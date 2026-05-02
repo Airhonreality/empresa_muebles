@@ -58,7 +58,7 @@ export const ForgeSigma = ({ meta = {}, onChange }) => {
             <style dangerouslySetInnerHTML={{ __html: `
                 .forge-zone-sigma { display: flex; flex-direction: column; gap: 2rem; padding: 2rem; border: 1px solid var(--border-soft); border-radius: var(--radius-md); }
                 .zone-header { display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid var(--border-soft); padding-bottom: 1rem; }
-                .zone-tag { font-size: 0.6rem; font-weight: 900; background: #6b4cff; color: white; padding: 0.2rem 0.5rem; border-radius: 2px; }
+                .zone-tag { font-size: 0.6rem; font-weight: 900; background: #333333; color: white; padding: 0.2rem 0.5rem; border-radius: 2px; }
                 .zone-title { margin: 0; font-size: 1.2rem; font-weight: 500; }
                 
                 .forge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -75,7 +75,7 @@ export const ForgeSigma = ({ meta = {}, onChange }) => {
                     flex: 1; padding: 0.6rem; background: var(--surface-2); border: 1px solid var(--border-soft); 
                     color: var(--text-muted); font-size: 0.65rem; font-weight: 700; cursor: pointer; border-radius: var(--radius-sm);
                 }
-                .radio-btn.active { background: #6b4cff; color: white; border-color: #6b4cff; }
+                .radio-btn.active { background: #ffffff; color: #000000; border-color: #ffffff; }
             `}} />
         </div>
     );

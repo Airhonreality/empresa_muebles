@@ -33,7 +33,20 @@ export const AppState = {
 
     // Métodos de mutación atómica
     mutations: {
-        setIdentity: (state, identity) => ({ ...state, identity }),
+        setIdentity: (state, profile) => ({ 
+            ...state, 
+            identity: { 
+                actor: profile.name, 
+                email: profile.email, 
+                avatar: profile.picture,
+                isAuthenticated: true 
+            } 
+        }),
+        
+        logout: (state) => ({ 
+            ...state, 
+            identity: { actor: 'guest', email: null, isAuthenticated: false } 
+        }),
         
         setSystemConfig: (state, config) => ({
             ...state,

@@ -43,16 +43,41 @@ Para mantener la integridad de la semilla, todo desarrollador debe respetar esta
 
 ---
 
+## 📜 MANIFIESTO DEL AGNOSTICISMO RADICAL
+
+1.  **El Código es Estéril**: El código fuente no debe contener conceptos de negocio (ERP, CRM, Factura). Es solo un intérprete de materia.
+2.  **La Realidad es JSON**: Toda la lógica, flujos y estructuras viven en el Silo de Materia. Cambiar el JSON es cambiar la realidad del sistema.
+3.  **La Semilla es Virgen**: Este repositorio debe permanecer libre de lógica específica. Los proyectos se "encarnan" en él, pero no lo habitan permanentemente.
+4.  **Soberanía Total**: El desarrollador no es esclavo del framework; el framework es una herramienta transparente para proyectar intenciones.
+
+---
+
+## 📂 Estructura de Soberanía (The Silo)
+
+Para mantener la semilla virgen, el sistema utiliza la carpeta `matter-silo/`:
+
+*   **`matter-silo/materia.json`**: Aquí reside el "ADN" de tu proyecto (ERP, etc.). Este archivo está en `.gitignore` para que puedas trabajar en múltiples proyectos usando la misma semilla sin mezclar lógicas.
+*   **`matter-silo/assets/`**: Almacenamiento de archivos binarios, imágenes y documentos del proyecto actual.
+
+### Cómo usar esta Semilla para tus Proyectos:
+1.  **Clona** este repositorio.
+2.  **Configura** tu Silo Local (ejecutando `node vault-server.js`).
+3.  **Proyecta**: Toda la lógica que crees en la Forja se guardará en `matter-silo/`.
+4.  **Extrae**: Si deseas iniciar un nuevo proyecto, simplemente limpia el Silo o apunta el Bridge a una nueva ubicación. El motor permanece intacto.
+
+---
+
 ## 🚀 Secuencia de Ignición (Setup)
 
 1.  **Instalación**: `npm install`
-2.  **Configuración**: Crea un archivo `.env` basado en `.env.example` con tus credenciales de GitHub.
-3.  **Arranque**: `npm run dev`
-4.  **Primeros Pasos**: Accede a `/forge` para crear tus primeras `META_CLASSES` y definir el universo de tu aplicación.
+2.  **Configuración**: Crea un archivo `.env` basado en `.env.example`.
+3.  **Lanzar el Silo**: `node vault-server.js` (En una terminal dedicada).
+4.  **Arranque App**: `npm run dev`
+5.  **Primeros Pasos**: Accede a `/forge` y comienza a definir tu realidad.
 
 ---
 
 ## 📜 Licencia de Soberanía
-Este sistema es una semilla virgen. Su propósito es servir como base para cualquier ecosistema digital (ERP, CRM, CMS) que requiera **Soberanía Técnica Total** y **Agnosticismo Radical**.
+Este sistema es una semilla virgen. Su propósito es servir como base para cualquier ecosistema digital que requiera **Soberanía Técnica Total**.
 
 **Sintoniza la frecuencia. Crea realidad.** 🛰️⚖️🏛️

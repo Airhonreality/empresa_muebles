@@ -30,3 +30,9 @@ yarn-error.log*
 # Sistema
 .DS_Store
 Thumbs.db
+
+# 🛰️ MATERIA (Lógica de Negocio)
+# Ignoramos los datos de la materia para mantener la semilla virgen
+matter-silo/materia.json
+matter-silo/assets/*
+!matter-silo/assets/.gitkeep

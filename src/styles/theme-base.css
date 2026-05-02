@@ -1,29 +1,28 @@
 @import './auto-layout.css';
 
 :root {
-    /* 🎨 Semantic Color Tokens */
-    --surface-0: #0a0a0a;
-    --surface-1: #141414;
-    --surface-2: #1f1f1f;
+    /* 🎨 Monochromatic Purist Tokens */
+    --surface-0: #000000;
+    --surface-1: #080808;
+    --surface-2: #121212;
     --surface-glass: rgba(255, 255, 255, 0.03);
     
-    --text-primary: #f0f0f0;
-    --text-secondary: #999999;
-    --text-muted: #666666;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --text-muted: #555555;
     
     --accent-primary: #ffffff;
-    --accent-vibrant: #0070f3;
+    --accent-vibrant: #ffffff; /* Eliminación de azul */
     
-    --border-soft: rgba(255, 255, 255, 0.1);
-    --border-strong: rgba(255, 255, 255, 0.2);
+    --border-soft: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.15);
 
-    /* 📐 Relative Layout Tokens (No Pixels) */
-    --radius-sm: 0.25rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 1rem;
+    /* 📐 Relative Layout Tokens */
+    --radius-sm: 0.2rem;
+    --radius-md: 0.4rem;
+    --radius-lg: 0.8rem;
     
-    /* ⚡ Transitions */
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -31,22 +30,22 @@ body {
     color: var(--text-primary);
     font-family: 'Inter', system-ui, sans-serif;
     margin: 0;
-    font-size: 1rem; /* Base unit */
+    font-size: 1rem;
+    letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
 }
 
 .glass {
     background: var(--surface-glass);
-    backdrop-filter: blur(0.75rem);
+    backdrop-filter: blur(1.5rem);
     border: 0.06rem solid var(--border-soft);
 }
 
-/* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(0.6rem); }
+    from { opacity: 0; transform: translateY(0.5rem); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade {
-    animation: fadeIn 0.6s ease forwards;
+    animation: fadeIn 0.5s ease forwards;
 }

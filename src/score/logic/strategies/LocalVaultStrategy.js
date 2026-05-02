@@ -1,58 +1,44 @@
 /**
- * 🛡️ LOCAL VAULT STRATEGY
- * Gestiona la persistencia en el navegador (IndexedDB o LocalStorage).
- * Actúa como caché y como fallback cuando el Silo Remoto falla.
+ * 🏛️ LOCAL VAULT STRATEGY (Node.js Edition)
+ * Persistencia física en archivos JSON locales mediante el vault-server.
  */
-
 export class LocalVaultStrategy {
     constructor() {
-        this.storageKey = 'SOVEREIGN_VAULT_CACHE';
+        // En local, usamos el puerto 3000 del vault-server
+        this.api_url = import.meta.env.VITE_VAULT_API_URL || 'http://localhost:3000/api/vault';
     }
 
-    async execute(uqo) {
-        const { protocol, context_id, data, payload } = uqo;
-        const db = this._loadDb();
-
-        if (protocol === 'ATOM_READ') {
-            return { items: db[context_id] || [], metadata: { source: 'LOCAL_VAULT' } };
-        }
-
-        if (protocol === 'CREATE' || protocol === 'UPDATE') {
-            if (!db[context_id]) db[context_id] = [];
-            const index = db[context_id].findIndex(item => item.slug === data.slug);
-            
-            if (index !== -1) db[context_id][index] = data;
-            else db[context_id].unshift(data);
-            
-            this._saveDb(db);
-            return { status: 'OK', msg: 'Materia cristalizada en Bóveda Local.' };
-        }
-
-        if (protocol === 'DELETE') {
-            if (db[payload.context_id]) {
-                db[payload.context_id] = db[payload.context_id].filter(i => i.slug !== payload.slug);
-                this._saveDb(db);
-            }
-            return { status: 'OK' };
-        }
-    }
-
-    /**
-     * Sincroniza datos externos con la bóveda local.
-     */
-    sync(context_id, items) {
-        const db = this._loadDb();
-        db[context_id] = items;
-        this._saveDb(db);
-    }
-
-    _loadDb() {
+    async getMateria(context_id) {
         try {
-            return JSON.parse(localStorage.getItem(this.storageKey)) || {};
-        } catch (e) { return {}; }
+            const response = await fetch(this.api_url);
+            const db = await response.json();
+            return db.materia?.[context_id] || [];
+        } catch (e) {
+            console.warn("⚠️ [LocalVault] No se pudo conectar al silo local. Usando fallback.");
+            return [];
+        }
     }
 
-    _saveDb(db) {
-        localStorage.setItem(this.storageKey, JSON.stringify(db));
+    async saveMateria(context_id, items) {
+        try {
+            // Primero leemos la base completa
+            const response = await fetch(this.api_url);
+            const db = await response.json();
+            
+            // Actualizamos el contexto específico
+            db.materia = { ...db.materia, [context_id]: items };
+            
+            // Guardamos de vuelta en el servidor
+            await fetch(this.api_url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(db)
+            });
+
+            return true;
+        } catch (e) {
+            console.error("❌ [LocalVault] Error al cristalizar materia local:", e);
+            return false;
+        }
     }
 }

@@ -81,10 +81,11 @@ export const ForgeSidebar = ({ materiaList = [], onSelect, activeSlug }) => {
                     transition: var(--transition-smooth); border: 1px solid transparent;
                 }
                 .materia-item:hover { background: rgba(255,255,255,0.03); }
-                .materia-item.active { background: rgba(255,255,255,0.07); border-color: var(--border-soft); }
+                .materia-item.active { background: #ffffff; color: #000000; border-color: #ffffff; }
                 .item-info { display: flex; flex-direction: column; gap: 0.2rem; }
-                .item-slug { font-size: 0.65rem; color: var(--accent-vibrant); font-weight: 700; letter-spacing: 0.05em; }
-                .item-title { font-size: 0.85rem; color: var(--text-primary); }
+                .search-group input:focus { border-color: #ffffff; }
+                .search-group svg { position: absolute; left: 0.8rem; top: 0.9rem; color: #555555; }
+                .search-group input:focus + svg { color: #ffffff; }
                 .item-meta { opacity: 0.3; }
             `}} />
         </div>

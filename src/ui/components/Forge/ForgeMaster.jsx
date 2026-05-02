@@ -4,6 +4,7 @@ import { ForgeAlfa } from './ForgeAlfa';
 import { ForgeSigma } from './ForgeSigma';
 import { ForgeOmega } from './ForgeOmega';
 import { ForgeCommands } from './ForgeCommands';
+import { ForgeHelp } from './ForgeHelp';
 import { useSovereign } from '../../../score/SovereignContext';
 import { BootstrapSchema } from '../../../score/logic/BootstrapSchema';
 
@@ -128,10 +129,17 @@ export const ForgeMaster = () => {
                 )}
             </main>
 
+            <ForgeHelp />
+
             <style dangerouslySetInnerHTML={{ __html: `
                 .forge-master-layout { display: grid; grid-template-columns: 350px 1fr; height: 100vh; background: var(--surface-0); overflow: hidden; }
                 .silo-selector { padding: 1rem; border-bottom: 1px solid var(--border-soft); }
-                .btn-ignite-new { width: 100%; padding: 0.8rem; background: var(--accent-vibrant); border: none; color: white; border-radius: var(--radius-sm); font-weight: 900; font-size: 0.7rem; cursor: pointer; }
+                .btn-ignite-new { 
+                    width: 100%; padding: 0.8rem; background: #ffffff; border: none; color: #000000; 
+                    border-radius: var(--radius-sm); font-weight: 900; font-size: 0.7rem; cursor: pointer; 
+                    letter-spacing: 0.1em; transition: var(--transition-smooth);
+                }
+                .btn-ignite-new:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255,255,255,0.1); }
                 .forge-main { height: 100%; overflow-y: auto; }
                 .forge-scroller { padding: 2rem 4rem; max-width: 900px; margin: 0 auto; }
                 .forge-zones { display: flex; flex-direction: column; gap: 3rem; padding-bottom: 15rem; }

@@ -91,6 +91,8 @@ export const ForgeOmega = ({ blocks = [], onChange }) => {
                 .block-controls { display: flex; flex-direction: column; gap: 1rem; width: 60px; align-items: center; }
                 .layout-picker { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; }
                 .layout-picker label { font-size: 0.5rem; font-weight: 900; opacity: 0.5; }
+                .grid-config-pro label { font-size: 0.6rem; font-weight: 900; color: #ffffff; }
+                .zone-tag { font-size: 0.6rem; font-weight: 900; background: #000000; color: white; border: 1px solid white; padding: 0.2rem 0.5rem; border-radius: 2px; }
                 .layout-picker select { background: var(--surface-2); border: none; color: white; font-size: 0.6rem; border-radius: 2px; padding: 0.2rem; }
                 .block-content-editor { flex-grow: 1; }
                 .simple-input { width: 100%; background: transparent; border: none; color: white; font-size: 1.2rem; outline: none; }
