@@ -1,0 +1,54 @@
+{
+  "materia": {
+    "SYSTEM_CONFIG": [
+      {
+        "slug": "main_config",
+        "data": {
+          "id": "config_001",
+          "site_title": "La Empresa de Diseño",
+          "identity_color": "#D4C5A1",
+          "home_slug": "projects",
+          "theme_mode": "warm",
+          "manifesto": "Diseño Industrial Sistémico para la Excelencia en Carpintería."
+        }
+      }
+    ],
+    "META_CLASSES": [
+      {
+        "slug": "material",
+        "data": {
+          "id": "class_material",
+          "name": "Material",
+          "icon": "Box",
+          "fields": [
+            { "id": "name", "label": "Nombre del Material", "type": "text", "required": true },
+            { "id": "type", "label": "Tipo", "type": "select", "options": ["Madera", "Metal", "Herraje", "Otro"] },
+            { "id": "height", "label": "Alto (mm)", "type": "number" },
+            { "id": "length", "label": "Largo (mm)", "type": "number" },
+            { "id": "width", "label": "Ancho (mm)", "type": "number" },
+            { "id": "finish_color", "label": "Color/Acabado", "type": "text" },
+            { "id": "finish_type", "label": "Tipo de Acabado", "type": "select", "options": ["Mate", "Brillante", "Satinado"] },
+            { "id": "cost_price", "label": "Precio de Compra (Directo)", "type": "number" },
+            { "id": "sale_price", "label": "Precio de Venta", "type": "number" },
+            { "id": "provider", "label": "Proveedor Principal", "type": "text" }
+          ]
+        }
+      },
+      {
+        "slug": "service",
+        "data": {
+          "id": "class_service",
+          "name": "Servicio",
+          "icon": "Tool",
+          "fields": [
+            { "id": "name", "label": "Nombre del Servicio", "type": "text", "required": true },
+            { "id": "type", "label": "Tipo", "type": "select", "options": ["Diseño", "Instalación", "Transporte", "Fabricación"] },
+            { "id": "unit", "label": "Unidad de Medida", "type": "select", "options": ["Global", "Hora", "m2", "Metro Lineal"] },
+            { "id": "cost_price", "label": "Costo Directo", "type": "number" },
+            { "id": "sale_price", "label": "Precio al Cliente", "type": "number" }
+          ]
+        }
+      }
+    ]
+  }
+}

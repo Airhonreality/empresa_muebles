@@ -1,12 +1,16 @@
-# 🛑 AGNOSTIC SEED - GITIGNORE
-
-# Dependencias
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Build output
+.next/
+out/
 dist/
 dist-ssr/
-*.local
+build/
 
-# Secretos y Configuración (Soberanía Privada)
+# Secrets
 .env
 .env.local
 .env.development.local
@@ -26,13 +30,23 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+.history/
 
-# Sistema
+# OS
 .DS_Store
 Thumbs.db
 
-# 🛰️ MATERIA (Lógica de Negocio)
-# Ignoramos los datos de la materia para mantener la semilla virgen
-matter-silo/materia.json
-matter-silo/assets/*
-!matter-silo/assets/.gitkeep
+# ── DATA SILO (Business logic — never tracked by the seed) ──────────────────
+# This directory belongs to the project (business), not the framework (seed).
+# Create your own data-silo/ locally or configure GITHUB_TOKEN for cloud storage.
+data-silo/db.json
+data-silo/assets/*
+!data-silo/assets/.gitkeep
+data-silo/modules/*
+!data-silo/modules/.gitkeep
+data-silo/styles/*
+!data-silo/styles/.gitkeep
+
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts

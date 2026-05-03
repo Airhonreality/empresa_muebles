@@ -1,0 +1,21 @@
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.error {
+  padding: 1rem 1.5rem;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius);
+  color: var(--danger);
+  font-size: 0.875rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+[data-theme='dark'] .error {
+  background: #2d0a0a;
+  border-color: #7f1d1d;
+}

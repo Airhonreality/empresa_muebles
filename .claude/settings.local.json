@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\javir\\\\Documents\\\\DEVs\\\\agnostic system\" -Recurse -Force)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(ConvertTo-Json)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\javir\\\\Documents\\\\DEVs\\\\agnostic system\" -Recurse -Force | Select-Object -Property @{Name='Path';Expression={$_.FullName}}, PSIsContainer | ConvertTo-Csv | Select-Object -Skip 1)",
+      "PowerShell(tree \"C:\\\\Users\\\\javir\\\\Documents\\\\DEVs\\\\agnostic system\" -L 3 -I \"node_modules|dist|.git\")",
+      "Bash(git checkout *)",
+      "Bash(Remove-Item -Force \"vault-server.js\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Force \"index.html\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Recurse -Force \"src\\\\score\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Recurse -Force \"src\\\\ui\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Force \"src\\\\main.jsx\" -ErrorAction SilentlyContinue)"
+    ]
+  }
+}
