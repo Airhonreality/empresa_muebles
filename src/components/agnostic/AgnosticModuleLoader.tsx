@@ -1,68 +1,70 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-
-interface ModuleApi {
-  getValue: (key: string) => any;
-  setValue: (key: string, val: any) => void;
-  onUpdate: (key: string, cb: (val: any) => void) => void;
-}
+import React, { useEffect, useState, useRef } from 'react';
 
 interface Props {
   moduleName: string;
-  api: ModuleApi;
+  api: any;
   children?: React.ReactNode;
 }
 
 /**
- * AgnosticModuleLoader: The Bridge for Radical JS Injection.
+ * AgnosticModuleLoader v2.1 (Performance Stabilized)
  * 
- * 1. Fetches the business logic from Materia (storage/modules).
- * 2. Injects it into the browser runtime using Dynamic Blob Imports.
- * 3. Connects the logic with the Component API.
+ * Ensures business logic is injected exactly once and persists
+ * through state updates via reference sharing.
  */
 export function AgnosticModuleLoader({ moduleName, api, children }: Props) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use a ref for the API to avoid re-triggering the load effect
+  const apiRef = useRef(api);
+  apiRef.current = api;
 
   useEffect(() => {
     let objectUrl: string | null = null;
+    let isMounted = true;
 
     async function loadModule() {
       try {
+        console.log(`[ModuleLoader] Injecting: ${moduleName}`);
         const response = await fetch(`/api/modules/${moduleName}`);
         if (!response.ok) throw new Error(`Logic module '${moduleName}' not found.`);
 
         const code = await response.text();
-        
-        // Use Blob + Dynamic Import for a safe and modern ES Module execution
         const blob = new Blob([code], { type: 'application/javascript' });
         objectUrl = URL.createObjectURL(blob);
         
         const module = await import(/* webpackIgnore: true */ objectUrl);
         
-        if (module.setup) {
-          module.setup(api);
+        if (isMounted && module.setup) {
+          // Pass the API ref current value to the setup
+          module.setup(apiRef.current, apiRef.current.container);
+          setIsLoaded(true);
         }
-
-        setIsLoaded(true);
       } catch (err) {
-        console.error('[ModuleLoader]', err);
-        setError(err instanceof Error ? err.message : 'Failed to inject logic');
+        if (isMounted) {
+          console.error('[ModuleLoader] Injection Error:', err);
+          setError(err instanceof Error ? err.message : 'Failed to inject logic');
+        }
       }
     }
 
     loadModule();
 
     return () => {
+      isMounted = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [moduleName, api]);
+    // ONLY re-run if the module name changes, NOT the API state
+  }, [moduleName]);
 
   if (error) {
     return (
-      <div className="p-4 border border-destructive/20 bg-destructive/5 rounded-xl text-[10px] font-bold text-destructive flex items-center gap-2">
-        <span>⚠ LOGIC ERROR: {error}</span>
+      <div className="p-6 border border-destructive/20 bg-destructive/5 rounded-[2rem] text-[10px] font-bold text-destructive flex items-center gap-3">
+        <span className="p-2 bg-destructive/10 rounded-lg">⚠</span>
+        <span>LOGIC INJECTION FAILURE: {error}</span>
       </div>
     );
   }

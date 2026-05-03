@@ -53,14 +53,7 @@ export default function MasterRoute() {
       "min-h-screen bg-background animate-in fade-in duration-1000 p-8 pb-32",
       layoutStyle === 'compact' ? "max-w-5xl mx-auto" : "w-full"
     )}>
-      {/* Dynamic Route Header */}
-      <div className="max-w-4xl mx-auto mb-16 space-y-2">
-         <h1 className="text-4xl font-black tracking-tighter text-foreground">{route.data.name as string}</h1>
-         <p className="text-xs text-muted-foreground font-medium italic opacity-60">Sovereign Path: {path}</p>
-         <Separator className="bg-primary/20 w-24 h-1 rounded-full mt-4" />
-      </div>
-
-      <div className="max-w-4xl mx-auto space-y-24">
+      <div className="max-w-4xl mx-auto space-y-24 pt-12">
         {blocks.map((block, idx) => (
           <div key={idx} className="animate-in slide-in-from-bottom-8 duration-1000" style={{ animationDelay: `${idx * 200}ms` }}>
             <AgnosticRenderer block={block} />

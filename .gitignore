@@ -1,47 +1,35 @@
-# Dependencies
-node_modules/
-.pnp
+# dependencies
+/node_modules
+/.pnp
 .pnp.js
 
-# Build output
-.next/
-out/
-dist/
-dist-ssr/
-build/
+# testing
+/coverage
 
-# Secrets
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# next.js
+/.next/
+/out/
+/dist/
 
-# Logs
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Editor
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-.history/
+# local env files
+.env*.local
+.env
 
-# OS
-.DS_Store
-Thumbs.db
+# vercel
+.vercel
 
-# ── DATA STORAGE (Business logic — never tracked by the seed) ──────────
-# This directory contains the entities (Business data, styles, and modules).
-# We ignore all instances except the 'default' one which serves as a template.
-storage/*
-!storage/default/
-
-# TypeScript build info
+# typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -29,11 +29,11 @@ export function SchemaSidebar({ activeTab, setActiveTab, t }: Props) {
           <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20">
             <Cpu className="text-primary-foreground" size={20} />
           </div>
-          <h1 className="text-xl font-black tracking-tighter">FORJA v2.2</h1>
+          <h1 className="text-lg font-black tracking-tighter leading-none">SCHEMA<br/>ARCHITECT</h1>
         </div>
         <div className="flex items-center gap-2 pl-1">
-          <ShieldCheck size={10} className="text-primary animate-pulse" />
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 italic">Sovereign Seed</span>
+          <div className="h-1 w-1 rounded-full bg-primary" />
+          <span className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 italic">Sovereign Core</span>
         </div>
       </div>
 
