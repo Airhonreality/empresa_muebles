@@ -1,39 +1,6 @@
-:root {
-  --surface-0: #ffffff;
-  --surface-1: #f7f7f7;
-  --surface-2: #eeeeee;
-  --text-primary: #111111;
-  --text-secondary: #666666;
-  --accent: #0070f3;
-  --accent-hover: #005fd4;
-  --danger: #dc2626;
-  --danger-hover: #b91c1c;
-  --border: #e0e0e0;
-  --radius: 6px;
-  --shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-[data-theme='dark'] {
-  --surface-0: #0f0f0f;
-  --surface-1: #1a1a1a;
-  --surface-2: #252525;
-  --text-primary: #f0f0f0;
-  --text-secondary: #999999;
-  --border: #333333;
-  --shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme='warm'] {
-  --surface-0: #fdf8f0;
-  --surface-1: #f5ede0;
-  --surface-2: #ecdfc9;
-  --text-primary: #2c1a0e;
-  --text-secondary: #7a5c3e;
-  --border: #ddd0bc;
-  --accent: #8b5e3c;
-  --accent-hover: #6d4a2e;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 *,
 *::before,

@@ -18,7 +18,8 @@ export async function GET(
 ) {
   const { filePath } = await params;
   const safeParts = filePath.map(p => path.basename(p));
-  const absPath = path.join(process.cwd(), 'data-silo', 'assets', ...safeParts);
+  const STORAGE_PATH = process.env.STORAGE_PATH || 'storage/default';
+  const absPath = path.join(process.cwd(), STORAGE_PATH, 'assets', ...safeParts);
 
   try {
     const data = await fs.readFile(absPath);

@@ -14,19 +14,19 @@ Aquí tienes el **Roadmap de Migración y Estandarización** para crear tu repos
 
 ---
 
-### 🗺️ Road Map: De Nomon a Agnostic Seed
+### 🗺️ Road Map: De Nomon a Agnostic Seed (Core Engine)
 
 #### **Fase 1: El Núcleo Soberano (Core Logic)**
 *Objetivo: Desacoplar la inteligencia del almacenamiento.*
 
-1.  **Refactor de `AgnosticBridge.js` (Ex-NomonBridge)**:
-    *   **Estandarización**: Cambiar las constantes `owner`, `repo` y `token` por `process.env` (Vite usa `import.meta.env`).
+1.  **Refactor de `DataConnector.ts` (Ex-NomonBridge)**:
+    *   **Estandardización**: Cambiar las constantes `owner`, `repo` y `token` por `process.env`.
     *   **Estrategias Intercambiables**: Extender la clase `PersistenceStrategy` para que sea fácil añadir `SupabaseStrategy` o `LocalStorageStrategy` sin tocar el resto del código.
-    *   **Protocolo de Comunicación**: Formalizar los mensajes `ATOM_READ`, `CREATE`, `UPDATE` en una interfaz limpia.
+    *   **Protocolo de Comunicación**: Formalizar los mensajes `ENTITY_READ`, `CREATE`, `UPDATE` en una interfaz limpia.
 2.  **Universalización de `SovereignContext`**:
     *   Limpiar el estado inicial para que no espere `NOMON_ENTRIES` por defecto, sino que reciba una configuración de "Contextos de Datos".
-3.  **Evolución de `useIndraResonance`**:
-    *   Hacer que el hook sea paramétrico: `useIndraResonance('CLIENTES')` en lugar de estar atado a la estructura de Nomon.
+3.  **Evolución de `useDataSync`**:
+    *   Hacer que el hook sea paramétrico: `useDataSync('CLIENTES')` en lugar de estar atado a la estructura previa.
 
 #### **Fase 2: El Motor Visual (Visual Engine)**
 *Objetivo: Pasar de estilos "hardcoded" a un sistema de diseño inyectable.*
@@ -35,21 +35,21 @@ Aquí tienes el **Roadmap de Migración y Estandarización** para crear tu repos
     *   Extraer todos los estilos del `dangerouslySetInnerHTML` de `MateriaComposer.jsx`.
     *   Crear un sistema de **Variables CSS** en `src/styles/theme-base.css` (colores, espaciados, bordes).
     *   Implementar un modo oscuro/claro nativo desde el core.
-2.  **Componentes Materia 2.0**:
-    *   **`DataCard.jsx`**: Recrearlo con un diseño más minimalista y premium, usando CSS Grid nativo.
-    *   **`MateriaComposer.jsx`**:
+2.  **Componentes de Entidad 2.0**:
+    *   **`DataCard.tsx`**: Recrearlo con un diseño más minimalista y premium, usando CSS Grid nativo.
+    *   **`EntityComposer.tsx`**:
         *   Convertir `LIBRARY_RESOURCE` en un bloque genérico `ACTION_CARD`.
         *   Añadir el soporte para `FORM_BLOCK` y `CHART_BLOCK` (vital para el ERP).
-    *   **`Grid.jsx`**: Hacerlo verdaderamente inteligente, que soporte layouts de "Masonry" o "Strict Grid" vía props.
+    *   **`Grid.tsx`**: Hacerlo verdaderamente inteligente, que soporte layouts de "Masonry" o "Strict Grid" vía props.
 
 #### **Fase 3: La Forja de Creación (The Forge)**
 *Objetivo: Modularizar la herramienta de administración.*
 
-1.  **Descomposición de `MateriaForge.jsx`**:
-    *   Actualmente es un archivo de 39KB. Hay que dividirlo en:
-        *   `ForgeEditor.jsx` (El editor de JSON/Markdown).
-        *   `ForgePreview.jsx` (La vista previa en tiempo real).
-        *   `ForgeSidebar.jsx` (Gestión de slugs y metadatos).
+1.  **Descomposición de `EntityBuilder.tsx`**:
+    *   Dividir el editor en submódulos:
+        *   `BuilderEditor.tsx` (El editor de JSON/Markdown).
+        *   `BuilderPreview.tsx` (La vista previa en tiempo real).
+        *   `BuilderSidebar.tsx` (Gestión de identificadores y metadatos).
 2.  **Sistema de Rutas Dinámico**:
     *   Asegurar que `SovereignRouter` pueda leer la estructura de navegación directamente del Bridge, permitiendo crear páginas nuevas sin tocar una sola línea de código React.
 
@@ -96,8 +96,8 @@ El contexto actual es un "Cajón de Sastre". El nuevo debe ser un **Registro de 
 
 *   **Desarrollo:** El `SovereignContext` debe permitir la "Inyección de Namespaces". Al iniciar, el AppState dice: "Voy a manejar los contextos `ORDENES`, `FACTURAS` y `ENTIDADES`".
 *   **Punto Crítico (Carrera de Datos):** Dos componentes actualizando la misma materia al mismo tiempo.
-*   **Solución (Atomic Updates):** Implementar un sistema de **Queue (Cola)** en el AppState. Los cambios se encolan y se "cristalizan" uno a uno en el Bridge.
-*   **Validación Agnóstica:** El estado no tiene propiedades fijas como `state.projects`; tiene un mapa `state.materia[context_id]`.
+*   **Solución (Atomic Updates):** Implementar un sistema de **Queue (Cola)** en el AppState. Los cambios se encolan y se persisten uno a uno en el Service.
+*   **Validación Agnóstica:** El estado no tiene propiedades fijas como `state.projects`; tiene un mapa `state.entities[context_id]`.
 
 #### 4. useIndraResonance: Sincronía Reactiva
 Este es el hook que conecta los componentes con la "Realidad Remota".

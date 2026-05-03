@@ -36,16 +36,11 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# ── DATA SILO (Business logic — never tracked by the seed) ──────────────────
-# This directory belongs to the project (business), not the framework (seed).
-# Create your own data-silo/ locally or configure GITHUB_TOKEN for cloud storage.
-data-silo/db.json
-data-silo/assets/*
-!data-silo/assets/.gitkeep
-data-silo/modules/*
-!data-silo/modules/.gitkeep
-data-silo/styles/*
-!data-silo/styles/.gitkeep
+# ── DATA STORAGE (Business logic — never tracked by the seed) ──────────
+# This directory contains the entities (Business data, styles, and modules).
+# We ignore all instances except the 'default' one which serves as a template.
+storage/*
+!storage/default/
 
 # TypeScript build info
 *.tsbuildinfo

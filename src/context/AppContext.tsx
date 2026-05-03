@@ -6,6 +6,7 @@ import React, {
   useReducer,
   useEffect,
   useCallback,
+  useMemo,
 } from 'react';
 import type { AppState, DataItem, FieldDefinition, SchemaDefinition } from '@/core/types';
 
@@ -45,32 +46,50 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-interface AppContextType {
+interface AppStateContextType {
   state: AppState;
-  dispatch: React.Dispatch<Action>;
-  saveItem: (context: string, item: Omit<DataItem, 'created_at' | 'updated_at'>) => Promise<void>;
-  deleteItem: (context: string, id: string) => Promise<void>;
 }
 
-const AppContext = createContext<AppContextType | null>(null);
+interface AppDispatchContextType {
+  saveItem: (context: string, item: Omit<DataItem, 'created_at' | 'updated_at'>) => Promise<void>;
+  deleteItem: (context: string, id: string) => Promise<void>;
+  dispatch: React.Dispatch<Action>;
+}
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+const AppStateContext = createContext<AppStateContextType | null>(null);
+const AppDispatchContext = createContext<AppDispatchContextType | null>(null);
 
+/**
+ * AppProvider (Next.js 15 Optimized)
+ * Receives initialData from the Server Component to eliminate client-side hydration waterfall.
+ */
+export function AppProvider({ 
+  children, 
+  initialData 
+}: { 
+  children: React.ReactNode, 
+  initialData?: Record<string, DataItem[]> 
+}) {
+  // Initialize state with initialData if provided (Server-Side Injection)
+  const [state, dispatch] = useReducer(reducer, initialData ? parseDB(initialData) : initialState);
+
+  // Sync effect (only runs if initialData was not provided or for re-syncing)
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch('/api/vault');
-        if (!res.ok) throw new Error('Failed to load database');
-        const db = (await res.json()) as Record<string, DataItem[]>;
-        dispatch({ type: 'SET_DB', payload: db });
-      } catch (err) {
-        console.error('[AppContext]', err);
-        dispatch({ type: 'SET_LOADING', payload: false });
+    if (!initialData) {
+      async function load() {
+        try {
+          const res = await fetch('/api/vault');
+          if (res.ok) {
+            const db = (await res.json()) as Record<string, DataItem[]>;
+            dispatch({ type: 'SET_DB', payload: db });
+          }
+        } catch (err) {
+          console.error('[AppContext]', err);
+        }
       }
+      load();
     }
-    load();
-  }, []);
+  }, [initialData]);
 
   const saveItem = useCallback(
     async (context: string, item: Omit<DataItem, 'created_at' | 'updated_at'>) => {
@@ -91,11 +110,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const newDB = { ...state.data, [context]: newItems };
       dispatch({ type: 'SET_DB', payload: newDB });
 
-      await fetch('/api/vault', {
+      fetch('/api/vault', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newDB),
-      });
+      }).catch(err => console.error('[CorePersistence]', err));
     },
     [state.data]
   );
@@ -108,24 +127,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       dispatch({ type: 'SET_DB', payload: newDB });
 
-      await fetch('/api/vault', {
+      fetch('/api/vault', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newDB),
-      });
+      }).catch(err => console.error('[CorePersistence]', err));
     },
     [state.data]
   );
 
+  const stateValue = useMemo(() => ({ state }), [state]);
+  const dispatchValue = useMemo(() => ({ saveItem, deleteItem, dispatch }), [saveItem, deleteItem]);
+
   return (
-    <AppContext.Provider value={{ state, dispatch, saveItem, deleteItem }}>
-      {children}
-    </AppContext.Provider>
+    <AppStateContext.Provider value={stateValue}>
+      <AppDispatchContext.Provider value={dispatchValue}>
+        {children}
+      </AppDispatchContext.Provider>
+    </AppStateContext.Provider>
   );
 }
 
-export function useAppContext(): AppContextType {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useAppContext must be used within AppProvider');
+export function useAppState() {
+  const ctx = useContext(AppStateContext);
+  if (!ctx) throw new Error('useAppState must be used within AppProvider');
   return ctx;
+}
+
+export function useAppDispatch() {
+  const ctx = useContext(AppDispatchContext);
+  if (!ctx) throw new Error('useAppDispatch must be used within AppProvider');
+  return ctx;
+}
+
+export function useAppContext() {
+  const { state } = useAppState();
+  const dispatchProps = useAppDispatch();
+  return { state, ...dispatchProps };
 }

@@ -10,7 +10,7 @@ translate syntax, but to evolve the architecture to:
 2. Replace the local Express server (vault-server.js) with native Next.js API routes.
 3. Type everything strictly with TypeScript to make the system robust at scale.
 4. Keep the framework 100% agnostic: ZERO business logic in the seed. All data,
-   logic, and styles must come from an external `data-silo/` directory (ignored by git).
+   logic, and styles must come from an external `storage/` directory (ignored by git).
 
 ---
 
@@ -19,9 +19,9 @@ Rename all "mystical" or non-standard names to industry-standard terms:
 
 | Old (Poetic) Name         | New (Standard) Name        |
 |---------------------------|----------------------------|
-| `Silo` / `matter-silo`    | `data-silo`                |
-| `Forja` (Forge)           | `Schema Builder` → route `/schema` |
-| `materia.json`            | `db.json`                  |
+| `Silo` / `matter-silo`    | `storage/`                 |
+| `Builder` (Builder)       | `Schema Builder` → route `/schema` |
+| `Entity Data`             | `db.json`                  |
 | `SovereignContext`        | `AppContext`               |
 | `AgnosticBridge`          | `DataBridge`               |
 | `SovereignLogicHost`      | `DynamicModuleHost`        |
@@ -41,12 +41,12 @@ Rename all "mystical" or non-standard names to industry-standard terms:
 - Use Vanilla CSS Modules for styling (NO Tailwind, NO CSS-in-JS libraries).
 - Delete all Vite-related files: `vite.config.js`, `index.html`, `vault-server.js`.
 - Delete all old `.js` source files once their `.ts`/`.tsx` equivalents are created.
-- The `data-silo/` directory must remain in `.gitignore` (it holds business data, not framework code).
-- The `data-silo/` directory must contain:
-  - `data-silo/db.json` → the main database (formerly `materia.json`)
-  - `data-silo/assets/` → uploaded files
-  - `data-silo/modules/` → injectable JS modules (formerly `logic/`)
-  - `data-silo/styles/` → injectable CSS files (formerly N/A)
+- The `storage/` directory must remain in `.gitignore` (it holds business data, not framework code).
+- The `storage/` directory must contain:
+  - `storage/default/db.json` → the main database
+  - `storage/default/assets/` → uploaded files
+  - `storage/default/modules/` → injectable JS modules
+  - `storage/default/styles/` → injectable CSS files
 
 ### 2. TYPE DEFINITIONS (The Contract)
 Create `src/core/types.ts` with these interfaces:
@@ -99,7 +99,7 @@ Create `src/app/api/vault/route.ts` as the SINGLE server endpoint for all data o
 
 **Logic:**
 - If `process.env.GITHUB_TOKEN` is set → use `GitHubStrategy` (reads/writes to a GitHub repo).
-- If not → use `LocalStrategy` (reads/writes to `data-silo/db.json` on disk).
+- If not → use `LocalStrategy` (reads/writes to `storage/default/db.json` on disk).
 - The client NEVER knows which strategy is active. It only calls `/api/vault`.
 
 Create strategy files:
@@ -139,9 +139,7 @@ Create `src/components/DynamicModuleHost.tsx`:
 
 ### 6. STYLE INJECTOR
 Create `src/components/StyleInjector.tsx`:
-- On app load, call `GET /api/silo-styles` to check if `data-silo/styles/theme.css` exists.
-- If it does, inject it as a `<style>` tag into the document `<head>`.
-- This allows any project to define its visual identity in `data-silo/styles/theme.css`
+- This allows any project to define its visual identity in `storage/default/styles/theme.css`
   without touching framework code.
 
 ### 7. DYNAMIC ROUTER & PAGE BUILDER
@@ -186,7 +184,7 @@ Create `docs/INFRASTRUCTURE.md` documenting:
 - How to deploy to Vercel.
 - What environment variables to set.
 - How the LocalStrategy vs GitHubStrategy auto-detection works.
-- How to create and connect a `data-silo/` for a new project.
+- How to create and connect a `storage/` instance for a new project.
 
 ### 10. FINAL VALIDATION
 After all files are created:

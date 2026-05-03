@@ -1,57 +1,85 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { useAppContext } from '@/context/AppContext';
-import { PageComposer } from '@/components/PageComposer';
-import { DynamicModuleHost } from '@/components/DynamicModuleHost';
-import type { Block } from '@/components/PageComposer';
+import { useAppState } from '@/context/AppContext';
+import { AgnosticRenderer } from '@/components/agnostic/AgnosticRenderer';
+import { AgnosticGuard } from '@/components/agnostic/AgnosticGuard';
+import { useParams } from 'next/navigation';
+import { useMemo } from 'react';
+import { Layers, LayoutGrid } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
-interface PageRoute {
-  path: string;
-  title: string;
-  module?: string;
-  blocks?: Block[];
-}
+/**
+ * Master Route (The Satellite Runtime v2.1)
+ * 
+ * 1. Resolves Materia paths.
+ * 2. Manages Auth Guards.
+ * 3. Orchestrates multiple 'Actors' via AgnosticRenderer.
+ */
+export default function MasterRoute() {
+  const { slug } = useParams();
+  const { state } = useAppState();
+  
+  const path = Array.isArray(slug) ? `/${slug.join('/')}` : `/${slug}`;
 
-export default function DynamicPage() {
-  const pathname = usePathname();
-  const { state } = useAppContext();
+  const route = useMemo(() => {
+    const routes = state.data['page_routes'] || [];
+    return routes.find(r => r.data.path === path);
+  }, [state.data, path]);
 
   if (state.system.isLoading) {
     return (
-      <main style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        Loading&hellip;
-      </main>
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse font-mono text-[10px] uppercase tracking-[0.4em] opacity-30">Hydrating Atomic Core...</div>
+      </div>
     );
   }
-
-  const routeItems = state.data['page_routes'] ?? [];
-  const route = routeItems
-    .map(item => item.data as unknown as PageRoute)
-    .find(r => r.path === pathname);
 
   if (!route) {
     return (
-      <main style={{ padding: '3rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>404</h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-          No page route configured for <code>{pathname}</code>
-        </p>
-        <Link href="/schema" style={{ color: 'var(--accent)' }}>
-          &rarr; Configure in Schema Builder
-        </Link>
-      </main>
+      <div className="h-screen flex flex-col items-center justify-center bg-background p-8 text-center">
+        <Layers size={48} className="text-muted-foreground/20 mb-6" />
+        <h1 className="text-4xl font-black tracking-tighter mb-2">404: Uncharted Entity</h1>
+        <p className="text-xs text-muted-foreground italic max-w-xs">The route '{path}' has no projection in the current Materia storage.</p>
+      </div>
     );
   }
 
-  if (route.module) {
-    return <DynamicModuleHost moduleName={route.module} />;
+  const blocks = (route.data.blocks as any[]) || [route.data];
+  const { requiredRole, layoutStyle } = route.data as any;
+
+  const content = (
+    <div className={cn(
+      "min-h-screen bg-background animate-in fade-in duration-1000 p-8 pb-32",
+      layoutStyle === 'compact' ? "max-w-5xl mx-auto" : "w-full"
+    )}>
+      {/* Dynamic Route Header */}
+      <div className="max-w-4xl mx-auto mb-16 space-y-2">
+         <h1 className="text-4xl font-black tracking-tighter text-foreground">{route.data.name as string}</h1>
+         <p className="text-xs text-muted-foreground font-medium italic opacity-60">Sovereign Path: {path}</p>
+         <Separator className="bg-primary/20 w-24 h-1 rounded-full mt-4" />
+      </div>
+
+      <div className="max-w-4xl mx-auto space-y-24">
+        {blocks.map((block, idx) => (
+          <div key={idx} className="animate-in slide-in-from-bottom-8 duration-1000" style={{ animationDelay: `${idx * 200}ms` }}>
+            <AgnosticRenderer block={block} />
+          </div>
+        ))}
+
+        {blocks.length === 0 && (
+          <div className="py-32 text-center opacity-10">
+            <LayoutGrid size={64} className="mx-auto mb-4" />
+            <p className="font-black uppercase tracking-widest text-sm">Empty Composition</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (requiredRole) {
+    return <AgnosticGuard requiredRole={requiredRole}>{content}</AgnosticGuard>;
   }
 
-  return (
-    <main>
-      <PageComposer blocks={route.blocks ?? []} />
-    </main>
-  );
+  return content;
 }
