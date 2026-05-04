@@ -1,10 +1,10 @@
 import type { DataItem, DataStrategy } from '@/core/types';
 
 /**
- * SupabaseStrategy (PostgREST Implementation)
+ * SupabaseStrategy v2.0 (Sovereign Records Pattern)
  * 
- * Interconnects the Satellite with the Supabase giant 
- * using the standard REST API for maximum performance.
+ * This strategy uses a single 'records' table with JSONB to provide 
+ * infinite flexibility to the Agnostic Schema Architect.
  */
 export class SupabaseStrategy implements DataStrategy {
   constructor(
@@ -23,42 +23,79 @@ export class SupabaseStrategy implements DataStrategy {
 
   async read(context?: string): Promise<Record<string, DataItem[]>> {
     try {
-      if (!context) {
-        // In a Multi-Tenant world, we might need a meta-fetch or just return empty
-        // For now, we fetch the requested entity
-        return {};
+      // 1. Build the URL (filter by context if provided)
+      let apiUrl = `${this.url}/rest/v1/records?select=id,data`;
+      if (context) {
+        apiUrl += `&context=eq.${context}`;
       }
 
-      const res = await fetch(`${this.url}/rest/v1/${context}?select=*`, {
+      const res = await fetch(apiUrl, {
         headers: this.headers,
         cache: 'no-store'
       });
 
-      if (!res.ok) return { [context]: [] };
+      if (!res.ok) {
+        console.error(`[Supabase] Fetch failed: ${res.statusText}`);
+        return context ? { [context]: [] } : {};
+      }
       
-      const data = await res.json();
-      return { [context]: data };
+      const rows = await res.json() as Array<{ id: string, data: any }>;
+      
+      // 2. Format rows back into DataItems
+      const result: Record<string, DataItem[]> = {};
+      
+      rows.forEach(row => {
+        // We ensure the 'id' from the DB is the one used in the app
+        const item = { ...row.data, id: row.id };
+        const ctx = context || 'default'; // In a full fetch, we'd need the context col too
+        if (!result[ctx]) result[ctx] = [];
+        result[ctx].push(item);
+      });
+
+      return result;
     } catch (err) {
-      console.error(`[SupabaseStrategy] Read Error for ${context}:`, err);
-      return { [context || 'error']: [] };
+      console.error(`[Supabase] Read Error:`, err);
+      return context ? { [context]: [] } : {};
     }
   }
 
   async write(fullDatabase: Record<string, DataItem[]>): Promise<void> {
     try {
-      // We iterate through contexts and upsert them into their respective tables
-      for (const [tableName, items] of Object.entries(fullDatabase)) {
-        await fetch(`${this.url}/rest/v1/${tableName}`, {
-          method: 'POST',
-          headers: {
-            ...this.headers,
-            'Prefer': 'resolution=merge-duplicates' // UPSERT logic
-          },
-          body: JSON.stringify(items)
+      const allPayloads: any[] = [];
+
+      for (const [context, items] of Object.entries(fullDatabase)) {
+        items.forEach(item => {
+          const { id, ...data } = item;
+          const payload: any = {
+            context,
+            data
+          };
+          // If the item has a valid UUID, we use it for upserting
+          if (id && id.length === 36) {
+            payload.id = id;
+          }
+          allPayloads.push(payload);
         });
       }
+
+      if (allPayloads.length === 0) return;
+
+      // Perform a massive UPSERT to the records table
+      const res = await fetch(`${this.url}/rest/v1/records`, {
+        method: 'POST',
+        headers: {
+          ...this.headers,
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(allPayloads)
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(`[Supabase] Write failed: ${errText}`);
+      }
     } catch (err) {
-      console.error('[SupabaseStrategy] Write Error:', err);
+      console.error('[Supabase] Write Error:', err);
     }
   }
 }
