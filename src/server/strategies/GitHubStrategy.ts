@@ -63,6 +63,21 @@ export class GitHubStrategy implements DataStrategy {
     }
   }
 
+  /**
+   * readConfig: Fetches a specific configuration file from the DNA
+   */
+  async readConfig(fileName: string): Promise<any> {
+    const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${fileName}`;
+    const res = await fetch(`${apiUrl}?ref=${this.branch}`, {
+      headers: this.headers,
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const file = await res.json() as { content: string };
+    const content = Buffer.from(file.content, 'base64').toString('utf-8');
+    return JSON.parse(content);
+  }
+
   async write(fullDatabase: Record<string, DataItem[]>): Promise<void> {
     // Note: Writing to GitHub is intentionaly slow for DNA/Config changes.
     // For transactional data, SupabaseStrategy is recommended.
