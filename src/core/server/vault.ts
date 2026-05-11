@@ -1,34 +1,34 @@
-import fs from 'fs/promises';
-import path from 'path';
-import { DataItem } from '@/core/types';
+import { IntegrityChecker } from '@/lib/agnostic/IntegrityChecker';
+import { getStrategy } from '@/server/getStrategy';
 
 /**
- * Server-Side Atomic Database Reader
- * Optimized for Next.js 15: Reads all entity files from the 'db/' directory 
- * to pre-populate the satellite with the full Materia context.
+ * Unified Vault Data Loader (Axiomatic v3.0)
+ * 
+ * This is the SINGLE point of truth for both SSR and Runtime.
+ * It uses the Strategy Resolver to determine where the 'Materia' lives,
+ * ensuring no discrepancy between the initial HTML and the dynamic app.
  */
-export async function getVaultData(): Promise<Record<string, DataItem[]>> {
+export async function getVaultData(): Promise<Record<string, any>> {
   try {
-    const storagePath = process.env.STORAGE_PATH || 'storage/default';
-    const dbDir = path.join(process.cwd(), storagePath, 'db');
+    // 1. Resolve the strategy (Local vs Supabase) based on the DNA
+    const strategy = await getStrategy();
     
-    // Ensure the directory exists
-    await fs.mkdir(dbDir, { recursive: true });
-
-    const files = await fs.readdir(dbDir);
-    const db: Record<string, DataItem[]> = {};
+    // 2. Fetch all data using the strategy's read method
+    const db = await strategy.read();
     
-    for (const file of files) {
-      if (file.endsWith('.json')) {
-        const contextName = path.basename(file, '.json');
-        const raw = await fs.readFile(path.join(dbDir, file), 'utf-8');
-        db[contextName] = JSON.parse(raw);
-      }
-    }
+    // 3. Perform Integrity Audit (Axiom: Fail-Fast / Deterministic Monitoring)
+    const integrity = IntegrityChecker.analyze(db);
     
-    return db;
+    console.log(`[Vault] Successfully hydrated ${Object.keys(db).length} contexts via ${strategy.constructor.name}. Integrity: ${integrity.isValid ? 'OK' : 'ISSUES'}`);
+    
+    return {
+      ...db,
+      _integrity: integrity
+    };
   } catch (error) {
-    console.warn('[ServerDB] Error reading atomic collections:', error);
-    return {};
+    console.error('[Vault] Critical failure during unified hydration:', error);
+    return {
+      _integrity: { isValid: false, issues: [{ level: 'ERROR', context: 'SYSTEM', message: 'Fallo crítico en la bóveda de datos.' }] }
+    };
   }
 }

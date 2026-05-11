@@ -1,0 +1,7 @@
+"Actúa como un Arquitecto de Software Senior. Necesito que entiendas este repositorio desde su núcleo hasta su implementación. Realiza los siguientes pasos en orden y dame un resumen ejecutivo al finalizar:
+
+Identificación del Stack y Core: Analiza los archivos de configuración (package.json, tsconfig.json, .env.example, etc.) para determinar el stack tecnológico, dependencias críticas y la estructura del proyecto (¿Es un monorepo? ¿Microservicios? ¿Clean Architecture?).
+Mapeo de la Estructura: Explora las carpetas principales (src, packages, storage, etc.) y define cuál es la responsabilidad de cada una. Identifica los puntos de entrada (entry points) de la aplicación.
+Flujo de Datos y Lógica de Negocio: Busca los archivos donde se define el dominio o las reglas de negocio (ej: schemas, controladores, servicios). Dime cómo fluye la información desde una petición externa hasta la base de datos/almacenamiento.
+Patrones de Desarrollo y Estándares: Identifica qué patrones de diseño se están utilizando y cuáles son las convenciones de nomenclatura y estilo. ¿Cómo se espera que un desarrollador añada una nueva funcionalidad correctamente en este sistema?
+Sentido y Propósito: Basado en los archivos de documentación (README, docs/, bussines docs/), dime qué problema resuelve este software y para quién está construido."*

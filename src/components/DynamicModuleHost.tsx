@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
-import type { AppState } from '@/core/types';
+import type { AppState } from '@agnostic/core';
 import styles from './DynamicModuleHost.module.css';
 
 interface Props {

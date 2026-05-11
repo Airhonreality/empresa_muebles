@@ -13,7 +13,7 @@ export default function ExplorerLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
 
   // Get all defined schemas
-  const schemas = state.system.items.filter(i => i.type === 'schema_definitions');
+  const schemas = state.system.schemas;
 
   return (
     <div className={styles.container}>
@@ -30,8 +30,8 @@ export default function ExplorerLayout({ children }: { children: React.ReactNode
             </div>
           )}
           {schemas.map(schema => {
-            const key = schema.data.key as string;
-            const name = schema.data.name as string;
+            const key = schema.id;
+            const name = schema.name;
             const isActive = pathname.includes(`/explorer/${key}`);
 
             return (

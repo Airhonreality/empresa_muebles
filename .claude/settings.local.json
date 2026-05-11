@@ -12,7 +12,14 @@
       "Bash(Remove-Item -Force \"index.html\" -ErrorAction SilentlyContinue)",
       "Bash(Remove-Item -Recurse -Force \"src\\\\score\" -ErrorAction SilentlyContinue)",
       "Bash(Remove-Item -Recurse -Force \"src\\\\ui\" -ErrorAction SilentlyContinue)",
-      "Bash(Remove-Item -Force \"src\\\\main.jsx\" -ErrorAction SilentlyContinue)"
+      "Bash(Remove-Item -Force \"src\\\\main.jsx\" -ErrorAction SilentlyContinue)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const fs = require\\('fs'\\); const c = fs.readFileSync\\('src/app/api/vault/route.ts', 'utf8'\\); const line = c.split\\('\\\\n'\\)[60]; console.log\\(JSON.stringify\\(line\\)\\);\")",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/zod/package.json'\\).version\\)\")",
+      "Bash(git stash *)",
+      "Bash(npx next *)"
     ]
   }
 }

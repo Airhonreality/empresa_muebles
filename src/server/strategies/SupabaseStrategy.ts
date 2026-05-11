@@ -1,4 +1,4 @@
-import type { DataItem, DataStrategy } from '@/core/types';
+import type { DataItem, DataStrategy } from '@agnostic/core';
 
 /**
  * SupabaseStrategy v2.0 (Sovereign Records Pattern)
@@ -24,11 +24,16 @@ export class SupabaseStrategy implements DataStrategy {
   async read(context?: string): Promise<Record<string, DataItem[]>> {
     try {
       // 1. Build the URL (filter by context if provided)
-      let apiUrl = `${this.url}/rest/v1/records?select=id,data`;
+      let apiUrl = `${this.url}/rest/v1/records?select=*`;
       if (context) {
-        apiUrl += `&context=eq.${context}`;
+        if (context.includes(',')) {
+          apiUrl += `&context=in.(${context})`;
+        } else {
+          apiUrl += `&context=eq.${context}`;
+        }
       }
 
+      const start = Date.now();
       const res = await fetch(apiUrl, {
         headers: this.headers,
         cache: 'no-store'
@@ -39,15 +44,28 @@ export class SupabaseStrategy implements DataStrategy {
         return context ? { [context]: [] } : {};
       }
       
-      const rows = await res.json() as Array<{ id: string, data: any }>;
+      const rows = await res.json() as Array<{ id: string, data: any, context: string }>;
+      console.log(`[Supabase] Received ${rows.length} items in ${Date.now() - start}ms`);
       
       // 2. Format rows back into DataItems
       const result: Record<string, DataItem[]> = {};
       
       rows.forEach(row => {
-        // We ensure the 'id' from the DB is the one used in the app
-        const item = { ...row.data, id: row.id };
-        const ctx = context || 'default'; // In a full fetch, we'd need the context col too
+        // --- SMART FLATTEN (Axiomatic Recovery) ---
+        // If data is double-nested (row.data.data exists), we flatten it to restore integrity.
+        let rawData = row.data;
+        if (rawData && rawData.data && typeof rawData.data === 'object' && !Array.isArray(rawData.data)) {
+          rawData = { ...rawData.data };
+        }
+
+        const item: DataItem = { 
+          id: row.id,
+          context: row.context,
+          data: rawData,
+          created_at: (row as any).created_at || new Date().toISOString(),
+          updated_at: (row as any).updated_at || new Date().toISOString()
+        };
+        const ctx = row.context;
         if (!result[ctx]) result[ctx] = [];
         result[ctx].push(item);
       });
@@ -65,16 +83,13 @@ export class SupabaseStrategy implements DataStrategy {
 
       for (const [context, items] of Object.entries(fullDatabase)) {
         items.forEach(item => {
-          const { id, ...data } = item;
-          const payload: any = {
-            context,
-            data
-          };
-          // If the item has a valid UUID, we use it for upserting
-          if (id && id.length === 36) {
-            payload.id = id;
-          }
-          allPayloads.push(payload);
+          allPayloads.push({
+            id: item.id,
+            context: item.context,
+            data: item.data,
+            created_at: item.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
         });
       }
 
@@ -96,6 +111,25 @@ export class SupabaseStrategy implements DataStrategy {
       }
     } catch (err) {
       console.error('[Supabase] Write Error:', err);
+    }
+  }
+  async writeContext(context: string, items: DataItem[]): Promise<void> {
+    return this.write({ [context]: items });
+  }
+
+  async delete(context: string, id: string): Promise<void> {
+    try {
+      const res = await fetch(`${this.url}/rest/v1/records?id=eq.${id}&context=eq.${context}`, {
+        method: 'DELETE',
+        headers: this.headers
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(`[Supabase] Delete failed: ${errText}`);
+      }
+    } catch (err) {
+      console.error('[Supabase] Delete Error:', err);
     }
   }
 }

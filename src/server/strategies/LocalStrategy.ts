@@ -1,27 +1,26 @@
 import fs from 'fs/promises';
 import path from 'path';
-import type { DataItem, DataStrategy } from '@/core/types';
+import type { DataItem, DataStrategy } from '@agnostic/core';
 
-const STORAGE_PATH = process.env.STORAGE_PATH || 'storage/default';
-const DB_DIR = path.join(process.cwd(), STORAGE_PATH, 'db');
-
-/**
- * LocalStrategy (Atomic Collections Edition)
- * Next.js 15 + Agnostic Core: This strategy stores each context in its own file.
- * Instead of db.json, we have db/users.json, db/schema_definitions.json, etc.
- * This ensures data integrity, prevents massive file rewrites, and scales to thousands of records.
- */
 export class LocalStrategy implements DataStrategy {
+  private readonly dbDir: string;
+
+  constructor(siloPath: string) {
+    // 🛡️ Use resolve to handle absolute paths correctly
+    this.dbDir = path.isAbsolute(siloPath) 
+      ? path.join(siloPath, 'db') 
+      : path.join(process.cwd(), siloPath, 'db');
+  }
+
   private getFilePath(context: string): string {
-    return path.join(DB_DIR, `${context}.json`);
+    return path.join(this.dbDir, `${context}.json`);
   }
 
   async read(context?: string): Promise<Record<string, DataItem[]>> {
     try {
-      await fs.mkdir(DB_DIR, { recursive: true });
+      await fs.mkdir(this.dbDir, { recursive: true });
 
       if (context) {
-        // Read only the specific entity file requested
         const filePath = this.getFilePath(context);
         try {
           const raw = await fs.readFile(filePath, 'utf-8');
@@ -31,14 +30,13 @@ export class LocalStrategy implements DataStrategy {
         }
       }
 
-      // Read all entity files in the db directory (Initial Sync)
-      const files = await fs.readdir(DB_DIR);
+      const files = await fs.readdir(this.dbDir);
       const db: Record<string, DataItem[]> = {};
       
       for (const file of files) {
         if (file.endsWith('.json')) {
           const contextName = path.basename(file, '.json');
-          const raw = await fs.readFile(path.join(DB_DIR, file), 'utf-8');
+          const raw = await fs.readFile(path.join(this.dbDir, file), 'utf-8');
           db[contextName] = JSON.parse(raw);
         }
       }
@@ -50,23 +48,46 @@ export class LocalStrategy implements DataStrategy {
   }
 
   async write(fullDatabase: Record<string, DataItem[]>): Promise<void> {
-    await fs.mkdir(DB_DIR, { recursive: true });
-
-    // Identify which contexts need updating (surgical write)
+    await fs.mkdir(this.dbDir, { recursive: true });
     for (const [context, items] of Object.entries(fullDatabase)) {
       const filePath = this.getFilePath(context);
-      // Only write if there's actual data to avoid empty file noise
       await fs.writeFile(filePath, JSON.stringify(items, null, 2), 'utf-8');
     }
   }
 
   /**
-   * Surgical Write: Only updates a specific context.
-   * This is what the Core uses for high-frequency updates.
+   * 🏗️ AXIOMATIC_OVERWRITE:
+   * Cristaliza la verdad recibida eliminando cualquier rastro anterior en el contexto.
+   */
+  async overwriteContext(context: string, items: DataItem[]): Promise<void> {
+    await fs.mkdir(this.dbDir, { recursive: true });
+    const filePath = this.getFilePath(context);
+    const tempPath = `${filePath}.tmp`;
+    
+    await fs.writeFile(tempPath, JSON.stringify(items, null, 2), 'utf-8');
+    await fs.rename(tempPath, filePath);
+  }
+
+  /**
+   * 📝 UPSERT_CONTEXT:
+   * Mantiene la integridad de los registros existentes realizando una fusión por ID.
    */
   async writeContext(context: string, items: DataItem[]): Promise<void> {
-    await fs.mkdir(DB_DIR, { recursive: true });
-    const filePath = this.getFilePath(context);
-    await fs.writeFile(filePath, JSON.stringify(items, null, 2), 'utf-8');
+    const db = await this.read(context);
+    const existingItems = db[context] || [];
+
+    const itemMap = new Map(existingItems.map(item => [item.id, item]));
+    items.forEach(item => {
+      itemMap.set(item.id, item);
+    });
+
+    await this.overwriteContext(context, Array.from(itemMap.values()));
+  }
+
+  async delete(context: string, id: string): Promise<void> {
+    const db = await this.read(context);
+    const items = db[context] || [];
+    const filtered = items.filter(item => item.id !== id);
+    await this.overwriteContext(context, filtered);
   }
 }

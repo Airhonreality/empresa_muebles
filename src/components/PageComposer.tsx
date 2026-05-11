@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppContext } from '@/context/AppContext';
-import type { DataItem } from '@/core/types';
+import type { DataItem } from '@agnostic/core';
 import styles from './PageComposer.module.css';
 
 export interface Block {

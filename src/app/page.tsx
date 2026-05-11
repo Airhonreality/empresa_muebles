@@ -3,7 +3,7 @@ import { getStrategy } from '@/server/getStrategy';
 
 export default async function HomePage() {
   try {
-    const strategy = getStrategy();
+    const strategy = await getStrategy();
     const db = await strategy.read('system_config');
     const items = db['system_config'] ?? [];
     if (items.length > 0) {

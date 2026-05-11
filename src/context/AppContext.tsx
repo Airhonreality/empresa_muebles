@@ -1,146 +1,112 @@
 'use client';
 
-import React, {
-  createContext,
-  useContext,
-  useReducer,
-  useEffect,
-  useCallback,
-  useMemo,
-} from 'react';
-import type { AppState, DataItem, FieldDefinition, SchemaDefinition } from '@/core/types';
+/**
+ * 🏛️ AGNOSTIC CONTEXT (The Nervous System)
+ * ───────────────
+ * AXIOMATIC_CONTRACT:
+ * - MUST: Handle Data (Materia), Identity (User), and UI State (Overlays).
+ * - NEVER: Create infinite loops between Context and Zustand Stores.
+ */
 
-type Action =
-  | { type: 'SET_DB'; payload: Record<string, DataItem[]> }
-  | { type: 'SET_LOADING'; payload: boolean };
+import React, { createContext, useContext, useReducer, useMemo, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
+import { initializeRegistry } from '@/lib/agnostic/init';
+import { useDNAStore, useMateriaStore } from '@/lib/agnostic/store';
 
-const initialState: AppState = {
-  system: { config: {}, schemas: [], isLoading: true },
-  data: {},
-};
+initializeRegistry();
 
-function parseDB(db: Record<string, DataItem[]>): AppState {
-  const configItems = db['system_config'] ?? [];
-  const config = configItems.reduce<Record<string, string>>((acc, item) => {
-    return { ...acc, ...(item.data as Record<string, string>) };
-  }, {});
-
-  const schemaItems = db['schema_definitions'] ?? [];
-  const schemas: SchemaDefinition[] = schemaItems.map(item => ({
-    id: item.id,
-    name: item.data.name as string,
-    fields: (item.data.fields as FieldDefinition[]) ?? [],
-  }));
-
-  return { system: { config, schemas, isLoading: false }, data: db };
+export interface UIOverlay {
+  type: 'SHEET' | 'DIALOG' | 'CONFIRM';
+  title: string;
+  component?: string;
+  props?: any;
 }
 
-function reducer(state: AppState, action: Action): AppState {
+interface ExtendedAppState {
+  data: Record<string, any[]>;
+  user: any | null;
+  ui: { overlay: UIOverlay | null; };
+  system: { isLoading: boolean; error: any; };
+}
+
+type LocalAction = 
+  | { type: 'SET_DATA', payload: { context: string, items: any[] } }
+  | { type: 'SET_USER', payload: any }
+  | { type: 'SET_LOADING', payload: boolean }
+  | { type: 'OPEN_OVERLAY', payload: UIOverlay }
+  | { type: 'CLOSE_OVERLAY' };
+
+function appReducer(state: ExtendedAppState, action: LocalAction): ExtendedAppState {
   switch (action.type) {
-    case 'SET_DB':
-      return parseDB(action.payload);
+    case 'SET_DATA':
+      return { ...state, data: { ...state.data, [action.payload.context]: action.payload.items } };
+    case 'SET_USER':
+      return { ...state, user: action.payload };
     case 'SET_LOADING':
       return { ...state, system: { ...state.system, isLoading: action.payload } };
+    case 'OPEN_OVERLAY':
+      return { ...state, ui: { ...state.ui, overlay: action.payload } };
+    case 'CLOSE_OVERLAY':
+      return { ...state, ui: { ...state.ui, overlay: null } };
     default:
       return state;
   }
 }
 
-interface AppStateContextType {
-  state: AppState;
-}
+const AppStateContext = createContext<ExtendedAppState | undefined>(undefined);
+const AppDispatchContext = createContext<any>(undefined);
 
-interface AppDispatchContextType {
-  saveItem: (context: string, item: Omit<DataItem, 'created_at' | 'updated_at'>) => Promise<void>;
-  deleteItem: (context: string, id: string) => Promise<void>;
-  dispatch: React.Dispatch<Action>;
-}
+export function AppProvider({ children, initialData }: { children: React.ReactNode, initialData?: any }) {
+  const [state, dispatch] = useReducer(appReducer, {
+    data: initialData || {},
+    user: null,
+    ui: { overlay: null },
+    system: { isLoading: false, error: null }
+  });
 
-const AppStateContext = createContext<AppStateContextType | null>(null);
-const AppDispatchContext = createContext<AppDispatchContextType | null>(null);
+  const { setRoutes, setSchemas } = useDNAStore();
+  const { setMateria } = useMateriaStore();
 
-/**
- * AppProvider (Next.js 15 Optimized)
- * Receives initialData from the Server Component to eliminate client-side hydration waterfall.
- */
-export function AppProvider({ 
-  children, 
-  initialData 
-}: { 
-  children: React.ReactNode, 
-  initialData?: Record<string, DataItem[]> 
-}) {
-  // Initialize state with initialData if provided (Server-Side Injection)
-  const [state, dispatch] = useReducer(reducer, initialData ? parseDB(initialData) : initialState);
-
-  // Sync effect (only runs if initialData was not provided or for re-syncing)
+  // 🌊 INITIAL HYDRATION: Feed the Stores with initial silo data
   useEffect(() => {
-    if (!initialData) {
-      async function load() {
-        try {
-          const res = await fetch('/api/vault');
-          if (res.ok) {
-            const db = (await res.json()) as Record<string, DataItem[]>;
-            dispatch({ type: 'SET_DB', payload: db });
-          }
-        } catch (err) {
-          console.error('[AppContext]', err);
-        }
-      }
-      load();
+    if (initialData) {
+      Object.entries(initialData).forEach(([context, items]) => {
+        if (context === 'page_routes') setRoutes(items as any[]);
+        if (context === 'schema_definitions') setSchemas(items as any[]);
+        if (!context.startsWith('_')) setMateria(context, items as any[]);
+      });
     }
-  }, [initialData]);
+  }, [initialData, setRoutes, setSchemas, setMateria]);
 
-  const saveItem = useCallback(
-    async (context: string, item: Omit<DataItem, 'created_at' | 'updated_at'>) => {
-      const now = new Date().toISOString();
-      const existingItems = state.data[context] ?? [];
-      const existingItem = existingItems.find(i => i.id === item.id);
-      const fullItem: DataItem = {
-        ...item,
-        context,
-        created_at: existingItem?.created_at ?? now,
-        updated_at: now,
-      };
-
-      const newItems = existingItem
-        ? existingItems.map(i => (i.id === fullItem.id ? fullItem : i))
-        : [...existingItems, fullItem];
-
-      const newDB = { ...state.data, [context]: newItems };
-      dispatch({ type: 'SET_DB', payload: newDB });
-
-      fetch('/api/vault', {
+  const syncContext = useCallback(async (context: string, items: any[]) => {
+    try {
+      const response = await fetch('/api/vault', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newDB),
-      }).catch(err => console.error('[CorePersistence]', err));
-    },
-    [state.data]
-  );
+        body: JSON.stringify({ action: 'SYNC_CONTEXT', context, payload: items })
+      });
+      const result = await response.json();
+      if (result.success) {
+        dispatch({ type: 'SET_DATA', payload: { context, items } });
+        // Sincronía manual segura
+        if (context === 'page_routes') setRoutes(items);
+        if (context === 'schema_definitions') setSchemas(items);
+        setMateria(context, items);
+      }
+    } catch (e) {
+      toast.error('Error de sincronización');
+    }
+  }, [setRoutes, setSchemas, setMateria]);
 
-  const deleteItem = useCallback(
-    async (context: string, id: string) => {
-      const newDB = {
-        ...state.data,
-        [context]: (state.data[context] ?? []).filter(i => i.id !== id),
-      };
-      dispatch({ type: 'SET_DB', payload: newDB });
-
-      fetch('/api/vault', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newDB),
-      }).catch(err => console.error('[CorePersistence]', err));
-    },
-    [state.data]
-  );
-
-  const stateValue = useMemo(() => ({ state }), [state]);
-  const dispatchValue = useMemo(() => ({ saveItem, deleteItem, dispatch }), [saveItem, deleteItem]);
+  const dispatchValue = useMemo(() => ({ 
+    syncContext,
+    openOverlay: (o: UIOverlay) => dispatch({ type: 'OPEN_OVERLAY', payload: o }),
+    closeOverlay: () => dispatch({ type: 'CLOSE_OVERLAY' }),
+    dispatch 
+  }), [syncContext]);
 
   return (
-    <AppStateContext.Provider value={stateValue}>
+    <AppStateContext.Provider value={state}>
       <AppDispatchContext.Provider value={dispatchValue}>
         {children}
       </AppDispatchContext.Provider>
@@ -148,20 +114,14 @@ export function AppProvider({
   );
 }
 
-export function useAppState() {
+export const useAppState = () => {
   const ctx = useContext(AppStateContext);
-  if (!ctx) throw new Error('useAppState must be used within AppProvider');
-  return ctx;
-}
+  if (!ctx) throw new Error('useAppState error');
+  return { state: ctx, ui: ctx.ui, user: ctx.user, system: ctx.system };
+};
 
-export function useAppDispatch() {
+export const useAppDispatch = () => {
   const ctx = useContext(AppDispatchContext);
-  if (!ctx) throw new Error('useAppDispatch must be used within AppProvider');
+  if (!ctx) throw new Error('useAppDispatch error');
   return ctx;
-}
-
-export function useAppContext() {
-  const { state } = useAppState();
-  const dispatchProps = useAppDispatch();
-  return { state, ...dispatchProps };
-}
+};

@@ -4,20 +4,17 @@ import { useParams } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
 import { DynamicModuleHost } from '@/components/DynamicModuleHost';
 import { Database, Plus, Table as TableIcon, Layout as LayoutIcon, Settings } from 'lucide-react';
-import type { SchemaDefinition } from '@/core/types';
+import type { IndraSchema } from '@agnostic/core';
 import styles from '../explorer.module.css';
 
-export default function EntityPage() {
-  const params = useParams();
-  const entityKey = params.entityKey as string;
+export default async function EntityPage({ params }: { params: Promise<{ entityKey: string }> }) {
+  const { entityKey } = await params;
   const { state } = useAppContext();
 
   // Find the schema for this entity
-  const schemaItem = state.system.items.find(
-    i => i.type === 'schema_definitions' && i.data.key === entityKey
-  );
+  const schema = state.system.schemas.find(s => s.id === entityKey || s.name.toLowerCase() === entityKey.toLowerCase());
 
-  if (!schemaItem) {
+  if (!schema) {
     return (
       <div className={styles.errorState}>
         <Database size={48} className={styles.errorIcon} />
@@ -27,7 +24,7 @@ export default function EntityPage() {
     );
   }
 
-  const schema = schemaItem.data as unknown as SchemaDefinition;
+  // const schema = schemaItem.data as unknown as IndraSchema;
   
   // Logic Switch: Custom vs Automatic
   // If the schema definition includes a 'custom_logic' field, we use the Dynamic Host

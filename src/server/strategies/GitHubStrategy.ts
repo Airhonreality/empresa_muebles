@@ -1,4 +1,4 @@
-import type { DataItem, DataStrategy } from '@/core/types';
+import type { DataItem, DataStrategy } from '@agnostic/core';
 
 /**
  * GitHubStrategy v2.0

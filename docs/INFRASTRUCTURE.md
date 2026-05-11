@@ -1,70 +1,142 @@
-# Infrastructure Guide — Agnostic Seed v2
+# Infrastructure Guide — Agnostic Seed
 
 ## Architecture Overview
 
-The Agnostic Seed runs in two modes based on environment variables:
+The engine (`src/`) is a blind renderer that projects the business defined in `storage/{tenant}/`. It communicates with storage exclusively through the **strategy layer** — it never reads files directly.
 
-| Mode | Condition | Storage |
-|------|-----------|---------|
-| **Local** | `GITHUB_TOKEN` not set | `data-silo/db.json` on disk |
-| **Cloud** | `GITHUB_TOKEN` is set | GitHub file via REST API |
+```
+                    ┌─────────────────────────────────────┐
+                    │              src/ (Engine)           │
+                    │                                      │
+                    │  /api/vault ──► getStrategy()        │
+                    │                     │                │
+                    └─────────────────────┼────────────────┘
+                                          │
+              ┌───────────────────────────┼───────────────────────────────┐
+              │                           │ strategy interface             │
+              │                           ▼                               │
+              │  LocalStrategy   SupabaseStrategy   HybridStrategy        │
+              │  (JSON files)    (Postgres/RLS)     (GitHub + Supabase)   │
+              └───────────────────────────────────────────────────────────┘
+```
 
-The client **never knows** which strategy is active. All persistence goes through
-`/api/vault` (GET to read, POST to write). The strategy is selected server-side.
+Strategy selection is determined by `storage/{tenant}/manifest.json` at startup.
 
 ---
 
-## Local Development
+## Storage Strategies
 
-```bash
-# 1. Clone the seed
-git clone <repo> my-project
-cd my-project
+### LOCAL (default)
 
-# 2. Install dependencies
-npm install
+Data lives in `storage/{tenant}/db/*.json`. One file per context (entity collection).
 
-# 3. Start the dev server (no .env needed — local mode is the default)
-npm run dev
-# → http://localhost:3000/schema
+```json
+{ "strategy": "local" }
 ```
 
-The `data-silo/` directory is created automatically on first write. It is
-**gitignored** — it contains business data, not framework code.
+Writes use atomic temp-rename: writes to `{file}.tmp` first, then renames to guarantee no partial writes.
 
----
+### SUPABASE
 
-## data-silo/ Structure
+Data lives in a Supabase Postgres database. Each context maps to a table.
 
-```
-data-silo/
-├── db.json          # Main database (all contexts in one file)
-├── assets/          # Uploaded files (served via /api/assets/*)
-├── modules/         # Injectable JS modules (served via /api/modules/*)
-└── styles/
-    └── theme.css    # Optional: overrides framework CSS variables
-```
-
-### theme.css example
-
-```css
-:root {
-  --accent: #e67e22;
-  --surface-0: #fdf6ec;
-  --text-primary: #2c1810;
+```json
+{
+  "strategy": "supabase",
+  "supabase_url": "https://xxx.supabase.co",
+  "supabase_anon_key": "your-anon-key"
 }
 ```
 
-### Dynamic Module contract
+Writes use native Supabase `upsert()` with ACID guarantees.
 
-Files in `data-silo/modules/` must export a `render` function:
+### HYBRID
+
+Schema DNA (schemas, routes) on GitHub; operational data on Supabase.
+
+```json
+{
+  "strategy": "hybrid",
+  "github_owner": "org",
+  "github_repo": "storage",
+  "github_branch": "main",
+  "supabase_url": "...",
+  "supabase_anon_key": "..."
+}
+```
+
+### GITHUB (read-only)
+
+Remote storage for DNA versioning. No write capability.
+
+```
+STORAGE_URL=https://raw.githubusercontent.com/org/storage/main/storage/tenant
+```
+
+---
+
+## Storage Structure
+
+```
+storage/{tenant}/
+├── manifest.json                   # Strategy config and tenant metadata
+├── db/
+│   ├── schema_definitions.json     # Entity schemas (append-only, versioned)
+│   ├── page_routes.json            # Route → block map
+│   └── {context}.json              # One file per entity context
+├── modules/                        # Guest UI modules (Vanilla JS)
+├── styles/
+│   └── tokens.css                  # CSS variable overrides
+└── assets/                         # Static resources
+```
+
+---
+
+## Guest Module Contract
+
+Modules in `storage/{tenant}/modules/` must be pure Vanilla JS. They export a `setup` function that returns a teardown function.
 
 ```javascript
-// data-silo/modules/MyWidget.js
-export const render = ({ state, dispatch, React }) => {
-  return React.createElement('div', null, 'Hello from MyWidget!');
-};
+// storage/default/modules/my_block.js
+
+/**
+ * @param {HTMLElement} container   - The DOM element to render into
+ * @param {AgnosticAPI} api         - The bridge to the host engine
+ * @returns {() => void}            - Teardown function called on unmount
+ */
+export function setup(container, api) {
+  // 1. Read current data
+  const items = api.getGlobalData('projects');
+
+  // 2. Initial render
+  container.innerHTML = `<ul>${items.map(i => `<li>${i.data.name}</li>`).join('')}</ul>`;
+
+  // 3. React to state changes
+  const unsubscribe = api.onUpdate('projects', (updatedData) => {
+    container.innerHTML = `<ul>${updatedData['projects'].map(i => `<li>${i.data.name}</li>`).join('')}</ul>`;
+  });
+
+  // 4. Dispatch mutations
+  container.querySelector('#add-btn')?.addEventListener('click', () => {
+    api.dispatch({ action: 'WRITE', context: 'projects', payload: { name: 'New Project' } });
+  });
+
+  // 5. Return teardown
+  return () => unsubscribe();
+}
 ```
+
+**AgnosticAPI reference:**
+
+| Method | Signature | Description |
+|---|---|---|
+| `getGlobalData` | `(context: string) => DataItem[]` | Read current state for a context |
+| `onUpdate` | `(context: string, cb) => unsubscribe` | Subscribe to state changes |
+| `dispatch` | `(query: UnifiedQuery) => Promise<void>` | Send a mutation or navigation intent |
+| `getActiveRecord` | `() => DataItem \| null` | Current page's active record |
+| `getSchema` | `(context?: string) => object \| null` | Schema definition for a context |
+| `notify.success` | `(msg: string) => void` | Toast notification |
+| `notify.error` | `(msg: string) => void` | Error toast |
 
 ---
 
@@ -72,50 +144,34 @@ export const render = ({ state, dispatch, React }) => {
 
 ### 1. Set environment variables
 
-In your Vercel project settings, add:
-
 ```
-GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
-GITHUB_OWNER=your-github-username
-GITHUB_REPO=your-data-repo
-GITHUB_FILE_PATH=db.json
-GITHUB_BRANCH=main
+ACTIVE_TENANT=my_company
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
 ```
 
-### 2. Create a data repository
+### 2. Remote DNA (optional)
 
-Create a **private** GitHub repository to hold your `db.json`. The seed will
-read from and write to this file via the GitHub Contents API.
+To read schemas from a GitHub repository instead of the local `storage/` folder:
 
-### 3. Deploy
+```
+STORAGE_URL=https://raw.githubusercontent.com/org/storage/main/storage/my_company
+GITHUB_TOKEN=ghp_...
+```
+
+### 3. Build command
 
 ```bash
-vercel --prod
+npm run build
 ```
 
-The app will boot and auto-detect the GitHub strategy. No `data-silo/` directory
-is needed on the server.
+Standard Next.js build. No additional configuration required.
 
 ---
 
-## Creating a New Project from the Seed
+## Golden Rules
 
-```bash
-# Clone or fork the seed
-git clone https://github.com/your/agnostic-seed my-new-project
-cd my-new-project
-
-# Create your data silo (gitignored)
-mkdir -p data-silo/assets data-silo/modules data-silo/styles
-
-# Start dev
-npm install && npm run dev
-
-# → Visit /schema to configure your schemas and routes
-```
-
-**Golden Rules:**
-1. Never add business logic to `src/` — it belongs in `data-silo/modules/`.
-2. Never commit `data-silo/db.json` — it contains client data.
-3. Never hardcode styles in components — use `data-silo/styles/theme.css`.
-4. The seed must work with `npm run dev` and zero configuration.
+1. Never add business logic to `src/` — it belongs in `storage/{tenant}/`.
+2. Never write to `storage/` directly from components — all mutations go through `POST /api/vault`.
+3. The engine boots with zero configuration if `storage/default/` is present.
+4. Every record mutation goes through the vault's read-upsert-write cycle. Never overwrite.

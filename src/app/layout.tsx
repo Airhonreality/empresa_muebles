@@ -1,45 +1,90 @@
+/**
+ * 🏛️ PORTAL: Root Layout (The Agnostic Shell)
+ * ──────────────────────────────────────────
+ * AXIOMATIC_CONTRACT:
+ * - MUST: Inyectar tokens CSS de satélite inline para prevenir FOUC.
+ * - MUST: Proveer el contexto de Soberanía (SovereigntyOrchestrator) globalmente.
+ * - NEVER: Contener lógica de negocio o de transformación de DNA.
+ * 
+ * ADR: Se opta por inyección inline de estilos de satélite para garantizar 
+ * que la identidad visual sea soberana desde el primer frame de renderizado.
+ * 
+ * RELATIONSHIPS:
+ * - Padre de todas las rutas del sistema.
+ * - Inyecta SovereigntyOrchestrator como centinela omnipresente.
+ */
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import { AppProvider } from "@/context/AppContext";
-import { AuthProvider } from "@/context/AuthContext";
-import { Toaster } from "sonner";
-import { getVaultData } from "@/core/server/vault";
-import fs from "fs/promises";
+import { AppProvider }    from "@/context/AppContext";
+import { AuthProvider }   from "@/context/AuthContext";
+import { Toaster }        from "sonner";
+import { SovereigntyOrchestrator } from "@/components/agnostic/engine/SovereigntyOrchestrator";
+import { getVaultData }   from "@/core/server/vault";
+import fs   from "fs/promises";
 import path from "path";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Agnostic System",
+  title:       "Agnostic System",
   description: "A professional, storage-based agnostic framework",
 };
 
 export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const storagePath = process.env.STORAGE_PATH || 'storage/default';
-  const vaultData = await getVaultData();
+}: Readonly<{ children: React.ReactNode }>) {
+  const activeTenant = process.env.ACTIVE_TENANT || "default";
+  const siloPath     = `storage/${activeTenant}`;
+  const vaultData    = await getVaultData();
 
-  let themeStyles = "";
+  // ── CAPA 1: Tokens CSS (inyectado inline — sin latencia de red) ──────────
+  // El satélite overridea variables --sat-* en tokens.css.
+  // Se inyecta como <style> en el <head> para evitar FOUC.
+  let tokenStyles = "";
   try {
-    const cssPath = path.join(process.cwd(), storagePath, "styles", "theme.css");
-    themeStyles = await fs.readFile(cssPath, "utf-8");
-  } catch (e) {
-    // Silent fail for styles if not present
-  }
+    const tokensPath = path.join(process.cwd(), siloPath, "styles", "tokens.css");
+    tokenStyles = await fs.readFile(tokensPath, "utf-8");
+  } catch { /* El satélite aún no tiene tokens → usa defaults del Seed */ }
+
+  // ── Manifest (DNA del satélite) ───────────────────────────────────────────
+  let dna: Record<string, unknown> = {};
+  try {
+    const manifestPath    = path.join(process.cwd(), siloPath, "manifest.json");
+    const manifestContent = await fs.readFile(manifestPath, "utf-8");
+    dna = JSON.parse(manifestContent.replace(/^﻿/, ""));
+  } catch { /* Sin manifest → estrategia local por defecto */ }
+
+  // ── Metadata dinámica desde DNA ───────────────────────────────────────────
+  const sysConfig = (vaultData?.["system_config"]?.[0]?.data ?? {}) as Record<string, unknown>;
+  const appName   = (sysConfig["app_name"] as string | undefined) ?? "Agnostic System";
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
-        <style id="agnostic-theme" dangerouslySetInnerHTML={{ __html: themeStyles }} />
+        {/* Tokens del satélite — inline para evitar FOUC */}
+        {tokenStyles && (
+          <style
+            id="agnostic-tokens"
+            dangerouslySetInnerHTML={{ __html: tokenStyles }}
+          />
+        )}
+
+        {/*
+          CAPA 2: CSS compilado del satélite — como <link> para beneficiarse
+          del caché del navegador. El endpoint retorna 204 si no existe.
+          Los módulos guest usan las clases definidas en este archivo.
+        */}
+        <link
+          rel="stylesheet"
+          href="/api/satellite-styles"
+          precedence="satellite"
+        />
+
+        <title>{appName}</title>
       </head>
-      <body className={`${inter.className} antialiased bg-background text-foreground`}>
+      <body className="antialiased">
         <AppProvider initialData={vaultData}>
           <AuthProvider>
             {children}
+            <SovereigntyOrchestrator />
             <Toaster position="top-right" expand={false} richColors />
           </AuthProvider>
         </AppProvider>

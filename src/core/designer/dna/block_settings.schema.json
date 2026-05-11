@@ -1,0 +1,99 @@
+{
+  "id": "block_settings_def",
+  "name": "block_settings",
+  "description": "Configuración paramétrica de bloques de interfaz",
+  "fields": [
+    {
+      "key": "behavior",
+      "label": "Comportamiento",
+      "icon": "Activity",
+      "type": "section",
+      "fields": [
+        {
+          "key": "isCollapsible",
+          "label": "Permitir Colapsar",
+          "type": "boolean",
+          "description": "Añade un control para contraer/expandir el bloque"
+        },
+        {
+          "key": "defaultExpanded",
+          "label": "Expandido por Defecto",
+          "type": "boolean",
+          "description": "Define si el bloque inicia abierto"
+        },
+        {
+          "key": "sticky",
+          "label": "Posición Fija (Sticky)",
+          "type": "select",
+          "options": [
+            { "label": "Ninguna", "value": "none" },
+            { "label": "Superior (Top)", "value": "top" },
+            { "label": "Inferior (Bottom)", "value": "bottom" }
+          ]
+        },
+        {
+          "key": "filterSection",
+          "label": "Filtrar por Sección ADN",
+          "type": "select",
+          "options_source": "dna_sections",
+          "description": "Si se selecciona, el bloque solo proyectará los campos pertenecientes a esa sección."
+        }
+      ]
+    },
+    {
+      "key": "visual",
+      "label": "Estética y Proyección",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        {
+          "key": "variant",
+          "label": "Variante de Estilo",
+          "type": "select",
+          "options": [
+            { "label": "Card (Estándar)", "value": "card" },
+            { "label": "Hero (Impacto)", "value": "hero" },
+            { "label": "Ghost (Sin bordes)", "value": "ghost" },
+            { "label": "Minimal", "value": "minimal" }
+          ]
+        },
+        {
+          "key": "theme",
+          "label": "Identidad Visual",
+          "type": "select",
+          "options": [
+            { "label": "Sistema (Default)", "value": "system" },
+            { "label": "Marca (Brand)", "value": "brand" },
+            { "label": "Lujo (Veta de Oro)", "value": "luxury" },
+            { "label": "Informativo", "value": "info" }
+          ]
+        },
+        {
+          "key": "width",
+          "label": "Ancho de Columna",
+          "type": "select",
+          "options": [
+            { "label": "Ancho Total (100%)", "value": "1/1" },
+            { "label": "Mitad (50%)", "value": "1/2" },
+            { "label": "Tercio (33%)", "value": "1/3" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "logic",
+      "label": "Automatización",
+      "icon": "Zap",
+      "type": "section",
+      "fields": [
+        {
+          "key": "zap",
+          "label": "Lógica Vinculada (Zaps)",
+          "type": "multi-select",
+          "description": "Lista secuencial de funciones que se dispararán con este bloque",
+          "options_source": "logic_engine_registry"
+        }
+      ]
+    }
+  ]
+}

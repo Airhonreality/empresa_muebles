@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@agnostic/core/*": ["./packages/core/src/*"],
+      "@agnostic/core": ["./packages/core/src/index.ts"]
+    },
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./storage/empresa_muebles/modules",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["packages/core/src/indra.ts"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,115 @@
+/**
+ * 🛠️ CORE_INDRA: DEFINITIONS & TYPES (v6.0 — STRICT CONTRACT)
+ * =============================================================
+ * Single source of truth for every type in the Agnostic System.
+ * All `any` has been eliminated at the public API boundary.
+ */
+
+// ─── PRIMITIVES ──────────────────────────────────────────────────────────────
+
+export interface DataItem {
+  id: string;
+  context: string;
+  data: Record<string, unknown>;
+  /** Populated by cloud strategies (Supabase). Ignored by local strategies. */
+  created_at?: string;
+  updated_at?: string;
+}
+
+// ─── DATA STRATEGY ───────────────────────────────────────────────────────────
+
+export interface DataStrategy {
+  read: (context?: string) => Promise<Record<string, DataItem[]>>;
+  write: (data: Record<string, DataItem[]>) => Promise<void>;
+  /** Optional for read-only strategies (e.g. GitHubStrategy for DNA versioning). */
+  delete?: (context: string, id: string) => Promise<void>;
+  /** High-frequency single-context write. Falls back to write() if absent. */
+  writeContext?: (context: string, items: DataItem[]) => Promise<void>;
+}
+
+// ─── OVERLAY ─────────────────────────────────────────────────────────────────
+
+export interface OverlayConfig {
+  type: 'SHEET' | 'DIALOG' | 'CONFIRM';
+  title: string;
+  description?: string;
+  component?: string;
+  props?: Record<string, unknown>;
+  onConfirm?: () => void;
+}
+
+// ─── UNIFIED QUERY — DISCRIMINATED UNION ────────────────────────────────────
+
+export type UnifiedQuery =
+  | { action: 'READ';     context: string;    filters?: Record<string, unknown> }
+  | { action: 'WRITE';    context: string;    payload: Record<string, unknown> }
+  | { action: 'DELETE';   context: string;    payload: { id: string } }
+  | { action: 'NAVIGATE'; context?: undefined; payload: { path: string } }
+  | { action: 'INTENT';   context: string;    payload?: Record<string, unknown> };
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+
+export interface AgnosticUser {
+  id: string;
+  name: string;
+  email?: string;
+  role: string;
+  [key: string]: unknown;
+}
+
+// ─── APP STATE ───────────────────────────────────────────────────────────────
+
+export interface AppState {
+  data: Record<string, DataItem[]>;
+  system: {
+    activeContext: string;
+    activeRecord: { id: string; context: string } | null;
+    isLoading: boolean;
+    error: string | null;
+    storageMode: 'LOCAL' | 'REMOTE' | 'HYBRID';
+    storageUrl?: string;
+  };
+  auth: {
+    isAuthenticated: boolean;
+    user: AgnosticUser | null;
+  };
+}
+
+export type Action =
+  | { type: 'SET_DATA';         payload: { context: string; items: DataItem[] } }
+  | { type: 'SET_SYSTEM_STATE'; payload: Partial<AppState['system']> }
+  | { type: 'SET_AUTH';         payload: AppState['auth'] };
+
+// ─── UI BRIDGE ───────────────────────────────────────────────────────────────
+
+export interface AgnosticUI {
+  openSheet:  (title: string, moduleName: string, props?: Record<string, unknown>) => void;
+  openDialog: (title: string, moduleName: string, props?: Record<string, unknown>) => void;
+  confirm:    (title: string, description: string, onConfirm: () => void) => void;
+  close:      () => void;
+  renderAction: (type: 'CREATE' | 'SAVE' | 'DELETE' | 'CANCEL', props: { label?: string, onClick: () => void, className?: string }) => string;
+}
+
+// ─── PUBLIC API CONTRACT ─────────────────────────────────────────────────────
+
+export interface AgnosticAPI {
+  /** Send an intent to the host. Always returns a resolved Promise (fire-and-hope pattern kept intentional). */
+  dispatch:        (query: UnifiedQuery) => Promise<void>;
+  /** Subscribe to context changes. Returns an unsubscribe function. */
+  onUpdate:        (context: string, callback: (data: Record<string, DataItem[]>) => void) => () => void;
+  getGlobalData:   (context: string) => DataItem[];
+  getActiveRecord: () => DataItem | null;
+  getContext:      () => string;
+  getSchema:       (context?: string) => Record<string, unknown> | null;
+  getBlockConfig:  () => Record<string, unknown>;
+  renderIcon:      (name: string) => string;
+  notify: {
+    success: (msg: string) => void;
+    error:   (msg: string) => void;
+    loading: (msg: string) => void;
+  };
+  ui:        AgnosticUI;
+  state:     AppState;
+  user:      AgnosticUser | null;
+  container?: HTMLElement;
+}
