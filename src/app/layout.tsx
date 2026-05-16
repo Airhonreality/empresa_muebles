@@ -33,7 +33,7 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const activeTenant = process.env.ACTIVE_TENANT || "default";
   const siloPath     = `storage/${activeTenant}`;
-  const vaultData    = await getVaultData();
+  const vaultData    = await getVaultData(['page_routes', 'schema_definitions', 'system_config', 'vault_manifest']);
 
   // ── CAPA 1: Tokens CSS (inyectado inline — sin latencia de red) ──────────
   // El satélite overridea variables --sat-* en tokens.css.
@@ -85,7 +85,7 @@ export default async function RootLayout({
           <AuthProvider>
             {children}
             <SovereigntyOrchestrator />
-            <Toaster position="top-right" expand={false} richColors />
+            <Toaster position="bottom-left" expand={false} richColors />
           </AuthProvider>
         </AppProvider>
       </body>

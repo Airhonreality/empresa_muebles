@@ -59,7 +59,7 @@ export function SovereigntyOrchestrator() {
     <>
       {/* 🧬 BACKDROP (Soberano e independiente) */}
       <div 
-        className="fixed inset-0 bg-background/40 backdrop-blur-sm z-[1000] cursor-pointer"
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[1000] cursor-pointer"
         onClick={() => setEditMode(false)}
       />
       

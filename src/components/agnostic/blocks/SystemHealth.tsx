@@ -45,36 +45,33 @@ export function SystemHealth() {
   }
 
   return (
-    <div className="space-y-4 p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between mb-2 px-2">
-        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Diagnóstico de Salud</h4>
+    <div className="space-y-6 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between border-b pb-4">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Diagnóstico de Salud</h4>
         <span className={cn(
-          "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
-          integrity.isValid ? "bg-amber-500/10 text-amber-500" : "bg-destructive/10 text-destructive"
+          "text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider",
+          integrity.isValid ? "bg-amber-500/20 text-amber-500" : "bg-destructive/10 text-destructive"
         )}>
           {integrity.isValid ? 'Precaución' : 'Estado Crítico'}
         </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {integrity.issues.map((issue: any, idx: number) => (
-          <Alert key={idx} variant={issue.level === 'ERROR' ? 'destructive' : 'default'} className={cn(
-            "border-none bg-card/40 backdrop-blur-md luxe-shadow",
-            issue.level === 'WARNING' && "border-l-2 border-amber-500 bg-amber-500/5"
-          )}>
-            <div className="flex gap-3">
-              {issue.level === 'ERROR' ? <AlertCircle className="w-4 h-4 mt-0.5" /> : <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-500" />}
+          <Alert key={idx} variant={issue.level === 'ERROR' ? 'destructive' : 'default'} className="bg-muted/50 border-none rounded-xl">
+            <div className="flex gap-4">
+              {issue.level === 'ERROR' ? <AlertCircle className="w-5 h-5 mt-0.5" /> : <AlertTriangle className="w-5 h-5 mt-0.5 text-amber-500" />}
               <div className="space-y-1">
-                <AlertTitle className="text-[10px] font-black uppercase tracking-tight leading-none mb-1">
+                <AlertTitle className="text-xs font-bold uppercase tracking-tight">
                   {issue.context}: {issue.level}
                 </AlertTitle>
-                <AlertDescription className="text-xs font-medium text-foreground/80">
+                <AlertDescription className="text-xs text-muted-foreground">
                   {issue.message}
                 </AlertDescription>
                 {issue.fixSuggestion && (
-                  <div className="mt-2 flex items-center gap-2 text-[9px] font-bold text-primary/60 uppercase group cursor-pointer hover:text-primary transition-colors">
+                  <div className="mt-2 flex items-center gap-2 text-[10px] font-bold text-primary uppercase group cursor-pointer hover:underline transition-all">
                     <span>Sugerencia: {issue.fixSuggestion}</span>
-                    <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </div>
                 )}
               </div>
@@ -83,7 +80,7 @@ export function SystemHealth() {
         ))}
       </div>
 
-      <p className="text-[8px] text-center font-bold text-muted-foreground opacity-30 uppercase pt-4 italic">
+      <p className="text-[10px] text-center font-bold text-muted-foreground/30 uppercase pt-4">
         Último escaneo: {new Date(integrity.timestamp).toLocaleTimeString()}
       </p>
     </div>

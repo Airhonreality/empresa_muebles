@@ -1,13 +1,27 @@
 /**
- * 🧠 EL MOTOR LÓGICO: AgnosticLogicEngine
- * ──────────────────────────────────────
- * AXIOMATIC_CONTRACT:
- * - MUST: Cargar funciones de negocio de forma dinámica desde el Silo (Storage).
- * - MUST: Proveer un Sandbox controlado para la ejecución de lógica de cliente.
- * - NEVER: Permitir acceso directo a APIs globales del navegador (usar Bridge).
+ * 🏛️ ARTEFACTO: AgnosticLogicEngine.ts
+ * ────────────
+ * CAPA: Agnostic Core (Intelligent Engine / Logic Hub)
+ * VERSIÓN: 2.1
+ * COMMIT: P3-M7.1-SYSTEMIC-SEGMENTATION
  * 
- * ADR: Se externaliza la lógica en archivos .js para permitir que el negocio 
- * evolucione su comportamiento sin necesidad de re-desplegar el binario del Seed.
+ * 🎯 FUNCTIONAL_SCOPE:
+ * - Orquestador de lógica de negocio dinámica (Zaps / Sandboxing).
+ * - Motor de Inferencia de Derivaciones y Cálculos en tiempo real.
+ * - Servicio Centralizado de Segmentación Sistémica (Fase 7).
+ * 
+ * 🛡️ AXIOMATIC_CONTRACT:
+ * - MUST: Ejecutar lógica en un Sandbox aislado; nunca permitir acceso a globals (Suh's Law).
+ * - MUST: Proveer determinismo en la partición de realidad (Segmentation).
+ * - NEVER: Permitir que la lógica de negocio se filtre a los componentes de UI.
+ * - ALWAYS: Fallback a valores seguros si la ejecución lógica falla.
+ * 
+ * 📜 ADR [2026-05-12]: CENTRALIZED-SEGMENTATION-SERVICE
+ * - CONTEXTO: Necesidad de dinamismo en pestañas y pasos sin contaminar la UI con IFs.
+ * - DECISIÓN: Implementar getVisibleSegments() como un servicio universal del motor.
+ * - APRENDIZAJE: La partición de la materia es una capacidad del sistema, no una propiedad del proyector.
+ * 
+ * 🔑 KEYWORDS: #LogicEngine #Segmentation #Fase7 #DynamicLogic #AgnosticSandbox
  */
 
 import { DataItem } from '@agnostic/core';
@@ -103,6 +117,18 @@ class LogicEngine {
             }
             break;
           }
+
+          case 'SLUGIFY': {
+            const raw = String(result[args[0]] || '');
+            const slug = raw.toString().toLowerCase().trim()
+              .replace(/\s+/g, '_')           // Replace spaces with _
+              .replace(/[^\w-]+/g, '')       // Remove all non-word chars
+              .replace(/--+/g, '_');         // Replace multiple - or _ with single _
+            
+            result[field.key] = slug;
+            hasChanges = true;
+            break;
+          }
         }
 
         if (newValue !== undefined && result[field.key] !== newValue) {
@@ -113,6 +139,28 @@ class LogicEngine {
     });
 
     return result;
+  }
+
+  /**
+   * 🧩 SEGMENTATION: System-wide capability to partition reality.
+   * Resolves which segments/tabs/steps are visible for a given context and record.
+   */
+  async getVisibleSegments(
+    context: string, 
+    record: any, 
+    allSegments: string[],
+    zapName?: string
+  ): Promise<string[]> {
+    if (!zapName) return allSegments;
+
+    try {
+      const result = await this.execute(zapName, record, { context, allSegments });
+      if (Array.isArray(result)) return result;
+      return allSegments;
+    } catch (e) {
+      console.warn(`[LogicEngine] Segmentation failed for ${zapName}, falling back to all segments.`);
+      return allSegments;
+    }
   }
 
   /**

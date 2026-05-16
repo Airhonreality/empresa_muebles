@@ -1,13 +1,39 @@
 /**
  * 🏛️ ARTEFACTO: route.ts (Vault API)
  * ────────────
- * CAPA: Server (Persistence Interface)
+ * CAPA: Server (Persistence Interface / The Sentinel)
+ * VERSIÓN: 8.5
+ * COMMIT: P3-M8.1-SENTINEL-INTEGRITY
+ * 
+ * 🎯 FUNCTIONAL_SCOPE:
+ * - Interfaz de persistencia universal para el Átomo Agnóstico.
+ * - Orquestador de mutaciones deterministas (WRITE, DELETE, SYNC, INTROSPECT).
+ * - Puerta de enlace entre el Motor (Kernel) y los Puentes de Datos (Strategies).
+ * 
+ * 🛡️ AXIOMATIC_CONTRACT:
+ * - MUST: Actuar como "El Centinela". Purificar TODO payload de entrada vía AgnosticDNACompiler antes de tocar el disco.
+ * - MUST: Garantizar que cada registro cristalizado siga la ley de DataItem { id, context, data }.
+ * - NEVER: Escribir objetos desnudos (Naked Objects) en el DNA.
+ * - NEVER: Almacenar lógica de negocio; delegar a la capa de Estrategia.
+ * 
+ * 📜 ADR [2026-05-12]: SYMMETRIC-PURIFICATION-PROTOCOL
+ * - CONTEXTO: Descubrimiento de DNA corrupto (objetos desnudos) inyectado desde el Manager.
+ * - DECISIÓN: Implementar purificación obligatoria en el servidor. El Vault deja de ser un buzón pasivo y se convierte en un validador de integridad.
+ * - IMPACTO: Eliminación total de TypeErrors por desestructuración de undefined en el Kernel.
+ * 
+ * 🔑 KEYWORDS: #VaultAPI #TheSentinel #DataIntegrity #SymmetricPurification #DataItemLaw
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getStrategy } from '@/server/getStrategy';
 import { DataItem } from '@agnostic/core';
+import { AgnosticDNACompiler } from '@/lib/agnostic/Middleware';
+import { registry } from '@/lib/agnostic/Registry';
+import { initializeRegistry } from '@/lib/agnostic/init';
 import crypto from 'crypto';
+
+// ⚓ SERVER-SIDE HYDRATION: Garantizar que el Registry tenga materia en el contexto del API
+initializeRegistry();
 
 // ─── DNA SCHEMAS ─────────────────────────────────────────────────────────────
 
@@ -16,7 +42,7 @@ const writeQuerySchema = z.object({
   context: z.string().min(1, 'context is required'),
   payload: z.object({
     id: z.string().optional(),
-    data: z.record(z.any()),
+    data: z.record(z.string(), z.any()),
   }),
 });
 
@@ -26,16 +52,34 @@ const deleteQuerySchema = z.object({
   payload: z.object({ id: z.string().min(1, 'id is required') }),
 });
 
-const syncContextQuerySchema = z.object({
-  action: z.literal('SYNC_CONTEXT'),
+const restoreQuerySchema = z.object({
+  action: z.literal('RESTORE'),
   context: z.string().min(1, 'context is required'),
   payload: z.array(z.any()),
+});
+
+const discoverQuerySchema = z.object({
+  action: z.literal('DISCOVER'),
+});
+
+const listQuerySchema = z.object({
+  action: z.literal('LIST'),
+});
+
+const updateQuerySchema = z.object({
+  action: z.literal('UPDATE'),
+  context: z.string().min(1),
+  patch: z.record(z.string(), z.any()),
+  filter: z.record(z.string(), z.any()),
 });
 
 const vaultMutationSchema = z.discriminatedUnion('action', [
   writeQuerySchema,
   deleteQuerySchema,
-  syncContextQuerySchema,
+  restoreQuerySchema,
+  discoverQuerySchema,
+  listQuerySchema,
+  updateQuerySchema
 ]);
 
 // ─── HANDLERS ────────────────────────────────────────────────────────────────
@@ -44,6 +88,14 @@ export async function GET(req: NextRequest) {
   try {
     const host    = req.headers.get('host') ?? undefined;
     const context = new URL(req.url).searchParams.get('context') ?? undefined;
+    
+    // 🏺 VIRTUAL CONTEXT: Autoconsciencia de capacidades (Fase 10)
+    if (context === 'system_capabilities') {
+      await getStrategy(host); // 🛡️ Force strategy discovery and registration
+      const manifest = registry.getManifest();
+      return NextResponse.json({ [context]: manifest });
+    }
+
     const strategy = await getStrategy(host);
     const data = await strategy.read(context);
     
@@ -63,19 +115,48 @@ export async function POST(req: NextRequest) {
     const host = req.headers.get('host') ?? undefined;
     const strategy = await getStrategy(host);
 
-    // 🔄 SYNC CONTEXT: Cristalización total de un contexto
-    if (query.action === 'SYNC_CONTEXT') {
+    // 📥 LIST: Lectura atómica de toda la materia
+    if (query.action === 'LIST') {
+      const data = await strategy.read();
+      
+      // 🧬 VIRTUAL INJECTION: Unimos la realidad física con la autoconsciencia del núcleo
+      const manifest = registry.getManifest();
+      manifest.forEach(item => {
+        if (!data[item.context]) data[item.context] = [];
+        data[item.context].push(item);
+      });
+
+      return NextResponse.json({ success: true, data });
+    }
+
+    // 🔍 DISCOVER: Auto-descubrimiento de DNA desde el Bridge
+    if (query.action === 'DISCOVER') {
+      if (!strategy.introspect) {
+        return NextResponse.json({ success: false, error: 'Introspection not supported by strategy' }, { status: 405 });
+      }
+
+      const newSchemas = await strategy.introspect();
+      
+      return NextResponse.json({ success: true, schemas: newSchemas });
+    }
+
+    // 🔄 RESTORE: Cristalización total de un contexto
+    if (query.action === 'RESTORE') {
       const { context, payload } = query;
       
-      // Intentamos usar el método especializado de sobreescritura
+      // 🛡️ INTEGITY GUARD: Purificar e Inyectar en forma canónica antes de cristalizar en disco
+      const schemas = (await strategy.read('schema_definitions'))['schema_definitions'] || [];
+      const purifiedPayload = (payload as any[]).map(item => {
+        return AgnosticDNACompiler.canonicalize({ ...item, context }, schemas);
+      }).filter(Boolean);
+
       if ((strategy as any).overwriteContext) {
-        await (strategy as any).overwriteContext(context, payload);
+        await (strategy as any).overwriteContext(context, purifiedPayload);
       } else {
-        // Fallback universal: Escribir el contexto completo
-        await strategy.write({ [context]: payload });
+        await strategy.write({ [context]: purifiedPayload as DataItem[] });
       }
       
-      return NextResponse.json({ success: true, count: payload.length });
+      return NextResponse.json({ success: true, count: purifiedPayload.length });
     }
 
     // 🗑️ DELETE: Eliminación quirúrgica
@@ -88,15 +169,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Delete not supported' }, { status: 405 });
     }
 
-    // 📝 WRITE: Escritura individual (Upsert)
+    // 📝 WRITE: Escritura individual (Update or Insert)
     if (query.action === 'WRITE') {
       const { context, payload } = query;
-      const item: DataItem = {
-        id: payload.id || crypto.randomUUID(),
+      
+      // 🛡️ INTEGRITY GUARD: Purificar y transformar en DataItem canónico
+      const schemas = (await strategy.read('schema_definitions'))['schema_definitions'] || [];
+      const item = AgnosticDNACompiler.canonicalize({
+        id: payload.id,
         context: context,
-        data: payload.data,
-        updated_at: new Date().toISOString()
-      };
+        data: payload.data
+      }, schemas);
+
+      if (!item) throw new Error('Purification failed for item');
 
       if (strategy.writeContext) {
         await strategy.writeContext(context, [item]);
@@ -105,6 +190,13 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({ success: true, record: item });
+    }
+
+    // 🏗️ UPDATE: Standard Bulk Patch
+    if (query.action === 'UPDATE') {
+      const { context, patch, filter } = query;
+      await strategy.update(context, patch, filter);
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ success: false, error: 'Unsupported action' }, { status: 400 });

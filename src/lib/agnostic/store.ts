@@ -43,6 +43,7 @@ interface DNAState {
   setDNA: (routes: DataItem[], schemas: DataItem[]) => void;
   setRoutes: (routes: DataItem[]) => void;
   setSchemas: (schemas: DataItem[]) => void;
+  hydrate: (routes: DataItem[], schemas: DataItem[]) => void;
 }
 
 export const useDNAStore = create<DNAState>((set) => ({
@@ -51,6 +52,7 @@ export const useDNAStore = create<DNAState>((set) => ({
   setDNA: (routes, schemas) => set({ routes, schemas }),
   setRoutes: (routes) => set({ routes }),
   setSchemas: (schemas) => set({ schemas }),
+  hydrate: (routes: DataItem[], schemas: DataItem[]) => set({ routes, schemas }),
 }));
 
 // --- 🧪 MATERIA STORE: La Realidad de los Datos ---
@@ -59,6 +61,7 @@ interface MateriaState {
   setMateria: (context: string, items: DataItem[]) => void;
   updateItem: (context: string, item: DataItem) => void;
   removeItem: (context: string, id: string) => void;
+  hydrate: (data: Record<string, DataItem[]>) => void;
 }
 
 export const useMateriaStore = create<MateriaState>((set) => ({
@@ -80,6 +83,7 @@ export const useMateriaStore = create<MateriaState>((set) => ({
       [context]: (state.data[context] || []).filter((i) => i.id !== id)
     }
   })),
+  hydrate: (data: Record<string, DataItem[]>) => set({ data }),
 }));
 
 // --- ⚙️ SYSTEM STORE: El Centinela de Orquestación ---
@@ -90,19 +94,17 @@ export const useMateriaStore = create<MateriaState>((set) => ({
  * - NEVER: Contener lógica de negocio (delegar a MateriaStore).
  */
 interface SystemState {
-  activeRecordId: string | null;
-  activeContext: string;
-  isLoading: boolean;
-  currentPath: string;
-  isEditMode: boolean; // Flag para activar la Capa de Soberanía Contextual
-  activeEditId: string | null; // ID de la ruta que se está orquestando actualmente
   integrity: any | null;
+  user: any | null;
+  overlay: any | null;
   setActiveRecord: (id: string | null, context: string) => void;
   setLoading: (loading: boolean) => void;
   setNavigation: (path: string) => void;
   setEditMode: (enabled: boolean) => void;
   setActiveEditId: (id: string | null) => void;
   setIntegrity: (report: any) => void;
+  setUser: (user: any) => void;
+  setOverlay: (overlay: any | null) => void;
 }
 
 export const useSystemStore = create<SystemState>((set) => ({
@@ -113,12 +115,16 @@ export const useSystemStore = create<SystemState>((set) => ({
   isEditMode: false,
   activeEditId: null,
   integrity: null,
+  user: null,
+  overlay: null,
   setActiveRecord: (id, context) => set({ activeRecordId: id, activeContext: context }),
   setLoading: (loading) => set({ isLoading: loading }),
   setNavigation: (currentPath) => set({ currentPath }),
   setEditMode: (isEditMode) => set({ isEditMode }),
   setActiveEditId: (activeEditId) => set({ activeEditId }),
   setIntegrity: (integrity) => set({ integrity }),
+  setUser: (user) => set({ user }),
+  setOverlay: (overlay) => set({ overlay }),
 }));
 
 // --- 🏹 REACTIVE SELECTORS: El Puente Determinista ---
@@ -142,12 +148,19 @@ export const useActiveRoute = () => {
 };
 
 export const useActiveRecord = () => {
-  const route = useActiveRoute();
-  const path = useSystemStore((s) => s.currentPath) || '';
+  const { activeRecordId, activeContext, currentPath } = useSystemStore();
   const materia = useMateriaStore((s) => s.data);
 
-  const routeContext = route?.data?.context as string | undefined;
-  const activeSlug = path.split('/').pop();
+  // 🏛️ DETERMINISTIC ANCHOR: If we have an active ID, that's the truth.
+  if (activeRecordId && activeContext) {
+    const record = (materia[activeContext] || []).find((r: any) => r.id === activeRecordId);
+    if (record) return record;
+  }
+
+  // 🛰️ HYDRATION FALLBACK: Lookup by slug from URL (Initial load only)
+  const route = useActiveRoute();
+  const routeContext = (route?.data?.context || route?.context) as string | undefined;
+  const activeSlug = currentPath.split('/').pop();
 
   if (!routeContext || !activeSlug || activeSlug === 'create-project') return null;
 

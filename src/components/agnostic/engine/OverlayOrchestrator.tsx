@@ -30,12 +30,12 @@ import { Separator } from '@/components/ui/separator';
 // ─── CVA VARIANTS ────────────────────────────────────────────────────────────
 
 const dialogContentVariants = cva(
-  'bg-background border border-border',
+  'bg-background border border-border shadow-2xl',
   {
     variants: {
       size: {
         sm: 'sm:max-w-[425px] rounded-xl',
-        md: 'sm:max-w-[600px] rounded-[2rem]',
+        md: 'sm:max-w-[600px] rounded-xl',
       },
     },
     defaultVariants: { size: 'md' },
@@ -100,7 +100,7 @@ export function OverlayOrchestrator({
       <Sheet open onOpenChange={closeOverlay}>
         <SheetContent className={cn(sheetContentVariants({ width: sheetWidth }))}>
           <SheetHeader className="mb-6">
-            <SheetTitle className="text-2xl font-serif">{title}</SheetTitle>
+            <SheetTitle className="text-2xl font-bold tracking-tight">{title}</SheetTitle>
             {description && <SheetDescription>{description}</SheetDescription>}
           </SheetHeader>
           <Separator className="mb-6" />
@@ -121,7 +121,7 @@ export function OverlayOrchestrator({
       <Dialog open onOpenChange={closeOverlay}>
         <DialogContent className={cn(dialogContentVariants({ size: dialogSize }))}>
           <DialogHeader>
-            <DialogTitle className="text-xl font-serif">{title}</DialogTitle>
+            <DialogTitle className="text-xl font-bold tracking-tight">{title}</DialogTitle>
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
           <Separator />

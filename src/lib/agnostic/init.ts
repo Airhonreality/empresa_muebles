@@ -1,38 +1,51 @@
 /**
  * 🏛️ ARTEFACTO: init.ts
  * ────────────
- * CAPA: Lib (Infrastructure Services)
- * VERSIÓN: 6.0
- * COMMIT: P2-M2.2-REGISTRY-INIT
+ * CAPA: Lib (System Boot)
+ * VERSIÓN: 2.0
+ * COMMIT: P3-M2.1-BOOT-CAPABILITY-REGISTRATION
  * 
  * 🎯 FUNCTIONAL_SCOPE:
- * - Inicialización centralizada del Agnostic Registry.
- * - Resolución de dependencias circulares mediante carga diferida de bloques.
+ * - Inicialización central del Catálogo de Capacidades del Sistema.
+ * - Registro de bloques core y estrategias de soberanía.
  * 
- * 🛡/ AXIOMATIC_CONTRACT:
- * - MUST: Ejecutarse una sola vez al inicio del ciclo de vida del cliente.
- * - NEVER: Contener lógica de renderizado.
- * 
- * 🔗 RELATIONSHIPS:
- * - UPSTREAM: [Core Blocks, Registry]
- * - DOWNSTREAM: [AgnosticRenderer]
+ * 🛡️ AXIOMATIC_CONTRACT:
+ * - MUST: Garantizar una única ejecución (Singleton Initialization).
+ * - NEVER: Registrar lógica de estado; solo capacidades estáticas.
  */
 
 import { registry } from './Registry';
-import { AgnosticForm } from '../../components/agnostic/blocks/AgnosticForm';
-import { AgnosticTable } from '../../components/agnostic/blocks/AgnosticTable';
-import { AgnosticCollection } from '../../components/agnostic/blocks/AgnosticCollection';
-import { AgnosticBelt } from '../../components/agnostic/blocks/AgnosticBelt';
-import { AgnosticSheet } from '../../components/agnostic/blocks/AgnosticSheet';
-import { CustomActorBridge } from '../../components/agnostic/engine/CustomActorBridge';
+import { AgnosticForm } from '@/components/agnostic/blocks/AgnosticForm';
+import { AgnosticTable } from '@/components/agnostic/blocks/AgnosticTable';
+import { AgnosticCollection } from '@/components/agnostic/blocks/AgnosticCollection';
+
+let isInitialized = false;
 
 export function initializeRegistry() {
-  registry.register('form', AgnosticForm);
-  registry.register('table', AgnosticTable);
-  registry.register('collection', AgnosticCollection);
-  registry.register('belt', AgnosticBelt);
-  registry.register('sheet', AgnosticSheet);
-  registry.register('custom', CustomActorBridge);
-  
-  console.log('[AgnosticSystem] Registry Initialized (Axiomatic v6.0)');
+  if (isInitialized) return;
+  isInitialized = true;
+
+  console.log('[SystemBoot] Initializing Universal Capability Catalog...');
+
+  // 1. CORE UI BLOCKS
+  registry.register('form', AgnosticForm, { category: 'core', name: 'Formulario Agnóstico' });
+  registry.register('table', AgnosticTable, { category: 'core', name: 'Tabla de Materia' });
+  registry.register('collection', AgnosticCollection, { category: 'core', name: 'Colección de Elementos' });
+
+  // 2. SOVEREIGNTY STRATEGIES (Catalog)
+  const strategies = [
+    { id: 'LocalStrategy', label: 'Estrategia Local', desc: 'Persistencia en sistema de archivos local' },
+    { id: 'GitHubStrategy', label: 'Estrategia GitHub', desc: 'Soberanía en nube vía Git (Satelital)' },
+    { id: 'SupabaseStrategy', label: 'Estrategia Supabase', desc: 'Almacenamiento en base de datos PostgreSQL' }
+  ];
+
+  strategies.forEach(s => {
+    registry.registerCapability('strategy', s.id, {
+      domain: 'sovereignty',
+      label: s.label,
+      description: s.desc
+    });
+  });
+
+  console.log(`[SystemBoot] Catalog Ready: ${strategies.length} strategies registered.`);
 }

@@ -106,19 +106,19 @@ export function AgnosticModuleLoader({ moduleName, api, children }: Props) {
 
   if (isLoading) {
     return (
-      <div className="w-full h-32 flex flex-col items-center justify-center bg-muted/5 rounded-[2rem] border border-dashed border-border/20 animate-pulse">
-        <div className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20">Hydrating {moduleName}...</div>
+      <div className="w-full h-32 flex flex-col items-center justify-center bg-muted/30 rounded-xl border border-dashed animate-pulse">
+        <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Inyectando {moduleName}...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8 border border-destructive/20 bg-destructive/5 rounded-[2rem] text-center">
-        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-destructive mb-2">
-          Sovereignty Breached
+      <div className="p-8 border border-destructive/20 bg-destructive/5 rounded-xl text-center">
+        <div className="text-sm font-bold uppercase tracking-wider text-destructive mb-2">
+          Fallo en Inyección
         </div>
-        <div className="text-[11px] font-mono opacity-50">{error}</div>
+        <div className="text-xs font-mono text-muted-foreground">{error}</div>
       </div>
     );
   }

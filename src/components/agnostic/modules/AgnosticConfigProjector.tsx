@@ -61,7 +61,8 @@ export function AgnosticConfigProjector({
   const groupedFields = React.useMemo(() => {
     const fields = schema.fields || [];
     return fields.reduce((acc: any, field: any) => {
-      const section = field.section || 'General';
+      // Si el campo es una sección, lo tratamos como su propia sección para que sea un bloque de primer nivel
+      const section = field.type === 'section' ? field.key : (field.section || '');
       if (!acc[section]) acc[section] = [];
       acc[section].push(field);
       return acc;
@@ -72,22 +73,23 @@ export function AgnosticConfigProjector({
 
   const renderField = (field: any): React.ReactNode => {
     const value = data[field.key] ?? field.default;
-    const label = <label className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-2">{field.label}</label>;
+    const label = <label className="text-[10px] font-bold uppercase text-muted-foreground/50 tracking-wider block mb-1">{field.label}</label>;
 
     switch (field.type) {
       case 'section':
         const Icon = IconMap[field.icon] || HelpCircle;
         return (
-          <div className="space-y-6 py-6 first:pt-0">
-             <div className="flex items-center gap-3 border-b border-border/5 pb-4">
-                <div className="p-2 bg-primary/5 rounded-xl text-primary/40">
-                  <Icon size={14} />
+          <div className="space-y-4">
+             <div className="flex items-center gap-3 border-b border-border/10 pb-2">
+                <Icon size={14} className="text-muted-foreground/60" />
+                <div className="space-y-0.5">
+                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{field.label}</h4>
+                  {field.description && <p className="text-[8px] text-muted-foreground/40">{field.description}</p>}
                 </div>
-                <h4 className="text-[10px] font-black text-primary/60 uppercase tracking-[0.2em]">{field.label}</h4>
              </div>
-             <div className="grid grid-cols-12 gap-6 pl-4">
+             <div className="space-y-4 pl-2">
                {field.fields?.map((f: any) => (
-                 <div key={f.key} className="col-span-12">{renderField(f)}</div>
+                 <div key={f.key}>{renderField(f)}</div>
                ))}
              </div>
           </div>
@@ -95,12 +97,14 @@ export function AgnosticConfigProjector({
 
       case 'boolean':
         return (
-          <div className="flex items-center justify-between gap-4 py-3 bg-primary/[0.02] px-6 rounded-2xl border border-primary/5">
-            <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest">{field.label}</span>
+          <div className="flex items-center justify-between gap-4 py-3 px-4 bg-muted/20 rounded-lg border border-border/5">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-bold uppercase text-muted-foreground/80 tracking-wide block">{field.label}</span>
+              {field.description && <p className="text-[8px] text-muted-foreground/40">{field.description}</p>}
+            </div>
             <Checkbox 
               checked={!!value} 
               onCheckedChange={(checked) => updateField(field.key, checked)}
-              className="w-5 h-5 rounded-lg border-primary/20"
             />
           </div>
         );
@@ -121,18 +125,19 @@ export function AgnosticConfigProjector({
               value={field.type === 'multi-select' ? (Array.isArray(value) ? value[0] : value) : value} 
               onValueChange={(v) => updateField(field.key, field.type === 'multi-select' ? [v] : v)}
             >
-              <SelectTrigger className="h-12 rounded-2xl bg-transparent border-border/10 px-5 font-bold focus:ring-primary/20 transition-all hover:border-primary/30">
+              <SelectTrigger>
                 <SelectValue placeholder={`Seleccionar...`} />
               </SelectTrigger>
-              <SelectContent className="rounded-2xl border-border/10">
-                <SelectItem value="none" className="rounded-xl">Ninguno</SelectItem>
+              <SelectContent>
+                <SelectItem value="none">Ninguno</SelectItem>
                 {options.map((opt: any, idx: number) => (
-                  <SelectItem key={idx} value={opt.value} className="text-[11px] font-medium rounded-xl my-1">
+                  <SelectItem key={idx} value={opt.value} className="text-xs">
                     {opt.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {field.description && <p className="text-[8px] text-muted-foreground/30 pl-1">{field.description}</p>}
           </div>
         );
 
@@ -144,55 +149,53 @@ export function AgnosticConfigProjector({
               value={value || ''} 
               onChange={(e) => updateField(field.key, e.target.value)} 
               placeholder={field.label}
-              className="text-[11px] h-12 bg-transparent border-border/10 rounded-2xl px-5 font-bold focus-visible:ring-primary/20 transition-all hover:border-primary/30" 
             />
+            {field.description && <p className="text-[8px] text-muted-foreground/30 pl-1">{field.description}</p>}
           </div>
         );
     }
   };
 
   const renderGrid = (fields: any[]) => (
-    <div className="grid grid-cols-12 gap-x-8 gap-y-6">
-      {fields.map((field: any) => {
-        const widthClass = field.width === 'half' ? 'col-span-12 lg:col-span-6' : 
-                          field.width === 'third' ? 'col-span-12 lg:col-span-4' : 
-                          'col-span-12';
-        return (
-          <div key={field.key} className={widthClass}>
-            {renderField(field)}
-          </div>
-        );
-      })}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+      {fields.map((field: any) => (
+        <div key={field.key} className={cn(
+          "col-span-1",
+          (field.width === 'full' || field.type === 'section') && "sm:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5"
+        )}>
+          {renderField(field)}
+        </div>
+      ))}
     </div>
   );
 
   // 🎯 RENDER FILTRADO (Un solo bloque plano)
   if (filterSection && filterSection !== 'none') {
     return (
-      <div className="p-8 bg-background/20 rounded-[2.5rem] border border-border/5">
+      <div className="p-10 bg-background/20 rounded-[3rem] border border-border/5">
         {renderGrid(groupedFields[filterSection] || [])}
       </div>
     );
   }
 
-  // 🌳 RENDER JERÁRQUICO (Vista completa por grupos)
+  // 🌳 RENDER DE ALTA DENSIDAD (Grupos en columnas, campos en filas)
   return (
-    <div className="space-y-4">
-      <Accordion type="multiple" className="space-y-4">
-        {sections.map((sectionName) => (
-          <AccordionItem key={sectionName} value={sectionName} className="border-none bg-background/20 rounded-[2.5rem] px-8 overflow-hidden">
-            <AccordionTrigger className="hover:no-underline py-6">
-              <div className="flex items-center gap-3">
-                <Layout size={14} className="text-primary/40" />
-                <span className="text-[10px] font-black uppercase tracking-widest">{sectionName}</span>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+      {sections.map((sectionName) => (
+        <div key={sectionName} className={cn(
+          "bg-background/20 rounded-[2.5rem] px-8 py-8 border border-border/5 flex flex-col h-full",
+          !sectionName && "bg-transparent border-none p-0 px-4"
+        )}>
+          {/* Renderizamos los campos de esta sección apilados verticalmente */}
+          <div className="space-y-6">
+            {groupedFields[sectionName].map((field: any) => (
+              <div key={field.key}>
+                {renderField(field)}
               </div>
-            </AccordionTrigger>
-            <AccordionContent className="pb-10 pt-4">
-              {renderGrid(groupedFields[sectionName])}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,11 +1,13 @@
 'use client';
 
-import { useAppContext } from '@/context/AppContext';
+import { useAppState } from '@/context/AppContext';
 import { es, en, Dictionary } from './dictionaries';
 
 export function useTranslation() {
-  const { state } = useAppContext();
-  const locale = state.system.config.locale || 'es';
+  const { state } = useAppState();
+  
+  // 🛡️ ACCESO SEGURO: El locale puede venir de la config del sistema o ser 'es' por defecto
+  const locale = (state.system as any)?.config?.locale || 'es';
 
   const dictionary: Dictionary = locale === 'en' ? en : es;
 
@@ -13,6 +15,7 @@ export function useTranslation() {
    * Translate a key using dot notation (e.g., 'common.save')
    */
   const t = (path: string): string => {
+    if (!path || typeof path !== 'string') return '';
     const keys = path.split('.');
     let current: any = dictionary;
 

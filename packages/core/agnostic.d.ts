@@ -407,6 +407,21 @@ export interface CustomBlock {
 export type AgnosticBlock = FormBlock | TableBlock | CollectionBlock | CustomBlock;
 
 /**
+ * A system-level capability exposed by a strategy or module.
+ * Drives auto-projection in the Config Manager.
+ */
+export interface SystemOperation {
+  id: string;
+  label: string;
+  description: string;
+  /** Standard Query Nomenclature */
+  action: 'INTROSPECT' | 'AUDIT' | 'ALIGN' | 'UPDATE';
+  scope: 'INFRASTRUCTURE' | 'DNA' | 'MATERIA';
+  /** Optional params for the operation execution */
+  params?: Record<string, any>;
+}
+
+/**
  * A page route definition. Stored in the 'page_routes' context.
  *
  * @example
@@ -533,6 +548,18 @@ export interface DataStrategy {
    * Falls back to write() if not implemented.
    */
   writeContext?: (context: string, items: DataItem[]) => Promise<void>;
+
+  /**
+   * Performs a bulk update (patch) on a set of records.
+   * Standard Query: UPDATE records SET <patch> WHERE <filter>
+   */
+  update: (context: string, patch: Record<string, unknown>, filter: Record<string, unknown>) => Promise<void>;
+
+  /**
+   * Returns the list of administrative operations supported by this strategy.
+   * Used for UI auto-projection and MCP discovery.
+   */
+  getOperations: () => SystemOperation[];
 }
 
 /**

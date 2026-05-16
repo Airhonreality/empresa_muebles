@@ -8,27 +8,52 @@ import { getStrategy } from '@/server/getStrategy';
  * It uses the Strategy Resolver to determine where the 'Materia' lives,
  * ensuring no discrepancy between the initial HTML and the dynamic app.
  */
-export async function getVaultData(): Promise<Record<string, any>> {
+export async function getVaultData(requestedContexts?: string | string[]): Promise<Record<string, any>> {
   try {
-    // 1. Resolve the strategy (Local vs Supabase) based on the DNA
     const strategy = await getStrategy();
     
-    // 2. Fetch all data using the strategy's read method
-    const db = await strategy.read();
+    // Core contexts always required for system operation
+    const coreContexts = ['page_routes', 'schema_definitions', 'system_config'];
+    const contextsToFetch = requestedContexts 
+      ? [...new Set([...coreContexts, ...(Array.isArray(requestedContexts) ? requestedContexts : [requestedContexts])])]
+      : null; // null means fetch all
+
+    const db: Record<string, any> = {};
+
+    if (contextsToFetch) {
+      // Selective fetch
+      for (const context of contextsToFetch) {
+        const result = await strategy.read(context);
+        if (result[context]) {
+          db[context] = result[context];
+        }
+      }
+    } else {
+      // Full fetch (backward compatibility)
+      Object.assign(db, await strategy.read());
+    }
+
+    // System capabilities injection
+    const { registry } = await import('@/lib/agnostic/Registry');
+    const { initializeRegistry } = await import('@/lib/agnostic/init');
+    initializeRegistry();
     
-    // 3. Perform Integrity Audit (Axiom: Fail-Fast / Deterministic Monitoring)
+    const manifest = registry.getManifest();
+    manifest.forEach(item => {
+      if (!db[item.context]) db[item.context] = [];
+      db[item.context].push(item);
+    });
+    
     const integrity = IntegrityChecker.analyze(db);
-    
-    console.log(`[Vault] Successfully hydrated ${Object.keys(db).length} contexts via ${strategy.constructor.name}. Integrity: ${integrity.isValid ? 'OK' : 'ISSUES'}`);
     
     return {
       ...db,
       _integrity: integrity
     };
   } catch (error) {
-    console.error('[Vault] Critical failure during unified hydration:', error);
+    console.error('[Vault] Selective hydration failure:', error);
     return {
-      _integrity: { isValid: false, issues: [{ level: 'ERROR', context: 'SYSTEM', message: 'Fallo crítico en la bóveda de datos.' }] }
+      _integrity: { isValid: false, issues: [{ level: 'ERROR', context: 'SYSTEM', message: 'Critical vault failure.' }] }
     };
   }
 }

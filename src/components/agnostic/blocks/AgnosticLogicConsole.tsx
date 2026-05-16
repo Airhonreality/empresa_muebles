@@ -37,56 +37,54 @@ export function AgnosticLogicConsole({ initialCode = '', fileName = 'logic_zap.j
   };
 
   return (
-    <Card className="w-full bg-[#1e1e1e] border-none shadow-2xl rounded-3xl overflow-hidden min-h-[500px]">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 bg-black/20 px-6 py-4">
+    <Card className="w-full bg-background border rounded-xl overflow-hidden min-h-[500px] shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/50 px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Code2 size={18} className="text-primary" />
-          </div>
+          <Code2 size={18} className="text-primary" />
           <div>
-            <CardTitle className="text-sm font-bold text-white/90">{fileName}</CardTitle>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Logic Engine Console</p>
+            <CardTitle className="text-sm font-bold">{fileName}</CardTitle>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Consola de Lógica</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5 h-8 gap-2">
-            <Play size={14} /> <span className="text-[10px] font-bold">PROBAR</span>
+          <Button variant="ghost" size="sm" className="h-8 gap-2 font-bold text-[10px]">
+            <Play size={14} /> PROBAR
           </Button>
-          <Button onClick={handleSave} size="sm" className="h-8 gap-2 bg-primary text-primary-foreground font-bold text-[10px]">
-            <Save size={14} /> GUARDAR CAMBIOS
+          <Button onClick={handleSave} size="sm" className="h-8 gap-2 font-bold text-[10px]">
+            <Save size={14} /> GUARDAR
           </Button>
         </div>
       </CardHeader>
       
       <CardContent className="p-0 flex flex-col md:flex-row h-[600px]">
         {/* 💻 EDITOR AREA */}
-        <div className="flex-1 relative font-mono text-sm leading-relaxed">
+        <div className="flex-1 relative font-mono text-sm leading-relaxed bg-muted/20">
           <textarea
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            className="w-full h-full bg-transparent p-6 text-primary/80 outline-none resize-none spellcheck-false"
+            className="w-full h-full bg-transparent p-6 text-foreground outline-none resize-none spellcheck-false"
             placeholder="// Escribe tu lógica agnóstica aquí..."
           />
         </div>
 
         {/* 📚 SIDEBAR: PLACEHOLDERS & DOCUMENTATION */}
-        <div className="w-full md:w-64 border-l border-white/5 bg-black/10 p-4 space-y-6 overflow-y-auto">
+        <div className="w-full md:w-64 border-l bg-muted/10 p-4 space-y-6 overflow-y-auto">
           <div>
-            <h4 className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-3 flex items-center gap-2">
-              <Info size={10} /> Campos Disponibles
+            <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider mb-3 flex items-center gap-2">
+              <Info size={12} /> Campos Disponibles
             </h4>
             <div className="space-y-1">
               {availableFields.map(field => (
-                <div key={field} className="group flex items-center justify-between p-1.5 rounded-lg hover:bg-primary/10 transition-all cursor-pointer">
-                  <code className="text-[10px] text-primary/60 group-hover:text-primary">{field}</code>
+                <div key={field} className="group flex items-center justify-between p-1.5 rounded-md hover:bg-primary/10 transition-all cursor-pointer">
+                  <code className="text-[10px] text-muted-foreground group-hover:text-primary">{field}</code>
                 </div>
               ))}
             </div>
           </div>
           
-          <div className="p-3 bg-primary/5 rounded-2xl border border-primary/10">
-             <h4 className="text-[9px] font-black uppercase text-primary/60 tracking-widest mb-2">Ayuda Axiomática</h4>
-             <p className="text-[10px] text-white/40 leading-relaxed">
+          <div className="p-4 bg-primary/5 rounded-lg border">
+             <h4 className="text-[10px] font-bold uppercase text-primary tracking-wider mb-2">Ayuda Axiomática</h4>
+             <p className="text-[11px] text-muted-foreground leading-relaxed">
                Usa `export const` para registrar funciones. El motor las descubrirá automáticamente.
              </p>
           </div>

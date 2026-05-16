@@ -17,9 +17,8 @@
 'use client';
 
 import React from 'react';
-import { useAppState } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { cn } from '@/lib/utils';
+import { cn, getDeep } from '@/lib/utils';
 import { Eye, FileEdit, Trash2 } from 'lucide-react';
 import { getModuleIcon } from '@/lib/agnostic/constants';
 
@@ -30,7 +29,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 interface Props {
-  schemaId: string;
+  schema?: any;
+  records?: any[];
   context?: string;
   title?: string;
   switches?: string[];
@@ -38,21 +38,18 @@ interface Props {
   className?: string;
 }
 
-export function AgnosticTable({ schemaId, context, title, switches, onAction, className }: Props) {
-  const { state } = useAppState();
+export function AgnosticTable({ schema, records = [], context, title, switches, onAction, className }: Props) {
   const { user } = useAuth();
   
-  // 🛰️ STRICT EXPLICIT CONTEXT (Spec v7.0)
-  if (!schemaId || !context) return null;
+  if (!schema || !context) {
+    return (
+      <div className="p-8 border border-dashed rounded-xl text-center">
+        <p className="text-xs font-bold uppercase opacity-30">DNA o Contexto No Encontrado</p>
+      </div>
+    );
+  }
 
-  const schemas = (state.data['schema_definitions'] || []) as any[];
-  const schemaRecord = schemas.find((s) => s.id === schemaId);
-  const schema = schemaRecord?.data;
-  const records = state.data[context] || [];
-
-  if (!schema) return null;
-
-  const columns = schema.fields.filter((f: any) => {
+  const columns = (schema.fields || []).filter((f: any) => {
     const isVisible = !f.visibility_whitelist || (user && f.visibility_whitelist.includes(user.role));
     const isSwitched = !switches || switches.length === 0 || switches.includes(f.key);
     return isVisible && isSwitched;
@@ -81,48 +78,48 @@ export function AgnosticTable({ schemaId, context, title, switches, onAction, cl
   };
 
   return (
-    <Card className={cn("overflow-hidden border-border luxe-shadow animate-in fade-in duration-700", className)}>
+    <Card className={cn("overflow-hidden border bg-background shadow-sm animate-in fade-in duration-700", className)}>
       {(title || schema.name) && (
-        <CardHeader className="bg-muted/30 border-b p-4 flex flex-row items-center justify-between">
+        <CardHeader className="bg-muted/50 border-b p-4 flex flex-row items-center justify-between">
           <div className="flex items-center gap-3">
-             <div className="p-1.5 bg-primary/5 text-primary/40 rounded-lg">
-                {React.createElement(getModuleIcon('table'), { size: 14 })}
+             <div className="p-2 bg-muted rounded-lg text-primary">
+                {React.createElement(getModuleIcon('table'), { size: 16 })}
              </div>
-             <CardTitle className="text-[11px] font-black uppercase tracking-[0.4em] opacity-60">
+             <CardTitle className="text-sm font-bold uppercase tracking-wider">
                {title || schema.name}
              </CardTitle>
           </div>
-          <div className="flex items-center gap-2 opacity-20">
-             <Separator orientation="vertical" className="h-3" />
-             <span className="text-[7px] font-black uppercase tracking-[0.2em]">{schema.name}</span>
+          <div className="flex items-center gap-2 opacity-40">
+             <Separator orientation="vertical" className="h-4" />
+             <span className="text-[10px] font-bold uppercase tracking-wider">{schema.name}</span>
           </div>
         </CardHeader>
       )}
       <CardContent className="p-0 overflow-x-auto">
         <Table>
-          <TableHeader className="bg-muted/10">
+          <TableHeader className="bg-muted/30">
             <TableRow className="hover:bg-transparent">
               {columns.map((col: any) => (
-                <TableHead key={col.key} className="text-[9px] font-black uppercase tracking-widest h-12 px-6">
+                <TableHead key={col.key} className="text-xs font-bold uppercase tracking-wider h-11 px-6">
                   {col.label}
                 </TableHead>
               ))}
-              <TableHead className="text-right px-6 text-[9px] font-black uppercase tracking-widest h-12">Acciones</TableHead>
+              <TableHead className="text-right px-6 text-xs font-bold uppercase tracking-wider h-11">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {records.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + 1} className="h-32 text-center text-[10px] font-bold opacity-30 italic">
+                <TableCell colSpan={columns.length + 1} className="h-32 text-center text-xs font-bold text-muted-foreground italic">
                   No se han detectado registros en esta Bóveda.
                 </TableCell>
               </TableRow>
             ) : (
               records.map((record: any) => (
-                <TableRow key={record.id} className="group hover:bg-muted/50 transition-colors cursor-pointer border-border/50">
-                  {columns.map((col: any) => (
+                <TableRow key={record.id} className="group hover:bg-muted/50 transition-colors cursor-pointer">
+                   {columns.map((col: any) => (
                     <TableCell key={col.key} className="px-6 py-4">
-                      {renderCellValue(record.data[col.key], col.key)}
+                      {renderCellValue(getDeep(record.data, col.key), col.key)}
                     </TableCell>
                   ))}
                   <TableCell className="px-6 py-4 text-right">
@@ -131,17 +128,17 @@ export function AgnosticTable({ schemaId, context, title, switches, onAction, cl
                          variant="ghost" 
                          size="icon" 
                          onClick={() => onAction?.('edit', record.id)}
-                         className="h-8 w-8 hover:text-primary"
+                         className="h-8 w-8 text-muted-foreground hover:text-primary"
                        >
-                          <FileEdit size={14} />
+                          <FileEdit size={16} />
                        </Button>
                        <Button 
                          variant="ghost" 
                          size="icon" 
                          onClick={() => onAction?.('delete', record.id)}
-                         className="h-8 w-8 hover:text-destructive"
+                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                        >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                        </Button>
                     </div>
                   </TableCell>

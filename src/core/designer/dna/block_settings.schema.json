@@ -4,6 +4,30 @@
   "description": "Configuración paramétrica de bloques de interfaz",
   "fields": [
     {
+      "key": "core_identity",
+      "label": "core_identity",
+      "type": "section",
+      "fields": [
+        {
+          "key": "title",
+          "label": "title",
+          "type": "string"
+        },
+        {
+          "key": "type",
+          "label": "block_type",
+          "type": "select",
+          "options_source": "block_registry"
+        },
+        {
+          "key": "schema_id",
+          "label": "schema_id",
+          "type": "select",
+          "options_source": "dna_registry"
+        }
+      ]
+    },
+    {
       "key": "behavior",
       "label": "Comportamiento",
       "icon": "Activity",
@@ -32,11 +56,18 @@
           ]
         },
         {
-          "key": "filterSection",
-          "label": "Filtrar por Sección ADN",
+          "key": "intent",
+          "label": "Intención (Modo Proyección)",
           "type": "select",
-          "options_source": "dna_sections",
-          "description": "Si se selecciona, el bloque solo proyectará los campos pertenecientes a esa sección."
+          "options": [
+            { "label": "Adaptativo (Inferencia Automática)", "value": "auto" },
+            { "label": "Creación (Lienzo Vacío)", "value": "create" },
+            { "label": "Edición (Cargar por ID)", "value": "edit" },
+            { "label": "Lectura (Solo Proyección)", "value": "view" },
+            { "label": "Lista (Colección)", "value": "list" }
+          ],
+          "default": "auto",
+          "description": "Define cómo debe despertar el bloque: si de forma inteligente (Adaptativo) o forzando un estado determinista."
         }
       ]
     },
@@ -56,6 +87,18 @@
             { "label": "Ghost (Sin bordes)", "value": "ghost" },
             { "label": "Minimal", "value": "minimal" }
           ]
+        },
+        {
+          "key": "switches",
+          "label": "campos_visibles (whitelist)",
+          "type": "string",
+          "description": "Lista de campos separados por coma (ej: name, price). Si está vacío, muestra todo."
+        },
+        {
+          "key": "blackout",
+          "label": "campos_ocultos (blacklist)",
+          "type": "string",
+          "description": "Lista de campos a esconder (ej: id, internal_code)."
         },
         {
           "key": "theme",
@@ -92,6 +135,42 @@
           "type": "multi-select",
           "description": "Lista secuencial de funciones que se dispararán con este bloque",
           "options_source": "logic_engine_registry"
+        }
+      ]
+    },
+    {
+      "key": "data_architecture",
+      "label": "Arquitectura de Datos",
+      "icon": "Database",
+      "type": "section",
+      "fields": [
+        {
+          "key": "parent_key",
+          "label": "Clave Foránea (Parent Key)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Identificador del campo que vincula este bloque con el registro jerárquico superior.",
+          "placeholder": "Seleccionar foreign key..."
+        },
+        {
+          "key": "segmentation_key",
+          "label": "Clave de Segmentación (Pivot)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Campo utilizado para particionar los datos en sub-vistas (Variantes, Idiomas, etc).",
+          "placeholder": "Seleccionar campo de pivote..."
+        },
+        {
+          "key": "segmentation_strategy",
+          "label": "Estrategia de Segmentación",
+          "type": "select",
+          "options": [
+            { "label": "Ninguna (Proyección Plana)", "value": "none" },
+            { "label": "Pestañas (Tabs)", "value": "tabs" },
+            { "label": "Pasos (Steps)", "value": "steps" },
+            { "label": "Selector (Dropdown)", "value": "select" }
+          ],
+          "description": "Define la interfaz de usuario utilizada para alternar entre segmentos de datos."
         }
       ]
     }

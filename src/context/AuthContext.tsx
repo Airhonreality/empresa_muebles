@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAppDispatch, useAppState } from './AppContext';
+import { useDNAStore, useMateriaStore, useSystemStore } from '@/lib/agnostic/store';
 import { DataItem } from '@agnostic/core';
 
 interface User {
@@ -22,20 +22,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-/**
- * AuthProvider: The Identity Layer of the Satellite.
- * Radically agnostic: It doesn't care about the provider, only about the 'user' entity in Materia.
- */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { state } = useAppState();
-  const { dispatch } = useAppDispatch();
+  
+  const { data } = useMateriaStore();
+  const { setUser: syncUserToStore } = useSystemStore();
 
-  // 🔄 SYNC MATERIA: Push user to atomic state
+  // Sync user identity to global system store
   useEffect(() => {
-    dispatch({ type: 'SET_USER', payload: user });
-  }, [user, dispatch]);
+    syncUserToStore(user);
+  }, [user, syncUserToStore]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('agnostic_session');
@@ -51,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, pass: string): Promise<boolean> => {
-    const users = state?.data?.['users'] || [];
+    const users = data?.['users'] || [];
     const found = users.find(u => u.data.email === email && u.data.password === pass);
 
     if (found) {
@@ -67,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return true;
     }
     return false;
-  }, [state?.data]);
+  }, [data]);
 
   const logout = useCallback(() => {
     setUserState(null);

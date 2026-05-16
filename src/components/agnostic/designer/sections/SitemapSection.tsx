@@ -4,35 +4,44 @@
  * 🏛️ ARTEFACTO: SitemapSection.tsx
  * ────────────
  * CAPA: Staging (Navigation Architecture)
- * VERSIÓN: 2.0
- * COMMIT: P2-M2.7-ADR-SITEMAP-ORCH
- * 
- * 🎯 FUNCTIONAL_SCOPE:
- * - Definición de la topología de rutas del satélite.
- * - Gestión de permisos de acceso (Privado/Público) por ruta.
- * - Orquestación de la navegación contextual hacia el compositor de bloques.
- * 
- * 🛡️ AXIOMATIC_CONTRACT:
- * - MUST: Garantizar que cada ruta tenga un ID único (UUID) para evitar colisiones en el Staging.
- * - NEVER: Permitir rutas vacías o rutas duplicadas en el mismo nivel de jerarquía.
- * - ALWAYS: Proveer un acceso rápido a la edición de contenido (Composer) desde el mapa.
- * 
- * 📜 ADR: [2026-05-11] SITEMAP_ORCHESTRATION
- * - DECISIÓN: Utilizar un grid responsivo con tarjetas de alto impacto para la gestión de rutas.
- * - MOTIVO: Facilitar la visión global del sitemap en sistemas ERP de gran escala.
- * - IMPACTO: Reducción del tiempo de configuración de la arquitectura de información.
- * 
- * 🔗 RELATIONSHIPS:
- * - UPSTREAM: [AgnosticConfigManager]
- * - DOWNSTREAM: [ComposerSection, Page Routes Registry]
+ * VERSIÓN: 3.1
+ * COMMIT: P3-M4.4-FIX-DUPLICATE-IMPORTS
  */
 
 import { useState } from 'react';
-import { Route as RouteIcon, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Route as RouteIcon, Plus, Trash2, Edit2, Layout, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { AgnosticForm } from '@/components/agnostic/blocks/AgnosticForm';
+import { useAgnosticSchema } from '@/lib/agnostic/SchemaInterpreter';
+
+// Schema interno para la gestión de una Ruta
+const routeItemSchema = {
+  name: 'Page Route',
+  fields: [
+    { key: "path", label: "URL Path", width: "full", required: true },
+    { key: "title", label: "Page Title", width: "full", required: true },
+    { 
+      key: "isPrivate", 
+      label: "Access Policy", 
+      width: "half", 
+      type: "select", 
+      options: [
+        { label: "Public (Global)", value: false },
+        { label: "Private (Auth Required)", value: true }
+      ]
+    },
+    { 
+      key: "layout_mode", 
+      label: "Default Layout", 
+      width: "half", 
+      type: "select", 
+      options: [
+        { label: "Full Canvas", value: "canvas" },
+        { label: "Container Optimized", value: "container" }
+      ]
+    }
+  ]
+};
 
 interface SitemapSectionProps {
   routes: any[];
@@ -41,108 +50,114 @@ interface SitemapSectionProps {
 }
 
 export function SitemapSection({ routes, setRoutes, onEditRoute }: SitemapSectionProps) {
+  const { schema: resolvedSchema, isLoading } = useAgnosticSchema(routeItemSchema);
+
   const addRoute = () => {
     const newRoute = {
       id: globalThis.crypto.randomUUID(),
-      path: '/nueva-ruta',
-      blocks: [],
-      isPrivate: true
+      context: 'page_routes',
+      data: {
+        path: '/new-route',
+        blocks: [],
+        isPrivate: true,
+        title: 'New Page'
+      }
     };
     setRoutes([...routes, newRoute]);
   };
 
   const updateRoute = (id: string, patch: any) => {
-    setRoutes(routes.map(r => r.id === id ? { ...r, ...patch } : r));
+    setRoutes(routes.map(r => {
+      if (r.id === id) {
+        return { ...r, data: { ...(r.data || {}), ...patch } };
+      }
+      return r;
+    }));
   };
 
   const removeRoute = (id: string) => {
-    setRoutes(routes.filter(r => r.id !== id));
+    if (confirm('¿Eliminar esta ruta permanentemente?')) {
+      setRoutes(routes.filter(r => r.id !== id));
+    }
   };
 
+  if (isLoading) return <div className="p-12 text-center opacity-30 uppercase text-[10px] font-bold">Mapeando Topología...</div>;
+
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-20">
       
-      {/* 🧭 HEADER & TOOLS */}
-      <div className="flex items-center justify-between px-2">
+      {/* Header Centralizado */}
+      <div className="flex items-center justify-between border-b pb-6 px-2">
         <div className="space-y-1">
-          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-            <RouteIcon size={14} />
-            Sitemap Orchestrator
+          <h3 className="text-sm font-black uppercase tracking-wider text-primary flex items-center gap-2">
+            <RouteIcon size={16} /> Sitemap Orchestrator
           </h3>
-          <p className="text-[9px] text-muted-foreground font-mono opacity-50 uppercase tracking-widest">
-            Arquitectura de navegación del satélite
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest opacity-60 font-bold">
+            Navigation topology and access governance
           </p>
         </div>
 
         <Button 
-          onClick={(e) => { e.stopPropagation(); addRoute(); }}
+          onClick={addRoute}
           variant="outline" 
           size="sm" 
-          className="h-11 rounded-2xl border-2 border-dashed border-primary/20 text-[11px] font-black gap-3 px-8 hover:bg-primary/5 transition-all z-10"
+          className="font-bold gap-2 px-6 h-10 text-[10px] uppercase tracking-widest"
         >
-          <Plus size={16} /> Nueva Ruta
+          <Plus size={16} /> Register New Route
         </Button>
       </div>
 
-      {/* 🗺️ GRID DE RUTAS */}
-      <div className="grid grid-cols-1 @[800px]:grid-cols-2 gap-6">
+      {/* Grid de Rutas Agnósticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {routes.map((route) => (
           <div 
             key={route.id} 
-            className="group relative bg-muted/5 border border-border/10 rounded-[2.5rem] p-10 hover:bg-background hover:border-primary/20 transition-all duration-300"
+            className="group relative bg-background border rounded-2xl p-6 hover:border-primary/50 transition-all"
           >
-            {/* ACCIONES FLOTANTES (Visibles y con Z-Index) */}
-            <div className="absolute right-6 top-6 flex items-center gap-2 z-20">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary/40 group-hover:text-primary transition-colors border border-primary/10">
+                <RouteIcon size={20} />
+              </div>
+              <div className="flex-1">
+                <AgnosticForm 
+                  schema={resolvedSchema}
+                  activeRecord={{ data: route.data || route }}
+                  hideHeader={true}
+                  onFieldChange={(_, __, allData) => updateRoute(route.id, allData)}
+                  className="border-none shadow-none bg-transparent p-0"
+                />
+              </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={(e) => { e.stopPropagation(); removeRoute(route.id); }}
-                className="rounded-2xl bg-destructive/5 text-destructive hover:bg-destructive hover:text-white h-10 w-10 transition-all"
+                onClick={() => removeRoute(route.id)}
+                className="text-destructive/30 hover:text-destructive hover:bg-destructive/5 transition-all"
               >
-                <Trash2 size={18} />
+                <Trash2 size={16} />
               </Button>
             </div>
 
-            <div className="flex items-start gap-5 mb-10 mr-12">
-              <div className="p-4 bg-primary/5 rounded-[1.5rem] text-primary/30 group-hover:text-primary transition-colors">
-                <RouteIcon size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <Input 
-                  value={route.path}
-                  onChange={(e) => updateRoute(route.id, { path: e.target.value })}
-                  className="bg-transparent border-none shadow-none text-xl font-black tracking-tighter p-0 h-auto focus-visible:ring-0"
-                />
-                <div className="flex items-center gap-3 mt-3">
-                  <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest opacity-40 rounded-full border-muted-foreground/20">
-                    {route.blocks?.length || 0} Bloques
-                  </Badge>
-                  <Badge 
-                    onClick={() => updateRoute(route.id, { isPrivate: !route.isPrivate })}
-                    className={cn(
-                      "text-[10px] font-black uppercase tracking-widest rounded-full cursor-pointer border-none px-4",
-                      route.isPrivate ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
-                    )}
-                  >
-                    {route.isPrivate ? "Privado" : "Público"}
-                  </Badge>
+            <div className="pt-4 border-t flex items-center justify-between mt-6">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 text-[9px] font-bold text-primary/60">
+                   <Layout size={10} />
+                   <span>{(route.data?.blocks || []).length} Blocks</span>
+                </div>
+                <div className="h-3 w-px bg-border" />
+                <div className="flex items-center gap-1">
+                  <CheckCircle2 size={10} className="text-emerald-500" />
+                  <span className="text-[9px] font-black uppercase tracking-tighter opacity-40">Route Valid</span>
                 </div>
               </div>
-            </div>
-
-            <div className="pt-8 border-t border-border/5 flex items-center justify-between">
-              <div className="flex items-center gap-3 text-[10px] font-black text-muted-foreground/30 uppercase tracking-widest font-mono">
-                <span>DNA_HASH:</span>
-                <span className="text-primary/40">{route.id.split('-')[0]}</span>
-              </div>
+              
               <Button 
                 onClick={() => onEditRoute(route.id)}
                 variant="ghost" 
                 size="sm" 
-                className="h-10 text-[11px] font-black uppercase tracking-widest hover:bg-primary/5 hover:text-primary transition-all rounded-2xl px-6"
+                className="h-8 px-4 rounded-lg text-[9px] font-black uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10"
               >
-                Editar Bloques
-                <Edit2 size={14} className="ml-2" />
+                Edit Content Blocks
+                <Edit2 size={12} />
               </Button>
             </div>
           </div>

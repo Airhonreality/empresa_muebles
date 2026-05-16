@@ -1,121 +1,137 @@
 /**
- * 🛡️ AGNOSTICISM GUARDIAN: STRATEGY RESOLVER (v6.0 — SINGLETON + CACHE)
- * ======================================================================
- *
- * ROLE: Identifies the Tenant, reads their manifest.json once per TTL window,
- *       and returns the correct DataStrategy singleton.
- *
- * SINGLETON PROTOCOL:
- * - Strategy instances are cached in a module-level Map keyed by tenant.
- * - Default TTL: 5 minutes (stays inside the Next.js server process lifetime).
- * - Call `invalidateStrategyCache(tenant?)` to force re-resolution (e.g. after hot-reload).
+ * 🏛️ ARTEFACTO: getStrategy.ts
+ * ────────────
+ * CAPA: Server (Sovereignty Orchestration)
+ * VERSIÓN: 4.0 (Axiomatic & Typed)
+ * COMMIT: P3-M2.2-ADR-DETERMINISTIC-ORCHESTRATOR
+ * 
+ * 🎯 FUNCTIONAL_SCOPE:
+ * - Resolución determinista de la Realidad Activa (ADN + Almacenamiento).
+ * - Hidratación del motor basada en el contrato MasterPassport.
+ * 
+ * 🛡️ AXIOMATIC_CONTRACT:
+ * - MUST: Lanzar error fatal si el Pasaporte Maestro está incompleto (Cero Fallbacks).
+ * - NEVER: Registrar estado dinámico en el Registry (El Registry es Catálogo).
+ * - ALWAYS: Garantizar que la identidad inyectada sea la fuente única de verdad.
+ * 
+ * 📜 ADR: [2026-05-15] ZERO_FALLBACK_POLICY
+ * - DECISIÓN: Eliminar el uso de 'any' y los valores por defecto 'LocalStrategy' o 'default'.
+ * - MOTIVO: Los fallbacks enmascaran la orfandad de datos y rompen el determinismo.
+ * - IMPACTO: El sistema solo arranca si el Pasaporte es válido y completo.
  */
+
 import type { DataStrategy } from '@agnostic/core';
-import { LocalStrategy }       from './strategies/LocalStrategy';
-import { SupabaseStrategy }    from './strategies/SupabaseStrategy';
-import { RemoteJSONStrategy }  from './strategies/RemoteJSONStrategy';
-import { HybridStrategy }      from './strategies/HybridStrategy';
+import { LocalStrategy } from './strategies/LocalStrategy';
+import { SupabaseStrategy } from './strategies/SupabaseStrategy';
+import { GitHubStrategy } from './strategies/GitHubStrategy';
+import { HybridStrategy } from './strategies/HybridStrategy';
+import { MasterPassport } from '@/types/sovereignty';
+import fs from 'fs';
+import path from 'path';
 
-// ─── CACHE ───────────────────────────────────────────────────────────────────
-
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes — stays inside prompt-cache window
-
+const CACHE_TTL_MS = 5 * 60 * 1000;
 interface CacheEntry {
-  strategy:  DataStrategy;
+  strategy: DataStrategy;
   expiresAt: number;
 }
-
 const strategyCache = new Map<string, CacheEntry>();
 
-export function invalidateStrategyCache(tenant?: string): void {
-  if (tenant) {
-    strategyCache.delete(tenant);
-  } else {
-    strategyCache.clear();
+export function invalidateStrategyCache(): void {
+  strategyCache.clear();
+}
+
+/**
+ * 🛡️ SOVEREIGNTY VALIDATOR
+ * Ensures the passport follows the Master Contract.
+ */
+function validatePassport(p: any): asserts p is MasterPassport {
+  const requiredFields: (keyof MasterPassport)[] = ['project_identity', 'dna_strategy', 'storage_strategy'];
+  const missing = requiredFields.filter(f => !p[f]);
+  if (missing.length > 0) {
+    throw new Error(`[SovereigntyEngine] FATAL ERROR: Master Passport is incomplete. Missing fields: ${missing.join(', ')}`);
   }
 }
 
-// ─── TENANT RESOLUTION ───────────────────────────────────────────────────────
+async function buildStrategy(): Promise<DataStrategy> {
+  const projectRoot = process.cwd();
+  let passport: Partial<MasterPassport> = {};
 
-function resolveTenantKey(host?: string): string {
-  const envTenant = process.env.ACTIVE_TENANT;
-  if (envTenant) return envTenant;
-  if (host && !host.includes('localhost')) return host.split('.')[0];
-  return 'default';
-}
-
-// ─── MANIFEST READER (sync, called once per cache miss) ──────────────────────
-
-function readLocalManifest(siloPath: string): Record<string, unknown> | null {
+  // 📜 IDENTITY DISCOVERY (Injection Priority)
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const fs   = require('fs') as typeof import('fs');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const path = require('path') as typeof import('path');
-    const manifestPath = path.isAbsolute(siloPath) 
-      ? path.join(siloPath, 'manifest.json')
-      : path.join(process.cwd(), siloPath, 'manifest.json');
-    
-    if (!fs.existsSync(manifestPath)) return null;
-    return JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as Record<string, unknown>;
-  } catch {
-    return null;
+    if (process.env.SYSTEM_PASSPORT) {
+      passport = JSON.parse(process.env.SYSTEM_PASSPORT);
+    } else {
+      const neutralConfigPath = path.join(projectRoot, 'storage', 'system_config.json');
+      if (fs.existsSync(neutralConfigPath)) {
+        const config = JSON.parse(fs.readFileSync(neutralConfigPath, 'utf8'));
+        // In Local, system_config is a DataItem array
+        const masterItem = Array.isArray(config) ? config.find((i: any) => i.id === 'master_passport') : null;
+        passport = masterItem ? masterItem.data : config;
+      }
+    }
+  } catch (e) {
+    throw new Error(`[SovereigntyEngine] Failed to read Identity Passport: ${e instanceof Error ? e.message : 'Unknown error'}`);
   }
+
+  // 🛡️ ENFORCE DETERMINISM
+  validatePassport(passport);
+
+  const { project_identity, dna_strategy, storage_strategy } = passport;
+  const siloPath = path.join(projectRoot, 'storage', project_identity);
+
+  console.log(`[SovereigntyEngine] EXECUTION_MODE: ID=${project_identity} | DNA=${dna_strategy} | STORAGE=${storage_strategy}`);
+
+  // 🏗️ STRATEGY FACTORY (Pure Resolution)
+  let dnaInstance: DataStrategy;
+  switch (dna_strategy) {
+    case 'GitHubStrategy': 
+      dnaInstance = new GitHubStrategy(
+        process.env.GITHUB_OWNER || '', 
+        process.env.GITHUB_REPO || ''
+      ); 
+      break;
+    case 'LocalStrategy':
+      dnaInstance = new LocalStrategy(siloPath); 
+      break;
+    default:
+      throw new Error(`[SovereigntyEngine] Unsupported DNA Strategy: ${dna_strategy}`);
+  }
+
+  let storageInstance: DataStrategy;
+  switch (storage_strategy) {
+    case 'SupabaseStrategy':
+      storageInstance = new SupabaseStrategy(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+      break;
+    case 'LocalStrategy':
+      storageInstance = dnaInstance;
+      break;
+    default:
+      throw new Error(`[SovereigntyEngine] Unsupported Storage Strategy: ${storage_strategy}`);
+  }
+
+  // 🛡️ HYBRID ASSEMBLY
+  let finalStrategy = dnaInstance;
+  if (passport.sovereign_mode === 'HYBRID') {
+    const cloudContexts = ['schema_projects', 'schema_clients', 'class_space', 'quote_items', 'items'];
+    finalStrategy = new HybridStrategy(dnaInstance, storageInstance, cloudContexts);
+  }
+
+  return finalStrategy;
 }
 
-// ─── STRATEGY BUILDER (called only on cache miss) ────────────────────────────
+export async function getStrategy(): Promise<DataStrategy> {
+  const cacheKey = 'global_sovereign_strategy';
+  const cached = strategyCache.get(cacheKey);
 
-async function buildStrategy(tenantKey: string): Promise<DataStrategy> {
-  const storageUrl = process.env.STORAGE_URL;
-  // 🛡️ AXIOMATIC FIX: Use absolute path to prevent CWD deviations
-  const projectRoot = 'c:/Users/javir/Documents/DEVs/agnostic system';
-  const siloPath   = `${projectRoot}/storage/${tenantKey}`;
-
-  let manifest = readLocalManifest(siloPath);
-
-  if (storageUrl && !manifest) {
-    try {
-      const res = await fetch(`${storageUrl}/manifest.json`);
-      if (res.ok) manifest = (await res.json()) as Record<string, unknown>;
-    } catch { /* silent fallback */ }
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.strategy;
   }
 
-  if (manifest) {
-    const config       = (manifest['config']  as Record<string, unknown> | undefined) ?? {};
-    const secrets      = (manifest['secrets'] as Record<string, unknown> | undefined) ?? {};
-    const strategy     = config['strategy']       as string | undefined;
-    const cloudContexts = config['cloud_contexts'] as string[] | undefined;
-    const supabaseUrl  = secrets['supabaseUrl']   as string | undefined;
-    const supabaseKey  = secrets['supabaseKey']   as string | undefined;
-    const hasSupabase  = Boolean(supabaseUrl && supabaseKey);
+  const strategy = await buildStrategy();
+  strategyCache.set(cacheKey, {
+    strategy,
+    expiresAt: Date.now() + CACHE_TTL_MS
+  });
 
-    if (strategy === 'HYBRID' && hasSupabase) {
-      console.log(`[StrategyResolver] HYBRID_MODE — tenant: ${tenantKey}`);
-      return new HybridStrategy(
-        new LocalStrategy(siloPath),
-        new SupabaseStrategy(supabaseUrl!, supabaseKey!),
-        cloudContexts ?? [],
-      );
-    }
-
-    if (hasSupabase) {
-      return new SupabaseStrategy(supabaseUrl!, supabaseKey!);
-    }
-  }
-
-  if (storageUrl && !manifest) return new RemoteJSONStrategy(storageUrl);
-  return new LocalStrategy(siloPath);
-}
-
-// ─── PUBLIC RESOLVER ─────────────────────────────────────────────────────────
-
-export async function getStrategy(host?: string): Promise<DataStrategy> {
-  const tenantKey = resolveTenantKey(host);
-
-  const cached = strategyCache.get(tenantKey);
-  if (cached && cached.expiresAt > Date.now()) return cached.strategy;
-
-  const strategy = await buildStrategy(tenantKey);
-  strategyCache.set(tenantKey, { strategy, expiresAt: Date.now() + CACHE_TTL_MS });
   return strategy;
 }

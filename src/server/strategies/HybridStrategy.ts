@@ -1,4 +1,4 @@
-import type { DataItem, DataStrategy } from '@agnostic/core';
+import type { DataItem, DataStrategy, SystemOperation } from '@agnostic/core';
 
 export class HybridStrategy implements DataStrategy {
   private local: DataStrategy;
@@ -32,7 +32,24 @@ export class HybridStrategy implements DataStrategy {
         } catch (err) { /* fallback to local */ }
       }
 
-      return await this.local.read(context);
+      const localData = await this.local.read(context);
+      
+      // 🛡️ STRATEGY REFLECTION: Inyectamos el estado real del motor en system_config
+      if (context === 'system_config' && localData[context]) {
+        localData[context].push({
+          id: 'strategy_status',
+          context: 'system_config',
+          data: {
+            active_strategy: 'HYBRID',
+            dna_source: (this.local as any).constructor.name,
+            matter_source: (this.remote as any).constructor.name,
+            cloud_contexts: this.cloudContexts,
+            is_healthy: true
+          }
+        });
+      }
+
+      return localData;
     } catch (err) {
       return context ? { [context]: [] } : {};
     }
@@ -85,5 +102,43 @@ export class HybridStrategy implements DataStrategy {
     const db = await target.read(context);
     const filtered = (db[context] || []).filter(i => i.id !== id);
     return await this.overwriteContext(context, filtered);
+  }
+
+  /**
+   * 🔭 INTROSPECT: Delegación soberana a la fuente de infraestructura.
+   */
+  async introspect(): Promise<DataItem[]> {
+    if ((this.remote as any).introspect) {
+      console.log('[HybridStrategy] Delegating Introspection to Remote Strategy');
+      return await (this.remote as any).introspect();
+    }
+    
+    if ((this.local as any).introspect) {
+      return await (this.local as any).introspect();
+    }
+    
+    return [];
+  }
+
+  /**
+   * 🏗️ UPDATE: Distributed Bulk Patch
+   */
+  async update(context: string, patch: Record<string, unknown>, filter: Record<string, unknown>): Promise<void> {
+    const target = this.cloudContexts.includes(context) ? this.remote : this.local;
+    return await target.update(context, patch, filter);
+  }
+
+  /**
+   * 🔭 DISCOVERY: Agregación de operaciones
+   */
+  getOperations(): SystemOperation[] {
+    const localOps = this.local.getOperations?.() || [];
+    const remoteOps = this.remote.getOperations?.() || [];
+    
+    // Deduplicate operations by ID
+    const opMap = new Map<string, SystemOperation>();
+    [...localOps, ...remoteOps].forEach(op => opMap.set(op.id, op));
+    
+    return Array.from(opMap.values());
   }
 }

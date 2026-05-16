@@ -34,25 +34,25 @@ export function AgnosticBelt({ moduleName, config, configSchema, onOpenConfig, c
   return (
     <TooltipProvider>
       <Card className={cn(
-        "h-16 flex items-center px-6 border-border luxe-shadow bg-card/80 backdrop-blur-md sticky top-6 z-40 transition-all duration-500 animate-in slide-in-from-top-4",
+        "h-16 flex items-center px-6 border bg-background shadow-sm sticky top-6 z-40 transition-all duration-300 animate-in slide-in-from-top-4",
         className
       )}>
         <CardContent className="p-0 flex items-center justify-between w-full h-full">
           
           {/* 📍 SOVEREIGN BREADCRUMB */}
           <div className="flex items-center gap-4 h-full">
-            <div className="bg-primary/5 p-2 rounded-lg">
-              <Layers className="w-4 h-4 text-primary opacity-60" />
+            <div className="bg-muted p-2 rounded-lg text-primary">
+              <Layers className="w-4 h-4" />
             </div>
             <Separator orientation="vertical" className="h-4" />
-            <nav className="flex items-center text-[9px] font-black uppercase tracking-[0.2em] opacity-40">
-              <span className="hover:opacity-100 cursor-pointer transition-opacity">Indra</span>
+            <nav className="flex items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <span className="hover:text-foreground cursor-pointer transition-colors">Indra</span>
               {segments.map((s, i) => (
                 <React.Fragment key={s}>
-                  <ChevronRight className="w-3 h-3 mx-1.5 opacity-30" />
+                  <ChevronRight className="w-3 h-3 mx-2 opacity-50" />
                   <span className={cn(
-                    "hover:opacity-100 cursor-pointer transition-opacity",
-                    i === segments.length - 1 ? "opacity-100 text-primary" : ""
+                    "hover:text-foreground cursor-pointer transition-colors",
+                    i === segments.length - 1 ? "text-primary" : ""
                   )}>
                     {s.replace(/-/g, ' ')}
                   </span>
@@ -64,11 +64,11 @@ export function AgnosticBelt({ moduleName, config, configSchema, onOpenConfig, c
           {/* 🛠️ ACTION ARRAY */}
           <div className="flex items-center gap-4">
             <div className="hidden @md:flex items-center gap-1 mr-2">
-              <button className="p-2 hover:bg-muted rounded-lg transition-colors opacity-30 hover:opacity-100">
-                <Share2 size={14} />
+              <button className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                <Share2 size={16} />
               </button>
-              <button className="p-2 hover:bg-muted rounded-lg transition-colors opacity-30 hover:opacity-100">
-                <Printer size={14} />
+              <button className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                <Printer size={16} />
               </button>
             </div>
 
@@ -80,20 +80,20 @@ export function AgnosticBelt({ moduleName, config, configSchema, onOpenConfig, c
                 <TooltipTrigger asChild>
                   <Button 
                     onClick={onOpenConfig}
-                    className="flex items-center gap-3 px-5 py-6 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all luxe-shadow group"
+                    className="flex items-center gap-3 px-6 h-10 font-bold uppercase text-[10px] tracking-wider transition-all group"
                   >
                     <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest hidden @sm:block">Calibrar</span>
+                    <span className="hidden @sm:block">Calibrar</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-[10px] font-bold p-3">
+                <TooltipContent side="bottom" className="text-xs font-bold p-3">
                   Configurar parámetros de {moduleName || 'Lógica'}
                 </TooltipContent>
               </Tooltip>
             )}
 
             {!configSchema && (
-              <Badge variant="outline" className="text-[8px] font-black uppercase tracking-[0.2em] opacity-20 border-dashed py-1 px-2.5">
+              <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 border-dashed py-1 px-3">
                 Materia_Estática
               </Badge>
             )}

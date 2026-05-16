@@ -1,40 +1,38 @@
-'use client';
-
 /**
  * 🏛️ ARTEFACTO: RecursiveBlockComposer.tsx
  * ────────────
  * CAPA: Staging (Block Architecture)
- * VERSIÓN: 4.2
- * COMMIT: P2-M2.3-ADR-VAULT-GOVERNANCE
+ * VERSIÓN: 4.5
+ * COMMIT: P3-M3.4-RELATIONAL-INFERENCE
  * 
  * 🎯 FUNCTIONAL_SCOPE:
  * - Composición jerárquica y recursiva de bloques de interfaz (Fractal UI).
  * - Orquestación de ajustes dinámicos basados en DNA y Bóvedas.
- * - Inferencia inteligente de ADN basada en el contrato de la Bóveda seleccionada.
+ * - Motor de Inferencia Relacional (Auto-discovery of Foreign Keys).
  * 
  * 🛡️ AXIOMATIC_CONTRACT:
- * - MUST: Utilizar exclusivamente Bóvedas autorizadas en el Manifiesto de Soberanía.
- * - NEVER: Romper el flujo de datos descendente (Top-Down) entre bloques padre e hijos.
+ * - MUST: Utilizar nomenclatura snake_case para todas las claves de arquitectura.
+ * - MUST: Intentar inferir la relación jerárquica basándose en el contexto del padre.
  * - ALWAYS: Proveer una vista previa en tiempo real (Live Preview) de la proyección.
  * 
- * 📜 ADR: [2026-05-11] VAULT_GOVERNED_COMPOSITION
- * - DECISIÓN: Eliminar el descubrimiento libre de contextos y forzar el uso del Manifiesto de Bóvedas.
- * - MOTIVO: Prevenir la entropía de datos y asegurar que el diseñador solo trabaje con silos autorizados.
- * - IMPACTO: Orden absoluto en los selectores de origen de datos y coherencia estructural garantizada.
- * 
- * 🔗 RELATIONSHIPS:
- * - UPSTREAM: [ComposerSection, VaultsSection]
- * - DOWNSTREAM: [AgnosticConfigProjector, UI Blocks Registry]
+ * 📜 ADR: [2026-05-11] AUTOMATED_RELATION_INFERENCE
+ * - DECISIÓN: Implementar un motor de descubrimiento de claves foráneas en el diseñador.
+ * - MOTIVO: Reducir el error humano y la carga cognitiva al configurar estructuras fractales complejas.
+ * - IMPACTO: Flujo de trabajo acelerado; el arquitecto solo confirma lo que el sistema infiere.
  */
+'use client';
 
-import React from 'react';
-import { Trash2, Plus, Zap, ChevronDown, ChevronRight, Settings2, Layers } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Trash2, Plus, ChevronDown, ChevronRight, Settings2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTranslation } from '@/core/i18n/useTranslation';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useMateriaStore } from '@/lib/agnostic/store';
 import { AgnosticLogicEngine } from '@/lib/agnostic/AgnosticLogicEngine';
 import { AgnosticConfigProjector } from '@/components/agnostic/modules/AgnosticConfigProjector';
+import { registry } from '@/lib/agnostic/Registry';
 import blockSettingsSchema from '@/core/designer/dna/block_settings.schema.json';
 
 interface RecursiveBlockComposerProps {
@@ -45,6 +43,7 @@ interface RecursiveBlockComposerProps {
   onUpdate: (patch: any) => void;
   onRemove: () => void;
   depth?: number;
+  parentContext?: string; // 🛰️ Context of the parent block for inference
 }
 
 export function RecursiveBlockComposer({ 
@@ -54,22 +53,78 @@ export function RecursiveBlockComposer({
   vaults = [],
   onUpdate, 
   onRemove, 
-  depth = 0 
+  depth = 0,
+  parentContext
 }: RecursiveBlockComposerProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = React.useState(true);
   const [showSettings, setShowSettings] = React.useState(false);
+  const [showLayout, setShowLayout] = React.useState(false);
   
+  const availableBlocks = React.useMemo(() => {
+    return registry.getRegisteredTypes().map(type => {
+      const meta = registry.getMetadata(type);
+      return {
+        value: type,
+        label: meta?.name || type,
+        category: meta?.category || 'core'
+      };
+    });
+  }, []);
+
   const updateBlock = (patch: any) => onUpdate(patch);
 
+  // 🧠 RELATION INFERENCE ENGINE
+  useEffect(() => {
+    if (depth > 0 && parentContext && block.schema_id && !block.config?.parent_key) {
+      // 🧬 Búsqueda Dual (ID o Slug)
+      const selectedSchema = schemas.find(s => s.id === block.schema_id || s.data?.slug === block.schema_id);
+      if (selectedSchema) {
+        const parentKeyCandidate = `${parentContext.replace('schema_', '').replace('_def', '')}_id`;
+        const hasMatch = selectedSchema.data.fields?.some((f: any) => f.key === parentKeyCandidate);
+        
+        if (hasMatch) {
+          console.log(`[Inference] Auto-linking ${block.title} to ${parentContext} via ${parentKeyCandidate}`);
+          updateBlock({ config: { ...(block.config || {}), parent_key: parentKeyCandidate } });
+        }
+      }
+    }
+  }, [block.schema_id, parentContext, depth]);
+
+  // 🏛️ SYNC LOGIC: Cuando cambia schema_id, inferimos el context desde el manifiesto
+  useEffect(() => {
+    if (block.schema_id) {
+      const manifestSnapshot = vaults.find(v => v.id === 'vault_manifest_core');
+      const silos = manifestSnapshot?.data?.silos || [];
+      // 🧬 Búsqueda Dual (ID o Slug)
+      const silo = silos.find((s: any) => s.dna === block.schema_id || s.context === block.schema_id);
+      
+      if (silo && silo.context !== block.context) {
+        console.log(`[Sovereignty] Auto-linking context: ${silo.context} for schema: ${block.schema_id}`);
+        updateBlock({ context: silo.context });
+      }
+    }
+  }, [block.schema_id, vaults]);
+
   const configResolvers = {
+    block_registry: availableBlocks.map(b => ({ label: b.label, value: b.value })),
+    dna_registry: schemas.map(s => ({ label: s.data?.name || s.id, value: s.id })),
     logic_engine_registry: AgnosticLogicEngine.getRegisteredFunctions(),
     style_registry: ['system', 'brand', 'luxury', 'info'],
     dna_sections: React.useMemo(() => {
-      const selectedSchema = schemas.find(s => s.id === block.schemaId);
+      const selectedSchema = schemas.find(s => s.id === block.schema_id || s.data?.slug === block.schema_id);
       if (!selectedSchema) return [];
-      const sections = new Set(selectedSchema.data.fields?.map((f: any) => f.section).filter(Boolean));
+      const sections = new Set(selectedSchema.data?.fields?.map((f: any) => f.section).filter(Boolean));
       return Array.from(sections).map(s => ({ label: s, value: s }));
-    }, [block.schemaId, schemas])
+    }, [block.schema_id, schemas]),
+    dna_fields: React.useMemo(() => {
+      const selectedSchema = schemas.find(s => s.id === block.schema_id || s.data?.slug === block.schema_id);
+      if (!selectedSchema) return [];
+      return (selectedSchema.data?.fields || []).map((f: any) => ({ 
+        label: `${f.label} (${f.key})`, 
+        value: f.key 
+      }));
+    }, [block.schema_id, schemas])
   };
 
   return (
@@ -77,6 +132,21 @@ export function RecursiveBlockComposer({
       "@container group relative p-10 bg-transparent border border-border/5 rounded-[3.5rem] transition-all duration-700 hover:border-primary/20 mb-12",
       depth > 0 && "ml-12 border-l-2 border-l-primary/10 bg-primary/[0.005]",
     )}>
+      {/* 🧬 PROYECCIÓN DE CAPACIDADES (DYNAMICS) */}
+      {showLayout && registry.hasCapability(block.type, 'layout') && (
+        <div className="mt-8 p-8 border border-border/10 rounded-[2rem] bg-muted/5 animate-in slide-in-from-top-2 duration-300">
+          {(() => {
+            const LayoutControls = registry.get('layout_controls');
+            return LayoutControls ? (
+              <LayoutControls 
+                data={block} 
+                onUpdate={(patch: any) => updateBlock({ layout: patch })} 
+              />
+            ) : null;
+          })()}
+        </div>
+      )}
+
       {/* 🗑️ ACCIÓN DE BORRADO */}
       <Button 
         variant="ghost"
@@ -87,116 +157,17 @@ export function RecursiveBlockComposer({
         <Trash2 size={18} />
       </Button>
 
-      {/* 🏛️ ENCABEZADO ESTRUCTURAL */}
-      <div className="flex flex-wrap gap-8 items-start pr-12">
-        <div className="flex-1 min-w-[200px] space-y-4">
-          <label className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-[0.2em] ml-1">Tipo de Bloque</label>
-          <Select value={block.type} onValueChange={(v) => updateBlock({ type: v })}>
-            <SelectTrigger className="h-12 rounded-2xl bg-transparent border-border/10 px-5 font-bold focus:ring-primary/20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              <SelectItem value="form" className="rounded-xl">Formulario</SelectItem>
-              <SelectItem value="table" className="rounded-xl">Tabla de Datos</SelectItem>
-              <SelectItem value="collection" className="rounded-xl">Colección</SelectItem>
-              <SelectItem value="sheet" className="rounded-xl">Hoja de Cálculo</SelectItem>
-              <SelectItem value="logic_console" className="rounded-xl">Consola de Lógica</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex-1 min-w-[200px] space-y-4">
-          <label className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-[0.2em] ml-1">Origen de Datos (Bóveda)</label>
-          <Select 
-            value={block.context || 'none'} 
-            onValueChange={(v) => {
-              const newContext = v === 'none' ? '' : v;
-              const selectedVault = vaults.find(vault => vault.context === newContext);
-              updateBlock({ 
-                context: newContext, 
-                schemaId: selectedVault?.dna || block.schemaId 
-              });
-            }}
-          >
-            <SelectTrigger className="h-12 rounded-2xl bg-transparent border-border/10 px-5 font-bold focus:ring-primary/20">
-              <SelectValue placeholder="Seleccionar Bóveda" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              <SelectItem value="none" className="rounded-xl">Sin origen (Estático)</SelectItem>
-              {vaults.map(v => (
-                <SelectItem key={v.id} value={v.context} className="rounded-xl">{v.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex-1 min-w-[200px] space-y-4">
-          <label className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-[0.2em] ml-1">Estructura (ADN)</label>
-          <Select value={block.schemaId} onValueChange={(v) => updateBlock({ schemaId: v })}>
-            <SelectTrigger className="h-12 rounded-2xl bg-transparent border-border/10 px-5 font-bold focus:ring-primary/20">
-              <SelectValue placeholder="Seleccionar ADN" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              {schemas.sort((a, b) => {
-                const aMatch = block.context && a.data.name?.toLowerCase().includes(block.context.replace('class_', '').toLowerCase()) ? -1 : 1;
-                const bMatch = block.context && b.data.name?.toLowerCase().includes(block.context.replace('class_', '').toLowerCase()) ? -1 : 1;
-                return aMatch - bMatch;
-              }).map((s: any) => (
-                <SelectItem key={s.id} value={s.id} className="rounded-xl">
-                  {s.data.name || s.id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex-1 min-w-[240px] space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <label className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-[0.2em]">Título Visual</label>
-          </div>
-          <Input 
-            value={block.title || ''} 
-            onChange={(e) => updateBlock({ title: e.target.value })} 
-            placeholder="Ej: Información General" 
-            className="h-12 rounded-2xl bg-transparent border-border/10 px-5 font-black tracking-tight focus-visible:ring-primary/20" 
-          />
-        </div>
-      </div>
-
-      {/* VISTA PREVIA VIVA (The "Live Preview" layer) */}
-      {block.schemaId && (
-        <div className="mt-8 p-10 bg-background/40 rounded-[2.5rem] border border-border/5 relative overflow-hidden group/preview">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover/preview:opacity-100 transition-opacity" />
-          <div className="flex items-center gap-3 mb-8 opacity-40">
-            <Layers size={14} className="text-primary" />
-            <span className="text-[9px] font-black uppercase tracking-[0.3em]">Vista Previa en Tiempo Real</span>
-          </div>
-          
-          <AgnosticConfigProjector 
-            schema={schemas.find(s => s.id === block.schemaId) || { fields: [] }}
-            data={block.data || {}}
-            onUpdate={(patch) => updateBlock({ data: { ...(block.data || {}), ...patch } })}
+      {/* 🏛️ PROYECCIÓN DE IDENTIDAD Y CONFIGURACIÓN (ZERO HARD-CODE) */}
+      <div className="mt-4">
+         <AgnosticConfigProjector 
+            schema={blockSettingsSchema} 
+            data={block} 
+            onUpdate={(patch) => updateBlock({ ...patch })}
             resolvers={configResolvers}
-            filterSection={block.config?.filterSection}
           />
-        </div>
-      )}
-
-      {/* AJUSTES PARAMÉTRICOS */}
-      <div className="mt-8 flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setShowSettings(!showSettings)}
-          className={cn(
-            "h-10 rounded-2xl text-[10px] font-black uppercase tracking-widest gap-3 transition-all px-6 shadow-none",
-            showSettings ? "bg-primary text-primary-foreground" : "bg-primary/5 text-primary hover:bg-primary/10"
-          )}
-        >
-          <Settings2 size={16} />
-          {showSettings ? "Ocultar Ajustes" : "Configurar Diseño y Lógica"}
-        </Button>
       </div>
+
+      {/* AJUSTES PARAMÉTRICOS (Legacy Clean-up) */}
 
       {showSettings && (
         <div className="mt-8 animate-in fade-in zoom-in-95 duration-500 border-t border-border/5 pt-8">
@@ -238,7 +209,9 @@ export function RecursiveBlockComposer({
             block={subBlock}
             idx={subIdx}
             schemas={schemas}
+            vaults={vaults}
             depth={depth + 1}
+            parentContext={block.context}
             onUpdate={(patch) => {
               const newBlocks = [...(block.blocks || [])];
               newBlocks[subIdx] = { ...newBlocks[subIdx], ...patch };

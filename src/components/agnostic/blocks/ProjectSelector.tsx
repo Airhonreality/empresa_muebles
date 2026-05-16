@@ -77,41 +77,43 @@ export function ProjectSelector() {
   };
 
   return (
-    <div className="relative w-full max-w-sm mb-6 z-50" ref={containerRef}>
+    <div className="relative w-full max-w-sm mb-8 z-50" ref={containerRef}>
       <div className="relative group">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30 group-focus-within:opacity-100 group-focus-within:text-primary transition-all" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-all" />
         <Input
           type="text"
-          placeholder={currentProject ? `Proyecto actual: ${currentProject.data.name}` : "Buscar o crear proyecto..."}
+          placeholder={currentProject ? `Proyecto: ${currentProject.data.name}` : "Buscar o crear proyecto..."}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          className="pl-9 bg-card/40 backdrop-blur-xl border-border/30 h-10 font-bold text-xs shadow-sm focus:ring-0 focus:border-primary/40"
+          className="pl-9 bg-background border h-10 font-bold text-xs shadow-sm"
         />
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 w-full mt-2 bg-card/95 backdrop-blur-2xl border border-border/30 rounded-lg shadow-xl overflow-hidden luxe-shadow animate-in fade-in zoom-in-95 duration-200">
-          <div className="max-h-60 overflow-y-auto p-1">
+        <div className="absolute top-full left-0 w-full mt-2 bg-popover border rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="max-h-60 overflow-y-auto p-1.5">
             {filtered.length === 0 && !showCreate ? (
-              <div className="p-4 text-center text-xs font-bold opacity-30">
-                No hay proyectos. Escribe para crear uno.
+              <div className="p-4 text-center text-xs font-bold text-muted-foreground italic">
+                No hay proyectos disponibles.
               </div>
             ) : (
               filtered.map((p: any) => (
                 <button
                   key={p.id || p.data?._slug || Math.random()}
                   onClick={() => handleSelect(p.data._slug)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-md hover:bg-primary/10 transition-colors group"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-lg hover:bg-muted transition-colors group"
                 >
-                  <FolderKanban className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:text-primary transition-all" />
+                  <div className="p-1.5 bg-muted rounded-md text-muted-foreground group-hover:text-primary transition-colors">
+                    <FolderKanban className="w-4 h-4" />
+                  </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-black truncate">{p.data.name}</span>
+                    <span className="text-xs font-bold truncate">{p.data.name}</span>
                     {p.data.client_name && (
-                      <span className="text-[9px] font-bold opacity-40 uppercase tracking-widest">{p.data.client_name}</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{p.data.client_name}</span>
                     )}
                   </div>
                 </button>
@@ -121,12 +123,12 @@ export function ProjectSelector() {
             {showCreate && (
               <button
                 onClick={handleCreate}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-md hover:bg-primary border-t border-border/10 transition-colors group mt-1"
+                className="w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg hover:bg-primary hover:text-primary-foreground transition-colors group mt-1 border-t"
               >
-                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-background/20 transition-colors">
-                  <Plus className="w-3 h-3 group-hover:text-background" />
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary-foreground/20 transition-colors">
+                  <Plus className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-black group-hover:text-background">
+                <span className="text-xs font-bold">
                   Crear proyecto "{search}"
                 </span>
               </button>

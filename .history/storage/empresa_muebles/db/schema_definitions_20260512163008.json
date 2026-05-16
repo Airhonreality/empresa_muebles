@@ -1,0 +1,500 @@
+[
+  {
+    "id": "schema_class_space_def",
+    "context": "schema_definitions",
+    "data": {
+      "data": {
+        "name": "Class space",
+        "fields": [
+          {
+            "key": "name",
+            "label": "Name",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "_slug",
+            "label": "_slug",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "status",
+            "label": "Status",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "area_type",
+            "label": "Area type",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "schema_projects_id",
+            "label": "Schema projects id",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          }
+        ]
+      },
+      "name": "Class space",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "_slug",
+          "label": "_slug",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "area_type",
+          "label": "Area type",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "schema_projects_id",
+          "label": "Schema projects id",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        }
+      ]
+    }
+  },
+  {
+    "id": "schema_items_def",
+    "context": "schema_definitions",
+    "data": {
+      "data": {
+        "name": "Items",
+        "fields": [
+          {
+            "key": "name",
+            "label": "Name",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "type",
+            "label": "Type",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "unit",
+            "label": "Unit",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "dim_x",
+            "label": "Dim x",
+            "type": "number",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "dim_y",
+            "label": "Dim y",
+            "type": "number",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "dim_z",
+            "label": "Dim z",
+            "type": "number",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "category",
+            "label": "Category",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "provider",
+            "label": "Provider",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "image_url",
+            "label": "Image url",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "stock_qty",
+            "label": "Stock qty",
+            "type": "number",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "price_cost",
+            "label": "Price cost",
+            "type": "number",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "source_url",
+            "label": "Source url",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "module_3d_id",
+            "label": "Module 3d id",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          }
+        ]
+      },
+      "name": "Items",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "type",
+          "label": "Type",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "unit",
+          "label": "Unit",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "dim_x",
+          "label": "Dim x",
+          "type": "number",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "dim_y",
+          "label": "Dim y",
+          "type": "number",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "dim_z",
+          "label": "Dim z",
+          "type": "number",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "category",
+          "label": "Category",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "provider",
+          "label": "Provider",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "image_url",
+          "label": "Image url",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "stock_qty",
+          "label": "Stock qty",
+          "type": "number",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "price_cost",
+          "label": "Price cost",
+          "type": "number",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "source_url",
+          "label": "Source url",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "module_3d_id",
+          "label": "Module 3d id",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        }
+      ]
+    }
+  },
+  {
+    "id": "schema_materials_def",
+    "context": "schema_definitions",
+    "data": {
+      "data": {
+        "name": "Materials",
+        "fields": [
+          {
+            "key": "code",
+            "label": "Code",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "name",
+            "label": "Name",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "unit",
+            "label": "Unit",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "price",
+            "label": "Price",
+            "type": "number",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "category",
+            "label": "Category",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          }
+        ]
+      },
+      "name": "Materials",
+      "fields": [
+        {
+          "key": "code",
+          "label": "Code",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "unit",
+          "label": "Unit",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "price",
+          "label": "Price",
+          "type": "number",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "category",
+          "label": "Category",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        }
+      ]
+    }
+  },
+  {
+    "id": "schema_quote_spaces_def",
+    "context": "schema_definitions",
+    "data": {
+      "data": {
+        "name": "Quote spaces",
+        "fields": [
+          {
+            "key": "name",
+            "label": "Name",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "order",
+            "label": "Order",
+            "type": "number",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "quote_id",
+            "label": "Quote id",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          },
+          {
+            "key": "labor_dev_days",
+            "label": "Labor dev days",
+            "type": "text",
+            "required": false,
+            "width": "half"
+          }
+        ]
+      },
+      "name": "Quote spaces",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "order",
+          "label": "Order",
+          "type": "number",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "quote_id",
+          "label": "Quote id",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        },
+        {
+          "key": "labor_dev_days",
+          "label": "Labor dev days",
+          "type": "text",
+          "required": false,
+          "width": "half"
+        }
+      ]
+    }
+  },
+  {
+    "id": "schema_51e30eda_def",
+    "context": "schema_definitions",
+    "data": {
+      "data": {
+        "name": "Nuevo Esquema",
+        "fields": [
+          {
+            "id": "a673a2c5-11fa-4893-be1b-b97594a769fa",
+            "key": "nombre_proyecto",
+            "label": "Nombre proyecto",
+            "type": "text",
+            "section": "identidad",
+            "width": "full",
+            "required": true,
+            "_isLocked": false
+          }
+        ]
+      },
+      "name": "proyectos",
+      "fields": [
+        {
+          "id": "a673a2c5-11fa-4893-be1b-b97594a769fa",
+          "key": "nombre_proyecto",
+          "label": "Nombre proyecto",
+          "type": "text",
+          "section": "identidad",
+          "width": "full",
+          "required": false,
+          "_isLocked": false
+        },
+        {
+          "id": "4ef605aa-60fd-4c7a-8d8c-56fa6f2807bd",
+          "key": "field_1189",
+          "label": "garantías",
+          "type": "text",
+          "section": "General",
+          "width": "full",
+          "required": false,
+          "_isLocked": false
+        },
+        {
+          "id": "3f1fb302-442d-4fdb-bbc5-0faece3452c3",
+          "key": "direccion",
+          "label": "dirección",
+          "type": "text",
+          "section": "identidad",
+          "width": "full",
+          "required": false,
+          "_isLocked": false
+        },
+        {
+          "id": "6c6e49f5-b3f2-4cb4-95c1-c4e93b8e4b6d",
+          "key": "field_2383",
+          "label": "Valor",
+          "type": "text",
+          "section": "identidad",
+          "width": "full",
+          "required": false,
+          "_isLocked": false
+        }
+      ]
+    }
+  }
+]

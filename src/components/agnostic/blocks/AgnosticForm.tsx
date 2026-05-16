@@ -28,11 +28,10 @@
 'use client';
 
 import React from 'react';
-import { useDNAStore, useMateriaStore, useActiveRecord, useSystemStore } from '@/lib/agnostic/store';
+import { useMateriaStore, useSystemStore } from '@/lib/agnostic/store';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useParams } from 'next/navigation';
 
 // Shadcn/UI Components
 import { Input } from '@/components/ui/input';
@@ -47,16 +46,18 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Info, Sparkles, Box, ArrowRight, ChevronRight } from 'lucide-react';
 import { getModuleIcon } from '@/lib/agnostic/constants';
 import { AgnosticLogicEngine } from '@/lib/agnostic/AgnosticLogicEngine';
-import { useAppDispatch } from '@/context/AppContext';
+// import { useAppDispatch } from '@/context/AppContext'; // 🚫 ELIMINADO PARA ROMPER BUCLE CIRCULAR
 
 interface AgnosticFormProps {
   schemaId?: string;
+  schema?: any; // 🧬 Manual Schema Injection
+  record?: any; // 🏺 Manual Record Injection
   context?: string; 
   section?: string;
   className?: string;
   title?: string;
   subtitle?: string;
-  zap?: string; // 🧠 The Holobiontic Action (v10.0)
+  zap?: string; 
   hideHeader?: boolean;
   defaultCollapsed?: boolean;
   redirectOnCreate?: string; 
@@ -64,11 +65,18 @@ interface AgnosticFormProps {
   projection?: string[];
   onSubmit?: (data: any) => void;
   onSuccess?: (record: any) => void;
+  onFieldChange?: (key: string, value: any, allData: any) => void; // ⚡ Live Preview Hook
+  onSave?: (updatedRecord: any) => void; // 💾 Direct Save Hook
+  segmentation_key?: string;
+  segmentation_strategy?: 'none' | 'tabs' | 'steps' | 'select';
+  segmentation_zap?: string;
+  intent?: 'create' | 'edit' | 'view';
 }
 
 export function AgnosticForm({ 
-  schemaId: propsSchemaId, 
-  context: propsContext,
+  schema, 
+  activeRecord,
+  context = 'system', 
   section, 
   className,
   title,
@@ -79,53 +87,90 @@ export function AgnosticForm({
   redirectOnCreate,
   projection,
   onSubmit,
-  onSuccess
+  onSuccess,
+  onFieldChange,
+  onSave,
+  segmentation_key,
+  segmentation_strategy = 'none',
+  segmentation_zap,
+  intent = 'create',
+  schemaId // Still kept in props but used primarily for ID generation
 }: AgnosticFormProps) {
-  const { slug } = useParams();
   const { user } = useAuth();
-  
   const { data: materiaStore } = useMateriaStore();
-  const { schemas } = useDNAStore();
   const { isLoading: isSystemLoading } = useSystemStore();
-  const activeRecord = useActiveRecord();
-  
-  const { saveItem } = useAppDispatch();
-  
-  // 🛰️ STRICT EXPLICIT CONTEXT (Spec v7.0)
-  const context = propsContext || 'system';
-  const schemaId = propsSchemaId;
-
+  // const { saveItem } = useAppDispatch(); // 🚫 DESACOPLADO AXIOMÁTICAMENTE
   const [isSaving, setIsSaving] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(!defaultCollapsed);
+  const [activeSegment, setActiveSegment] = React.useState<string | null>(null);
+  const [visibleSegments, setVisibleSegments] = React.useState<string[]>([]);
   
-  // 🧠 LIVE MATERIA STATE (Hot Loop)
+  // Initialize form data from record. No useEffect sync needed because key strategy handles remounts.
   const [formData, setFormData] = React.useState<Record<string, any>>(activeRecord?.data || {});
 
-  // Update local state when activeRecord changes (Hydration)
-  React.useEffect(() => {
-    if (activeRecord?.data) {
-      setFormData(activeRecord.data);
-    }
-  }, [activeRecord]);
+  // 🛡️ FORM GUARD: Validate required context
 
-  const schemaItem = schemas.find((s) => s.id === schemaId);
-  const schema = schemaItem?.data as Record<string, any> | null;
+  // 🛡️ AXIOMATIC GUARD: No schema, no form.
+  if (!schema) {
+    return (
+      <div className="p-8 border border-dashed rounded-xl text-center">
+        <p className="text-xs font-bold uppercase opacity-30">Definición de esquema no encontrada</p>
+      </div>
+    ); 
+  }
 
-  if (!schema || isSystemLoading) {
-    return null; // Silent failure if definition is missing (Engine responsibility)
+  // 🛡️ MATTER GUARD: No record found for EDIT mode
+  if (intent === 'edit' && !activeRecord) {
+    return (
+      <div className="p-12 border border-dashed rounded-2xl text-center bg-muted/5">
+        <Box className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Sin datos de registro</p>
+        <p className="text-[10px] text-muted-foreground mt-2">No se encontró el registro para editar.</p>
+      </div>
+    );
   }
 
   // ⚡ HOT LOOP: Compute derivations on every change
   const handleFieldChange = (key: string, value: any) => {
     setFormData(prev => {
       const next = { ...prev, [key]: value };
-      // Axiomatic computation: UI syncs with computed truth
-      return AgnosticLogicEngine.compute(schema, next, materiaStore);
+      const computed = AgnosticLogicEngine.compute(schema, next, materiaStore);
+      
+      // Notificar al mundo exterior para Live Previews (Capa de Soberanía)
+      if (onFieldChange) onFieldChange(key, value, computed);
+      
+      return computed;
     });
   };
 
-  // Filter fields by section if provided
-  let allFields = schema.fields.filter((f: any) => {
+  // 🧩 RESOLVE ALL POTENTIAL SEGMENTS
+  const allSegments = React.useMemo(() => {
+    if (!segmentation_key) return [];
+    const field = schema?.fields?.find((f: any) => f.key === segmentation_key);
+    return field?.options?.map((o: any) => o.value) || [];
+  }, [segmentation_key, schema]);
+
+  // 🧠 Fase 7: LOGIC-DRIVEN PIVOT (System Capability)
+  React.useEffect(() => {
+    async function resolveReality() {
+      const filtered = await AgnosticLogicEngine.getVisibleSegments(
+        context, 
+        activeRecord || { data: formData }, 
+        allSegments, 
+        segmentation_zap
+      );
+      setVisibleSegments(filtered);
+      if (filtered.length > 0 && (!activeSegment || !filtered.includes(activeSegment))) {
+        setActiveSegment(filtered[0]);
+      }
+    }
+    resolveReality();
+  }, [allSegments, activeRecord, formData, context, segmentation_zap]);
+
+  // 🛰️ DEFENSIVE FIELD RESOLUTION
+  const fields = Array.isArray(schema.fields) ? schema.fields : [];
+
+  let allFields = fields.filter((f: any) => {
     if (!f.visibility_whitelist) return true;
     if (!user) return false;
     return f.visibility_whitelist.includes(user.role);
@@ -135,8 +180,6 @@ export function AgnosticForm({
     allFields = allFields.filter((f: any) => f.section === section || (f.section === undefined && section === 'General'));
   }
 
-  if (allFields.length === 0) return null;
-
   const sections: Record<string, any[]> = {};
   allFields.forEach((f: any) => {
     const sectionName = f.section || 'General';
@@ -144,32 +187,26 @@ export function AgnosticForm({
     sections[sectionName].push(f);
   });
 
-  const persistData = async (formData: Record<string, any>) => {
+  const noFieldsAvailable = allFields.length === 0;
+
+  const persistData = async (currentData: Record<string, any>) => {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const { id: formId, ...data } = formData;
-      if (onSubmit) {
+      const { id: formId, ...data } = currentData;
+      if (onSave) {
+        // Direct save hook for internal components (System, DNS, etc.)
+        await onSave({ id: formId || activeRecord?.id, context, data });
+        toast.success(`Sincronización Interna Completa`);
+      } else if (onSubmit) {
         onSubmit(data);
       } else {
-        const payload = { id: formId || activeRecord?.id, context, data };
-        const record = await saveItem(context, payload);
-        
-        toast.success(`Materia sincronizada`);
-
-        // 🧠 EXECUTE HOLOBIONTIC ACTION (v10.0)
-        if (zap) {
-          try {
-            await AgnosticLogicEngine.execute(zap, record, { context, schemaId });
-          } catch (e) {
-            toast.error(`Error en Acción: ${zap}`);
-          }
-        }
-
-        if (onSuccess) onSuccess(record);
+        // 🛡️ FALLBACK: Si no hay onSave/onSubmit, el bloque tonto no puede persistir por sí solo
+        console.warn(`[AgnosticForm] Intento de persistencia sin dispatcher. Context: ${context}`);
+        toast.error("Persistencia no configurada para este bloque");
       }
     } catch (err) {
-      toast.error("Fallo de comunicación industrial");
+      toast.error("Error al guardar en el servidor");
     } finally {
       setIsSaving(false);
     }
@@ -190,28 +227,45 @@ export function AgnosticForm({
           'third':   'col-span-12 @lg:col-span-4',
           'quarter': 'col-span-12 @lg:col-span-3'
         };
+        const isSection = field.type === 'section';
+        const isInfo = field.type === 'info';
         const isDerived = !!field.config?.derivation;
-        const colSpan = spanMap[field.width] || 'col-span-12 @lg:col-span-4';
+        const colSpan = (isSection || isInfo) ? 'col-span-12' : (spanMap[field.width] || 'col-span-12 @lg:col-span-4');
+
+        if (isSection) {
+          return (
+            <div key={field.key} className="col-span-12 mt-6 mb-2">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 whitespace-nowrap">
+                  {field.label}
+                </span>
+                <Separator className="flex-1 opacity-20" />
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div key={field.key} className={cn("space-y-1 group/field", colSpan, isDerived && "is-derived")}>
-            <div className="flex items-center justify-between px-0.5">
-              <Label className="text-[8px] font-black uppercase tracking-widest opacity-30 group-focus-within/field:opacity-100 group-focus-within/field:text-primary transition-all">
-                {field.label} {field.required && <span className="text-primary">*</span>}
-              </Label>
-              {isDerived && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Sparkles className="w-2.5 h-2.5 text-primary/40 animate-pulse" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-[10px] bg-background/95 backdrop-blur-xl border-primary/20">
-                      Campo calculado por el motor
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
+            {!isInfo && (
+              <div className="flex items-center justify-between px-0.5">
+                <Label className="text-[8px] font-black uppercase tracking-widest opacity-30 group-focus-within/field:opacity-100 group-focus-within/field:text-primary transition-all">
+                  {field.label} {field.required && <span className="text-primary">*</span>}
+                </Label>
+                {isDerived && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Sparkles className="w-2.5 h-2.5 text-primary/40 animate-pulse" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-[10px] bg-background/95 backdrop-blur-xl border-primary/20">
+                        Campo calculado por el motor
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            )}
             <div className="relative group/input">
               {field.type === 'select' ? (
                 <Select 
@@ -226,10 +280,23 @@ export function AgnosticForm({
                   )}>
                     <SelectValue placeholder={formData[field.key] || '...'} />
                   </SelectTrigger>
-                  <SelectContent className="rounded-md border-border/60 bg-card/95 backdrop-blur-xl">
-                    {field.options?.map((opt: string) => (
-                      <SelectItem key={opt} value={opt} className="font-bold text-xs">{opt}</SelectItem>
-                    ))}
+                  <SelectContent className="rounded-md border border-border bg-popover shadow-md">
+                    {field.options
+                      ?.filter((opt: any) => (typeof opt === 'object' ? opt.value : opt) !== undefined)
+                      .map((opt: any, idx: number) => {
+                        const value = typeof opt === 'object' ? opt.value : opt;
+                        const label = typeof opt === 'object' ? opt.label : opt;
+                        return (
+                          <SelectItem 
+                            key={`${value}-${idx}`} 
+                            value={String(value)} 
+                            className="text-xs font-medium"
+                          >
+                            {String(label)}
+                          </SelectItem>
+                        );
+                      })
+                    }
                   </SelectContent>
                 </Select>
               ) : field.type === 'textarea' ? (
@@ -244,6 +311,16 @@ export function AgnosticForm({
                     isDerived && "cursor-default opacity-80"
                   )}
                 />
+              ) : field.type === 'info' ? (
+                <div className="p-4 rounded-xl border border-primary/10 bg-primary/[0.03] space-y-2">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Info size={14} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{field.label}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+                    {field.description}
+                  </p>
+                </div>
               ) : (
                   <Input
                     type={field.type}
@@ -268,34 +345,34 @@ export function AgnosticForm({
 
   return (
     <Card className={cn(
-      "@container overflow-hidden border-border/30 bg-card/40 backdrop-blur-2xl luxe-shadow transition-all duration-300",
+      "@container overflow-hidden border bg-background shadow-sm transition-all duration-300",
       "flex flex-col",
       className
     )}>
       
       {!hideHeader && (
         <CardHeader 
-          className="py-3 px-4 border-b bg-muted/5 cursor-pointer select-none"
+          className="py-4 px-6 border-b bg-muted/50 cursor-pointer select-none"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <ChevronRight className={cn("w-3.5 h-3.5 transition-transform duration-300 opacity-20", isExpanded && "rotate-90 opacity-100 text-primary")} />
+              <ChevronRight className={cn("w-4 h-4 transition-transform duration-300 text-muted-foreground", isExpanded && "rotate-90 text-primary")} />
               <div className="space-y-0.5">
-                <CardTitle className="text-base font-serif italic font-black tracking-tight leading-none">
+                <CardTitle className="text-base font-bold tracking-tight">
                   {title || `Forjar ${schema.name}`}
                 </CardTitle>
                 {subtitle && (
-                  <p className="text-[8px] font-bold uppercase tracking-widest opacity-30">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
                     {subtitle}
                   </p>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 opacity-20">
-               {React.createElement(getModuleIcon('form'), { className: "w-3.5 h-3.5" })}
-               <Separator orientation="vertical" className="h-3" />
-               <span className="text-[7px] font-black uppercase tracking-[0.2em]">{schema.name}</span>
+            <div className="flex items-center gap-2 opacity-40">
+               {React.createElement(getModuleIcon('form'), { className: "w-4 h-4" })}
+               <Separator orientation="vertical" className="h-4" />
+               <span className="text-[10px] font-bold uppercase tracking-wider">{schema.name}</span>
             </div>
           </div>
         </CardHeader>
@@ -305,23 +382,28 @@ export function AgnosticForm({
         <form 
           id={`form-${schemaId}-${section || ''}`}
           onSubmit={handleSubmit} 
-          className="flex-1 animate-in fade-in zoom-in-95 duration-300"
+          className="flex-1 animate-in fade-in duration-300"
         >
           {/* 🆔 PRO IDENTITY FIELD: Hidden ID anchor */}
           <input type="hidden" name="id" value={activeRecord?.id || ''} />
 
-        <CardContent className="p-3">
-          {section ? (
+          <CardContent className="p-6">
+          {noFieldsAvailable ? (
+             <div className="py-12 flex flex-col items-center justify-center gap-4 text-muted-foreground/30">
+                <Box size={40} strokeWidth={1} />
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Cámara de Materia Vacía</p>
+             </div>
+          ) : (Object.keys(sections).length === 1 && Object.keys(sections)[0] === 'General') || section ? (
             renderGrid(allFields)
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {Object.entries(sections).map(([name, sectionFields]) => (
-                <div key={name} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-20">
+                <div key={name} className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       {name.replace(/_/g, ' ')}
                     </span>
-                    <Separator className="flex-1 opacity-5" />
+                    <Separator className="flex-1" />
                   </div>
                   {renderGrid(sectionFields)}
                 </div>
@@ -330,26 +412,28 @@ export function AgnosticForm({
           )}
         </CardContent>
 
-        <CardFooter className="py-1.5 px-3 bg-muted/5 border-t border-border/5 flex justify-end">
-          <Button
-            type="submit"
-            size="sm"
-            disabled={isSaving}
-            className="h-7 px-4 rounded bg-sat-fg text-sat-bg font-black uppercase text-[8px] tracking-widest hover:bg-sat-fg/90 transition-all active:scale-[0.98] group"
-          >
-            {isSaving ? (
-              <span className="flex items-center gap-2">
-                <Sparkles className="w-3 h-3 animate-spin" />
-                Sincronizando...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                Sincronizar {section ? section.split('_')[0] : 'Materia'}
-                <ArrowRight className="w-3 h-3 opacity-30 group-hover:translate-x-1 transition-transform" />
-              </span>
-            )}
-          </Button>
-        </CardFooter>
+        {!noFieldsAvailable && (
+          <CardFooter className="py-4 px-6 bg-muted/30 border-t flex justify-end">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSaving}
+              className="h-9 px-6 font-bold uppercase text-xs tracking-wider gap-2 transition-all active:scale-[0.98] group"
+            >
+              {isSaving ? (
+                <>
+                  <Sparkles className="w-4 h-4 animate-spin" />
+                  Sincronizando...
+                </>
+              ) : (
+                <>
+                  Sincronizar {section ? section.split('_')[0] : 'Materia'}
+                  <ArrowRight className="w-4 h-4 opacity-40 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        )}
       </form>
       )}
     </Card>

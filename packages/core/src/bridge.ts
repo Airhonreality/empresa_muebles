@@ -63,7 +63,7 @@ export function createAgnosticAPI(config: BridgeConfig): AgnosticAPI {
         updateListeners.forEach(listener => listener({
           action: query.action,
           context: query.context,
-          data: query.payload
+          data: (query as any).payload
         }));
       }, 500);
 
@@ -72,7 +72,7 @@ export function createAgnosticAPI(config: BridgeConfig): AgnosticAPI {
           router.push(query.payload.path);
           break;
 
-        case 'WRITE':
+        case 'UPSERT':
           await saveItem(query.context, query.payload);
           break;
 

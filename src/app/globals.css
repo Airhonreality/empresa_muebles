@@ -10,7 +10,7 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+    --primary: 28 45% 45%; /* 🏛️ VETA DE ORO */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -22,7 +22,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+    --ring: 28 45% 45%;
     --radius: 0.75rem;
   }
 
@@ -33,7 +33,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 28 45% 45%;
     --primary-foreground: 240 5.9% 10%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -45,7 +45,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --ring: 28 45% 45%;
   }
 }
 
@@ -59,7 +59,7 @@
 }
 
 @layer components {
-  /* 📜 CUSTOM SCROLLBAR AXIOM */
+  /* 📜 CUSTOM SCROLLBAR */
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
   }
@@ -69,14 +69,5 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: hsl(var(--primary) / 0.1);
     border-radius: 9999px;
-    transition: background 0.2s ease;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.2);
-  }
-
-  /* 🏛️ DESIGNER TYPOGRAPHY */
-  .designer-title {
-    @apply text-xl font-black uppercase tracking-tighter;
   }
 }

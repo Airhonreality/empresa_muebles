@@ -27,10 +27,14 @@
  * - DOWNSTREAM: [RecursiveBlockComposer, Page Routes Registry]
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { RecursiveBlockComposer } from '../components/RecursiveBlockComposer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Layout, Zap, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { ArrowLeft, Layout, Zap, Plus, Maximize2, Database } from 'lucide-react';
+import { registry } from '@/lib/agnostic/Registry';
+import { AgnosticLayoutControls } from '../AgnosticLayoutControls';
 
 interface ComposerSectionProps {
   routeId: string;
@@ -42,9 +46,11 @@ interface ComposerSectionProps {
 }
 
 export function ComposerSection({ routeId, routes, schemas, vaults, onUpdateRoutes, onBack }: ComposerSectionProps) {
+  const [showLayout, setShowLayout] = useState(false);
   
   // 🎯 SELECTOR DE CONTEXTO: Buscamos en el borrador inyectado
   const route = useMemo(() => routes.find((r: any) => r.id === routeId), [routes, routeId]);
+  const routeData = useMemo(() => route?.data || route || {}, [route]);
 
   if (!route) {
     return (
@@ -60,11 +66,36 @@ export function ComposerSection({ routeId, routes, schemas, vaults, onUpdateRout
     );
   }
 
-  // 🛠️ HANDLERS: Actualización del borrador local de rutas
+  // 🛠️ HANDLERS: Actualización del borrador local de rutas (Systemic Style)
   const handleUpdateBlocks = (newBlocks: any[]) => {
-    const updatedRoutes = routes.map(r => 
-      r.id === routeId ? { ...r, blocks: newBlocks } : r
-    );
+    const updatedRoutes = routes.map(r => {
+      if (r.id === routeId) {
+        return { 
+          ...r, 
+          data: { 
+            ...(r.data || {}), 
+            blocks: newBlocks 
+          } 
+        };
+      }
+      return r;
+    });
+    onUpdateRoutes(updatedRoutes);
+  };
+
+  const handleUpdateRoute = (patch: any) => {
+    const updatedRoutes = routes.map(r => {
+      if (r.id === routeId) {
+        return { 
+          ...r, 
+          data: { 
+            ...(r.data || {}), 
+            ...patch
+          } 
+        };
+      }
+      return r;
+    });
     onUpdateRoutes(updatedRoutes);
   };
 
@@ -75,7 +106,10 @@ export function ComposerSection({ routeId, routes, schemas, vaults, onUpdateRout
       config: { title: 'Nueva Sección' },
       blocks: []
     };
-    handleUpdateBlocks([...(route.blocks || []), newBlock]);
+    
+    // 🛡️ CORRECCIÓN DE PUNTERO: routeData ya es el payload (.data)
+    const currentBlocks = Array.isArray(routeData?.blocks) ? routeData.blocks : [];
+    handleUpdateBlocks([...currentBlocks, newBlock]);
   };
 
   return (
@@ -95,7 +129,7 @@ export function ComposerSection({ routeId, routes, schemas, vaults, onUpdateRout
           <div className="space-y-1">
             <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2 leading-none">
               <Layout size={14} />
-              Componiendo: <span className="opacity-60">{route.path}</span>
+              Componiendo: <span className="opacity-60">{routeData.path}</span>
             </h3>
             <p className="text-[9px] text-muted-foreground font-mono uppercase tracking-widest opacity-40">
               Draft ID: {route.id}
@@ -105,22 +139,55 @@ export function ComposerSection({ routeId, routes, schemas, vaults, onUpdateRout
         
         <div className="flex items-center gap-3">
           <Button 
+            variant="outline" 
+            size="sm"
+            className={cn("h-11 px-6 rounded-2xl gap-3 transition-all", showLayout && "bg-primary text-primary-foreground border-primary")}
+            onClick={() => setShowLayout(!showLayout)}
+          >
+            <Maximize2 size={18} />
+            <span className="text-[10px] font-black uppercase tracking-widest">Layout de Ruta</span>
+          </Button>
+
+          <Button 
             onClick={handleAddBlock}
             size="sm"
             className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-none"
           >
             <Plus size={12} /> Añadir Bloque Raíz
           </Button>
-          <div className="px-3 py-1 bg-emerald-500/5 rounded-lg border border-emerald-500/10 flex items-center gap-2">
-            <Zap size={10} className="text-emerald-500" />
-            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Staging Link Active</span>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-emerald-500/5 rounded-lg border border-emerald-500/10 flex items-center gap-2">
+              <Zap size={10} className="text-emerald-500" />
+              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Staging Link Active</span>
+            </div>
+            
+            <Button 
+              onClick={async () => {
+                await onUpdateRoutes(routes);
+                toast.success('Realidad Cristalizada: Ruta actualizada en el servidor');
+              }}
+              size="sm"
+              className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest gap-2 bg-emerald-500 text-white hover:bg-emerald-600 border-none px-4 shadow-lg shadow-emerald-500/20"
+            >
+              <Database size={12} /> Cristalizar Ruta
+            </Button>
           </div>
         </div>
       </div>
 
+      {/* 🧬 PROYECCIÓN DE CAPACIDAD: LAYOUT DE RUTA */}
+      {showLayout && (
+        <div className="p-12 bg-muted/5 border border-border/10 rounded-[3.5rem] animate-in slide-in-from-top-4 duration-500">
+          <AgnosticLayoutControls 
+            data={routeData} 
+            onUpdate={(layout) => handleUpdateRoute({ layout })} 
+          />
+        </div>
+      )}
+
       {/* 🧱 COMPOSITION CANVAS */}
       <div className="space-y-6">
-        {route.blocks?.map((block: any, idx: number) => (
+        {routeData.blocks?.map((block: any, idx: number) => (
           <RecursiveBlockComposer
             key={block.id || idx}
             block={block}
@@ -128,18 +195,18 @@ export function ComposerSection({ routeId, routes, schemas, vaults, onUpdateRout
             schemas={schemas}
             vaults={vaults}
             onUpdate={(patch) => {
-              const newBlocks = [...(route.blocks || [])];
+              const newBlocks = [...(routeData.blocks || [])];
               newBlocks[idx] = { ...block, ...patch };
               handleUpdateBlocks(newBlocks);
             }}
             onRemove={() => {
-              const newBlocks = route.blocks.filter((_: any, i: number) => i !== idx);
+              const newBlocks = (routeData.blocks || []).filter((_: any, i: number) => i !== idx);
               handleUpdateBlocks(newBlocks);
             }}
           />
         ))}
 
-        {(!route.blocks || route.blocks.length === 0) && (
+        {(!routeData.blocks || routeData.blocks.length === 0) && (
           <div className="py-32 flex flex-col items-center justify-center border-2 border-dashed border-border/10 rounded-[3rem] bg-muted/5 transition-colors hover:bg-muted/10">
             <Layout size={40} className="text-muted-foreground/10 mb-4" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30">Lienzo en Blanco</p>

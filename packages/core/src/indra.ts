@@ -14,6 +14,7 @@ export interface DataItem {
   /** Populated by cloud strategies (Supabase). Ignored by local strategies. */
   created_at?: string;
   updated_at?: string;
+  [key: string]: any; // Industrial flexibility for convenience properties
 }
 
 // ─── DATA STRATEGY ───────────────────────────────────────────────────────────
@@ -25,6 +26,8 @@ export interface DataStrategy {
   delete?: (context: string, id: string) => Promise<void>;
   /** High-frequency single-context write. Falls back to write() if absent. */
   writeContext?: (context: string, items: DataItem[]) => Promise<void>;
+  /** 🔭 INTROSPECTION: Enables the bridge to self-map its native structure to Agnostic DNA. */
+  introspect?: () => Promise<DataItem[]>;
 }
 
 // ─── OVERLAY ─────────────────────────────────────────────────────────────────
@@ -42,10 +45,12 @@ export interface OverlayConfig {
 
 export type UnifiedQuery =
   | { action: 'READ';     context: string;    filters?: Record<string, unknown> }
-  | { action: 'WRITE';    context: string;    payload: Record<string, unknown> }
+  | { action: 'UPSERT';   context: string;    payload: Record<string, unknown> }
   | { action: 'DELETE';   context: string;    payload: { id: string } }
   | { action: 'NAVIGATE'; context?: undefined; payload: { path: string } }
-  | { action: 'INTENT';   context: string;    payload?: Record<string, unknown> };
+  | { action: 'INTENT';   context: string;    payload?: Record<string, unknown> }
+  | { action: 'RESTORE';  context: string;    payload: any[] }
+  | { action: 'INTROSPECT'; context?: undefined; payload?: undefined };
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 
@@ -61,17 +66,20 @@ export interface AgnosticUser {
 
 export interface AppState {
   data: Record<string, DataItem[]>;
-  system: {
-    activeContext: string;
-    activeRecord: { id: string; context: string } | null;
-    isLoading: boolean;
-    error: string | null;
-    storageMode: 'LOCAL' | 'REMOTE' | 'HYBRID';
-    storageUrl?: string;
+  user: any | null;
+  ui: {
+    overlay: OverlayConfig | null;
   };
-  auth: {
-    isAuthenticated: boolean;
-    user: AgnosticUser | null;
+  system: {
+    isLoading: boolean;
+    error: any;
+    status: 'booting' | 'ready' | 'error';
+    config: any;
+    schemas: any[];
+    routes: any[];
+    currentPath: string;
+    activeContext?: string;
+    activeRecord?: { id: string; context: string } | null;
   };
 }
 
