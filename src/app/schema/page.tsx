@@ -8,12 +8,12 @@
  * ROLE: Proporciona el acceso a pantalla completa al Config Manager.
  */
 
-import { AgnosticConfigManager } from '@/components/agnostic/designer/AgnosticConfigManager';
+import { AgnosticDesigner } from '@/components/agnostic/designer/AgnosticDesigner';
 
 export default function SchemaPage() {
   return (
-    <div className="h-screen w-screen bg-[#FAF9F6]">
-      <AgnosticConfigManager isFullScreen={true} />
+    <div className="h-screen w-screen bg-background">
+      <AgnosticDesigner />
     </div>
   );
 }

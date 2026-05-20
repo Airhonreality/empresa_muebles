@@ -1,0 +1,16 @@
+{
+  "id": "faq_settings_def",
+  "name": "faq_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "FAQ",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        { "key": "title", "label": "Título del Bloque FAQ", "type": "string",
+          "description": "Encabezado visible sobre las preguntas. Puede dejarse vacío." }
+      ]
+    }
+  ]
+}

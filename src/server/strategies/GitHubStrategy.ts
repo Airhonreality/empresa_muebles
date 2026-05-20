@@ -1,16 +1,58 @@
-import type { DataItem, DataStrategy } from '@agnostic/core';
-
 /**
- * 🏛️ GitHubStrategy v3.0 (Deterministic)
- * Supports dynamic repo targeting via Master Passport.
+ * 🏛️ ARTEFACTO: GitHubStrategy.ts
+ * ────────────
+ * CAPA: Server (GitHub Git Persistence Strategy)
+ * VERSIÓN: 5.0
+ * COMMIT: P3-M1.3-GITHUB-STRATEGY-AXIOMATIC
+ * 
+ * 🎯 FUNCTIONAL_SCOPE:
+ * - Implement standard data persistence utilizing JSON files hosted on a GitHub Repository.
+ * - Restrict operations strictly to read, write, and remove using GitHub Contents API.
+ * 
+ * 🛡️ AXIOMATIC_CONTRACT:
+ * - MUST: Implement standard read, write, and remove operations securely.
+ * - NEVER: Contain any DDL schema creation logic or auto-registration.
+ * - ALWAYS: Keep operations consistent with read-modify-write cycles to simulate atomic writes over Git.
+ * 
+ * 📜 ADR: [2026-05-16] GIT_STRATEGY_PRUNING
+ * - DECISIÓN: Align the Git backend with the simplified 3-method Adapter contract, purging old patch, evolve, wipe, inspect verbs.
+ * - MOTIVO: Adherence to Suh's Independence Axiom, eliminating dynamic DDL and complex transaction capabilities from a pure storage engine.
+ * - IMPACTO: 100+ lines of code deleted, simplified API interface, and unified terminology.
+ * 
+ * 🔗 RELATIONSHIPS:
+ * - UPSTREAM: [storage.ts]
+ * - DOWNSTREAM: [getStrategy.ts]
  */
-export class GitHubStrategy implements DataStrategy {
-  private readonly token = process.env.GITHUB_TOKEN;
-  private readonly branch = process.env.GITHUB_BRANCH ?? 'main';
+
+import type { 
+  DataItem, 
+  AgnosticBridge, 
+  AgnosticCapabilities, 
+  AgnosticQuery 
+} from '@agnostic/core';
+
+export class GitHubStrategy implements AgnosticBridge {
+  private get token(): string | undefined {
+    return this.customToken ?? process.env.GITHUB_TOKEN;
+  }
+
+  private get branch(): string {
+    return this.customBranch ?? process.env.GITHUB_BRANCH ?? 'main';
+  }
+
+  /**
+   * Describes the GitHub Git storage capabilities.
+   */
+  readonly capabilities: AgnosticCapabilities = {
+    storageType: 'GIT',
+    isRelational: false
+  };
 
   constructor(
     private readonly owner: string,
-    private readonly repo: string
+    private readonly repo: string,
+    private readonly customToken?: string,
+    private readonly customBranch?: string
   ) {
     if (!this.token) {
       console.warn('[GitHubStrategy] WARNING: GITHUB_TOKEN not found in environment.');
@@ -25,88 +67,103 @@ export class GitHubStrategy implements DataStrategy {
     };
   }
 
-  async read(context?: string): Promise<Record<string, DataItem[]>> {
-    try {
-      if (!this.owner || !this.repo) return {};
+  private async fetchFile(namespace: string): Promise<{ items: DataItem[]; sha: string | undefined }> {
+    const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/db/${namespace}.json`;
+    const res = await fetch(`${apiUrl}?ref=${this.branch}`, {
+      headers: this.headers,
+      cache: 'no-store',
+    });
+    if (!res.ok) return { items: [], sha: undefined };
+    const file = await res.json() as { content: string; sha: string };
+    const content = Buffer.from(file.content, 'base64').toString('utf-8');
+    const parsed = JSON.parse(content);
+    const items = Array.isArray(parsed) ? parsed : (parsed[namespace] || []);
+    return { items, sha: file.sha };
+  }
 
-      // Structure: storage/[identity]/db/[context].json translates to [repo]/db/[context].json
-      const path = context ? `db/${context}.json` : 'db';
-      const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${path}`;
-      
-      const res = await fetch(`${apiUrl}?ref=${this.branch}`, {
-        headers: this.headers,
-        cache: 'no-store',
-      });
-
-      if (!res.ok) {
-         console.warn(`[GitHubStrategy] Resource not found at ${path} (${res.statusText})`);
-         return {};
-      }
-
-      const fileData = await res.json();
-
-      // CASE: Single file read
-      if (context) {
-        const content = Buffer.from((fileData as any).content, 'base64').toString('utf-8');
-        const parsed = JSON.parse(content);
-        return { [context]: Array.isArray(parsed) ? parsed : (parsed[context] || []) };
-      }
-
-      // CASE: Directory scan (Full fetch)
-      const fullDb: Record<string, DataItem[]> = {};
-      const files = fileData as any[];
-      
-      for (const file of files) {
-        if (file.name.endsWith('.json')) {
-           const entityName = file.name.replace('.json', '');
-           const fileContentRes = await fetch(file.download_url, { cache: 'no-store' });
-           if (fileContentRes.ok) {
-             const raw = await fileContentRes.json();
-             fullDb[entityName] = Array.isArray(raw) ? raw : (raw[entityName] || []);
-           }
-        }
-      }
-
-      return fullDb;
-    } catch (err) {
-      console.error('[GitHubStrategy] Read Error:', err);
-      return {};
+  private async putFile(namespace: string, items: DataItem[], sha: string | undefined, attempt = 1): Promise<void> {
+    const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/db/${namespace}.json`;
+    const encoded = Buffer.from(JSON.stringify(items, null, 2)).toString('base64');
+    const res = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify({
+        message: `[agnostic] vault: ${namespace}`,
+        content: encoded,
+        sha,
+        branch: this.branch,
+      }),
+    });
+    if (res.status === 409 && attempt === 1) {
+      // Concurrency conflict (409 stale SHA) - auto-retry once with fresh SHA
+      const fresh = await this.fetchFile(namespace);
+      await this.putFile(namespace, items, fresh.sha, 2);
+      return;
+    }
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(`[GitHubStrategy] PUT failed for ${namespace}: ${error.message}`);
     }
   }
 
-  async write(fullDatabase: Record<string, DataItem[]>): Promise<void> {
-    if (!this.token || !this.owner || !this.repo) {
-       console.error('[GitHubStrategy] CANNOT WRITE: Missing credentials or repo config.');
-       return;
-    }
+  // ─── CRUD OPERATIONS ───────────────────────────────────────────────────────
 
-    for (const [context, items] of Object.entries(fullDatabase)) {
-      const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/db/${context}.json`;
-      
-      // 1. Get current SHA to allow update
-      const getRes = await fetch(`${apiUrl}?ref=${this.branch}`, { headers: this.headers, cache: 'no-store' });
-      const existing = getRes.ok ? (await getRes.json() as { sha?: string }) : null;
-
-      const payload = { [context]: items };
-      const encoded = Buffer.from(JSON.stringify(payload, null, 2)).toString('base64');
-      
-      const res = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: this.headers,
-        body: JSON.stringify({
-          message: `[agnostic] ${context} synchronized`,
-          content: encoded,
-          sha: existing?.sha,
-          branch: this.branch,
-        }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        console.error(`[GitHubStrategy] Write failed for ${context}:`, error.message);
-      } else {
-        console.log(`[GitHubStrategy] Successfully committed ${context} to GitHub.`);
+  /**
+   * Reads raw JSON files from the GitHub repository contents.
+   */
+  async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
+    try {
+      if (!this.owner || !this.repo) return [];
+      const { items } = await this.fetchFile(namespace);
+      if (query?.where) {
+        return items.filter((i: any) => {
+          return Object.entries(query.where!).every(([k, v]) => {
+            return (k === 'id' && i.id === v) || i.data?.[k] === v || i[k] === v;
+          });
+        });
       }
+      return items;
+    } catch (err) {
+      console.error('[GitHubStrategy] Read Error:', err);
+      return [];
     }
+  }
+
+  /**
+   * Writes a record by retrieving the remote JSON array, updating it in memory, and committing back.
+   */
+  async write(namespace: string, record: Partial<DataItem> & { data: Record<string, unknown> }): Promise<DataItem> {
+    if (!this.token || !this.owner || !this.repo) {
+       throw new Error('GitHubStrategy requires GITHUB_TOKEN, owner, and repo to write');
+    }
+
+    const id = record.id || globalThis.crypto.randomUUID();
+    const saved: DataItem = { 
+      id, 
+      context: namespace, 
+      data: record.data, 
+      updated_at: new Date().toISOString() 
+    };
+
+    const { items, sha } = await this.fetchFile(namespace);
+    const map = new Map(items.map(i => [i.id, i]));
+    map.set(id, saved);
+
+    await this.putFile(namespace, Array.from(map.values()), sha);
+    return saved;
+  }
+
+  /**
+   * Removes a record by filtering it out from the remote JSON array and committing the updated array back.
+   */
+  async remove(namespace: string, id: string): Promise<void> {
+    if (!this.token || !this.owner || !this.repo) {
+       throw new Error('GitHubStrategy requires GITHUB_TOKEN, owner, and repo to remove');
+    }
+
+    const { items, sha } = await this.fetchFile(namespace);
+    const filtered = items.filter(i => i.id !== id);
+
+    await this.putFile(namespace, filtered, sha);
   }
 }

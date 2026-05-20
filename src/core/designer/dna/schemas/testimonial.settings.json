@@ -1,0 +1,29 @@
+{
+  "id": "testimonial_settings_def",
+  "name": "testimonial_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Testimonio",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        { "key": "quote",  "label": "Cita",             "type": "string" },
+        { "key": "author", "label": "Autor",             "type": "string" },
+        { "key": "role",   "label": "Cargo / Empresa",  "type": "string" },
+        { "key": "avatar", "label": "Iniciales Avatar",  "type": "string",
+          "description": "1-2 letras para el avatar circular. Si se omite se auto-genera del nombre." },
+        {
+          "key": "variant",
+          "label": "Estilo",
+          "type": "select",
+          "options": [
+            { "label": "Tarjeta",  "value": "card" },
+            { "label": "Minimal",  "value": "minimal" }
+          ],
+          "default": "card"
+        }
+      ]
+    }
+  ]
+}

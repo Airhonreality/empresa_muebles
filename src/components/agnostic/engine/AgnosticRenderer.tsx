@@ -31,7 +31,11 @@ import { cn } from '@/lib/utils';
 import { useDNAStore, useMateriaStore, useActiveRecord } from '@/lib/agnostic/store';
 import { useAppDispatch } from '@/context/AppContext';
 import { useParams } from 'next/navigation';
-import '@/styles/layout_tokens.css';
+
+function paddingToCss(p?: number[]): string {
+  if (!p || p.length < 4) return '';
+  return `${p[0]}rem ${p[1]}rem ${p[2]}rem ${p[3]}rem`;
+}
 
 export function AgnosticRenderer({ 
   block, 
@@ -55,87 +59,100 @@ export function AgnosticRenderer({
   const activeRecordFromStore = useActiveRecord();
   const { saveItem, deleteItem, openOverlay, closeOverlay } = useAppDispatch();
   const router = useRouter();
-  const { slug } = useParams();
 
   const stateRef = useRef({ data: materia });
   stateRef.current = { data: materia };
 
   const agnosticApi = useMemo(() => createAgnosticAPI({
-    router, saveItem, deleteItem, openOverlay, closeOverlay, stateRef, block, toast
+    router, saveItem, deleteItem, openOverlay, closeOverlay, stateRef: stateRef as any, block, toast, user: null
   }), [router, saveItem, deleteItem, openOverlay, closeOverlay, block]); // REMOVED materia dependency
 
+  // ─── HOOKS: siempre al top-level, ANTES de cualquier return condicional ───────
+  const config = block.config || {};
+  const type = block.type;
+  
+  // 🪐 AXIOMATIC GRAVITY RESOLUTION
+  const currentContext = block.context || config.context || block.data?.context || propContext;
+  // 🏛️ ISOMORPHIC RESOLVER: Soporte para nomenclatura DEV (snake_case) y Legacy (camelCase)
+  const schemaId = block.schema_id || config.schema_id || block.data?.schema_id;
+
+  const schema = useMemo(() => {
+    if (block.schema) return block.schema;
+    if (!schemaId) return null;
+    const schemaItem = schemas.find((s) => s.id === schemaId || s.data?.slug === schemaId || s.data?.name === schemaId);
+    return schemaItem?.data;
+  }, [schemaId, schemas, block.schema]);
+
+  const activeRecord = propRecord || activeRecordFromStore;
+  const intent = propIntent || block.intent || config.intent || block.data?.intent || block.behavior?.intent || 'list';
+
+  const records = useMemo(() => {
+    if (!currentContext || currentContext === 'system') return [];
+    return materia[currentContext] || [];
+  }, [currentContext, materia[currentContext]]);
+
+  // ─── GUARDS: solo después de que todos los hooks hayan corrido ────────────────
+  if (!type) return null;
+  const BlockComponent = registry.get(type);
+
+  if (!BlockComponent) {
+    console.warn(`[AgnosticRenderer] Unknown block type: ${type}`);
+    return null;
+  }
+
+  // ─── COMPOSITE FRAME: tiene sub-bloques, solo posiciona si no es un componente registrado en la UI ───────────────────────
+  if (!BlockComponent && Array.isArray(block.blocks) && block.blocks.length > 0) {
+    return (
+      <div
+        className={cn(
+          'flex',
+          block.direction === 'horizontal' ? 'flex-row' : 'flex-col',
+          block.sizing === 'hug' ? 'w-auto' : 'w-full'
+        )}
+        style={{
+          gap: `${block.gap ?? 0}rem`,
+          padding: paddingToCss(block.padding),
+        }}
+      >
+        {block.blocks.map((sub: any, i: number) => (
+          <AgnosticRenderer
+            key={sub.id || i}
+            block={sub}
+            context={propContext}
+            intent={propIntent}
+            record={propRecord}
+            onSuccess={onSuccess}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // ─── LEAF BLOCK: proyecta contenido ───────────────────────────────────────────
   try {
-    const config = block.config || {};
-    const type = block.type;
-    if (!type) return null;
-
-    // 🪐 AXIOMATIC GRAVITY RESOLUTION
-    const currentContext = block.context || config.context || block.data?.context || propContext;
-    // 🏛️ ISOMORPHIC RESOLVER: Soporte para nomenclatura DEV (snake_case) y Legacy (camelCase)
-    const schemaId = block.schema_id || block.schemaId || config.schemaId || block.data?.schemaId;
-    const context = block.context || block.data?.context;
-    
-    // 🧬 ADAPTIVE SCHEMA RESOLUTION
-    const schema = useMemo(() => {
-      if (!schemaId) return null;
-      const schemaItem = schemas.find((s) => s.id === schemaId || s.data?.slug === schemaId);
-      return schemaItem?.data;
-    }, [schemaId, schemas]);
-
-    // 🏺 ADAPTIVE RECORD RESOLUTION (Sovereign Isolation)
-    const activeRecord = propRecord || activeRecordFromStore;
-
-    // 🎯 DETERMINISTIC INTENT (Primacía del DNA)
-    const intent = propIntent || block.intent || config.intent || block.data?.intent || 'list';
-
-    // 🏺 CONTEXTUAL DATA RESOLUTION (The Renderer provides the matter)
-    const records = useMemo(() => {
-      if (!currentContext || currentContext === 'system') return [];
-      return materia[currentContext] || [];
-    }, [currentContext, materia[currentContext]]); // ONLY depend on the specific context slice
-
-    const BlockComponent = registry.get(type);
-
-    if (!BlockComponent) {
-      console.warn(`[AgnosticRenderer] Unknown block type: ${type}`);
-      return null;
-    }
-
-    // 🏗️ UNIVERSAL PROJECTION (Adaptive Protocol)
-    // 🎨 LAYOUT PROJECTION
-    const layout = block.layout || {};
-    const padding = layout.padding || [0, 0, 0, 0];
-    const layoutStyles: React.CSSProperties = {
-      padding: `${padding[0]}rem ${padding[1]}rem ${padding[2]}rem ${padding[3]}rem`,
-      gap: `${layout.gap || 0}rem`,
-      overflow: layout.clip ? 'hidden' : 'visible',
+    // 🏛️ AXIOMATIC RESOLUTION: Flatten namespaces from the Designer's ConfigProjector
+    const effectiveConfig = {
+      ...(block.behavior || {}),         // intent, isCollapsible, defaultExpanded, sticky
+      ...(block.visual || {}),           // switches, blackout, variant, theme, width
+      ...(block.data_architecture || {}), // parent_key, segmentation_key, segmentation_strategy
+      ...(block.logic || {}),            // zap
+      ...config,                         // direct overrides
     };
 
-    if (layout.sizing === 'relative' && layout.width) {
-      layoutStyles.width = layout.width; // Should be in %
-    }
-
-    const layoutClasses = cn(
-      'agnostic-frame',
-      layout.direction === 'horizontal' ? 'frame-horizontal' : 'frame-vertical',
-      layout.align || 'align-tl',
-      layout.sizing === 'fill' ? 'size-fill' : 'size-hug'
-    );
-
     return (
-      <div className={layoutClasses} style={layoutStyles}>
+      <div className={block.sizing === 'hug' ? 'w-auto' : 'w-full'}>
         <BlockComponent
           {...block}
           {...(block.data || {})}
-          {...config}
-          schema={schema} 
+          {...effectiveConfig}
+          schema={schema}
           schema_id={schemaId}
           context={currentContext}
           activeRecord={activeRecord}
           records={records}
           intent={intent}
-          parentId={propParentId || config.parentId}
-          parentKey={propParentKey || config.parent_key || config.parentKey}
+          parentId={propParentId || config.parent_id || activeRecord?.id}
+          parentKey={propParentKey || config.parent_key || effectiveConfig.parent_key}
           onSuccess={onSuccess}
           api={agnosticApi}
         />

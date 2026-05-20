@@ -1,0 +1,32 @@
+{
+  "id": "divider_settings_def",
+  "name": "divider_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Estilo del Divisor",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        {
+          "key": "variant",
+          "label": "Variante",
+          "type": "select",
+          "options": [
+            { "label": "Línea horizontal", "value": "line" },
+            { "label": "Espacio vacío",    "value": "space" },
+            { "label": "Tres puntos",      "value": "dots" }
+          ],
+          "default": "line"
+        },
+        {
+          "key": "spacing",
+          "label": "Espaciado (unidades Tailwind)",
+          "type": "string",
+          "description": "Solo aplica para variante 'space'. Ejemplo: 4 = 1rem.",
+          "default": "4"
+        }
+      ]
+    }
+  ]
+}

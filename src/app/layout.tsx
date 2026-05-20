@@ -20,8 +20,10 @@ import { AuthProvider }   from "@/context/AuthContext";
 import { Toaster }        from "sonner";
 import { SovereigntyOrchestrator } from "@/components/agnostic/engine/SovereigntyOrchestrator";
 import { getVaultData }   from "@/core/server/vault";
+import { getSiloPath }    from "@/server/activeProject";
 import fs   from "fs/promises";
 import path from "path";
+import { SYSTEM_NS } from "@/lib/agnostic/constants";
 
 export const metadata: Metadata = {
   title:       "Agnostic System",
@@ -31,23 +33,22 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const activeTenant = process.env.ACTIVE_TENANT || "default";
-  const siloPath     = `storage/${activeTenant}`;
-  const vaultData    = await getVaultData(['page_routes', 'schema_definitions', 'system_config', 'vault_manifest']);
+  const siloPath     = getSiloPath();
+  const vaultData    = await getVaultData([SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG]);
 
   // ── CAPA 1: Tokens CSS (inyectado inline — sin latencia de red) ──────────
   // El satélite overridea variables --sat-* en tokens.css.
   // Se inyecta como <style> en el <head> para evitar FOUC.
   let tokenStyles = "";
   try {
-    const tokensPath = path.join(process.cwd(), siloPath, "styles", "tokens.css");
+    const tokensPath = path.join(siloPath, "styles", "tokens.css");
     tokenStyles = await fs.readFile(tokensPath, "utf-8");
   } catch { /* El satélite aún no tiene tokens → usa defaults del Seed */ }
 
   // ── Manifest (DNA del satélite) ───────────────────────────────────────────
   let dna: Record<string, unknown> = {};
   try {
-    const manifestPath    = path.join(process.cwd(), siloPath, "manifest.json");
+    const manifestPath    = path.join(siloPath, "manifest.json");
     const manifestContent = await fs.readFile(manifestPath, "utf-8");
     dna = JSON.parse(manifestContent.replace(/^﻿/, ""));
   } catch { /* Sin manifest → estrategia local por defecto */ }

@@ -518,48 +518,77 @@ export interface SchemaDefinition {
 // ════════════════════════════════════════════════════════════════════════════════
 
 /**
- * The persistence abstraction. All reads and writes flow through a DataStrategy.
- * The active strategy is resolved by getStrategy() based on manifest.json.
- *
- * Implementations: LocalStrategy, SupabaseStrategy, GitHubStrategy (read-only), HybridStrategy.
+ * 🛡️ AGNOSTIC CAPABILITIES: Declaración de poder de un puente de almacenamiento.
+ * Permite a la UI proyectar herramientas administrativas de forma dinámica.
  */
-export interface DataStrategy {
-  /**
-   * Reads all records, optionally filtered by context.
-   * Returns a map of contextName → DataItem[].
-   */
-  read: (context?: string) => Promise<Record<string, DataItem[]>>;
+export interface AgnosticCapabilities {
+  /** ¿Puede el puente crear o alterar tablas/esquemas físicamente? */
+  canEvolve: boolean;
+  /** ¿Soporta el comando de borrado total de datos? */
+  canWipe: boolean;
+  /** ¿Puede auditar e inspeccionar la infraestructura física existente? */
+  canInspect: boolean;
+  /** true si usa tablas dedicadas (SQL), false si es un almacén de documentos (JSON). */
+  isRelational: boolean;
+  storageType: 'SQL' | 'FILE' | 'NOSQL' | 'GIT';
+}
 
-  /**
-   * Persists a batch of records across one or more contexts.
-   * Performs upsert: existing records (by id) are updated, new ones are inserted.
-   */
-  write: (data: Record<string, DataItem[]>) => Promise<void>;
+/**
+ * 🔭 AGNOSTIC QUERY: Estructura de consulta universal (Agnostic SQL).
+ * Independiza la lógica de negocio de la sintaxis del motor de persistencia.
+ */
+export interface AgnosticQuery {
+  /** Columnas o campos específicos a recuperar. */
+  select?: string[];
+  /** Filtros de búsqueda (WHERE). */
+  where?: Record<string, any>;
+  limit?: number;
+  offset?: number;
+  orderBy?: { column: string; order: 'asc' | 'desc' };
+}
 
-  /**
-   * Deletes a single record by id within a context.
-   * Optional for read-only strategies (e.g. GitHubStrategy).
-   * The vault returns HTTP 405 if the active strategy does not implement delete.
-   */
-  delete?: (context: string, id: string) => Promise<void>;
+/**
+ * 🧬 AGNOSTIC DNA: Representación de estructura para evolución física.
+ */
+export interface AgnosticDNA {
+  name: string;
+  fields: Array<{
+    key: string;
+    type: string;
+    required?: boolean;
+    unique?: boolean;
+    defaultValue?: any;
+  }>;
+}
 
-  /**
-   * High-frequency single-context write (avoids full-DB payload).
-   * Falls back to write() if not implemented.
-   */
-  writeContext?: (context: string, items: DataItem[]) => Promise<void>;
+/**
+ * 🏛️ AGNOSTIC BRIDGE: El Contrato Maestro de Soberanía.
+ * Todas las operaciones de persistencia y gestión de estructura fluyen por aquí.
+ * Sustituye a la antigua interfaz DataStrategy.
+ */
+export interface AgnosticBridge {
+  readonly capabilities: AgnosticCapabilities;
 
-  /**
-   * Performs a bulk update (patch) on a set of records.
-   * Standard Query: UPDATE records SET <patch> WHERE <filter>
-   */
-  update: (context: string, patch: Record<string, unknown>, filter: Record<string, unknown>) => Promise<void>;
+  /** 🔭 SELECT: Recuperación de materia (DML). */
+  select<T = DataItem>(namespace: string, query?: AgnosticQuery): Promise<T[]>;
 
-  /**
-   * Returns the list of administrative operations supported by this strategy.
-   * Used for UI auto-projection and MCP discovery.
-   */
-  getOperations: () => SystemOperation[];
+  /** 📝 COMMIT: Persistencia atómica de materia (DML - Insert/Upsert). */
+  commit<T = DataItem>(namespace: string, items: T[]): Promise<void>;
+
+  /** 🔄 PATCH: Modificación parcial de materia existente (DML - Update). */
+  patch(namespace: string, delta: any, filter: any): Promise<void>;
+
+  /** 🗑️ PURGE: Eliminación quirúrgica de materia (DML - Delete). */
+  purge(namespace: string, filter: any): Promise<void>;
+
+  /** 🧬 EVOLVE: Sincronización de estructura física basada en ADN (DDL). */
+  evolve(namespace: string, dna: AgnosticDNA): Promise<void>;
+
+  /** 🧼 WIPE: Limpieza total del Silo (DDL). */
+  wipe(scope: 'DATA' | 'SCHEMA' | 'ALL'): Promise<void>;
+
+  /** 🔍 INSPECT: Auditoría de la realidad física. */
+  inspect(): Promise<AgnosticDNA[]>;
 }
 
 /**

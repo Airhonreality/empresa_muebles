@@ -1,0 +1,33 @@
+{
+  "id": "spacer_settings_def",
+  "name": "spacer_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Espaciado",
+      "icon": "Layout",
+      "type": "section",
+      "fields": [
+        {
+          "key": "size",
+          "label": "Tamaño del Espacio",
+          "type": "select",
+          "options": [
+            { "label": "XS — 1rem",  "value": "xs" },
+            { "label": "SM — 2rem",  "value": "sm" },
+            { "label": "MD — 4rem",  "value": "md" },
+            { "label": "LG — 8rem",  "value": "lg" },
+            { "label": "XL — 12rem", "value": "xl" }
+          ],
+          "default": "md"
+        },
+        {
+          "key": "custom",
+          "label": "Tamaño Personalizado (CSS)",
+          "type": "string",
+          "description": "Anula el selector de tamaño. Cualquier valor CSS válido. Ejemplo: 5.5rem, 100px"
+        }
+      ]
+    }
+  ]
+}

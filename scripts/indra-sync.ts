@@ -71,7 +71,7 @@ async function sync() {
       let slug = data._slug || '';
       try {
         const fullDb = JSON.parse(fs.readFileSync(path.join(storagePath, 'db', 'schema_definitions.json'), 'utf8'));
-        const schema = fullDb.find(s => s.data.name?.toString().toLowerCase() === context.toLowerCase() || s.id === context);
+        const schema = fullDb.find((s: any) => s.data?.name?.toString().toLowerCase() === context.toLowerCase() || s.id === context);
         if (schema && schema.data.slug_source) {
           const sourceValue = data[schema.data.slug_source];
           if (sourceValue) {

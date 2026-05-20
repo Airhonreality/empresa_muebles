@@ -4,26 +4,55 @@
   "description": "Configuración paramétrica de bloques de interfaz",
   "fields": [
     {
-      "key": "core_identity",
-      "label": "core_identity",
+      "key": "layout",
+      "label": "Dimensión y Canvas",
+      "icon": "Layout",
       "type": "section",
       "fields": [
         {
-          "key": "title",
-          "label": "title",
+          "key": "direction",
+          "label": "Eje de Flujo",
+          "type": "select",
+          "options": [
+            { "label": "Vertical (Column)", "value": "vertical" },
+            { "label": "Horizontal (Row)", "value": "horizontal" }
+          ]
+        },
+        {
+          "key": "sizing",
+          "label": "Modelo de Dimensión",
+          "type": "select",
+          "options": [
+            { "label": "Fill (Expandir al contenedor)", "value": "fill" },
+            { "label": "Hug (Ajustar al contenido)", "value": "hug" },
+            { "label": "Relativo (%)", "value": "relative" }
+          ]
+        },
+        {
+          "key": "align",
+          "label": "Punto de Anclaje (9-Grid)",
+          "type": "select",
+          "options": [
+            { "label": "↖ Superior Izquierda", "value": "tl" },
+            { "label": "↑ Superior Centro",    "value": "tc" },
+            { "label": "↗ Superior Derecha",   "value": "tr" },
+            { "label": "← Medio Izquierda",    "value": "ml" },
+            { "label": "· Centro",             "value": "mc" },
+            { "label": "→ Medio Derecha",      "value": "mr" },
+            { "label": "↙ Inferior Izquierda", "value": "bl" },
+            { "label": "↓ Inferior Centro",    "value": "bc" },
+            { "label": "↘ Inferior Derecha",   "value": "br" }
+          ]
+        },
+        {
+          "key": "gap",
+          "label": "Separación entre hijos (rem)",
           "type": "string"
         },
         {
-          "key": "type",
-          "label": "block_type",
-          "type": "select",
-          "options_source": "block_registry"
-        },
-        {
-          "key": "schema_id",
-          "label": "schema_id",
-          "type": "select",
-          "options_source": "dna_registry"
+          "key": "clip",
+          "label": "Recortar Overflow",
+          "type": "boolean"
         }
       ]
     },
@@ -46,28 +75,18 @@
           "description": "Define si el bloque inicia abierto"
         },
         {
-          "key": "sticky",
-          "label": "Posición Fija (Sticky)",
-          "type": "select",
-          "options": [
-            { "label": "Ninguna", "value": "none" },
-            { "label": "Superior (Top)", "value": "top" },
-            { "label": "Inferior (Bottom)", "value": "bottom" }
-          ]
-        },
-        {
           "key": "intent",
-          "label": "Intención (Modo Proyección)",
+          "label": "Intención (Modo Operación)",
           "type": "select",
           "options": [
             { "label": "Adaptativo (Inferencia Automática)", "value": "auto" },
-            { "label": "Creación (Lienzo Vacío)", "value": "create" },
-            { "label": "Edición (Cargar por ID)", "value": "edit" },
+            { "label": "Creación (Formulario Vacío)", "value": "create" },
+            { "label": "Edición (Cargar Registro Activo)", "value": "edit" },
             { "label": "Lectura (Solo Proyección)", "value": "view" },
             { "label": "Lista (Colección)", "value": "list" }
           ],
           "default": "auto",
-          "description": "Define cómo debe despertar el bloque: si de forma inteligente (Adaptativo) o forzando un estado determinista."
+          "description": "Define el modo de operación del bloque (ej: visualización vs edición)."
         }
       ]
     },
@@ -78,48 +97,16 @@
       "type": "section",
       "fields": [
         {
-          "key": "variant",
-          "label": "Variante de Estilo",
-          "type": "select",
-          "options": [
-            { "label": "Card (Estándar)", "value": "card" },
-            { "label": "Hero (Impacto)", "value": "hero" },
-            { "label": "Ghost (Sin bordes)", "value": "ghost" },
-            { "label": "Minimal", "value": "minimal" }
-          ]
-        },
-        {
           "key": "switches",
-          "label": "campos_visibles (whitelist)",
+          "label": "Campos Visibles (Whitelist)",
           "type": "string",
-          "description": "Lista de campos separados por coma (ej: name, price). Si está vacío, muestra todo."
+          "description": "Lista de campos separados por coma (ej: name, price) a proyectar. Si está vacío, se muestran todos."
         },
         {
           "key": "blackout",
-          "label": "campos_ocultos (blacklist)",
+          "label": "Campos Ocultos (Blacklist)",
           "type": "string",
-          "description": "Lista de campos a esconder (ej: id, internal_code)."
-        },
-        {
-          "key": "theme",
-          "label": "Identidad Visual",
-          "type": "select",
-          "options": [
-            { "label": "Sistema (Default)", "value": "system" },
-            { "label": "Marca (Brand)", "value": "brand" },
-            { "label": "Lujo (Veta de Oro)", "value": "luxury" },
-            { "label": "Informativo", "value": "info" }
-          ]
-        },
-        {
-          "key": "width",
-          "label": "Ancho de Columna",
-          "type": "select",
-          "options": [
-            { "label": "Ancho Total (100%)", "value": "1/1" },
-            { "label": "Mitad (50%)", "value": "1/2" },
-            { "label": "Tercio (33%)", "value": "1/3" }
-          ]
+          "description": "Lista de campos separados por coma a ocultar (ej: id, internal_code)."
         }
       ]
     },
@@ -171,6 +158,49 @@
             { "label": "Selector (Dropdown)", "value": "select" }
           ],
           "description": "Define la interfaz de usuario utilizada para alternar entre segmentos de datos."
+        },
+        {
+          "key": "segmentation_rename",
+          "label": "Renombrado de Pestañas (Inline)",
+          "type": "boolean",
+          "description": "Permite editar el nombre de una pestaña de segmento con doble clic (solo para colecciones con segmentation_strategy: tabs)."
+        },
+        {
+          "key": "group_by_key",
+          "label": "Agrupar por Campo (Group Key)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Agrupa los registros por el valor de este campo, renderizando un card por grupo."
+        },
+        {
+          "key": "view",
+          "label": "Modo de Vista",
+          "type": "select",
+          "options": [
+            { "label": "Tarjetas (Card Grid)", "value": "card_grid" },
+            { "label": "Tabla (Table)", "value": "table" },
+            { "label": "Editor en Pila (Editor Stack)", "value": "editor_stack" },
+            { "label": "Detalle (Details)", "value": "details" }
+          ],
+          "description": "Proyección visual de los registros de la colección."
+        },
+        {
+          "key": "hideSubmit",
+          "label": "Auto-Guardado Silencioso",
+          "type": "boolean",
+          "description": "Oculta el botón de envío y activa el guardado automático con debounce de 800ms. Muestra un indicador de estado inline."
+        },
+        {
+          "key": "searchable",
+          "label": "Habilitar Búsqueda",
+          "type": "boolean",
+          "description": "Muestra un input de búsqueda en tiempo real sobre los registros de la colección."
+        },
+        {
+          "key": "singular",
+          "label": "Nombre Singular del Registro",
+          "type": "string",
+          "description": "Etiqueta para el botón de creación (ej: 'Producto', 'Espacio', 'Cliente')."
         }
       ]
     }

@@ -1,0 +1,28 @@
+{
+  "id": "card_static_settings_def",
+  "name": "card_static_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Contenido de la Tarjeta",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        { "key": "icon",    "label": "Icono (Lucide)", "type": "string",
+          "description": "Nombre del icono. Ejemplo: Package, Star, Shield." },
+        { "key": "title",   "label": "Título",         "type": "string" },
+        { "key": "body",    "label": "Descripción",    "type": "string" },
+        {
+          "key": "variant",
+          "label": "Estilo de Tarjeta",
+          "type": "select",
+          "options": [
+            { "label": "Borde visible", "value": "bordered" },
+            { "label": "Sin borde",     "value": "ghost" }
+          ],
+          "default": "bordered"
+        }
+      ]
+    }
+  ]
+}

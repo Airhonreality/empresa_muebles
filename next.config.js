@@ -6,7 +6,8 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  }
+  },
+  transpilePackages: ['@agnostic/core']
 };
 
 module.exports = nextConfig;

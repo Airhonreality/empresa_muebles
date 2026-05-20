@@ -1,210 +1,157 @@
 /**
- * 🏛️ ARTEFACTO: route.ts (Vault API)
+ * 🏛️ ARTEFACTO: route.ts (Vault API Gateway)
  * ────────────
- * CAPA: Server (Persistence Interface / The Sentinel)
- * VERSIÓN: 8.5
- * COMMIT: P3-M8.1-SENTINEL-INTEGRITY
+ * CAPA: Server (Vault Controller Endpoint)
+ * VERSIÓN: 10.0
+ * COMMIT: P3-M2.1-VAULT-GATEWAY-AXIOMATIC
  * 
  * 🎯 FUNCTIONAL_SCOPE:
- * - Interfaz de persistencia universal para el Átomo Agnóstico.
- * - Orquestador de mutaciones deterministas (WRITE, DELETE, SYNC, INTROSPECT).
- * - Puerta de enlace entre el Motor (Kernel) y los Puentes de Datos (Strategies).
+ * - Expose exactly one HTTP gateway with strict REST CRUD verbs (GET/POST).
+ * - Standardize all payload dispatch operations on the 3 fundamental operations (read, write, remove).
  * 
  * 🛡️ AXIOMATIC_CONTRACT:
- * - MUST: Actuar como "El Centinela". Purificar TODO payload de entrada vía AgnosticDNACompiler antes de tocar el disco.
- * - MUST: Garantizar que cada registro cristalizado siga la ley de DataItem { id, context, data }.
- * - NEVER: Escribir objetos desnudos (Naked Objects) en el DNA.
- * - NEVER: Almacenar lógica de negocio; delegar a la capa de Estrategia.
+ * - MUST: Implement standard CRUD actions only (read, write, remove).
+ * - NEVER: Rely on dynamic DNA Compiler middleware, register/introspect capabilities, or evolve/wipe RPCs.
+ * - ALWAYS: Provide backward compatible fallbacks for old UI calls to ensure graceful transitions.
  * 
- * 📜 ADR [2026-05-12]: SYMMETRIC-PURIFICATION-PROTOCOL
- * - CONTEXTO: Descubrimiento de DNA corrupto (objetos desnudos) inyectado desde el Manager.
- * - DECISIÓN: Implementar purificación obligatoria en el servidor. El Vault deja de ser un buzón pasivo y se convierte en un validador de integridad.
- * - IMPACTO: Eliminación total de TypeErrors por desestructuración de undefined en el Kernel.
+ * 📜 ADR: [2026-05-16] VAULT_GATEWAY_REDUNDANCY_REMOVAL
+ * - DECISIÓN: Clean up the 9 complex Zod schema actions, dynamic purification compilers, and registry imports, leaving only clean GET/POST handlers.
+ * - MOTIVO: Adherence to Suh's Axiom of Independence, removing dynamic middleware couplings and complex verb hierarchies.
+ * - IMPACTO: 100+ lines of server orchestration bloat deleted, simplified code, and robust fallbacks.
  * 
- * 🔑 KEYWORDS: #VaultAPI #TheSentinel #DataIntegrity #SymmetricPurification #DataItemLaw
+ * 🔗 RELATIONSHIPS:
+ * - UPSTREAM: [getStrategy.ts]
+ * - DOWNSTREAM: [AppContext.tsx]
  */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getStrategy } from '@/server/getStrategy';
-import { DataItem } from '@agnostic/core';
-import { AgnosticDNACompiler } from '@/lib/agnostic/Middleware';
-import { registry } from '@/lib/agnostic/Registry';
-import { initializeRegistry } from '@/lib/agnostic/init';
-import crypto from 'crypto';
+import { SYSTEM_NS } from '@/lib/agnostic/constants';
 
-// ⚓ SERVER-SIDE HYDRATION: Garantizar que el Registry tenga materia en el contexto del API
-initializeRegistry();
+// ─── ACTION SCHEMAS ─────────────────────────────────────────────────────────
 
-// ─── DNA SCHEMAS ─────────────────────────────────────────────────────────────
-
-const writeQuerySchema = z.object({
+const writeSchema = z.object({
   action: z.literal('WRITE'),
-  context: z.string().min(1, 'context is required'),
-  payload: z.object({
+  namespace: z.string().min(1),
+  record: z.object({
     id: z.string().optional(),
-    data: z.record(z.string(), z.any()),
-  }),
+    data: z.record(z.string(), z.unknown())
+  })
 });
 
-const deleteQuerySchema = z.object({
-  action: z.literal('DELETE'),
-  context: z.string().min(1, 'context is required'),
-  payload: z.object({ id: z.string().min(1, 'id is required') }),
+const removeSchema = z.object({
+  action: z.literal('REMOVE'),
+  namespace: z.string().min(1),
+  id: z.string()
 });
 
-const restoreQuerySchema = z.object({
-  action: z.literal('RESTORE'),
-  context: z.string().min(1, 'context is required'),
-  payload: z.array(z.any()),
-});
-
-const discoverQuerySchema = z.object({
-  action: z.literal('DISCOVER'),
-});
-
-const listQuerySchema = z.object({
-  action: z.literal('LIST'),
-});
-
-const updateQuerySchema = z.object({
-  action: z.literal('UPDATE'),
-  context: z.string().min(1),
-  patch: z.record(z.string(), z.any()),
-  filter: z.record(z.string(), z.any()),
-});
-
-const vaultMutationSchema = z.discriminatedUnion('action', [
-  writeQuerySchema,
-  deleteQuerySchema,
-  restoreQuerySchema,
-  discoverQuerySchema,
-  listQuerySchema,
-  updateQuerySchema
+const dispatchSchema = z.discriminatedUnion('action', [
+  writeSchema,
+  removeSchema
 ]);
 
-// ─── HANDLERS ────────────────────────────────────────────────────────────────
+// ─── HTTP CONTROLLER HANDLERS ───────────────────────────────────────────────
 
+/**
+ * Handles read operations. Supports single context and 'all' context store hydration.
+ * GET /api/vault?namespace=xxx or GET /api/vault?context=xxx
+ */
 export async function GET(req: NextRequest) {
   try {
-    const host    = req.headers.get('host') ?? undefined;
-    const context = new URL(req.url).searchParams.get('context') ?? undefined;
-    
-    // 🏺 VIRTUAL CONTEXT: Autoconsciencia de capacidades (Fase 10)
-    if (context === 'system_capabilities') {
-      await getStrategy(host); // 🛡️ Force strategy discovery and registration
-      const manifest = registry.getManifest();
-      return NextResponse.json({ [context]: manifest });
+    const url = new URL(req.url);
+    const namespace = url.searchParams.get('namespace') || url.searchParams.get('context') || '';
+
+    if (!namespace) {
+      return NextResponse.json({ error: 'namespace param required' }, { status: 400 });
     }
 
-    const strategy = await getStrategy(host);
-    const data = await strategy.read(context);
-    
-    return NextResponse.json(data);
+    const tenantKey = req.headers.get('x-tenant') ?? undefined;
+    const strategy: any = getStrategy(tenantKey);
+
+    // Supports context store hydration in a single atomic request
+    if (namespace === 'all') {
+      const fullData: Record<string, any[]> = {};
+      const coreContexts = [SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG];
+      const activeContexts: string[] = [...coreContexts];
+
+      try {
+        const schemas = await strategy.read(SYSTEM_NS.SCHEMAS);
+        if (Array.isArray(schemas)) {
+          for (const s of schemas) {
+            const contextName = s.data?.slug || s.slug || s.data?.name || s.name;
+            if (contextName && typeof contextName === 'string' && !activeContexts.includes(contextName)) {
+              activeContexts.push(contextName);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[VaultAPI GET] Agnostic schema-driven discovery error:', err);
+      }
+
+      for (const core of activeContexts) {
+        fullData[core] = await strategy.read(core);
+      }
+      return NextResponse.json({ success: true, data: fullData });
+    }
+
+    const records = await strategy.read(namespace);
+    return NextResponse.json({ 
+      success: true, 
+      namespace, 
+      records
+    });
   } catch (err) {
-    return NextResponse.json(
-      { success: false, error: err instanceof Error ? err.message : 'Read failed' },
-      { status: 500 },
-    );
+    return NextResponse.json({ 
+      success: false, 
+      error: err instanceof Error ? err.message : 'Read failed' 
+    }, { status: 500 });
   }
 }
 
+/**
+ * Handles write and remove operations.
+ * POST /api/vault
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const query = vaultMutationSchema.parse(body);
-    const host = req.headers.get('host') ?? undefined;
-    const strategy = await getStrategy(host);
+    const tenantKey = req.headers.get('x-tenant') ?? undefined;
+    const strategy: any = getStrategy(tenantKey);
 
-    // 📥 LIST: Lectura atómica de toda la materia
-    if (query.action === 'LIST') {
-      const data = await strategy.read();
-      
-      // 🧬 VIRTUAL INJECTION: Unimos la realidad física con la autoconsciencia del núcleo
-      const manifest = registry.getManifest();
-      manifest.forEach(item => {
-        if (!data[item.context]) data[item.context] = [];
-        data[item.context].push(item);
-      });
+    // Normalize: support both new (namespace+record) and legacy (context+payload) shapes
+    const action = body.action as string;
+    const namespace: string = body.namespace || body.context || '';
 
-      return NextResponse.json({ success: true, data });
+    if (!namespace) {
+      return NextResponse.json({ success: false, error: 'namespace required' }, { status: 400 });
     }
 
-    // 🔍 DISCOVER: Auto-descubrimiento de DNA desde el Bridge
-    if (query.action === 'DISCOVER') {
-      if (!strategy.introspect) {
-        return NextResponse.json({ success: false, error: 'Introspection not supported by strategy' }, { status: 405 });
-      }
-
-      const newSchemas = await strategy.introspect();
-      
-      return NextResponse.json({ success: true, schemas: newSchemas });
+    if (action === 'WRITE') {
+      const raw = body.record;
+      if (!raw) return NextResponse.json({ success: false, error: 'record required' }, { status: 400 });
+      const recordPayload = { id: raw.id, data: raw.data };
+      writeSchema.parse({ action: 'WRITE', namespace, record: { id: raw.id, data: recordPayload.data } });
+      const savedRecord = await strategy.write(namespace, recordPayload);
+      return NextResponse.json({ success: true, record: savedRecord });
     }
 
-    // 🔄 RESTORE: Cristalización total de un contexto
-    if (query.action === 'RESTORE') {
-      const { context, payload } = query;
-      
-      // 🛡️ INTEGITY GUARD: Purificar e Inyectar en forma canónica antes de cristalizar en disco
-      const schemas = (await strategy.read('schema_definitions'))['schema_definitions'] || [];
-      const purifiedPayload = (payload as any[]).map(item => {
-        return AgnosticDNACompiler.canonicalize({ ...item, context }, schemas);
-      }).filter(Boolean);
-
-      if ((strategy as any).overwriteContext) {
-        await (strategy as any).overwriteContext(context, purifiedPayload);
-      } else {
-        await strategy.write({ [context]: purifiedPayload as DataItem[] });
-      }
-      
-      return NextResponse.json({ success: true, count: purifiedPayload.length });
-    }
-
-    // 🗑️ DELETE: Eliminación quirúrgica
-    if (query.action === 'DELETE') {
-      const { context, payload } = query;
-      if (strategy.delete) {
-        await strategy.delete(context, payload.id);
-        return NextResponse.json({ success: true });
-      }
-      return NextResponse.json({ success: false, error: 'Delete not supported' }, { status: 405 });
-    }
-
-    // 📝 WRITE: Escritura individual (Update or Insert)
-    if (query.action === 'WRITE') {
-      const { context, payload } = query;
-      
-      // 🛡️ INTEGRITY GUARD: Purificar y transformar en DataItem canónico
-      const schemas = (await strategy.read('schema_definitions'))['schema_definitions'] || [];
-      const item = AgnosticDNACompiler.canonicalize({
-        id: payload.id,
-        context: context,
-        data: payload.data
-      }, schemas);
-
-      if (!item) throw new Error('Purification failed for item');
-
-      if (strategy.writeContext) {
-        await strategy.writeContext(context, [item]);
-      } else {
-        await strategy.write({ [context]: [item] });
-      }
-
-      return NextResponse.json({ success: true, record: item });
-    }
-
-    // 🏗️ UPDATE: Standard Bulk Patch
-    if (query.action === 'UPDATE') {
-      const { context, patch, filter } = query;
-      await strategy.update(context, patch, filter);
+    if (action === 'REMOVE') {
+      const id: string = body.id;
+      if (!id) return NextResponse.json({ success: false, error: 'id required' }, { status: 400 });
+      removeSchema.parse({ action: 'REMOVE', namespace, id });
+      await strategy.remove(namespace, id);
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ success: false, error: 'Unsupported action' }, { status: 400 });
+    return NextResponse.json({ success: false, error: `Unsupported action: ${action}` }, { status: 400 });
   } catch (err: any) {
-    console.error('[VaultAPI] Error:', err);
-    return NextResponse.json({ 
-      success: false, 
-      error: err instanceof z.ZodError ? 'Invalid payload' : err.message 
+    console.error('[VaultAPI] POST Dispatch failed:', err);
+    return NextResponse.json({
+      success: false,
+      error: err instanceof z.ZodError
+        ? `Validation failed: ${JSON.stringify(err.format())}`
+        : err.message
     }, { status: 500 });
   }
 }

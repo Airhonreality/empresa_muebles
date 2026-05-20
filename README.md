@@ -1,126 +1,86 @@
 # Agnostic Seed
 
-A schema-driven, multi-tenant UI framework built on Next.js 15. Define your data model in JSON — the engine renders it.
+Schema-driven parametric UI engine built on Next.js 15. Define data models in JSON — the engine renders them.
 
 ## Quick Start
 
 ```bash
 npm install
 npm run dev
+# → http://localhost:3000
 ```
-
-Open [http://localhost:3000](http://localhost:3000). The default tenant at `storage/default/` is loaded automatically.
-
----
 
 ## Core Concept
 
-The engine (`src/`) is a blind renderer. It does not know what a "Project", "Invoice", or "User" is. All business meaning lives in the **Storage Silo**:
+The engine (`src/`) is a **blind renderer**. It knows nothing about "clients", "invoices", or "products". All business meaning lives in the storage silo:
 
 ```
 storage/{tenant}/
-├── manifest.json                 # Strategy selection and tenant config
 ├── db/
 │   ├── schema_definitions.json   # Entity schemas and field definitions
-│   └── page_routes.json          # Route → block composition map
-├── modules/                      # Guest UI modules (Vanilla JS, no React)
-├── styles/
-│   └── tokens.css                # CSS variable overrides
-└── assets/                       # Static files
+│   ├── page_routes.json          # URL → block composition map
+│   └── {entity}.json             # One file per data collection
+├── manifest.json                 # Strategy selection and tenant config
+├── modules/                      # Guest UI modules (Vanilla JS only)
+└── styles/tokens.css             # CSS variable overrides
 ```
 
-To change what the app shows: edit the storage. Never touch `src/` for business changes.
+**Rule:** to change what the app shows, edit `storage/`. Never touch `src/` for business changes.
 
----
+## Five Atoms
+
+The entire system is built from exactly five concepts:
+
+| Atom | Definition |
+|---|---|
+| **Schema** | Data shape contract. `{ name, fields[] }` |
+| **Record** | Instance of a schema. `{ id, data }` |
+| **Adapter** | Persistence interface. `read / write / remove` |
+| **Block** | Projection directive. `{ type, schema_id, context }` |
+| **Page** | Ordered list of blocks at a URL path |
+
+The invariant that must always hold: `block.context === schema.data.name === data_file_name`.
 
 ## Architecture
 
 ```
-                      ┌─────────────────────────────────┐
-                      │           src/ (Engine)          │
-  Request             │                                  │
-  ──────────────────► │  layout.tsx → getVaultData()     │
-                      │  MasterRoute → resolves route    │
-                      │  AgnosticRenderer → maps blocks  │
-                      │  /api/vault → only write gateway │
-                      └───────────────┬─────────────────┘
-                                      │ reads / writes
-                      ┌───────────────▼─────────────────┐
-                      │     storage/{tenant}/ (Silo)     │
-                      │  manifest.json   db/  modules/   │
-                      └─────────────────────────────────┘
+Request → layout.tsx → getVaultData()
+          MasterRoute → resolveAgnosticRoute()
+          AgnosticRenderer → maps block types to components
+          /api/vault → only write gateway → Adapter → storage/
 ```
 
-| Layer | Location | Purpose |
-|---|---|---|
-| Canonical types | `packages/core/src/indra.ts` | SSoT for all interfaces |
-| **Sovereignty Layer** | `src/core/designer/` | Parametric Experience Designer (Self-Abstracted) |
-| DNA (Schemas) | `storage/{tenant}/db/` | Data shape and Relational Axioms |
-| Experience (Routes) | `storage/{tenant}/db/` | UI Composition and Projection Intent |
-| Projections | `src/components/agnostic/` | Blind UI blocks (Form, View, Collection) |
+## Key Files
 
-### 🧠 The Experience Designer (Axiomatic Approach)
-The designer is a **Self-Abstracted Subsystem**. It doesn't hardcode UI controls; it uses a `block_config.schema.json` to project its own configuration forms using the same `AgnosticForm` engine used for business logic.
+| Concern | File |
+|---|---|
+| Canonical types | `packages/core/src/indra.ts` |
+| Only write gateway | `src/app/api/vault/route.ts` |
+| Route resolver | `src/lib/agnostic/resolver.ts` |
+| Block router | `src/components/agnostic/engine/AgnosticRenderer.tsx` |
+| Strategy selection | `src/server/getStrategy.ts` |
+| Parametric Designer | `/schema` route → `AgnosticDesigner.tsx` |
 
-| Bridge / SDK | `packages/core/src/bridge.ts` | Guest module API contract |
-| Global state | `src/context/AppContext.tsx` | React context + reducer |
-| Write gateway | `src/app/api/vault/route.ts` | Only mutation entry point |
-| Strategy router | `src/server/getStrategy.ts` | Reads manifest, selects strategy |
+## MCP Bridge
 
----
+Semantic AI interface — 17 intent-driven tools:
+
+```bash
+npm run mcp:bridge    # stdio JSON-RPC server (registered in .mcp.json)
+```
 
 ## Storage Strategies
 
-| Strategy | Trigger | Use case |
-|---|---|---|
-| `LOCAL` | Default | Development, single-user |
-| `SUPABASE` | `SUPABASE_URL` in manifest | Production cloud DB |
-| `HYBRID` | `strategy: "hybrid"` in manifest | GitHub DNA + Supabase data |
-| `GITHUB` | `STORAGE_URL` env var | Read-only, remote DNA |
+Configured in `storage/{tenant}/manifest.json`:
 
-Configure in `storage/{tenant}/manifest.json`.
-
-## 🏛️ Axiomatic Layer Contract (v6.0)
-
-To prevent architectural drift and maintain total agnosticism, every layer in `src` follows a strict mandate.
-
-| Layer | Responsibility (What it DOES) | Anti-Patterns (What it MUST NOT DO) |
-| :--- | :--- | :--- |
-| **`src/lib`** | **Foundations**: Pure utilities, Registry, and global contracts. | **NO Context**: Must never import from `src/context` or `src/app`. No state awareness. |
-| **`src/server`** | **Strategies**: Data persistence abstractions (Supabase, Local, etc.). | **NO Business Logic**: Must not generate slugs, calculate prices, or know about the UI. It is a "Dumb Conduit". |
-| **`src/context`** | **The Brain**: Unified Atomic State (Auth + Data). DNA-driven computation and Identity generation. | **NO Side-Effects**: Must not access the DOM or handle browser navigation. It only manages "Reality". |
-| **`src/components`** | **Projection**: Blind Agnostic Blocks and the Decentralized Renderer. | **NO Navigation**: Must not call `useRouter` or handle redirects. It only projects and emits events (`onSuccess`). |
-| **`src/app`** | **Orchestration**: Routes and Page logic. The "Joint" between blocks and navigation. | **NO Computation**: Must not calculate derived data. It is a pure orchestrator of the user journey. |
-
----
-
-## 🆔 Identity Model (Sovereign DNA)
-
-The Agnostic Core owns the identity. Identity logic is centralized in the `AppProvider` (Reducer/Save-Hook), ensuring the server remains a passive mirror.
-
-- **`id`** (UUID v4) — The immutable anchor. Generated by the Core before persistence.
-- **`_slug`** — The aesthetic mask. Generated by the Core from a DNA-defined source field. Used **only** for human-readable URLs.
-
----
-
-## 📜 Documentation
-
-| Document | Purpose |
+| Strategy | Use case |
 |---|---|
-| [Architecture Contract](storage/default/ARCHITECTURE_CONTRACT.md) | The 10 laws of the system |
-| [Operator Guide](storage/default/GUIA_DE_OPERACIONES.md) | Step-by-step for building with a tenant |
-| [Infrastructure Guide](docs/INFRASTRUCTURE.md) | Deployment, env vars, strategies |
-| [AI Context](agnostic.context.json) | Machine-readable spec |
-| [CLAUDE.md](CLAUDE.md) | AI behavioral instructions |
+| `local` | Development, JSON files |
+| `supabase` | Production cloud DB |
+| `hybrid` | GitHub DNA + Supabase data |
 
----
+## Docs
 
-## Environment Variables
-
-| Variable | Description | Default |
-|---|---|---|
-| `ACTIVE_TENANT` | Silo directory name under `storage/` | `default` |
-| `SUPABASE_URL` | Supabase project URL | — |
-| `SUPABASE_ANON_KEY` | Supabase anonymous key | — |
-| `GITHUB_TOKEN` | GitHub API token (for remote writes) | — |
-| `STORAGE_URL` | Remote storage base URL | — |
+- [`CLAUDE.md`](CLAUDE.md) — Engine invariants and anti-patterns. **Read before touching any code.**
+- [`docs/AXIOMATIC_DESIGN.md`](docs/AXIOMATIC_DESIGN.md) — Axiomatic Design (Nam P. Suh) applied.
+- [`docs/INFRASTRUCTURE.md`](docs/INFRASTRUCTURE.md) — Storage strategies and deployment.

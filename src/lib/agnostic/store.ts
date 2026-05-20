@@ -83,7 +83,9 @@ export const useMateriaStore = create<MateriaState>((set) => ({
       [context]: (state.data[context] || []).filter((i) => i.id !== id)
     }
   })),
-  hydrate: (data: Record<string, DataItem[]>) => set({ data }),
+  hydrate: (data: Record<string, DataItem[]>) => set((state) => ({
+    data: { ...state.data, ...data }
+  })),
 }));
 
 // --- ⚙️ SYSTEM STORE: El Centinela de Orquestación ---
@@ -94,6 +96,12 @@ export const useMateriaStore = create<MateriaState>((set) => ({
  * - NEVER: Contener lógica de negocio (delegar a MateriaStore).
  */
 interface SystemState {
+  activeRecordId: string | null;
+  activeContext: string;
+  isLoading: boolean;
+  currentPath: string;
+  isEditMode: boolean;
+  activeEditId: string | null;
   integrity: any | null;
   user: any | null;
   overlay: any | null;
@@ -148,22 +156,22 @@ export const useActiveRoute = () => {
 };
 
 export const useActiveRecord = () => {
-  const { activeRecordId, activeContext, currentPath } = useSystemStore();
+  const { activeRecordId, activeContext } = useSystemStore();
   const materia = useMateriaStore((s) => s.data);
+  // Always call useActiveRoute — conditional calls violate Rules of Hooks
+  const route = useActiveRoute();
 
-  // 🏛️ DETERMINISTIC ANCHOR: If we have an active ID, that's the truth.
   if (activeRecordId && activeContext) {
     const record = (materia[activeContext] || []).find((r: any) => r.id === activeRecordId);
     if (record) return record;
   }
 
-  // 🛰️ HYDRATION FALLBACK: Lookup by slug from URL (Initial load only)
-  const route = useActiveRoute();
   const routeContext = (route?.data?.context || route?.context) as string | undefined;
+  const currentPath = useSystemStore.getState().currentPath;
   const activeSlug = currentPath.split('/').pop();
 
-  if (!routeContext || !activeSlug || activeSlug === 'create-project') return null;
+  if (!routeContext || !activeSlug) return null;
 
   const records = (materia[routeContext] || []) as any[];
-  return records.find((r: any) => r?.data?._slug === activeSlug);
+  return records.find((r: any) => r?.id === activeSlug) || null;
 };

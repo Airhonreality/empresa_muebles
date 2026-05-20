@@ -48,7 +48,6 @@ export function createAgnosticAPI(config: BridgeConfig): AgnosticAPI {
   return {
     get user(): AgnosticUser | null { return user; },
     get state(): AppState          { return stateRef.current; },
-    getUser: () => user,
     getConfig: (key: string) => settings[key] ?? null,
 
     dispatch: async (query: UnifiedQuery): Promise<void> => {
@@ -98,14 +97,14 @@ export function createAgnosticAPI(config: BridgeConfig): AgnosticAPI {
       stateRef.current.data[context] ?? [],
 
     getActiveRecord: (): DataItem | null => {
-      const context = (block.context as string | undefined) || stateRef.current.system.activeContext;
+      const context = ((block.context as string | undefined) || stateRef.current.system.activeContext || 'system') as string;
       const path =
         (block._activePath as string | undefined) ??
         (typeof window !== 'undefined' ? window.location.pathname : '');
       const slug = path.split('/').pop();
       return (
         stateRef.current.data[context]?.find(
-          (r) => (r.data['_slug'] as string | undefined) === slug
+          (r: any) => (r.data['_slug'] as string | undefined) === slug
         ) ?? null
       );
     },
@@ -161,7 +160,7 @@ export function createAgnosticAPI(config: BridgeConfig): AgnosticAPI {
         return `<button id="${id}" type="button" class="px-8 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.4em] shadow-xl shadow-primary/20 transition-all active:scale-95 ${styles[type]} ${props.className || ''}">${props.label || type}</button>`;
       },
 
-      renderBelt: (config) => {
+      renderBelt: (config: any) => {
         // En el modo 'Intención', el módulo simplemente retorna este manifiesto
         // El cargador detectará este retorno y activará el AgnosticBelt Reactivo.
         return { __type: 'INTENT_BELT', config };

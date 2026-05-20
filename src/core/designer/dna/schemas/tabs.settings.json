@@ -1,0 +1,20 @@
+{
+  "id": "tabs_settings_def",
+  "name": "tabs_settings",
+  "fields": [
+    {
+      "key": "behavior",
+      "label": "Comportamiento",
+      "icon": "Activity",
+      "type": "section",
+      "fields": [
+        {
+          "key": "default_tab",
+          "label": "Pestaña Activa por Defecto",
+          "type": "string",
+          "description": "ID o tab_label de la pestaña que abre por defecto. Si se omite, usa la primera."
+        }
+      ]
+    }
+  ]
+}

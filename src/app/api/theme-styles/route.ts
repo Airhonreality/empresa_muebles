@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
+import { getSiloPath } from '@/server/activeProject';
 import fs from 'fs/promises';
 import path from 'path';
 
 export async function GET() {
-  const STORAGE_PATH = process.env.STORAGE_PATH || 'storage/default';
-  const cssPath = path.join(process.cwd(), STORAGE_PATH, 'styles', 'theme.css');
+  const cssPath = path.join(getSiloPath(), 'styles', 'theme.css');
   try {
     const css = await fs.readFile(cssPath, 'utf-8');
     return new NextResponse(css, {

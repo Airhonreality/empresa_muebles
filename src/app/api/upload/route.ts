@@ -5,6 +5,7 @@
  * Max size: 5 MB.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { getSiloPath } from '@/server/activeProject';
 import fs   from 'fs/promises';
 import path from 'path';
 
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const uploadsDir = path.join(process.cwd(), 'data-silo', 'assets');
+    const uploadsDir = path.join(getSiloPath(), 'assets');
     await fs.mkdir(uploadsDir, { recursive: true });
 
     // path.basename strips directory traversal attempts

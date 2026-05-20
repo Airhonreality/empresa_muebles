@@ -1,0 +1,31 @@
+{
+  "id": "markdown_settings_def",
+  "name": "markdown_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Contenido",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        {
+          "key": "content",
+          "label": "Texto Markdown",
+          "type": "textarea",
+          "description": "Soporta: # Heading, **negrita**, *cursiva*, `código`, [link](url), - listas. Doble salto de línea = nuevo párrafo."
+        },
+        {
+          "key": "align",
+          "label": "Alineación",
+          "type": "select",
+          "options": [
+            { "label": "Izquierda", "value": "left" },
+            { "label": "Centro",   "value": "center" },
+            { "label": "Derecha",  "value": "right" }
+          ],
+          "default": "left"
+        }
+      ]
+    }
+  ]
+}

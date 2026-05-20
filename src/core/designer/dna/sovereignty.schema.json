@@ -19,6 +19,21 @@
       "title": "Persistence Strategy",
       "description": "Defines the physical medium for data crystallization (Local, GitHub, or Database).",
       "options_source": "system://registry/strategy"
+    },
+    "ui_tokens": {
+      "type": "object",
+      "properties": {
+        "primary": { "type": "string", "title": "Primary Color" },
+        "radius": { "type": "string", "title": "Border Radius" },
+        "font_sans": { "type": "string", "title": "Font Family" }
+      }
+    },
+    "layout_defaults": {
+      "type": "object",
+      "properties": {
+        "container_width": { "type": "string", "enum": ["full", "container", "narrow"] },
+        "density": { "type": "string", "enum": ["compact", "normal", "spacious"] }
+      }
     }
   },
   "required": ["project_identity", "dna_strategy", "storage_strategy"],
@@ -29,6 +44,35 @@
     { "key": "STRATEGIES_GROUP", "type": "section", "label": "Architecture & Persistence" },
     { "key": "dna_strategy", "label": "Architecture (DNA) Strategy", "width": "half", "required": true, "type": "select" },
     { "key": "storage_strategy", "label": "Persistence (Storage) Strategy", "width": "half", "required": true, "type": "select" },
+
+    { "key": "DESIGN_GROUP", "type": "section", "label": "Design System Tokens" },
+    { "key": "ui_tokens.primary", "label": "Primary Color (HSL)", "width": "third" },
+    { "key": "ui_tokens.radius", "label": "Border Radius", "width": "third" },
+    { "key": "ui_tokens.font_sans", "label": "Font Family", "width": "third" },
+    
+    { "key": "LAYOUT_GROUP", "type": "section", "label": "Layout Defaults" },
+    { 
+      "key": "layout_defaults.container_width", 
+      "label": "Container Width", 
+      "width": "half",
+      "type": "select",
+      "options": [
+        { "label": "Full Canvas", "value": "full" },
+        { "label": "Container (1200px)", "value": "container" },
+        { "label": "Narrow (800px)", "value": "narrow" }
+      ]
+    },
+    {
+      "key": "layout_defaults.density",
+      "label": "UI Density",
+      "width": "half",
+      "type": "select",
+      "options": [
+        { "label": "Compact", "value": "compact" },
+        { "label": "Normal", "value": "normal" },
+        { "label": "Spacious", "value": "spacious" }
+      ]
+    },
 
     { 
       "key": "STRATEGY_NOTE", 

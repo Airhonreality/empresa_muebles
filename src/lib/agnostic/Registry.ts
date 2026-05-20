@@ -1,45 +1,38 @@
 /**
  * 🏛️ ARTEFACTO: Registry.ts
  * ────────────
- * CAPA: Lib (Infrastructure Services)
- * VERSIÓN: 8.0
- * COMMIT: P3-M2.1-ADR-CAPABILITY-CATALOG
+ * CAPA: Staging / Client (Isomorphic Component Registry)
+ * VERSIÓN: 9.0
+ * COMMIT: P3-M3.2-REGISTRY-AXIOMATIC
  * 
  * 🎯 FUNCTIONAL_SCOPE:
- * - Mediación central para el registro de bloques y capacidades del sistema.
- * - Resolución isomórfica de componentes (Servidor/Cliente).
- * - Catálogo de Introspección para el MCP Bridge y el Designer.
+ * - Act as a central, lightweight registration and discovery map for UI projector components.
+ * - Support isomorphic resolution of components (Server and Client).
  * 
  * 🛡️ AXIOMATIC_CONTRACT:
- * - MUST: Separar el Catálogo (qué existe) del Estado (qué está activo).
- * - NEVER: Almacenar configuración volátil o de instancia.
- * - ALWAYS: Proporcionar metadatos claros para el autodescubrimiento del sistema.
+ * - MUST: Register UI block components and their metadata.
+ * - NEVER: Manage dynamic operations, external capability configurations, or runtime instances.
+ * - ALWAYS: Keep the registration mapping static and memory-only.
  * 
- * 📜 ADR: [2026-05-15] CAPABILITY_DECOUPLING
- * - DECISIÓN: Implementar un mapa de 'capabilities' independiente de las 'operations'.
- * - MOTIVO: Erradicar el abuso del Registry como transporte de configuración dinámica.
- * - IMPACTO: Arquitectura mínima donde el Registry solo sabe qué herramientas tiene disponibles.
+ * 📜 ADR: [2026-05-16] UI_REGISTRY_SIMPLIFICATION
+ * - DECISIÓN: Clean up the operations catalog, capabilities mapping, dynamic discovery imports, and SystemOperation type dependencies.
+ * - MOTIVO: Adherence to Suh's Axiom of Independence, stripping out dynamic service orchestration from the static component registry.
+ * - IMPACTO: 60+ lines of codebase pruned, compile-safe, and extremely fast block component resolution.
+ * 
+ * 🔗 RELATIONSHIPS:
+ * - UPSTREAM: [init.ts]
+ * - DOWNSTREAM: [AgnosticRenderer.tsx]
  */
 
 import React from 'react';
-import { DataItem, SystemOperation } from '@agnostic/core';
-import { CAPABILITY_REGISTRY } from '@/config/agnostic.capabilities';
 
 export interface BlockMetadata {
   name: string;
-  category: 'core' | 'layout' | 'data' | 'system' | 'guest';
+  category: 'core' | 'layout' | 'data' | 'system' | 'guest' | 'content';
   description?: string;
   icon?: string;
   settings_schema?: any;
   capabilities?: string[];
-}
-
-export interface CapabilityMetadata {
-  value?: string;
-  domain: string;
-  label: string;
-  description?: string;
-  metadata?: any;
 }
 
 type AgnosticBlockComponent = React.ComponentType<any>;
@@ -48,8 +41,6 @@ class AgnosticRegistry {
   private static instance: AgnosticRegistry;
   private blocks: Map<string, AgnosticBlockComponent> = new Map();
   private metadata: Map<string, BlockMetadata> = new Map();
-  private operations: Map<string, SystemOperation> = new Map();
-  private capabilities: Map<string, Map<string, CapabilityMetadata>> = new Map();
 
   private constructor() {}
 
@@ -60,74 +51,62 @@ class AgnosticRegistry {
     return AgnosticRegistry.instance;
   }
 
+  /**
+   * Registers a UI block component and its catalog metadata.
+   */
   public register(type: string, component: AgnosticBlockComponent, meta?: BlockMetadata) {
     this.blocks.set(type, component);
-    const capability = CAPABILITY_REGISTRY[type];
     const finalMeta: BlockMetadata = {
-      name: capability?.label || meta?.name || type.charAt(0).toUpperCase() + type.slice(1),
-      category: (capability?.type as any) || meta?.category || 'core',
-      description: capability?.description || meta?.description,
-      settings_schema: capability?.params || meta?.settings_schema,
+      name: meta?.name || type.charAt(0).toUpperCase() + type.slice(1),
+      category: meta?.category || 'core',
+      description: meta?.description || `UI block component of type ${type}`,
+      settings_schema: meta?.settings_schema,
       icon: meta?.icon,
       capabilities: meta?.capabilities
     };
     this.metadata.set(type, finalMeta);
   }
 
-  public registerCapability(domain: string, id: string, meta: CapabilityMetadata) {
-    if (!this.capabilities.has(domain)) {
-      this.capabilities.set(domain, new Map());
-    }
-    this.capabilities.get(domain)!.set(id, meta);
-  }
-
-  public registerOperation(op: SystemOperation) {
-    this.operations.set(op.id, op);
-  }
-
+  /**
+   * Resolves a registered UI block component by type.
+   */
   public get(type: string): AgnosticBlockComponent | null {
     return this.blocks.get(type) || null;
   }
 
-  public getCapabilities(domain: string): CapabilityMetadata[] {
-    const domainMap = this.capabilities.get(domain);
-    if (!domainMap) return [];
-    
-    // Inject the key (value) into the returned metadata object
-    return Array.from(domainMap.entries()).map(([value, meta]) => ({
-      value,
-      ...meta
-    }));
+  /**
+   * Checks if a registered UI block component has a specific capability.
+   */
+  public hasCapability(type: string, capability: string): boolean {
+    return this.metadata.get(type)?.capabilities?.includes(capability) || false;
   }
 
-  public getManifest(): DataItem[] {
-    const blocks = Array.from(this.blocks.keys()).map(type => ({
-      id: `capability_block_${type}`,
-      context: 'system_capabilities',
-      data: { type, ...this.metadata.get(type) },
-      updated_at: new Date().toISOString()
-    }));
+  /**
+   * Returns a list of all registered block types.
+   */
+  public getRegisteredTypes(): string[] {
+    return Array.from(this.blocks.keys());
+  }
 
-    const capabilities: any[] = [];
-    this.capabilities.forEach((map, domain) => {
-      map.forEach((meta, id) => {
-        capabilities.push({
-          id: `capability_${domain}_${id}`,
-          context: 'system_capabilities',
-          data: { id, ...meta },
-          updated_at: new Date().toISOString()
-        });
-      });
+  /**
+   * Retrieves metadata for a specific block type.
+   */
+  public getMetadata(type: string): BlockMetadata | null {
+    return this.metadata.get(type) || null;
+  }
+
+  /**
+   * Returns a list of all registered blocks formatted as simple static metadata.
+   */
+  public getManifest(): { type: string; name: string; category: string }[] {
+    return Array.from(this.blocks.keys()).map(type => {
+      const meta = this.metadata.get(type);
+      return {
+        type,
+        name: meta?.name || type,
+        category: meta?.category || 'core'
+      };
     });
-
-    const operations = Array.from(this.operations.values()).map(op => ({
-      id: `operation_${op.id}`,
-      context: 'system_operations',
-      data: { id: op.id, name: op.name, metadata: op.metadata },
-      updated_at: new Date().toISOString()
-    }));
-
-    return [...blocks, ...capabilities, ...operations];
   }
 }
 

@@ -126,10 +126,10 @@ export function AgnosticModuleLoader({ moduleName, api, children }: Props) {
   if (intent?.type === 'BELT') {
     return (
       <AgnosticBelt 
-        api={api} 
+        moduleName={moduleName} 
         config={intent.config} 
         configSchema={intent.configSchema}
-        visibility_whitelist={intent.visibility_whitelist}
+        {...({ api, visibility_whitelist: intent.visibility_whitelist } as any)}
       />
     );
   }

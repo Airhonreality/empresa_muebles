@@ -32,13 +32,14 @@ import { Settings, X } from 'lucide-react';
 import { useSystemStore } from '@/lib/agnostic/store';
 import { useAppState } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
-import { AgnosticConfigManager } from '../designer/AgnosticConfigManager';
+import { AgnosticDesigner } from '../designer/AgnosticDesigner';
+import { SYSTEM_NS } from '@/lib/agnostic/constants';
 
 export function SovereigntyOrchestrator() {
   const { isEditMode, setEditMode, currentPath } = useSystemStore();
   const { state } = useAppState();
   
-  const routes = state.data['page_routes'] ?? [];
+  const routes = state.data[SYSTEM_NS.ROUTES] ?? [];
   const activeRoute = useMemo(() => routes.find((r: any) => r.path === currentPath), [routes, currentPath]);
 
   if (!isEditMode) {
@@ -64,7 +65,7 @@ export function SovereigntyOrchestrator() {
       />
       
       {/* 🏛️ DRAWER (Soberano e independiente) */}
-      <aside className="fixed top-0 right-0 h-full w-full max-w-2xl bg-background border-l z-[1001] flex flex-col shadow-2xl overflow-hidden">
+      <aside className="fixed top-0 right-0 h-full w-full max-w-6xl bg-background border-l z-[1001] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Botón de Cierre (Shadcn Puro) */}
         <div className="absolute top-6 right-6 z-[1002]">
@@ -72,14 +73,14 @@ export function SovereigntyOrchestrator() {
             variant="ghost" 
             size="icon" 
             onClick={() => setEditMode(false)}
-            className="rounded-full"
+            className="rounded-full animate-spin-hover"
           >
             <X size={20} />
           </Button>
         </div>
 
         <div className="flex-1">
-          <AgnosticConfigManager 
+          <AgnosticDesigner 
             initialSection={activeRoute ? 'composer' : 'routes'} 
             initialRouteId={activeRoute?.id}
           />

@@ -1,0 +1,26 @@
+{
+  "id": "stats_grid_settings_def",
+  "name": "stats_grid_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Métricas",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        {
+          "key": "cols",
+          "label": "Columnas",
+          "type": "select",
+          "options": [
+            { "label": "2", "value": "2" },
+            { "label": "3", "value": "3" },
+            { "label": "4", "value": "4" }
+          ],
+          "default": "3",
+          "description": "Número de stats por fila. Se ajusta automáticamente en móvil."
+        }
+      ]
+    }
+  ]
+}

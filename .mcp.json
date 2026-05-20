@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "agnostic": {
+      "command": "npx",
+      "args": ["tsx", "scripts/mcp-bridge.ts"],
+      "description": "Agnostic System — Schema, Route and Record management"
+    }
+  }
+}

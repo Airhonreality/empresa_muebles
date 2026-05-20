@@ -39,3 +39,9 @@ export const AGNOSTIC_ICONS: Record<string, LucideIcon> = {
 export const getModuleIcon = (type: string): LucideIcon => {
   return AGNOSTIC_ICONS[type] || AGNOSTIC_ICONS['default'];
 };
+
+export const SYSTEM_NS = {
+  ROUTES:  'page_routes',
+  SCHEMAS: 'schema_definitions',
+  CONFIG:  'system_config',
+} as const;

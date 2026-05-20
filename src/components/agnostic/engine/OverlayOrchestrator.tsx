@@ -17,6 +17,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn }                    from '@/lib/utils';
 import { useAppState, useAppDispatch } from '@/context/AppContext';
 import { AgnosticModuleLoader }  from './AgnosticModuleLoader';
+import { AgnosticForm }          from '../blocks/AgnosticForm';
 import type { AgnosticAPI }      from '@agnostic/core';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
@@ -105,7 +106,12 @@ export function OverlayOrchestrator({
           </SheetHeader>
           <Separator className="mb-6" />
           <div className="h-full overflow-y-auto pb-20">
-            {component && (
+            {component === 'AgnosticForm' ? (
+              <AgnosticForm {...props} api={moduleApi} onSubmit={async (data) => {
+                if (props.onSubmit) await props.onSubmit(data);
+                closeOverlay();
+              }} />
+            ) : component && (
               <AgnosticModuleLoader moduleName={component} api={moduleApi}>
                 <div id={`overlay-${component}`} />
               </AgnosticModuleLoader>
@@ -126,7 +132,12 @@ export function OverlayOrchestrator({
           </DialogHeader>
           <Separator />
           <div className="py-4">
-            {component && (
+            {component === 'AgnosticForm' ? (
+              <AgnosticForm {...props} api={moduleApi} onSubmit={async (data) => {
+                if (props.onSubmit) await props.onSubmit(data);
+                closeOverlay();
+              }} />
+            ) : component && (
               <AgnosticModuleLoader moduleName={component} api={moduleApi}>
                 <div id={`overlay-${component}`} />
               </AgnosticModuleLoader>

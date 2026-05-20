@@ -17,18 +17,9 @@ export interface DataItem {
   [key: string]: any; // Industrial flexibility for convenience properties
 }
 
-// ─── DATA STRATEGY ───────────────────────────────────────────────────────────
-
-export interface DataStrategy {
-  read: (context?: string) => Promise<Record<string, DataItem[]>>;
-  write: (data: Record<string, DataItem[]>) => Promise<void>;
-  /** Optional for read-only strategies (e.g. GitHubStrategy for DNA versioning). */
-  delete?: (context: string, id: string) => Promise<void>;
-  /** High-frequency single-context write. Falls back to write() if absent. */
-  writeContext?: (context: string, items: DataItem[]) => Promise<void>;
-  /** 🔭 INTROSPECTION: Enables the bridge to self-map its native structure to Agnostic DNA. */
-  introspect?: () => Promise<DataItem[]>;
-}
+// ─── DATA STRATEGY (REMOVED) ────────────────────────────────────────────────
+// The legacy DataStrategy has been replaced by the Universal Management Protocol (AgnosticBridge).
+// See storage.ts for the new canonical contract.
 
 // ─── OVERLAY ─────────────────────────────────────────────────────────────────
 
@@ -48,9 +39,7 @@ export type UnifiedQuery =
   | { action: 'UPSERT';   context: string;    payload: Record<string, unknown> }
   | { action: 'DELETE';   context: string;    payload: { id: string } }
   | { action: 'NAVIGATE'; context?: undefined; payload: { path: string } }
-  | { action: 'INTENT';   context: string;    payload?: Record<string, unknown> }
-  | { action: 'RESTORE';  context: string;    payload: any[] }
-  | { action: 'INTROSPECT'; context?: undefined; payload?: undefined };
+  | { action: 'INTENT';   context: string;    payload?: Record<string, unknown> };
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 
@@ -86,7 +75,7 @@ export interface AppState {
 export type Action =
   | { type: 'SET_DATA';         payload: { context: string; items: DataItem[] } }
   | { type: 'SET_SYSTEM_STATE'; payload: Partial<AppState['system']> }
-  | { type: 'SET_AUTH';         payload: AppState['auth'] };
+  | { type: 'SET_AUTH';         payload: any };
 
 // ─── UI BRIDGE ───────────────────────────────────────────────────────────────
 
@@ -96,6 +85,7 @@ export interface AgnosticUI {
   confirm:    (title: string, description: string, onConfirm: () => void) => void;
   close:      () => void;
   renderAction: (type: 'CREATE' | 'SAVE' | 'DELETE' | 'CANCEL', props: { label?: string, onClick: () => void, className?: string }) => string;
+  renderBelt?: (config: any) => any;
 }
 
 // ─── PUBLIC API CONTRACT ─────────────────────────────────────────────────────
@@ -110,6 +100,7 @@ export interface AgnosticAPI {
   getContext:      () => string;
   getSchema:       (context?: string) => Record<string, unknown> | null;
   getBlockConfig:  () => Record<string, unknown>;
+  getConfig:       (key: string) => any;
   renderIcon:      (name: string) => string;
   notify: {
     success: (msg: string) => void;
@@ -121,3 +112,16 @@ export interface AgnosticAPI {
   user:      AgnosticUser | null;
   container?: HTMLElement;
 }
+
+// ─── SYSTEM CONFIG & PASSPORT ───────────────────────────────────────────────
+
+export interface SystemPassport {
+  project_identity: string;
+  storage_strategy: 'LocalStrategy' | 'SupabaseStrategy' | 'GitHubStrategy';
+  dna_strategy: 'local' | 'remote';
+  home_slug?: string;
+  app_name?: string;
+  github_repo?: string;    // 'owner/repo' - NO es un secreto
+  github_branch?: string;  // 'main' - NO es un secreto
+}
+

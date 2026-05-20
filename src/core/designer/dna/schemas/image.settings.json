@@ -1,0 +1,42 @@
+{
+  "id": "image_settings_def",
+  "name": "image_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Imagen",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        { "key": "src",     "label": "URL de la Imagen",  "type": "string",
+          "description": "URL absoluta o path relativo. Ejemplo: /images/hero.jpg o https://cdn.ejemplo.com/img.webp" },
+        { "key": "alt",     "label": "Texto Alternativo", "type": "string",
+          "description": "Describe la imagen para accesibilidad y SEO." },
+        { "key": "caption", "label": "Pie de Foto",       "type": "string" },
+        {
+          "key": "aspect",
+          "label": "Relación de Aspecto",
+          "type": "select",
+          "options": [
+            { "label": "16:9 Video",   "value": "video" },
+            { "label": "1:1 Cuadrado", "value": "square" },
+            { "label": "3:4 Retrato",  "value": "portrait" },
+            { "label": "Auto",         "value": "auto" }
+          ],
+          "default": "video"
+        },
+        {
+          "key": "fit",
+          "label": "Ajuste de Imagen",
+          "type": "select",
+          "options": [
+            { "label": "Cover (rellena, recorta)", "value": "cover" },
+            { "label": "Contain (completa)",       "value": "contain" }
+          ],
+          "default": "cover"
+        },
+        { "key": "rounded", "label": "Bordes Redondeados", "type": "boolean" }
+      ]
+    }
+  ]
+}

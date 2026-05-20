@@ -1,65 +1,120 @@
-/**
- * 🏛️ ARTEFACTO: SystemSection.tsx
- * ────────────
- * CAPA: Designer (UI Layout)
- * VERSIÓN: 3.0
- * COMMIT: P3-M4.1-ADR-PURE-PROJECTOR
- */
-
 'use client';
 
-import { useAgnosticSchema } from '@/lib/agnostic/SchemaInterpreter';
-import { AgnosticForm } from '../../blocks/AgnosticForm';
-import sovereigntySchemaRaw from '@/core/designer/dna/sovereignty.schema.json';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Shield, Database, Palette, LogOut, RefreshCw } from 'lucide-react';
 import { MasterPassport } from '@/types/sovereignty';
+import { AgnosticConfigProjector } from '@/components/agnostic/modules/AgnosticConfigProjector';
+import tokensSchema from '@/core/designer/dna/tokens.schema.json';
 
 interface SystemSectionProps {
   config: Partial<MasterPassport>;
-  setConfig: (newConfig: any) => void;
+  setConfig: (newConfig: any) => Promise<void> | void;
 }
 
 export function SystemSection({ config, setConfig }: SystemSectionProps) {
-  
-  // 🔭 UNIFIED RESOLUTION: Delegamos la inteligencia al Intérprete Maestro
-  const { schema, isLoading } = useAgnosticSchema(sovereigntySchemaRaw);
+  const router = useRouter();
+  const [localTokens, setLocalTokens] = useState<any>(config);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // 🛡️ SOBERIGNTY DATA BINDING
-  const activeRecord = {
-    id: 'master_passport',
-    context: 'system_config',
-    data: config
+  useEffect(() => {
+    setLocalTokens(config);
+  }, [config]);
+
+  const isDirty = JSON.stringify(localTokens?.ui_tokens) !== JSON.stringify(config?.ui_tokens);
+
+  const handleSaveTokens = async () => {
+    setIsSaving(true);
+    try {
+      await setConfig(localTokens);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSave = async (updatedRecord: any) => {
-    setConfig(updatedRecord.data);
+  const handleSiloRedirect = () => {
+    if (confirm('¿Deseas salir al asistente de configuración para cambiar de Silo de datos? Tus configuraciones actuales se mantendrán a salvo.')) {
+      router.push('/setup');
+    }
   };
-
-  if (isLoading) return <div className="py-20 text-center text-[10px] uppercase font-bold tracking-widest animate-pulse">Interpretando Soberanía...</div>;
 
   return (
-    <div className="space-y-8 py-2 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      
-      {/* 🔮 MASTER INFRASTRUCTURE PLUG */}
-      <AgnosticForm 
-        schema={schema}
-        activeRecord={activeRecord}
-        context="system_config"
-        onSave={handleSave}
-        title="Enchufe de Soberanía"
-        subtitle="Administración del Pasaporte Maestro de Identidad e Infraestructura"
-        className="border-primary/5 shadow-xl shadow-primary/5 bg-card/40 backdrop-blur-sm"
-      />
-      
-      <div className="p-5 rounded-2xl border border-primary/10 bg-primary/[0.02]">
-        <div className="flex items-start gap-4">
-          <div className="mt-1 w-2 h-2 rounded-full bg-primary/40 animate-pulse" />
-          <div className="space-y-1">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">Protocolo de Reinicio Determinista</h4>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Cualquier cambio en la identidad del proyecto o en las estrategias de persistencia invalidará el caché del orquestador y forzará una re-instanciación del motor para alinearse con la nueva realidad física del silo.
-            </p>
+    <div className="space-y-6 py-2 animate-in fade-in duration-500">
+
+      {/* FR1 & FR2 — Read-Only */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-1.5">
+          <Shield size={14} className="text-primary" /> Soberanía y Núcleo
+        </h3>
+        <div className="bg-background border rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="flex flex-col gap-1">
+            <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Silo Activo</Label>
+            <div className="h-9 px-3 border bg-muted/20 rounded-xl flex items-center justify-between text-xs font-mono font-bold text-foreground">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {config.project_identity || 'sin-silo'}
+              </span>
+              <span className="text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                Conectado
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Estrategia del Adaptador</Label>
+            <div className="h-9 px-3 border bg-muted/20 rounded-xl flex items-center text-xs font-bold text-foreground">
+              <span className="flex items-center gap-2 text-primary">
+                <Database size={13} />
+                {config.storage_strategy === 'LocalStrategy' ? 'Local (Archivos JSON)' : config.storage_strategy || 'Local Strategy'}
+              </span>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* FR3 — Tokens con estado local + save explícito */}
+      <div className="space-y-3 border-t pt-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-1.5">
+            <Palette size={14} className="text-primary" /> Tokens Estéticos
+          </h3>
+          {isDirty && (
+            <Button
+              size="sm"
+              onClick={handleSaveTokens}
+              disabled={isSaving}
+              className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
+            >
+              <RefreshCw size={10} className={isSaving ? 'animate-spin' : ''} />
+              {isSaving ? 'Guardando...' : 'Guardar'}
+            </Button>
+          )}
+        </div>
+        <div className="bg-background border rounded-2xl p-4 shadow-sm">
+          <AgnosticConfigProjector
+            schema={tokensSchema}
+            data={localTokens}
+            onUpdate={(patch) => setLocalTokens((prev: any) => ({
+              ...prev,
+              ...(patch.ui_tokens ? { ui_tokens: { ...(prev?.ui_tokens || {}), ...patch.ui_tokens } } : patch),
+            }))}
+          />
+        </div>
+      </div>
+
+      {/* FR4 — Cambio de Silo */}
+      <div className="border-t pt-5 space-y-2">
+        <Button
+          variant="outline"
+          onClick={handleSiloRedirect}
+          className="w-full h-9 border-dashed text-destructive hover:text-destructive hover:bg-destructive/5 font-bold uppercase text-[9px] tracking-widest gap-2 rounded-xl"
+        >
+          <LogOut size={12} /> Desconectar / Cambiar Silo
+        </Button>
+        <p className="text-[9px] text-muted-foreground text-center leading-relaxed">
+          El cambio de silo requiere re-instanciar el motor físico y recargar los almacenes de datos.
+        </p>
       </div>
 
     </div>

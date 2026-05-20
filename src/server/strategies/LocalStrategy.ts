@@ -1,16 +1,49 @@
 /**
  * 🏛️ ARTEFACTO: LocalStrategy.ts
  * ────────────
- * CAPA: Integrations / Adapters (Local Persistence Bridge)
- * VERSIÓN: 3.0 (Neutral Sovereignty)
+ * CAPA: Server (Local File Persistence Strategy)
+ * VERSIÓN: 5.0
+ * COMMIT: P3-M1.2-LOCAL-STRATEGY-AXIOMATIC
+ * 
+ * 🎯 FUNCTIONAL_SCOPE:
+ * - Implement standard data persistence utilizing local JSON files.
+ * - Restrict operations strictly to read, write, and remove.
+ * 
+ * 🛡️ AXIOMATIC_CONTRACT:
+ * - MUST: Implement standard CRUD operation definitions cleanly.
+ * - NEVER: Contain DDL schema evolution logic or registry auto-registration.
+ * - ALWAYS: Keep operations atomic when writing to the filesystem.
+ * 
+ * 📜 ADR: [2026-05-16] LOCAL_STRATEGY_PRUNING
+ * - DECISIÓN: Clean up StrategyRegistry references, dynamic schema building, and unused verbs (patch, evolve, wipe, inspect).
+ * - MOTIVO: Adherence to Suh's Axiom of Independence, separating physical schema definition from storage logic.
+ * - IMPACTO: Reduction of technical debt, simpler data flow, and fully predictable operations.
+ * 
+ * 🔗 RELATIONSHIPS:
+ * - UPSTREAM: [storage.ts]
+ * - DOWNSTREAM: [getStrategy.ts]
  */
+
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import type { DataItem, DataStrategy, SystemOperation } from '@agnostic/core';
+import type { 
+  DataItem, 
+  AgnosticBridge, 
+  AgnosticCapabilities, 
+  AgnosticQuery 
+} from '@agnostic/core';
 
-export class LocalStrategy implements DataStrategy {
+export class LocalStrategy implements AgnosticBridge {
   private readonly dbDir: string;
+
+  /**
+   * Describes the local file system storage capabilities.
+   */
+  readonly capabilities: AgnosticCapabilities = {
+    storageType: 'FILE',
+    isRelational: false
+  };
 
   constructor(siloPath: string) {
     this.dbDir = path.isAbsolute(siloPath) 
@@ -18,172 +51,119 @@ export class LocalStrategy implements DataStrategy {
       : path.join(process.cwd(), siloPath, 'db');
   }
 
-  private getFilePath(context: string): string {
-    return path.join(this.dbDir, `${context}.json`);
+  /**
+   * Resolves the JSON file path for a given namespace.
+   */
+  private getFilePath(namespace: string): string {
+    return path.join(this.dbDir, `${namespace}.json`);
   }
 
-  private sanitizeData(context: string, data: any): DataItem[] {
+  /**
+   * Standardizes the parsed JSON data format into a flat array of DataItem.
+   */
+  private sanitizeData(namespace: string, data: any): DataItem[] {
     if (data && typeof data === 'object' && !Array.isArray(data)) {
-      if (data[context] && Array.isArray(data[context])) {
-        return data[context];
+      if (data[namespace] && Array.isArray(data[namespace])) {
+        return data[namespace];
       }
     }
     return Array.isArray(data) ? data : [];
   }
 
-  async read(context?: string): Promise<Record<string, DataItem[]>> {
+  // ─── CRUD OPERATIONS ───────────────────────────────────────────────────────
+
+  /**
+   * Reads all items in a namespace and applies optional filters.
+   */
+  async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
       await fs.mkdir(this.dbDir, { recursive: true });
 
-      if (context) {
-        // 🛡️ SOVEREIGNTY BRIDGE: Master Passport is ALWAYS in the neutral root
-        if (context === 'system_config') {
-          const rootPath = path.join(process.cwd(), 'storage', 'system_config.json');
-          try {
-            const raw = await fs.readFile(rootPath, 'utf-8');
-            return { [context]: this.sanitizeData(context, JSON.parse(raw)) };
-          } catch { return { [context]: [] }; }
-        }
-
-        // 🧬 DNA HERITAGE: Inject Core Definitions
-        if (context === 'schema_definitions' || context === 'page_routes') {
-           const coreItems = await this.readCoreDNA(context);
-           const filePath = this.getFilePath(context);
-           let localItems: DataItem[] = [];
-           try {
-             const raw = await fs.readFile(filePath, 'utf-8');
-             localItems = this.sanitizeData(context, JSON.parse(raw));
-           } catch {}
-           
-           const itemMap = new Map(coreItems.map(i => [i.id, i]));
-           localItems.forEach(i => itemMap.set(i.id, i));
-           return { [context]: Array.from(itemMap.values()) };
-        }
-
-        const filePath = this.getFilePath(context);
-        try {
-          const raw = await fs.readFile(filePath, 'utf-8');
-          return { [context]: this.sanitizeData(context, JSON.parse(raw)) };
-        } catch { return { [context]: [] }; }
-      }
-
-      // Full Directory Read
-      const files = await fs.readdir(this.dbDir);
-      const db: Record<string, DataItem[]> = {};
-      for (const file of files) {
-        if (file.endsWith('.json')) {
-          const contextName = path.basename(file, '.json');
-          const raw = await fs.readFile(path.join(this.dbDir, file), 'utf-8');
-          db[contextName] = this.sanitizeData(contextName, JSON.parse(raw));
-        }
-      }
-      return db;
-    } catch (err) {
-      return {};
-    }
-  }
-
-  async write(fullDatabase: Record<string, DataItem[]>): Promise<void> {
-    for (const [context, items] of Object.entries(fullDatabase)) {
-      // 🛡️ SOVEREIGNTY BRIDGE: Master Passport writes to Neutral Root
-      const masterPassport = items.find(i => i.id === 'master_passport' && context === 'system_config');
-      
-      if (masterPassport) {
+      // Handle system config stored at the neutral storage root
+      if (namespace === 'system_config') {
         const rootPath = path.join(process.cwd(), 'storage', 'system_config.json');
-        
-        // 🧬 SOVEREIGNTY MIGRATION: Auto-rename silo folder
-        let oldPassport: any = null;
         try {
-          if (fsSync.existsSync(rootPath)) {
-            const raw = await fs.readFile(rootPath, 'utf-8');
-            const parsed = JSON.parse(raw);
-            oldPassport = Array.isArray(parsed) ? parsed.find(i => i.id === 'master_passport')?.data : parsed;
-          }
-        } catch (e) {}
+          const raw = await fs.readFile(rootPath, 'utf-8');
+          return this.sanitizeData(namespace, JSON.parse(raw));
+        } catch { 
+          return []; 
+        }
+      }
 
-        const newPassport = (masterPassport as any).data;
-        const oldIdentity = oldPassport?.project_identity;
-        const newIdentity = newPassport?.project_identity;
-
-        if (oldIdentity && newIdentity && oldIdentity !== newIdentity) {
-          const storageRoot = path.join(process.cwd(), 'storage');
-          const oldSiloPath = path.join(storageRoot, oldIdentity);
-          const newSiloPath = path.join(storageRoot, newIdentity);
-
-          if (fsSync.existsSync(oldSiloPath) && !fsSync.existsSync(newSiloPath)) {
-            console.log(`[SovereigntyMigration] RENAMING SILO: ${oldIdentity} -> ${newIdentity}`);
-            await fs.rename(oldSiloPath, newSiloPath);
-          }
+      const filePath = this.getFilePath(namespace);
+      try {
+        const raw = await fs.readFile(filePath, 'utf-8');
+        const items = this.sanitizeData(namespace, JSON.parse(raw));
+        
+        if (query?.where) {
+          return items.filter(item => {
+            return Object.entries(query.where!).every(([k, v]) => {
+              return (k === 'id' && item.id === v) || item.data?.[k] === v || item[k] === v;
+            });
+          });
         }
 
-        await fs.writeFile(rootPath, JSON.stringify(items, null, 2), 'utf-8');
-        
-        // Invalidate cache to force re-instantiation of the engine with the new identity
-        const { invalidateStrategyCache } = require('../getStrategy');
-        invalidateStrategyCache();
-        continue; 
+        return items;
+      } catch { 
+        return []; 
       }
-
-      const filePath = this.getFilePath(context);
-      await fs.mkdir(path.dirname(filePath), { recursive: true });
-      await fs.writeFile(filePath, JSON.stringify(items, null, 2), 'utf-8');
+    } catch (err) {
+      return [];
     }
   }
 
-  private async readCoreDNA(context: string): Promise<DataItem[]> {
-    const coreDnaPath = path.join(process.cwd(), 'src', 'core', 'designer', 'dna');
-    const items: DataItem[] = [];
-    if (!fsSync.existsSync(coreDnaPath)) return [];
+  /**
+   * Writes a record atomically to the filesystem. Merges existing data if already present.
+   */
+  async write(namespace: string, record: Partial<DataItem> & { data: Record<string, unknown> }): Promise<DataItem> {
+    const existing = await this.read(namespace);
+    const id = record.id || globalThis.crypto.randomUUID();
+    const saved: DataItem = { 
+      id, 
+      context: namespace, 
+      data: record.data, 
+      updated_at: new Date().toISOString() 
+    };
     
-    const files = await fs.readdir(coreDnaPath);
-    const extension = context === 'schema_definitions' ? '.schema.json' : '.route.json';
+    const map = new Map(existing.map(i => [i.id, i]));
+    map.set(id, saved);
     
-    for (const file of files) {
-      if (file.endsWith(extension)) {
-        const raw = await fs.readFile(path.join(coreDnaPath, file), 'utf-8');
-        const data = JSON.parse(raw);
-        items.push({ id: data.id || `core_${path.basename(file, extension)}`, context, data });
-      }
+    let filePath = this.getFilePath(namespace);
+    if (namespace === 'system_config') {
+      filePath = path.join(process.cwd(), 'storage', 'system_config.json');
     }
-    return items;
-  }
-
-  async overwriteContext(context: string, items: DataItem[]): Promise<void> {
-    // 🛡️ SOVEREIGNTY BRIDGE: Master Passport writes to Neutral Root
-    const masterPassport = items.find(i => i.id === 'master_passport' && context === 'system_config');
     
-    if (masterPassport) {
-      const rootPath = path.join(process.cwd(), 'storage', 'system_config.json');
-      await fs.writeFile(rootPath, JSON.stringify(items, null, 2), 'utf-8');
-      
-      // Invalidate cache to force re-instantiation
-      try {
-        const { invalidateStrategyCache } = require('../getStrategy');
-        invalidateStrategyCache();
-      } catch (e) {}
-      return;
-    }
-
-    const filePath = this.getFilePath(context);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(items, null, 2), 'utf-8');
+    
+    // Atomic Write Operation: write to a temporary file, then rename it
+    const content = JSON.stringify(Array.from(map.values()), null, 2);
+    const tmp = filePath + '.tmp';
+    await fs.writeFile(tmp, content, 'utf-8');
+    try {
+      await fs.rename(tmp, filePath);
+    } catch {
+      // Windows: el file watcher puede tener el destino bloqueado.
+      // Fallback: overwrite directo (no atómico pero seguro en entorno local).
+      await fs.writeFile(filePath, content, 'utf-8');
+      try { await fs.unlink(tmp); } catch { /* limpieza best-effort */ }
+    }
+    
+    return saved;
   }
 
-  async writeContext(context: string, items: DataItem[]): Promise<void> {
-    const db = await this.read(context);
-    const existingItems = db[context] || [];
-    const itemMap = new Map(existingItems.map(item => [item.id, item]));
-    items.forEach(item => itemMap.set(item.id, item));
-    await this.overwriteContext(context, Array.from(itemMap.values()));
-  }
-
-  async delete(context: string, id: string): Promise<void> {
-    const db = await this.read(context);
-    const filtered = (db[context] || []).filter(item => item.id !== id);
-    await this.overwriteContext(context, filtered);
-  }
-
-  getOperations(): SystemOperation[] {
-    return [{ id: 'local_migration', label: 'Alinear Silo Local', action: 'UPDATE', scope: 'MATERIA' }];
+  /**
+   * Removes a record by ID from a specific namespace.
+   */
+  async remove(namespace: string, id: string): Promise<void> {
+    const existing = await this.read(namespace);
+    const filtered = existing.filter(i => i.id !== id);
+    
+    let filePath = this.getFilePath(namespace);
+    if (namespace === 'system_config') {
+      filePath = path.join(process.cwd(), 'storage', 'system_config.json');
+    }
+    
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(filtered, null, 2), 'utf-8');
   }
 }

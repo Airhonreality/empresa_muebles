@@ -12,20 +12,15 @@
  * este endpoint es sólo para el CSS de utilidades/clases propias del satélite.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { getSiloPath } from '@/server/activeProject';
 import fs   from 'fs/promises';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  const host         = req.headers.get('host') ?? '';
-  const activeTenant = process.env.ACTIVE_TENANT ??
-    (host && !host.includes('localhost') ? host.split('.')[0] : 'default');
-
   const compiledPath = path.join(
-    process.cwd(),
-    'storage',
-    activeTenant,
+    getSiloPath(),
     'styles',
     'compiled.css',
   );

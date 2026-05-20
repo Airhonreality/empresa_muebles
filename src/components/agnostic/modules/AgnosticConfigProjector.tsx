@@ -29,6 +29,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ interface ConfigProjectorProps {
   onUpdate: (patch: any) => void;
   resolvers?: Record<string, any[]>; 
   filterSection?: string | null;
+  layout?: 'grid' | 'vertical';
 }
 
 export function AgnosticConfigProjector({ 
@@ -50,7 +52,8 @@ export function AgnosticConfigProjector({
   data = {}, 
   onUpdate, 
   resolvers = {},
-  filterSection = null
+  filterSection = null,
+  layout = 'vertical'
 }: ConfigProjectorProps) {
   
   const updateField = (key: string, value: any) => {
@@ -71,8 +74,16 @@ export function AgnosticConfigProjector({
 
   const sections = Object.keys(groupedFields);
 
-  const renderField = (field: any): React.ReactNode => {
-    const value = data[field.key] ?? field.default;
+  const renderField = (field: any, nsKey?: string): React.ReactNode => {
+    const value = nsKey
+      ? (data[nsKey]?.[field.key] ?? field.default)
+      : (data[field.key] ?? field.default);
+
+    const updateValue = (val: any) =>
+      nsKey
+        ? onUpdate({ [nsKey]: { ...(data[nsKey] || {}), [field.key]: val } })
+        : onUpdate({ [field.key]: val });
+
     const label = <label className="text-[10px] font-bold uppercase text-muted-foreground/50 tracking-wider block mb-1">{field.label}</label>;
 
     switch (field.type) {
@@ -89,7 +100,7 @@ export function AgnosticConfigProjector({
              </div>
              <div className="space-y-4 pl-2">
                {field.fields?.map((f: any) => (
-                 <div key={f.key}>{renderField(f)}</div>
+                 <div key={f.key}>{renderField(f, field.key)}</div>
                ))}
              </div>
           </div>
@@ -104,7 +115,7 @@ export function AgnosticConfigProjector({
             </div>
             <Checkbox 
               checked={!!value} 
-              onCheckedChange={(checked) => updateField(field.key, checked)}
+              onCheckedChange={(checked) => updateValue(checked)}
             />
           </div>
         );
@@ -123,7 +134,7 @@ export function AgnosticConfigProjector({
             {label}
             <Select 
               value={field.type === 'multi-select' ? (Array.isArray(value) ? value[0] : value) : value} 
-              onValueChange={(v) => updateField(field.key, field.type === 'multi-select' ? [v] : v)}
+              onValueChange={(v) => updateValue(field.type === 'multi-select' ? [v] : v)}
             >
               <SelectTrigger>
                 <SelectValue placeholder={`Seleccionar...`} />
@@ -141,13 +152,27 @@ export function AgnosticConfigProjector({
           </div>
         );
 
+      case 'textarea':
+        return (
+          <div className="space-y-1">
+            {label}
+            <Textarea
+              value={value || ''}
+              onChange={(e) => updateValue(e.target.value)}
+              placeholder={field.label}
+              className="min-h-[72px] text-xs resize-y"
+            />
+            {field.description && <p className="text-[8px] text-muted-foreground/30 pl-1">{field.description}</p>}
+          </div>
+        );
+
       default:
         return (
           <div className="space-y-1">
             {label}
-            <Input 
-              value={value || ''} 
-              onChange={(e) => updateField(field.key, e.target.value)} 
+            <Input
+              value={value || ''}
+              onChange={(e) => updateValue(e.target.value)}
               placeholder={field.label}
             />
             {field.description && <p className="text-[8px] text-muted-foreground/30 pl-1">{field.description}</p>}
@@ -179,8 +204,12 @@ export function AgnosticConfigProjector({
   }
 
   // 🌳 RENDER DE ALTA DENSIDAD (Grupos en columnas, campos en filas)
+  const containerClass = layout === 'grid'
+    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+    : "flex flex-col gap-6";
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+    <div className={containerClass}>
       {sections.map((sectionName) => (
         <div key={sectionName} className={cn(
           "bg-background/20 rounded-[2.5rem] px-8 py-8 border border-border/5 flex flex-col h-full",

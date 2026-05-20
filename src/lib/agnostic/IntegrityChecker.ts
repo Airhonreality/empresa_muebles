@@ -6,6 +6,7 @@
  */
 
 import { DataItem } from '@agnostic/core';
+import { SYSTEM_NS } from './constants';
 
 export interface IntegrityIssue {
   level: 'ERROR' | 'WARNING';
@@ -28,8 +29,8 @@ export class IntegrityChecker {
   static analyze(fullDb: Record<string, any[]>): IntegrityReport {
     const issues: IntegrityIssue[] = [];
     
-    const schemas = fullDb['schema_definitions'] || [];
-    const routes = fullDb['page_routes'] || [];
+    const schemas = fullDb[SYSTEM_NS.SCHEMAS] || [];
+    const routes = fullDb[SYSTEM_NS.ROUTES] || [];
 
     // Helper para extraer la data sin importar el formato (envuelto o plano)
     const getData = (item: any) => item?.data ?? item;

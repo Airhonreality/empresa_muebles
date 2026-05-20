@@ -1,137 +1,77 @@
 /**
  * 🏛️ ARTEFACTO: getStrategy.ts
  * ────────────
- * CAPA: Server (Sovereignty Orchestration)
- * VERSIÓN: 4.0 (Axiomatic & Typed)
- * COMMIT: P3-M2.2-ADR-DETERMINISTIC-ORCHESTRATOR
+ * CAPA: Server (Adapter Resolution Gateway)
+ * VERSIÓN: 5.0
+ * COMMIT: P3-M1.4-RESOLVER-PRUNING
  * 
  * 🎯 FUNCTIONAL_SCOPE:
- * - Resolución determinista de la Realidad Activa (ADN + Almacenamiento).
- * - Hidratación del motor basada en el contrato MasterPassport.
+ * - Load the master passport dynamically and instantiate the correct data persistence adapter.
+ * - Resolve between LocalStrategy and SupabaseStrategy based on active passport configuration.
  * 
  * 🛡️ AXIOMATIC_CONTRACT:
- * - MUST: Lanzar error fatal si el Pasaporte Maestro está incompleto (Cero Fallbacks).
- * - NEVER: Registrar estado dinámico en el Registry (El Registry es Catálogo).
- * - ALWAYS: Garantizar que la identidad inyectada sea la fuente única de verdad.
+ * - MUST: Instantiate strategies synchronously on-demand.
+ * - NEVER: Rely on StrategyRegistry dynamic discovery or cached instances with TTL.
+ * - ALWAYS: Keep the mapping direct, concrete, and strictly mapped to standard types.
  * 
- * 📜 ADR: [2026-05-15] ZERO_FALLBACK_POLICY
- * - DECISIÓN: Eliminar el uso de 'any' y los valores por defecto 'LocalStrategy' o 'default'.
- * - MOTIVO: Los fallbacks enmascaran la orfandad de datos y rompen el determinismo.
- * - IMPACTO: El sistema solo arranca si el Pasaporte es válido y completo.
+ * 📜 ADR: [2026-05-16] ADAPTER_RESOLUTION_SIMPLIFICATION
+ * - DECISIÓN: Replace the complex dynamic StrategyRegistry mechanism and in-memory TTL caching with a 20-line direct conditional factory.
+ * - MOTIVO: Adherence to Suh's Independence Axiom, stripping out redundant dynamic discovery layers that bloated the core logic.
+ * - IMPACTO: Elimination of 100+ lines of registry configuration and a completely predictable strategy factory.
+ * 
+ * 🔗 RELATIONSHIPS:
+ * - UPSTREAM: [LocalStrategy.ts, SupabaseStrategy.ts]
+ * - DOWNSTREAM: [vault/route.ts, vault.ts]
  */
 
-import type { DataStrategy } from '@agnostic/core';
+import 'server-only';
+import { AgnosticBridge } from '@agnostic/core';
 import { LocalStrategy } from './strategies/LocalStrategy';
 import { SupabaseStrategy } from './strategies/SupabaseStrategy';
 import { GitHubStrategy } from './strategies/GitHubStrategy';
-import { HybridStrategy } from './strategies/HybridStrategy';
-import { MasterPassport } from '@/types/sovereignty';
-import fs from 'fs';
-import path from 'path';
-
-const CACHE_TTL_MS = 5 * 60 * 1000;
-interface CacheEntry {
-  strategy: DataStrategy;
-  expiresAt: number;
-}
-const strategyCache = new Map<string, CacheEntry>();
-
-export function invalidateStrategyCache(): void {
-  strategyCache.clear();
-}
+import { readPassport, readPassportForTenant, getSiloPath } from './activeProject';
 
 /**
- * 🛡️ SOVEREIGNTY VALIDATOR
- * Ensures the passport follows the Master Contract.
+ * Resolves and instantiates the correct persistence strategy.
+ * Direct and synchronous factory mapping avoiding discovery overhead.
  */
-function validatePassport(p: any): asserts p is MasterPassport {
-  const requiredFields: (keyof MasterPassport)[] = ['project_identity', 'dna_strategy', 'storage_strategy'];
-  const missing = requiredFields.filter(f => !p[f]);
-  if (missing.length > 0) {
-    throw new Error(`[SovereigntyEngine] FATAL ERROR: Master Passport is incomplete. Missing fields: ${missing.join(', ')}`);
+export function getStrategy(tenantKey?: string): AgnosticBridge {
+  const passport = tenantKey 
+    ? readPassportForTenant(tenantKey) 
+    : readPassport();
+
+  if (passport.storage_strategy === 'SupabaseStrategy') {
+    return new SupabaseStrategy(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
   }
-}
 
-async function buildStrategy(): Promise<DataStrategy> {
-  const projectRoot = process.cwd();
-  let passport: Partial<MasterPassport> = {};
-
-  // 📜 IDENTITY DISCOVERY (Injection Priority)
-  try {
-    if (process.env.SYSTEM_PASSPORT) {
-      passport = JSON.parse(process.env.SYSTEM_PASSPORT);
-    } else {
-      const neutralConfigPath = path.join(projectRoot, 'storage', 'system_config.json');
-      if (fs.existsSync(neutralConfigPath)) {
-        const config = JSON.parse(fs.readFileSync(neutralConfigPath, 'utf8'));
-        // In Local, system_config is a DataItem array
-        const masterItem = Array.isArray(config) ? config.find((i: any) => i.id === 'master_passport') : null;
-        passport = masterItem ? masterItem.data : config;
-      }
+  if (passport.storage_strategy === 'GitHubStrategy') {
+    const [owner, repo] = (passport.github_repo ?? passport.project_identity).split('/');
+    
+    // Resolve optional custom token from TENANTS_MAP for isolated tenant rates
+    let customToken: string | undefined = undefined;
+    const tenantsMapRaw = process.env.TENANTS_MAP;
+    if (tenantsMapRaw && tenantKey) {
+      try {
+        const map = JSON.parse(tenantsMapRaw) as Record<string, string | { repo: string; token?: string }>;
+        const entry = map[tenantKey];
+        if (entry && typeof entry !== 'string') {
+          customToken = entry.token;
+        }
+      } catch {}
     }
-  } catch (e) {
-    throw new Error(`[SovereigntyEngine] Failed to read Identity Passport: ${e instanceof Error ? e.message : 'Unknown error'}`);
+
+    return new GitHubStrategy(owner, repo, customToken, passport.github_branch);
   }
 
-  // 🛡️ ENFORCE DETERMINISM
-  validatePassport(passport);
-
-  const { project_identity, dna_strategy, storage_strategy } = passport;
-  const siloPath = path.join(projectRoot, 'storage', project_identity);
-
-  console.log(`[SovereigntyEngine] EXECUTION_MODE: ID=${project_identity} | DNA=${dna_strategy} | STORAGE=${storage_strategy}`);
-
-  // 🏗️ STRATEGY FACTORY (Pure Resolution)
-  let dnaInstance: DataStrategy;
-  switch (dna_strategy) {
-    case 'GitHubStrategy': 
-      dnaInstance = new GitHubStrategy(
-        process.env.GITHUB_OWNER || '', 
-        process.env.GITHUB_REPO || ''
-      ); 
-      break;
-    case 'LocalStrategy':
-      dnaInstance = new LocalStrategy(siloPath); 
-      break;
-    default:
-      throw new Error(`[SovereigntyEngine] Unsupported DNA Strategy: ${dna_strategy}`);
+  // Warning when Vercel runs local filesystem persistence (Vector 2 Mitigation)
+  if (process.env.VERCEL && (passport.storage_strategy === 'LocalStrategy' || passport.storage_strategy === 'local')) {
+    console.warn('[getStrategy] WARNING: LocalStrategy running on Vercel ephemeral filesystem. Set GITHUB_REPO.');
   }
 
-  let storageInstance: DataStrategy;
-  switch (storage_strategy) {
-    case 'SupabaseStrategy':
-      storageInstance = new SupabaseStrategy(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-      break;
-    case 'LocalStrategy':
-      storageInstance = dnaInstance;
-      break;
-    default:
-      throw new Error(`[SovereigntyEngine] Unsupported Storage Strategy: ${storage_strategy}`);
-  }
-
-  // 🛡️ HYBRID ASSEMBLY
-  let finalStrategy = dnaInstance;
-  if (passport.sovereign_mode === 'HYBRID') {
-    const cloudContexts = ['schema_projects', 'schema_clients', 'class_space', 'quote_items', 'items'];
-    finalStrategy = new HybridStrategy(dnaInstance, storageInstance, cloudContexts);
-  }
-
-  return finalStrategy;
+  // 'LocalStrategy' or legacy 'local' - both default to LocalStrategy
+  return new LocalStrategy(getSiloPath(passport.project_identity));
 }
 
-export async function getStrategy(): Promise<DataStrategy> {
-  const cacheKey = 'global_sovereign_strategy';
-  const cached = strategyCache.get(cacheKey);
-
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.strategy;
-  }
-
-  const strategy = await buildStrategy();
-  strategyCache.set(cacheKey, {
-    strategy,
-    expiresAt: Date.now() + CACHE_TTL_MS
-  });
-
-  return strategy;
-}

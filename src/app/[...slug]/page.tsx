@@ -27,6 +27,7 @@ import { AgnosticShell } from '@/components/agnostic/engine/AgnosticShell';
 import { AgnosticGuard } from '@/components/agnostic/layouts/AgnosticGuard';
 import { Layers } from 'lucide-react';
 import { Metadata } from 'next';
+import { SYSTEM_NS } from '@/lib/agnostic/constants';
 
 export const metadata: Metadata = {
   title: 'Cargando Proyección...',
@@ -40,12 +41,11 @@ export default async function MasterRoute({ params }: PageProps) {
   const { slug } = await params;
   
   // 1. RESOLUCIÓN DE INFRAESTRUCTURA: Traemos el mapa para saber dónde estamos
-  // Solicitamos los contextos críticos para la resolución inicial
-  const coreContexts = ['page_routes', 'schema_definitions', 'vault_manifest'];
+  const coreContexts = [SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS];
   const coreData = await getVaultData(coreContexts);
-  const resolution = await resolveAgnosticRoute(slug, coreData);
+  const partialResolution = await resolveAgnosticRoute(slug, coreData);
 
-  if (!resolution.route) {
+  if (!partialResolution.route) {
     const path = Array.isArray(slug) ? `/${slug.join('/')}` : `/${slug}`;
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background p-8 text-center">
@@ -59,15 +59,18 @@ export default async function MasterRoute({ params }: PageProps) {
   }
 
   // 2. CRISTALIZACIÓN DE LA TRIPLE ALIANZA:
-  // Inyectamos ADN, Rutas, Manifiesto y la Materia específica de esta ruta.
-  const contextsToHydrate = [...coreContexts];
-  if (resolution.context && resolution.context !== 'system') {
-    contextsToHydrate.push(resolution.context);
-  }
+  // Cargamos la materia de entidades para que el resolver pueda encontrar el activeRecord.
+  const contextsToHydrate = [...new Set([
+    ...coreContexts,
+    ...(partialResolution.allContexts || [])
+  ])];
 
   const initialData = await getVaultData(contextsToHydrate);
 
-  // 3. THE SOVEREIGN SHELL: Proyectamos la realidad hidratada
+  // 3. SEGUNDA RESOLUCIÓN: ahora con datos completos para obtener el activeRecord correcto.
+  const resolution = await resolveAgnosticRoute(slug, initialData);
+
+  // 4. THE SOVEREIGN SHELL: Proyectamos la realidad hidratada
   const content = (
     <AgnosticShell 
       initialData={initialData} 
@@ -75,7 +78,7 @@ export default async function MasterRoute({ params }: PageProps) {
     />
   );
 
-  const requiredRole = (resolution.route.data as any)?.requiredRole;
+  const requiredRole = (resolution.route?.data as any)?.requiredRole;
 
   return requiredRole ? (
     <AgnosticGuard requiredRole={requiredRole}>
