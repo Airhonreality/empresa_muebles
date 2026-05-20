@@ -36,6 +36,7 @@ import { AgnosticDesigner } from '../designer/AgnosticDesigner';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 
 export function SovereigntyOrchestrator() {
+  if (!process.env.NEXT_PUBLIC_ENABLE_DESIGNER) return null;
   const { isEditMode, setEditMode, currentPath } = useSystemStore();
   const { state } = useAppState();
   
