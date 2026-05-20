@@ -37,6 +37,9 @@ next-env.d.ts
 # local tenant storage — NEVER commit to kernel repo
 storage/
 
+# local Claude Code settings (machine-specific paths)
+.claude/settings.local.json
+
 .vercel
 .env*.local
 /.history/
