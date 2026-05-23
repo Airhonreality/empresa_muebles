@@ -20,6 +20,7 @@ import { AuthProvider }   from "@/context/AuthContext";
 import { Toaster }        from "sonner";
 import { SovereigntyOrchestrator } from "@/components/agnostic/engine/SovereigntyOrchestrator";
 import { AdminGear }               from "@/components/agnostic/admin/AdminGear";
+import { AgnoChat }               from "@/components/agnostic/admin/AgnoChat";
 import { getVaultData }   from "@/core/server/vault";
 import { getSiloPath }    from "@/server/activeProject";
 import fs   from "fs/promises";
@@ -88,6 +89,7 @@ export default async function RootLayout({
             {children}
             <SovereigntyOrchestrator />
             <AdminGear />
+            <AgnoChat />
             <Toaster position="bottom-left" expand={false} richColors />
           </AuthProvider>
         </AppProvider>

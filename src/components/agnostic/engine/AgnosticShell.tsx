@@ -77,12 +77,16 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
   const stateRef = useRef({ data: initialData });
   stateRef.current = { data: materia || initialData };
 
+  const liveRoutes = useDNAStore((s) => s.routes);
+  const liveRoute = liveRoutes.find((r: any) => r.id === resolution.route?.id);
+  const blocks = ((liveRoute?.data as any)?.blocks ?? resolution.blocks) as typeof resolution.blocks;
+
   const masterApi = useMemo(() => createAgnosticAPI({
     router, saveItem, deleteItem, openOverlay, closeOverlay, stateRef: stateRef as any, 
     block: { context: resolution.context }, toast, user: null
   }), [router, saveItem, deleteItem, openOverlay, closeOverlay, resolution.context]);
 
-  const { route, blocks, activeRecord, intent, path } = resolution;
+  const { route, activeRecord, intent, path } = resolution;
   const routeData = (route?.data || {}) as any;
   const pageLayout = (routeData.layout || {}) as any;
   const isHorizontal = pageLayout.direction === 'horizontal';
@@ -101,13 +105,18 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
         }}
       >
         {blocks.map((block, idx) => (
-          <AgnosticRenderer 
-            key={`${idx}-${activeRecord?.id || 'new'}`}
-            block={{ ...block, _activePath: path }} 
-            context={resolution.context}
-            intent={intent}
-            record={activeRecord}
-          />
+          <React.Fragment key={`${idx}-${activeRecord?.id || 'new'}`}>
+            <AgnosticRenderer
+              block={{ ...block, _activePath: path }}
+              context={resolution.context}
+              intent={intent}
+              record={activeRecord}
+            />
+            {/* Spacer compensates for fixed-position blocks that leave the flow */}
+            {(block.position === 'fixed-top' || block.position === 'fixed-bottom') && (
+              <div className="shrink-0" style={{ height: block.position_height ?? 56 }} />
+            )}
+          </React.Fragment>
         ))}
       </div>
       <OverlayOrchestrator api={masterApi} />

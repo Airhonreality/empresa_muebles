@@ -55,6 +55,7 @@ import {
 
 import { useRelationData } from '@/lib/agnostic/hooks/useRelationData';
 import { SmartImageInput } from '@/components/ui/SmartImageInput';
+import ReactMarkdown from 'react-markdown';
 import { registerForm } from '@/lib/agnostic/formRegistry';
 
 interface AgnosticFormProps {
@@ -520,6 +521,31 @@ export function AgnosticForm({
                   value={formData[field.key] || ''}
                   onChange={(url) => handleFieldChange(field.key, url)}
                   placeholder={field.placeholder}
+                />
+              ) : field.type === 'markdown' ? (
+                isDerived || field.readOnly ? (
+                  <div className="rounded-md border border-border/30 bg-secondary/5 px-3 py-2 min-h-[80px] prose prose-xs prose-neutral dark:prose-invert max-w-none text-xs">
+                    <ReactMarkdown>{String(formData[field.key] || '')}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <Textarea
+                    name={field.key}
+                    value={formData[field.key] || ''}
+                    onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                    required={field.required}
+                    placeholder="Texto en markdown... **negrita**, *itálica*, # Título"
+                    className="rounded-md border-border/30 bg-secondary/5 min-h-[100px] py-2 font-mono text-xs focus:ring-0 focus:border-primary/40 resize-y px-3"
+                  />
+                )
+              ) : field.type === 'password' ? (
+                <Input
+                  type="password"
+                  name={field.key}
+                  value={formData[field.key] || ''}
+                  onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                  required={field.required}
+                  autoComplete="new-password"
+                  className="rounded-md border-border/30 bg-secondary/5 h-9 font-mono text-xs focus:ring-0 focus:border-primary/40 px-3"
                 />
               ) : field.type === 'info' ? (
                 <div className="p-4 rounded-xl border border-primary/10 bg-primary/[0.03] space-y-2">

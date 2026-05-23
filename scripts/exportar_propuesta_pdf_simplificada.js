@@ -163,13 +163,6 @@ const optionsHtml = Object.entries(variantTotals).map(([vName, totals]) => {
   `;
 }).join("");
 
-const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200">
-  <rect width="320" height="200" fill="#F5F1E8"/>
-  <rect x="8" y="8" width="304" height="184" fill="none" stroke="#D8C9A6" stroke-width="2" stroke-dasharray="6 6"/>
-  <text x="160" y="105" font-family="Inter, Arial, sans-serif" font-size="14" fill="#A3916A" text-anchor="middle">SIN IMAGEN</text>
-</svg>`;
-const PLACEHOLDER_IMAGE = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(PLACEHOLDER_SVG)}`;
-
 // 5. Compile detailed spaces breakdown HTML
 let spacesHtml = activeSpacesList.map((space, sIdx) => {
   const itemsRows = space.items.map(item => `
@@ -181,30 +174,33 @@ let spacesHtml = activeSpacesList.map((space, sIdx) => {
     </tr>
   `).join("");
 
-  const imagesToRender = space.images && space.images.length > 0
-    ? space.images
-    : [{
-        id: 'placeholder',
-        imagen_url: PLACEHOLDER_IMAGE,
-        descripcion: 'Sin imagen'
-      }];
+    // Desactivar temporalmente la parte de imágenes para evitar contaminación
+  const imagesHtml = '';
 
-  const imagesHtml = `
-    <div class="space-images" style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 16px;">
-      ${imagesToRender.map(img => `
-        <figure style="margin:0;text-align:center;">
-          <img src="${img.imagen_url}" alt="${img.descripcion || space.name}"
-            style="max-width:200px;max-height:150px;border-radius:6px;object-fit:cover;border:1px solid #e0d9cc;" />
-          ${img.descripcion
-            ? `<figcaption style="font-size:10px;color:#888;margin-top:3px;">${img.descripcion}</figcaption>`
-            : ''}
-        </figure>`).join("")}
-    </div>`;
+    // Renderizar notas_markdown como HTML (simple, sin librerías externas)
+  const renderMarkdown = (md: string) => {
+    if (!md) return '';
+    return md
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>')
+      .replace(/\#{1,6}\s+(.*?)\n/g, '<h4>$1</h4>')
+      .replace(/\-(.*?)\n/g, '<li>$1</li>')
+      .replace(/\d\.\s+(.*?)\n/g, '<li>$1</li>');
+  };
+
+  const notasHtml = space.notas_markdown ? `
+    <div class="space-notas" style="margin: 12px 0; padding: 10px; background: #f8f8f8; border-radius: 6px;">
+      ${renderMarkdown(space.notas_markdown)}
+    </div>
+  ` : '';
 
   return `
     <div class="space-section">
       <h3 class="space-title">Espacio: ${space.name}</h3>
       ${imagesHtml}
+      ${notasHtml}
       <table class="items-table">
         <thead>
           <tr>

@@ -152,3 +152,18 @@ export interface SchemaField {
   fields?: SchemaField[];  // recursivo para type 'object' o 'array_of_objects'
 }
 
+export type LayoutNodeType = 'frame' | 'field';
+
+export interface LayoutNode {
+  id: string;
+  type: LayoutNodeType;
+  field_key?: string;
+  style?: Record<string, string>;
+  children?: LayoutNode[];
+}
+
+export interface CollectionConfig {
+  view: 'custom' | 'card' | 'grid' | 'timeline';
+  item_layout?: LayoutNode[];
+}
+

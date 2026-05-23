@@ -65,23 +65,19 @@ export function RecursiveBlockComposer({
   const [isExpanded, setIsExpanded] = React.useState(true);
   const [isConfigOpen, setIsConfigOpen] = React.useState(false);
   
-// Categorized block options (E1 Fix)
-const BLOCK_CATEGORIES = [
-  { label: 'Layout / Contenedores', items: [{ value: 'frame', label: 'Frame (Contenedor)' }] },
-  { label: 'Contenido Visual', items: [
-    { value: 'text', label: 'Texto' }, { value: 'image', label: 'Imagen' },
-    { value: 'card_static', label: 'Tarjeta Estática' }, { value: 'stats_grid', label: 'Métricas' },
-    { value: 'testimonial', label: 'Testimonio' }, { value: 'cta_banner', label: 'CTA Banner' },    
-    { value: 'divider', label: 'Divisor' }, { value: 'spacer', label: 'Espacio' },
-  ]},
-  { label: 'Datos del DNA', items: [
-    { value: 'form', label: 'Formulario' }, { value: 'table', label: 'Tabla' },
-    { value: 'collection', label: 'Colección' }, { value: 'action', label: 'Acción' },
-  ]},
-];
+  const BLOCK_CATEGORIES = useMemo(() => {
+    const manifest = registry.getManifest();
+    const grouped: Record<string, { value: string; label: string }[]> = {};
 
-// Flat representation for internal registries mapping
-const staticBlockOptions = BLOCK_CATEGORIES.flatMap(cat => cat.items);
+    for (const b of manifest) {
+      if (!grouped[b.category]) grouped[b.category] = [];
+      grouped[b.category].push({ value: b.type, label: b.name });
+    }
+
+    return Object.entries(grouped).map(([label, items]) => ({ label, items }));
+  }, []);
+
+  const staticBlockOptions = BLOCK_CATEGORIES.flatMap((cat) => cat.items);
 
 
 

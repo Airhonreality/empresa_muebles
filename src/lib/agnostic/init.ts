@@ -38,6 +38,10 @@ import { AgnosticColumns } from '@/components/agnostic/blocks/AgnosticColumns';
 import { AgnosticFrame } from '@/components/agnostic/blocks/AgnosticFrame';
 import frameSettingsSchema from '@/core/designer/dna/schemas/frame.settings.json';
 
+// Navigation & Composition Blocks
+import { AgnosticNav }   from '@/components/agnostic/blocks/AgnosticNav';
+import { AgnosticEmbed } from '@/components/agnostic/blocks/AgnosticEmbed';
+
 // Content Blocks (ROADMAP_CONTENT_BLOCKS.md)
 import { AgnosticMarkdown } from '@/components/agnostic/blocks/AgnosticMarkdown';
 import { AgnosticFaq } from '@/components/agnostic/blocks/AgnosticFaq';
@@ -55,15 +59,11 @@ import textSettingsSchema from '@/core/designer/dna/schemas/text.settings.json';
 import heroSettingsSchema from '@/core/designer/dna/schemas/hero.settings.json';
 import columnsSettingsSchema from '@/core/designer/dna/schemas/columns.settings.json';
 import dividerSettingsSchema from '@/core/designer/dna/schemas/divider.settings.json';
-import cardStaticSettingsSchema from '@/core/designer/dna/schemas/card_static.settings.json';
 
 // Content blocks settings schemas
 import markdownSettingsSchema from '@/core/designer/dna/schemas/markdown.settings.json';
 import imageSettingsSchema from '@/core/designer/dna/schemas/image.settings.json';
-import statsGridSettingsSchema from '@/core/designer/dna/schemas/stats_grid.settings.json';
 import faqSettingsSchema from '@/core/designer/dna/schemas/faq.settings.json';
-import testimonialSettingsSchema from '@/core/designer/dna/schemas/testimonial.settings.json';
-import ctaBannerSettingsSchema from '@/core/designer/dna/schemas/cta_banner.settings.json';
 import spacerSettingsSchema from '@/core/designer/dna/schemas/spacer.settings.json';
 
 let isInitialized = false;
@@ -78,11 +78,7 @@ const VISUAL_BLOCKS = [
   { type: 'hero',        name: 'Hero',             category: 'content', schema: heroSettingsSchema },
   { type: 'divider',     name: 'Divisor',          category: 'layout',  schema: dividerSettingsSchema },
   { type: 'spacer',      name: 'Espacio',          category: 'layout',  schema: spacerSettingsSchema },
-  { type: 'card_static', name: 'Tarjeta Estática', category: 'content', schema: cardStaticSettingsSchema },
-  { type: 'stats_grid',  name: 'Métricas',         category: 'content', schema: statsGridSettingsSchema },
-  { type: 'testimonial', name: 'Testimonio',       category: 'content', schema: testimonialSettingsSchema },
   { type: 'image',       name: 'Imagen',           category: 'content', schema: imageSettingsSchema },
-  { type: 'cta_banner',  name: 'CTA Banner',       category: 'content', schema: ctaBannerSettingsSchema },
 ] as const;
 
 /**
@@ -112,6 +108,10 @@ export function initializeRegistry() {
   for (const b of VISUAL_BLOCKS) {
     registry.register(b.type, AgnosticVisual, { category: b.category, name: b.name, settings_schema: b.schema });
   }
+
+  // Navigation & Composition
+  registry.register('nav',   AgnosticNav,   { category: 'layout', name: 'Navegación', description: 'Nav data-driven desde cualquier entidad' });
+  registry.register('embed', AgnosticEmbed, { category: 'layout', name: 'Embed',      description: 'Renderiza los bloques de otra ruta inline' });
 
   // Register Content Projectors (Content Blocks with logical complexity)
   registry.register('markdown', AgnosticMarkdown, { category: 'content', name: 'Markdown', settings_schema: markdownSettingsSchema });

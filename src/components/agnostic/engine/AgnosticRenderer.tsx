@@ -109,8 +109,15 @@ export function AgnosticRenderer({
 
     const sizing = effectiveConfig.sizing || block.sizing;
 
+    const POSITION_MAP: Record<string, string> = {
+      'fixed-top':    'fixed top-0 inset-x-0 z-50 w-full',
+      'fixed-bottom': 'fixed bottom-0 inset-x-0 z-50 w-full',
+      'sticky-top':   'sticky top-0 z-40 w-full',
+    };
+    const wrapClass = POSITION_MAP[block.position] ?? (sizing === 'hug' ? 'w-auto' : 'w-full');
+
     return (
-      <div className={sizing === 'hug' ? 'w-auto' : 'w-full'}>
+      <div className={wrapClass}>
         <BlockComponent
           {...block}
           {...(block.data || {})}

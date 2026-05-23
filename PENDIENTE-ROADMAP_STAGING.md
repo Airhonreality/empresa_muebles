@@ -1,13 +1,16 @@
 PENDIETES URGENTES:
-1. INCORPORAR ICNO DE ENGRANAJE DE ADMIN PARA QUE CUNADO EL USUARIO ES ADMIN, SIMEPRE APARESCA EN TODAS LAS PAGINAS ASI PEUDE DESPLEGAR PANEL DE CONFIGURACION DE RUTA, Y EDITAR VISUALIZACION EN TIEMPO REAL Y VER OCMO LA PAGINA CAMBIA PARAMETRICAMENTE.
+1. ya veo el panel de usuarios pero no estoy logeado no se supone qeu el sistema no deberia permitrime estar dentro sin estar loegeado como admin? si no hay ningun usuario registraod el sistema esta en modo 0 invisibilidad totla y redirigirme a la pagina de logeo? aunque claro no creo que so en local no aplica porqeu el logeo involucra 2 portales de vercel distitntos y otras cosas compliadas no cierto? explcia eso.
 
-2. IMPLEMENTAR UN SITEMA NATIVO DE ADMINSTRACION DE WHITELIST DE USAERS, UNA SECCION DONDE SE CREEN Y ADMINISTREN LSITAS DE USAURIOS FAICLMENTE, CREAR ELMIANR LSITA AÑADIR USAURIOS, ALADIR BLOUE DE USARIOS, OSEA MUY SIMPLE Y AGNOSTIO,CO, PEUNTUALENTE QUE SOLO VENGA DEFINIDA UNA WHITELIST DEFAULT INBORRABLE, LA WHITELIST DE ADMIN. QUE ES LA QUE SE CARGA AUTAOMTICMAENT CUNAOD EL UUASIRO INCIA SESION PRIMERA VEZ EN PORTAL... 
-
-3. inCORPORAR AL OBEJTO "RUTA" CÓMO UN ELEMENTO QUE S EPEUDA LSITAR DE UNA COLECCION, ASI PODRIA CREAR NAV BARS PERSONALIZADOS, LA COLECCION SERPIA UNA LISTA DE RUTAS, CÓMO NATURALIZAMOS USAR EL OBJEOT RUTA DE MAENRA AGNOSTICA EN EL COMPOCITOR DE INTERFACES? 
+2. Keys conectar a vercel autoamtico porqeu hay muchas keys como la del chat que comeinza a requerir el sistema y si s epeude usa rla api de vercel para esto mejor, si no pues f.
 
 
 
+CONFIRMACION FINAL:
+1. El npx tsx scripts/agno.ts <comando> permite libertad TOTAL, crea aginas, rutas, schemas, cambia entiende y modifica estilos, especficos, a detalle, macro y micro, d efroma ordenada sin saturar la ventana de contexto.
+2. Los pickes de imagen quedan slaudables tanto en modo fomr, como en interno
+3. Los bloques estaticos y prediseñados se peuden utilziar y modificar libremente
 
+5. todo se peude managear desde la consola con solo comandos estilo mcp pero libre sin el bridge que nos ha impedido usar los comandos chat libres.
 
 
 

@@ -62,85 +62,7 @@ function renderSpacer(v: Record<string, unknown>) {
   return <div style={{ height }} aria-hidden="true" />;
 }
 
-// ── 4. CARD STATIC ───────────────────────────────────────────────────────────
-function renderCardStatic(v: Record<string, unknown>) {
-  const props = v as { icon?: string; title?: string; body?: string; variant?: string };
-  const { icon, title, body, variant = 'bordered' } = props;
-  const IconComp = icon && icon in Icons ? (Icons as any)[icon] : null;
-  return (
-    <Card className={cn('h-full', variant === 'ghost' && 'border-none shadow-none bg-transparent')}>
-      <CardContent className="p-6 space-y-3">
-        {IconComp && <IconComp className="w-8 h-8 text-primary" />}
-        {title && <h3 className="font-bold text-base tracking-tight">{title}</h3>}
-        {body  && <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ── 5. STATS GRID ────────────────────────────────────────────────────────────
-const STATS_COLS: Record<number, string> = {
-  1: 'grid-cols-1',
-  2: 'grid-cols-2',
-  3: 'grid-cols-1 sm:grid-cols-3',
-  4: 'grid-cols-2 lg:grid-cols-4',
-};
-
-function renderStatsGrid(v: Record<string, unknown>) {
-  const props = v as { items?: Array<{ value: string; label: string; icon?: string; description?: string }>; cols?: string | number };
-  const items = props.items || [];
-  const cols  = Number(props.cols) || items.length || 3;
-  return (
-    <div className={`grid ${STATS_COLS[cols] || STATS_COLS[3]} gap-8`}>
-      {items.map((item, i) => {
-        const IconComp = item.icon && item.icon in Icons ? (Icons as any)[item.icon] : null;
-        return (
-          <div key={i} className="text-center space-y-1">
-            {IconComp && <IconComp className="w-6 h-6 mx-auto text-primary/60 mb-2" />}
-            <div className="text-4xl font-black tracking-tighter text-foreground">{item.value}</div>
-            <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{item.label}</div>
-            {item.description && <p className="text-xs text-muted-foreground/60">{item.description}</p>}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── 6. TESTIMONIAL ───────────────────────────────────────────────────────────
-function renderTestimonial(v: Record<string, unknown>) {
-  const props = v as { quote?: string; author?: string; role?: string; avatar?: string; variant?: string };
-  const { quote = '', author = '', role = '', avatar, variant = 'card' } = props;
-  const initials = avatar || author.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-
-  if (variant === 'minimal') {
-    return (
-      <blockquote className="border-l-4 border-primary pl-6 space-y-3">
-        <p className="text-lg italic text-muted-foreground leading-relaxed">"{quote}"</p>
-        <footer className="text-sm font-bold uppercase tracking-wider">
-          {author}{role && <span className="font-normal opacity-60 ml-2">— {role}</span>}
-        </footer>
-      </blockquote>
-    );
-  }
-
-  return (
-    <div className="bg-muted/20 border border-border/50 rounded-2xl p-8 space-y-4">
-      <p className="text-base leading-relaxed text-foreground/80 italic">"{quote}"</p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-black text-sm flex items-center justify-center shrink-0">
-          {initials}
-        </div>
-        <div>
-          <div className="text-sm font-bold">{author}</div>
-          {role && <div className="text-xs text-muted-foreground">{role}</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── 7. IMAGE ─────────────────────────────────────────────────────────────────
+// ── 4. IMAGE ─────────────────────────────────────────────────────────────────
 const IMG_ASPECT: Record<string, string> = {
   video:    'aspect-video',
   square:   'aspect-square',
@@ -183,7 +105,7 @@ function renderImage(v: Record<string, unknown>) {
   );
 }
 
-// ── 8. HERO ──────────────────────────────────────────────────────────────────
+// ── 5. HERO ──────────────────────────────────────────────────────────────────
 function renderHero(v: Record<string, unknown>) {
   const props = v as {
     title?: string;
@@ -231,44 +153,14 @@ function renderHero(v: Record<string, unknown>) {
   );
 }
 
-// ── 9. CTA BANNER ────────────────────────────────────────────────────────────
-function renderCtaBanner(v: Record<string, unknown>) {
-  const props = v as { headline?: string; sub?: string; cta_label?: string; cta_href?: string; variant?: string };
-  const { headline, sub, cta_label, cta_href = '#', variant = 'primary' } = props;
-
-  return (
-    <section className={cn(
-      "w-full rounded-2xl p-12 text-center flex flex-col items-center gap-6",
-      variant === 'primary' ? "bg-primary text-primary-foreground" : "bg-muted/30 border border-border"
-    )}>
-      {headline && <h2 className="text-3xl font-black tracking-tight max-w-2xl">{headline}</h2>}
-      {sub && <p className={cn("text-sm max-w-md", variant === 'primary' ? "opacity-80" : "text-muted-foreground")}>{sub}</p>}
-      {cta_label && (
-        <Button
-          asChild
-          size="lg"
-          variant={variant === 'primary' ? 'secondary' : 'default'}
-          className="font-bold uppercase tracking-wider"
-        >
-          <Link href={cta_href}>{cta_label}</Link>
-        </Button>
-      )}
-    </section>
-  );
-}
-
 // ── DISPATCHER MAP ───────────────────────────────────────────────────────────
 
 const RENDERERS: Record<string, (v: Record<string, unknown>) => React.ReactElement | null> = {
   text:        renderText,
   divider:     renderDivider,
   spacer:      renderSpacer,
-  card_static: renderCardStatic,
-  stats_grid:  renderStatsGrid,
-  testimonial: renderTestimonial,
   image:       renderImage,
   hero:        renderHero,
-  cta_banner:  renderCtaBanner,
 };
 
 // ── MASTER RENDERER COMPONENT ────────────────────────────────────────────────
