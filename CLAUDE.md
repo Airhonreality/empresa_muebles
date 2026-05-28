@@ -4,7 +4,17 @@ AI assistants working on this repo MUST read this file first.
 
 ## What this system is
 
-A **blind renderer**. `src/` knows nothing about clients, invoices, or products. All business meaning lives in `storage/{tenant}/db/*.json`. To change what the app shows, edit `storage/`. Never touch `src/` for business changes.
+A **seed repo** — a schema-driven UI engine built on Next.js 15. Each project is a fork of this seed. The engine (`packages/`) never knows about your business domain. All business meaning lives in `storage/{project}/db/*.json`.
+
+**Three layers, hard boundaries:**
+
+| Layer | Location | Owner | Gets engine updates |
+|-------|----------|-------|---------------------|
+| Engine | `packages/` | Agnostic team | Yes |
+| Project | `src/` | Developer / AI | No — it's yours |
+| Data | `storage/` | Config Manager | No — it's yours |
+
+To change what the app shows → edit `storage/`. Never touch `packages/` for project changes. `src/` is yours to customize freely.
 
 ## The one invariant that must never break
 
@@ -142,26 +152,75 @@ payload.record                                      // the activeRecord that tri
 
 ## Storage strategies
 
-Configured in `storage/{tenant}/manifest.json`:
+Configured in `storage/{project}/manifest.json`:
 
-- `local` — JSON files in `storage/{tenant}/db/`
+- `local` — JSON files in `storage/{project}/db/`
 - `supabase` — cloud DB
 - `hybrid` — GitHub DNA + Supabase data
 
-Active tenant is resolved by `src/server/activeProject.ts`. Change the tenant there, not in code.
+Active project is resolved by `src/server/activeProject.ts`. Change the project there, not in code.
+
+## Schema compiler — the stable contract
+
+`src/generated/agnostic-schemas.ts` is auto-generated from `storage/db/schemas.json`.
+
+```bash
+npm run agnostic:compile   # regenerate after changing schemas in Config Manager
+```
+
+This file is **committed to the repo**. It is the typed contract between the engine and custom components. It is what AI assistants read to generate correct, type-safe code.
+
+**Rules:**
+- Never edit `src/generated/agnostic-schemas.ts` manually
+- Always run `agnostic:compile` after modifying schemas
+- Always import schema types from `@/generated/agnostic-schemas`, never from engine internals
+- Schemas are append-only — do not delete a schema if custom components reference its types
+
+## Custom block registration
+
+Custom components live in `src/components/specialized/`. They are registered in `agnostic.config.ts`:
+
+```typescript
+// agnostic.config.ts
+import { defineConfig } from './packages/core/src/config'
+export default defineConfig({
+  blocks: {
+    my_block: () => import('./src/components/specialized/MyBlock'),
+  }
+})
+```
+
+Then set `"type": "my_block"` in `storage/db/page_routes.json`. The engine routes it automatically.
+
+## AI context for generating components
+
+When prompting AI to generate a custom component, always provide:
+1. `src/generated/agnostic-schemas.ts` — typed schema contracts
+2. `agnostic.config.ts` — how to register the block
+3. `src/components/specialized/_TEMPLATE.tsx` — the base pattern
 
 ## What you can safely do
 
-- Edit `storage/{tenant}/db/*.json` to change data, schemas, routes
-- Edit `storage/{tenant}/styles/tokens.css` to change visual identity
-- Edit `storage/{tenant}/manifest.json` to change strategy or tenant config
-- Add new block types by registering them in `src/lib/agnostic/Registry.ts`
+- Edit `storage/{project}/db/*.json` to change data, schemas, routes
+- Edit `storage/{project}/styles/tokens.css` to change visual identity
+- Edit `storage/{project}/manifest.json` to change strategy or project config
+- Add custom block types via `agnostic.config.ts` — never hardcode in `AgnosticRenderer.tsx`
+- Generate components in `src/components/specialized/` using AI + schema types
+- Run `npm run agnostic:compile` to regenerate TypeScript types from schemas
 - Use `npm run mcp:bridge` for semantic CRUD operations via MCP
 
 ## What you must not do
 
-- Add business logic to `src/` (it belongs in `storage/`)
+- Add business logic to `packages/` (it belongs in `storage/` or `src/components/specialized/`)
 - Add new namespaces to the SSR relation inference (the loop was deleted intentionally)
 - Add `any` types to `indra.ts` — it is the canonical type contract
+- Import from engine internal paths — only import from `@agnostic/engine` public surface
+- Edit `src/generated/agnostic-schemas.ts` — it is auto-generated
 - Create files outside of established layers without an explicit architectural reason
 - Add comments that describe WHAT code does — only comment non-obvious WHY
+
+## Architecture decisions
+
+- [ADR-001](docs/adr/ADR-001-blind-renderer-five-atoms.md) — Blind renderer, five atoms, invariants
+- [ADR-002](docs/adr/ADR-002-seed-distribution-model.md) — Seed repo model, three layers, update contract
+- [ADR-003](docs/adr/ADR-003-schema-compiler-contract.md) — Schema compiler as stable contract

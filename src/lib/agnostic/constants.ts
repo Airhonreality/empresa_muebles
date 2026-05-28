@@ -47,6 +47,8 @@ export const SYSTEM_NS = {
   TOKENS:     'design_tokens',
   USERS:      'users',
   USER_LISTS: 'user_lists',
+  COMPONENTS: 'components',
+  AI_CONFIG:  'ai_config',
 } as const;
 
 export const FIELD_META_SCHEMA = {

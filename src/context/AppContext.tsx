@@ -37,7 +37,7 @@ export function AppProvider({ children, initialData }: { children: React.ReactNo
   // Initialize block registry synchronously when the provider renders
   initializeRegistry();
 
-  const { hydrate: hydrateDNA } = useDNAStore();
+  const { hydrate: hydrateDNA, setRoutes, setSchemas } = useDNAStore();
   const { hydrate: hydrateMateria, updateItem, removeItem, setMateria } = useMateriaStore();
   const { setOverlay } = useSystemStore();
 
@@ -91,6 +91,12 @@ export function AppProvider({ children, initialData }: { children: React.ReactNo
       const result = await response.json();
       if (result.success && result.record) {
         updateItem(namespace, result.record);
+        // Keep DNA store in sync — AgnosticShell reads routes/schemas from there
+        if (namespace === SYSTEM_NS.ROUTES) {
+          setRoutes(useMateriaStore.getState().data[SYSTEM_NS.ROUTES] ?? []);
+        } else if (namespace === SYSTEM_NS.SCHEMAS) {
+          setSchemas(useMateriaStore.getState().data[SYSTEM_NS.SCHEMAS] ?? []);
+        }
         if (!options?.silent) {
           toast.success('Cambios guardados con éxito');
         }
@@ -103,7 +109,7 @@ export function AppProvider({ children, initialData }: { children: React.ReactNo
       }
       throw e;
     }
-  }, [updateItem]);
+  }, [updateItem, setRoutes, setSchemas]);
 
   /**
    * Synchronizes an entire namespace array by calculating deletions and writes.
@@ -179,6 +185,11 @@ export function AppProvider({ children, initialData }: { children: React.ReactNo
       const result = await response.json();
       if (result.success) {
         removeItem(namespace, id);
+        if (namespace === SYSTEM_NS.ROUTES) {
+          setRoutes(useMateriaStore.getState().data[SYSTEM_NS.ROUTES] ?? []);
+        } else if (namespace === SYSTEM_NS.SCHEMAS) {
+          setSchemas(useMateriaStore.getState().data[SYSTEM_NS.SCHEMAS] ?? []);
+        }
         toast.success('Registro eliminado');
         return;
       }
@@ -187,7 +198,7 @@ export function AppProvider({ children, initialData }: { children: React.ReactNo
       toast.error(`Error eliminando item en ${namespace}: ${e.message}`);
       throw e;
     }
-  }, [removeItem]);
+  }, [removeItem, setRoutes, setSchemas]);
 
   const dispatchValue = useMemo(() => ({ 
     saveItem,

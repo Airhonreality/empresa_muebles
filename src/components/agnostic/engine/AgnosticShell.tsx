@@ -1,25 +1,10 @@
 'use client';
 
-/**
- * 🏛️ ARTEFACTO: AgnosticShell.tsx
- * ────────────
- * CAPA: Projection (Deterministic Shell)
- * VERSIÓN: 1.0
- * 
- * 🎯 FUNCTIONAL_SCOPE:
- * - Carcasa liviana para la proyección de bloques.
- * - Hidratación única de Zustand desde el servidor.
- */
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDNAStore, useMateriaStore, useSystemStore } from '@/lib/agnostic/store';
 import { AgnosticRenderer } from '@/components/agnostic/engine/AgnosticRenderer';
-import { OverlayOrchestrator } from '@/components/agnostic/engine/OverlayOrchestrator';
 import { RouteResolution } from '@/lib/agnostic/resolver';
 import { cn } from '@/lib/utils';
-import { createAgnosticAPI } from '@agnostic/core';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { useAppDispatch } from '@/context/AppContext';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 
 interface ShellProps {
@@ -39,19 +24,16 @@ function paddingToCss(p?: number[]): string {
 }
 
 export function AgnosticShell({ initialData, resolution }: ShellProps) {
-  const router = useRouter();
-  const { hydrate: hydrateDNA } = useDNAStore();
-  const { hydrate: hydrateMateria, data: materia } = useMateriaStore();
-  const { setNavigation, setActiveRecord } = useSystemStore();
-  const { saveItem, deleteItem, openOverlay, closeOverlay } = useAppDispatch();
+  const { hydrate: hydrateDNA }             = useDNAStore();
+  const { hydrate: hydrateMateria }         = useMateriaStore();
+  const { setNavigation, setActiveRecord }  = useSystemStore();
 
-  // 1. ATOMIC HYDRATION (Only once or on data change)
+  // Hydrate Zustand ONCE per navigation — SSR data flows into client stores
   useEffect(() => {
-    const routes = initialData[SYSTEM_NS.ROUTES] || [];
+    const routes  = initialData[SYSTEM_NS.ROUTES]  || [];
     const schemas = initialData[SYSTEM_NS.SCHEMAS] || [];
     hydrateDNA(routes, schemas);
     hydrateMateria(initialData);
-    
     setNavigation(resolution.path);
     if (resolution.activeRecord) {
       setActiveRecord(resolution.activeRecord.id, resolution.context);
@@ -60,35 +42,27 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
     }
   }, [resolution.path, hydrateDNA, hydrateMateria, setNavigation, setActiveRecord]);
 
-  // 🏛️ Dynamic Isomorphic Document Title Resolution (Axiomatic Principle)
+  // Document title — driven by route title + active record name
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const pageTitle = resolution.route?.data?.title || resolution.route?.name || 'Agnostic System';
-      if (resolution.activeRecord) {
-        const record = resolution.activeRecord;
-        const recordName = record.nombre_proyecto || record.nombre || record.name || record.title || record.id?.substring(0, 8);
-        document.title = `${pageTitle} : ${recordName}`;
-      } else {
-        document.title = pageTitle;
-      }
+    if (typeof window === 'undefined') return;
+    const pageTitle = (resolution.route?.data as any)?.title || 'Agnostic';
+    if (resolution.activeRecord) {
+      const r = resolution.activeRecord as any;
+      const name = r.nombre_proyecto || r.nombre || r.name || r.title || (r.id as string)?.substring(0, 8);
+      document.title = `${pageTitle} : ${name}`;
+    } else {
+      document.title = pageTitle;
     }
   }, [resolution.route, resolution.activeRecord]);
 
-  const stateRef = useRef({ data: initialData });
-  stateRef.current = { data: materia || initialData };
-
   const liveRoutes = useDNAStore((s) => s.routes);
-  const liveRoute = liveRoutes.find((r: any) => r.id === resolution.route?.id);
-  const blocks = ((liveRoute?.data as any)?.blocks ?? resolution.blocks) as typeof resolution.blocks;
-
-  const masterApi = useMemo(() => createAgnosticAPI({
-    router, saveItem, deleteItem, openOverlay, closeOverlay, stateRef: stateRef as any, 
-    block: { context: resolution.context }, toast, user: null
-  }), [router, saveItem, deleteItem, openOverlay, closeOverlay, resolution.context]);
+  const liveRoute  = liveRoutes.find((r: any) => r.id === resolution.route?.id);
+  const liveData   = (liveRoute?.data as any) ?? (resolution.route?.data as any);
+  const blocks     = (liveData?.blocks ?? resolution.blocks) as typeof resolution.blocks;
 
   const { route, activeRecord, intent, path } = resolution;
-  const routeData = (route?.data || {}) as any;
-  const pageLayout = (routeData.layout || {}) as any;
+  const routeData   = (route?.data || {}) as any;
+  const pageLayout  = (routeData.layout || {}) as any;
   const isHorizontal = pageLayout.direction === 'horizontal';
 
   return (
@@ -100,7 +74,7 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
           MAX_WIDTH_MAP[pageLayout.max_width] || 'max-w-full'
         )}
         style={{
-          gap: `${pageLayout.gap ?? 1.5}rem`,
+          gap:     `${pageLayout.gap ?? 1.5}rem`,
           padding: paddingToCss(pageLayout.padding) || '2rem',
         }}
       >
@@ -112,14 +86,12 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
               intent={intent}
               record={activeRecord}
             />
-            {/* Spacer compensates for fixed-position blocks that leave the flow */}
             {(block.position === 'fixed-top' || block.position === 'fixed-bottom') && (
-              <div className="shrink-0" style={{ height: block.position_height ?? 56 }} />
+              <div className="shrink-0" style={{ height: (block as any).position_height ?? 56 }} />
             )}
           </React.Fragment>
         ))}
       </div>
-      <OverlayOrchestrator api={masterApi} />
     </main>
   );
 }

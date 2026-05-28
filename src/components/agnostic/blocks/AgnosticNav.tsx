@@ -53,12 +53,12 @@ export function AgnosticNav({
           </Link>
         )}
 
-        {links.map((link: any) => {
+        {links.map((link: any, i: number) => {
           const isActive = pathname === link.path || (link.path !== '/' && pathname.startsWith(link.path + '/'));
           const IconComp = link.icon && link.icon in Icons ? (Icons as any)[link.icon] : null;
           return (
             <Link
-              key={link.path || link.label}
+              key={link.path ?? link.label ?? i}
               href={link.path || '#'}
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-colors w-full',

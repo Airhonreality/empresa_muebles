@@ -651,29 +651,31 @@ export function AgnosticCollection({
                     </CardHeader>
 
                     <CardContent className="p-4 space-y-4">
-                      {((blocks && blocks.length > 0) ? blocks : (activeProjection?.blocks || [])).length > 0 ? (
-                        ((blocks && blocks.length > 0) ? blocks : (activeProjection?.blocks || [])).map((subBlock: any, bIdx: number) => {
-                           let resolvedParentKey = subBlock.parent_key || subBlock.config?.parent_key;
-                           if (!resolvedParentKey) {
+                      {(() => {
+                        const blockList = (blocks && blocks.length > 0) ? blocks : (activeProjection?.blocks || []);
+                        return blockList.length > 0 ? (
+                          blockList.map((subBlock: any, bIdx: number) => {
+                            let resolvedParentKey = subBlock.parent_key || subBlock.config?.parent_key;
+                            if (!resolvedParentKey) {
                               const parentEntity = context;
                               const childSchema = schemas.find((s: any) => s.id === subBlock.schema_id || s.data?.name === subBlock.context) as any;
                               const relationField = (childSchema?.data?.fields as any[])?.find((f: any) => f.type === 'relation' && f.config?.relation?.entity === parentEntity);
                               resolvedParentKey = relationField?.key || `${parentEntity}_id`;
-                          }
-                          return (
-                            <div key={subBlock.id || bIdx} className="w-full">
-                              <AgnosticRenderer
-                                block={subBlock}
-                                parentId={item.id}
-                                parentKey={resolvedParentKey}
-                                context={subBlock.context || subBlock.config?.context}
-                                record={item}
-                              />
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="grid grid-cols-2 gap-4">
+                            }
+                            return (
+                              <div key={subBlock.id || bIdx} className="w-full">
+                                <AgnosticRenderer
+                                  block={subBlock}
+                                  parentId={item.id}
+                                  parentKey={resolvedParentKey}
+                                  context={subBlock.context || subBlock.config?.context}
+                                  record={item}
+                                />
+                              </div>
+                            );
+                          })
+                        ) : (
+                                <div className="grid grid-cols-2 gap-4">
                           {Object.entries(item.data).map(([key, val]) => {
                             if (key.startsWith('_') || key.endsWith('_id') || key === activeProjection?.title || key === activeProjection?.badge) return null;
                             if (safeBlackout.includes(key)) return null;
@@ -687,7 +689,8 @@ export function AgnosticCollection({
                             );
                           })}
                         </div>
-                      )}
+                        )
+                      })()}
                     </CardContent>
                   </Card>
                 ))}

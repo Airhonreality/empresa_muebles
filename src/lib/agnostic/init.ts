@@ -26,6 +26,7 @@
 
 import React from 'react';
 import { registry } from './Registry';
+import agnosticConfig from '../../../agnostic.config';
 import { AgnosticForm } from '@/components/agnostic/blocks/AgnosticForm';
 import { AgnosticCollection } from '@/components/agnostic/blocks/AgnosticCollection';
 import { AgnosticAction } from '@/components/agnostic/blocks/AgnosticAction';
@@ -46,6 +47,7 @@ import { AgnosticEmbed } from '@/components/agnostic/blocks/AgnosticEmbed';
 import { AgnosticMarkdown } from '@/components/agnostic/blocks/AgnosticMarkdown';
 import { AgnosticFaq } from '@/components/agnostic/blocks/AgnosticFaq';
 import { AgnosticVisual } from '@/components/agnostic/blocks/AgnosticVisual';
+import { AgnosticField } from '@/components/agnostic/blocks/AgnosticField';
 
 // Core settings schemas
 import actionSettingsSchema from '@/core/designer/dna/schemas/action.settings.json';
@@ -109,6 +111,9 @@ export function initializeRegistry() {
     registry.register(b.type, AgnosticVisual, { category: b.category, name: b.name, settings_schema: b.schema });
   }
 
+  // Field primitive used by canonical block compositions
+  registry.register('field', AgnosticField, { category: 'content', name: 'Campo' });
+
   // Navigation & Composition
   registry.register('nav',   AgnosticNav,   { category: 'layout', name: 'Navegación', description: 'Nav data-driven desde cualquier entidad' });
   registry.register('embed', AgnosticEmbed, { category: 'layout', name: 'Embed',      description: 'Renderiza los bloques de otra ruta inline' });
@@ -116,4 +121,20 @@ export function initializeRegistry() {
   // Register Content Projectors (Content Blocks with logical complexity)
   registry.register('markdown', AgnosticMarkdown, { category: 'content', name: 'Markdown', settings_schema: markdownSettingsSchema });
   registry.register('faq', AgnosticFaq, { category: 'content', name: 'FAQ', settings_schema: faqSettingsSchema });
+
+  // ── Custom blocks from agnostic.config.ts ─────────────────────────────────
+  // These are project-specific components registered without touching the engine.
+  // Each custom block wraps its lazy loader in Suspense so the renderer stays sync.
+  const customBlocks = agnosticConfig.blocks ?? {}
+  for (const [type, loader] of Object.entries(customBlocks)) {
+    const Lazy = React.lazy(loader)
+    const Wrapped = (props: any) => (
+      React.createElement(React.Suspense, { fallback: null },
+        React.createElement(Lazy, props)
+      )
+    )
+    Wrapped.displayName = `CustomBlock(${type})`
+    registry.register(type, Wrapped, { category: 'guest', name: type })
+    console.log(`[RegistryInit] Custom block registered: "${type}"`)
+  }
 }

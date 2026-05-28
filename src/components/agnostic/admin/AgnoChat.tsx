@@ -2,13 +2,23 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+import ReactMarkdown from 'react-markdown';
+import { useDNAStore, useMateriaStore } from '@/lib/agnostic/store';
+import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { Bot, X, Send, Settings, Terminal, Loader2, Check, Wifi } from 'lucide-react';
+import { Bot, X, Send, Settings, Terminal, Loader2, Check, Wifi, RefreshCw, XCircle } from 'lucide-react';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
+
+// Modelos que NO soportan tool calling — el servidor los reemplaza automáticamente
+const FIM_MODEL_PATTERNS = ['codestral', 'embed', 'moderation'];
+function isFimModel(model: string) {
+  return FIM_MODEL_PATTERNS.some(p => model.toLowerCase().includes(p));
+}
 
 const PROVIDERS = [
   { value: 'mistral',   label: 'Mistral' },
@@ -18,37 +28,13 @@ const PROVIDERS = [
   { value: 'ollama',    label: 'Ollama (local)' },
 ];
 
-const MODELS: Record<string, { value: string; label: string }[]> = {
-  mistral: [
-    { value: 'mistral-large-latest',  label: 'Mistral Large' },
-    { value: 'mistral-small-latest',  label: 'Mistral Small' },
-    { value: 'codestral-latest',      label: 'Codestral' },
-    { value: 'open-mistral-nemo',     label: 'Mistral Nemo' },
-    { value: 'ministral-8b-latest',   label: 'Ministral 8B' },
-  ],
-  openai: [
-    { value: 'gpt-4o',      label: 'GPT-4o' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-    { value: 'o1-mini',     label: 'o1 Mini' },
-    { value: 'o3-mini',     label: 'o3 Mini' },
-  ],
-  anthropic: [
-    { value: 'claude-opus-4-7',           label: 'Claude Opus 4.7' },
-    { value: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6' },
-    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-  ],
-  gemini: [
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-    { value: 'gemini-1.5-pro',   label: 'Gemini 1.5 Pro' },
-    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  ],
-  ollama: [
-    { value: 'llama3.1',      label: 'Llama 3.1' },
-    { value: 'llama3',        label: 'Llama 3' },
-    { value: 'mistral',       label: 'Mistral (local)' },
-    { value: 'codellama',     label: 'Code Llama' },
-    { value: 'deepseek-coder',label: 'DeepSeek Coder' },
-  ],
+// Fallback estático solo para cuando el proveedor no tiene api_key aún
+const FALLBACK_MODELS: Record<string, { value: string; label: string }[]> = {
+  mistral:   [{ value: 'mistral-large-latest', label: 'Mistral Large (fallback)' }],
+  openai:    [{ value: 'gpt-4o-mini',          label: 'GPT-4o Mini (fallback)' }],
+  anthropic: [{ value: 'claude-sonnet-4-6',    label: 'Claude Sonnet 4.6 (fallback)' }],
+  gemini:    [{ value: 'gemini-2.0-flash',     label: 'Gemini 2.0 Flash (fallback)' }],
+  ollama:    [{ value: 'llama3.1',             label: 'Llama 3.1 (fallback)' }],
 };
 
 const DEFAULT_MANIFEST = JSON.stringify({
@@ -117,77 +103,145 @@ interface AiConfig {
 
 type SettingsTab = 'conexion' | 'reglas' | 'manifest';
 
-// ── Helpers de contenido ──────────────────────────────────────────────────────
+// ── Markdown renderer ─────────────────────────────────────────────────────────
 
-function parseContent(text: string) {
-  const parts = text.split(/(```agno[\s\S]*?```|```[\s\S]*?```)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('```agno')) {
-      return <AgnoBlock key={i} code={part.slice(7, -3).trim()} />;
-    }
-    if (part.startsWith('```')) {
-      return <CodeBlock key={i} code={part.slice(3, -3).replace(/^\w+\n/, '').trim()} />;
-    }
-    return <span key={i} className="whitespace-pre-wrap">{part}</span>;
-  });
-}
-
-function AgnoBlock({ code }: { code: string }) {
+function MdCode({ lang, code }: { lang: string; code: string }) {
   const [copied, setCopied] = useState(false);
+  const isAgno = lang === 'agno';
   return (
-    <div className="my-2 rounded-md border border-primary/30 bg-primary/5 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-primary/10 border-b border-primary/20">
-        <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-primary">
-          <Terminal size={10} /> agno
-        </span>
-        <button
-          onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-          className="text-[9px] text-primary/60 hover:text-primary transition-colors flex items-center gap-1"
-        >
-          {copied ? <><Check size={9} /> copiado</> : 'copiar'}
-        </button>
-      </div>
-      <pre className="px-3 py-2 text-[11px] font-mono text-primary/90 overflow-x-auto leading-relaxed">{code}</pre>
+    <div className={cn('my-2 rounded-md overflow-hidden border', isAgno ? 'border-primary/30 bg-primary/5' : 'border-border/30 bg-muted/40')}>
+      {isAgno && (
+        <div className="flex items-center justify-between px-3 py-1 bg-primary/10 border-b border-primary/20">
+          <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-primary">
+            <Terminal size={9} /> agno
+          </span>
+          <button
+            onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+            className="text-[9px] text-primary/60 hover:text-primary transition-colors flex items-center gap-1"
+          >
+            {copied ? <><Check size={9} /> copiado</> : 'copiar'}
+          </button>
+        </div>
+      )}
+      <pre className={cn('px-3 py-2 text-[11px] font-mono overflow-x-auto leading-relaxed', isAgno ? 'text-primary/90' : 'text-foreground/80')}>{code}</pre>
     </div>
   );
 }
 
-function CodeBlock({ code }: { code: string }) {
+function MarkdownContent({ text }: { text: string }) {
   return (
-    <pre className="my-1.5 px-3 py-2 rounded-md bg-muted/60 text-[11px] font-mono overflow-x-auto leading-relaxed">{code}</pre>
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="mb-1.5 last:mb-0 leading-relaxed">{children}</p>,
+        strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+        em: ({ children }) => <em className="italic">{children}</em>,
+        h1: ({ children }) => <h1 className="font-black text-sm mb-1 mt-2 first:mt-0">{children}</h1>,
+        h2: ({ children }) => <h2 className="font-black text-[13px] mb-1 mt-2 first:mt-0">{children}</h2>,
+        h3: ({ children }) => <h3 className="font-bold text-[12px] mb-0.5 mt-1.5 first:mt-0">{children}</h3>,
+        ul: ({ children }) => <ul className="ml-3 mb-1.5 space-y-0.5 list-disc list-outside">{children}</ul>,
+        ol: ({ children }) => <ol className="ml-3 mb-1.5 space-y-0.5 list-decimal list-outside">{children}</ol>,
+        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+        code: ({ children, className }) => {
+          const lang = (className ?? '').replace('language-', '');
+          if (lang) return <MdCode lang={lang} code={String(children).trimEnd()} />;
+          return <code className="px-1 py-0.5 rounded bg-muted/70 font-mono text-[10px] text-primary">{children}</code>;
+        },
+        pre: ({ children }) => <>{children}</>,
+        hr: () => <hr className="my-2 border-border/30" />,
+        blockquote: ({ children }) => <blockquote className="border-l-2 border-primary/30 pl-2 my-1.5 text-muted-foreground italic">{children}</blockquote>,
+        a: ({ children, href }) => <a href={href} className="text-primary underline underline-offset-2 hover:opacity-80" target="_blank" rel="noopener noreferrer">{children}</a>,
+      }}
+    >
+      {text}
+    </ReactMarkdown>
   );
 }
 
 // ── Settings Panel ────────────────────────────────────────────────────────────
 
+type ConnStatus = 'idle' | 'testing' | 'ok' | 'error';
+
 function SettingsPanel() {
   const [tab, setTab] = useState<SettingsTab>('conexion');
   const [config, setConfig] = useState<AiConfig>({
-    provider: 'mistral', model: 'mistral-large-latest', api_key: '',
+    provider: 'mistral', model: '', api_key: '',
     custom_rules: '', manifest: DEFAULT_MANIFEST,
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [manifestError, setManifestError] = useState('');
+  const [models, setModels] = useState<{ value: string; label: string }[]>([]);
+  const [connStatus, setConnStatus] = useState<ConnStatus>('idle');
+  const [connMsg, setConnMsg] = useState('');
 
+  // Carga config guardada al abrir el panel
+  // Si hay api_key + model guardados → marca como "ok" directamente (el chat ya funciona)
   useEffect(() => {
     fetch('/api/vault?namespace=ai_config')
       .then(r => r.json())
-      .then((records: any[]) => {
-        const active = records?.find(r => r.data?.active) ?? records?.[0];
+      .then((res: any) => {
+        const records: any[] = res.records ?? [];
+        const active = records.find(r => r.data?.active) ?? records[0];
         if (active) {
-          setConfig({
-            id: active.id,
-            provider: active.data.provider ?? 'mistral',
-            model: active.data.model ?? 'mistral-large-latest',
-            api_key: active.data.api_key ?? '',
+          const loaded = {
+            id:           active.id,
+            provider:     active.data.provider    ?? 'mistral',
+            model:        active.data.model       ?? '',
+            api_key:      active.data.api_key     ?? '',
             custom_rules: active.data.custom_rules ?? '',
-            manifest: active.data.manifest ?? DEFAULT_MANIFEST,
-          });
+            manifest:     active.data.manifest     ?? DEFAULT_MANIFEST,
+          };
+          setConfig(loaded);
+          if (loaded.api_key && loaded.model) {
+            setConnStatus('ok');
+            setConnMsg(`Usando ${loaded.model}`);
+            // Inyectar modelo guardado en la lista para que el select lo muestre
+            setModels([{ value: loaded.model, label: loaded.model }]);
+          }
         }
       })
       .catch(() => {});
   }, []);
+
+  // Llama POST /api/models con la key actual del form (no del vault)
+  const handleConnect = async () => {
+    if (!config.api_key && config.provider !== 'ollama') {
+      setConnStatus('error');
+      setConnMsg('Ingresa una API key primero');
+      return;
+    }
+    setConnStatus('testing');
+    setConnMsg('');
+    try {
+      const res = await fetch('/api/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider:   config.provider,
+          api_key:    config.api_key,
+          ollama_url: (config as any).ollama_url,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        setConnStatus('error');
+        setConnMsg(json.error ?? `Error ${res.status}`);
+        setModels([]);
+      } else {
+        setModels(json.models ?? []);
+        setConnStatus('ok');
+        setConnMsg(`${json.count ?? json.models?.length ?? 0} modelos disponibles`);
+        // Auto-seleccionar el primero si no hay modelo guardado aún
+        if (!config.model && json.models?.length) {
+          setConfig(c => ({ ...c, model: json.models[0].value }));
+        }
+      }
+    } catch (e: any) {
+      setConnStatus('error');
+      setConnMsg(e.message ?? 'Error de red');
+      setModels([]);
+    }
+  };
 
   const handleSave = async () => {
     if (tab === 'manifest') {
@@ -215,11 +269,8 @@ function SettingsPanel() {
     tab === t ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
   );
 
-  const currentModels = MODELS[config.provider] ?? [];
-
   return (
     <div className="border-b border-border/40 bg-muted/10">
-      {/* Tabs */}
       <div className="flex gap-1 px-3 pt-3 pb-2">
         <button className={tabClass('conexion')}  onClick={() => setTab('conexion')}>Conexión</button>
         <button className={tabClass('reglas')}    onClick={() => setTab('reglas')}>Reglas</button>
@@ -230,14 +281,15 @@ function SettingsPanel() {
         {/* TAB: Conexión */}
         {tab === 'conexion' && (
           <>
+            {/* Proveedor */}
             <div className="space-y-1">
               <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Proveedor</label>
               <select
                 value={config.provider}
                 onChange={e => {
-                  const p = e.target.value;
-                  const firstModel = MODELS[p]?.[0]?.value ?? '';
-                  setConfig(c => ({ ...c, provider: p, model: firstModel }));
+                  setConfig(c => ({ ...c, provider: e.target.value, model: '' }));
+                  setConnStatus('idle');
+                  setModels([]);
                 }}
                 className="w-full h-8 rounded-md border border-border/40 bg-background px-2 text-xs font-medium"
               >
@@ -245,37 +297,97 @@ function SettingsPanel() {
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Modelo</label>
-              <select
-                value={config.model}
-                onChange={e => setConfig(c => ({ ...c, model: e.target.value }))}
-                className="w-full h-8 rounded-md border border-border/40 bg-background px-2 text-xs font-medium"
-              >
-                {currentModels.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                <option value="__custom__" disabled>── custom ──</option>
-              </select>
-              {!currentModels.find(m => m.value === config.model) && (
-                <Input
-                  value={config.model}
-                  onChange={e => setConfig(c => ({ ...c, model: e.target.value }))}
-                  placeholder="modelo-custom"
-                  className="h-7 text-xs font-mono border-border/40 bg-background mt-1"
-                />
-              )}
-            </div>
-
+            {/* API Key */}
             <div className="space-y-1">
               <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">API Key</label>
               <Input
                 type="password"
                 value={config.api_key}
-                onChange={e => setConfig(c => ({ ...c, api_key: e.target.value }))}
+                onChange={e => {
+                  setConfig(c => ({ ...c, api_key: e.target.value }));
+                  if (connStatus !== 'idle') { setConnStatus('idle'); setModels([]); }
+                }}
                 placeholder="sk-..."
                 autoComplete="new-password"
                 className="h-8 text-xs font-mono border-border/40 bg-background"
               />
             </div>
+
+            {/* Botón Conectar + estado */}
+            <div className="space-y-1.5">
+              <button
+                onClick={handleConnect}
+                disabled={connStatus === 'testing'}
+                className={cn(
+                  'w-full h-8 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-colors border',
+                  connStatus === 'ok'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/20'
+                    : connStatus === 'error'
+                    ? 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
+                    : 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10'
+                )}
+              >
+                {connStatus === 'testing' ? (
+                  <><Loader2 size={11} className="animate-spin" /> Conectando…</>
+                ) : connStatus === 'ok' ? (
+                  <><RefreshCw size={11} /> Ver todos los modelos</>
+                ) : connStatus === 'error' ? (
+                  <><XCircle size={11} /> Reintentar</>
+                ) : (
+                  <><RefreshCw size={11} /> Conectar y cargar modelos</>
+                )}
+              </button>
+
+              {/* Mensaje de estado */}
+              {connMsg && (
+                <p className={cn(
+                  'text-[9px] font-mono px-1',
+                  connStatus === 'ok' ? 'text-emerald-600' : 'text-destructive'
+                )}>
+                  {connStatus === 'ok' ? '✓ ' : '✗ '}{connMsg}
+                </p>
+              )}
+            </div>
+
+            {/* Selector de modelo — solo visible si hay modelos cargados */}
+            {models.length > 0 && (
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">
+                  Modelo <span className="text-primary/50 normal-case font-normal">({models.length})</span>
+                </label>
+                <select
+                  value={config.model}
+                  onChange={e => setConfig(c => ({ ...c, model: e.target.value }))}
+                  className="w-full h-8 rounded-md border border-border/40 bg-background px-2 text-xs font-medium"
+                >
+                  {models.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+                {isFimModel(config.model) && (
+                  <p className="text-[9px] text-amber-600 font-mono px-1">
+                    ⚠ Este modelo es FIM (code completion) y no soporta tool calling. El servidor usará mistral-large-latest automáticamente.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Modelo manual cuando no hay lista (sin conexión aún) */}
+            {models.length === 0 && config.model && (
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Modelo actual (guardado)</label>
+                <Input
+                  value={config.model}
+                  onChange={e => setConfig(c => ({ ...c, model: e.target.value }))}
+                  className="h-8 text-xs font-mono border-border/40 bg-background"
+                />
+                {isFimModel(config.model) && (
+                  <p className="text-[9px] text-amber-600 font-mono px-1">
+                    ⚠ FIM model — sin tool calling. Se usará mistral-large-latest.
+                  </p>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -340,31 +452,106 @@ function SettingsPanel() {
         >
           {saving ? <Loader2 size={12} className="animate-spin" />
             : saved  ? <><Check size={12} /> Guardado</>
-            : 'Guardar'}
+            : 'Guardar configuración'}
         </Button>
       </div>
     </div>
   );
 }
 
+// ── Tool call pill (AI SDK v6: part.type = 'tool-{name}', state = 'input-*'/'output-*') ──
+
+function ToolPill({ part }: { part: any }) {
+  // v6: toolName lives in part.toolName (dynamic) or derived from part.type
+  const toolName: string = part.toolName ?? part.type.replace(/^tool-/, '');
+  const state: string = part.state ?? '';
+  const isPending = state === 'input-streaming' || state === 'input-available';
+  const isError = state === 'output-error';
+
+  // v6: args → input, result → output
+  const input = part.input ?? part.args ?? {};
+  const output = part.output ?? part.result;
+
+  const label = toolName === 'observe' ? 'observe'
+    : toolName === 'execute_agno'      ? (input?.command ?? 'execute_agno')
+    : toolName;
+
+  const ok = !isError && (output == null || output?.ok !== false);
+
+  const summary = isError
+    ? (part.errorText ?? 'error')
+    : (!isPending && output != null)
+      ? toolName === 'observe'
+        ? `${output.schemas?.length ?? 0} schemas · ${output.routes?.length ?? 0} rutas`
+        : output.ok
+          ? (output.action ?? 'ok')
+          : output.error
+      : null;
+
+  return (
+    <div className={cn(
+      'flex items-start gap-1.5 px-2 py-1 rounded-md border text-[10px] font-mono my-0.5',
+      isPending ? 'border-primary/20 bg-primary/5 text-primary/70'
+        : ok    ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700'
+        :          'border-destructive/20 bg-destructive/5 text-destructive'
+    )}>
+      {isPending
+        ? <Loader2 size={9} className="animate-spin shrink-0 mt-0.5" />
+        : ok ? <Check size={9} className="shrink-0 mt-0.5" />
+             : <XCircle size={9} className="shrink-0 mt-0.5" />
+      }
+      <span className="truncate">
+        {label}
+        {summary && <span className="opacity-60 ml-1">→ {summary}</span>}
+      </span>
+    </div>
+  );
+}
+
 // ── Mensaje ───────────────────────────────────────────────────────────────────
 
-function Message({ role, content }: { role: string; content: string }) {
-  const isUser = role === 'user';
-  return (
-    <div className={cn('flex gap-2 text-xs', isUser ? 'justify-end' : 'justify-start')}>
-      {!isUser && (
-        <div className="shrink-0 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
-          <Bot size={11} className="text-primary" />
+function Message({ message }: { message: any }) {
+  const isUser = message.role === 'user';
+  const parts: any[] = message.parts ?? [];
+
+  if (isUser) {
+    const text = parts.find((p: any) => p.type === 'text')?.text ?? '';
+    return (
+      <div className="flex gap-2 text-xs justify-end">
+        <div className="max-w-[85%] rounded-xl px-3 py-2 text-[12px] leading-relaxed bg-primary text-primary-foreground rounded-tr-none">
+          {text}
         </div>
-      )}
-      <div className={cn(
-        'max-w-[85%] rounded-xl px-3 py-2 text-[12px] leading-relaxed',
-        isUser
-          ? 'bg-primary text-primary-foreground rounded-tr-none'
-          : 'bg-muted/60 text-foreground rounded-tl-none'
-      )}>
-        {isUser ? content : parseContent(content)}
+      </div>
+    );
+  }
+
+  const isToolPart = (p: any) => typeof p.type === 'string' && p.type.startsWith('tool-');
+
+  const hasParts = parts.some(p => p.type === 'text' || isToolPart(p));
+  if (!hasParts) return null;
+
+  return (
+    <div className="flex gap-2 text-xs justify-start">
+      <div className="shrink-0 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+        <Bot size={11} className="text-primary" />
+      </div>
+      <div className="max-w-[90%] space-y-0.5">
+        {parts.map((part: any, i: number) => {
+          if (part.type === 'step-start') {
+            return <div key={i} className="border-t border-border/20 my-1 w-full" />;
+          }
+          if (part.type === 'text' && part.text) {
+            return (
+              <div key={i} className="rounded-xl px-3 py-2 text-[12px] leading-relaxed bg-muted/60 text-foreground rounded-tl-none">
+                <MarkdownContent text={part.text} />
+              </div>
+            );
+          }
+          if (isToolPart(part)) {
+            return <ToolPill key={i} part={part} />;
+          }
+          return null;
+        })}
       </div>
     </div>
   );
@@ -375,17 +562,56 @@ function Message({ role, content }: { role: string; content: string }) {
 export function AgnoChat() {
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevStatus = useRef<string>('ready');
 
-  const { messages, input, setInput, handleSubmit, isLoading, setMessages } = useChat({
-    api: '/api/chat',
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/chat' }),
   });
+
+  const isLoading = status === 'streaming' || status === 'submitted';
+
+  // After AI executes commands, bypass the SSR cycle and hydrate Zustand stores directly.
+  // router.refresh() alone can't trigger re-hydration because AgnosticShell only hydrates
+  // on path change — stores would stay stale until navigation.
+  useEffect(() => {
+    if (prevStatus.current === 'streaming' && status === 'ready') {
+      const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant');
+      const ranCommands = lastAssistant?.parts?.some(
+        (p: any) => p.type === 'tool-execute_agno' && p.state === 'output-available'
+      );
+      if (ranCommands) {
+        fetch('/api/vault?namespace=all')
+          .then(r => r.json())
+          .then((res: any) => {
+            if (!res.success || !res.data) return;
+            const fresh = res.data as Record<string, any[]>;
+            useDNAStore.getState().hydrate(
+              fresh[SYSTEM_NS.ROUTES]  ?? [],
+              fresh[SYSTEM_NS.SCHEMAS] ?? []
+            );
+            useMateriaStore.getState().hydrate(fresh);
+          })
+          .catch(() => {});
+      }
+    }
+    prevStatus.current = status;
+  }, [status, messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    const text = input;
+    setInput('');
+    await sendMessage({ text });
+  };
 
   useEffect(() => {
     if (open) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
-  const HINTS = ['crear schema productos', 'añadir ruta /clientes', 'ver estructura actual'];
+  const HINTS = ['crear schema productos', 'añadir ruta /clientes', 'validate — verificar contratos'];
 
   return (
     <>
@@ -464,7 +690,9 @@ export function AgnoChat() {
                   </div>
                 </div>
               )}
-              {messages.map(m => <Message key={m.id} role={m.role} content={m.content} />)}
+              {messages.map(m => (
+                <Message key={m.id} message={m} />
+              ))}
               {isLoading && (
                 <div className="flex gap-2 items-center">
                   <div className="shrink-0 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
@@ -485,14 +713,14 @@ export function AgnoChat() {
           {!showSettings && (
             <form onSubmit={handleSubmit} className="flex gap-2 px-3 py-3 border-t border-border/40 bg-muted/10 shrink-0">
               <Input
-                value={input ?? ''}
+                value={input}
                 onChange={e => setInput(e.target.value)}
                 placeholder="Describe lo que necesitas..."
                 disabled={isLoading}
                 className="flex-1 h-8 text-xs border-border/40 bg-background focus:ring-0"
                 autoFocus
               />
-              <Button type="submit" size="icon" disabled={isLoading || !input?.trim()} className="h-8 w-8 shrink-0">
+              <Button type="submit" size="icon" disabled={isLoading || !input.trim()} className="h-8 w-8 shrink-0">
                 {isLoading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
               </Button>
             </form>

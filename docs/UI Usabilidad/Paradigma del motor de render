@@ -1,0 +1,91 @@
+Análisis desde primeros principios — Sin filtros
+Cómo lo resolvieron los grandes en 2026
+Analicé Figma, Framer, Builder.io, Plasmic, Penpot y Webflow. Todos comparten una sola decisión arquitectónica que nosotros no tomamos:
+
+
+ELLOS:   Modelo de diseño (abstracto) → Compilador → CSS
+NOSOTROS: CSS directamente ← panel edita → CSS directamente → renderer aplica
+En Figma, node.layoutSizingHorizontal = FILL no es CSS. Es una propiedad semántica. Un compilador interno (basado en Yoga — el mismo engine de React Native) convierte FILL en píxeles exactos antes de que el renderer toque el DOM. El renderer recibe posiciones y tamaños resueltos, nunca ambigüedad.
+
+En Builder.io, el componente visual compila a React/Vue/Angular/Svelte. CSS es uno de los outputs, no el modelo. El editor trabaja sobre el modelo abstracto.
+
+En Penpot (open source, 2025), el editor usa SVG como renderer — completamente desacoplado de CSS. El modelo de diseño y el modelo de rendering son capas explícitamente separadas.
+
+El patrón universal: ningún design tool serio en 2026 edita CSS directamente. CSS es una consecuencia, no una causa.
+
+La contradicción axiómatica central
+El sistema tiene DOS axiomas que se anulan mutuamente:
+
+Axioma A (correcto, bien implementado):
+
+src/ es ciego al negocio. Los datos viven en storage/. El renderer es una función pura del JSON.
+
+Axioma B (roto, implícito):
+
+El modelo de diseño visual ES CSS. node.style es un objeto CSS. El panel edita strings CSS. El renderer aplica ese CSS.
+
+El Axioma B destruye el Axioma A porque CSS tiene su propio layout engine que el sistema no controla. flexGrow:1 en un contenedor sin altura explícita produce 0. CSS hace lo que CSS hace — independientemente de la intención del diseñador. El sistema pide a CSS que exprese intenciones que CSS no puede expresar sin contexto de su árbol completo.
+
+Resultado: el renderer necesita isDesignMode para ser funcional. Eso significa que el renderer no es una función pura. El Axioma A quedó roto.
+
+La arquitectura correcta — lo que ya resolvieron los grandes
+
+┌──────────────────────────────────────────────────────────┐
+│ NIVEL 0: MODELO DE DISEÑO (abstracto, semántico)         │
+│  NodeDesign {                                            │
+│    sizing: { w: {mode:'fill'}, h: {mode:'fixed', v:200}} │
+│    layout: { mode:'flex-row', align:'center', gap:16 }   │
+│    fill: ColorToken | null                               │
+│    children: NodeDesign[]                                │
+│  }                                                       │
+│  → Nunca contiene strings CSS. Solo intención.          │
+└──────────────────────────┬───────────────────────────────┘
+                           │
+                    COMPILADOR (pasa una vez, conoce el árbol completo,
+                    valida constraints: Fill solo si padre es flex)
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│ NIVEL 1: ESTILOS RESUELTOS (CSS válido, sin ambigüedad)  │
+│  ComputedStyle { flexGrow:1, gap:'16px', background:'...'} │
+│  → Función pura de NodeDesign + contexto del padre      │
+└──────────────────────────┬───────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│ NIVEL 2: RENDERER (función pura, sin isDesignMode)       │
+│  <div style={computedStyle}>{children}</div>             │
+│  → Idéntico en diseño y producción                       │
+└──────────────────────────────────────────────────────────┘
+                           +
+┌──────────────────────────────────────────────────────────┐
+│ NIVEL 3: CAPA DE EDITOR (overlay separado, no mezclado)  │
+│  Rings de selección, labels, handlers de click           │
+│  → React Portal encima del canvas, no dentro del renderer│
+└──────────────────────────────────────────────────────────┘
+Reactivity model (cómo Figma y Framer lo hacen):
+
+
+Panel edita → Session Store en memoria → Compilador → Renderer (INSTANTÁNEO)
+                                                    ↗
+                              Background sync → API/Disco (cada N segundos)
+El canvas lee del session store en memoria. La persistencia es un efecto secundario asíncrono. Nunca un prerequisito para ver cambios.
+
+Diagnóstico de pañitos de agua tibia — sí o no
+Fix que hemos hecho	¿Pañito?	Por qué
+minHeight:32 en design mode	SÍ	Encubre que el renderer no es puro
+DimMode pills en el panel	SÍ	Dos SSoT siguen existiendo
+7-hop chain para reactividad	SÍ	La arquitectura requiere HTTP para ver un cambio
+Sync DNAStore tras saveItem	SÍ	El problema es que DNAStore y MateriaStore existen separados
+Collapsible sections en panel	NO	UX pura, no arquitectónica
+3×3 alignment matrix	NO	UX pura, no arquitectónica
+selection ring en canvas	PARCIAL	Buena idea, implementación mezclada con el renderer
+Los últimos 4 días de trabajo son mayormente pañitos sobre el renderer. La UX del panel avanzó bien. El renderer sigue roto en su base.
+
+Lo que NO hay que reconstruir (está bien):
+
+El storage adapter system (LocalStrategy, SupabaseStrategy)
+La blind renderer philosophy para datos de negocio (blocks V2, AgnosticRenderer)
+El sistema de rutas y resolución
+El MCP bridge
+El sistema de schemas y CRUD

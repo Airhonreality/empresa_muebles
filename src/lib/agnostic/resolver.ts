@@ -95,6 +95,7 @@ function extractAllContexts(blocks: any[]): string[] {
   return Array.from(contexts);
 }
 
+
 /**
  * Resolves the route, page blocks, active record and CRUD intent isomorphicly.
  */

@@ -135,6 +135,7 @@ export const useSystemStore = create<SystemState>((set) => ({
   setOverlay: (overlay) => set({ overlay }),
 }));
 
+
 // --- 🏹 REACTIVE SELECTORS: El Puente Determinista ---
 export const useActiveRoute = () => {
   const path = useSystemStore((s) => s.currentPath) || '';

@@ -3,22 +3,19 @@
  * ──────────────────────────────────────────
  * AXIOMATIC_CONTRACT:
  * - MUST: Inyectar tokens CSS de satélite inline para prevenir FOUC.
- * - MUST: Proveer el contexto de Soberanía (SovereigntyOrchestrator) globalmente.
  * - NEVER: Contener lógica de negocio o de transformación de DNA.
- * 
- * ADR: Se opta por inyección inline de estilos de satélite para garantizar 
+ *
+ * ADR: Se opta por inyección inline de estilos de satélite para garantizar
  * que la identidad visual sea soberana desde el primer frame de renderizado.
- * 
+ *
  * RELATIONSHIPS:
  * - Padre de todas las rutas del sistema.
- * - Inyecta SovereigntyOrchestrator como centinela omnipresente.
  */
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider }    from "@/context/AppContext";
 import { AuthProvider }   from "@/context/AuthContext";
 import { Toaster }        from "sonner";
-import { SovereigntyOrchestrator } from "@/components/agnostic/engine/SovereigntyOrchestrator";
 import { AdminGear }               from "@/components/agnostic/admin/AdminGear";
 import { AgnoChat }               from "@/components/agnostic/admin/AgnoChat";
 import { getVaultData }   from "@/core/server/vault";
@@ -87,7 +84,6 @@ export default async function RootLayout({
         <AppProvider initialData={vaultData}>
           <AuthProvider>
             {children}
-            <SovereigntyOrchestrator />
             <AdminGear />
             <AgnoChat />
             <Toaster position="bottom-left" expand={false} richColors />

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Settings2, X, PanelRight, PanelBottom } from 'lucide-react';
 import { useActiveRoute } from '@/lib/agnostic/store';
-import { AgnosticDesigner } from '@/components/agnostic/designer/AgnosticDesigner';
+import { ConfigManager } from '@/components/agnostic/designer/AgnosticDesigner';
 import { useAdminGate } from '@/hooks/useAdminGate';
 import { cn } from '@/lib/utils';
 
@@ -50,7 +50,7 @@ export function AdminGear() {
             </button>
           </div>
           <div className="flex-1 overflow-hidden">
-            <AgnosticDesigner initialRouteId={activeRoute?.id ?? null} />
+            <ConfigManager initialRouteId={activeRoute?.id ?? null} />
           </div>
         </div>
       )}

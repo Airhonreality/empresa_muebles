@@ -36,6 +36,8 @@ import type {
 
 export class LocalStrategy implements AgnosticBridge {
   private readonly dbDir: string;
+  // Per-namespace write queue prevents concurrent reads from racing each other
+  private readonly writeQueues = new Map<string, Promise<unknown>>();
 
   /**
    * Describes the local file system storage capabilities.
@@ -46,8 +48,8 @@ export class LocalStrategy implements AgnosticBridge {
   };
 
   constructor(siloPath: string) {
-    this.dbDir = path.isAbsolute(siloPath) 
-      ? path.join(siloPath, 'db') 
+    this.dbDir = path.isAbsolute(siloPath)
+      ? path.join(siloPath, 'db')
       : path.join(process.cwd(), siloPath, 'db');
   }
 
@@ -114,27 +116,36 @@ export class LocalStrategy implements AgnosticBridge {
 
   /**
    * Writes a record atomically to the filesystem. Merges existing data if already present.
+   * Serializes concurrent writes per namespace to prevent read-modify-write races.
    */
   async write(namespace: string, record: Partial<DataItem> & { data: Record<string, unknown> }): Promise<DataItem> {
+    const pending = this.writeQueues.get(namespace) ?? Promise.resolve();
+    const next = pending.then(() => this._doWrite(namespace, record));
+    // Keep the chain alive but don't let a rejection block future writes
+    this.writeQueues.set(namespace, next.catch(() => undefined));
+    return next;
+  }
+
+  private async _doWrite(namespace: string, record: Partial<DataItem> & { data: Record<string, unknown> }): Promise<DataItem> {
     const existing = await this.read(namespace);
     const id = record.id || globalThis.crypto.randomUUID();
-    const saved: DataItem = { 
-      id, 
-      context: namespace, 
-      data: record.data, 
-      updated_at: new Date().toISOString() 
+    const saved: DataItem = {
+      id,
+      context: namespace,
+      data: record.data,
+      updated_at: new Date().toISOString()
     };
-    
+
     const map = new Map(existing.map(i => [i.id, i]));
     map.set(id, saved);
-    
+
     let filePath = this.getFilePath(namespace);
     if (namespace === 'system_config') {
       filePath = path.join(process.cwd(), 'storage', 'system_config.json');
     }
-    
+
     await fs.mkdir(path.dirname(filePath), { recursive: true });
-    
+
     // Atomic Write Operation: write to a temporary file, then rename it
     const content = JSON.stringify(Array.from(map.values()), null, 2);
     const tmp = filePath + '.tmp';
@@ -147,7 +158,7 @@ export class LocalStrategy implements AgnosticBridge {
       await fs.writeFile(filePath, content, 'utf-8');
       try { await fs.unlink(tmp); } catch { /* limpieza best-effort */ }
     }
-    
+
     return saved;
   }
 

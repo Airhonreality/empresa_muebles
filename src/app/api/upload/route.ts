@@ -24,6 +24,21 @@ const ALLOWED_MIME = new Set([
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
+export async function GET() {
+  try {
+    const assetsDir = path.join(getSiloPath(), 'assets');
+    await fs.mkdir(assetsDir, { recursive: true });
+    const files = await fs.readdir(assetsDir);
+    const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']);
+    const urls = files
+      .filter(f => IMAGE_EXTS.has(path.extname(f).toLowerCase()))
+      .map(f => `/api/assets/${f}`);
+    return NextResponse.json({ urls });
+  } catch (err) {
+    return NextResponse.json({ urls: [] });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();

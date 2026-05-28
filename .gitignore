@@ -18,6 +18,9 @@
 .DS_Store
 *.pem
 
+# agno activity log — local only, never committed
+.agno-log.jsonl
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -34,8 +37,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local tenant storage — NEVER commit to kernel repo
+# ── PROJECT LAYER — never lives in the seed ──────────────────────────────────
+# These directories belong to project forks. The seed has them empty (.gitkeep).
+# Merging upstream/main into a project fork will NEVER touch these paths.
+
+# Tenant storage — schemas, routes, data, scripts
 storage/
+
+# Project-specific custom blocks built with AI
+# Exception: _TEMPLATE.tsx is part of the seed (shows the pattern to follow)
+src/components/specialized/
+!src/components/specialized/_TEMPLATE.tsx
 
 # local Claude Code settings (machine-specific paths)
 .claude/settings.local.json

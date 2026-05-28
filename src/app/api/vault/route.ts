@@ -28,6 +28,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getStrategy } from '@/server/getStrategy';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
+import { appendLog } from '@/lib/agnostic/activity-log';
+import { triggerSchemaCompile } from '@/lib/agnostic/schema-compiler-trigger';
 
 // ─── ACTION SCHEMAS ─────────────────────────────────────────────────────────
 
@@ -75,12 +77,13 @@ export async function GET(req: NextRequest) {
       const coreContexts = [SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.USERS, SYSTEM_NS.USER_LISTS];
       const activeContexts: string[] = [...coreContexts];
 
+      const systemNamespaces = new Set(Object.values(SYSTEM_NS));
       try {
         const schemas = await strategy.read(SYSTEM_NS.SCHEMAS);
         if (Array.isArray(schemas)) {
           for (const s of schemas) {
             const contextName = s.data?.slug || s.slug || s.data?.name || s.name;
-            if (contextName && typeof contextName === 'string' && !activeContexts.includes(contextName)) {
+            if (contextName && typeof contextName === 'string' && !activeContexts.includes(contextName) && !systemNamespaces.has(contextName)) {
               activeContexts.push(contextName);
             }
           }
@@ -133,6 +136,11 @@ export async function POST(req: NextRequest) {
       const recordPayload = { id: raw.id, data: raw.data };
       writeSchema.parse({ action: 'WRITE', namespace, record: { id: raw.id, data: recordPayload.data } });
       const savedRecord = await strategy.write(namespace, recordPayload);
+      const titleField = raw.data?.name ?? raw.data?.title ?? raw.data?.path ?? raw.id ?? '';
+      appendLog({ src: 'vault', action: 'WRITE', ns: namespace, id: raw.id, summary: `${namespace} › ${String(titleField).slice(0, 60)}` });
+      // When schemas change, regenerate TypeScript contracts in background.
+      // Transparent to the user — happens automatically, never blocks the response.
+      if (namespace === SYSTEM_NS.SCHEMAS) triggerSchemaCompile();
       return NextResponse.json({ success: true, record: savedRecord });
     }
 
@@ -150,6 +158,8 @@ export async function POST(req: NextRequest) {
         );
       }
       await strategy.remove(namespace, id);
+      appendLog({ src: 'vault', action: 'REMOVE', ns: namespace, id, summary: `${namespace} › ${id.slice(0, 8)}` });
+      if (namespace === SYSTEM_NS.SCHEMAS) triggerSchemaCompile();
       return NextResponse.json({ success: true });
     }
 
