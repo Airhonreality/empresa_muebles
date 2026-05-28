@@ -1,0 +1,18 @@
+{
+  "id": "hero_settings_def",
+  "name": "hero_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Contenido del Hero",
+      "icon": "Palette",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        { "key": "title",    "label": "Título Principal",  "type": "string" },
+        { "key": "subtitle", "label": "Subtítulo",         "type": "string" },
+        { "key": "align",    "label": "Alineación",        "type": "align", "default": "center" }
+      ]
+    }
+  ]
+}

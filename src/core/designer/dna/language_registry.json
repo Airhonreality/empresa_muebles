@@ -1,0 +1,16 @@
+{
+  "locales": [
+    { "id": "es-ES", "name": "Español (España)", "flag": "🇪🇸" },
+    { "id": "en-US", "name": "English (United States)", "flag": "🇺🇸" },
+    { "id": "pt-BR", "name": "Português (Brasil)", "flag": "🇧🇷" },
+    { "id": "fr-FR", "name": "Français (France)", "flag": "🇫🇷" },
+    { "id": "de-DE", "name": "Deutsch (Deutschland)", "flag": "🇩🇪" },
+    { "id": "it-IT", "name": "Italiano (Italia)", "flag": "🇮🇹" }
+  ],
+  "currencies": [
+    { "id": "USD", "symbol": "$", "name": "US Dollar" },
+    { "id": "EUR", "symbol": "€", "name": "Euro" },
+    { "id": "MXN", "symbol": "$", "name": "Peso Mexicano" },
+    { "id": "COP", "symbol": "$", "name": "Peso Colombiano" }
+  ]
+}

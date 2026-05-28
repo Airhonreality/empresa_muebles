@@ -1,0 +1,83 @@
+{
+  "id": "schema_system_project_def",
+  "name": "system_project",
+  "label": "Proyecto Agnóstico",
+  "description": "Entidad Maestra de Gestión de Repositorio y Despliegue",
+  "fields": [
+    {
+      "id": "fld_prj_1",
+      "key": "name",
+      "label": "Nombre del Proyecto",
+      "type": "text",
+      "required": true,
+      "width": "half",
+      "section": "Identidad"
+    },
+    {
+      "id": "fld_prj_2",
+      "key": "slug",
+      "label": "Identidad Técnica (Repo)",
+      "type": "text",
+      "required": true,
+      "width": "half",
+      "section": "Identidad",
+      "config": {
+        "derivation": { "op": "SLUGIFY", "args": ["name"] }
+      }
+    },
+    {
+      "id": "fld_prj_3",
+      "key": "repo_url",
+      "label": "GitHub Repository",
+      "type": "text",
+      "required": true,
+      "width": "full",
+      "section": "Infraestructura"
+    },
+    {
+      "id": "fld_prj_4",
+      "key": "vercel_link",
+      "label": "URL de Producción",
+      "type": "text",
+      "width": "half",
+      "section": "Infraestructura"
+    },
+    {
+      "id": "fld_prj_5",
+      "key": "deployment_status",
+      "label": "Estado del Despliegue",
+      "type": "select",
+      "width": "half",
+      "section": "Infraestructura",
+      "options": [
+        { "label": "🟢 Online", "value": "READY" },
+        { "label": "🟡 Desplegando", "value": "BUILDING" },
+        { "label": "🔴 Error", "value": "FAILED" }
+      ]
+    },
+    {
+      "id": "fld_prj_6",
+      "key": "dna_strategy",
+      "label": "Estrategia ADN",
+      "type": "select",
+      "width": "half",
+      "section": "Configuración_Base",
+      "options": [
+        { "label": "Local", "value": "LocalStrategy" },
+        { "label": "GitHub", "value": "GitHubStrategy" }
+      ]
+    },
+    {
+      "id": "fld_prj_7",
+      "key": "storage_strategy",
+      "label": "Estrategia Almacenamiento",
+      "type": "select",
+      "width": "half",
+      "section": "Configuración_Base",
+      "options": [
+        { "label": "Local", "value": "LocalStrategy" },
+        { "label": "Supabase", "value": "SupabaseStrategy" }
+      ]
+    }
+  ]
+}

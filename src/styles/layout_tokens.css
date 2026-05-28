@@ -1,0 +1,52 @@
+/**
+ * 🎨 ARTEFACTO: layout_tokens.css
+ * ────────────
+ * CAPA: Design System (Sovereign / Rem-Based)
+ * 
+ * 🎯 FUNCTIONAL_SCOPE:
+ * - Sistema de coordenadas elásticas basado en rem y porcentajes.
+ * - Cero píxeles hardcoded para garantizar adaptabilidad TV/Móvil.
+ */
+
+:root {
+  /* Escala de espaciado basada en REM (1rem = 16px por defecto) */
+  --space-unit: 1rem;
+  --layout-padding-base: 1.5rem;
+  --layout-gap-base: 1rem;
+  
+  /* Colores de Señalética Figma */
+  --layout-accent: #007aff;
+  --layout-bg-panel: #1e1e1e;
+  --layout-border: #333333;
+}
+
+
+
+/* HUD UI STYLES (Shadcn Complement) */
+.hud-panel {
+  background: var(--layout-bg-panel);
+  border: 1px solid var(--layout-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-size: 0.75rem;
+}
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.matrix-dot {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.125rem;
+  border: 1px solid var(--layout-border);
+  transition: all 0.1s;
+  cursor: pointer;
+}
+
+.matrix-dot:hover { border-color: var(--layout-accent); }
+.matrix-dot.active { background: var(--layout-accent); border-color: var(--layout-accent); }

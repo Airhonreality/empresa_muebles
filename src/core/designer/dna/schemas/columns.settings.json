@@ -1,0 +1,31 @@
+{
+  "id": "columns_settings_def",
+  "name": "columns_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Configuración de Columnas",
+      "icon": "Layout",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "cols",
+          "label": "Número de Columnas",
+          "type": "slider",
+          "min": 1,
+          "max": 4,
+          "default": 2
+        },
+        {
+          "key": "gap",
+          "label": "Separación (unidades)",
+          "type": "slider",
+          "min": 1,
+          "max": 16,
+          "default": 6
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "e1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c",
+    "context": "page_routes",
+    "data": {
+      "path": "/projects",
+      "blocks": [
+        {
+          "type": "custom",
+          "moduleName": "block_project_list",
+          "context": "schema_projects"
+        }
+      ]
+    }
+  },
+  {
+    "id": "a2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d",
+    "context": "page_routes",
+    "data": {
+      "path": "/create-project",
+      "blocks": [
+        {
+          "type": "form",
+          "schemaId": "schema_projects",
+          "config": {
+            "title": "Registrar Nuevo Proyecto",
+            "redirect": "/projects"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "b3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e",
+    "context": "page_routes",
+    "data": {
+      "path": "/project/:slug",
+      "blocks": [
+        {
+          "type": "custom",
+          "moduleName": "block_project_header",
+          "context": "schema_projects",
+          "config": {
+            "title_key": "name",
+            "meta_keys": [
+              "client_name",
+              "installation_address",
+              "client_email",
+              "client_tax_id"
+            ],
+            "sub_keys": [
+              "estimated_delivery",
+              "warranty_period"
+            ],
+            "status_key": "status",
+            "budget_key": "budget_total"
+          }
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,34 @@
+{
+  "id": "divider_settings_def",
+  "name": "divider_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Estilo del Divisor",
+      "icon": "Palette",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "variant",
+          "label": "Variante",
+          "type": "select",
+          "options": [
+            { "label": "Línea horizontal", "value": "line" },
+            { "label": "Espacio vacío",    "value": "space" },
+            { "label": "Tres puntos",      "value": "dots" }
+          ],
+          "default": "line"
+        },
+        {
+          "key": "spacing",
+          "label": "Espaciado (unidades)",
+          "type": "slider",
+          "min": 1,
+          "max": 20,
+          "default": 4
+        }
+      ]
+    }
+  ]
+}

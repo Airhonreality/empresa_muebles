@@ -1,0 +1,58 @@
+[
+  {
+    "id": "schema_quote_main_def",
+    "context": "schema_definitions",
+    "data": {
+      "name": "Cotización (Veta de Oro)",
+      "fields": [
+        { "id": "f1", "key": "cliente_nombre", "label": "Nombre del Cliente", "type": "text", "section": "Identidad", "width": "half", "required": true },
+        { "id": "f2", "key": "cliente_id", "label": "Cédula/NIT", "type": "text", "section": "Identidad", "width": "half" },
+        { "id": "f3", "key": "proyecto_direccion", "label": "Dirección del Proyecto", "type": "text", "section": "Logística", "width": "full" },
+        { "id": "f4", "key": "dias_entrega", "label": "Días Estimados de Entrega", "type": "number", "section": "Logística", "width": "half" },
+        { "id": "f5", "key": "garantia_meses", "label": "Garantía (Meses)", "type": "number", "section": "Logística", "width": "half" },
+        { "id": "f6", "key": "costos_operativos", "label": "Costos Operativos", "type": "number", "section": "Finanzas", "width": "half" },
+        { "id": "f7", "key": "descuento_global", "label": "Descuento Aplicado (%)", "type": "number", "section": "Finanzas", "width": "half" }
+      ]
+    }
+  },
+  {
+    "id": "schema_quote_spaces_def",
+    "context": "schema_definitions",
+    "data": {
+      "name": "Espacio de Cotización",
+      "fields": [
+        { "id": "s1", "key": "nombre_espacio", "label": "Nombre del Espacio (ej. Cocina)", "type": "text", "section": "General", "width": "full", "required": true },
+        { "id": "s2", "key": "variante_nombre", "label": "Variante (ej. Opción A)", "type": "text", "section": "General", "width": "half" },
+        { "id": "s3", "key": "dias_desarrollo", "label": "Días de Desarrollo", "type": "number", "section": "Mano de Obra", "width": "third" },
+        { "id": "s4", "key": "dias_ensamblaje", "label": "Días de Ensamblaje", "type": "number", "section": "Mano de Obra", "width": "third" },
+        { "id": "s5", "key": "dias_instalacion", "label": "Días de Instalación", "type": "number", "section": "Mano de Obra", "width": "third" }
+      ]
+    }
+  },
+  {
+    "id": "schema_quote_items_def",
+    "context": "schema_definitions",
+    "data": {
+      "name": "Ítems de Cotización",
+      "fields": [
+        { "id": "i1", "key": "item_nombre", "label": "Descripción del Item", "type": "text", "width": "full", "required": true },
+        { "id": "i2", "key": "unidad_medida", "label": "U.M.", "type": "text", "width": "fourth" },
+        { "id": "i3", "key": "cantidad", "label": "Cant.", "type": "number", "width": "fourth" },
+        { "id": "i4", "key": "precio_unitario", "label": "Precio Unit.", "type": "number", "width": "half" }
+      ]
+    }
+  },
+  {
+    "id": "schema_catalog_items_def",
+    "context": "schema_definitions",
+    "data": {
+      "name": "Catálogo de Referencias",
+      "fields": [
+        { "id": "c1", "key": "sku", "label": "SKU", "type": "text", "width": "half" },
+        { "id": "c2", "key": "nombre", "label": "Nombre", "type": "text", "width": "half" },
+        { "id": "c3", "key": "precio_base", "label": "Precio Base", "type": "number", "width": "half" },
+        { "id": "c4", "key": "imagen", "label": "URL Imagen", "type": "text", "width": "half" }
+      ]
+    }
+  }
+]

@@ -1,0 +1,42 @@
+{
+  "id": "text_settings_def",
+  "name": "text_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Contenido y Estilo",
+      "icon": "Palette",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "content",
+          "label": "Texto",
+          "type": "string",
+          "description": "El texto a mostrar."
+        },
+        {
+          "key": "variant",
+          "label": "Variante Tipográfica",
+          "type": "select",
+          "options": [
+            { "label": "H1 — Título Principal",   "value": "h1" },
+            { "label": "H2 — Sección",            "value": "h2" },
+            { "label": "H3 — Subsección",         "value": "h3" },
+            { "label": "Cuerpo",                  "value": "body" },
+            { "label": "Caption (pequeño)",       "value": "caption" },
+            { "label": "Label",                   "value": "label" },
+            { "label": "Cita / Quote",            "value": "quote" }
+          ],
+          "default": "body"
+        },
+        {
+          "key": "align",
+          "label": "Alineación",
+          "type": "align",
+          "default": "left"
+        }
+      ]
+    }
+  ]
+}

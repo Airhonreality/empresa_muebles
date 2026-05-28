@@ -1,0 +1,38 @@
+# 🛑 AGNOSTIC SEED - GITIGNORE
+
+# Dependencias
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Secretos y Configuración (Soberanía Privada)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# 🛰️ MATERIA (Lógica de Negocio)
+# Ignoramos los datos de la materia para mantener la semilla virgen
+matter-silo/materia.json
+matter-silo/assets/*
+!matter-silo/assets/.gitkeep

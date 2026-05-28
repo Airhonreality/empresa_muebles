@@ -1,0 +1,94 @@
+{
+  "id": "form_settings_def",
+  "name": "form_settings",
+  "description": "Configuración paramétrica específica para Formularios",
+  "fields": [
+    {
+      "key": "behavior",
+      "label": "Comportamiento",
+      "icon": "Activity",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "intent",
+          "label": "Intención (Modo Operación)",
+          "type": "select",
+          "options": [
+            { "label": "Adaptativo (Inferencia Automática)", "value": "auto" },
+            { "label": "Creación (Formulario Vacío)", "value": "create" },
+            { "label": "Edición (Cargar Registro Activo)", "value": "edit" },
+            { "label": "Lectura (Solo Proyección)", "value": "view" }
+          ],
+          "default": "auto",
+          "description": "Define el comportamiento de carga de datos del formulario."
+        },
+        {
+          "key": "isCollapsible",
+          "label": "Permitir Colapsar",
+          "type": "boolean",
+          "description": "Muestra un control chevron para contraer/expandir el formulario. Por defecto: true."
+        },
+        {
+          "key": "defaultExpanded",
+          "label": "Expandido por Defecto",
+          "type": "boolean",
+          "description": "Define si el formulario inicia expandido (true) o colapsado (false). Solo aplica si isCollapsible está activo."
+        },
+        {
+          "key": "hideSubmit",
+          "label": "Auto-Guardado Silencioso",
+          "type": "boolean",
+          "description": "Oculta el botón de envío y activa guardado automático con debounce de 800ms. Muestra micro-indicador de estado en el footer (✓ Guardado / Guardando... / Error). Ideal para formularios de edición continua tipo Notion."
+        }
+      ]
+    },
+    {
+      "key": "visual",
+      "label": "Estética y Proyección",
+      "icon": "Palette",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "switches",
+          "label": "Campos Visibles en Tabla/Colección (Whitelist)",
+          "type": "multi-select",
+          "options_source": "dna_fields",
+          "description": "Columnas a proyectar en AgnosticTable y AgnosticGroupedCard. Vacío = todas."
+        },
+        {
+          "key": "blackout",
+          "label": "Campos Ocultos en Tabla/Colección (Blacklist)",
+          "type": "multi-select",
+          "options_source": "dna_fields",
+          "description": "Campos del esquema a ocultar de la proyección de tabla."
+        }
+      ]
+    },
+    {
+      "key": "data_architecture",
+      "label": "Arquitectura de Datos",
+      "icon": "Database",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "parent_key",
+          "label": "Clave Foránea (Parent Key)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Identificador del campo que vincula este formulario con el registro jerárquico superior.",
+          "placeholder": "Seleccionar foreign key..."
+        },
+        {
+          "key": "visible_fields",
+          "label": "Campos del Formulario (Restricción)",
+          "type": "multi-select",
+          "options_source": "dna_fields",
+          "description": "Field keys que se renderizan en este formulario. Vacío = todos los campos del schema."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "navbar_settings_def",
+  "name": "navbar_settings",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Datos del Navbar",
+      "icon": "Layout",
+      "type": "section",
+      "fields": [
+        {
+          "key": "nav_id",
+          "label": "ID de Configuración (nav_id)",
+          "type": "string",
+          "description": "Nombre del registro en el namespace app_navbars. Si está vacío, usa links inline del bloque."
+        }
+      ]
+    }
+  ]
+}

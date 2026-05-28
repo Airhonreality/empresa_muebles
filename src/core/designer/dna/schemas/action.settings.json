@@ -1,0 +1,76 @@
+{
+  "id": "action_settings_def",
+  "name": "action_settings",
+  "description": "Configuración paramétrica específica para Botones y Acciones",
+  "fields": [
+    {
+      "key": "visual",
+      "label": "Estética y Proyección",
+      "icon": "Palette",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "label",
+          "label": "Etiqueta del Botón",
+          "type": "string",
+          "description": "Texto visible en el botón. Si se omite, usa el campo title del bloque."
+        },
+        {
+          "key": "variant",
+          "label": "Variante de Estilo",
+          "type": "select",
+          "options": [
+            { "label": "Default (Primario)", "value": "default" },
+            { "label": "Secondary", "value": "secondary" },
+            { "label": "Outline", "value": "outline" },
+            { "label": "Ghost", "value": "ghost" },
+            { "label": "Destructive", "value": "destructive" },
+            { "label": "Link", "value": "link" }
+          ],
+          "default": "default"
+        },
+        {
+          "key": "size",
+          "label": "Tamaño del Botón",
+          "type": "select",
+          "options": [
+            { "label": "Normal", "value": "default" },
+            { "label": "Pequeño (SM)", "value": "sm" },
+            { "label": "Grande (LG)", "value": "lg" },
+            { "label": "Icono", "value": "icon" }
+          ],
+          "default": "default"
+        },
+        {
+          "key": "icon",
+          "label": "Icono (Lucide)",
+          "type": "string",
+          "description": "Nombre exacto del icono de la librería Lucide. Ejemplo: Save, Play, Trash, Printer, Sparkles."
+        }
+      ]
+    },
+    {
+      "key": "logic",
+      "label": "Automatización",
+      "icon": "Zap",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "zap",
+          "label": "Script Vinculado (Zap)",
+          "type": "select",
+          "description": "Selecciona el script a ejecutar en el servidor al presionar este botón. Los scripts se administran en storage/{tenant}/db/scripts.json.",
+          "options_source": "logic_engine_registry"
+        },
+        {
+          "key": "save_forms_first",
+          "label": "Guardar Formularios Antes de Ejecutar",
+          "type": "boolean",
+          "description": "Antes de llamar al servidor, dispara el submit de todos los formularios registrados en la vista actual (formRegistry.saveAllForms()). Útil para botones que leen datos recientes del servidor. Muestra un toast de 'Guardando formularios...' durante el proceso."
+        }
+      ]
+    }
+  ]
+}

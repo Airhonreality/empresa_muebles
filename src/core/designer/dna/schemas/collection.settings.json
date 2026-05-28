@@ -1,0 +1,128 @@
+{
+  "id": "collection_settings_def",
+  "name": "collection_settings",
+  "description": "Configuración paramétrica específica para Colecciones y Tablas",
+  "fields": [
+    {
+      "key": "behavior",
+      "label": "Comportamiento",
+      "icon": "Activity",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "intent",
+          "label": "Intención (Modo Operación)",
+          "type": "select",
+          "options": [
+            { "label": "Adaptativo (Inferencia Automática)", "value": "auto" },
+            { "label": "Lista (Colección Plana)", "value": "list" }
+          ],
+          "default": "list"
+        },
+        {
+          "key": "isCollapsible",
+          "label": "Permitir Colapsar",
+          "type": "boolean",
+          "description": "Muestra un control chevron para contraer/expandir la colección. Por defecto: true."
+        }
+      ]
+    },
+    {
+      "key": "visual",
+      "label": "Estética y Proyección",
+      "icon": "Palette",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "view",
+          "label": "Modo de Vista",
+          "type": "select",
+          "options": [
+            { "label": "Tarjetas (Card Grid)", "value": "card_grid" },
+            { "label": "Tabla Inteligente (Table)", "value": "table" },
+            { "label": "Editor en Pila (Editor Stack)", "value": "editor_stack" },
+            { "label": "Vista Detalle (Details)", "value": "details" }
+          ],
+          "default": "card_grid",
+          "description": "Modelo de visualización de los registros. IMPORTANTE: cuando group_by_key está configurado, siempre se renderiza AgnosticGroupedCard sin importar el valor de view."
+        },
+        {
+          "key": "searchable",
+          "label": "Habilitar Búsqueda en Tiempo Real",
+          "type": "boolean",
+          "description": "Muestra un input de búsqueda que filtra registros por cualquier campo visible. Por defecto: true."
+        },
+        {
+          "key": "singular",
+          "label": "Nombre Singular del Registro",
+          "type": "string",
+          "description": "Etiqueta para el botón de creación. Ejemplo: Producto, Espacio, Cliente, Variante. Si se omite, usa el nombre del schema."
+        },
+        {
+          "key": "switches",
+          "label": "Campos Visibles (Whitelist de Columnas)",
+          "type": "multi-select",
+          "options_source": "dna_fields",
+          "description": "Columnas a proyectar en tabla/cards. Vacío = todas."
+        },
+        {
+          "key": "blackout",
+          "label": "Campos Ocultos (Blacklist de Columnas)",
+          "type": "multi-select",
+          "options_source": "dna_fields",
+          "description": "Columnas a ocultar de la proyección."
+        }
+      ]
+    },
+    {
+      "key": "data_architecture",
+      "label": "Arquitectura de Datos",
+      "icon": "Database",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "parent_key",
+          "label": "Clave Foránea (Parent Key)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Campo que vincula esta colección con el registro superior. El sistema infiere automáticamente si el schema tiene un campo de relación con el contexto padre."
+        },
+        {
+          "key": "segmentation_key",
+          "label": "Clave de Segmentación (Pivot)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Campo utilizado para particionar los datos en sub-vistas (Variantes, Categorías, Idiomas, etc)."
+        },
+        {
+          "key": "segmentation_strategy",
+          "label": "Estrategia de Segmentación",
+          "type": "select",
+          "options": [
+            { "label": "Ninguna (Proyección Plana)", "value": "none" },
+            { "label": "Pestañas (Tabs)", "value": "tabs" },
+            { "label": "Pasos (Steps)", "value": "steps" },
+            { "label": "Selector (Dropdown)", "value": "select" }
+          ],
+          "description": "Define la interfaz utilizada para alternar entre segmentos de datos. Requiere segmentation_key configurado."
+        },
+        {
+          "key": "segmentation_rename",
+          "label": "Renombrado Inline de Pestañas",
+          "type": "boolean",
+          "description": "Permite editar el nombre de una pestaña de segmento con doble clic. Al confirmar (Enter/blur) actualiza el campo segmentation_key en TODOS los registros del segmento. Solo aplica con segmentation_strategy: tabs."
+        },
+        {
+          "key": "group_by_key",
+          "label": "Agrupar por Campo (Group Key)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Agrupa los registros por el valor de este campo, renderizando un AgnosticGroupedCard por grupo. Cuando está activo, toma precedencia sobre view y la colección siempre usa AgnosticGroupedCard."
+        }
+      ]
+    }
+  ]
+}

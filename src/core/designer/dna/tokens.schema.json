@@ -1,0 +1,35 @@
+{
+  "id": "tokens_def",
+  "name": "tokens",
+  "fields": [
+    {
+      "key": "ui_tokens",
+      "label": "Tokens Estéticos",
+      "icon": "Palette",
+      "type": "section",
+      "fields": [
+        {
+          "key": "primary",
+          "label": "Color Primario (HSL)",
+          "type": "string",
+          "default": "222.2 47.4% 11.2%",
+          "description": "Color corporativo principal en formato HSL (ej. 222.2 47.4% 11.2%)."
+        },
+        {
+          "key": "radius",
+          "label": "Radio de Borde (Radius)",
+          "type": "string",
+          "default": "0.5rem",
+          "description": "Curvatura de bordes de inputs, botones y paneles (ej. 0.5rem)."
+        },
+        {
+          "key": "font_sans",
+          "label": "Tipografía Sans-Serif",
+          "type": "string",
+          "default": "Inter, sans-serif",
+          "description": "Familia tipográfica principal (ej. Inter, sans-serif)."
+        }
+      ]
+    }
+  ]
+}

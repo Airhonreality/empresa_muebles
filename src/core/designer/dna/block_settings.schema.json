@@ -1,0 +1,215 @@
+{
+  "id": "block_settings_def",
+  "name": "block_settings",
+  "description": "Configuración paramétrica de bloques de interfaz",
+  "fields": [
+    {
+      "key": "layout",
+      "label": "Dimensión y Canvas",
+      "icon": "Layout",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "direction",
+          "label": "Eje de Flujo",
+          "type": "select",
+          "options": [
+            { "label": "Vertical (Column)", "value": "vertical" },
+            { "label": "Horizontal (Row)", "value": "horizontal" }
+          ]
+        },
+        {
+          "key": "sizing",
+          "label": "Modelo de Dimensión",
+          "type": "select",
+          "options": [
+            { "label": "Fill (Expandir al contenedor)", "value": "fill" },
+            { "label": "Hug (Ajustar al contenido)", "value": "hug" },
+            { "label": "Relativo (%)", "value": "relative" }
+          ]
+        },
+        {
+          "key": "align",
+          "label": "Punto de Anclaje (9-Grid)",
+          "type": "select",
+          "options": [
+            { "label": "↖ Superior Izquierda", "value": "tl" },
+            { "label": "↑ Superior Centro",    "value": "tc" },
+            { "label": "↗ Superior Derecha",   "value": "tr" },
+            { "label": "← Medio Izquierda",    "value": "ml" },
+            { "label": "· Centro",             "value": "mc" },
+            { "label": "→ Medio Derecha",      "value": "mr" },
+            { "label": "↙ Inferior Izquierda", "value": "bl" },
+            { "label": "↓ Inferior Centro",    "value": "bc" },
+            { "label": "↘ Inferior Derecha",   "value": "br" }
+          ]
+        },
+        {
+          "key": "gap",
+          "label": "Separación entre hijos (rem)",
+          "type": "string"
+        },
+        {
+          "key": "clip",
+          "label": "Recortar Overflow",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "key": "behavior",
+      "label": "Comportamiento",
+      "icon": "Activity",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "isCollapsible",
+          "label": "Permitir Colapsar",
+          "type": "boolean",
+          "description": "Añade un control para contraer/expandir el bloque"
+        },
+        {
+          "key": "defaultExpanded",
+          "label": "Expandido por Defecto",
+          "type": "boolean",
+          "description": "Define si el bloque inicia abierto"
+        },
+        {
+          "key": "intent",
+          "label": "Intención (Modo Operación)",
+          "type": "select",
+          "options": [
+            { "label": "Adaptativo (Inferencia Automática)", "value": "auto" },
+            { "label": "Creación (Formulario Vacío)", "value": "create" },
+            { "label": "Edición (Cargar Registro Activo)", "value": "edit" },
+            { "label": "Lectura (Solo Proyección)", "value": "view" },
+            { "label": "Lista (Colección)", "value": "list" }
+          ],
+          "default": "auto",
+          "description": "Define el modo de operación del bloque (ej: visualización vs edición)."
+        }
+      ]
+    },
+    {
+      "key": "visual",
+      "label": "Estética y Proyección",
+      "icon": "Palette",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "switches",
+          "label": "Campos Visibles (Whitelist)",
+          "type": "multi-select",
+          "options_source": "dna_fields",
+          "description": "Campos del DNA a proyectar. Vacío = todos."
+        },
+        {
+          "key": "blackout",
+          "label": "Campos Ocultos (Blacklist)",
+          "type": "multi-select",
+          "options_source": "dna_fields",
+          "description": "Campos del DNA a ocultar de la proyección."
+        }
+      ]
+    },
+    {
+      "key": "logic",
+      "label": "Automatización",
+      "icon": "Zap",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "zap",
+          "label": "Lógica Vinculada (Zaps)",
+          "type": "multi-select",
+          "description": "Lista secuencial de funciones que se dispararán con este bloque",
+          "options_source": "logic_engine_registry"
+        }
+      ]
+    },
+    {
+      "key": "data_architecture",
+      "label": "Arquitectura de Datos",
+      "icon": "Database",
+      "type": "section",
+      "ns": false,
+      "fields": [
+        {
+          "key": "parent_key",
+          "label": "Clave Foránea (Parent Key)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Identificador del campo que vincula este bloque con el registro jerárquico superior.",
+          "placeholder": "Seleccionar foreign key..."
+        },
+        {
+          "key": "segmentation_key",
+          "label": "Clave de Segmentación (Pivot)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Campo utilizado para particionar los datos en sub-vistas (Variantes, Idiomas, etc).",
+          "placeholder": "Seleccionar campo de pivote..."
+        },
+        {
+          "key": "segmentation_strategy",
+          "label": "Estrategia de Segmentación",
+          "type": "select",
+          "options": [
+            { "label": "Ninguna (Proyección Plana)", "value": "none" },
+            { "label": "Pestañas (Tabs)", "value": "tabs" },
+            { "label": "Pasos (Steps)", "value": "steps" },
+            { "label": "Selector (Dropdown)", "value": "select" }
+          ],
+          "description": "Define la interfaz de usuario utilizada para alternar entre segmentos de datos."
+        },
+        {
+          "key": "segmentation_rename",
+          "label": "Renombrado de Pestañas (Inline)",
+          "type": "boolean",
+          "description": "Permite editar el nombre de una pestaña de segmento con doble clic (solo para colecciones con segmentation_strategy: tabs)."
+        },
+        {
+          "key": "group_by_key",
+          "label": "Agrupar por Campo (Group Key)",
+          "type": "select",
+          "options_source": "dna_fields",
+          "description": "Agrupa los registros por el valor de este campo, renderizando un card por grupo."
+        },
+        {
+          "key": "view",
+          "label": "Modo de Vista",
+          "type": "select",
+          "options": [
+            { "label": "Tarjetas (Card Grid)", "value": "card_grid" },
+            { "label": "Tabla (Table)", "value": "table" },
+            { "label": "Editor en Pila (Editor Stack)", "value": "editor_stack" },
+            { "label": "Detalle (Details)", "value": "details" }
+          ],
+          "description": "Proyección visual de los registros de la colección."
+        },
+        {
+          "key": "hideSubmit",
+          "label": "Auto-Guardado Silencioso",
+          "type": "boolean",
+          "description": "Oculta el botón de envío y activa el guardado automático con debounce de 800ms. Muestra un indicador de estado inline."
+        },
+        {
+          "key": "searchable",
+          "label": "Habilitar Búsqueda",
+          "type": "boolean",
+          "description": "Muestra un input de búsqueda en tiempo real sobre los registros de la colección."
+        },
+        {
+          "key": "singular",
+          "label": "Nombre Singular del Registro",
+          "type": "string",
+          "description": "Etiqueta para el botón de creación (ej: 'Producto', 'Espacio', 'Cliente')."
+        }
+      ]
+    }
+  ]
+}
