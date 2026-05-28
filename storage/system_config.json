@@ -1,0 +1,11 @@
+[
+  {
+    "id": "master_passport",
+    "context": "system_config",
+    "data": {
+      "project_identity": "empresa-2",
+      "storage_strategy": "LocalStrategy",
+      "dna_strategy": "local"
+    }
+  }
+]

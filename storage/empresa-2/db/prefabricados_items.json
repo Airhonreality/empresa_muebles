@@ -1,0 +1,35 @@
+[
+  {
+    "id": "1ccfc7d9-9ff3-461c-8a17-8850e3400e4e",
+    "context": "prefabricados_items",
+    "data": {
+      "prefabricado_id": "3e517b92-212e-4683-9773-5ebfdca0128f",
+      "catalogo_id": "ce97456d-4a15-4e30-8ff9-3d8cb5abd468",
+      "cantidad": 1,
+      "unidad_medida": "servicio"
+    },
+    "updated_at": "2026-05-22T15:30:36.664Z"
+  },
+  {
+    "id": "3e2e5865-6f18-4d74-ba15-c33d835ac181",
+    "context": "prefabricados_items",
+    "data": {
+      "prefabricado_id": "3e517b92-212e-4683-9773-5ebfdca0128f",
+      "catalogo_id": "1f694a14-6703-4ef3-b9c2-2e218436868f",
+      "cantidad": 1,
+      "unidad_medida": "servicio"
+    },
+    "updated_at": "2026-05-22T15:30:36.669Z"
+  },
+  {
+    "id": "fd2bada8-99be-4cc7-97aa-0ed10338c2d4",
+    "context": "prefabricados_items",
+    "data": {
+      "prefabricado_id": "3e517b92-212e-4683-9773-5ebfdca0128f",
+      "catalogo_id": "e4cfb11e-1811-4515-bb48-e7a547a20ee3",
+      "cantidad": 1,
+      "unidad_medida": "servicio"
+    },
+    "updated_at": "2026-05-22T15:30:36.674Z"
+  }
+]

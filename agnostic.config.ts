@@ -35,9 +35,8 @@ export default defineConfig({
   // Add your AI-generated specialized components here.
   // Key must match the "type" field in page_routes.json exactly.
   blocks: {
-    // Register your project's custom blocks here.
-    // Example:
-    // my_block: () => import('./src/components/specialized/MyBlock'),
+    cotizador_pro: () => import('./src/components/specialized/CotizadorPro'),
+    data_browser:  () => import('./src/components/specialized/DataBrowser'),
   },
 
   features: {

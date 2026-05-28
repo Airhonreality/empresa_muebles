@@ -1,0 +1,13 @@
+[
+  {
+    "id": "3e517b92-212e-4683-9773-5ebfdca0128f",
+    "context": "prefabricados",
+    "data": {
+      "nombre": "Cocina Estándar Pequeña",
+      "descripcion": "Prefabricado para cocina estándar pequeña con módulos básicos.",
+      "catalogo_id": "02749579-7c46-4efc-bfff-f67b2955f8f0",
+      "imagen_url": "https://ejemplo.com/cocina-estandar.jpg"
+    },
+    "updated_at": "2026-05-22T15:30:36.657Z"
+  }
+]

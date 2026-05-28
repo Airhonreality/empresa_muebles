@@ -1,0 +1,136 @@
+[
+  {
+    "id": "32692fa4-689e-405e-9aea-b08f678152bd",
+    "context": "espacio_variantes",
+    "data": {
+      "nombre_espacio": "Cocina integral",
+      "nombre_variante": "Inicial"
+    },
+    "updated_at": "2026-05-19T16:34:35.646Z"
+  },
+  {
+    "id": "9265b7fa-e8b3-4eee-a1ec-f6e719193368",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "b7732c7d-96ea-41c5-acb0-ca794c1575dd",
+      "nombre_espacio": "Nuevo Espacio / Elemento",
+      "nombre_variante": "Inicial"
+    },
+    "updated_at": "2026-05-19T17:22:06.493Z"
+  },
+  {
+    "id": "d935f587-d0a9-486a-be5f-59bcfef36f40",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "b8d6b192-ffee-4bf5-b9ad-b102cfe53a71",
+      "nombre_espacio": "COCINA INTEGRAL",
+      "nombre_variante": "cocina integral",
+      "jornadas_desarrollo_tecnico": "1",
+      "jornadas_ensamblaje_taller": "5",
+      "jornadas_instalacion_obra": "4"
+    },
+    "updated_at": "2026-05-19T21:42:39.888Z"
+  },
+  {
+    "id": "f6c92c5f-fc6b-41b2-8cc6-0d8a1e6a8889",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "%3Aid",
+      "nombre_espacio": "Cocina",
+      "nombre_variante": "Inicial",
+      "jornadas_ensamblaje_taller": "1",
+      "jornadas_instalacion_obra": "1"
+    },
+    "updated_at": "2026-05-22T11:38:55.962Z"
+  },
+  {
+    "id": "75456e98-19b4-4fd0-a891-a6e03c58fa8a",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "1fcee8f9-dd9f-45f3-ad05-e8b3fffa45ed",
+      "nombre_espacio": "Nuevo Espacio / Elemento",
+      "nombre_variante": "Inicial",
+      "jornadas_ensamblaje_taller": ".5",
+      "jornadas_instalacion_obra": ".5"
+    },
+    "updated_at": "2026-05-22T13:29:07.901Z"
+  },
+  {
+    "id": "5a428855-b944-4a29-8091-791f6aaec460",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "6cc5e9ec-f97c-41bf-8d4b-ef7ac5dac550",
+      "nombre_espacio": "closet",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": "1",
+      "jornadas_ensamblaje_taller": "2",
+      "jornadas_instalacion_obra": "1"
+    },
+    "updated_at": "2026-05-22T14:50:27.989Z"
+  },
+  {
+    "id": "920ff388-5d0c-4d3e-b0cf-a65e9e9568fd",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "183a71f7-2f2f-45d3-aea0-e54e1a1e9998",
+      "nombre_espacio": "Closet",
+      "nombre_variante": "Base",
+      "jornadas_desarrollo_tecnico": ".5",
+      "jornadas_ensamblaje_taller": "3.5",
+      "jornadas_instalacion_obra": "1.5"
+    },
+    "updated_at": "2026-05-23T13:06:28.740Z"
+  },
+  {
+    "id": "f06407c5-d8f0-4de2-a210-76b38059e1f9",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "183a71f7-2f2f-45d3-aea0-e54e1a1e9998",
+      "nombre_espacio": "Estudio David",
+      "nombre_variante": "Base",
+      "jornadas_desarrollo_tecnico": ".5",
+      "jornadas_ensamblaje_taller": "2",
+      "jornadas_instalacion_obra": "1.5"
+    },
+    "updated_at": "2026-05-23T13:06:23.105Z"
+  },
+  {
+    "id": "eb2f805b-660b-468f-8caa-c09293536d56",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "183a71f7-2f2f-45d3-aea0-e54e1a1e9998",
+      "nombre_espacio": "Centro de tv",
+      "nombre_variante": "Base",
+      "jornadas_desarrollo_tecnico": ".2",
+      "jornadas_ensamblaje_taller": "2",
+      "jornadas_instalacion_obra": "1"
+    },
+    "updated_at": "2026-05-23T13:06:00.730Z"
+  },
+  {
+    "id": "e84f0936-6bc3-4e82-b1fc-b78b65aeabca",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "c5f5bbaa-2b7d-4118-9f6e-726fce81777f",
+      "nombre_espacio": "cocina integral",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": "1",
+      "jornadas_ensamblaje_taller": "7",
+      "jornadas_instalacion_obra": "7"
+    },
+    "updated_at": "2026-05-25T15:39:24.275Z"
+  },
+  {
+    "id": "39eaa037-3508-48c0-9e5c-ffd3137f5c22",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "fbb78c41-89f8-446e-b95d-891460e36cc3",
+      "nombre_espacio": "Nuevo Espacio / Elemento",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": "1",
+      "jornadas_ensamblaje_taller": "4",
+      "jornadas_instalacion_obra": "3"
+    },
+    "updated_at": "2026-05-25T17:45:54.609Z"
+  }
+]
