@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "agnostic:compile": "tsx scripts/compile-schemas.ts",
     "dev": "npm run agnostic:compile && next dev",
     "build": "npm run agnostic:compile && next build",
