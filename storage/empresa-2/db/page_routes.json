@@ -444,5 +444,36 @@
       ]
     },
     "updated_at": "2026-05-22T15:02:15.573Z"
+  },
+  {
+    "id": "55e0382e-08ae-4d67-9331-6a64b5612d30",
+    "context": "page_routes",
+    "data": {
+      "path": "/cotizaciones",
+      "title": "Cotizador de Proyectos",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "f589ee5a-cf1f-465f-831a-e6375a3cdf27",
+          "type": "cotizador_pro",
+          "blocks": [],
+          "context": "cotizaciones"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-05-29T15:59:48.736Z"
+  },
+  {
+    "id": "cfd8a9c7-010b-40a5-9e3a-607f3941a7e9",
+    "context": "page_routes",
+    "data": {
+      "path": "/cotizaciones",
+      "title": "Cotizador de Proyectos",
+      "isPrivate": false,
+      "blocks": [],
+      "order": 0
+    },
+    "updated_at": "2026-05-29T15:59:42.323Z"
   }
 ]

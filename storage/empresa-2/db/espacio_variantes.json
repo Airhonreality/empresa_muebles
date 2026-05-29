@@ -132,5 +132,28 @@
       "jornadas_instalacion_obra": "3"
     },
     "updated_at": "2026-05-25T17:45:54.609Z"
+  },
+  {
+    "id": "b5f830ba-7720-44ed-b52a-9821730b8b1e",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+      "nombre_espacio": "Oficinas",
+      "nombre_variante": "Inicial"
+    },
+    "updated_at": "2026-05-29T15:29:01.438Z"
+  },
+  {
+    "id": "c23e15d6-5573-4fc3-b420-d2ed5e315260",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "8399a364-75ee-4479-b42c-7eb39816a094",
+      "nombre_espacio": "mueble barra",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": ".5",
+      "jornadas_ensamblaje_taller": "2",
+      "jornadas_instalacion_obra": "1"
+    },
+    "updated_at": "2026-05-29T16:30:08.765Z"
   }
 ]

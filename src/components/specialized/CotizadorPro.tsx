@@ -459,7 +459,7 @@ function EspacioCard({ nombre, variants, items, catalogo, tarifaJornada,
 
 // ─── CotizadorPro ─────────────────────────────────────────────────────────────
 
-export default function CotizadorPro({ block }: BlockProps) {
+export default function CotizadorPro({ block = {} }: BlockProps) {
   const tarifaJornada = Number((block.config as any)?.tarifa_jornada) || 185_000
 
   // ── Data state ───────────────────────────────────────────────────

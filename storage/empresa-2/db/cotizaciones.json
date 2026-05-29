@@ -1,143 +1,18 @@
 [
   {
-    "id": "b8d6b192-ffee-4bf5-b9ad-b102cfe53a71",
+    "id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
     "context": "cotizaciones",
     "data": {
-      "nombre_proyecto": "Cocina integral",
-      "costos_operativos": "250000",
-      "imprevistos_instalacion": "150000"
+      "nombre_proyecto": "Legale"
     },
-    "updated_at": "2026-05-19T21:42:21.735Z"
+    "updated_at": "2026-05-29T15:28:41.109Z"
   },
   {
-    "id": "b7732c7d-96ea-41c5-acb0-ca794c1575dd",
+    "id": "8399a364-75ee-4479-b42c-7eb39816a094",
     "context": "cotizaciones",
     "data": {
-      "nombre_proyecto": "prueba 2"
+      "nombre_proyecto": "Barra y pintura"
     },
-    "updated_at": "2026-05-19T16:55:39.182Z"
-  },
-  {
-    "id": "c4a2c392-12bb-4e36-9164-2e1d2ea9311e",
-    "context": "cotizaciones",
-    "data": {
-      "nombre_proyecto": "prubea 3"
-    },
-    "updated_at": "2026-05-19T17:05:16.084Z"
-  },
-  {
-    "id": "446e095f-cd12-4ad3-9bcf-ab2ff31a5251",
-    "context": "cotizaciones",
-    "data": {
-      "nombre_proyecto": "Oficinas"
-    },
-    "updated_at": "2026-05-20T00:39:27.338Z"
-  },
-  {
-    "id": "e4ec8072-a021-4c57-b1a2-bef23d8f42f6",
-    "context": "cotizaciones",
-    "data": {
-      "cliente_id": ""
-    },
-    "updated_at": "2026-05-22T11:36:58.256Z"
-  },
-  {
-    "id": "cd6812fc-ff80-4190-8c79-08dda3029ad3",
-    "context": "cotizaciones",
-    "data": {
-      "costos_operativos": "-1"
-    },
-    "updated_at": "2026-05-22T11:37:12.701Z"
-  },
-  {
-    "id": "fbe75df3-21da-4b2a-876a-92c33cfb31b9",
-    "context": "cotizaciones",
-    "data": {
-      "costos_operativos": ""
-    },
-    "updated_at": "2026-05-22T11:37:14.471Z"
-  },
-  {
-    "id": "b9aab77f-66aa-4135-a835-b558d2764993",
-    "context": "cotizaciones",
-    "data": {
-      "costos_operativos": "120000"
-    },
-    "updated_at": "2026-05-22T11:39:07.881Z"
-  },
-  {
-    "id": "1fcee8f9-dd9f-45f3-ad05-e8b3fffa45ed",
-    "context": "cotizaciones",
-    "data": {
-      "nombre_proyecto": "Mueble superior cocina",
-      "costos_operativos": "120000",
-      "cliente_id": "68c1f4d5-e5b1-4c92-89aa-b4b7ded9935a"
-    },
-    "updated_at": "2026-05-22T13:29:54.712Z"
-  },
-  {
-    "id": "6cc5e9ec-f97c-41bf-8d4b-ef7ac5dac550",
-    "context": "cotizaciones",
-    "data": {
-      "nombre_proyecto": "Closet",
-      "costos_operativos": "180000",
-      "cliente_id": "3353e06b-1bbe-4cc6-881b-12ecdb76074e"
-    },
-    "updated_at": "2026-05-22T14:51:00.048Z"
-  },
-  {
-    "id": "45812370-e18f-43bf-b7c1-a5e619cae48c",
-    "context": "cotizaciones",
-    "data": {
-      "nombre_proyecto": "Cotización Nico"
-    },
-    "updated_at": "2026-05-22T15:04:33.692Z"
-  },
-  {
-    "id": "183a71f7-2f2f-45d3-aea0-e54e1a1e9998",
-    "context": "cotizaciones",
-    "data": {
-      "nombre_proyecto": "Cotizacion Ciro Rincon 3",
-      "cliente_id": "",
-      "costos_operativos": "250000",
-      "descuento_comercial": "250000"
-    },
-    "updated_at": "2026-05-23T13:01:36.060Z"
-  },
-  {
-    "id": "c5f5bbaa-2b7d-4118-9f6e-726fce81777f",
-    "context": "cotizaciones",
-    "data": {
-      "nombre_proyecto": "Cocina integral - Franky Gonzalez - Chía",
-      "costos_operativos": "750000"
-    },
-    "updated_at": "2026-05-25T15:44:10.785Z"
-  },
-  {
-    "id": "fbb78c41-89f8-446e-b95d-891460e36cc3",
-    "context": "cotizaciones",
-    "data": {
-      "nombre_proyecto": "Cocina integral",
-      "cliente_id": "be96715e-07fe-4bc3-ba1c-2a97dc62fce3",
-      "costos_operativos": "250000"
-    },
-    "updated_at": "2026-05-25T23:01:40.355Z"
-  },
-  {
-    "id": "931325a5-534f-4a2e-b45d-bff413a8a15d",
-    "context": "cotizaciones",
-    "data": {
-      "descuento_comercial": "-3"
-    },
-    "updated_at": "2026-05-27T18:15:03.608Z"
-  },
-  {
-    "id": "874ca517-8f6d-4b97-ade7-71b37c929c1f",
-    "context": "cotizaciones",
-    "data": {
-      "descuento_comercial": "-3",
-      "ajuste_arbitrario": "-4"
-    },
-    "updated_at": "2026-05-27T18:15:05.492Z"
+    "updated_at": "2026-05-29T16:01:33.211Z"
   }
 ]
