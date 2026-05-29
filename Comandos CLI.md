@@ -1,4 +1,15 @@
-Cómo usar el CLI agno
+# ⛔ REGLA ABSOLUTA — NUNCA editar JSON manualmente
+
+Los archivos `storage/**/*.json` **nunca se editan a mano** — ni por humanos, ni por agentes de IA.
+
+**Por qué:** agno garantiza que los schemas no queden malformados, que los contextos sean consistentes y que las relaciones entre entidades no se rompan. Un JSON editado a mano puede romper el sistema silenciosamente (el engine no renderiza nada, sin error visible).
+
+**Si un agente de IA intenta editar un `.json` directamente, está mal.** Debe usar los comandos agno.
+
+---
+
+# Cómo usar el CLI agno
+
 Hay tres modos de invocarlo:
 
 
@@ -30,7 +41,7 @@ script <name>                    ver código de un script
 validate                         verificar invariantes (contextos, camelCase, etc.)
 ⚡ Capa 2 — Composición de bloques (aplica inmediato, no requiere commit)
 
-add-block <ruta> <type> [context:<s>] [visual:key=val ...]
+add-block <ruta> <type> [context:<s>] [visual:key=val ...] [config:key=val ...]
 add-child <ruta> <parentId> <type> [visual:key=val ...]
 set-visual <ruta> <blockId> <key> <valor>
 get-block <ruta> <blockId>
@@ -79,6 +90,27 @@ agno> scaffold proveedores
 agno> context
 Las capas 2 y 3 (add-block, scaffold, create-route, etc.) no van a la cola — se escriben directo al storage. Solo los cambios de schema y datos van a la cola de staging.
 
+---
+
+## Bloques especializados (agnostic.config.ts)
+
+Los bloques creados en `src/components/specialized/` y registrados en `agnostic.config.ts` se añaden con `add-block` exactamente igual que los del engine. agno los reconocerá con aviso `[CUSTOM]` — eso es normal, no es un error.
+
+```
+# Sintaxis para bloque especializado:
+agno> add-block /cotizador cotizador_pro context:cotizaciones config:tarifa_jornada=185000
+
+# Respuesta esperada:
+[CUSTOM] tipo "cotizador_pro" no está en el catálogo del engine.
+  → Se asume bloque especializado de agnostic.config.ts. Añadiendo...
+[OK] block:eb66d8dc type:cotizador_pro (custom) en /cotizador  config:{tarifa_jornada:185000}
+```
+
+`config:key=val` pasa parámetros al bloque (equivale al campo `config` en el JSON de la ruta). Usa tantos como necesites: `config:tarifa=185000 config:moneda=COP`.
+
+**Si validate muestra `[AVISO]` para tipos custom — es normal.** Solo son errores los problemas de camelCase, contextos rotos o relaciones inválidas.
+
+---
 
 Vectores de entropía al conceptualizar lógica custom
 Hay cuatro planos donde se genera la mayoría del ruido. No son errores de código — son errores de modelo mental.
