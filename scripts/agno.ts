@@ -367,6 +367,21 @@ function parseVisualArgs(args: string[]): Record<string, any> {
   return visual;
 }
 
+// Parsea args con prefijo config:key=val (para bloques especializados)
+function parseConfigArgs(args: string[]): Record<string, any> {
+  const config: Record<string, any> = {};
+  for (const a of args) {
+    if (!a.startsWith('config:')) continue;
+    const kv = a.slice(7);
+    const eq = kv.indexOf('=');
+    if (eq === -1) continue;
+    const k = kv.slice(0, eq);
+    const v = kv.slice(eq + 1);
+    config[k] = v === 'true' ? true : v === 'false' ? false : (!isNaN(Number(v)) && v !== '') ? Number(v) : v;
+  }
+  return config;
+}
+
 // Parsea args key=val (sin prefijo)
 function parseKV(args: string[]): Record<string, any> {
   const out: Record<string, any> = {};
@@ -725,54 +740,55 @@ async function cmdScriptWrite(args: string[]) {
 async function cmdAddBlock(args: string[]) {
   const [routePath, type, ...rest] = args;
   if (!routePath || !type) {
-    console.log('[ERROR] uso: add-block <route> <type> [context:<schema>] [intent:<i>] [zap:<z>] [visual:key=val ...]');
-    console.log('       Usa block-types para ver tipos disponibles y sus params.');
+    console.log('[ERROR] uso: add-block <route> <type> [context:<schema>] [intent:<i>] [zap:<z>] [visual:key=val ...] [config:key=val ...]');
+    console.log('       Usa block-types para ver tipos del engine. Los tipos de agnostic.config.ts también son válidos.');
     return;
   }
 
-  if (!BLOCK_CATALOG[type]) {
-    console.log(`[ERROR] tipo "${type}" no existe. Tipos válidos:`);
-    const byCategory: Record<string, string[]> = {};
-    for (const [t, info] of Object.entries(BLOCK_CATALOG)) {
-      (byCategory[info.category] ??= []).push(t);
-    }
-    for (const [cat, types] of Object.entries(byCategory)) {
-      console.log(`  ${cat.padEnd(8)} ${types.join('  ')}`);
-    }
-    console.log('  Usa block-schema <type> para ver params de cada tipo.');
-    return;
+  const isCustom = !BLOCK_CATALOG[type];
+  if (isCustom) {
+    // Bloques especializados registrados en agnostic.config.ts son válidos.
+    // agno no los conoce porque viven en el proyecto, no en el engine.
+    console.log(`[CUSTOM] tipo "${type}" no está en el catálogo del engine.`);
+    console.log(`  → Se asume bloque especializado de agnostic.config.ts. Añadiendo...`);
+    console.log(`  → Verifica que "${type}" coincida exactamente con la clave en agnostic.config.ts`);
   }
 
-  const ctxArg   = rest.find(a => a.startsWith('context:') || a.startsWith('schema:'));
+  const ctxArg    = rest.find(a => a.startsWith('context:') || a.startsWith('schema:'));
   const intentArg = rest.find(a => a.startsWith('intent:'));
   const zapArg    = rest.find(a => a.startsWith('zap:'));
   const dry       = rest.includes('--dry');
 
-  const context = ctxArg   ? ctxArg.split(':').slice(1).join(':')   : undefined;
-  const intent  = intentArg ? intentArg.slice(7) : undefined;
-  const zap     = zapArg    ? zapArg.slice(4)    : undefined;
+  const context = ctxArg    ? ctxArg.split(':').slice(1).join(':') : undefined;
+  const intent  = intentArg ? intentArg.slice(7)                   : undefined;
+  const zap     = zapArg    ? zapArg.slice(4)                      : undefined;
   const visual  = parseVisualArgs(rest);
+  const config  = parseConfigArgs(rest);
 
   const r = await findRoute(routePath);
   if (!r) { console.log(`[ERROR] ruta no encontrada: ${routePath}`); return; }
 
   const id = crypto.randomUUID();
   const block: any = { id, type, blocks: [] };
-  if (context) block.context = context;
-  if (intent)  block.intent  = intent;
-  if (zap)     block.zap     = zap;
-  if (Object.keys(visual).length) block.visual = visual;
+  if (context)                      block.context = context;
+  if (intent)                       block.intent  = intent;
+  if (zap)                          block.zap     = zap;
+  if (Object.keys(visual).length)   block.visual  = visual;
+  if (Object.keys(config).length)   block.config  = config;
+
   if (dry) {
     console.log(`[DRY] add-block ${routePath}`);
-    console.log(`  id:   ${id.slice(0, 8)}  type: ${type}`);
-    if (context) console.log(`  context: ${context}`);
+    console.log(`  id:   ${id.slice(0, 8)}  type: ${type}${isCustom ? ' (custom)' : ''}`);
+    if (context)                    console.log(`  context: ${context}`);
+    if (Object.keys(config).length) console.log(`  config:  ${JSON.stringify(config)}`);
     return;
   }
   r.data.blocks = [...(r.data.blocks || []), block];
   r.updated_at  = new Date().toISOString();
   await adapter.write('page_routes', r);
   const vs = fmtVisual(visual);
-  console.log(`[OK] block:${id.slice(0,8)} type:${type} en ${routePath}${vs}`);
+  const cs = Object.keys(config).length ? `  config:{${Object.entries(config).map(([k,v]) => `${k}:${v}`).join(' ')}}` : '';
+  console.log(`[OK] block:${id.slice(0,8)} type:${type}${isCustom ? ' (custom)' : ''} en ${routePath}${vs}${cs}`);
   const info = BLOCK_CATALOG[type];
   if (info?.hasChildren) {
     console.log(`     → usa add-child ${routePath} ${id.slice(0,8)} <type> para añadir hijos`);
@@ -1541,6 +1557,7 @@ async function cmdValidate() {
   }
 
   // Route block invariants
+  let warnings = 0;
   for (const r of routes) {
     const path: string = r.data?.path ?? '?';
     const checkContexts = (blocks: any[]) => {
@@ -1549,7 +1566,8 @@ async function cmdValidate() {
           console.log(`  [route:${path}] block "${b.type}" context "${b.context}" no coincide con ningún schema`); errors++;
         }
         if (!BLOCK_CATALOG[b.type]) {
-          console.log(`  [route:${path}] block type "${b.type}" no está en BLOCK_CATALOG`); errors++;
+          // Tipos fuera del catálogo son bloques especializados (agnostic.config.ts) — warning, no error.
+          console.log(`  [route:${path}] block type "${b.type}" es custom (agnostic.config.ts) — no validado por agno`); warnings++;
         }
         if (b.blocks?.length) checkContexts(b.blocks);
       }
@@ -1558,10 +1576,12 @@ async function cmdValidate() {
     errors += validateBlocksVisual(r.data?.blocks ?? [], path);
   }
 
-  if (errors === 0) {
+  if (errors === 0 && warnings === 0) {
     console.log(`${belt('ESTRUCTURA')} validate: OK — ${schemas.length} schemas, ${routes.length} routes, 0 errores`);
+  } else if (errors === 0) {
+    console.log(`${belt('ESTRUCTURA')} validate: OK con ${warnings} aviso(s) (bloques custom — normal)`);
   } else {
-    console.log(`${belt('ESTRUCTURA')} validate: ${errors} error(s) encontrados`);
+    console.log(`${belt('ESTRUCTURA')} validate: ${errors} error(s), ${warnings} aviso(s)`);
   }
 }
 
@@ -1640,7 +1660,9 @@ agno — Agnostic CLI / MCP de Interfaz  (ver AGNO_MCP_PLAN.md)
 
 ══ CAPA 2 — COMPOSICIÓN INMEDIATA ════════════════════════════════════
   add-block <route> <type> [context:<s>] [intent:<i>] [zap:<z>]
-            [visual:key=val ...] [--dry]
+            [visual:key=val ...] [config:key=val ...] [--dry]
+            → tipos del engine: usa block-types
+            → bloques especializados (agnostic.config.ts): se añaden con aviso [CUSTOM]
   add-child <route> <parentId> <type> [visual:key=val ...] [--dry]
   set-visual <route> <blockId> <key> <value>
   get-block <route> <blockId>
