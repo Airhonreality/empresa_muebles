@@ -1,4 +1,15 @@
-Cómo usar el CLI agno
+# ⛔ REGLA ABSOLUTA — NUNCA editar JSON manualmente
+
+Los archivos `storage/**/*.json` **nunca se editan a mano** — ni por humanos, ni por agentes de IA.
+
+**Por qué:** agno garantiza que los schemas no queden malformados, que los contextos sean consistentes y que las relaciones entre entidades no se rompan. Un JSON editado a mano puede romper el sistema silenciosamente (el engine no renderiza nada, sin error visible).
+
+**Si un agente de IA intenta editar un `.json` directamente, está mal.** Debe usar los comandos agno.
+
+---
+
+# Cómo usar el CLI agno
+
 Hay tres modos de invocarlo:
 
 
@@ -30,7 +41,7 @@ script <name>                    ver código de un script
 validate                         verificar invariantes (contextos, camelCase, etc.)
 ⚡ Capa 2 — Composición de bloques (aplica inmediato, no requiere commit)
 
-add-block <ruta> <type> [context:<s>] [visual:key=val ...]
+add-block <ruta> <type> [context:<s>] [visual:key=val ...] [config:key=val ...]
 add-child <ruta> <parentId> <type> [visual:key=val ...]
 set-visual <ruta> <blockId> <key> <valor>
 get-block <ruta> <blockId>
@@ -79,6 +90,27 @@ agno> scaffold proveedores
 agno> context
 Las capas 2 y 3 (add-block, scaffold, create-route, etc.) no van a la cola — se escriben directo al storage. Solo los cambios de schema y datos van a la cola de staging.
 
+---
+
+## Bloques especializados (agnostic.config.ts)
+
+Los bloques creados en `src/components/specialized/` y registrados en `agnostic.config.ts` se añaden con `add-block` exactamente igual que los del engine. agno los reconocerá con aviso `[CUSTOM]` — eso es normal, no es un error.
+
+```
+# Sintaxis para bloque especializado:
+agno> add-block /cotizador cotizador_pro context:cotizaciones config:tarifa_jornada=185000
+
+# Respuesta esperada:
+[CUSTOM] tipo "cotizador_pro" no está en el catálogo del engine.
+  → Se asume bloque especializado de agnostic.config.ts. Añadiendo...
+[OK] block:eb66d8dc type:cotizador_pro (custom) en /cotizador  config:{tarifa_jornada:185000}
+```
+
+`config:key=val` pasa parámetros al bloque (equivale al campo `config` en el JSON de la ruta). Usa tantos como necesites: `config:tarifa=185000 config:moneda=COP`.
+
+**Si validate muestra `[AVISO]` para tipos custom — es normal.** Solo son errores los problemas de camelCase, contextos rotos o relaciones inválidas.
+
+---
 
 Vectores de entropía al conceptualizar lógica custom
 Hay cuatro planos donde se genera la mayoría del ruido. No son errores de código — son errores de modelo mental.
@@ -138,3 +170,116 @@ Antes de crear cualquier cosa, responde tres preguntas:
 ¿Qué acción la muta? → script (zap) + action block
 ¿Cómo se muestra? → block type (colección/form) o specialized/ si nada genérico aplica
 Si no puedes responder las tres, el concepto no está maduro todavía. Diseñar en ese estado es la raíz de todos los vectores anteriores.
+
+---
+
+## Campos calculados (derivaciones)
+
+Los campos derivados se computan **read-time** en el formulario — nunca se almacenan como valor fijo. Cuando el usuario cambia cualquier campo fuente, el campo derivado se recalcula en el momento.
+
+El campo es automáticamente **read-only** y muestra un ícono ✦ en el label.
+
+### Definición en el schema
+
+Agrega `config.derivation` a cualquier campo numérico o de texto:
+
+```json
+{
+  "key": "precio_publico",
+  "label": "Precio Público",
+  "type": "number",
+  "config": {
+    "derivation": {
+      "op": "MULTIPLY",
+      "args": ["precio_directo"],
+      "constants": [1.3]
+    }
+  }
+}
+```
+
+### Operadores disponibles
+
+| Operador | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `MULTIPLY` | `args[0] × args[1] × … × constants[0] × …` | `precio * margen` |
+| `SUM` | `args[0] + args[1] + … + constants[0] + …` | `subtotal + iva` |
+| `SUBTRACT` | `args[0] − (args[1] + … + constants[0] + …)` | `bruto - descuento` |
+| `DIVIDE` | `args[0] ÷ (args[1] × … × constants[0] × …)` | `total / unidades` |
+| `PERCENTAGE` | `(args[0] × args[1]) / 100` | `base × porcentaje` |
+| `AGGREGATE` | Suma de un campo en registros hijos | Ver abajo |
+| `LOOKUP` | Copia un campo de un registro relacionado | Ver abajo |
+| `SLUGIFY` | Convierte `args[0]` a snake_case | `nombre → slug` |
+
+**`args`** — claves de campos del mismo registro.  
+**`constants`** — literales numéricos (e.g. `[1.3]` para multiplicar por 1.3).
+
+#### AGGREGATE — sumar hijos
+
+```json
+{
+  "op": "AGGREGATE",
+  "args": ["precio_unitario"],
+  "context": "items_orden",
+  "foreignKey": "orden_id"
+}
+```
+Suma `precio_unitario` de todos los registros en `items_orden` cuyo `orden_id` coincida con el `id` del registro actual.
+
+#### LOOKUP — copiar campo de relación
+
+```json
+{
+  "op": "LOOKUP",
+  "args": ["categoria_id", "margen_defecto"],
+  "context": "categorias"
+}
+```
+Lee el campo `margen_defecto` del registro de `categorias` cuyo `id` coincide con `categoria_id`.
+
+### Agregar derivación desde el CLI
+
+```
+agno> set productos_catalogo.precio_publico.config {"derivation":{"op":"MULTIPLY","args":["precio_directo"],"constants":[1.3]}}
+agno> commit --force
+agno> npm run agnostic:compile
+```
+
+### Backfill de registros existentes (Zap de migración)
+
+Cuando agregas una derivación a un schema que ya tiene datos, los registros históricos no tienen el campo calculado. Ejecútalo una sola vez con un Zap:
+
+```javascript
+// nombre del script: backfill_precio_publico
+const productos = await api.query('productos_catalogo');
+let actualizados = 0;
+for (const p of productos) {
+  if (p.precio_directo) {
+    await api.saveItem('productos_catalogo', {
+      id: p.id,
+      data: { precio_publico: p.precio_directo * 1.3 }
+    });
+    actualizados++;
+  }
+}
+api.notify.success(`${actualizados} productos actualizados`);
+```
+
+Crea el script con agno y ponlo en un action block de administración:
+
+```
+agno> script write backfill_precio_publico --file scripts/backfill_precio_publico.js
+agno> add-block /admin action context:productos_catalogo config:zap=backfill_precio_publico
+```
+
+Una vez ejecutado y verificado, puedes borrar ese action block — el Zap queda en el storage como registro histórico.
+
+### Cuándo usar derivación vs. Zap
+
+| Caso | Usar |
+|------|------|
+| Campo que se calcula de otros campos del mismo registro | `config.derivation` |
+| Campo que suma hijos o busca en relaciones | `config.derivation` con AGGREGATE/LOOKUP |
+| Lógica que muta datos en otros schemas | Zap |
+| Lógica condicional compleja (`if`, loops, fetch) | Zap |
+| Cálculo que necesita persistirse para consultas externas | Zap que guarda el resultado |

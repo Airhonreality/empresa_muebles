@@ -127,6 +127,32 @@ export interface SystemPassport {
 
 // ─── DNA SCHEMAS ─────────────────────────────────────────────────────────────
 
+// ─── DERIVATION / LOGIC OPERATION ────────────────────────────────────────────
+
+export type OperatorType =
+  | 'MULTIPLY'
+  | 'SUM'
+  | 'SUBTRACT'
+  | 'DIVIDE'
+  | 'AGGREGATE'
+  | 'PERCENTAGE'
+  | 'SLUGIFY'
+  | 'LOOKUP';
+
+export interface LogicOperation {
+  op: OperatorType;
+  /** Keys of same-record fields used as operands. */
+  args: string[];
+  /** Literal numeric values mixed into the operation (e.g. [1.3] to scale by 30%). */
+  constants?: number[];
+  /** Used by AGGREGATE: which context (namespace) to sum children from. */
+  context?: string;
+  /** Used by AGGREGATE: foreign key on child records that links to the parent. */
+  foreignKey?: string;
+}
+
+// ─── SCHEMA FIELD CONFIG ─────────────────────────────────────────────────────
+
 export interface SchemaFieldConfig {
   relation?: {
     entity: string;
@@ -135,6 +161,8 @@ export interface SchemaFieldConfig {
   };
   options?: Array<{ label: string; value: string }>;
   isPrimary?: boolean;
+  /** Declarative computation applied read-time. Makes the field read-only in forms. */
+  derivation?: LogicOperation;
 }
 
 export interface SchemaField {

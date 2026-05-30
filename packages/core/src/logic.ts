@@ -12,24 +12,9 @@
  * - NEVER: Contaminate core operations with hardcoded business conditions.
  */
 
-import { DataItem } from './indra';
+import { DataItem, LogicOperation, OperatorType } from './indra';
 
-export type OperatorType = 
-  | 'MULTIPLY' 
-  | 'SUM' 
-  | 'SUBTRACT' 
-  | 'DIVIDE' 
-  | 'AGGREGATE' 
-  | 'PERCENTAGE'
-  | 'SLUGIFY'
-  | 'LOOKUP';
-
-export interface LogicOperation {
-  op: OperatorType;
-  args: string[]; // Keys of fields to use as arguments
-  context?: string; // Used for AGGREGATE (which context to sum)
-  foreignKey?: string; // Used for AGGREGATE (how to link to parent)
-}
+export type { OperatorType, LogicOperation };
 
 type AgnosticFunction = (data: any, context: any) => Promise<any> | any;
 
@@ -97,26 +82,33 @@ class LogicEngine {
 
         switch (op) {
           case 'MULTIPLY': {
-            const values = args.map(key => Number(result[key] || 0));
-            newValue = values.reduce((acc, val) => acc * val, 1);
+            const fieldVals = args.map(key => Number(result[key] || 0));
+            const constVals = derivation.constants ?? [];
+            newValue = [...fieldVals, ...constVals].reduce((acc, val) => acc * val, 1);
             break;
           }
 
           case 'SUM': {
-            const values = args.map(key => Number(result[key] || 0));
-            newValue = values.reduce((acc, val) => acc + val, 0);
+            const fieldVals = args.map(key => Number(result[key] || 0));
+            const constVals = derivation.constants ?? [];
+            newValue = [...fieldVals, ...constVals].reduce((acc, val) => acc + val, 0);
             break;
           }
 
           case 'SUBTRACT': {
-            const values = args.map(key => Number(result[key] || 0));
-            newValue = values[0] - (values[1] || 0);
+            const fieldVals = args.map(key => Number(result[key] || 0));
+            const constVals = derivation.constants ?? [];
+            const subtrahends = [...fieldVals.slice(1), ...constVals];
+            newValue = fieldVals[0] - subtrahends.reduce((acc, v) => acc + v, 0);
             break;
           }
 
           case 'DIVIDE': {
-            const values = args.map(key => Number(result[key] || 0));
-            newValue = values[1] !== 0 ? values[0] / values[1] : 0;
+            const fieldVals = args.map(key => Number(result[key] || 0));
+            const constVals = derivation.constants ?? [];
+            const divisors = [...fieldVals.slice(1), ...constVals];
+            const divisor = divisors.reduce((acc, v) => acc * v, 1);
+            newValue = divisor !== 0 ? fieldVals[0] / divisor : 0;
             break;
           }
 

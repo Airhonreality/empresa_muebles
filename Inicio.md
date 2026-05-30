@@ -2,131 +2,89 @@
 
 ---
 
-## Parte 1 — Crear un proyecto nuevo desde cero
+## Cómo está organizado todo
 
-**Cinco pasos, una sola vez.**
+En tu computador tienes dos tipos de carpetas conviviendo como hermanas:
 
-### Paso 1 — Clonar el seed
-
-```bash
-git clone https://github.com/Airhonreality/Agnostic_System_Seed.git nombre-proyecto
-cd nombre-proyecto
+```
+DEVs/
+  agnostic system/        ← El ENGINE. No lo tocas para trabajar.
+  empresa_muebles_clone/  ← Un PROYECTO. Aquí vive tu negocio.
+  otro_proyecto/          ← Otro proyecto (cuando lo crees).
 ```
 
-Esto te da el engine completo. `nombre-proyecto` es el nombre de la carpeta local.
+El **engine** es el cerebro compartido. Los **proyectos** son los que le dan identidad y datos a cada cliente.  
+El engine mejora solo — tus proyectos reciben esas mejoras con un comando.
 
 ---
 
-### Paso 2 — Crear el silo (obligatorio, manual)
+## Crear un proyecto nuevo
 
-El silo es el identificador de tu proyecto y dice dónde viven tus datos.  
-Crea este archivo exacto:
+Abre la terminal en la carpeta del engine (`agnostic system`) y corre:
 
-**`storage/system_config.json`**
-```json
-[
-  {
-    "id": "master_passport",
-    "context": "system_config",
-    "data": {
-      "project_identity": "nombre-proyecto",
-      "storage_strategy": "LocalStrategy",
-      "dna_strategy": "local"
-    }
-  }
-]
+```powershell
+.\scripts\admin\new-workspace.ps1 -Name nombre_del_proyecto
 ```
 
-Luego crea la carpeta de datos vacía:
-```bash
-mkdir -p storage/nombre-proyecto/db
-```
+Reemplaza `nombre_del_proyecto` con el nombre real (sin espacios, usa guión bajo).
 
-> ⚠️ `project_identity` debe coincidir con el nombre de la carpeta dentro de `storage/`.  
-> No se puede crear desde la UI — la UI solo gestiona silos ya existentes.
+**Qué pasa automáticamente:**
+- Se crea la carpeta `../nombre_del_proyecto` con el engine adentro
+- Se crea el repositorio en GitHub
+- El proyecto queda registrado para recibir mejoras del engine en el futuro
+
+**Qué haces tú después (una sola vez):**
+
+1. Entra a la carpeta del proyecto:
+   ```powershell
+   cd ..\nombre_del_proyecto
+   npm install
+   npm run dev
+   ```
+
+2. Abre el navegador en `http://localhost:3000/_agnostic`
+
+3. Crea el **silo** del proyecto desde la UI — esto le da identidad y dice dónde vivirán los datos.
+
+4. Ya puedes crear schemas, rutas y datos desde el panel.
 
 ---
 
-### Paso 3 — Instalar y correr
+## Trabajo diario en un proyecto existente
 
-```bash
-npm install
+```powershell
+cd ..\nombre_del_proyecto
 npm run dev
 ```
 
-Abre `http://localhost:3000/_agnostic` — desde ahí creas schemas, rutas y datos. Tu app está lista.
+Abre `http://localhost:3000` — tu app.  
+Abre `http://localhost:3000/_agnostic` — el panel de configuración.
+
+Nada más.
 
 ---
 
-### Paso 4 — Conectar a GitHub (para guardar y sincronizar)
+## Cuando mejoras el engine
 
-Crea un repo vacío en GitHub, luego:
+Cada vez que corriges un bug o agregas una funcionalidad al engine, dos pasos:
 
-```bash
-git remote set-url origin https://github.com/TU_USUARIO/nombre-proyecto.git
-git remote add upstream https://github.com/Airhonreality/Agnostic_System_Seed.git
-git push -u origin main
+**Paso 1 — Guardar el cambio:**
+```powershell
+git add .
+git commit -m "descripción del cambio"
 ```
 
-- `origin` = tu proyecto (donde guardas cambios)
-- `upstream` = el seed (de donde recibes mejoras del engine)
-
----
-
-## Parte 2 — Trabajo diario en un proyecto existente
-
-```bash
-# Abrir VS Code en la carpeta del proyecto
-code nombre-proyecto
-
-# Primera vez:
-npm install
-
-# Siempre:
-npm run dev
+**Paso 2 — Propagar a todos los proyectos:**
+```powershell
+.\scripts\admin\sync-workspaces.ps1
 ```
 
-Eso es todo. Tus datos, componentes y configuración están en el repositorio del proyecto.
+El script sube el engine a GitHub y actualiza automáticamente cada proyecto registrado.  
+Si hay un conflicto en algún proyecto, el script lo reporta y sigue con los demás.
 
 ---
 
-## Parte 3 — Recibir mejoras del engine (raro)
+## Referencias
 
-Cuando el seed tiene un fix o feature nuevo:
-
-```bash
-git fetch upstream
-git merge upstream/main
-```
-
-Seguro porque el seed **nunca toca** `storage/` ni `src/components/specialized/`.
-
----
-
-## Parte 4 — Arreglar un bug del engine (muy raro)
-
-```bash
-# Abrir la carpeta del seed puro
-code "agnostic system"
-
-# Hacer el fix y subirlo al seed
-git push origin main
-
-# Luego en cada proyecto:
-git fetch upstream && git merge upstream/main
-```
-
----
-
-## Comienza a usar
-
-Una vez con `npm run dev` corriendo:
-
-- **`/_agnostic`** → UI de administración: crear schemas, rutas, ver datos, gestionar silo
-- **`npx tsx scripts/agno.ts`** → CLI para agentes de IA y automatización
-
----
-
-[@Comandos CLI.md](Comandos%20CLI.md) — Guía completa del CLI agno: cómo crear schemas, rutas, scripts y estructuras de datos desde terminal o con un agente de IA.
-
-[@Interfaces Custom.md](Interfaces%20Custom.md) — Guía de widgets, tipos TypeScript y patrones para proyectar datos en interfaces personalizadas (React, WebGL, etc.).
+- [Comandos CLI.md](Comandos%20CLI.md) — Crear schemas, rutas y datos desde terminal o con un agente IA.
+- [Interfaces Custom.md](Interfaces%20Custom.md) — Guía para construir componentes visuales personalizados.

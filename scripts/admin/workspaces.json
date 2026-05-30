@@ -1,0 +1,10 @@
+{
+  "_comment": "Paths son relativos a la raíz del engine seed. Agrega una entrada por cada workspace.",
+  "workspaces": [
+    {
+      "name": "empresa_muebles",
+      "path": "../empresa_muebles_clone",
+      "branch": "main-app"
+    }
+  ]
+}
