@@ -27,7 +27,7 @@ $seedBranch   = git rev-parse --abbrev-ref HEAD
 $seedRemoteUrl = git remote get-url origin
 
 Write-Host ""
-Write-Host "ENGINE  ›  $seedBranch  ›  $seedRemoteUrl" -ForegroundColor Cyan
+Write-Host "ENGINE  >>  $seedBranch  >>  $seedRemoteUrl" -ForegroundColor Cyan
 
 Write-Step "Verificando estado del repositorio..."
 $status = git status --porcelain
@@ -41,7 +41,7 @@ if ($status) {
 Write-Step "Empujando a GitHub..."
 git push origin $seedBranch
 if ($LASTEXITCODE -ne 0) {
-    Write-Fail "Push fallido. Revisa conexión o permisos."
+    Write-Fail "Push fallido. Revisa conexion o permisos."
     Pop-Location
     exit 1
 }
@@ -57,7 +57,7 @@ foreach ($ws in $registry.workspaces) {
     $wsPath = Resolve-Path (Join-Path $seedDir $ws.path) -ErrorAction SilentlyContinue
 
     Write-Host ""
-    Write-Host "WORKSPACE  ›  $($ws.name)" -ForegroundColor Cyan
+    Write-Host "WORKSPACE  >>  $($ws.name)" -ForegroundColor Cyan
 
     if (-not $wsPath -or -not (Test-Path $wsPath)) {
         Write-Skip "Carpeta no encontrada: $(Join-Path $seedDir $ws.path)"
@@ -92,7 +92,7 @@ foreach ($ws in $registry.workspaces) {
     # Contar commits nuevos
     $behind = (git rev-list HEAD.."upstream/$seedBranch" --count).Trim()
     if ($behind -eq "0") {
-        Write-Ok "Ya está al día."
+        Write-Ok "Ya esta al dia."
         $synced++
         Pop-Location
         continue
@@ -117,6 +117,6 @@ foreach ($ws in $registry.workspaces) {
 # ── Resumen ───────────────────────────────────────────────────────────────────
 
 Write-Host ""
-Write-Host "─────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host "  Sync completo: $synced ok | $skipped omitidos | $conflicts conflictos  (de $total)" -ForegroundColor Cyan
+Write-Host "-----------------------------------------" -ForegroundColor DarkGray
+Write-Host ("  Sync completo: " + $synced + " ok / " + $skipped + " omitidos / " + $conflicts + " conflictos  (de " + $total + ")") -ForegroundColor Cyan
 Write-Host ""
