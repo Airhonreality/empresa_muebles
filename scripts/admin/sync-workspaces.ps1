@@ -87,7 +87,10 @@ foreach ($ws in $registry.workspaces) {
 
     # Descargar cambios del engine
     Write-Step "Descargando cambios del engine..."
-    git fetch upstream 2>$null
+    $prevPref = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    git fetch upstream
+    $ErrorActionPreference = $prevPref
 
     # Contar commits nuevos
     $behind = (git rev-list HEAD.."upstream/$seedBranch" --count).Trim()
