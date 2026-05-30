@@ -1,0 +1,15 @@
+[
+  {
+    "id": "0c9a5fca-0b62-4741-9249-947ba76fafa7",
+    "context": "app_navbars",
+    "data": {
+      "name": "erp_main",
+      "links": [],
+      "brand": {
+        "label": "label",
+        "path": "Mi"
+      }
+    },
+    "updated_at": "2026-05-30T23:02:42.436Z"
+  }
+]
