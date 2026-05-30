@@ -118,5 +118,5 @@ foreach ($ws in $registry.workspaces) {
 
 Write-Host ""
 Write-Host "─────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host "  Sync completo: $synced ok · $skipped omitidos · $conflicts conflictos  (de $total)" -ForegroundColor Cyan
+Write-Host "  Sync completo: $synced ok | $skipped omitidos | $conflicts conflictos  (de $total)" -ForegroundColor Cyan
 Write-Host ""
