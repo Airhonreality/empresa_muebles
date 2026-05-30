@@ -324,7 +324,16 @@
           "required": false,
           "width": "full",
           "section": "General",
-          "config": {}
+          "config": {
+            "format": "currency",
+            "derivation": {
+              "operator": "multiply",
+              "constants": [
+                1.3
+              ],
+              "source_field": "precio_directo"
+            }
+          }
         },
         {
           "id": "f11-img",

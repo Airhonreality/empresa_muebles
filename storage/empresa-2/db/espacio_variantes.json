@@ -138,10 +138,13 @@
     "context": "espacio_variantes",
     "data": {
       "cotizacion_id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
-      "nombre_espacio": "Oficinas",
-      "nombre_variante": "Inicial"
+      "nombre_espacio": "Oficina 1",
+      "nombre_variante": "Inicial",
+      "jornadas_instalacion_obra": 2,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_desarrollo_tecnico": 0.5
     },
-    "updated_at": "2026-05-29T15:29:01.438Z"
+    "updated_at": "2026-05-30T17:06:11.128Z"
   },
   {
     "id": "c23e15d6-5573-4fc3-b420-d2ed5e315260",
@@ -155,5 +158,58 @@
       "jornadas_instalacion_obra": "1"
     },
     "updated_at": "2026-05-29T16:30:08.765Z"
+  },
+  {
+    "id": "5859d678-8ba3-42ae-bd28-6f15cabb06d7",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+      "nombre_espacio": "oficina 2",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 0.4,
+      "jornadas_ensamblaje_taller": 0.5,
+      "jornadas_instalacion_obra": 0.5
+    },
+    "updated_at": "2026-05-30T17:06:49.947Z"
+  },
+  {
+    "id": "cce9b1ec-af22-487e-ae05-4714ae663433",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+      "nombre_espacio": "Oficina 3",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 1,
+      "jornadas_instalacion_obra": 2
+    },
+    "updated_at": "2026-05-30T17:16:54.962Z"
+  },
+  {
+    "id": "0039317c-2732-4ba8-a544-fad960c55364",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+      "nombre_espacio": "Oficina 4",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 0.5,
+      "jornadas_ensamblaje_taller": 1,
+      "jornadas_instalacion_obra": 1.5
+    },
+    "updated_at": "2026-05-30T17:07:39.505Z"
+  },
+  {
+    "id": "3ce55cf4-7124-4044-93f4-ef4d7d0fefd3",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+      "nombre_espacio": "Oficina 5",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 0.8,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_instalacion_obra": 1,
+      "activa": true
+    },
+    "updated_at": "2026-05-30T17:14:13.947Z"
   }
 ]
