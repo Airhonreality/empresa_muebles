@@ -462,6 +462,7 @@ function RightPanel({
   switch (node.nodeType) {
     case 'route':
       return <RouteConfig key={node.id} routeId={node.id} routes={routes} userLists={userLists}
+        schemas={schemas} scripts={scripts}
         saveItem={saveItem} deleteItem={deleteItem} setPendingDelete={setPendingDelete} onSelectNode={onSelectNode} />;
     case 'block':
       return <BlockConfig key={`${node.routeId}-${node.id}`} blockId={node.id} routeId={node.routeId!}
@@ -487,15 +488,29 @@ function SaveIndicator({ status }: { status: 'idle' | 'saving' | 'saved' }) {
   );
 }
 
+// ─── ROUTE ANATOMY ────────────────────────────────────────────────────────────
+function collectRouteAnatomy(blocks: any[]): { contexts: string[]; zaps: string[] } {
+  const contexts = new Set<string>();
+  const zaps = new Set<string>();
+  function walk(nodes: any[]) {
+    for (const b of nodes) {
+      if (b.context) contexts.add(b.context);
+      if (b.config?.zap) zaps.add(b.config.zap);
+      if (b.blocks?.length) walk(b.blocks);
+    }
+  }
+  walk(blocks);
+  return { contexts: [...contexts], zaps: [...zaps] };
+}
+
 // ─── 1. ROUTE CONFIG ─────────────────────────────────────────────────────────
 function RouteConfig({
-  routeId, routes, userLists, saveItem, deleteItem, setPendingDelete, onSelectNode,
+  routeId, routes, userLists, schemas, scripts, saveItem, deleteItem, setPendingDelete, onSelectNode,
 }: {
-  routeId: string; routes: any[]; userLists: any[];
+  routeId: string; routes: any[]; userLists: any[]; schemas: any[]; scripts: any[];
   saveItem: any; deleteItem: any;
   setPendingDelete: (n: SelectedNode) => void;
   onSelectNode: (n: SelectedNode) => void;
-  schemas?: any[]; tokens?: any[];
 }) {
   const route = useMemo(() => routes.find((r: any) => r.id === routeId), [routes, routeId]);
   const [local, setLocal] = useState<any>({});
@@ -606,6 +621,63 @@ function RouteConfig({
           </div>
         </div>
       </div>
+
+      {/* Anatomía de la ruta */}
+      {(() => {
+        const { contexts, zaps } = collectRouteAnatomy(local.blocks ?? []);
+        if (contexts.length === 0 && zaps.length === 0) return null;
+        return (
+          <div className="bg-background border rounded-2xl p-6 shadow-sm space-y-4">
+            <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground block">
+              Anatomía de la Ruta
+            </label>
+            {contexts.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
+                  <Database size={9} /> Schemas activos
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {contexts.map(ctx => {
+                    const ok = schemas.some((s: any) => s.data?.name === ctx);
+                    return (
+                      <span key={ctx} className={cn(
+                        'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide border',
+                        ok ? 'border-emerald-500/30 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400'
+                           : 'border-amber-500/30 text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400'
+                      )}>
+                        <span className={cn('size-1.5 rounded-full shrink-0', ok ? 'bg-emerald-500' : 'bg-amber-500')} />
+                        {ctx}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {zaps.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
+                  <Zap size={9} /> Zaps activos
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {zaps.map(zap => {
+                    const ok = scripts.some((s: any) => s.data?.name === zap);
+                    return (
+                      <span key={zap} className={cn(
+                        'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide border',
+                        ok ? 'border-violet-500/30 text-violet-700 bg-violet-50 dark:bg-violet-950/30 dark:text-violet-400'
+                           : 'border-red-500/30 text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400'
+                      )}>
+                        <span className={cn('size-1.5 rounded-full shrink-0', ok ? 'bg-violet-500' : 'bg-red-500')} />
+                        {zap}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Acceso permitido */}
       <div className="bg-background border rounded-2xl p-6 shadow-sm">

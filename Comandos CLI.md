@@ -170,3 +170,116 @@ Antes de crear cualquier cosa, responde tres preguntas:
 ¿Qué acción la muta? → script (zap) + action block
 ¿Cómo se muestra? → block type (colección/form) o specialized/ si nada genérico aplica
 Si no puedes responder las tres, el concepto no está maduro todavía. Diseñar en ese estado es la raíz de todos los vectores anteriores.
+
+---
+
+## Campos calculados (derivaciones)
+
+Los campos derivados se computan **read-time** en el formulario — nunca se almacenan como valor fijo. Cuando el usuario cambia cualquier campo fuente, el campo derivado se recalcula en el momento.
+
+El campo es automáticamente **read-only** y muestra un ícono ✦ en el label.
+
+### Definición en el schema
+
+Agrega `config.derivation` a cualquier campo numérico o de texto:
+
+```json
+{
+  "key": "precio_publico",
+  "label": "Precio Público",
+  "type": "number",
+  "config": {
+    "derivation": {
+      "op": "MULTIPLY",
+      "args": ["precio_directo"],
+      "constants": [1.3]
+    }
+  }
+}
+```
+
+### Operadores disponibles
+
+| Operador | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `MULTIPLY` | `args[0] × args[1] × … × constants[0] × …` | `precio * margen` |
+| `SUM` | `args[0] + args[1] + … + constants[0] + …` | `subtotal + iva` |
+| `SUBTRACT` | `args[0] − (args[1] + … + constants[0] + …)` | `bruto - descuento` |
+| `DIVIDE` | `args[0] ÷ (args[1] × … × constants[0] × …)` | `total / unidades` |
+| `PERCENTAGE` | `(args[0] × args[1]) / 100` | `base × porcentaje` |
+| `AGGREGATE` | Suma de un campo en registros hijos | Ver abajo |
+| `LOOKUP` | Copia un campo de un registro relacionado | Ver abajo |
+| `SLUGIFY` | Convierte `args[0]` a snake_case | `nombre → slug` |
+
+**`args`** — claves de campos del mismo registro.  
+**`constants`** — literales numéricos (e.g. `[1.3]` para multiplicar por 1.3).
+
+#### AGGREGATE — sumar hijos
+
+```json
+{
+  "op": "AGGREGATE",
+  "args": ["precio_unitario"],
+  "context": "items_orden",
+  "foreignKey": "orden_id"
+}
+```
+Suma `precio_unitario` de todos los registros en `items_orden` cuyo `orden_id` coincida con el `id` del registro actual.
+
+#### LOOKUP — copiar campo de relación
+
+```json
+{
+  "op": "LOOKUP",
+  "args": ["categoria_id", "margen_defecto"],
+  "context": "categorias"
+}
+```
+Lee el campo `margen_defecto` del registro de `categorias` cuyo `id` coincide con `categoria_id`.
+
+### Agregar derivación desde el CLI
+
+```
+agno> set productos_catalogo.precio_publico.config {"derivation":{"op":"MULTIPLY","args":["precio_directo"],"constants":[1.3]}}
+agno> commit --force
+agno> npm run agnostic:compile
+```
+
+### Backfill de registros existentes (Zap de migración)
+
+Cuando agregas una derivación a un schema que ya tiene datos, los registros históricos no tienen el campo calculado. Ejecútalo una sola vez con un Zap:
+
+```javascript
+// nombre del script: backfill_precio_publico
+const productos = await api.query('productos_catalogo');
+let actualizados = 0;
+for (const p of productos) {
+  if (p.precio_directo) {
+    await api.saveItem('productos_catalogo', {
+      id: p.id,
+      data: { precio_publico: p.precio_directo * 1.3 }
+    });
+    actualizados++;
+  }
+}
+api.notify.success(`${actualizados} productos actualizados`);
+```
+
+Crea el script con agno y ponlo en un action block de administración:
+
+```
+agno> script write backfill_precio_publico --file scripts/backfill_precio_publico.js
+agno> add-block /admin action context:productos_catalogo config:zap=backfill_precio_publico
+```
+
+Una vez ejecutado y verificado, puedes borrar ese action block — el Zap queda en el storage como registro histórico.
+
+### Cuándo usar derivación vs. Zap
+
+| Caso | Usar |
+|------|------|
+| Campo que se calcula de otros campos del mismo registro | `config.derivation` |
+| Campo que suma hijos o busca en relaciones | `config.derivation` con AGGREGATE/LOOKUP |
+| Lógica que muta datos en otros schemas | Zap |
+| Lógica condicional compleja (`if`, loops, fetch) | Zap |
+| Cálculo que necesita persistirse para consultas externas | Zap que guarda el resultado |
