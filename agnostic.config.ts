@@ -36,7 +36,7 @@ export default defineConfig({
   // Key must match the "type" field in page_routes.json exactly.
   blocks: {
     cotizador_pro: () => import('./src/components/specialized/CotizadorPro'),
-    data_browser:  () => import('./src/components/specialized/DataBrowser'),
+    production_directory: () => import('./src/components/specialized/ProductionDirectory'),
   },
 
   features: {

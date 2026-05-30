@@ -475,5 +475,24 @@
       "order": 0
     },
     "updated_at": "2026-05-29T15:59:42.323Z"
+  },
+  {
+    "id": "70bdfb89-ab55-4e35-8909-f427acaa3ce5",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/production",
+      "title": "Directorio de Producción",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "028ec528-329e-4b86-b2e0-c13c5458138e",
+          "type": "production_directory",
+          "blocks": [],
+          "context": "ordenes_trabajo"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-05-30T23:06:01.541Z"
   }
 ]
