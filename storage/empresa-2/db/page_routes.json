@@ -465,18 +465,6 @@
     "updated_at": "2026-05-29T15:59:48.736Z"
   },
   {
-    "id": "cfd8a9c7-010b-40a5-9e3a-607f3941a7e9",
-    "context": "page_routes",
-    "data": {
-      "path": "/cotizaciones",
-      "title": "Cotizador de Proyectos",
-      "isPrivate": false,
-      "blocks": [],
-      "order": 0
-    },
-    "updated_at": "2026-05-29T15:59:42.323Z"
-  },
-  {
     "id": "70bdfb89-ab55-4e35-8909-f427acaa3ce5",
     "context": "page_routes",
     "data": {

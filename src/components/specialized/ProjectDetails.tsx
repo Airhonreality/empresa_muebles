@@ -8,13 +8,30 @@ import { Badge } from '@/components/ui/badge'
 import { useState } from 'react'
 import Viewer3DModal from './Viewer3DModal'
 
-export default function ProjectDetails({ order, tasks }: { order: OrdenesTrabajoRecord, tasks: TareasProduccionRecord[] }) {
+export default function ProjectDetails({
+  order,
+  tasks,
+  api,
+  direccion_obra,
+}: {
+  order: OrdenesTrabajoRecord
+  tasks: TareasProduccionRecord[]
+  api?: Record<string, unknown>
+  direccion_obra?: string
+}) {
   const [isModalOpen, setModalOpen] = useState(false)
-  
+
+  const handleAction = async (zap: string, payload: Record<string, unknown>) => {
+    if (!api) return
+    await fetch('/api/engine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zap, payload }),
+    })
+  }
+
   const handleCopy = () => {
-    // Asumimos que la dirección está en la cotización original.
-    // Esto requerirá un lookup o un campo denormalizado en el futuro.
-    navigator.clipboard.writeText("Dirección de ejemplo") 
+    if (direccion_obra) navigator.clipboard.writeText(direccion_obra)
   }
 
   return (
@@ -32,8 +49,8 @@ export default function ProjectDetails({ order, tasks }: { order: OrdenesTrabajo
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{task.data.notas}</p>
                 <div className="flex gap-2 mt-4">
-                    <Button size="sm" variant="outline">Pausar</Button>
-                    <Button size="sm">Finalizar</Button>
+                    <Button size="sm" variant="outline" onClick={() => handleAction('pausar_tarea', { tarea_id: task.id })}>Pausar</Button>
+                    <Button size="sm" onClick={() => handleAction('finalizar_tarea', { tarea_id: task.id })}>Finalizar</Button>
                 </div>
               </AccordionContent>
             </AccordionItem>

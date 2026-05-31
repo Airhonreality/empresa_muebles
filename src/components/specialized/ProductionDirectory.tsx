@@ -5,8 +5,8 @@ import { useMemo } from 'react'
 import type { OrdenesTrabajoRecord } from '@/generated/agnostic-schemas'
 import ProjectNode from './ProjectNode'
 
-export default function ProductionDirectory({ records }: BlockProps) {
-  const orders = records as OrdenesTrabajoRecord[]
+export default function ProductionDirectory({ records, api }: BlockProps) {
+  const orders = (records ?? []) as unknown as OrdenesTrabajoRecord[]
 
   const { inProgress, warranty } = useMemo(() => {
     const inProgress = orders.filter(o => o.data.estado !== 'entregada' && o.data.estado !== 'terminada')
@@ -23,14 +23,14 @@ export default function ProductionDirectory({ records }: BlockProps) {
       <TabsContent value="in-progress">
         <div className="flex flex-col gap-4">
           {inProgress.map(order => (
-            <ProjectNode key={order.id} record={order} />
+            <ProjectNode key={order.id} record={order} api={api} />
           ))}
         </div>
       </TabsContent>
       <TabsContent value="warranty">
         <div className="flex flex-col gap-4">
           {warranty.map(order => (
-            <ProjectNode key={order.id} record={order} />
+            <ProjectNode key={order.id} record={order} api={api} />
           ))}
         </div>
       </TabsContent>

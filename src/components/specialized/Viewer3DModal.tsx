@@ -55,13 +55,12 @@ function ThreeScene() {
 
 
 export default function Viewer3DModal({ isOpen, onClose, order }: { isOpen: boolean, onClose: () => void, order: OrdenesTrabajoRecord }) {
-  const { data: spaces } = useRelationData('espacio_variantes', {
-    filter: { cotizacion_id: order.data.cotizacion_id }
-  })
+  const { data: allSpaces } = useRelationData('espacio_variantes')
 
   const activeSpaces = useMemo(() => {
-    return (spaces as EspacioVariantesRecord[] || []).filter(s => s.data.activa)
-  }, [spaces])
+    return (allSpaces as EspacioVariantesRecord[] || [])
+      .filter(s => s.data.cotizacion_id === order.data.cotizacion_id && s.data.activa)
+  }, [allSpaces, order.data.cotizacion_id])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

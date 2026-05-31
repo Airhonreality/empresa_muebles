@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx shadcn@latest add progress --yes)",
+      "Bash(Remove-Item -Recurse -Force \"c:/Users/javir/Documents/DEVs/empresa_muebles_clone/.next\" -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

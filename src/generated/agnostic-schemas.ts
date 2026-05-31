@@ -2,7 +2,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: .\storage\empresa-2\db\schema_definitions.json
 // Run:    npm run agnostic:compile
-// Generated: 2026-05-30T23:02:24.357Z
+// Generated: 2026-05-30T23:27:57.817Z
 // ============================================================
 
 // DataItem is the universal record wrapper used by the engine.
@@ -131,6 +131,28 @@ export interface PrefabricadosItems {
 
 export type PrefabricadosItemsRecord = AgnosticDataItem<PrefabricadosItems>
 
+// ─── Schema: "ordenes_trabajo" — primary field: "codigo_orden" 
+export interface OrdenesTrabajo {
+  cotizacion_id: string  // Cotización Origen
+  codigo_orden: string  // Código de Orden
+  estado: string  // Estado
+  fecha_entrega?: string  // Fecha de Entrega
+  notas?: string  // Notas
+}
+
+export type OrdenesTrabajoRecord = AgnosticDataItem<OrdenesTrabajo>
+
+// ─── Schema: "tareas_produccion" — primary field: "nombre_tarea" 
+export interface TareasProduccion {
+  orden_trabajo_id: string  // Orden de Trabajo
+  nombre_tarea: string  // Nombre de la Tarea
+  estado: string  // Estado
+  operario_id?: string  // Operario Asignado
+  notas?: string  // Notas
+}
+
+export type TareasProduccionRecord = AgnosticDataItem<TareasProduccion>
+
 // ─── Schema: "nav_links" 
 export interface NavLinks {
   label?: string  // Etiqueta
@@ -160,9 +182,11 @@ export interface AgnosticSchemas {
   cotizaciones: Cotizaciones
   prefabricados: Prefabricados
   prefabricados_items: PrefabricadosItems
+  ordenes_trabajo: OrdenesTrabajo
+  tareas_produccion: TareasProduccion
   nav_links: NavLinks
 }
 
 // Valid values for block.context and fetch(`/api/vault?namespace=${ctx}`)
 export type SchemaName = keyof AgnosticSchemas
-// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'cotizaciones_snapshot' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'nav_links'
+// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'cotizaciones_snapshot' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'nav_links'
