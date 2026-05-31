@@ -217,7 +217,15 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString()
       }];
       
-      await atomicWrite(systemConfigPath, passport);
+      try {
+        await atomicWrite(systemConfigPath, passport);
+      } catch (writeErr: any) {
+        if (writeErr.code === 'EROFS' || writeErr.code === 'EACCES') {
+          console.warn('[Bootstrap POST] Read-only filesystem detected on Serverless environment. Local config write skipped because env vars are active.');
+        } else {
+          throw writeErr;
+        }
+      }
 
       return NextResponse.json({ success: true });
     }
