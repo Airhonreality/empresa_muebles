@@ -1,5 +1,5 @@
-import { AgnosticNavbar } from "@/components/agnostic/engine/AgnosticNavbar";
-import { AgnosticBelt } from "@/components/agnostic/engine/AgnosticBelt";
+import { AgnosticNavbar } from "@/components/agnostic/blocks/AgnosticNavbar";
+import { AgnosticBelt } from "@/components/agnostic/blocks/AgnosticBelt";
 import {
   DropdownMenu,
   DropdownMenuContent,

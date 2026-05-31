@@ -3,8 +3,8 @@
     "id": "db6124ac-0139-4b04-b1aa-b25ae0a53fd0",
     "context": "page_routes",
     "data": {
-      "path": "/cotizador",
-      "title": "Cotizaciones",
+      "path": "/app/quoting",
+      "title": "Cotizador",
       "isPrivate": false,
       "layout_mode": "full",
       "layout": {
@@ -34,7 +34,7 @@
     "id": "8e2f478b-77da-4d74-b9e5-8cd1ed30e901",
     "context": "page_routes",
     "data": {
-      "path": "/catalogo",
+      "path": "/app/catalog",
       "title": "CatÃ¡logo de Productos y Servicios",
       "isPrivate": false,
       "layout_mode": "container",
@@ -80,7 +80,7 @@
     "id": "966c3d81-e7a7-431d-8172-05b55a964d2e",
     "context": "page_routes",
     "data": {
-      "path": "/cotizador/:id",
+      "path": "/app/quoting/:id",
       "title": "Cotizador Editor de Propuesta",
       "isPrivate": false,
       "layout_mode": "container",
@@ -214,10 +214,22 @@
             "icon": "Printer",
             "className": "border-primary/50 text-primary hover:bg-primary/[0.05]"
           }
+        },
+        {
+          "id": "a1b2c3d4-e5f6-7890-aaaa-bbbbccccdddd",
+          "type": "action",
+          "context": "cotizaciones",
+          "schema_id": "03fa884c-e96e-43e4-8899-858d6d3be927",
+          "config": {
+            "label": "Enviar a Producción",
+            "zap": "crear_orden_trabajo",
+            "variant": "default",
+            "icon": "Factory"
+          }
         }
       ]
     },
-    "updated_at": "2026-05-28T03:13:25.265Z"
+    "updated_at": "2026-05-31T00:00:00.000Z"
   },
   {
     "id": "886f4199-9b12-4d58-836d-2af9de225bdd",
@@ -343,7 +355,7 @@
     "id": "f3a92b11-8c4e-4d07-a561-e72b9f103d55",
     "context": "page_routes",
     "data": {
-      "path": "/snapshots",
+      "path": "/app/analytics",
       "title": "Historial de Propuestas",
       "isPrivate": false,
       "layout_mode": "container",
@@ -386,7 +398,7 @@
     "id": "12fcb5a0-9d95-45aa-a3a2-ec13de7a8485",
     "context": "page_routes",
     "data": {
-      "path": "/prefabricados",
+      "path": "/app/prefabricados",
       "blocks": [
         {
           "id": "bc48f0fb-6061-4d8b-8273-8de485bc1237",
@@ -446,25 +458,6 @@
     "updated_at": "2026-05-22T15:02:15.573Z"
   },
   {
-    "id": "55e0382e-08ae-4d67-9331-6a64b5612d30",
-    "context": "page_routes",
-    "data": {
-      "path": "/cotizaciones",
-      "title": "Cotizador de Proyectos",
-      "isPrivate": false,
-      "blocks": [
-        {
-          "id": "f589ee5a-cf1f-465f-831a-e6375a3cdf27",
-          "type": "cotizador_pro",
-          "blocks": [],
-          "context": "cotizaciones"
-        }
-      ],
-      "order": 0
-    },
-    "updated_at": "2026-05-29T15:59:48.736Z"
-  },
-  {
     "id": "70bdfb89-ab55-4e35-8909-f427acaa3ce5",
     "context": "page_routes",
     "data": {
@@ -481,6 +474,6 @@
       ],
       "order": 0
     },
-    "updated_at": "2026-05-30T23:06:01.541Z"
+    "updated_at": "2026-05-31T15:09:21.595Z"
   }
 ]

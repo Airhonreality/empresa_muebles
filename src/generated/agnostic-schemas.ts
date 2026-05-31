@@ -2,7 +2,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: .\storage\empresa-2\db\schema_definitions.json
 // Run:    npm run agnostic:compile
-// Generated: 2026-05-30T23:27:57.817Z
+// Generated: 2026-05-31T14:58:12.082Z
 // ============================================================
 
 // DataItem is the universal record wrapper used by the engine.
@@ -149,6 +149,7 @@ export interface TareasProduccion {
   estado: string  // Estado
   operario_id?: string  // Operario Asignado
   notas?: string  // Notas
+  espacio_variante_id?: string  // Espacio Asociado
 }
 
 export type TareasProduccionRecord = AgnosticDataItem<TareasProduccion>

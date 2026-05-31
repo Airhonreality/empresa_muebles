@@ -1,0 +1,46 @@
+[
+  {
+    "id": "68c1f4d5-e5b1-4c92-89aa-b4b7ded9935a",
+    "context": "clientes",
+    "data": {
+      "nombre": "David Cornejo",
+      "documento": "",
+      "telefono": "",
+      "email": ""
+    },
+    "updated_at": "2026-05-22T11:36:56.831Z"
+  },
+  {
+    "id": "3353e06b-1bbe-4cc6-881b-12ecdb76074e",
+    "context": "clientes",
+    "data": {
+      "nombre": "Enrique Galeano",
+      "documento": "",
+      "telefono": "",
+      "email": ""
+    },
+    "updated_at": "2026-05-22T14:44:22.204Z"
+  },
+  {
+    "id": "eae4a0d9-f947-4c0c-bb9c-d1ec76e034ce",
+    "context": "clientes",
+    "data": {
+      "nombre": "Ciro Rincón",
+      "documento": "",
+      "telefono": "",
+      "email": ""
+    },
+    "updated_at": "2026-05-23T12:41:05.068Z"
+  },
+  {
+    "id": "be96715e-07fe-4bc3-ba1c-2a97dc62fce3",
+    "context": "clientes",
+    "data": {
+      "nombre": "Adriana cubillos",
+      "documento": "",
+      "telefono": "",
+      "email": ""
+    },
+    "updated_at": "2026-05-25T15:49:20.619Z"
+  }
+]

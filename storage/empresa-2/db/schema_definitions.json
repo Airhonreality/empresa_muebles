@@ -956,10 +956,25 @@
           "width": "full",
           "section": "General",
           "config": {}
+        },
+        {
+          "id": "tp6_espacio",
+          "key": "espacio_variante_id",
+          "label": "Espacio Asociado",
+          "type": "relation",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "espacio_variantes",
+              "parent_key": "id"
+            }
+          }
         }
       ]
     },
-    "updated_at": "2026-05-30T23:00:00.000Z"
+    "updated_at": "2026-05-31T00:00:00.000Z"
   },
   {
     "id": "d3538611-7567-4a99-a515-1ec1f4b0e4fb",
