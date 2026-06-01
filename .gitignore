@@ -49,8 +49,8 @@ storage/
 src/components/specialized/
 !src/components/specialized/_TEMPLATE.tsx
 
-# local Claude Code settings (machine-specific paths)
-.claude/settings.local.json
+# local Claude Code settings (machine-specific, never committed)
+.claude/
 
 .vercel
 .env*.local
