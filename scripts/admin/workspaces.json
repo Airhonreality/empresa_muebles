@@ -1,10 +1,15 @@
-{
-  "_comment": "Paths son relativos a la raíz del engine seed. Agrega una entrada por cada workspace.",
-  "workspaces": [
-    {
-      "name": "empresa_muebles",
-      "path": "../empresa_muebles_clone",
-      "branch": "main-app"
-    }
-  ]
+﻿{
+    "_comment":  "Paths son relativos a la raÃ­z del engine seed. Agrega una entrada por cada workspace.",
+    "workspaces":  [
+                       {
+                           "name":  "empresa_muebles",
+                           "path":  "../empresa_muebles_clone",
+                           "branch":  "main-app"
+                       },
+                       {
+                           "name":  "HUG_WORKS",
+                           "path":  "../HUG_WORKS",
+                           "branch":  "main"
+                       }
+                   ]
 }

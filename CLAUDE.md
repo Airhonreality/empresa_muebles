@@ -104,6 +104,15 @@ await saveItem(context, { data: { direccion_obra: "", costos_operativos: 0 } }) 
 // storage/{tenant}/actions/*.js // FORBIDDEN — no existe este patrón
 // Los scripts SIEMPRE viven en storage/{tenant}/db/scripts.json como DataItems
 // y se ejecutan vía /api/engine. Usar herramienta MCP write_script para crearlos.
+
+// 9. Modificar archivos del engine para resolver necesidades de un proyecto
+// AppContext.tsx          // FORBIDDEN — no añadir listeners de proyecto aquí
+// src/app/api/*/route.ts  // FORBIDDEN — no añadir lógica de negocio a las rutas del engine
+// packages/**             // FORBIDDEN — nunca tocar para resolver algo de un fork
+// Si sientes la necesidad de modificar el engine para un proyecto: el problema
+// es cómo estás llamando la API del engine, no el engine en sí.
+// Solución: procesa los eventos de /api/engine en el specialized/ que los origina.
+// Ver: Interfaces Custom.md § "Llamar a un Zap desde un componente especializado"
 ```
 
 ## Zap execution system (action buttons with logic)

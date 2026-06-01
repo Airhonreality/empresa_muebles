@@ -492,6 +492,24 @@ function findNodeDeep(children: any[], idPrefix: string): any | null {
   return null;
 }
 
+function removeNodeDeep(children: any[], id: string): boolean {
+  const idx = children.findIndex(n => n.id === id || n.id.startsWith(id));
+  if (idx !== -1) { children.splice(idx, 1); return true; }
+  for (const n of children) {
+    if (n.children?.length && removeNodeDeep(n.children, id)) return true;
+  }
+  return false;
+}
+
+function removeBlockDeep(blocks: any[], id: string): boolean {
+  const idx = blocks.findIndex(b => b.id === id || b.id.startsWith(id));
+  if (idx !== -1) { blocks.splice(idx, 1); return true; }
+  for (const b of blocks) {
+    if (b.blocks?.length && removeBlockDeep(b.blocks, id)) return true;
+  }
+  return false;
+}
+
 function countNodes(node: any): number {
   if (!node) return 0;
   return (node.children ?? []).reduce((s: number, c: any) => s + 1 + countNodes(c), 0);
@@ -768,6 +786,16 @@ async function cmdAddBlock(args: string[]) {
   const r = await findRoute(routePath);
   if (!r) { console.log(`[ERROR] ruta no encontrada: ${routePath}`); return; }
 
+  if (context) {
+    const schemas = await getSchemas();
+    const schemaNames = new Set(schemas.map((s: any) => s.data?.name).filter(Boolean));
+    if (!schemaNames.has(context)) {
+      console.log(`[ERROR] context "${context}" no coincide con ningún schema existente.`);
+      console.log(`  → Schemas disponibles: ${[...schemaNames].join(', ')}`);
+      return;
+    }
+  }
+
   const id = crypto.randomUUID();
   const block: any = { id, type, blocks: [] };
   if (context)                      block.context = context;
@@ -982,16 +1010,14 @@ async function cmdRemoveBlock(args: string[]) {
   if (!r) { console.log(`[ERROR] ruta no encontrada: ${routePath}`); return; }
 
   if (r.data?.root) {
-    const before = (r.data.root.children ?? []).length;
-    r.data.root.children = (r.data.root.children ?? []).filter((n: any) => n.id !== blockId && !n.id.startsWith(blockId));
-    if (r.data.root.children.length === before) { console.log(`[ERROR] nodo "${blockId}" no encontrado en raíz de ${routePath}`); return; }
+    const removed = removeNodeDeep(r.data.root.children ?? [], blockId);
+    if (!removed) { console.log(`[ERROR] nodo "${blockId}" no encontrado en ${routePath}`); return; }
     r.updated_at = new Date().toISOString();
     await adapter.write('page_routes', r);
     console.log(`[OK] node:${blockId.slice(0,8)} eliminado de ${routePath}`);
   } else {
-    const before = r.data.blocks?.length ?? 0;
-    r.data.blocks = (r.data.blocks || []).filter((b: any) => b.id !== blockId && !b.id.startsWith(blockId));
-    if (r.data.blocks.length === before) { console.log(`[ERROR] block "${blockId}" no encontrado en ${routePath}`); return; }
+    const removed = removeBlockDeep(r.data.blocks ?? [], blockId);
+    if (!removed) { console.log(`[ERROR] block "${blockId}" no encontrado en ${routePath}`); return; }
     r.updated_at = new Date().toISOString();
     await adapter.write('page_routes', r);
     console.log(`[OK] block:${blockId.slice(0,8)} eliminado de ${routePath}`);
@@ -1253,19 +1279,36 @@ async function cmdCreateSchema(args: string[]) {
 async function cmdAddField(args: string[]) {
   const [schemaName, key, type] = args;
   if (!schemaName || !key || !type) {
-    console.log('[ERROR] uso: add-field <schema> <key> <type> [label:<label>] [required] [options:<a,b,c>] [entity:<schema>]');
+    console.log('[ERROR] uso: add-field <schema> <key> <type> [label:<l>] [required] [readonly] [primary] [options:<a,b,c>] [entity:<schema>] [display:<field>] [width:full|half|third] [section:<name>]');
     return;
   }
-  const labelArg  = args.find(a => a.startsWith('label:'));
-  const label     = labelArg ? labelArg.slice(6) : autoLabel(key);
-  const required  = args.includes('required');
+  const labelArg   = args.find(a => a.startsWith('label:'));
+  const label      = labelArg ? labelArg.slice(6) : autoLabel(key);
+  const required   = args.includes('required');
+  const readOnly   = args.includes('readonly');
+  const isPrimary  = args.includes('primary');
+  const widthArg   = args.find(a => a.startsWith('width:'));
+  const width      = widthArg ? widthArg.slice(6) : undefined;
+  const sectionArg = args.find(a => a.startsWith('section:'));
+  const section    = sectionArg ? sectionArg.slice(8) : undefined;
   const optionsArg = args.find(a => a.startsWith('options:'));
-  const options   = optionsArg ? optionsArg.slice(8).split(',').map(o => o.trim()) : undefined;
-  const entityArg = args.find(a => a.startsWith('entity:'));
-  const config    = entityArg ? { relation: { entity: entityArg.slice(7), parent_key: 'id' } } : undefined;
+  const options    = optionsArg
+    ? optionsArg.slice(8).split(',').map(o => ({ label: o.trim(), value: o.trim() }))
+    : undefined;
+  const entityArg  = args.find(a => a.startsWith('entity:'));
+  const displayArg = args.find(a => a.startsWith('display:'));
+  let config: any  = undefined;
+  if (entityArg) {
+    config = { relation: { entity: entityArg.slice(7), parent_key: 'id' } };
+    if (displayArg) config.relation.display_field = displayArg.slice(8);
+  }
   const field: any = { id: crypto.randomUUID(), key, type, label, required };
-  if (options) field.options = options;
-  if (config)  field.config  = config;
+  if (readOnly)   field.readOnly  = true;
+  if (isPrimary)  field.isPrimary = true;
+  if (width)      field.width     = width;
+  if (section)    field.section   = section;
+  if (options)    field.options   = options;
+  if (config)     field.config    = config;
   const desc = `schema:${schemaName} add-field:${key}(${type})`;
   pending.push({
     desc,
@@ -1557,6 +1600,9 @@ async function cmdValidate() {
   }
 
   // Route block invariants
+  const CONTEXT_REQUIRED = new Set(['form', 'collection', 'table', 'action']);
+  const scripts = await adapter.read('scripts').catch(() => []) as any[];
+  const scriptNames = new Set(scripts.map((s: any) => s.data?.name).filter(Boolean));
   let warnings = 0;
   for (const r of routes) {
     const path: string = r.data?.path ?? '?';
@@ -1564,6 +1610,12 @@ async function cmdValidate() {
       for (const b of blocks) {
         if (b.context && !schemaNames.has(b.context)) {
           console.log(`  [route:${path}] block "${b.type}" context "${b.context}" no coincide con ningún schema`); errors++;
+        }
+        if (CONTEXT_REQUIRED.has(b.type) && !b.context) {
+          console.log(`  [route:${path}] block "${b.type}" (${b.id?.slice(0,8)}) no tiene context — el engine renderizará vacío`); errors++;
+        }
+        if (b.zap && !scriptNames.has(b.zap)) {
+          console.log(`  [route:${path}] block "${b.type}" zap "${b.zap}" no existe en scripts`); errors++;
         }
         if (!BLOCK_CATALOG[b.type]) {
           // Tipos fuera del catálogo son bloques especializados (agnostic.config.ts) — warning, no error.
@@ -1601,11 +1653,26 @@ async function cmdSet(args: string[]) {
       if (!s) throw new Error(`schema ${schemaName} no encontrado`);
       const field = s.data.fields?.find((f: any) => f.key === fieldKey);
       if (!field) throw new Error(`field ${fieldKey} no encontrado`);
-      if (prop === 'entity')   field.config = { relation: { entity: value, parent_key: 'id' } };
-      else if (prop === 'required') field.required = value === 'true';
-      else if (prop === 'label')    field.label = value;
-      else if (prop === 'type')     field.type  = value;
-      else throw new Error(`prop desconocida: ${prop}`);
+      if (prop === 'label')        field.label       = value;
+      else if (prop === 'type')        field.type        = value;
+      else if (prop === 'required')    field.required    = value === 'true';
+      else if (prop === 'readOnly')    field.readOnly    = value === 'true';
+      else if (prop === 'isPrimary')   field.isPrimary   = value === 'true';
+      else if (prop === 'width')       field.width       = value;
+      else if (prop === 'section')     field.section     = value;
+      else if (prop === 'placeholder') field.placeholder = value;
+      else if (prop === 'options') {
+        field.options = value.split(',').map((o: string) => ({ label: o.trim(), value: o.trim() }));
+      }
+      else if (prop === 'entity') {
+        if (!field.config) field.config = {};
+        field.config.relation = { ...(field.config.relation ?? {}), entity: value, parent_key: field.config.relation?.parent_key ?? 'id' };
+      }
+      else if (prop === 'display_field') {
+        if (!field.config?.relation) throw new Error(`field ${fieldKey} no es de tipo relation`);
+        field.config.relation.display_field = value;
+      }
+      else throw new Error(`prop desconocida: ${prop}. Válidas: label, type, required, readOnly, isPrimary, width, section, placeholder, options, entity, display_field`);
       s.updated_at = new Date().toISOString();
       await adapter.write('schema_definitions', s);
     }
@@ -1683,10 +1750,14 @@ agno — Agnostic CLI / MCP de Interfaz  (ver AGNO_MCP_PLAN.md)
 
 ══ CAPA 4 — SCHEMA (staged) ══════════════════════════════════════════
   create-schema <name> [field:<key>:<type>[:<label>] ...]
-  add-field <schema> <key> <type> [label:<l>] [required] [options:<a,b,c>]
+  add-field <schema> <key> <type> [label:<l>] [required] [readonly] [primary]
+            [options:<a,b,c>] [entity:<schema>] [display:<field>]
+            [width:full|half|third] [section:<name>]
   remove-field <schema> <key>
   delete-schema <name>
-  set <schema>.<field>.<prop> <value>     prop: label|type|required|entity
+  set <schema>.<field>.<prop> <value>
+            prop: label | type | required | readOnly | isPrimary | width
+                  section | placeholder | options:<a,b,c> | entity | display_field
 
 ══ CAPA 5 — DATOS (staged) ═══════════════════════════════════════════
   create-record <schema> [key=val ...]

@@ -87,8 +87,8 @@ function resolveProjectPath(): string {
   // Read active project from system_config.json (same logic as activeProject.ts)
   const configPath = path.join(process.cwd(), 'storage', 'system_config.json')
   if (!fs.existsSync(configPath)) {
-    console.error('[agnostic:compile] storage/system_config.json not found.')
-    process.exit(1)
+    console.warn('[agnostic:compile] storage/system_config.json not found — fresh workspace, skipping compile.')
+    process.exit(0)
   }
   const raw = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
   const items = Array.isArray(raw) ? raw : [raw]
@@ -96,8 +96,8 @@ function resolveProjectPath(): string {
   const identity = passport?.data?.project_identity
 
   if (!identity) {
-    console.error('[agnostic:compile] master_passport.project_identity not found in system_config.json')
-    process.exit(1)
+    console.warn('[agnostic:compile] master_passport.project_identity not found — skipping compile.')
+    process.exit(0)
   }
 
   return path.join(process.cwd(), 'storage', identity, 'db')
@@ -110,8 +110,8 @@ function compile(): void {
     ?? path.join(process.cwd(), 'src', 'generated', 'agnostic-schemas.ts')
 
   if (!fs.existsSync(schemasPath)) {
-    console.error(`[agnostic:compile] schema_definitions.json not found at:\n  ${schemasPath}`)
-    process.exit(1)
+    console.warn(`[agnostic:compile] schema_definitions.json not found — skipping compile.`)
+    process.exit(0)
   }
 
   const raw: SchemaItem[] = JSON.parse(fs.readFileSync(schemasPath, 'utf-8'))

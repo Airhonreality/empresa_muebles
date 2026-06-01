@@ -346,7 +346,53 @@ useEffect(() => {
     rendererRef.current = null
   }
 }, [])
-6. Resumen — reglas de oro para especializar sin entropía
+6. Llamar a un Zap desde un componente especializado
+
+Cuando un specialized/ necesita ejecutar lógica de servidor (zap), llama `/api/engine` directamente y procesa los eventos en el mismo componente. **No toques AppContext.tsx ni ningún archivo del engine.**
+
+```typescript
+const ejecutarZap = async () => {
+  const response = await fetch('/api/engine', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zap: 'nombre_del_zap', payload: { ...datos } }),
+  })
+
+  if (!response.ok) throw new Error(`Error ${response.status}`)
+
+  const result = await response.json()
+  if (!result.success) throw new Error(result.error)
+
+  // Procesar eventos del engine — siempre en el componente, nunca en AppContext
+  for (const event of result.events ?? []) {
+    if (event.action === 'notify') {
+      event.type === 'success' ? toast.success(event.message) : toast.error(event.message)
+
+    } else if (event.action === 'materia_sync') {
+      // Si el zap mutó datos que este componente muestra, re-fetch:
+      await refetch()
+
+    } else if (event.action === 'print_pdf') {
+      // Iframe invisible — evita bloqueador de popups del navegador
+      const iframe = document.createElement('iframe')
+      iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;'
+      document.body.appendChild(iframe)
+      iframe.contentDocument!.open()
+      iframe.contentDocument!.write(event.payload?.html || '')
+      iframe.contentDocument!.close()
+      iframe.contentWindow!.focus()
+      setTimeout(() => {
+        iframe.contentWindow!.print()
+        setTimeout(() => document.body.removeChild(iframe), 2000)
+      }, 500)
+    }
+  }
+}
+```
+
+**Regla absoluta:** si el zap hace todo lo que necesitas, no tienes que tocar nada fuera de `src/components/specialized/`. Si sientes la necesidad de modificar `AppContext.tsx`, `route.ts` o cualquier archivo de `packages/` — para. El problema está en cómo llamas al zap, no en el engine.
+
+7. Resumen — reglas de oro para especializar sin entropía
 Decisión	Correcto	Evitar
 Datos del schema propio	records prop	useMateriaStore() directo
 Datos de schema secundario	fetch('/api/vault?namespace=X')	Import del adapter
