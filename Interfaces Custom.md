@@ -346,7 +346,28 @@ useEffect(() => {
     rendererRef.current = null
   }
 }, [])
-6. Resumen — reglas de oro para especializar sin entropía
+6. Tokens CSS — dos capas, solo una es tuya
+El engine inyecta los tokens en dos pasos:
+
+1. globals.css (seed) define los --sat-* como fallbacks del engine (tracked en git)
+2. storage/{silo}/styles/tokens.css sobreescribe esos fallbacks con los valores del proyecto
+
+layout.tsx los inyecta en orden:
+  <style>{tokenStyles}</style>   ← storage/{silo}/styles/tokens.css (tuyo)
+  globals.css                    ← defaults del engine (del seed)
+
+El archivo tokens.css se regenera con /api/tokens/sync cada vez que guardas en el TokensEditor.
+También puedes editarlo directamente en storage/{silo}/styles/tokens.css.
+
+Regla de sync: storage/ es gitignoreado → el sync nunca toca tokens.css.
+Tus variables CSS sobreviven cualquier merge del engine intactas.
+
+Donde editas	¿Sobrevive sync?	Cuándo usarlo
+storage/{silo}/styles/tokens.css	✅ Siempre	Customización de proyecto (--sat-bg, --sat-accent, etc.)
+src/app/globals.css	⚠️ Conflicto si el seed también lo toca	Nunca para customizar un proyecto
+src/styles/layout_tokens.css	⚠️ Conflicto si el seed también lo toca	Nunca para customizar un proyecto
+
+7. Resumen — reglas de oro para especializar sin entropía
 Decisión	Correcto	Evitar
 Datos del schema propio	records prop	useMateriaStore() directo
 Datos de schema secundario	fetch('/api/vault?namespace=X')	Import del adapter
@@ -357,3 +378,4 @@ Config del bloque	block.config.mi_param	Props hardcodeados
 Cleanup de efectos	return () => cancelAnimationFrame(...)	No cleanup → memory leak
 Escritura de datos	POST /api/vault	Adapter importado directamente
 Lógica de negocio compleja	Script zap via POST /api/engine	Lógica en el componente
+Variables CSS del proyecto	storage/{silo}/styles/tokens.css	src/app/globals.css

@@ -44,9 +44,10 @@ next-env.d.ts
 # because the seed never has files there.
 
 # Nothing to exclude here — storage/ and specialized/ are yours, commit them.
+# system_config.json is tracked (silo persists in git → Vercel never shows setup screen).
 
-# local Claude Code settings (machine-specific paths)
-.claude/settings.local.json
+# local Claude Code settings (machine-specific, never committed)
+.claude/
 
 .vercel
 .env*.local

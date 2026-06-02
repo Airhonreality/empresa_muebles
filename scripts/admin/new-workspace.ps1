@@ -34,11 +34,11 @@ function Write-Ok($msg)   { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Fail($msg) { Write-Host "  [!!] $msg" -ForegroundColor Red; exit 1 }
 
 Write-Host ""
-Write-Host "NUEVO WORKSPACE  ›  $Name" -ForegroundColor Cyan
+Write-Host "NUEVO WORKSPACE  |  $Name" -ForegroundColor Cyan
 Write-Host "  Destino: $wsPath" -ForegroundColor DarkGray
 Write-Host ""
 
-# ── Guardia: no pisar un workspace existente ──────────────────────────────────
+# Guardia: no pisar un workspace existente
 
 if (Test-Path $wsPath) {
     Write-Fail "La carpeta '$wsPath' ya existe. Elige otro nombre."
@@ -47,10 +47,10 @@ if (Test-Path $wsPath) {
 $registry = Get-Content $registryPath | ConvertFrom-Json
 $exists = $registry.workspaces | Where-Object { $_.name -eq $Name }
 if ($exists) {
-    Write-Fail "'$Name' ya está registrado en workspaces.json."
+    Write-Fail "'$Name' ya esta registrado en workspaces.json."
 }
 
-# ── 1. Clonar el seed ─────────────────────────────────────────────────────────
+# 1. Clonar el seed
 
 Write-Step "Clonando engine seed..."
 git clone $seedUrl $wsPath --branch main
@@ -59,12 +59,12 @@ Write-Ok "Clonado en $wsPath"
 
 Push-Location $wsPath
 
-# ── 2. Renombrar remotos: seed pasa a ser upstream, no origin ─────────────────
+# 2. Renombrar remotos: seed pasa a ser upstream, no origin
 
-Write-Step "Configurando remotos (seed → upstream)..."
+Write-Step "Configurando remotos (seed -> upstream)..."
 git remote rename origin upstream
 
-# ── 3. Crear repo en GitHub ───────────────────────────────────────────────────
+# 3. Crear repo en GitHub
 
 Write-Step "Creando repo en GitHub ($Name)..."
 $visibility = if ($Private) { "--private" } else { "--public" }
@@ -76,7 +76,7 @@ $newOrigin = "https://github.com/$ghUser/$Name.git"
 git remote add origin $newOrigin
 Write-Ok "Repo creado: $newOrigin"
 
-# ── 4. Crear rama de trabajo y empujar ───────────────────────────────────────
+# 4. Crear rama de trabajo y empujar
 
 if ($Branch -ne "main") {
     Write-Step "Creando rama '$Branch'..."
@@ -90,7 +90,7 @@ Write-Ok "Workspace en GitHub."
 
 Pop-Location
 
-# ── 5. Registrar en workspaces.json ──────────────────────────────────────────
+# 5. Registrar en workspaces.json
 
 Write-Step "Registrando en workspaces.json..."
 $newEntry = [PSCustomObject]@{
@@ -103,17 +103,17 @@ $registry.workspaces += $newEntry
 $registry | ConvertTo-Json -Depth 5 | Set-Content $registryPath -Encoding utf8
 Write-Ok "Registrado en workspaces.json."
 
-# ── Resumen ───────────────────────────────────────────────────────────────────
+# Resumen
 
 Write-Host ""
-Write-Host "─────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "-----------------------------------------" -ForegroundColor DarkGray
 Write-Host "  Workspace '$Name' listo." -ForegroundColor Green
 Write-Host "  GitHub:  $newOrigin" -ForegroundColor DarkGray
 Write-Host "  Local:   $wsPath" -ForegroundColor DarkGray
 Write-Host "  Rama:    $Branch" -ForegroundColor DarkGray
 Write-Host ""
-Write-Host "  Próximos pasos:" -ForegroundColor DarkGray
+Write-Host "  Proximos pasos:" -ForegroundColor DarkGray
 Write-Host "    1. Edita storage/ con la identidad del nuevo proyecto" -ForegroundColor DarkGray
-Write-Host "    2. Corre: npm install && npm run dev" -ForegroundColor DarkGray
+Write-Host "    2. Corre: npm install; npm run dev" -ForegroundColor DarkGray
 Write-Host "    3. Para recibir updates del engine: .\scripts\admin\sync-workspaces.ps1" -ForegroundColor DarkGray
 Write-Host ""
