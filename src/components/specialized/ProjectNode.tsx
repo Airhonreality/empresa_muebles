@@ -2,31 +2,26 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { useMemo } from 'react'
-import { useRelationData } from '@/lib/agnostic/hooks/useRelationData'
-import type { OrdenesTrabajoRecord, TareasProduccionRecord, ClientesRecord, CotizacionesRecord } from '@/generated/agnostic-schemas'
+import { useMemo, useState } from 'react'
+import type { OrdenesTrabajoRecord, TareasProduccionRecord, CotizacionesRecord } from '@/generated/agnostic-schemas'
 import ProjectDetails from './ProjectDetails'
 
-export default function ProjectNode({ record, api }: { record: OrdenesTrabajoRecord, api?: Record<string, unknown> }) {
-  const { data: allTasks } = useRelationData('tareas_produccion')
-  const { data: allClients } = useRelationData('clientes')
-  const { data: allQuotes } = useRelationData('cotizaciones')
+interface Props {
+  record: OrdenesTrabajoRecord
+  api?: Record<string, unknown>
+  allTasks: TareasProduccionRecord[]
+  cotizacion?: CotizacionesRecord
+  clientName: string
+}
 
+export default function ProjectNode({ record, api, allTasks, cotizacion, clientName }: Props) {
+  const [expanded, setExpanded] = useState(false)
+
+  // Filtrado local — no hay hooks de datos aquí
   const tasks = useMemo(
-    () => (allTasks as TareasProduccionRecord[]).filter(t => t.data.orden_trabajo_id === record.id),
+    () => allTasks.filter(t => t.data.orden_trabajo_id === record.id),
     [allTasks, record.id]
   )
-
-  const cotizacion = useMemo(
-    () => (allQuotes as CotizacionesRecord[]).find(q => q.id === record.data.cotizacion_id),
-    [allQuotes, record.data.cotizacion_id]
-  )
-
-  const clientName = useMemo(() => {
-    if (!cotizacion) return 'Cargando...'
-    const client = (allClients as ClientesRecord[]).find(c => c.id === cotizacion.data.cliente_id)
-    return client?.data?.nombre ?? cotizacion.data.nombre_proyecto
-  }, [cotizacion, allClients])
 
   const progress = useMemo(() => {
     if (!tasks.length) return 0
@@ -35,24 +30,37 @@ export default function ProjectNode({ record, api }: { record: OrdenesTrabajoRec
   }, [tasks])
 
   return (
-    <Accordion type="single" collapsible className="w-full">
+    <Accordion
+      type="single"
+      collapsible
+      className="w-full"
+      onValueChange={v => setExpanded(!!v)}
+    >
       <AccordionItem value={record.id}>
-        <AccordionTrigger>
+        <AccordionTrigger className="hover:no-underline p-0">
           <Card className="w-full p-4 text-left">
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold">{record.data.codigo_orden} - {clientName}</h3>
-              <span className="text-sm text-muted-foreground">{record.data.fecha_entrega}</span>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold">{record.data.codigo_orden} — {clientName}</h3>
+              <span className="text-xs text-muted-foreground shrink-0 ml-2">{record.data.fecha_entrega}</span>
             </div>
-            <Progress value={progress} className="mt-2" />
+            <div className="flex items-center gap-2">
+              <Progress value={progress} className="flex-1 h-1.5" />
+              <span className="text-xs text-muted-foreground w-10 text-right">
+                {tasks.filter(t => t.data.estado === 'completada').length}/{tasks.length}
+              </span>
+            </div>
           </Card>
         </AccordionTrigger>
         <AccordionContent>
-          <ProjectDetails
-            order={record}
-            tasks={tasks}
-            api={api}
-            direccion_obra={cotizacion?.data?.direccion_obra as string | undefined}
-          />
+          {/* Lazy mount: ProjectDetails (y su Viewer3DModal) solo se monta al expandir */}
+          {expanded && (
+            <ProjectDetails
+              order={record}
+              tasks={tasks}
+              api={api}
+              direccion_obra={cotizacion?.data?.direccion_obra as string | undefined}
+            />
+          )}
         </AccordionContent>
       </AccordionItem>
     </Accordion>

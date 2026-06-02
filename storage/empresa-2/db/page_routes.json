@@ -1,5 +1,27 @@
 [
   {
+    "id": "e6f7a8b9-c0d1-2345-fabc-456789012346",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/dashboard",
+      "title": "ERP — Panel de Control",
+      "isPrivate": true,
+      "layout_mode": "container",
+      "blocks": [
+        {
+          "id": "block_dash_header",
+          "type": "header",
+          "config": {
+            "title": "Panel de Control",
+            "subtitle": "Selecciona un módulo para comenzar o revisa el estado de tus proyectos activos.",
+            "label": "ERP Muebles"
+          }
+        }
+      ]
+    },
+    "updated_at": "2026-06-01T01:59:04.525Z"
+  },
+  {
     "id": "db6124ac-0139-4b04-b1aa-b25ae0a53fd0",
     "context": "page_routes",
     "data": {
@@ -28,7 +50,7 @@
         }
       ]
     },
-    "updated_at": "2026-05-28T04:00:00.000Z"
+    "updated_at": "2026-06-01T01:59:05.518Z"
   },
   {
     "id": "8e2f478b-77da-4d74-b9e5-8cd1ed30e901",
@@ -74,7 +96,7 @@
         }
       ]
     },
-    "updated_at": "2026-05-28T03:13:47.616Z"
+    "updated_at": "2026-06-02T01:47:24.940Z"
   },
   {
     "id": "966c3d81-e7a7-431d-8172-05b55a964d2e",
@@ -223,13 +245,25 @@
           "config": {
             "label": "Enviar a Producción",
             "zap": "crear_orden_trabajo",
-            "variant": "default",
+            "variant": "outline",
             "icon": "Factory"
+          }
+        },
+        {
+          "id": "f1a2b3c4-d5e6-7890-fabc-def012345601",
+          "type": "action",
+          "context": "cotizaciones",
+          "schema_id": "03fa884c-e96e-43e4-8899-858d6d3be927",
+          "config": {
+            "label": "Generar Contrato",
+            "zap": "generar_contrato",
+            "variant": "default",
+            "icon": "FileSignature"
           }
         }
       ]
     },
-    "updated_at": "2026-05-31T00:00:00.000Z"
+    "updated_at": "2026-06-01T01:59:06.926Z"
   },
   {
     "id": "886f4199-9b12-4d58-836d-2af9de225bdd",
@@ -455,25 +489,79 @@
         }
       ]
     },
-    "updated_at": "2026-05-22T15:02:15.573Z"
+    "updated_at": "2026-06-02T01:47:09.100Z"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8901-abcd-ef1234567801",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/comercial",
+      "title": "Directorio Comercial",
+      "isPrivate": false,
+      "layout_mode": "container",
+      "blocks": [
+        {
+          "id": "block_comercial_header",
+          "type": "header",
+          "config": {
+            "title": "Seguimiento Comercial",
+            "subtitle": "Gestión del pipeline: leads, propuestas, contratos y registro de abonos.",
+            "label": "Área Comercial"
+          }
+        },
+        {
+          "id": "block_comercial_kanban",
+          "type": "comercial_kanban",
+          "context": "cotizaciones"
+        }
+      ]
+    },
+    "updated_at": "2026-06-01T02:18:37.813Z"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9012-bcde-f12345678902",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/contratos",
+      "title": "Generador de Contrato",
+      "isPrivate": false,
+      "layout_mode": "container",
+      "blocks": [
+        {
+          "id": "block_contrato_selector",
+          "type": "project_selector",
+          "context": "contratos",
+          "config": {
+            "singular": "contrato",
+            "label": "Seleccionar Contrato"
+          }
+        },
+        {
+          "id": "block_contrato_generator",
+          "type": "contrato_generator",
+          "context": "contratos"
+        }
+      ]
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
   },
   {
     "id": "70bdfb89-ab55-4e35-8909-f427acaa3ce5",
     "context": "page_routes",
     "data": {
       "path": "/app/production",
-      "title": "Directorio de Producción",
+      "title": "Producción",
       "isPrivate": false,
+      "layout_mode": "container",
       "blocks": [
         {
           "id": "028ec528-329e-4b86-b2e0-c13c5458138e",
-          "type": "production_directory",
-          "blocks": [],
+          "type": "production_kanban",
           "context": "ordenes_trabajo"
         }
       ],
       "order": 0
     },
-    "updated_at": "2026-05-31T15:09:21.595Z"
+    "updated_at": "2026-06-01T00:00:00.000Z"
   }
 ]

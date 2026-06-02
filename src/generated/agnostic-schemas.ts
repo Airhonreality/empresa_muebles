@@ -2,7 +2,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: .\storage\empresa-2\db\schema_definitions.json
 // Run:    npm run agnostic:compile
-// Generated: 2026-05-31T14:58:12.082Z
+// Generated: 2026-06-02T01:38:36.525Z
 // ============================================================
 
 // DataItem is the universal record wrapper used by the engine.
@@ -92,6 +92,7 @@ export interface Clientes {
   documento?: string  // Documento
   telefono?: string  // TelÃ©fono
   email?: string  // Email
+  domicilio?: string  // Domicilio / Dirección
 }
 
 export type ClientesRecord = AgnosticDataItem<Clientes>
@@ -106,7 +107,8 @@ export interface Cotizaciones {
   costos_operativos?: number  // Costos Operativos
   imprevistos_instalacion?: number  // Imprevistos de InstalaciÃ³n
   descuento_comercial?: number  // Descuento Comercial
-  ajuste_arbitrario?: number  // Ajuste TÃ©cnico
+  ajuste_arbitrario?: number  // Ajuste Técnico
+  estado?: string  // Estado Comercial
 }
 
 export type CotizacionesRecord = AgnosticDataItem<Cotizaciones>
@@ -154,6 +156,40 @@ export interface TareasProduccion {
 
 export type TareasProduccionRecord = AgnosticDataItem<TareasProduccion>
 
+// ─── Schema: "contratos" — primary field: "codigo_contrato" 
+export interface Contratos {
+  cotizacion_id: string  // Cotización Origen
+  codigo_contrato: string  // Código de Contrato
+  fecha_contrato: string  // Fecha del Contrato
+  contratante_domicilio?: string  // Domicilio del Contratante
+  plazo_ejecucion_texto: string  // Plazo de Ejecución (descripción)
+  holgura_dias?: number  // Holgura Operativa (días hábiles)
+  garantia_anios?: number  // Garantía (años)
+  objeto_items?: string  // Objeto del Contrato (lista de muebles)
+  especificaciones_estructura?: string  // Estructura (materiales principales)
+  especificaciones_herrajes?: string  // Herrajes y Accesorios
+  especificaciones_mesones?: string  // Mesones (si aplica)
+  condiciones_desmonte?: string  // Desmonte y Disposición
+  valor_total: number  // Valor Total del Contrato ($)
+  estado: string  // Estado del Contrato
+  email_asunto?: string  // Asunto del Correo
+  email_cuerpo?: string  // Cuerpo del Correo
+}
+
+export type ContratosRecord = AgnosticDataItem<Contratos>
+
+// ─── Schema: "abonos_contrato" — primary field: "numero_abono" 
+export interface AbonosContrato {
+  contrato_id: string  // Contrato
+  numero_abono: string  // Número de Abono
+  valor_abono: number  // Valor Recibido ($)
+  fecha_recibido?: string  // Fecha de Recepción
+  observaciones?: string  // Observaciones
+  verificado?: boolean  // Verificado
+}
+
+export type AbonosContratoRecord = AgnosticDataItem<AbonosContrato>
+
 // ─── Schema: "nav_links" 
 export interface NavLinks {
   label?: string  // Etiqueta
@@ -164,6 +200,18 @@ export interface NavLinks {
 }
 
 export type NavLinksRecord = AgnosticDataItem<NavLinks>
+
+// ─── Schema: "apoyo_tecnico" 
+export interface ApoyoTecnico {
+  cotizacion_id: string  // Cotizacion
+  tipo_recurso: string  // Tipo
+  imagen_url?: string  // Imagen
+  fecha_visita?: string  // Fecha_de_Visita
+  notas?: string  // Notas
+  lista_requisitos?: string  // Lista_de_Requisitos
+}
+
+export type ApoyoTecnicoRecord = AgnosticDataItem<ApoyoTecnico>
 
 // ============================================================
 // AgnosticSchemas — complete project schema map
@@ -185,9 +233,12 @@ export interface AgnosticSchemas {
   prefabricados_items: PrefabricadosItems
   ordenes_trabajo: OrdenesTrabajo
   tareas_produccion: TareasProduccion
+  contratos: Contratos
+  abonos_contrato: AbonosContrato
   nav_links: NavLinks
+  apoyo_tecnico: ApoyoTecnico
 }
 
 // Valid values for block.context and fetch(`/api/vault?namespace=${ctx}`)
 export type SchemaName = keyof AgnosticSchemas
-// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'cotizaciones_snapshot' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'nav_links'
+// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'cotizaciones_snapshot' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico'

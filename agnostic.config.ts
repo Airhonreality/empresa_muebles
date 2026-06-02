@@ -35,8 +35,12 @@ export default defineConfig({
   // Add your AI-generated specialized components here.
   // Key must match the "type" field in page_routes.json exactly.
   blocks: {
-    cotizador_pro: () => import('./src/components/specialized/CotizadorPro'),
+    cotizador_pro:        () => import('./src/components/specialized/CotizadorPro'),
     production_directory: () => import('./src/components/specialized/ProductionDirectory'),
+    contrato_generator:   () => import('./src/components/specialized/ContratoGenerator'),
+    comercial_directory:  () => import('./src/components/specialized/ComercialDirectory'),
+    comercial_kanban:     () => import('./src/components/specialized/kanban/ComercialKanban'),
+    production_kanban:    () => import('./src/components/specialized/kanban/ProductionKanban'),
   },
 
   features: {

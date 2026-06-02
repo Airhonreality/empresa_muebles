@@ -11,7 +11,7 @@ import type {
   ProductosCatalogoRecord,
 } from '@/generated/agnostic-schemas'
 import { useRelationData } from '@/lib/agnostic/hooks/useRelationData'
-import { useMemo, useRef, useEffect } from 'react'
+import { useMemo, useRef, useEffect, useState } from 'react'
 import * as THREE from 'three'
 
 function ThreeScene() {
@@ -142,6 +142,11 @@ export default function Viewer3DModal({ isOpen, onClose, order }: {
     [allSpaces, order.data.cotizacion_id]
   )
 
+  // Un solo tab activo → un solo WebGL context activo
+  const [activeTab, setActiveTab] = useState<string | undefined>(undefined)
+  const defaultTab = activeSpaces[0]?.id
+  const currentTab = activeTab ?? defaultTab
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[80vh] flex flex-col overflow-hidden">
@@ -154,7 +159,11 @@ export default function Viewer3DModal({ isOpen, onClose, order }: {
             No hay espacios activos en la cotización de esta orden.
           </p>
         ) : (
-          <Tabs defaultValue={activeSpaces[0]?.id} className="flex-grow flex flex-col overflow-hidden">
+          <Tabs
+            value={currentTab}
+            onValueChange={setActiveTab}
+            className="flex-grow flex flex-col overflow-hidden"
+          >
             <TabsList className="shrink-0">
               {activeSpaces.map(space => (
                 <TabsTrigger key={space.id} value={space.id}>
@@ -170,7 +179,8 @@ export default function Viewer3DModal({ isOpen, onClose, order }: {
               <TabsContent key={space.id} value={space.id} className="flex-grow overflow-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="rounded-lg bg-muted flex items-center justify-center min-h-64">
-                    <ThreeScene />
+                    {/* Solo monta ThreeScene en el tab activo → 1 WebGL context máximo */}
+                    {currentTab === space.id && <ThreeScene />}
                   </div>
                   <div>
                     <Tabs defaultValue="items" className="w-full">

@@ -1,0 +1,43 @@
+/**
+ * 🪵 SATELLITE TOKENS — Empresa de Muebles (Premium Warm Palette)
+ * ─────────────────────────────────────────────────────────────────
+ * Estos tokens se inyectan DESPUÉS de globals.css en el <head>,
+ * por lo que sobrescriben los defaults del engine por cascada CSS.
+ *
+ * Editarlos aquí NO genera conflictos con el seed/upstream.
+ * Ruta: storage/empresa-2/styles/tokens.css
+ */
+:root {
+  /* 🪵 Paleta orgánica — muebles de alta gama */
+  --background: 30 15% 98.5%;        /* Arena ultra suave (Warm Off-white) */
+  --foreground: 20 20% 12%;          /* Carbón orgánico */
+  --card: 30 10% 99.5%;
+  --card-foreground: 20 20% 12%;
+  --popover: 30 10% 99.5%;
+  --popover-foreground: 20 20% 12%;
+
+  --secondary: 35 12% 93%;           /* Crema suave */
+  --secondary-foreground: 28 45% 35%;
+  --muted: 30 10% 94.5%;             /* Warm Muted Gray */
+  --muted-foreground: 25 10% 46%;
+  --accent: 30 10% 93%;
+  --accent-foreground: 28 45% 30%;
+
+  --border: 30 10% 87%;              /* Líneas sutiles de color tierra */
+  --input: 30 10% 87%;
+  --radius: 0.85rem;                 /* Esquinas redondeadas premium */
+
+  /* 🛰️ Satellite overrides (consumed by Tailwind via --sat-*) */
+  --sat-bg:             hsl(var(--background));
+  --sat-fg:             hsl(var(--foreground));
+  --sat-card:           hsl(var(--card));
+  --sat-card-fg:        hsl(var(--card-foreground));
+  --sat-muted:          hsl(var(--muted));
+  --sat-muted-fg:       hsl(var(--muted-foreground));
+  --sat-border:         hsl(var(--border));
+  --sat-input:          hsl(var(--input));
+  --sat-radius:         var(--radius);
+
+  /* 🪚 Tipografía Premium */
+  --sat-font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
+}
