@@ -42,11 +42,9 @@ next-env.d.ts
 # Merging upstream/main into a project fork will NEVER touch these paths.
 
 # Tenant storage — data files stay out of the seed repo.
-# In a project fork, system_config.json is intentionally tracked so the silo
-# selection persists in git and Vercel never shows the setup screen.
+# In a project fork, all storage/ is yours to commit freely.
 storage/*
 !storage/.gitkeep
-!storage/system_config.json
 
 # Project-specific custom blocks built with AI
 # Exception: _TEMPLATE.tsx is part of the seed (shows the pattern to follow)
