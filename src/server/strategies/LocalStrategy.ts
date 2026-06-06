@@ -195,17 +195,8 @@ export class LocalStrategy implements AgnosticBridge {
   private async _doRemove(namespace: string, id: string): Promise<void> {
     const existing = await this.read(namespace);
     const filtered = existing.filter(i => i.id !== id);
-<<<<<<< HEAD
 
-    let filePath = this.getFilePath(namespace);
-    if (namespace === 'system_config') {
-      filePath = path.join(process.cwd(), 'storage', 'system_config.json');
-    }
-
-=======
-    
     const filePath = this.getFilePath(namespace);
->>>>>>> upstream/feature/agile-rendering-engine
     await fs.mkdir(path.dirname(filePath), { recursive: true });
 
     // Respaldar estado previo en el VCS local
