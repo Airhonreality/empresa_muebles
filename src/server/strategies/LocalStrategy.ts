@@ -79,8 +79,6 @@ export class LocalStrategy implements AgnosticBridge {
    */
   async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
-      await fs.mkdir(this.dbDir, { recursive: true });
-
       // Handle system config stored at the neutral storage root
       if (namespace === 'system_config') {
         const rootPath = path.join(process.cwd(), 'storage', 'system_config.json');
