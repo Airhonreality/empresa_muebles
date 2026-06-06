@@ -11,7 +11,7 @@ param(
     [Parameter(Mandatory)]
     [string]$Name,
 
-    [string]$Branch = "main",
+    [string]$Branch = "",   # vacio = usar la rama activa del seed
 
     [switch]$Private = $true
 )
@@ -22,6 +22,10 @@ $scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $seedDir     = Resolve-Path (Join-Path $scriptDir "../..") | Select-Object -ExpandProperty Path
 $registryPath = Join-Path $scriptDir "workspaces.json"
 $seedUrl     = (& git -C $seedDir remote get-url origin)
+
+# Usar la rama activa del seed como fuente de verdad
+$seedBranch = (& git -C $seedDir rev-parse --abbrev-ref HEAD).Trim()
+if (-not $Branch) { $Branch = $seedBranch }
 
 # El workspace queda como hermano del engine seed
 $parentDir   = Split-Path -Parent $seedDir
@@ -52,8 +56,8 @@ if ($exists) {
 
 # 1. Clonar el seed
 
-Write-Step "Clonando engine seed..."
-git clone $seedUrl $wsPath --branch main
+Write-Step "Clonando engine seed (rama: $Branch)..."
+git clone $seedUrl $wsPath --branch $Branch
 if ($LASTEXITCODE -ne 0) { Write-Fail "No se pudo clonar el seed." }
 Write-Ok "Clonado en $wsPath"
 
@@ -76,12 +80,7 @@ $newOrigin = "https://github.com/$ghUser/$Name.git"
 git remote add origin $newOrigin
 Write-Ok "Repo creado: $newOrigin"
 
-# 4. Crear rama de trabajo y empujar
-
-if ($Branch -ne "main") {
-    Write-Step "Creando rama '$Branch'..."
-    git checkout -b $Branch
-}
+# 4. Empujar rama al nuevo origin
 
 Write-Step "Empujando a GitHub..."
 git push -u origin $Branch

@@ -16,6 +16,16 @@ DEVs/
 El **engine** es el cerebro compartido. Los **proyectos** son los que le dan identidad y datos a cada cliente.  
 El engine mejora solo — tus proyectos reciben esas mejoras con un comando.
 
+Cada proyecto tiene su propio directorio `storage/` que actúa como base de datos viva:
+
+```
+mi_proyecto/
+  storage/
+    db/         ← Schemas, rutas, registros (JSON)
+    styles/     ← Tokens visuales
+    manifest.json  ← Estrategia de almacenamiento activa
+```
+
 ---
 
 ## Crear un proyecto nuevo
@@ -29,24 +39,75 @@ Abre la terminal en la carpeta del engine (`agnostic system`) y corre:
 Reemplaza `nombre_del_proyecto` con el nombre real (sin espacios, usa guión bajo).
 
 **Qué pasa automáticamente:**
-- Se crea la carpeta `../nombre_del_proyecto` con el engine adentro
+- Se clona el engine en `../nombre_del_proyecto`
 - Se crea el repositorio en GitHub
 - El proyecto queda registrado para recibir mejoras del engine en el futuro
 
-**Qué haces tú después (una sola vez):**
+**Qué haces tú después:**
 
-1. Entra a la carpeta del proyecto:
-   ```powershell
-   cd ..\nombre_del_proyecto
-   npm install
-   npm run dev
-   ```
+```powershell
+cd ..\nombre_del_proyecto
+npm install
+npm run dev
+```
 
-2. Abre el navegador en `http://localhost:3000/_agnostic`
+Abre `http://localhost:3000` — si no hay usuarios registrados, verás el modo **bootstrap**: crea el primer administrador directamente desde ahí.
 
-3. Crea el **silo** del proyecto desde la UI — esto le da identidad y dice dónde vivirán los datos.
+---
 
-4. Ya puedes crear schemas, rutas y datos desde el panel.
+## Configurar el despliegue
+
+Una vez dentro del panel (`http://localhost:3000/schema`), ve al tab **⚡ Deploy** en el rail izquierdo.
+
+Ahí verás en tiempo real qué variables de entorno están configuradas y cuáles faltan, con tutoriales paso a paso para obtener cada clave.
+
+### Estrategias disponibles
+
+| Estrategia | Cuándo usarla | Variables requeridas |
+|---|---|---|
+| **Local** (dev) | Desarrollo en tu máquina | Ninguna |
+| **GitHub** (prod) | Producción gratuita, datos en JSON | `GITHUB_TOKEN`, `GITHUB_REPO` |
+| **Supabase** (prod) | Producción con base de datos relacional | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+
+### Archivos (subidas) — Cloudflare R2
+
+Para que los uploads funcionen en producción configura:
+
+```
+CF_ACCOUNT_ID=
+CF_R2_BUCKET=
+CF_R2_ACCESS_KEY_ID=
+CF_R2_SECRET_ACCESS_KEY=
+CF_R2_PUBLIC_URL=        ← opcional, para URLs públicas
+```
+
+Sin estas variables las subidas se guardan localmente (solo sirve en dev).
+
+### Auth — activar login con contraseña
+
+Por defecto el panel está abierto (modo desarrollo). Para activar login:
+
+```
+SESSION_SECRET=un_secreto_de_64_caracteres_hexadecimales
+```
+
+Genera el secreto con PowerShell:
+
+```powershell
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$b = New-Object byte[] 32
+$rng.GetBytes($b)
+[System.BitConverter]::ToString($b).Replace('-','').ToLower()
+```
+
+Sin `SESSION_SECRET`, el panel funciona sin login — ideal para desarrollo local.
+
+### Dónde poner las variables
+
+- **Desarrollo local:** archivo `.env.local` en la raíz del proyecto (no se sube a git)
+- **Vercel:** Settings → Environment Variables
+
+El tab Deploy del panel muestra exactamente cuáles faltan y qué significa cada una.
 
 ---
 
@@ -57,10 +118,8 @@ cd ..\nombre_del_proyecto
 npm run dev
 ```
 
-Abre `http://localhost:3000` — tu app.  
-Abre `http://localhost:3000/_agnostic` — el panel de configuración.
-
-Nada más.
+- `http://localhost:3000` — tu app
+- `http://localhost:3000/schema` — el panel de configuración (schemas, rutas, datos, deploy)
 
 ---
 
