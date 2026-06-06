@@ -1,25 +1,45 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import type { DataItem } from '@agnostic/core'
-import { X } from 'lucide-react'
+import { X, Edit3, Plus } from 'lucide-react'
 import { COP } from './utils'
 import type { ItemsVariante, ProductosCatalogo } from '@/generated/agnostic-schemas'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { fuzzySearch } from '@/lib/utils'
 
-export function ItemRow({ item, catalogo, onUpdate, onDelete }: {
+export function ItemRow({ item, catalogo, onUpdate, onDelete, onEditCatalogItem, onAddCatalogItem, autoFocus }: {
   item: DataItem; catalogo: DataItem[]
   onUpdate: (p: Partial<ItemsVariante>) => void; onDelete: () => void
+  onEditCatalogItem: (id: string) => void
+  onAddCatalogItem: (initialSearch: string) => void
+  autoFocus?: boolean
 }) {
   const d = item.data as any as ItemsVariante
   const [catSearch, setCatSearch] = useState('')
   const [catOpen, setCatOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const catItem = catalogo.find(c => c.id === d.catalogo_id)
-  const catData = catItem?.data as any as ProductosCatalogo | undefined
-  const displayName = catData?.descripcion || ''
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      // Small timeout to ensure the DOM is ready and prevent potential render race conditions
+      const timer = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus()
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [autoFocus])
 
-  const filtered = catSearch
-    ? catalogo.filter(c => (c.data as any as ProductosCatalogo).descripcion?.toLowerCase().includes(catSearch.toLowerCase())).slice(0, 8)
-    : []
+  // Resolve display name
+  const matched = catalogo.find(c => c.id === d.catalogo_id)
+  const displayName = matched ? (matched.data as any as ProductosCatalogo).descripcion : ''
+
+  const filtered = React.useMemo(() => {
+    return fuzzySearch(catalogo, catSearch, c => {
+      const cd = c.data as any as ProductosCatalogo
+      return cd.descripcion || ''
+    })
+  }, [catSearch, catalogo])
 
   const pickCat = (c: DataItem) => {
     const cd = c.data as any as ProductosCatalogo
@@ -33,9 +53,10 @@ export function ItemRow({ item, catalogo, onUpdate, onDelete }: {
     <tr className="group/row border-b border-stone-50 hover:bg-amber-50/20 transition-colors">
       {/* Descripción */}
       <td className="py-2 pl-3 pr-2">
-        <Popover open={catOpen && filtered.length > 0} onOpenChange={setCatOpen}>
+        <Popover open={catOpen} onOpenChange={setCatOpen}>
           <PopoverTrigger asChild>
             <input type="text"
+              ref={inputRef}
               value={catOpen ? catSearch : displayName}
               onChange={e => { setCatSearch(e.target.value); setCatOpen(true) }}
               onFocus={() => { setCatSearch(''); setCatOpen(true) }}
@@ -51,6 +72,20 @@ export function ItemRow({ item, catalogo, onUpdate, onDelete }: {
             onOpenAutoFocus={(e) => e.preventDefault()}
             className="w-72 bg-white border border-stone-200 rounded-xl shadow-xl overflow-hidden p-0 max-h-60 overflow-y-auto"
           >
+            <div className="border-b border-stone-100 p-1.5 bg-stone-50 flex items-center justify-between">
+              <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider px-1">Catálogo</span>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  onAddCatalogItem(catSearch)
+                  setCatOpen(false)
+                }}
+                className="text-[10px] text-amber-600 hover:text-amber-700 font-bold px-1.5 py-0.5 hover:bg-amber-100/50 rounded flex items-center gap-0.5 transition-colors"
+              >
+                <Plus size={10} /> Nuevo producto
+              </button>
+            </div>
             {filtered.map(c => {
               const cd = c.data as any as ProductosCatalogo
               return (
@@ -61,6 +96,11 @@ export function ItemRow({ item, catalogo, onUpdate, onDelete }: {
                 </button>
               )
             })}
+            {filtered.length === 0 && (
+              <div className="p-3 text-center text-xs text-stone-400">
+                Sin coincidencias en el catálogo
+              </div>
+            )}
           </PopoverContent>
         </Popover>
       </td>
@@ -98,12 +138,22 @@ export function ItemRow({ item, catalogo, onUpdate, onDelete }: {
       <td className="py-2 pl-1 pr-3 text-right w-28">
         <span className="text-xs font-semibold text-stone-700 tabular-nums">{COP(d.total_linea)}</span>
       </td>
-      {/* Delete */}
-      <td className="py-2 pr-1 w-7">
-        <button onClick={onDelete}
-          className="opacity-0 group-hover/row:opacity-100 text-stone-200 hover:text-red-400 transition-all">
-          <X size={12} />
-        </button>
+      {/* Actions (Edit / Delete) */}
+      <td className="py-2 pr-1 w-14">
+        <div className="flex items-center gap-1.5 opacity-0 group-hover/row:opacity-100 transition-all justify-end pr-2">
+          {d.catalogo_id && (
+            <button onClick={() => onEditCatalogItem(d.catalogo_id!)}
+              className="text-stone-300 hover:text-amber-600 transition-colors p-1"
+              title="Editar producto en catálogo">
+              <Edit3 size={11} />
+            </button>
+          )}
+          <button onClick={onDelete}
+            className="text-stone-300 hover:text-red-400 transition-colors p-1"
+            title="Eliminar fila">
+            <X size={12} />
+          </button>
+        </div>
       </td>
     </tr>
   )

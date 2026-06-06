@@ -32,5 +32,8 @@
         "copilot/oswe-vscode-prime"
       ]
     }
+  },
+  "chat.tools.terminal.autoApprove": {
+    "npm install": true
   }
 }

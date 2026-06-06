@@ -596,7 +596,7 @@
           "config": {
             "relation": {
               "entity": "clientes",
-              "parentKey": "id"
+              "parent_key": "id"
             }
           }
         },

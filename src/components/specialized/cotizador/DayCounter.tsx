@@ -12,8 +12,9 @@ export function DayCounter({ label, value, onChange }: {
   }, [v])
 
   const commit = () => {
-    const parsed = parseFloat(str) || 0
-    onChange(Math.max(0, parsed))
+    const normalized = str.replace(',', '.')
+    const parsed = parseFloat(normalized)
+    onChange(Math.max(0, isNaN(parsed) ? v : parsed))
   }
 
   const dec = () => {

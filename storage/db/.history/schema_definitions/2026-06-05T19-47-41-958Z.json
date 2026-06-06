@@ -1,0 +1,1555 @@
+[
+  {
+    "id": "6addc0dc-f61b-4a12-a3fe-9c4ea7eb07be",
+    "context": "schema_definitions",
+    "data": {
+      "name": "espacio_variantes",
+      "fields": [
+        {
+          "id": "v1_cotizacion",
+          "key": "cotizacion_id",
+          "label": "Cotizacion Perteneciente",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "cotizaciones",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "v1_nombre_espacio",
+          "key": "nombre_espacio",
+          "label": "Nombre del Espacio (e.g. Cocina)",
+          "type": "text",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "v1_nombre_variante",
+          "key": "nombre_variante",
+          "label": "Nombre de la Variante / Alternativa",
+          "type": "text",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {
+            "isPrimary": true
+          },
+          "isPrimary": true
+        },
+        {
+          "id": "v1_activa",
+          "key": "activa",
+          "label": "Variante Seleccionada para Cotizacion",
+          "type": "boolean",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "v1_dias_desarrollo",
+          "key": "jornadas_desarrollo_tecnico",
+          "label": "Jornadas de Desarrollo Tecnico (Dias)",
+          "type": "number",
+          "required": false,
+          "width": "third",
+          "section": "Mano de Obra (Jornadas)",
+          "config": {}
+        },
+        {
+          "id": "v1_dias_ensamblaje",
+          "key": "jornadas_ensamblaje_taller",
+          "label": "Jornadas de Ensamblaje en Taller (Dias)",
+          "type": "number",
+          "required": false,
+          "width": "third",
+          "section": "Mano de Obra (Jornadas)",
+          "config": {}
+        },
+        {
+          "id": "v1_dias_instalacion",
+          "key": "jornadas_instalacion_obra",
+          "label": "Jornadas de Instalacion en Obra (Dias)",
+          "type": "number",
+          "required": false,
+          "width": "third",
+          "section": "Mano de Obra (Jornadas)",
+          "config": {}
+        },
+        {
+          "key": "notas_markdown",
+          "type": "markdown",
+          "required": false,
+          "label": "Notas en Markdown"
+        },
+        {
+          "id": "369ec3cc-3bf9-4b58-97ce-5faece4e7af8",
+          "key": "imagenes",
+          "type": "text",
+          "label": "Im?genes",
+          "required": false
+        },
+        {
+          "id": "a9a3b2b1-1234-4321-abcd-ef1234567890",
+          "key": "colores",
+          "type": "text",
+          "label": "Colores",
+          "required": false
+        },
+        {
+          "key": "descripcion",
+          "label": "Descripción del Espacio",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "descripcion_alternativa",
+          "label": "Descripción de Alternativa",
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-06-04T19:03:08.409Z"
+  },
+  {
+    "id": "1f4c3f96-5f6e-4d5f-816c-dc3334f40a6f",
+    "context": "schema_definitions",
+    "data": {
+      "name": "items_variante",
+      "fields": [
+        {
+          "id": "i1_variante",
+          "key": "variante_id",
+          "label": "Variante Perteneciente",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "espacio_variantes",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "i1_producto",
+          "key": "catalogo_id",
+          "label": "Seleccionar del Catalogo de Insumos",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "Detalle del Material",
+          "config": {
+            "relation": {
+              "entity": "productos_catalogo",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "i1_unidad",
+          "key": "unidad_medida",
+          "label": "Unidad de Medida",
+          "type": "text",
+          "required": false,
+          "width": "half",
+          "section": "Detalle del Material",
+          "config": {
+            "derivation": {
+              "op": "LOOKUP",
+              "args": [
+                "catalogo_id",
+                "unidad_medida"
+              ],
+              "context": "productos_catalogo"
+            }
+          }
+        },
+        {
+          "id": "i1_cantidad",
+          "key": "cantidad",
+          "label": "Cantidad / Medida",
+          "type": "number",
+          "required": true,
+          "width": "half",
+          "section": "Valores",
+          "config": {}
+        },
+        {
+          "id": "i1_precio_unitario",
+          "key": "precio_unitario",
+          "label": "Precio Unitario ($)",
+          "type": "number",
+          "required": true,
+          "width": "half",
+          "section": "Valores",
+          "config": {
+            "derivation": {
+              "op": "LOOKUP",
+              "args": [
+                "catalogo_id",
+                "precio_publico"
+              ],
+              "context": "productos_catalogo"
+            }
+          }
+        },
+        {
+          "id": "i1_total_linea",
+          "key": "total_linea",
+          "label": "Total Material ($)",
+          "type": "number",
+          "required": false,
+          "width": "half",
+          "section": "Valores",
+          "config": {
+            "derivation": {
+              "op": "MULTIPLY",
+              "args": [
+                "cantidad",
+                "precio_unitario"
+              ]
+            }
+          }
+        },
+        {
+          "key": "origen_prefabricado_id",
+          "type": "relation",
+          "required": false,
+          "label": "Origen Prefabricado",
+          "config": {
+            "relation": {
+              "entity": "prefabricados",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "key": "imagen_url",
+          "type": "image",
+          "required": false,
+          "label": "URL de Imagen del Ítem"
+        }
+      ]
+    },
+    "updated_at": "2026-05-22T12:59:00.175Z"
+  },
+  {
+    "id": "db012ec9-130e-4189-bdfe-b383afd21aad",
+    "context": "schema_definitions",
+    "data": {
+      "name": "productos_catalogo",
+      "fields": [
+        {
+          "id": "f1-sku",
+          "key": "sku",
+          "label": "SKU",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f2-tipo",
+          "key": "tipo",
+          "label": "Tipo",
+          "type": "select",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {},
+          "options": [
+            {
+              "label": "Tableros / Maderas",
+              "value": "Tableros / Maderas"
+            },
+            {
+              "label": "Herrajes / Accesorios",
+              "value": "Herrajes / Accesorios"
+            },
+            {
+              "label": "Modulos prefabricados",
+              "value": "Modulos prefabricados"
+            },
+            {
+              "label": "Piedras / Mesones",
+              "value": "Piedras / Mesones"
+            },
+            {
+              "label": "Electrodomesticos / Gasodomesticos",
+              "value": "Electrodomesticos / Gasodomesticos"
+            },
+            {
+              "label": "Servicio",
+              "value": "Servicio"
+            }
+          ]
+        },
+        {
+          "id": "f3-desc",
+          "key": "descripcion",
+          "label": "DescripciÃ³n",
+          "type": "text",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "isPrimary": true
+          },
+          "isPrimary": true
+        },
+        {
+          "id": "f4-um",
+          "key": "unidad_medida",
+          "label": "Unidad de Medida (Um)",
+          "type": "select",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {},
+          "options": [
+            {
+              "label": "unidad",
+              "value": "unidad"
+            },
+            {
+              "label": "metro lineal",
+              "value": "metro lineal"
+            },
+            {
+              "label": "metro cuadrado",
+              "value": "metro cuadrado"
+            },
+            {
+              "label": "tablero",
+              "value": "tablero"
+            },
+            {
+              "label": "juego",
+              "value": "juego"
+            },
+            {
+              "label": "día",
+              "value": "día"
+            },
+            {
+              "label": "jornada",
+              "value": "jornada"
+            },
+            {
+              "label": "servicio",
+              "value": "servicio"
+            }
+          ]
+        },
+        {
+          "id": "f5-ancho",
+          "key": "ancho",
+          "label": "Ancho",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f6-alto",
+          "key": "alto",
+          "label": "Alto",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f7-profundo",
+          "key": "profundo",
+          "label": "Profundo",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f8-stock",
+          "key": "stock_actual",
+          "label": "Stock Actual",
+          "type": "number",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f9-preciod",
+          "key": "precio_directo",
+          "label": "Precio Directo",
+          "type": "number",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f10-preciop",
+          "key": "precio_publico",
+          "label": "Precio PÃºblico",
+          "type": "number",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "format": "currency",
+            "derivation": {
+              "operator": "multiply",
+              "constants": [
+                1.3
+              ],
+              "source_field": "precio_directo"
+            }
+          }
+        },
+        {
+          "id": "f11-img",
+          "key": "imagen_url",
+          "label": "Imagen (URL)",
+          "type": "image",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f12-m3d",
+          "key": "modelo_3d",
+          "label": "Modelo 3D (.glb / .obj)",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f13-ref",
+          "key": "url_referencia",
+          "label": "URL de Referencia / Ficha",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "f14-prov",
+          "key": "proveedor",
+          "label": "Proveedor",
+          "type": "select",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {},
+          "options": [
+            {
+              "label": "Dalver Fonseca",
+              "value": "Dalver Fonseca"
+            }
+          ]
+        }
+      ]
+    },
+    "updated_at": "2026-06-04T18:44:12.038Z"
+  },
+  {
+    "id": "9328a3a3-c62a-45d7-b8c8-018d6ab19a3a",
+    "context": "schema_definitions",
+    "data": {
+      "name": "imagenes_espacio",
+      "fields": [
+        {
+          "id": "img1_espacio",
+          "key": "espacio_variante_id",
+          "label": "Espacio Perteneciente",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "espacio_variantes",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "img2_url",
+          "key": "imagen_url",
+          "label": "Imagen de DiseÃ±o / Referente (URL)",
+          "type": "image",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "img3_desc",
+          "key": "descripcion",
+          "label": "DescripciÃ³n",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "img4_orden",
+          "key": "orden",
+          "label": "Orden",
+          "type": "number",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        }
+      ]
+    },
+    "updated_at": "2026-05-21T23:48:44.498Z"
+  },
+  {
+    "id": "45fe6e43-ec9f-43e7-bee7-c2768bd1f940",
+    "context": "schema_definitions",
+    "data": {
+      "name": "cotizaciones_snapshot",
+      "fields": [
+        {
+          "id": "s1_cotizacion",
+          "key": "cotizacion_id",
+          "label": "CotizaciÃ³n",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "cotizaciones",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "s2_fecha",
+          "key": "fecha_exportacion",
+          "label": "Fecha de ExportaciÃ³n",
+          "type": "date",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "s3_variant",
+          "key": "variant_name",
+          "label": "Variante Seleccionada",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "s4_total",
+          "key": "total_neto",
+          "label": "Total Neto",
+          "type": "number",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "s5_detalle",
+          "key": "detalle_json",
+          "label": "Detalle (JSON)",
+          "type": "text",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "s6_html",
+          "key": "html_pdf",
+          "label": "HTML PDF",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        }
+      ]
+    },
+    "updated_at": "2026-05-21T23:48:44.506Z"
+  },
+  {
+    "id": "fc1dcb7e-aca8-4235-93bd-e3cc28aa79be",
+    "context": "schema_definitions",
+    "data": {
+      "name": "clientes",
+      "fields": [
+        {
+          "id": "5049f76c-6fad-4224-b805-0067b0513fab",
+          "key": "nombre",
+          "label": "Nombre",
+          "type": "text",
+          "required": true,
+          "section": "General",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "44b8ce72-81a8-4a96-909b-152843dad5eb",
+          "key": "documento",
+          "label": "Documento",
+          "type": "text",
+          "required": false,
+          "section": "General",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "c4c1a3db-e6e6-460a-b1f7-1bd2f4da1861",
+          "key": "telefono",
+          "label": "TelÃ©fono",
+          "type": "text",
+          "required": false,
+          "section": "General",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "2ff7304e-801d-4d33-adda-ecafa5f3ebe6",
+          "key": "email",
+          "label": "Email",
+          "type": "text",
+          "required": false,
+          "section": "General",
+          "width": "full",
+          "config": {}
+        },
+        {
+          "id": "a1f2e3d4-b5c6-7890-abcd-ef1234567801",
+          "key": "domicilio",
+          "label": "Domicilio / Dirección",
+          "type": "text",
+          "required": false,
+          "section": "General",
+          "width": "full",
+          "config": {}
+        }
+      ]
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  },
+  {
+    "id": "03fa884c-e96e-43e4-8899-858d6d3be927",
+    "context": "schema_definitions",
+    "data": {
+      "name": "cotizaciones",
+      "fields": [
+        {
+          "id": "be2de1c1-81fd-4885-86aa-5f107f38618d",
+          "key": "cliente_id",
+          "label": "Cliente",
+          "type": "relation",
+          "required": false,
+          "section": "General",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "clientes",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "6ce87fe6-75dd-4af8-a13e-84fae330a729",
+          "key": "nombre_proyecto",
+          "label": "Nombre del Proyecto",
+          "type": "text",
+          "required": true,
+          "section": "General",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "b3870e98-061f-4485-854a-4769a08fc381",
+          "key": "direccion_obra",
+          "label": "DirecciÃ³n de la Obra",
+          "type": "text",
+          "required": false,
+          "section": "General",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "552314a8-b89d-4942-a17f-4f0a35b04049",
+          "key": "dias_entrega_estimados",
+          "label": "DÃ­as de Entrega Estimados",
+          "type": "number",
+          "required": false,
+          "section": "Condiciones de la Obra",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "4e4d7477-965b-4519-bf79-a35c8dece059",
+          "key": "garantia_anios",
+          "label": "GarantÃ­a (aÃ±os)",
+          "type": "number",
+          "required": false,
+          "section": "Condiciones de la Obra",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "2a217b3b-1884-419b-b859-971f12185c5b",
+          "key": "costos_operativos",
+          "label": "Costos Operativos",
+          "type": "number",
+          "required": false,
+          "section": "Cierre TÃ©cnico",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "79c91bce-edfe-4093-8ada-bb6ab381f369",
+          "key": "imprevistos_instalacion",
+          "label": "Imprevistos de InstalaciÃ³n",
+          "type": "number",
+          "required": false,
+          "section": "Cierre TÃ©cnico",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "4eaffd57-81b3-41d0-a4ba-99e7e83d6a9b",
+          "key": "descuento_comercial",
+          "label": "Descuento Comercial",
+          "type": "number",
+          "required": false,
+          "section": "Cierre TÃ©cnico",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "id": "bf3a2279-31fa-4622-99be-730d167ee1cd",
+          "key": "ajuste_arbitrario",
+          "label": "Ajuste Técnico",
+          "type": "number",
+          "required": false,
+          "section": "Cierre Técnico",
+          "width": "full",
+          "config": {}
+        },
+        {
+          "id": "c9d0e1f2-a3b4-5678-cdef-012345678901",
+          "key": "estado",
+          "label": "Estado Comercial",
+          "type": "select",
+          "required": false,
+          "section": "Estado",
+          "width": "full",
+          "config": {
+            "options": [
+              "activa",
+              "enviada",
+              "en_contrato",
+              "pre_produccion",
+              "produccion",
+              "entregada"
+            ]
+          }
+        }
+      ]
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  },
+  {
+    "id": "189a09f5-ee5c-4514-ab13-a62d4bcaecae",
+    "context": "schema_definitions",
+    "data": {
+      "name": "prefabricados",
+      "fields": [
+        {
+          "key": "nombre",
+          "type": "text",
+          "required": true,
+          "label": "Nombre del Prefabricado"
+        },
+        {
+          "key": "descripcion",
+          "type": "text",
+          "required": false,
+          "label": "Descripción"
+        },
+        {
+          "key": "catalogo_id",
+          "type": "relation",
+          "required": true,
+          "label": "Producto Maestro del Catálogo",
+          "config": {
+            "relation": {
+              "entity": "productos_catalogo",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "key": "imagen_url",
+          "type": "image",
+          "required": false,
+          "label": "URL de Imagen"
+        }
+      ]
+    },
+    "updated_at": "2026-05-22T12:59:00.164Z"
+  },
+  {
+    "id": "4200ef36-0e94-4356-89e9-870d0e80048d",
+    "context": "schema_definitions",
+    "data": {
+      "name": "prefabricados_items",
+      "fields": [
+        {
+          "key": "prefabricado_id",
+          "type": "relation",
+          "required": true,
+          "label": "Prefabricado Asociado",
+          "config": {
+            "relation": {
+              "entity": "prefabricados",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "key": "catalogo_id",
+          "type": "relation",
+          "required": true,
+          "label": "Producto del Catálogo",
+          "config": {
+            "relation": {
+              "entity": "productos_catalogo",
+              "parentKey": "id"
+            }
+          }
+        },
+        {
+          "key": "cantidad",
+          "type": "number",
+          "required": true,
+          "label": "Cantidad"
+        },
+        {
+          "key": "unidad_medida",
+          "type": "text",
+          "required": false,
+          "label": "Unidad de Medida"
+        }
+      ]
+    },
+    "updated_at": "2026-05-22T12:59:00.170Z"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "context": "schema_definitions",
+    "data": {
+      "name": "ordenes_trabajo",
+      "fields": [
+        {
+          "id": "ot1_cotizacion",
+          "key": "cotizacion_id",
+          "label": "Cotización Origen",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "cotizaciones",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "ot2_codigo",
+          "key": "codigo_orden",
+          "label": "Código de Orden",
+          "type": "text",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {
+            "isPrimary": true
+          },
+          "isPrimary": true
+        },
+        {
+          "id": "ot3_estado",
+          "key": "estado",
+          "label": "Estado",
+          "type": "select",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {
+            "options": [
+              "pendiente",
+              "en_proceso",
+              "instalacion",
+              "entregada",
+              "garantia"
+            ]
+          }
+        },
+        {
+          "id": "ot4_fecha_entrega",
+          "key": "fecha_entrega",
+          "label": "Fecha de Entrega",
+          "type": "date",
+          "required": false,
+          "width": "half",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "ot5_notas",
+          "key": "notas",
+          "label": "Notas",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        }
+      ]
+    },
+    "updated_at": "2026-05-30T23:00:00.000Z"
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "context": "schema_definitions",
+    "data": {
+      "name": "tareas_produccion",
+      "fields": [
+        {
+          "id": "tp1_orden",
+          "key": "orden_trabajo_id",
+          "label": "Orden de Trabajo",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "ordenes_trabajo",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "tp2_nombre",
+          "key": "nombre_tarea",
+          "label": "Nombre de la Tarea",
+          "type": "text",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "isPrimary": true
+          },
+          "isPrimary": true
+        },
+        {
+          "id": "tp3_estado",
+          "key": "estado",
+          "label": "Estado",
+          "type": "select",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {
+            "options": [
+              "pendiente",
+              "en_progreso",
+              "pausada",
+              "completada"
+            ]
+          }
+        },
+        {
+          "id": "tp4_operario",
+          "key": "operario_id",
+          "label": "Operario Asignado",
+          "type": "text",
+          "required": false,
+          "width": "half",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "tp5_notas",
+          "key": "notas",
+          "label": "Notas",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "tp6_espacio",
+          "key": "espacio_variante_id",
+          "label": "Espacio Asociado",
+          "type": "relation",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "espacio_variantes",
+              "parent_key": "id"
+            }
+          }
+        }
+      ]
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  },
+  {
+    "id": "e1f2a3b4-c5d6-7890-efab-cdef01234567",
+    "context": "schema_definitions",
+    "data": {
+      "name": "contratos",
+      "fields": [
+        {
+          "id": "ct01_cotizacion",
+          "key": "cotizacion_id",
+          "label": "Cotización Origen",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "cotizaciones",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "ct02_codigo",
+          "key": "codigo_contrato",
+          "label": "Código de Contrato",
+          "type": "text",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {
+            "isPrimary": true
+          },
+          "isPrimary": true
+        },
+        {
+          "id": "ct03_fecha",
+          "key": "fecha_contrato",
+          "label": "Fecha del Contrato",
+          "type": "date",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "ct04_domicilio",
+          "key": "contratante_domicilio",
+          "label": "Domicilio del Contratante",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "Datos del Contratante",
+          "config": {}
+        },
+        {
+          "id": "ct05_plazo",
+          "key": "plazo_ejecucion_texto",
+          "label": "Plazo de Ejecución (descripción)",
+          "type": "text",
+          "required": true,
+          "width": "full",
+          "section": "Cláusulas",
+          "config": {}
+        },
+        {
+          "id": "ct06_holgura",
+          "key": "holgura_dias",
+          "label": "Holgura Operativa (días hábiles)",
+          "type": "number",
+          "required": false,
+          "width": "half",
+          "section": "Cláusulas",
+          "config": {}
+        },
+        {
+          "id": "ct07_garantia",
+          "key": "garantia_anios",
+          "label": "Garantía (años)",
+          "type": "number",
+          "required": false,
+          "width": "half",
+          "section": "Cláusulas",
+          "config": {}
+        },
+        {
+          "id": "ct08_objeto",
+          "key": "objeto_items",
+          "label": "Objeto del Contrato (lista de muebles)",
+          "type": "markdown",
+          "required": false,
+          "width": "full",
+          "section": "Cláusulas",
+          "config": {}
+        },
+        {
+          "id": "ct09_estructura",
+          "key": "especificaciones_estructura",
+          "label": "Estructura (materiales principales)",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "Especificaciones Técnicas",
+          "config": {}
+        },
+        {
+          "id": "ct10_herrajes",
+          "key": "especificaciones_herrajes",
+          "label": "Herrajes y Accesorios",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "Especificaciones Técnicas",
+          "config": {}
+        },
+        {
+          "id": "ct11_mesones",
+          "key": "especificaciones_mesones",
+          "label": "Mesones (si aplica)",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "Especificaciones Técnicas",
+          "config": {}
+        },
+        {
+          "id": "ct12_desmonte",
+          "key": "condiciones_desmonte",
+          "label": "Desmonte y Disposición",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "Especificaciones Técnicas",
+          "config": {}
+        },
+        {
+          "id": "ct13_valor",
+          "key": "valor_total",
+          "label": "Valor Total del Contrato ($)",
+          "type": "number",
+          "required": true,
+          "width": "full",
+          "section": "Pagos",
+          "config": {}
+        },
+        {
+          "id": "ct14_estado",
+          "key": "estado",
+          "label": "Estado del Contrato",
+          "type": "select",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {
+            "options": [
+              "borrador",
+              "enviado",
+              "firmado"
+            ]
+          }
+        },
+        {
+          "id": "ct15_email_asunto",
+          "key": "email_asunto",
+          "label": "Asunto del Correo",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "Correo",
+          "config": {}
+        },
+        {
+          "id": "ct16_email_cuerpo",
+          "key": "email_cuerpo",
+          "label": "Cuerpo del Correo",
+          "type": "markdown",
+          "required": false,
+          "width": "full",
+          "section": "Correo",
+          "config": {}
+        }
+      ]
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  },
+  {
+    "id": "f2a3b4c5-d6e7-8901-fab0-def012345678",
+    "context": "schema_definitions",
+    "data": {
+      "name": "abonos_contrato",
+      "fields": [
+        {
+          "id": "ab01_contrato",
+          "key": "contrato_id",
+          "label": "Contrato",
+          "type": "relation",
+          "required": true,
+          "width": "full",
+          "section": "General",
+          "config": {
+            "relation": {
+              "entity": "contratos",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "ab02_numero",
+          "key": "numero_abono",
+          "label": "Número de Abono",
+          "type": "select",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {
+            "options": [
+              "1",
+              "2",
+              "3"
+            ],
+            "isPrimary": true
+          },
+          "isPrimary": true
+        },
+        {
+          "id": "ab03_valor",
+          "key": "valor_abono",
+          "label": "Valor Recibido ($)",
+          "type": "number",
+          "required": true,
+          "width": "half",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "ab04_fecha",
+          "key": "fecha_recibido",
+          "label": "Fecha de Recepción",
+          "type": "date",
+          "required": false,
+          "width": "half",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "ab05_obs",
+          "key": "observaciones",
+          "label": "Observaciones",
+          "type": "text",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {}
+        },
+        {
+          "id": "ab06_verificado",
+          "key": "verificado",
+          "label": "Verificado",
+          "type": "boolean",
+          "required": false,
+          "width": "half",
+          "section": "General",
+          "config": {}
+        }
+      ]
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  },
+  {
+    "id": "d3538611-7567-4a99-a515-1ec1f4b0e4fb",
+    "context": "schema_definitions",
+    "data": {
+      "name": "nav_links",
+      "fields": [
+        {
+          "id": "82a8f3d7-7841-4660-bdb5-1697431d7235",
+          "key": "label",
+          "type": "text",
+          "label": "Etiqueta",
+          "required": false
+        },
+        {
+          "id": "08d58510-e0c9-4acd-9434-822af30b9d27",
+          "key": "path",
+          "type": "text",
+          "label": "Path",
+          "required": false
+        },
+        {
+          "id": "4817e2f0-56b1-485d-917c-91cce1ce0c9f",
+          "key": "icon",
+          "type": "text",
+          "label": "Icono",
+          "required": false
+        },
+        {
+          "id": "dff19b8e-1d0f-4eb3-a318-16d603da5338",
+          "key": "orden",
+          "type": "number",
+          "label": "Orden",
+          "required": false
+        },
+        {
+          "id": "1d50f310-c07b-44af-9ff7-434a21479e03",
+          "key": "grupo",
+          "type": "text",
+          "label": "Grupo",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-05-22T18:26:09.137Z"
+  },
+  {
+    "id": "c694a5dd-c6cb-430e-806e-892cebb1147c",
+    "context": "schema_definitions",
+    "data": {
+      "name": "apoyo_tecnico",
+      "fields": [
+        {
+          "id": "f02ae8c7-8b75-4af0-b130-c1eba771533c",
+          "key": "cotizacion_id",
+          "type": "relation",
+          "label": "Cotizacion",
+          "required": true,
+          "config": {
+            "relation": {
+              "entity": "cotizaciones",
+              "parent_key": "id"
+            }
+          }
+        },
+        {
+          "id": "bd0231e1-4224-4e77-8bb7-278a2ba4778d",
+          "key": "tipo_recurso",
+          "type": "select",
+          "label": "Tipo",
+          "required": true,
+          "options": [
+            "foto",
+            "diagrama",
+            "visita"
+          ]
+        },
+        {
+          "id": "1c963d27-e51f-41f2-a9ad-e873a32bd523",
+          "key": "imagen_url",
+          "type": "image",
+          "label": "Imagen",
+          "required": false
+        },
+        {
+          "id": "47245515-484a-49d7-b277-6dee64564e04",
+          "key": "fecha_visita",
+          "type": "date",
+          "label": "Fecha_de_Visita",
+          "required": false
+        },
+        {
+          "id": "cc2ee09b-62e4-4869-9eb2-74f4d8a423e7",
+          "key": "notas",
+          "type": "textarea",
+          "label": "Notas",
+          "required": false
+        },
+        {
+          "id": "fa9c9a45-79e2-4bba-b578-ec41f95c1d4f",
+          "key": "lista_requisitos",
+          "type": "markdown",
+          "label": "Lista_de_Requisitos",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-06-01T02:44:35.952Z"
+  },
+  {
+    "id": "b1c07ec8-baac-42d0-b506-91f3071cf795",
+    "context": "schema_definitions",
+    "data": {
+      "name": "proveedores",
+      "fields": [
+        {
+          "id": "f1f40264-6530-468b-a05d-969099c15ab2",
+          "key": "nombre",
+          "type": "text",
+          "label": "Nombre",
+          "required": false
+        },
+        {
+          "id": "ddbab19f-ae8f-49ad-939a-67e4f33b73a7",
+          "key": "nit",
+          "type": "text",
+          "label": "Nit",
+          "required": false
+        },
+        {
+          "id": "17855cf1-5710-492d-92a7-b1512f11bb22",
+          "key": "telefono",
+          "type": "text",
+          "label": "Telefono",
+          "required": false
+        },
+        {
+          "id": "2c3e54a3-dfa8-4e81-abbb-0a34ff6b17a9",
+          "key": "direccion",
+          "type": "text",
+          "label": "Direccion",
+          "required": false
+        },
+        {
+          "id": "776868b0-b38c-402d-9c0e-96a8bfe8bc4f",
+          "key": "categoria",
+          "type": "select",
+          "label": "Categoria",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-06-05T19:46:58.516Z"
+  },
+  {
+    "id": "29fe4c17-f97b-4998-8613-1934ea544216",
+    "context": "schema_definitions",
+    "data": {
+      "name": "proveedores",
+      "fields": [
+        {
+          "id": "85c5f9a9-b9c8-43a6-9b7a-df588aa7f5d1",
+          "key": "nombre",
+          "type": "text",
+          "label": "Nombre",
+          "required": false
+        },
+        {
+          "id": "0d4eb6e2-34d9-45a5-a971-140846984abf",
+          "key": "nit",
+          "type": "text",
+          "label": "Nit",
+          "required": false
+        },
+        {
+          "id": "1590c437-ad90-4b60-ab0e-d73a6168fede",
+          "key": "telefono",
+          "type": "text",
+          "label": "Telefono",
+          "required": false
+        },
+        {
+          "id": "6d3d5071-4534-4b02-9f63-b0f59aa90aab",
+          "key": "direccion",
+          "type": "text",
+          "label": "Direccion",
+          "required": false
+        },
+        {
+          "id": "9d99ec4e-2ef7-429c-a8de-a9c915a52514",
+          "key": "categoria",
+          "type": "select",
+          "label": "Categoria",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-06-05T19:47:02.741Z"
+  }
+]

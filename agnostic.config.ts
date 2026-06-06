@@ -41,6 +41,10 @@ export default defineConfig({
     comercial_directory:  () => import('./src/components/specialized/ComercialDirectory'),
     comercial_kanban:     () => import('./src/components/specialized/kanban/ComercialKanban'),
     production_kanban:    () => import('./src/components/specialized/kanban/ProductionKanban'),
+    'agnostic-navbar':    () => import('./src/components/specialized/AgnosticNavbar'),
+    'agnostic-header':    () => import('./src/components/specialized/AgnosticHeader'),
+    'yango-dispatcher':   () => import('./src/components/specialized/YangoDispatcher'),
+    'chart':              () => import('./src/components/specialized/Chart'),
   },
 
   features: {

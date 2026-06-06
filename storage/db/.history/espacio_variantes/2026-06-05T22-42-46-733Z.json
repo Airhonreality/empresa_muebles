@@ -1,0 +1,50 @@
+[
+  {
+    "id": "29209ca8-d9f3-422a-bca0-97d26c86c5e5",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "933c4919-ca43-41a3-9162-817c2726127e",
+      "nombre_espacio": "Cocina integral",
+      "nombre_variante": "Con puerta corrediza",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 3,
+      "jornadas_instalacion_obra": 2.5,
+      "imagenes": "[\"/api/assets/1780599273874-Sin título_4_Página 5.png\",\"/api/assets/1780599273879-Sin título_5_Página 4.png\"]",
+      "colores": "[{\"nombre\":\"Kallio\",\"imagen_url\":\"/api/assets/1780598678675-Kalio-1.jpg\"},{\"nombre\":\"Yutex\",\"imagen_url\":\"/api/assets/1780598690065-YUTEXT.jpg\"},{\"nombre\":\"Mesón\",\"imagen_url\":\"/api/assets/1780599351820-MESON SINTERIZADO.jpg\"}]",
+      "activa": true,
+      "descripcion_alternativa": "",
+      "orden": 0
+    },
+    "updated_at": "2026-06-04T19:47:32.113Z"
+  },
+  {
+    "id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "959f0044-05cf-44e6-aefd-6d1087eb668c",
+      "nombre_espacio": "Closet 220 cm",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_instalacion_obra": 1,
+      "activa": true,
+      "descripcion_alternativa": "Closet estándar con 8 cajones y tubo colgador, melamina calibre 18mm con cantos rígidos y puertas corredizas."
+    },
+    "updated_at": "2026-06-05T22:42:39.704Z"
+  },
+  {
+    "id": "8cc83927-809a-46d4-bada-d613d5d66272",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "959f0044-05cf-44e6-aefd-6d1087eb668c",
+      "nombre_espacio": "Closet 107 cm (Copia)",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 0.5,
+      "jornadas_ensamblaje_taller": 1,
+      "jornadas_instalacion_obra": 1,
+      "activa": true,
+      "descripcion_alternativa": "Closet estándar con 4 cajones y tubo colgador, melamina calibre 18mm con cantos rígidos y puertas corredizas."
+    },
+    "updated_at": "2026-06-05T22:37:42.188Z"
+  }
+]

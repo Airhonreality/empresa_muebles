@@ -2,7 +2,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: .\storage\empresa-2\db\schema_definitions.json
 // Run:    npm run agnostic:compile
-// Generated: 2026-06-02T01:38:36.525Z
+// Generated: 2026-06-05T21:59:37.039Z
 // ============================================================
 
 // DataItem is the universal record wrapper used by the engine.
@@ -26,6 +26,10 @@ export interface EspacioVariantes {
   jornadas_ensamblaje_taller?: number  // Jornadas de Ensamblaje en Taller (Dias)
   jornadas_instalacion_obra?: number  // Jornadas de Instalacion en Obra (Dias)
   notas_markdown?: string  // Notas en Markdown
+  imagenes?: string  // Im?genes
+  colores?: string  // Colores
+  descripcion?: string  // Descripción del Espacio
+  descripcion_alternativa?: string  // Descripción de Alternativa
 }
 
 export type EspacioVariantesRecord = AgnosticDataItem<EspacioVariantes>
@@ -140,6 +144,8 @@ export interface OrdenesTrabajo {
   estado: string  // Estado
   fecha_entrega?: string  // Fecha de Entrega
   notas?: string  // Notas
+  costo_total_real?: number  // "Costo
+  estado_flete?: string  // "Estado
 }
 
 export type OrdenesTrabajoRecord = AgnosticDataItem<OrdenesTrabajo>
@@ -213,6 +219,43 @@ export interface ApoyoTecnico {
 
 export type ApoyoTecnicoRecord = AgnosticDataItem<ApoyoTecnico>
 
+// ─── Schema: "proveedores" 
+export interface Proveedores {
+  nombre?: string  // Nombre
+  nit?: string  // Nit
+  telefono?: string  // Telefono
+  direccion?: string  // Direccion
+  categoria?: string  // Categoria
+}
+
+export type ProveedoresRecord = AgnosticDataItem<Proveedores>
+
+// ─── Schema: "registro_logistica" 
+export interface RegistroLogistica {
+  nombre_flete?: string  // Nombre Flete
+  direccion_destino?: string  // Direccion Destino
+  estado_flete?: string  // Estado Flete
+  viaje_programado?: boolean  // Viaje Programado
+  fecha_viaje?: string  // Fecha Viaje
+  notas?: string  // Notas
+}
+
+export type RegistroLogisticaRecord = AgnosticDataItem<RegistroLogistica>
+
+// ─── Schema: "compras_materiales" 
+export interface ComprasMateriales {
+  descripcion?: string  // Descripcion
+  material_id?: string  // Material Id
+  cantidad?: number  // Cantidad
+  unidad_medida?: string  // Unidad Medida
+  costo_real_compra?: number  // Costo Real Compra
+  proveedor_id?: string  // Proveedor Id
+  fecha_compra?: string  // Fecha Compra
+  notas?: string  // Notas
+}
+
+export type ComprasMaterialesRecord = AgnosticDataItem<ComprasMateriales>
+
 // ============================================================
 // AgnosticSchemas — complete project schema map
 //
@@ -237,8 +280,11 @@ export interface AgnosticSchemas {
   abonos_contrato: AbonosContrato
   nav_links: NavLinks
   apoyo_tecnico: ApoyoTecnico
+  proveedores: Proveedores
+  registro_logistica: RegistroLogistica
+  compras_materiales: ComprasMateriales
 }
 
 // Valid values for block.context and fetch(`/api/vault?namespace=${ctx}`)
 export type SchemaName = keyof AgnosticSchemas
-// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'cotizaciones_snapshot' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico'
+// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'cotizaciones_snapshot' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales'

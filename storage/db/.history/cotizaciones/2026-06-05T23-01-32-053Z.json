@@ -1,0 +1,59 @@
+[
+  {
+    "id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Legale",
+      "costos_operativos": 360000,
+      "imprevistos_instalacion": 150000,
+      "estado": "enviada"
+    },
+    "updated_at": "2026-06-02T14:40:44.711Z"
+  },
+  {
+    "id": "8399a364-75ee-4479-b42c-7eb39816a094",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Barra y pintura",
+      "estado": "activa"
+    },
+    "updated_at": "2026-06-02T14:40:43.159Z"
+  },
+  {
+    "id": "e2929178-aaf6-430d-ae98-f1cc4173bc6e",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Cocina integral Carlos Flórez",
+      "costos_operativos": 350000,
+      "imprevistos_instalacion": 100000
+    },
+    "updated_at": "2026-06-03T19:40:46.350Z"
+  },
+  {
+    "id": "ef144cee-5671-4a93-8599-d5771b998a5b",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Cotización Cava"
+    },
+    "updated_at": "2026-06-03T19:47:38.489Z"
+  },
+  {
+    "id": "933c4919-ca43-41a3-9162-817c2726127e",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Cotización Cocina integral ",
+      "cliente_id": "be96715e-07fe-4bc3-ba1c-2a97dc62fce3",
+      "costos_operativos": 250000,
+      "imprevistos_instalacion": 100000
+    },
+    "updated_at": "2026-06-04T17:52:30.482Z"
+  },
+  {
+    "id": "959f0044-05cf-44e6-aefd-6d1087eb668c",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Cotiza"
+    },
+    "updated_at": "2026-06-05T23:01:27.384Z"
+  }
+]

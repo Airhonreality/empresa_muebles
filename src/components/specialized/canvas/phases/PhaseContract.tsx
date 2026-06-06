@@ -27,12 +27,14 @@ export default function PhaseContract({
 }: PhaseContractProps) {
   const [plazoText, setPlazoText]   = useState('')
   const [garantia, setGarantia]     = useState('2')
+  const [planPagos, setPlanPagos]   = useState('50/25/25')
   const [saving, setSaving]         = useState(false)
 
   useEffect(() => {
     if (contrato) {
       setPlazoText(contrato.data.plazo_ejecucion_texto as string ?? '')
       setGarantia(String(contrato.data.garantia_anios ?? '2'))
+      setPlanPagos((contrato.data as any).plan_pagos as string ?? '50/25/25')
     }
   }, [contrato?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -41,10 +43,13 @@ export default function PhaseContract({
     setSaving(true)
     try {
       const updated = await vaultWrite('contratos', contrato.id, {
-        ...contrato.data, plazo_ejecucion_texto: plazoText, garantia_anios: Number(garantia),
+        ...contrato.data,
+        plazo_ejecucion_texto: plazoText,
+        garantia_anios: Number(garantia),
+        plan_pagos: planPagos,
       })
       useMateriaStore.getState().updateItem('contratos', updated)
-      toast.success('Contrato actualizado.'); onRefresh()
+      toast.success('Contrato y plan de pagos actualizado.'); onRefresh()
     } catch { toast.error('Error al actualizar.') }
     finally { setSaving(false) }
   }
@@ -82,10 +87,10 @@ export default function PhaseContract({
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 border rounded-xl p-5 bg-card shadow-sm flex flex-col gap-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-primary">Pliego Legal y Fechas</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs font-medium">Plazo de Ejecución</Label>
-                <Input value={plazoText} onChange={e => setPlazoText(e.target.value)}
+                <Input value={plazoText} onChange={e => setPlanPagos && setPlazoText(e.target.value)}
                   placeholder="Ej: 35 días hábiles..." className="h-8 text-xs font-medium" />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -95,6 +100,17 @@ export default function PhaseContract({
                   <option value="1">1 año</option>
                   <option value="2">2 años</option>
                   <option value="5">5 años (Maderas selectas)</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-medium">Plan de Pagos</Label>
+                <select value={planPagos} onChange={e => setPlanPagos(e.target.value)}
+                  className="h-8 px-2 rounded-md border border-input bg-background text-xs font-semibold focus:outline-none">
+                  <option value="50/25/25">50/25/25 (Anticipo/Taller/Obra)</option>
+                  <option value="50/50">50/50 (Anticipo/Entrega)</option>
+                  <option value="60/40">60/40 (Anticipo/Entrega)</option>
+                  <option value="40/40/20">40/40/20 (Anticipo/Taller/Obra)</option>
+                  <option value="30/30/30/10">30/30/30/10 (4 Cuotas)</option>
                 </select>
               </div>
             </div>

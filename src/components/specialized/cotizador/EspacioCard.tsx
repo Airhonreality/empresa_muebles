@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useMemo } from 'react'
 import type { DataItem } from '@agnostic/core'
-import { Briefcase, Copy, Plus, Trash2 } from 'lucide-react'
+import { Briefcase, Copy, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Loader2, Image as ImageIcon, ClipboardList, Palette } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { COP } from './utils'
 import { EspacioTabs } from './EspacioTabs'
 import { ItemRow } from './ItemRow'
 import { DayCounter } from './DayCounter'
 import { CollapseStrip } from './CollapseStrip'
+import { toast } from 'sonner'
 import type { EspacioVariantes, ItemsVariante } from '@/generated/agnostic-schemas'
 
 export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   activeVarId, onSelectVarId,
-  onRename, onAddVariante, onUpdateVariante, onDuplicateVariante, onDeleteVariante, onAddItem, onUpdateItem, onDeleteItem, onDelete, onDuplicate,
+  onRename, onAddVariante, onUpdateVariante, onDuplicateVariante, onDeleteVariante, onReorderVariante, onAddItem, onUpdateItem, onDeleteItem, onDelete, onDuplicate,
+  onEditCatalogItem, onAddCatalogItem,
+  allExistingColors = [],
 }: {
   nombre: string; variants: DataItem[]; items: DataItem[]
   catalogo: DataItem[]; tarifas: { dev: number; assembly: number; install: number }
@@ -21,16 +24,26 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   onUpdateVariante: (id: string, p: Partial<EspacioVariantes>) => void
   onDuplicateVariante: (id: string) => void
   onDeleteVariante: (id: string) => void
-  onAddItem: (varId: string) => void
+  onReorderVariante?: (id: string, direction: 'left' | 'right') => void
+  onAddItem: (varId: string) => Promise<string | undefined>
   onUpdateItem: (id: string, p: Partial<ItemsVariante>) => void
   onDeleteItem: (id: string) => void
   onDelete: () => void
   onDuplicate: () => void
+  onEditCatalogItem: (id: string) => void
+  onAddCatalogItem: (initialSearch: string) => void
+  allExistingColors?: { nombre: string; imagen_url: string }[]
 }) {
   const [moOpen, setMoOpen] = useState(false)
   const [totOpen, setTotOpen] = useState(false)
   const [editName, setEditName] = useState(false)
   const [nameLocal, setNameLocal] = useState(nombre)
+  
+  const [autoFocusItemId, setAutoFocusItemId] = useState<string | null>(null)
+  const [imgOpen, setImgOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [urlInput, setUrlInput] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setNameLocal(nombre)
@@ -40,6 +53,137 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   const vd = (activeVar?.data ?? {}) as any as EspacioVariantes
   const activeVarIdResolved = activeVar?.id || activeVarId
   const activeItems = items.filter(it => (it.data as any as ItemsVariante).variante_id === activeVarIdResolved)
+
+  const [descLocal, setDescLocal] = useState(vd.descripcion || '')
+  const [descAltLocal, setDescAltLocal] = useState(vd.descripcion_alternativa || '')
+
+  useEffect(() => {
+    setDescLocal(vd.descripcion || '')
+    setDescAltLocal(vd.descripcion_alternativa || '')
+  }, [vd.descripcion, vd.descripcion_alternativa])
+
+  const images: string[] = useMemo(() => {
+    if (!vd.imagenes) return []
+    try {
+      const parsed = JSON.parse(vd.imagenes)
+      if (Array.isArray(parsed)) return parsed
+      return []
+    } catch (e) {
+      return vd.imagenes.split(',').map(x => x.trim()).filter(Boolean)
+    }
+  }, [vd.imagenes])
+
+  const handleAddUrl = () => {
+    if (!urlInput.trim()) return
+    const next = [...images, urlInput.trim()]
+    onUpdateVariante(activeVarIdResolved, { imagenes: JSON.stringify(next) })
+    setUrlInput('')
+  }
+
+  const handleDeleteImage = (idx: number) => {
+    const next = images.filter((_, i) => i !== idx)
+    onUpdateVariante(activeVarIdResolved, { imagenes: JSON.stringify(next) })
+  }
+
+  const handleMoveImage = (idx: number, dir: 'left' | 'right') => {
+    const targetIdx = dir === 'left' ? idx - 1 : idx + 1
+    if (targetIdx < 0 || targetIdx >= images.length) return
+    const next = [...images]
+    const temp = next[idx]
+    next[idx] = next[targetIdx]
+    next[targetIdx] = temp
+    onUpdateVariante(activeVarIdResolved, { imagenes: JSON.stringify(next) })
+  }
+
+  const notes: string[] = useMemo(() => {
+    if (!vd.notas_markdown) return []
+    return vd.notas_markdown
+      .split('\n')
+      .map(n => n.replace(/^[-*]\s+/, '').trim())
+      .filter(Boolean)
+  }, [vd.notas_markdown])
+
+  const [newNoteInput, setNewNoteInput] = useState('')
+  const [notesOpen, setNotesOpen] = useState(false)
+
+  const handleAddNote = () => {
+    if (!newNoteInput.trim()) return
+    const next = [...notes, newNoteInput.trim()]
+    onUpdateVariante(activeVarIdResolved, { notas_markdown: next.map(n => `- ${n}`).join('\n') })
+    setNewNoteInput('')
+  }
+
+  const handleUpdateNote = (idx: number, newVal: string) => {
+    const next = [...notes]
+    next[idx] = newVal
+    onUpdateVariante(activeVarIdResolved, { notas_markdown: next.map(n => n.trim()).filter(Boolean).map(n => `- ${n}`).join('\n') })
+  }
+
+  const handleDeleteNote = (idx: number) => {
+    const next = notes.filter((_, i) => i !== idx)
+    onUpdateVariante(activeVarIdResolved, { notas_markdown: next.map(n => `- ${n}`).join('\n') })
+  }
+
+  const handleMoveNote = (idx: number, dir: 'up' | 'down') => {
+    const targetIdx = dir === 'up' ? idx - 1 : idx + 1
+    if (targetIdx < 0 || targetIdx >= notes.length) return
+    const next = [...notes]
+    const temp = next[idx]
+    next[idx] = next[targetIdx]
+    next[targetIdx] = temp
+    onUpdateVariante(activeVarIdResolved, { notas_markdown: next.map(n => `- ${n}`).join('\n') })
+  }
+
+  const colors: { nombre: string; imagen_url: string }[] = useMemo(() => {
+    if (!vd.colores) return []
+    try {
+      const parsed = JSON.parse(vd.colores)
+      if (Array.isArray(parsed)) return parsed
+      return []
+    } catch (e) {
+      return []
+    }
+  }, [vd.colores])
+
+  const [colorNameInput, setColorNameInput] = useState('')
+  const [colorUrlInput, setColorUrlInput] = useState('')
+  const [colorUploading, setColorUploading] = useState(false)
+  const [colorsOpen, setColorsOpen] = useState(false)
+  const colorFileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAddColor = (url?: string) => {
+    const targetUrl = url || colorUrlInput.trim()
+    if (!colorNameInput.trim() || !targetUrl) {
+      toast.error('Debes ingresar el nombre del color y su imagen')
+      return
+    }
+    const next = [...colors, { nombre: colorNameInput.trim(), imagen_url: targetUrl }]
+    onUpdateVariante(activeVarIdResolved, { colores: JSON.stringify(next) })
+    setColorNameInput('')
+    setColorUrlInput('')
+  }
+
+  const handleDeleteColor = (idx: number) => {
+    const next = colors.filter((_, i) => i !== idx)
+    onUpdateVariante(activeVarIdResolved, { colores: JSON.stringify(next) })
+  }
+
+  const handleMoveColor = (idx: number, dir: 'left' | 'right') => {
+    const targetIdx = dir === 'left' ? idx - 1 : idx + 1
+    if (targetIdx < 0 || targetIdx >= colors.length) return
+    const next = [...colors]
+    const temp = next[idx]
+    next[idx] = next[targetIdx]
+    next[targetIdx] = temp
+    onUpdateVariante(activeVarIdResolved, { colores: JSON.stringify(next) })
+  }
+
+  const handleAddItem = async () => {
+    const newId = await onAddItem(activeVarIdResolved)
+    if (newId) {
+      setAutoFocusItemId(newId)
+    }
+  }
 
   const totalMat = activeItems.reduce((s, it) => s + (Number((it.data as any as ItemsVariante).total_linea) || 0), 0)
   
@@ -82,8 +226,21 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
         </button>
       </div>
 
+      {/* Description of Space (Above Tabs) */}
+      <div className="px-5 pt-2 pb-1.5 flex flex-col gap-1">
+        <label className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Descripción del Espacio</label>
+        <textarea
+          value={descLocal}
+          onChange={e => setDescLocal(e.target.value)}
+          onBlur={() => onUpdateVariante(activeVarIdResolved, { descripcion: descLocal })}
+          placeholder="Descripción general del espacio (ej: Cocina en L con acabados premium)..."
+          rows={2}
+          className="w-full text-xs text-stone-700 bg-white border border-stone-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-amber-500 placeholder-stone-300 resize-none transition-all"
+        />
+      </div>
+
       {/* Tabs */}
-      <div className="px-5 pt-2">
+      <div className="px-5 pt-1">
         <EspacioTabs
           variants={variants}
           activeId={activeVarIdResolved}
@@ -91,6 +248,21 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
           onAdd={onAddVariante}
           onDuplicate={() => onDuplicateVariante(activeVarIdResolved)}
           onDelete={onDeleteVariante}
+          onRename={(id, name) => onUpdateVariante(id, { nombre_variante: name })}
+          onMove={onReorderVariante}
+        />
+      </div>
+
+      {/* Description of Alternative (Below Tabs) */}
+      <div className="px-5 pt-2.5 pb-2.5 flex flex-col gap-1 border-b border-stone-100 bg-stone-50/20">
+        <label className="text-[9px] font-bold uppercase tracking-wider text-amber-700/80">Descripción de Alternativa ({vd.nombre_variante || 'Variante'})</label>
+        <textarea
+          value={descAltLocal}
+          onChange={e => setDescAltLocal(e.target.value)}
+          onBlur={() => onUpdateVariante(activeVarIdResolved, { descripcion_alternativa: descAltLocal })}
+          placeholder="Detalles específicos para esta variante (ej: Se cambia mesón a cuarzo blanco)..."
+          rows={2}
+          className="w-full text-xs text-stone-700 bg-white border border-stone-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-amber-500 placeholder-stone-300 resize-none transition-all"
         />
       </div>
 
@@ -112,15 +284,432 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
               <ItemRow key={it.id} item={it} catalogo={catalogo}
                 onUpdate={p => onUpdateItem(it.id, p)}
                 onDelete={() => onDeleteItem(it.id)}
+                onEditCatalogItem={onEditCatalogItem}
+                onAddCatalogItem={onAddCatalogItem}
+                autoFocus={it.id === autoFocusItemId}
               />
             ))}
           </tbody>
         </table>
-        <button onClick={() => onAddItem(activeVarId)}
+        <button onClick={handleAddItem}
           className="mt-1 ml-3 flex items-center gap-1.5 text-xs text-stone-300 hover:text-amber-600 transition-colors py-1">
           <Plus size={11} /><span>Agregar ítem</span>
         </button>
       </div>
+
+      {/* Imágenes de referencia */}
+      <CollapseStrip open={imgOpen} onToggle={() => setImgOpen(o => !o)}
+        label="Imágenes de referencia" icon={ImageIcon}
+        summary={images.length > 0 && (
+          <span className="ml-2 text-amber-600 font-medium tabular-nums">
+            {images.length} imagen{images.length !== 1 ? 'es' : ''}
+          </span>
+        )}
+      >
+        <div className="px-5 pb-5 space-y-4">
+          {images.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {images.map((url, idx) => (
+                <div key={url + '-' + idx} className="relative aspect-video rounded-xl overflow-hidden border border-stone-200 bg-stone-50 group/img">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  
+                  {/* Badge displaying order */}
+                  <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 text-white text-[9px] font-bold">
+                    {idx + 1}
+                  </span>
+
+                  {/* Actions overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleMoveImage(idx, 'left')}
+                      disabled={idx === 0}
+                      className="p-1 rounded bg-white/80 hover:bg-white text-stone-700 disabled:opacity-40 disabled:hover:bg-white/80 transition-colors"
+                      title="Mover a la izquierda"
+                    >
+                      <ArrowLeft size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveImage(idx, 'right')}
+                      disabled={idx === images.length - 1}
+                      className="p-1 rounded bg-white/80 hover:bg-white text-stone-700 disabled:opacity-40 disabled:hover:bg-white/80 transition-colors"
+                      title="Mover a la derecha"
+                    >
+                      <ArrowRight size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(idx)}
+                      className="p-1 rounded bg-red-600/80 hover:bg-red-600 text-white transition-colors"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add image bar */}
+          <div className="flex gap-2">
+            <div className="flex-1 relative flex items-center">
+              <input
+                type="text"
+                value={urlInput}
+                onChange={e => setUrlInput(e.target.value)}
+                placeholder="Pegar URL o presiona Ctrl+V para pegar archivo de imagen..."
+                onKeyDown={e => { if (e.key === 'Enter') handleAddUrl() }}
+                onPaste={async (e) => {
+                  const files = Array.from(e.clipboardData.files)
+                  if (files.length > 0) {
+                    e.preventDefault()
+                    setUploading(true)
+                    try {
+                      const uploadPromises = files.map(async (file) => {
+                        const fd = new FormData()
+                        fd.append('file', file)
+                        const res = await fetch('/api/upload', { method: 'POST', body: fd })
+                        const json = await res.json()
+                        if (!res.ok) throw new Error(json.error || 'Upload failed')
+                        return json.url
+                      })
+                      const uploadedUrls = await Promise.all(uploadPromises)
+                      const next = [...images, ...uploadedUrls]
+                      onUpdateVariante(activeVarIdResolved, { imagenes: JSON.stringify(next) })
+                      toast.success(`${files.length} imagen${files.length !== 1 ? 'es' : ''} pegada${files.length !== 1 ? 's' : ''} con éxito`)
+                    } catch (err: any) {
+                      toast.error(err.message || 'Error al subir imagen pegada')
+                    } finally {
+                      setUploading(false)
+                    }
+                  }
+                }}
+                className="w-full text-xs border border-stone-200 rounded-lg pl-2.5 pr-8 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700 placeholder:text-stone-300"
+              />
+              {urlInput && (
+                <button
+                  type="button"
+                  onClick={handleAddUrl}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-amber-600 rounded"
+                >
+                  <Plus size={14} />
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="px-3 py-2 border border-stone-200 rounded-lg bg-stone-50 hover:bg-stone-100 disabled:opacity-50 text-stone-600 hover:text-stone-800 text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0"
+            >
+              {uploading ? (
+                <Loader2 size={13} className="animate-spin text-amber-600" />
+              ) : (
+                <Upload size={13} />
+              )}
+              <span>Subir</span>
+            </button>
+             <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              multiple
+              onChange={async (e) => {
+                const files = Array.from(e.target.files || [])
+                if (files.length === 0) return
+                setUploading(true)
+                try {
+                  const uploadPromises = files.map(async (file) => {
+                    const fd = new FormData()
+                    fd.append('file', file)
+                    const res = await fetch('/api/upload', { method: 'POST', body: fd })
+                    const json = await res.json()
+                    if (!res.ok) throw new Error(json.error || 'Upload failed')
+                    return json.url
+                  })
+                  const uploadedUrls = await Promise.all(uploadPromises)
+                  const next = [...images, ...uploadedUrls]
+                  onUpdateVariante(activeVarIdResolved, { imagenes: JSON.stringify(next) })
+                  toast.success(`${files.length} imagen${files.length !== 1 ? 'es' : ''} subida${files.length !== 1 ? 's' : ''} con éxito`)
+                } catch (err: any) {
+                  toast.error(err.message || 'Error al subir imágenes')
+                } finally {
+                  setUploading(false)
+                  e.target.value = ''
+                }
+              }}
+            />
+          </div>
+        </div>
+      </CollapseStrip>
+
+      {/* Notas del espacio */}
+      <CollapseStrip open={notesOpen} onToggle={() => setNotesOpen(o => !o)}
+        label="Notas del espacio" icon={ClipboardList}
+        summary={notes.length > 0 && (
+          <span className="ml-2 text-amber-600 font-medium tabular-nums">
+            {notes.length} nota{notes.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      >
+        <div className="px-5 pb-5 space-y-3">
+          {notes.length > 0 && (
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {notes.map((note, idx) => (
+                <div key={idx} className="flex items-center gap-2 group/note bg-stone-50 hover:bg-stone-100/60 px-3 py-2 rounded-xl border border-stone-100/60 transition-colors">
+                  <span className="text-stone-300 font-bold select-none text-[10px] tabular-nums w-4 text-center">
+                    {idx + 1}
+                  </span>
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={e => handleUpdateNote(idx, e.target.value)}
+                    className="flex-1 bg-transparent text-xs text-stone-700 focus:outline-none focus:ring-0 border-none p-0 font-medium"
+                  />
+                  <div className="flex items-center gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => handleMoveNote(idx, 'up')}
+                      disabled={idx === 0}
+                      className="p-1 rounded text-stone-300 hover:text-stone-700 disabled:opacity-30 transition-colors"
+                      title="Mover arriba"
+                    >
+                      <ArrowLeft size={12} className="rotate-90" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveNote(idx, 'down')}
+                      disabled={idx === notes.length - 1}
+                      className="p-1 rounded text-stone-300 hover:text-stone-700 disabled:opacity-30 transition-colors"
+                      title="Mover abajo"
+                    >
+                      <ArrowRight size={12} className="rotate-90" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNote(idx)}
+                      className="p-1 rounded text-stone-300 hover:text-red-500 transition-colors"
+                      title="Eliminar nota"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add note input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newNoteInput}
+              onChange={e => setNewNoteInput(e.target.value)}
+              placeholder="Escribe una nota para este espacio..."
+              onKeyDown={e => { if (e.key === 'Enter') handleAddNote() }}
+              className="flex-1 text-xs border border-stone-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700 placeholder:text-stone-300"
+            />
+            <button
+              type="button"
+              onClick={handleAddNote}
+              className="px-3 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-600 hover:text-stone-800 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0"
+            >
+              <Plus size={13} />
+              <span>Agregar</span>
+            </button>
+          </div>
+        </div>
+      </CollapseStrip>
+
+      {/* Colores del espacio */}
+      <CollapseStrip open={colorsOpen} onToggle={() => setColorsOpen(o => !o)}
+        label="Colores del espacio" icon={Palette}
+        summary={colors.length > 0 && (
+          <span className="ml-2 text-amber-600 font-medium tabular-nums">
+            {colors.length} color{colors.length !== 1 ? 'es' : ''}
+          </span>
+        )}
+      >
+        <div className="px-5 pb-5 space-y-4">
+          {/* Colors Swatches Grid */}
+          {colors.length > 0 && (
+            <div className="flex flex-wrap gap-4 pt-1">
+              {colors.map((col, idx) => (
+                <div key={idx} className="relative group/color flex flex-col items-center gap-1.5 p-2 bg-stone-50 border border-stone-100 rounded-xl hover:shadow-md hover:bg-stone-100/60 transition-all w-20">
+                  {/* Swatch image */}
+                  <div className="w-12 h-12 rounded-lg border border-stone-200 overflow-hidden bg-stone-200 shrink-0 shadow-sm">
+                    <img src={col.imagen_url} alt={col.nombre} className="w-full h-full object-cover" />
+                  </div>
+                  {/* Color name */}
+                  <span className="text-[10px] font-semibold text-stone-600 text-center w-full truncate px-0.5" title={col.nombre}>
+                    {col.nombre}
+                  </span>
+
+                  {/* Hover Controls */}
+                  <div className="absolute inset-0 bg-stone-900/70 rounded-xl flex items-center justify-center gap-0.5 opacity-0 group-hover/color:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => handleMoveColor(idx, 'left')}
+                      className="p-1 rounded bg-white/20 text-white hover:bg-white/40 disabled:opacity-30 transition-colors"
+                      title="Mover izquierda"
+                    >
+                      <ArrowLeft size={10} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteColor(idx)}
+                      className="p-1 rounded bg-red-600/80 text-white hover:bg-red-600 transition-colors"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={idx === colors.length - 1}
+                      onClick={() => handleMoveColor(idx, 'right')}
+                      className="p-1 rounded bg-white/20 text-white hover:bg-white/40 disabled:opacity-30 transition-colors"
+                      title="Mover derecha"
+                    >
+                      <ArrowRight size={10} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Form to add color swatch */}
+          <div className="bg-stone-50/50 border border-stone-100 rounded-xl p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] uppercase tracking-widest text-stone-400 font-bold block">
+                Agregar color / textura de muestra
+              </span>
+              {allExistingColors && allExistingColors.length > 0 && (
+                <select
+                  value=""
+                  onChange={e => {
+                    const val = e.target.value
+                    if (!val) return
+                    const found = allExistingColors.find(c => c.nombre === val)
+                    if (found) {
+                      setColorNameInput(found.nombre)
+                      setColorUrlInput(found.imagen_url)
+                      toast.success(`Color "${found.nombre}" cargado del catálogo`)
+                    }
+                  }}
+                  className="text-[10px] font-semibold border border-stone-200 rounded-lg px-2 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-amber-700 bg-amber-50/30 cursor-pointer"
+                >
+                  <option value="">🎨 Cargar del catálogo...</option>
+                  {allExistingColors.map(c => (
+                    <option key={c.nombre} value={c.nombre}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 flex flex-col gap-1">
+                <input
+                  type="text"
+                  value={colorNameInput}
+                  onChange={e => setColorNameInput(e.target.value)}
+                  placeholder="Nombre del color (e.g. Roble Ahumado)"
+                  className="w-full text-xs border border-stone-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700 font-medium"
+                />
+              </div>
+
+              <div className="flex-1 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={colorUrlInput}
+                  onChange={e => setColorUrlInput(e.target.value)}
+                  placeholder="URL de la muestra o presiona Ctrl+V para pegar..."
+                  onPaste={async (e) => {
+                    const files = Array.from(e.clipboardData.files)
+                    if (files.length > 0) {
+                      e.preventDefault()
+                      if (!colorNameInput.trim()) {
+                        toast.error('Por favor escribe primero el nombre del color')
+                        return
+                      }
+                      setColorUploading(true)
+                      try {
+                        const fd = new FormData()
+                        fd.append('file', files[0])
+                        const res = await fetch('/api/upload', { method: 'POST', body: fd })
+                        const json = await res.json()
+                        if (!res.ok) throw new Error(json.error || 'Upload failed')
+                        handleAddColor(json.url)
+                        toast.success('Muestra de color pegada y subida con éxito')
+                      } catch (err: any) {
+                        toast.error(err.message || 'Error al subir imagen pegada')
+                      } finally {
+                        setColorUploading(false)
+                      }
+                    }
+                  }}
+                  className="flex-1 text-xs border border-stone-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700"
+                />
+                <span className="text-stone-300 text-xs font-semibold select-none">o</span>
+                
+                <button
+                  type="button"
+                  disabled={colorUploading}
+                  onClick={() => colorFileInputRef.current?.click()}
+                  className="px-3 py-1.5 bg-white border border-stone-200 text-stone-600 hover:text-stone-800 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-sm disabled:opacity-50"
+                >
+                  {colorUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                  <span>Subir</span>
+                </button>
+                <input
+                  type="file"
+                  ref={colorFileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={async e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    if (!colorNameInput.trim()) {
+                      toast.error('Por favor escribe primero el nombre del color')
+                      e.target.value = ''
+                      return
+                    }
+                    setColorUploading(true)
+                    try {
+                      const fd = new FormData()
+                      fd.append('file', file)
+                      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+                      const json = await res.json()
+                      if (!res.ok) throw new Error(json.error || 'Upload failed')
+                      handleAddColor(json.url)
+                      toast.success('Muestra de color subida con éxito')
+                    } catch (err: any) {
+                      toast.error(err.message || 'Error al subir imagen de color')
+                    } finally {
+                      setColorUploading(false)
+                      e.target.value = ''
+                    }
+                  }}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleAddColor()}
+                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 justify-center shrink-0 shadow-sm"
+              >
+                <Plus size={13} />
+                <span>Agregar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </CollapseStrip>
 
       {/* Mano de obra */}
       <CollapseStrip open={moOpen} onToggle={() => setMoOpen(o => !o)}

@@ -61,6 +61,9 @@ export default function PhasePayments({ contrato, abonos, onRefresh }: PhasePaym
   const totalPagado   = abonosPagados.reduce((s, a) => s + Number(a.data.valor_abono ?? 0), 0)
   const pct           = valorTotal > 0 ? Math.round((totalPagado / valorTotal) * 100) : 0
 
+  const planRaw = (contrato.data as any).plan_pagos as string ?? '50/25/25'
+  const splits = planRaw.split('/').map(Number)
+
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-lg font-bold">Lienzo de Control de Pagos</h2>
@@ -82,11 +85,13 @@ export default function PhasePayments({ contrato, abonos, onRefresh }: PhasePaym
 
           {/* Cuotas */}
           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-2">Cuotas</h4>
-          <div className="grid grid-cols-3 gap-3">
-            {[1, 2, 3].map(n => {
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {splits.map((splitPct, idx) => {
+              const n = idx + 1
               const abono = abonos.find(a => String(a.data.numero_abono) === String(n))
               const isDone = abono?.data.verificado
               const isSubmitted = abono && !isDone
+              const targetValor = Math.round(valorTotal * (splitPct / 100))
               return (
                 <div key={n} className={[
                   'rounded-xl border p-3 flex flex-col gap-1.5 text-center transition-all',
@@ -94,14 +99,14 @@ export default function PhasePayments({ contrato, abonos, onRefresh }: PhasePaym
                   isSubmitted ? 'border-amber-500/40 bg-amber-500/[0.03] text-amber-700' :
                   'border-border bg-card text-muted-foreground',
                 ].join(' ')}>
-                  <div className="text-xs font-bold flex items-center justify-center gap-1.5">
-                    Abono {n}
+                  <div className="text-xs font-bold flex items-center justify-center gap-1.5 flex-wrap">
+                    Abono {n} ({splitPct}%)
                     <Badge variant="outline" className={`text-[8px] px-1 py-0 border-none uppercase ${
                       isDone ? 'bg-green-100 text-green-700' : isSubmitted ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'
                     }`}>{isDone ? 'Verificado' : isSubmitted ? 'Pendiente' : 'Vacío'}</Badge>
                   </div>
                   <div className="font-mono text-xs font-bold text-foreground">
-                    ${abono?.data.valor_abono ? Number(abono.data.valor_abono).toLocaleString('es-CO') : '0'}
+                    ${abono?.data.valor_abono ? Number(abono.data.valor_abono).toLocaleString('es-CO') : `${targetValor.toLocaleString('es-CO')} (Est.)`}
                   </div>
                   {abono?.data.fecha_recibido && (
                     <span className="text-[9px] text-muted-foreground/80 flex items-center justify-center gap-1">
@@ -117,16 +122,18 @@ export default function PhasePayments({ contrato, abonos, onRefresh }: PhasePaym
         {/* Registrar abono */}
         <div className="border rounded-xl p-4 bg-muted/5 flex flex-col gap-3.5 h-fit">
           <h4 className="text-xs font-bold uppercase tracking-wider text-primary">Registrar Abono</h4>
-          <div className="grid grid-cols-3 gap-1">
-            {['1', '2', '3'].map(num => (
-              <button key={num} type="button" onClick={() => {
-                setAbonoNum(num)
-                const pctMap: Record<string, number> = { '1': 0.5, '2': 0.25, '3': 0.25 }
-                setAbonoValor(String(Math.round(valorTotal * (pctMap[num] ?? 0.25))))
-              }} className={`rounded-md border p-1 text-[10px] font-semibold text-center transition-colors ${
-                abonoNum === num ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted/50 text-muted-foreground'
-              }`}>Cuota {num}</button>
-            ))}
+          <div className="grid grid-cols-2 gap-1">
+            {splits.map((splitPct, idx) => {
+              const num = String(idx + 1)
+              return (
+                <button key={num} type="button" onClick={() => {
+                  setAbonoNum(num)
+                  setAbonoValor(String(Math.round(valorTotal * (splitPct / 100))))
+                }} className={`rounded-md border p-1 text-[10px] font-semibold text-center transition-colors ${
+                  abonoNum === num ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted/50 text-muted-foreground'
+                }`}>Cuota {num} ({splitPct}%)</button>
+              )
+            })}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>{{pdfTitle}}</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;700;800;900&family=Inter:wght@400;600;700;900&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #FFFFFF;
+      color: #2D2D2D;
+      line-height: 1.6;
+      padding: 40px;
+      -webkit-print-color-adjust: exact;
+    }
+
+    .quote-container {
+      max-width: 900px;
+      margin: 0 auto;
+      border: 1px solid #EAEAEA;
+      padding: 50px;
+      background: #FFFFFF;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    }
+
+    /* Luxury Header */
+    .brand-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #C5A059;
+      padding-bottom: 25px;
+      margin-bottom: 40px;
+    }
+
+    .brand-logo h1 {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #1A1A1A;
+      text-transform: uppercase;
+    }
+
+    .brand-logo p.brand-subtitle {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: #C5A059;
+      margin-top: 4px;
+    }
+
+    .brand-logo p.brand-contact {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #777777;
+      margin-top: 8px;
+      letter-spacing: 0.05em;
+      text-transform: none;
+    }
+
+    .proposal-meta {
+      text-align: right;
+    }
+
+    .proposal-meta h2 {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #1A1A1A;
+      margin-bottom: 6px;
+    }
+
+    .proposal-meta p {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #777777;
+      letter-spacing: 0.1em;
+    }
+
+    /* Client info card */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .info-block h4 {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #C5A059;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #F1ECE1;
+      padding-bottom: 4px;
+    }
+
+    .info-block p {
+      font-size: 12px;
+      color: #4D4D4D;
+      margin-bottom: 4px;
+    }
+
+    .info-block strong {
+      color: #1A1A1A;
+      font-weight: 700;
+    }
+
+    .info-block.full-width {
+      grid-column: span 2;
+    }
+
+    /* Section divider & Titles */
+    .section-title {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #1A1A1A;
+      margin-bottom: 20px;
+      border-left: 3.5px solid #C5A059;
+      padding-left: 12px;
+    }
+
+    /* Executive summary */
+    .options-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 45px;
+    }
+
+    .option-card {
+      border: 1px solid #E5E5E5;
+      border-radius: 6px;
+      padding: 20px;
+      background: #FAFAFA;
+      transition: all 0.3s ease;
+    }
+
+    .option-card.selected {
+      border-color: #C5A059;
+      background: #FCFAF6;
+      box-shadow: 0 4px 15px rgba(197, 160, 89, 0.08);
+    }
+
+    .option-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .option-title {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      color: #666666;
+    }
+
+    .option-card.selected .option-title {
+      color: #C5A059;
+    }
+
+    .selected-badge {
+      font-size: 8px;
+      font-weight: 900;
+      color: #FFFFFF;
+      background: #C5A059;
+      padding: 2px 6px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+    }
+
+    .option-price {
+      font-family: 'Inter', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin-bottom: 6px;
+    }
+
+    .option-diff {
+      font-size: 10px;
+      color: #777777;
+    }
+
+    /* Space section details */
+    .space-section {
+      border: 1px solid #EAEAEA;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 25px;
+    }
+
+    .space-title {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #1A1A1A;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #EAEAEA;
+      padding-bottom: 8px;
+    }
+
+    /* Table styling */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+
+    .items-table th {
+      background: #FAFAFA;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6B7280;
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    .items-table td {
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #374151;
+      border-bottom: 1px solid #F3F4F6;
+    }
+
+    .items-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .items-table .center {
+      text-align: center;
+    }
+
+    .items-table .right {
+      text-align: right;
+    }
+
+    .empty-row {
+      text-align: center !important;
+      color: #999999 !important;
+      font-style: italic;
+      padding: 20px !important;
+    }
+
+    /* Labor collapsed bar */
+    .labor-bar-collapsed {
+      background: #FCFAF6;
+      border: 1px dashed #E5DEC9;
+      border-radius: 6px;
+      padding: 10px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .labor-summary-title {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #C5A059;
+    }
+
+    .labor-summary-days {
+      font-size: 11px;
+      font-weight: 700;
+      color: #5E533F;
+    }
+
+    /* Space sub-totals block */
+    .space-totals {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .space-total-line {
+      font-size: 11px;
+      color: #666666;
+      width: 250px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .space-total-line span {
+      font-weight: 600;
+      color: #1A1A1A;
+    }
+
+    .space-total-line.space-grand {
+      font-weight: 600;
+      border-top: 1px solid #EAEAEA;
+      padding-top: 6px;
+      color: #1A1A1A;
+      font-size: 12px;
+    }
+
+    .space-total-line.space-grand span {
+      color: #C5A059;
+      font-weight: 700;
+    }
+
+    /* Proposal Notes */
+    .notes-section {
+      background: #FAFAFA;
+      border-left: 2px solid #C5A059;
+      padding: 20px;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 45px;
+      page-break-inside: avoid;
+    }
+
+    .notes-section h4 {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #1A1A1A;
+      margin-bottom: 12px;
+    }
+
+    .notes-section ol {
+      padding-left: 15px;
+    }
+
+    .notes-section li {
+      font-size: 11px;
+      color: #555555;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    /* Final Totals block */
+    .final-totals-container {
+      display: flex;
+      justify-content: center;
+      page-break-inside: avoid;
+      margin-top: 30px;
+      margin-bottom: 45px;
+    }
+
+    .final-totals-card {
+      border: 1.5px solid #C5A059;
+      background: #FCFAF6;
+      width: 100%;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(197, 160, 89, 0.04);
+    }
+
+    .totals-grid-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 40px;
+    }
+
+    .totals-details-col {
+      border-right: 1px solid #E5DEC9;
+      padding-right: 40px;
+    }
+
+    .totals-grand-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .final-totals-header {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-weight: 800;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-bottom: 1px solid #EAEAEA;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      color: #1A1A1A;
+    }
+
+    .final-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #555555;
+      margin-bottom: 8px;
+    }
+
+    .final-line.discount {
+      color: #2E7D32;
+      font-weight: 600;
+    }
+
+    .final-line.grand-total {
+      border-top: 2px solid #C5A059;
+      padding-top: 12px;
+      margin-top: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1A1A1A;
+    }
+
+    .final-line.grand-total span {
+      color: #C5A059;
+      font-weight: 800;
+    }
+
+    /* Closing Page back cover styles */
+    .technical-notes-wrapper {
+      page-break-before: always;
+      page-break-inside: avoid;
+      min-height: 720px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      position: relative;
+      padding: 40px 0;
+    }
+
+    .technical-notes-wrapper::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #C5A059, transparent);
+    }
+
+    .technical-notes-wrapper::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #C5A059, transparent);
+    }
+
+    .technical-notes-section {
+      background: #FCFAF6;
+      border-left: 3px solid #C5A059;
+      border-right: 1px solid #E5DEC9;
+      border-top: 1px solid #E5DEC9;
+      border-bottom: 1px solid #E5DEC9;
+      padding: 25px 30px;
+      border-radius: 0 8px 8px 0;
+      margin: 0;
+    }
+
+    .technical-notes-section h4 {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #C5A059;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #E5DEC9;
+      padding-bottom: 8px;
+    }
+
+    /* Closing Page back cover styles */
+    .closing-page {
+      page-break-before: always;
+      padding-top: 40px;
+    }
+
+    .closing-title {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-align: center;
+      color: #1A1A1A;
+      margin-bottom: 50px;
+      border-bottom: 2px solid #C5A059;
+      padding-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .closing-grid {
+      display: block;
+      margin-bottom: 50px;
+      page-break-inside: avoid;
+    }
+
+    .policy-block {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .policy-block h4 {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #C5A059;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #F1ECE1;
+      padding-bottom: 8px;
+      text-align: center;
+    }
+
+    .policy-text {
+      font-size: 12px;
+      color: #4D4D4D;
+      line-height: 1.8;
+      text-align: justify;
+    }
+
+    .policy-text p {
+      margin-bottom: 16px;
+    }
+
+    .notes-list {
+      padding-left: 20px;
+    }
+
+    .notes-list li {
+      font-size: 11px;
+      color: #4D4D4D;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .financial-terms-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      border-top: 1px solid #EAEAEA;
+      padding-top: 30px;
+      margin-bottom: 40px;
+      page-break-inside: avoid;
+    }
+
+    .term-block h5 {
+      font-family: 'Alegreya Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #C5A059;
+      margin-bottom: 15px;
+    }
+
+    .term-block p {
+      font-size: 12px;
+      color: #4D4D4D;
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+
+    .term-block p strong {
+      color: #1A1A1A;
+    }
+
+    .legal-footer {
+      text-align: center;
+      font-size: 9.5px;
+      color: #888888;
+      border-top: 1px solid #EAEAEA;
+      padding-top: 20px;
+      letter-spacing: 0.05em;
+      margin-top: 40px;
+      font-weight: 600;
+    }
+
+    /* Print styles */
+    @page {
+      size: letter;
+      margin: 1.2cm 1.5cm;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        background: transparent;
+      }
+
+      .quote-container {
+        border: none;
+        box-shadow: none;
+        padding: 20px 30px;
+        max-width: 100%;
+      }
+
+      .space-section {
+        page-break-inside: auto;
+        break-inside: auto;
+      }
+
+      tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+    }
+
+    /* Cover Spaces List style on Page 1 */
+    .cover-spaces-container {
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 1px solid #F1ECE1;
+      text-align: center;
+    }
+
+    .cover-spaces-title {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #C5A059;
+      margin-bottom: 20px;
+    }
+
+    .cover-spaces-list {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px 30px;
+    }
+
+    .cover-space-item {
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4D4D4D;
+      letter-spacing: 0.03em;
+    }
+
+    .cover-space-item .bullet {
+      color: #C5A059;
+      margin-right: 8px;
+      font-size: 11px;
+    }
+
+    /* Force Section 2 to start on a new page */
+    .detailed-breakdown-section {
+      page-break-before: always;
+      break-before: page;
+      margin-top: 0;
+    }
+
+    .cover-spaces-layout-wrapper {
+      margin-top: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .cover-spaces-layout-img {
+      max-width: 90%;
+      max-height: 280px;
+      border-radius: 8px;
+      border: 1px solid #E5DEC9;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="quote-container">
+
+    <!-- Header -->
+    <header class="brand-section">
+      <div class="brand-logo">
+        <h1>Veta de Oro</h1>
+        <p class="brand-subtitle">Estetica y Confort</p>
+        <p class="brand-contact">302 5922101 &nbsp;&nbsp;|&nbsp;&nbsp; www.vetadeoro.co &nbsp;&nbsp;|&nbsp;&nbsp; Cra
+          72A 71A 57</p>
+      </div>
+      <div class="proposal-meta">
+        <h2>PROPUESTA COMERCIAL</h2>
+        <p>Nº de Propuesta: {{proposalNumber}}</p>
+        <p>Fecha de Emisión: {{proposalDate}}</p>
+      </div>
+    </header>
+
+    <!-- Info Grid -->
+    <section class="info-grid">
+      {{infoGridHtml}}
+    </section>
+
+    <!-- Executive summary options -->
+    <h3 class="section-title">1. Resumen de Cotización</h3>
+    <section class="options-container">
+      {{optionsHtml}}
+    </section>
+
+    <!-- Centered elegant list of spaces cotizados -->
+    <div class="cover-spaces-container">
+      <h4 class="cover-spaces-title">Espacios Incluidos</h4>
+      <div class="cover-spaces-list">
+        {{spacesListHtml}}
+      </div>
+
+    </div>
+
+    <!-- Spaces breakdown details -->
+    <h3 class="section-title detailed-breakdown-section">2. Desglose Detallado de Propuesta ({{activeVariantName}})</h3>
+    <section class="breakdown-container">
+      {{spacesHtml}}
+    </section>
+
+    <!-- Consideraciones Importantes (Notas Técnicas) debajo del total -->
+    <div class="technical-notes-wrapper">
+      <section class="technical-notes-section">
+        <h4>Consideraciones Importantes</h4>
+        <ol class="notes-list">
+          <li><strong>Mano de Obra Civil</strong> Esta cotización contempla únicamente los servicios de fabricación e
+            instalación de la cocina integral. Si se requiere obra civil, debe realizarse con un profecional
+            especializado, veta de oro podra suministrar contactos de confianza, sin embargo el contrato con terceros
+            será ageno a la empresa.</li>
+          <li><strong>Selección de Acabados:</strong> La textura final y tonos se elegirán sobre muestras físicas que
+            presentaremos antes de la producción.</li>
+          <li><strong>Vigencia:</strong> Esta propuesta tiene una validez de 15 días hábiles a partir de la fecha de
+            emisión.</li>
+        </ol>
+      </section>
+    </div>
+
+    <!-- Closing Page / Back Page -->
+    <section class="closing-page">
+
+      <div class="closing-grid">
+        <div class="policy-block">
+          <h4>Políticas Veta de Oro</h4>
+          <div class="policy-text">
+            <p>En Veta de Oro diseñamos y fabricamos sin intermediarios. Nuestro proceso es directo, preciso y sin
+              margen para errores: lo que diseñamos es exactamente lo que usted recibe.</p>
+            <p>Más de 25 años de experiencia respaldan nuestra calidad. Contamos con un equipo especializado en
+              carpintería, enchapado y acabados, asegurando ejecución impecable en cada detalle.</p>
+            <p>Lo que nos distingue no es solo la estética, sino la precisión. Creamos espacios con carácter, hechos
+              para durar, reflejando su estilo sin concesiones.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="financial-terms-grid">
+        <div class="term-block">
+          <h5>Avances y Anticipos</h5>
+          <p><strong>50%</strong> producción</p>
+          <p><strong>25%</strong> Pre-entrega</p>
+          <p><strong>25%</strong> Entrega</p>
+        </div>
+        <div class="term-block">
+          <h5>Medios de Pago</h5>
+          <p>Bancolombia</p>
+          <p>Efectivo</p>
+          <p>Tarjeta de crédito <em>(incrementará 2% x cobros de comisión)</em></p>
+        </div>
+      </div>
+
+      <div class="legal-footer">
+        Veta de Oro es una firma de diseño de Hermanos García Gonzalez SAS | NIT 901421357-9
+      </div>
+    </section>
+
+  </div>
+</body>
+
+</html>
