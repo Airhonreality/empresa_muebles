@@ -79,8 +79,6 @@ export class LocalStrategy implements AgnosticBridge {
    */
   async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
-      await fs.mkdir(this.dbDir, { recursive: true });
-
       // Handle system config stored at the neutral storage root
       if (namespace === 'system_config') {
         const rootPath = path.join(process.cwd(), 'storage', 'system_config.json');
@@ -115,6 +113,39 @@ export class LocalStrategy implements AgnosticBridge {
   }
 
   /**
+   * Realiza un respaldo histórico deslizante del archivo de base de datos local
+   * para control de versiones automático antes de sobreescribir.
+   */
+  private async backupFile(namespace: string, filePath: string): Promise<void> {
+    try {
+      // Ignorar copias del propio sistema de historial para evitar recursión
+      if (namespace.startsWith('.') || namespace === 'system_config') return;
+      if (!fsSync.existsSync(filePath)) return;
+
+      const historyDir = path.join(this.dbDir, '.history', namespace);
+      await fs.mkdir(historyDir, { recursive: true });
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupPath = path.join(historyDir, `${timestamp}.json`);
+      await fs.copyFile(filePath, backupPath);
+
+      // Axioma 2 de Nam P. Suh: Mantener únicamente las últimas 10 versiones para minimizar entropía y almacenamiento
+      const files = await fs.readdir(historyDir);
+      if (files.length > 10) {
+        files.sort(); // Orden lexicográfico por timestamp
+        const toDelete = files.slice(0, files.length - 10);
+        for (const file of toDelete) {
+          await fs.unlink(path.join(historyDir, file));
+        }
+      }
+    } catch (err) {
+      console.warn(`[LocalStrategy] Fallo al respaldar histórico para ${namespace}:`, err);
+    }
+  }
+
+  // ─── CRUD OPERATIONS ───────────────────────────────────────────────────────
+
+  /**
    * Writes a record atomically to the filesystem. Merges existing data if already present.
    * Serializes concurrent writes per namespace to prevent read-modify-write races.
    */
@@ -146,6 +177,9 @@ export class LocalStrategy implements AgnosticBridge {
 
     await fs.mkdir(path.dirname(filePath), { recursive: true });
 
+    // Respaldar estado previo en el VCS local
+    await this.backupFile(namespace, filePath);
+
     // Atomic Write Operation: write to a temporary file, then rename it
     const content = JSON.stringify(Array.from(map.values()), null, 2);
     const tmp = filePath + '.tmp';
@@ -164,17 +198,37 @@ export class LocalStrategy implements AgnosticBridge {
 
   /**
    * Removes a record by ID from a specific namespace.
+   * Serializes removal operations within the namespace queue to prevent write/delete race conditions.
    */
   async remove(namespace: string, id: string): Promise<void> {
+    const pending = this.writeQueues.get(namespace) ?? Promise.resolve();
+    const next = pending.then(() => this._doRemove(namespace, id));
+    this.writeQueues.set(namespace, next.catch(() => undefined));
+    return next as Promise<void>;
+  }
+
+  private async _doRemove(namespace: string, id: string): Promise<void> {
     const existing = await this.read(namespace);
     const filtered = existing.filter(i => i.id !== id);
-    
+
     let filePath = this.getFilePath(namespace);
     if (namespace === 'system_config') {
       filePath = path.join(process.cwd(), 'storage', 'system_config.json');
     }
-    
+
     await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(filtered, null, 2), 'utf-8');
+
+    // Respaldar estado previo en el VCS local
+    await this.backupFile(namespace, filePath);
+
+    const content = JSON.stringify(filtered, null, 2);
+    const tmp = filePath + '.tmp';
+    await fs.writeFile(tmp, content, 'utf-8');
+    try {
+      await fs.rename(tmp, filePath);
+    } catch {
+      await fs.writeFile(filePath, content, 'utf-8');
+      try { await fs.unlink(tmp); } catch { /* limpieza best-effort */ }
+    }
   }
 }
