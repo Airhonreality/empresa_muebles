@@ -44,14 +44,31 @@ export async function POST(req: NextRequest) {
 
     const filename = `${Date.now()}-${path.basename(file.name)}`;
 
-    // ── Vercel Blob (when BLOB_READ_WRITE_TOKEN is configured) ───────────────
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      const { put } = await import('@vercel/blob');
-      const blob = await put(filename, file.stream(), {
-        access: 'public',
-        contentType: file.type,
+    // ── Cloudflare R2 (when CF vars are configured) ──────────────────────────
+    const cfAccountId = process.env.CF_ACCOUNT_ID;
+    const cfBucket    = process.env.CF_R2_BUCKET;
+    const cfKeyId     = process.env.CF_R2_ACCESS_KEY_ID;
+    const cfSecret    = process.env.CF_R2_SECRET_ACCESS_KEY;
+
+    if (cfAccountId && cfBucket && cfKeyId && cfSecret) {
+      const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
+      const s3 = new S3Client({
+        region: 'auto',
+        endpoint: `https://${cfAccountId}.r2.cloudflarestorage.com`,
+        credentials: { accessKeyId: cfKeyId, secretAccessKey: cfSecret },
       });
-      return NextResponse.json({ url: blob.url });
+
+      const buffer = Buffer.from(await file.arrayBuffer());
+      await s3.send(new PutObjectCommand({
+        Bucket: cfBucket,
+        Key:    filename,
+        Body:   buffer,
+        ContentType: file.type,
+      }));
+
+      const publicBase = process.env.CF_R2_PUBLIC_URL?.replace(/\/$/, '');
+      const url = publicBase ? `${publicBase}/${filename}` : filename;
+      return NextResponse.json({ url });
     }
 
     // ── Local filesystem fallback ────────────────────────────────────────────

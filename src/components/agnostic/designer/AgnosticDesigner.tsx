@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SchemaField } from '@agnostic/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { SystemSection } from './sections/SystemSection';
+import { DeploySection } from './sections/DeploySection';
 import { ImportWizard } from '@/components/agnostic/plugins/ImportWizard';
 import { RecursiveBlockComposer } from './components/RecursiveBlockComposer';
 import { cn } from '@/lib/utils';
@@ -118,7 +119,7 @@ export function ConfigManager({
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(
     initialRouteId ? { nodeType: 'route', id: initialRouteId } : null
   );
-  type ActiveMode = 'dna' | 'users' | 'silo';
+  type ActiveMode = 'dna' | 'users' | 'silo' | 'deploy';
   const [activeMode, setActiveMode] = useState<ActiveMode>('dna');
   const [pendingDelete, setPendingDelete] = useState<SelectedNode | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -257,9 +258,10 @@ const handleAddScript = async () => {
   // ─── RAIL ─────────────────────────────────────────────────────────────────
 
   const RAIL = [
-    { id: 'dna'   as const, icon: FileJson, label: 'DNA & Rutas'       },
-    { id: 'users' as const, icon: Users,    label: 'Gestión de Acceso' },
-    { id: 'silo'  as const, icon: Shield,   label: 'Config del Silo'   },
+    { id: 'dna'    as const, icon: FileJson, label: 'DNA & Rutas'       },
+    { id: 'users'  as const, icon: Users,    label: 'Gestión de Acceso' },
+    { id: 'silo'   as const, icon: Shield,   label: 'Config del Silo'   },
+    { id: 'deploy' as const, icon: Zap,      label: 'Estado del Deploy' },
   ];
 
   return (
@@ -412,6 +414,11 @@ const handleAddScript = async () => {
         {activeMode === 'silo' && (
           <div className="h-full overflow-y-auto p-8 max-w-2xl">
             <SystemSection config={config} setConfig={handleUpdateConfig} />
+          </div>
+        )}
+        {activeMode === 'deploy' && (
+          <div className="h-full overflow-y-auto p-8 max-w-2xl">
+            <DeploySection />
           </div>
         )}
       </main>
