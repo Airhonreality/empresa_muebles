@@ -106,6 +106,21 @@ foreach ($ws in $registry.workspaces) {
 
     if ($LASTEXITCODE -eq 0) {
         Write-Ok "Actualizado ($behind commits)."
+
+        # Re-install dependencies in case package.json changed
+        if (Test-Path (Join-Path $wsPath "package.json")) {
+            Write-Step "Actualizando dependencias (npm install)..."
+            $prevPref = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
+            npm install --prefix $wsPath 2>&1 | Out-Null
+            $ErrorActionPreference = $prevPref
+            if ($LASTEXITCODE -eq 0) {
+                Write-Ok "Dependencias actualizadas."
+            } else {
+                Write-Skip "npm install fallo - corre manualmente en $wsPath"
+            }
+        }
+
         $synced++
     } else {
         Write-Fail "Conflictos detectados. Archivos afectados:"

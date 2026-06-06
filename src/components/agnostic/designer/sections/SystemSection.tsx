@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Shield, Database, Palette, RefreshCw } from 'lucide-react';
 import { AgnosticConfigProjector } from '@/components/agnostic/modules/AgnosticConfigProjector';
 import tokensSchema from '@/core/designer/dna/tokens.schema.json';
