@@ -26,6 +26,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
+export const dynamic = 'force-dynamic';
 import { getStrategy } from '@/server/getStrategy';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { appendLog } from '@/lib/agnostic/activity-log';

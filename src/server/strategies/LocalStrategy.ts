@@ -79,17 +79,6 @@ export class LocalStrategy implements AgnosticBridge {
    */
   async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
-      // Handle system config stored at the neutral storage root
-      if (namespace === 'system_config') {
-        const rootPath = path.join(process.cwd(), 'storage', 'system_config.json');
-        try {
-          const raw = await fs.readFile(rootPath, 'utf-8');
-          return this.sanitizeData(namespace, JSON.parse(raw));
-        } catch { 
-          return []; 
-        }
-      }
-
       const filePath = this.getFilePath(namespace);
       try {
         const raw = (await fs.readFile(filePath, 'utf-8')).replace(/^﻿/, '');
@@ -170,11 +159,7 @@ export class LocalStrategy implements AgnosticBridge {
     const map = new Map(existing.map(i => [i.id, i]));
     map.set(id, saved);
 
-    let filePath = this.getFilePath(namespace);
-    if (namespace === 'system_config') {
-      filePath = path.join(process.cwd(), 'storage', 'system_config.json');
-    }
-
+    const filePath = this.getFilePath(namespace);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
 
     // Respaldar estado previo en el VCS local
@@ -210,12 +195,17 @@ export class LocalStrategy implements AgnosticBridge {
   private async _doRemove(namespace: string, id: string): Promise<void> {
     const existing = await this.read(namespace);
     const filtered = existing.filter(i => i.id !== id);
+<<<<<<< HEAD
 
     let filePath = this.getFilePath(namespace);
     if (namespace === 'system_config') {
       filePath = path.join(process.cwd(), 'storage', 'system_config.json');
     }
 
+=======
+    
+    const filePath = this.getFilePath(namespace);
+>>>>>>> upstream/feature/agile-rendering-engine
     await fs.mkdir(path.dirname(filePath), { recursive: true });
 
     // Respaldar estado previo en el VCS local

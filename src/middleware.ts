@@ -1,19 +1,30 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { SESSION_COOKIE } from '@/lib/agnostic/session';
+
+const PROTECTED_PATHS = ['/schema'];
+const PUBLIC_PATHS    = ['/login', '/api/auth'];
 
 export function middleware(request: NextRequest) {
-  const host = request.headers.get('host') ?? '';
-  const baseDomain = process.env.BASE_DOMAIN ?? '';
-  
-  // Extract subdomain if host ends with the base domain
-  const subdomain = baseDomain && host.endsWith(`.${baseDomain}`)
-    ? host.slice(0, host.length - baseDomain.length - 1)
-    : null;
+  const { pathname } = request.nextUrl;
 
-  if (subdomain) {
-    const headers = new Headers(request.headers);
-    headers.set('x-tenant', subdomain);
-    return NextResponse.next({ request: { headers } });
+  // ── Auth guard for /schema ────────────────────────────────────────────────
+  // Only active when SESSION_SECRET is set (opt-in for production).
+  // Without SESSION_SECRET the panel stays open (dev mode).
+  const authEnabled = !!process.env.SESSION_SECRET;
+
+  if (authEnabled) {
+    const isProtected = PROTECTED_PATHS.some(p => pathname.startsWith(p));
+    const isPublic    = PUBLIC_PATHS.some(p => pathname.startsWith(p));
+
+    if (isProtected && !isPublic) {
+      const cookie = request.cookies.get(SESSION_COOKIE);
+      if (!cookie?.value) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('from', pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
   }
 
   return NextResponse.next();
