@@ -347,122 +347,8 @@
   {
     "id": "886f4199-9b12-4d58-836d-2af9de225bdd",
     "context": "page_routes",
-    "data": {
-      "path": "/Public",
-      "title": "Nueva",
-      "isPrivate": true,
-      "layout_mode": "container",
-      "blocks": [
-        {
-          "id": "13d0348d-94a2-4beb-ae3a-1614197f8c3d",
-          "type": "text",
-          "title": "Nuevo Frame",
-          "direction": "vertical",
-          "blocks": [],
-          "config": {
-            "content": "aqui estoy"
-          }
-        }
-      ],
-      "order": 3,
-      "root": {
-        "id": "886f4199-9b12-4d58-836d-2af9de225bdd",
-        "label": "Nueva",
-        "path": "/Public",
-        "layout": {
-          "direction": "column"
-        },
-        "render": "canvas",
-        "contexts": [],
-        "children": [
-          {
-            "id": "9d51dbd8-3638-4606-a739-fc863bce7918",
-            "label": "Nuevo Frame",
-            "layout": {
-              "direction": "vertical"
-            },
-            "render": "canvas",
-            "contexts": [
-              "productos_catalogo"
-            ],
-            "children": [
-              {
-                "id": "054d246b-29d2-45da-98cd-17faaa25cccc",
-                "label": "Nuevo Frame",
-                "layout": {
-                  "direction": "vertical"
-                },
-                "render": "canvas",
-                "contexts": [
-                  "clientes"
-                ],
-                "children": [
-                  {
-                    "id": "b9ed1ede-14df-4a27-a3a8-d7b17be736f5",
-                    "label": "Nuevo Frame",
-                    "layout": {
-                      "direction": "vertical"
-                    },
-                    "render": "canvas",
-                    "contexts": [],
-                    "children": []
-                  },
-                  {
-                    "id": "cd0c037c-666d-420a-a7b7-f44e93bfe3bd",
-                    "label": "Nombre",
-                    "layout": {},
-                    "render": "field",
-                    "field_key": "nombre",
-                    "contexts": [],
-                    "children": []
-                  },
-                  {
-                    "id": "cbda9c04-8c20-4ef4-9e24-e98341dbaefe",
-                    "label": "Documento",
-                    "layout": {},
-                    "render": "field",
-                    "field_key": "documento",
-                    "contexts": [],
-                    "children": []
-                  },
-                  {
-                    "id": "9fd3debf-9881-49ca-908d-5d11a0d54a22",
-                    "label": "TelÃ©fono",
-                    "layout": {},
-                    "render": "field",
-                    "field_key": "telefono",
-                    "contexts": [],
-                    "children": []
-                  },
-                  {
-                    "id": "46892d56-ad05-4940-8694-aba1d9a0669b",
-                    "label": "Email",
-                    "layout": {},
-                    "render": "field",
-                    "field_key": "email",
-                    "contexts": [],
-                    "children": []
-                  }
-                ]
-              },
-              {
-                "id": "a7f6eab8-8642-4a29-9400-945b30d40b96",
-                "label": "Nuevo Frame",
-                "layout": {
-                  "direction": "vertical"
-                },
-                "render": "list",
-                "contexts": [
-                  "items_variante"
-                ],
-                "children": []
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "updated_at": "2026-05-28T12:35:33.319Z"
+    "data": {},
+    "updated_at": "2026-06-06T17:13:57.303Z"
   },
   {
     "id": "f3a92b11-8c4e-4d07-a561-e72b9f103d55",
@@ -568,7 +454,7 @@
         }
       ]
     },
-    "updated_at": "2026-06-02T01:47:09.100Z"
+    "updated_at": "2026-06-06T17:14:15.105Z"
   },
   {
     "id": "a2b3c4d5-e6f7-8901-abcd-ef1234567801",

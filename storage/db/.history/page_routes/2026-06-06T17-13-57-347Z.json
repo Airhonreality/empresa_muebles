@@ -38,6 +38,7 @@
                 {
                   "id": "1e6dd9ed-e43e-4f11-965f-210b273a3f73",
                   "type": "collection",
+                  "context": "ordenes_trabajo",
                   "blocks": []
                 }
               ],
@@ -52,7 +53,8 @@
                 {
                   "id": "1aead897-16b9-49b9-861f-b2bf8b25ba31",
                   "type": "collection",
-                  "blocks": []
+                  "blocks": [],
+                  "context": "registro_logistica"
                 },
                 {
                   "id": "b9df73a3-3038-4f64-a63a-7993de501b87",
@@ -67,19 +69,36 @@
             {
               "id": "7efd4083-e4d4-404c-9978-89f90a9be9fe",
               "type": "card",
-              "blocks": [],
+              "blocks": [
+                {
+                  "id": "444e9831-0cb5-410b-95e2-f5d9bde623b5",
+                  "type": "chart",
+                  "blocks": [],
+                  "context": "compras_materiales"
+                },
+                {
+                  "id": "f7f7ef49-434f-459d-9024-80b17a407dbe",
+                  "type": "action",
+                  "blocks": [],
+                  "visual": {
+                    "label": "Actualizar"
+                  },
+                  "zap": "actualizar_catalogo_precio",
+                  "context": "compras_materiales"
+                }
+              ],
               "visual": {
                 "title": "Compras"
               }
             }
           ],
           "config": {
-            "className": "grid"
+            "className": "grid grid-cols-1 md:grid-cols-3 gap-4"
           }
         }
       ]
     },
-    "updated_at": "2026-06-05T20:59:29.396Z"
+    "updated_at": "2026-06-06T14:47:50.224Z"
   },
   {
     "id": "db6124ac-0139-4b04-b1aa-b25ae0a53fd0",

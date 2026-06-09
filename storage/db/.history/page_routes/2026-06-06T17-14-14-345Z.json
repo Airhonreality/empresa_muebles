@@ -38,6 +38,7 @@
                 {
                   "id": "1e6dd9ed-e43e-4f11-965f-210b273a3f73",
                   "type": "collection",
+                  "context": "ordenes_trabajo",
                   "blocks": []
                 }
               ],
@@ -52,7 +53,8 @@
                 {
                   "id": "1aead897-16b9-49b9-861f-b2bf8b25ba31",
                   "type": "collection",
-                  "blocks": []
+                  "blocks": [],
+                  "context": "registro_logistica"
                 },
                 {
                   "id": "b9df73a3-3038-4f64-a63a-7993de501b87",
@@ -71,7 +73,18 @@
                 {
                   "id": "444e9831-0cb5-410b-95e2-f5d9bde623b5",
                   "type": "chart",
-                  "blocks": []
+                  "blocks": [],
+                  "context": "compras_materiales"
+                },
+                {
+                  "id": "f7f7ef49-434f-459d-9024-80b17a407dbe",
+                  "type": "action",
+                  "blocks": [],
+                  "visual": {
+                    "label": "Actualizar"
+                  },
+                  "zap": "actualizar_catalogo_precio",
+                  "context": "compras_materiales"
                 }
               ],
               "visual": {
@@ -80,12 +93,12 @@
             }
           ],
           "config": {
-            "className": "grid"
+            "className": "grid grid-cols-1 md:grid-cols-3 gap-4"
           }
         }
       ]
     },
-    "updated_at": "2026-06-05T20:59:35.990Z"
+    "updated_at": "2026-06-06T14:47:50.224Z"
   },
   {
     "id": "db6124ac-0139-4b04-b1aa-b25ae0a53fd0",
@@ -334,122 +347,8 @@
   {
     "id": "886f4199-9b12-4d58-836d-2af9de225bdd",
     "context": "page_routes",
-    "data": {
-      "path": "/Public",
-      "title": "Nueva",
-      "isPrivate": true,
-      "layout_mode": "container",
-      "blocks": [
-        {
-          "id": "13d0348d-94a2-4beb-ae3a-1614197f8c3d",
-          "type": "text",
-          "title": "Nuevo Frame",
-          "direction": "vertical",
-          "blocks": [],
-          "config": {
-            "content": "aqui estoy"
-          }
-        }
-      ],
-      "order": 3,
-      "root": {
-        "id": "886f4199-9b12-4d58-836d-2af9de225bdd",
-        "label": "Nueva",
-        "path": "/Public",
-        "layout": {
-          "direction": "column"
-        },
-        "render": "canvas",
-        "contexts": [],
-        "children": [
-          {
-            "id": "9d51dbd8-3638-4606-a739-fc863bce7918",
-            "label": "Nuevo Frame",
-            "layout": {
-              "direction": "vertical"
-            },
-            "render": "canvas",
-            "contexts": [
-              "productos_catalogo"
-            ],
-            "children": [
-              {
-                "id": "054d246b-29d2-45da-98cd-17faaa25cccc",
-                "label": "Nuevo Frame",
-                "layout": {
-                  "direction": "vertical"
-                },
-                "render": "canvas",
-                "contexts": [
-                  "clientes"
-                ],
-                "children": [
-                  {
-                    "id": "b9ed1ede-14df-4a27-a3a8-d7b17be736f5",
-                    "label": "Nuevo Frame",
-                    "layout": {
-                      "direction": "vertical"
-                    },
-                    "render": "canvas",
-                    "contexts": [],
-                    "children": []
-                  },
-                  {
-                    "id": "cd0c037c-666d-420a-a7b7-f44e93bfe3bd",
-                    "label": "Nombre",
-                    "layout": {},
-                    "render": "field",
-                    "field_key": "nombre",
-                    "contexts": [],
-                    "children": []
-                  },
-                  {
-                    "id": "cbda9c04-8c20-4ef4-9e24-e98341dbaefe",
-                    "label": "Documento",
-                    "layout": {},
-                    "render": "field",
-                    "field_key": "documento",
-                    "contexts": [],
-                    "children": []
-                  },
-                  {
-                    "id": "9fd3debf-9881-49ca-908d-5d11a0d54a22",
-                    "label": "TelÃ©fono",
-                    "layout": {},
-                    "render": "field",
-                    "field_key": "telefono",
-                    "contexts": [],
-                    "children": []
-                  },
-                  {
-                    "id": "46892d56-ad05-4940-8694-aba1d9a0669b",
-                    "label": "Email",
-                    "layout": {},
-                    "render": "field",
-                    "field_key": "email",
-                    "contexts": [],
-                    "children": []
-                  }
-                ]
-              },
-              {
-                "id": "a7f6eab8-8642-4a29-9400-945b30d40b96",
-                "label": "Nuevo Frame",
-                "layout": {
-                  "direction": "vertical"
-                },
-                "render": "list",
-                "contexts": [
-                  "items_variante"
-                ],
-                "children": []
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "updated_at": "2026-05-28T12:35:33.319Z"
+    "data": {},
+    "updated_at": "2026-06-06T17:13:57.303Z"
   },
   {
     "id": "f3a92b11-8c4e-4d07-a561-e72b9f103d55",
