@@ -40,7 +40,9 @@ const writeSchema = z.object({
   namespace: z.string().min(1),
   record: z.object({
     id: z.string().optional(),
-    data: z.record(z.string(), z.unknown())
+    data: z.record(z.string(), z.unknown()),
+    // Field-level LWW timestamps: { fieldKey: ISO-string }
+    _meta: z.record(z.string(), z.string()).optional(),
   })
 });
 
@@ -135,8 +137,8 @@ export async function POST(req: NextRequest) {
     if (action === 'WRITE') {
       const raw = body.record;
       if (!raw) return NextResponse.json({ success: false, error: 'record required' }, { status: 400 });
-      const recordPayload = { id: raw.id, data: raw.data };
-      writeSchema.parse({ action: 'WRITE', namespace, record: { id: raw.id, data: recordPayload.data } });
+      const recordPayload = { id: raw.id, data: raw.data, _meta: raw._meta };
+      writeSchema.parse({ action: 'WRITE', namespace, record: { id: raw.id, data: raw.data, _meta: raw._meta } });
       const savedRecord = await strategy.write(namespace, recordPayload);
       const titleField = raw.data?.name ?? raw.data?.title ?? raw.data?.path ?? raw.id ?? '';
       appendLog({ src: 'vault', action: 'WRITE', ns: namespace, id: raw.id, summary: `${namespace} › ${String(titleField).slice(0, 60)}` });

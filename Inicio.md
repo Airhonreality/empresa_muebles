@@ -59,7 +59,29 @@ Abre `http://localhost:3000` — si no hay usuarios registrados, verás el modo 
 
 Una vez dentro del panel (`http://localhost:3000/schema`), ve al tab **⚡ Deploy** en el rail izquierdo.
 
-Ahí verás en tiempo real qué variables de entorno están configuradas y cuáles faltan, con tutoriales paso a paso para obtener cada clave.
+El **Configurador de Servicios** diagnostica cada servicio en tiempo real, te permite probar credenciales antes de guardarlas, y las escribe directamente en Vercel sin que salgas del panel.
+
+### Flujo normal (primera vez)
+
+1. **Diagnóstico automático** — el panel carga el estado real de cada servicio (no solo si la variable existe, sino si la conexión funciona).
+2. **Ingresa las credenciales** en el formulario de la estrategia que quieres usar. Los campos vacíos con `✅` ya tienen valor — déjalos vacíos para no cambiarlos.
+3. **Probar conexión** — verifica las credenciales antes de guardar, sin tocar el entorno actual.
+4. **Guardar y redesplegar** — escribe las variables en la bóveda encriptada de Vercel y dispara un nuevo build automáticamente.
+5. El panel hace **polling del despliegue** cada 5 segundos y muestra cuando termina con el enlace de producción.
+
+> En desarrollo local los botones "Guardar" están deshabilitados — agrega las variables a tu `.env.local` directamente.
+
+### Bootstrap (una sola vez en Vercel)
+
+Para que el guardado automático funcione, configura estas tres variables manualmente en Vercel Dashboard → Settings → Environment Variables:
+
+| Variable | Dónde obtenerla |
+|---|---|
+| `VERCEL_ACCESS_TOKEN` | Vercel → Settings → Tokens |
+| `VERCEL_PROJECT_ID` | Vercel → Tu proyecto → Settings → General |
+| `VERCEL_TEAM_ID` | Solo si usas cuenta de equipo |
+
+El panel detecta si faltan y muestra el asistente de bootstrap paso a paso.
 
 ### Estrategias disponibles
 
@@ -69,9 +91,9 @@ Ahí verás en tiempo real qué variables de entorno están configuradas y cuál
 | **GitHub** (prod) | Producción gratuita, datos en JSON | `GITHUB_TOKEN`, `GITHUB_REPO` |
 | **Supabase** (prod) | Producción con base de datos relacional | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 
-### Archivos (subidas) — Cloudflare R2
+Prioridad de resolución: `GITHUB_REPO` → `SUPABASE_URL` → Local (fallback). Si configuras ambas, GitHub gana.
 
-Para que los uploads funcionen en producción configura:
+### Archivos (subidas) — Cloudflare R2
 
 ```
 CF_ACCOUNT_ID=
@@ -81,7 +103,7 @@ CF_R2_SECRET_ACCESS_KEY=
 CF_R2_PUBLIC_URL=        ← opcional, para URLs públicas
 ```
 
-Sin estas variables las subidas se guardan localmente (solo sirve en dev).
+El health check de R2 verifica permisos reales de escritura (PutObject + DeleteObject), no solo que el bucket exista.
 
 ### Auth — activar login con contraseña
 
@@ -100,14 +122,12 @@ $rng.GetBytes($b)
 [System.BitConverter]::ToString($b).Replace('-','').ToLower()
 ```
 
-Sin `SESSION_SECRET`, el panel funciona sin login — ideal para desarrollo local.
+El panel muestra el snippet copiable si `SESSION_SECRET` no está configurado.
 
 ### Dónde poner las variables
 
 - **Desarrollo local:** archivo `.env.local` en la raíz del proyecto (no se sube a git)
-- **Vercel:** Settings → Environment Variables
-
-El tab Deploy del panel muestra exactamente cuáles faltan y qué significa cada una.
+- **Vercel:** a través del Configurador de Servicios del panel, o manualmente en Settings → Environment Variables
 
 ---
 
