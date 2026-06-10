@@ -72,7 +72,7 @@ export class GitHubStrategy implements AgnosticBridge {
   }
 
   private async fetchFile(namespace: string): Promise<{ items: DataItem[]; sha: string | undefined }> {
-    const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/db/${namespace}.json`;
+    const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/storage/db/${namespace}.json`;
     const res = await fetch(`${apiUrl}?ref=${this.branch}`, {
       headers: this.headers,
       cache: 'no-store',
@@ -86,7 +86,7 @@ export class GitHubStrategy implements AgnosticBridge {
   }
 
   private async putFile(namespace: string, items: DataItem[], sha: string | undefined, attempt = 1): Promise<void> {
-    const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/db/${namespace}.json`;
+    const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/storage/db/${namespace}.json`;
     const encoded = Buffer.from(JSON.stringify(items, null, 2)).toString('base64');
     const res = await fetch(apiUrl, {
       method: 'PUT',
@@ -194,7 +194,7 @@ export class GitHubStrategy implements AgnosticBridge {
   async getHistory(namespace: string, limit = 20): Promise<HistoryEntry[]> {
     try {
       if (!this.token || !this.owner || !this.repo) return [];
-      const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/commits?path=db/${namespace}.json&per_page=${limit}&sha=${this.branch}`;
+      const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/commits?path=storage/db/${namespace}.json&per_page=${limit}&sha=${this.branch}`;
       const res = await fetch(apiUrl, { headers: this.headers, cache: 'no-store' });
       if (!res.ok) return [];
       const commits = await res.json() as any[];

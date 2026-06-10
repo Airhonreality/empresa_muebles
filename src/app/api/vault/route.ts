@@ -72,8 +72,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'namespace param required' }, { status: 400 });
     }
 
-    const tenantKey = req.headers.get('x-tenant') ?? undefined;
-    const strategy: any = getStrategy(tenantKey);
+    const strategy = getStrategy();
 
     // Supports context store hydration in a single atomic request
     if (namespace === 'all') {
@@ -123,8 +122,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const tenantKey = req.headers.get('x-tenant') ?? undefined;
-    const strategy: any = getStrategy(tenantKey);
+    const strategy = getStrategy();
 
     // Normalize: support both new (namespace+record) and legacy (context+payload) shapes
     const action = body.action as string;

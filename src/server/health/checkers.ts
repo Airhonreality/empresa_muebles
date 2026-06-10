@@ -179,6 +179,36 @@ export async function checkR2(
   }
 }
 
+// ─── POSTGRES CHECKER ────────────────────────────────────────────────────────
+
+export async function checkPostgres(
+  url = process.env.DATABASE_URL,
+): Promise<CheckResult> {
+  const id = 'postgres';
+  const type = 'datastore';
+  const time = new Date().toISOString();
+  const start = Date.now();
+
+  if (!url) {
+    return { componentId: id, componentType: type, status: 'fail', output: 'DATABASE_URL no configurado', time, latency_ms: 0 };
+  }
+
+  try {
+    // Dynamic import — postgres.js may not be installed in all environments
+    const { default: postgres } = await import('postgres');
+    const sql = postgres(url, { max: 1, connect_timeout: 5, idle_timeout: 5 });
+    await withTimeout(sql`SELECT 1`, TIMEOUT_MS);
+    await sql.end({ timeout: 3 });
+    return { componentId: id, componentType: type, status: 'pass', time, latency_ms: Date.now() - start };
+  } catch (err: unknown) {
+    return {
+      componentId: id, componentType: type, status: 'fail',
+      output: err instanceof Error ? err.message : 'Error desconocido',
+      time, latency_ms: Date.now() - start,
+    };
+  }
+}
+
 // ─── AUTH CHECKER ────────────────────────────────────────────────────────────
 
 export async function checkSession(
