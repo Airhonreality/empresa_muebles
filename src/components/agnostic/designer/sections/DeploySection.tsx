@@ -22,15 +22,16 @@ interface CheckResult {
 
 interface HealthData {
   status: 'pass' | 'warn' | 'fail';
-  activeDataStrategy: 'github' | 'supabase' | 'local';
+  activeDataStrategy: 'github' | 'postgres' | 'supabase' | 'local';
   isVercel: boolean;
   env_presence: Record<string, boolean>;
   checks: {
-    'data:github': CheckResult[];
-    'storage:r2': CheckResult[];
-    'data:supabase': CheckResult[];
-    'data:local': CheckResult[];
-    'auth:session': CheckResult[];
+    'data:github':    CheckResult[];
+    'data:postgres':  CheckResult[];
+    'storage:r2':     CheckResult[];
+    'data:supabase':  CheckResult[];
+    'data:local':     CheckResult[];
+    'auth:session':   CheckResult[];
   };
 }
 
@@ -393,7 +394,7 @@ type MigrationResult = {
   report: MigrationReport[];
 };
 
-const MIGRATE_STRATEGIES = ['github', 'supabase', 'local'] as const;
+const MIGRATE_STRATEGIES = ['github', 'postgres', 'supabase', 'local'] as const;
 type MigrateStrategy = typeof MIGRATE_STRATEGIES[number];
 
 function MigrationPanel() {
@@ -428,7 +429,7 @@ function MigrationPanel() {
     setLoadingSql(true);
     setSetupSql(null);
     try {
-      const res = await fetch(`/api/admin/migrate?from=${from}`);
+      const res = await fetch(`/api/admin/migrate?from=${from}&to=${to}`);
       setSetupSql(await res.text());
     } finally {
       setLoadingSql(false);
@@ -495,11 +496,18 @@ function MigrationPanel() {
             </div>
           </div>
 
-          {/* Supabase setup SQL hint */}
+          {/* Setup notes per target */}
+          {to === 'postgres' && (
+            <div className="rounded-xl bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-500/20 px-3 py-2.5">
+              <p className="text-[9px] text-emerald-700 dark:text-emerald-400">
+                PostgreSQL — no necesitas preparar nada. La tabla <code className="bg-muted px-1 rounded">agnostic_records</code> se crea automáticamente en el primer write.
+              </p>
+            </div>
+          )}
           {to === 'supabase' && (
             <div className="rounded-xl bg-amber-50/30 dark:bg-amber-950/10 border border-amber-500/20 px-3 py-2.5 space-y-2">
               <p className="text-[9px] text-amber-700 dark:text-amber-400">
-                Supabase requiere crear las tablas antes de migrar. Ejecuta el SQL de setup en el SQL Editor de tu proyecto Supabase.
+                Supabase (PostgREST) requiere crear las tablas antes de migrar. Considera usar <code className="bg-muted px-1 rounded">DATABASE_URL</code> con la URL de Postgres directa para evitar este paso.
               </p>
               <button
                 onClick={fetchSetupSql}
@@ -507,7 +515,7 @@ function MigrationPanel() {
                 className="flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-400 hover:underline"
               >
                 {loadingSql && <Loader2 size={10} className="animate-spin" />}
-                Generar SQL de setup
+                Generar SQL de setup (PostgREST)
               </button>
               {setupSql && <CopySnippet text={setupSql} />}
             </div>
@@ -609,17 +617,19 @@ function MigrationPanel() {
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 type FormMap = {
-  github:  { GITHUB_TOKEN: string; GITHUB_REPO: string; GITHUB_BRANCH: string };
-  r2:      { CF_ACCOUNT_ID: string; CF_R2_BUCKET: string; CF_R2_ACCESS_KEY_ID: string; CF_R2_SECRET_ACCESS_KEY: string; CF_R2_PUBLIC_URL: string };
-  supabase:{ SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string };
-  auth:    { SESSION_SECRET: string };
+  github:   { GITHUB_TOKEN: string; GITHUB_REPO: string; GITHUB_BRANCH: string };
+  postgres: { DATABASE_URL: string };
+  r2:       { CF_ACCOUNT_ID: string; CF_R2_BUCKET: string; CF_R2_ACCESS_KEY_ID: string; CF_R2_SECRET_ACCESS_KEY: string; CF_R2_PUBLIC_URL: string };
+  supabase: { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string };
+  auth:     { SESSION_SECRET: string };
 };
 
 const EMPTY_FORMS: FormMap = {
-  github:  { GITHUB_TOKEN: '', GITHUB_REPO: '', GITHUB_BRANCH: '' },
-  r2:      { CF_ACCOUNT_ID: '', CF_R2_BUCKET: '', CF_R2_ACCESS_KEY_ID: '', CF_R2_SECRET_ACCESS_KEY: '', CF_R2_PUBLIC_URL: '' },
-  supabase:{ SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '' },
-  auth:    { SESSION_SECRET: '' },
+  github:   { GITHUB_TOKEN: '', GITHUB_REPO: '', GITHUB_BRANCH: '' },
+  postgres: { DATABASE_URL: '' },
+  r2:       { CF_ACCOUNT_ID: '', CF_R2_BUCKET: '', CF_R2_ACCESS_KEY_ID: '', CF_R2_SECRET_ACCESS_KEY: '', CF_R2_PUBLIC_URL: '' },
+  supabase: { SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '' },
+  auth:     { SESSION_SECRET: '' },
 };
 
 export function DeploySection() {
@@ -755,11 +765,12 @@ export function DeploySection() {
 
   // ─── RENDER ──────────────────────────────────────────────────────────────────
 
-  const checks    = health?.checks;
-  const githubCk  = checks?.['data:github'][0];
-  const r2Ck      = checks?.['storage:r2'][0];
-  const supabaseCk = checks?.['data:supabase'][0];
-  const sessionCk = checks?.['auth:session'][0];
+  const checks      = health?.checks;
+  const githubCk    = checks?.['data:github'][0];
+  const postgresCk  = checks?.['data:postgres'][0];
+  const r2Ck        = checks?.['storage:r2'][0];
+  const supabaseCk  = checks?.['data:supabase'][0];
+  const sessionCk   = checks?.['auth:session'][0];
 
   const globalStatus = health?.status ?? 'fail';
 
@@ -831,6 +842,44 @@ export function DeploySection() {
           testResult={testResults['github'] ?? null}
           testing={testingId === 'github'}
           saving={savingId === 'github'}
+          isDevMode={isDevMode}
+        />
+      </StrategyCard>
+
+      {/* ── PostgreSQL / Neon ───────────────────────────────────────── */}
+      <StrategyCard
+        icon={Database}
+        title="Datos — PostgreSQL"
+        subtitle={
+          health?.activeDataStrategy === 'postgres'
+            ? 'Estrategia activa'
+            : 'Neon · Supabase · Railway · Render'
+        }
+        check={postgresCk}
+        defaultOpen={health?.activeDataStrategy === 'postgres' && postgresCk?.status !== 'pass'}
+      >
+        <div className="text-[9px] text-muted-foreground px-1 pb-1 leading-relaxed">
+          Un único <code className="bg-muted px-1 rounded">DATABASE_URL</code> conecta con cualquier proveedor Postgres estándar.
+          Las tablas se crean automáticamente — no necesitas ejecutar SQL de setup.
+        </div>
+        <div className="space-y-2">
+          <CredentialField
+            name="DATABASE_URL"
+            value={forms.postgres.DATABASE_URL}
+            onChange={v => setField('postgres', 'DATABASE_URL', v)}
+            exists={!!presence['DATABASE_URL']}
+            sensitive
+            placeholder="postgresql://user:pass@host/db"
+          />
+        </div>
+        <ActionRow
+          onTest={() => handleTest('postgres', { DATABASE_URL: forms.postgres.DATABASE_URL })}
+          onSave={(redeploy) => handleSave('postgres', [
+            { key: 'DATABASE_URL', value: forms.postgres.DATABASE_URL, sensitive: true },
+          ], redeploy)}
+          testResult={testResults['postgres'] ?? null}
+          testing={testingId === 'postgres'}
+          saving={savingId === 'postgres'}
           isDevMode={isDevMode}
         />
       </StrategyCard>

@@ -8,15 +8,18 @@ if (process.env.NEXT_RUNTIME) {
 }
 
 import type { AgnosticBridge } from '@agnostic/core';
-import { LocalStrategy }   from './strategies/LocalStrategy';
+import { LocalStrategy }    from './strategies/LocalStrategy';
 import { SupabaseStrategy } from './strategies/SupabaseStrategy';
-import { GitHubStrategy }  from './strategies/GitHubStrategy';
-import { getSiloPath }     from './activeProject';
+import { GitHubStrategy }   from './strategies/GitHubStrategy';
+import { PostgresStrategy } from './strategies/PostgresStrategy';
+import { getSiloPath }      from './activeProject';
 
 /**
  * Resolves the persistence strategy from environment variables.
- * Priority: GITHUB_REPO → SUPABASE_URL → LocalStrategy (default).
- * No filesystem passport needed — strategy is set at deploy time via env vars.
+ * Priority: GITHUB_REPO → DATABASE_URL → SUPABASE_URL → LocalStrategy (default).
+ *
+ * DATABASE_URL accepts any standard PostgreSQL connection string:
+ *   Neon, Supabase (direct Postgres), Railway, Render, etc.
  */
 export function getStrategy(): AgnosticBridge {
   if (process.env.GITHUB_REPO) {
@@ -24,15 +27,16 @@ export function getStrategy(): AgnosticBridge {
     return new GitHubStrategy(owner, repo, undefined, process.env.GITHUB_BRANCH ?? 'main');
   }
 
+  if (process.env.DATABASE_URL) {
+    return new PostgresStrategy(process.env.DATABASE_URL);
+  }
+
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return new SupabaseStrategy(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    return new SupabaseStrategy(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   }
 
   if (process.env.VERCEL) {
-    console.warn('[getStrategy] WARNING: LocalStrategy on Vercel read-only filesystem. Set GITHUB_REPO for persistent storage.');
+    console.warn('[getStrategy] WARNING: LocalStrategy on Vercel read-only filesystem. Set GITHUB_REPO or DATABASE_URL for persistent storage.');
   }
 
   return new LocalStrategy(getSiloPath());

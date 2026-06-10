@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GitHubStrategy } from '@/server/strategies/GitHubStrategy';
+import { GitHubStrategy }  from '@/server/strategies/GitHubStrategy';
 import { SupabaseStrategy } from '@/server/strategies/SupabaseStrategy';
-import { LocalStrategy } from '@/server/strategies/LocalStrategy';
+import { PostgresStrategy } from '@/server/strategies/PostgresStrategy';
+import { LocalStrategy }   from '@/server/strategies/LocalStrategy';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { getSiloPath } from '@/server/activeProject';
 import type { AgnosticBridge } from '@agnostic/core';
@@ -28,6 +29,11 @@ function buildAdapter(strategy: string): { adapter: AgnosticBridge } | { error: 
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!url || !key) return { error: 'SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY no configurados' };
       return { adapter: new SupabaseStrategy(url, key) };
+    }
+    case 'postgres': {
+      const url = process.env.DATABASE_URL;
+      if (!url) return { error: 'DATABASE_URL no configurado' };
+      return { adapter: new PostgresStrategy(url) };
     }
     case 'local': {
       return { adapter: new LocalStrategy(getSiloPath()) };
@@ -59,9 +65,29 @@ async function discoverNamespaces(source: AgnosticBridge): Promise<string[]> {
   }
 }
 
-// ─── SQL SETUP GENERATOR (for Supabase target) ───────────────────────────────
+// ─── SQL SETUP GENERATOR ─────────────────────────────────────────────────────
+// postgres target: single table, auto-created on first write — no manual SQL needed.
+// supabase (PostgREST) target: still requires one table per namespace.
 
-function generateSetupSQL(namespaces: string[]): string {
+function generateSetupSQL(to: string, namespaces: string[]): string {
+  if (to !== 'supabase') {
+    return `-- No SQL manual requerido para la estrategia "${to}".
+-- PostgresStrategy crea la tabla agnostic_records automáticamente en el primer write.
+--
+-- Schema de referencia (ya ejecutado por el engine):
+CREATE TABLE IF NOT EXISTS agnostic_records (
+  id         TEXT        NOT NULL,
+  namespace  TEXT        NOT NULL,
+  context    TEXT,
+  data       JSONB       NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ,
+  PRIMARY KEY (namespace, id)
+);
+CREATE INDEX IF NOT EXISTS idx_agnostic_ns ON agnostic_records (namespace);`;
+  }
+
+  // Legacy Supabase PostgREST: one table per namespace
   const blocks = namespaces.map(ns => `
 CREATE TABLE IF NOT EXISTS "${ns}" (
   id          TEXT PRIMARY KEY,
@@ -71,9 +97,10 @@ CREATE TABLE IF NOT EXISTS "${ns}" (
   updated_at  TIMESTAMPTZ
 );`).join('\n');
 
-  return `-- Agnostic System — Supabase table setup
--- Run this in the Supabase SQL editor BEFORE migrating data.
--- Tables are safe to run multiple times (IF NOT EXISTS).
+  return `-- Agnostic System — Supabase (PostgREST) table setup
+-- Ejecuta este SQL en el SQL Editor de Supabase ANTES de migrar datos.
+-- Considera usar DATABASE_URL con la conexión directa de Postgres en su lugar
+-- para no necesitar este paso (PostgresStrategy crea la tabla automáticamente).
 ${blocks}`;
 }
 
@@ -179,14 +206,17 @@ export async function POST(req: NextRequest) {
 // ─── SETUP SQL ENDPOINT ───────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const from = new URL(req.url).searchParams.get('from') ?? 'github';
+  const params = new URL(req.url).searchParams;
+  const from = params.get('from') ?? 'github';
+  const to   = params.get('to')   ?? 'postgres';
+
   const srcResult = buildAdapter(from);
   if ('error' in srcResult) {
     return NextResponse.json({ error: srcResult.error }, { status: 400 });
   }
 
   const namespaces = await discoverNamespaces(srcResult.adapter);
-  const sql = generateSetupSQL(namespaces);
+  const sql = generateSetupSQL(to, namespaces);
 
   return new NextResponse(sql, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
