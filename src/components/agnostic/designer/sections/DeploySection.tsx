@@ -1,33 +1,74 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  CheckCircle2, XCircle, ChevronDown, ChevronRight,
-  Shield, Github, Cloud, Database, Rocket, Copy, Check,
+  CheckCircle2, XCircle, AlertCircle, Rocket, RefreshCw,
+  Github, Cloud, Database, Shield, ChevronDown, ChevronRight,
+  Eye, EyeOff, Loader2, Copy, Check, ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
-interface EnvStatus {
-  auth:    { SESSION_SECRET: boolean };
-  github:  { GITHUB_TOKEN: boolean; GITHUB_REPO: boolean; GITHUB_BRANCH: boolean };
-  r2:      { CF_ACCOUNT_ID: boolean; CF_R2_BUCKET: boolean; CF_R2_ACCESS_KEY_ID: boolean; CF_R2_SECRET_ACCESS_KEY: boolean; CF_R2_PUBLIC_URL: boolean };
-  supabase:{ SUPABASE_URL: boolean; SUPABASE_SERVICE_ROLE_KEY: boolean };
+interface CheckResult {
+  componentId: string;
+  componentType: string;
+  status: 'pass' | 'fail' | 'warn';
+  output?: string;
+  time: string;
+  latency_ms: number;
 }
+
+interface HealthData {
+  status: 'pass' | 'warn' | 'fail';
+  activeDataStrategy: 'github' | 'supabase' | 'local';
+  isVercel: boolean;
+  env_presence: Record<string, boolean>;
+  checks: {
+    'data:github': CheckResult[];
+    'storage:r2': CheckResult[];
+    'data:supabase': CheckResult[];
+    'data:local': CheckResult[];
+    'auth:session': CheckResult[];
+  };
+}
+
+interface DeployState {
+  id: string;
+  readyState: string;
+  url: string | null;
+  errorMessage: string | null;
+  pollCount: number;
+}
+
+type SaveResult = {
+  saved: number;
+  failed: number;
+  errors: string[];
+  deployment: { id: string; url: string | null; readyState: string } | null;
+  warning?: string;
+};
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+
+const POLL_INTERVAL_MS  = 5000;
+const MAX_POLL_ATTEMPTS = 72; // 6 min max (72 × 5s)
+const TERMINAL_STATES   = new Set(['READY', 'ERROR', 'CANCELED']);
 
 // ─── PRIMITIVES ───────────────────────────────────────────────────────────────
 
-function EnvVar({ name, ok }: { name: string; ok: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-      <span className="font-mono text-[10px] font-bold text-foreground/80">{name}</span>
-      {ok
-        ? <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
-        : <XCircle     size={13} className="text-destructive/60 shrink-0" />}
-    </div>
-  );
+function StatusDot({ status }: { status: 'pass' | 'warn' | 'fail' | 'loading' }) {
+  if (status === 'loading') return <Loader2 size={12} className="animate-spin text-muted-foreground" />;
+  if (status === 'pass')    return <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />;
+  if (status === 'warn')    return <AlertCircle  size={12} className="text-amber-500 shrink-0" />;
+  return                           <XCircle      size={12} className="text-destructive/70 shrink-0" />;
+}
+
+function ExistsBadge({ exists }: { exists: boolean }) {
+  return exists
+    ? <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
+    : <span className="w-[11px] h-[11px] rounded-full border border-muted-foreground/30 shrink-0 block" />;
 }
 
 function CopySnippet({ text }: { text: string }) {
@@ -39,8 +80,8 @@ function CopySnippet({ text }: { text: string }) {
     });
   };
   return (
-    <div className="flex items-center gap-2 bg-muted/40 border rounded-lg px-3 py-2 font-mono text-[10px] text-muted-foreground group">
-      <span className="flex-1 break-all">{text}</span>
+    <div className="flex items-center gap-2 bg-muted/40 border rounded-lg px-3 py-2 font-mono text-[10px] text-muted-foreground">
+      <span className="flex-1 break-all whitespace-pre-wrap">{text}</span>
       <button onClick={handleCopy} className="shrink-0 text-muted-foreground/50 hover:text-primary transition-colors">
         {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
       </button>
@@ -48,38 +89,64 @@ function CopySnippet({ text }: { text: string }) {
   );
 }
 
-function Tutorial({ steps }: { steps: { title: string; body: React.ReactNode }[] }) {
+// ─── CREDENTIAL FIELD ─────────────────────────────────────────────────────────
+
+function CredentialField({
+  name, value, onChange, exists, sensitive = true, placeholder,
+}: {
+  name: string;
+  value: string;
+  onChange: (v: string) => void;
+  exists: boolean;
+  sensitive?: boolean;
+  placeholder?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  const type = sensitive && !visible ? 'password' : 'text';
+
   return (
-    <ol className="space-y-3 mt-3">
-      {steps.map((step, i) => (
-        <li key={i} className="flex gap-3">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-[9px] font-black">{i + 1}</span>
-          <div className="space-y-1.5 flex-1">
-            <p className="text-[11px] font-bold text-foreground/80">{step.title}</p>
-            <div className="text-[10px] text-muted-foreground leading-relaxed">{step.body}</div>
-          </div>
-        </li>
-      ))}
-    </ol>
+    <div className="flex items-center gap-2 group">
+      <span className="font-mono text-[9px] font-bold w-48 shrink-0 text-foreground/60 leading-tight">{name}</span>
+      <div className="flex-1 flex items-center gap-1 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1.5 focus-within:ring-1 focus-within:ring-primary/50 transition-all">
+        <input
+          type={type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder ?? (exists ? '— dejar vacío para mantener —' : 'Nuevo valor...')}
+          className="flex-1 bg-transparent text-[10px] font-mono outline-none text-foreground placeholder:text-muted-foreground/40 min-w-0"
+        />
+        {sensitive && (
+          <button onClick={() => setVisible(v => !v)} className="text-muted-foreground/40 hover:text-muted-foreground transition-colors shrink-0">
+            {visible ? <EyeOff size={10} /> : <Eye size={10} />}
+          </button>
+        )}
+      </div>
+      <ExistsBadge exists={exists} />
+    </div>
   );
 }
 
-function ServiceCard({
-  icon: Icon, title, vars, ok, children,
+// ─── STRATEGY CARD ────────────────────────────────────────────────────────────
+
+function StrategyCard({
+  icon: Icon, title, subtitle, check, defaultOpen, children,
 }: {
   icon: React.ElementType;
   title: string;
-  vars: boolean[];
-  ok: boolean;
-  children?: React.ReactNode;
+  subtitle?: string;
+  check?: CheckResult;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(!ok);
+  const [open, setOpen] = useState(defaultOpen ?? false);
+  const status = check?.status ?? 'fail';
 
   return (
     <div className={cn(
       'rounded-2xl border shadow-sm overflow-hidden transition-all',
-      ok ? 'border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/10'
-         : 'border-destructive/20 bg-destructive/5 dark:bg-destructive/5',
+      status === 'pass' ? 'border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/10'
+      : status === 'warn' ? 'border-amber-500/20 bg-amber-50/20 dark:bg-amber-950/10'
+      : 'border-destructive/20 bg-destructive/5',
     )}>
       <button
         onClick={() => setOpen(v => !v)}
@@ -87,22 +154,36 @@ function ServiceCard({
       >
         <div className={cn(
           'h-8 w-8 rounded-xl flex items-center justify-center shrink-0',
-          ok ? 'bg-emerald-500/10 text-emerald-600' : 'bg-destructive/10 text-destructive/70',
+          status === 'pass' ? 'bg-emerald-500/10 text-emerald-600'
+          : status === 'warn' ? 'bg-amber-500/10 text-amber-600'
+          : 'bg-destructive/10 text-destructive/70',
         )}>
           <Icon size={15} />
         </div>
-        <div className="flex-1 text-left">
+        <div className="flex-1 text-left min-w-0">
           <p className="text-[11px] font-black uppercase tracking-widest text-foreground">{title}</p>
-          <p className={cn('text-[9px] font-bold uppercase tracking-wider mt-0.5',
-            ok ? 'text-emerald-600' : 'text-destructive/70',
-          )}>
-            {ok ? `${vars.length}/${vars.length} configurado` : `${vars.filter(Boolean).length}/${vars.length} configurado`}
-          </p>
+          {subtitle && <p className="text-[9px] text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
         </div>
-        {open ? <ChevronDown size={14} className="text-muted-foreground/50" /> : <ChevronRight size={14} className="text-muted-foreground/50" />}
+        {check && (
+          <span className={cn(
+            'text-[9px] font-bold uppercase tracking-wider',
+            status === 'pass' ? 'text-emerald-600' : status === 'warn' ? 'text-amber-600' : 'text-destructive/70',
+          )}>
+            {status === 'pass' ? 'OK' : status === 'warn' ? 'WARN' : 'FAIL'}
+            {check.latency_ms > 0 && status === 'pass' ? ` · ${check.latency_ms}ms` : ''}
+          </span>
+        )}
+        {open ? <ChevronDown size={14} className="text-muted-foreground/50 shrink-0" /> : <ChevronRight size={14} className="text-muted-foreground/50 shrink-0" />}
       </button>
+
       {open && (
-        <div className="px-4 pb-4 space-y-2 border-t border-border/30 pt-3 animate-in slide-in-from-top-1 duration-200">
+        <div className="px-4 pb-4 space-y-3 border-t border-border/30 pt-3 animate-in slide-in-from-top-1 duration-200">
+          {check?.output && (
+            <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-muted/30 text-[10px] text-muted-foreground">
+              <AlertCircle size={12} className="shrink-0 mt-0.5 text-amber-500" />
+              <span>{check.output}</span>
+            </div>
+          )}
           {children}
         </div>
       )}
@@ -110,251 +191,504 @@ function ServiceCard({
   );
 }
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// ─── ACTION ROW ───────────────────────────────────────────────────────────────
 
-export function DeploySection() {
-  const [status, setStatus] = useState<EnvStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/admin/env-status')
-      .then(r => r.json())
-      .then(setStatus)
-      .catch(() => setStatus(null))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const reload = () => {
-    setLoading(true);
-    fetch('/api/admin/env-status')
-      .then(r => r.json())
-      .then(setStatus)
-      .catch(() => setStatus(null))
-      .finally(() => setLoading(false));
-  };
-
-  if (loading) {
-    return (
-      <div className="h-40 flex items-center justify-center text-xs text-muted-foreground gap-2">
-        <Rocket size={14} className="animate-bounce" /> Verificando entorno...
-      </div>
-    );
-  }
-
-  if (!status) {
-    return (
-      <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center space-y-2">
-        <p className="text-xs font-bold text-destructive">No se pudo leer el estado del entorno.</p>
-        <p className="text-[10px] text-muted-foreground">Verifica que /api/admin/env-status responda correctamente.</p>
-      </div>
-    );
-  }
-
-  const allVars = [
-    status.auth.SESSION_SECRET,
-    status.github.GITHUB_TOKEN, status.github.GITHUB_REPO,
-    status.r2.CF_ACCOUNT_ID, status.r2.CF_R2_BUCKET, status.r2.CF_R2_ACCESS_KEY_ID, status.r2.CF_R2_SECRET_ACCESS_KEY,
-  ];
-  const configuredCount = allVars.filter(Boolean).length;
-  const totalCount      = allVars.length;
-  const allOk           = configuredCount === totalCount;
-
-  const authOk    = status.auth.SESSION_SECRET;
-  const githubOk  = status.github.GITHUB_TOKEN && status.github.GITHUB_REPO;
-  const r2Ok      = status.r2.CF_ACCOUNT_ID && status.r2.CF_R2_BUCKET && status.r2.CF_R2_ACCESS_KEY_ID && status.r2.CF_R2_SECRET_ACCESS_KEY;
-  const supabaseOk = status.supabase.SUPABASE_URL && status.supabase.SUPABASE_SERVICE_ROLE_KEY;
+function ActionRow({
+  onTest, onSave, testResult, testing, saving, isDevMode,
+}: {
+  onTest: () => void;
+  onSave: (redeploy: boolean) => void;
+  testResult: CheckResult | null;
+  testing: boolean;
+  saving: boolean;
+  isDevMode: boolean;
+}) {
+  const testOk = testResult?.status === 'pass';
+  const testWarn = testResult?.status === 'warn';
 
   return (
-    <div className="space-y-5 py-2 animate-in fade-in duration-500">
+    <div className="space-y-2 pt-1">
+      {/* Test result message */}
+      {testResult && (
+        <div className={cn(
+          'flex items-start gap-2 px-3 py-2 rounded-xl text-[10px]',
+          testOk ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+          : testWarn ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+          : 'bg-destructive/10 text-destructive',
+        )}>
+          <StatusDot status={testResult.status} />
+          <span>{testOk ? `Conexión exitosa (${testResult.latency_ms}ms)` : testResult.output ?? 'Error desconocido'}</span>
+        </div>
+      )}
 
-      {/* ── Header ────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          variant="outline" size="sm"
+          onClick={onTest}
+          disabled={testing || saving}
+          className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
+        >
+          {testing ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+          Probar conexión
+        </Button>
+
+        <Button
+          size="sm"
+          onClick={() => onSave(true)}
+          disabled={saving || testing || isDevMode}
+          title={isDevMode ? 'Solo disponible en producción — agrega las variables a tu .env.local' : undefined}
+          className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
+        >
+          {saving ? <Loader2 size={10} className="animate-spin" /> : <Rocket size={10} />}
+          {isDevMode ? 'Solo en producción' : 'Guardar y redesplegar'}
+        </Button>
+
+        {!isDevMode && (
+          <Button
+            variant="ghost" size="sm"
+            onClick={() => onSave(false)}
+            disabled={saving || testing}
+            className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3 text-muted-foreground"
+          >
+            Solo guardar
+          </Button>
+        )}
+      </div>
+
+      {isDevMode && (
+        <p className="text-[9px] text-muted-foreground italic">
+          En desarrollo, agrega las variables a tu <code className="bg-muted px-1 rounded">.env.local</code>.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── DEPLOY STATUS BAR ────────────────────────────────────────────────────────
+
+function DeployStatusBar({ deploy, onDismiss }: { deploy: DeployState; onDismiss: () => void }) {
+  const isTerminal = TERMINAL_STATES.has(deploy.readyState);
+
+  return (
+    <div className={cn(
+      'rounded-2xl border p-4 space-y-2',
+      deploy.readyState === 'READY' ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/10'
+      : deploy.readyState === 'ERROR' ? 'border-destructive/30 bg-destructive/5'
+      : 'border-primary/20 bg-primary/5',
+    )}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Rocket size={13} className={cn(deploy.readyState === 'READY' ? 'text-emerald-600' : deploy.readyState === 'ERROR' ? 'text-destructive' : 'text-primary animate-bounce')} />
+          <p className="text-[10px] font-black uppercase tracking-widest text-foreground">
+            {deploy.readyState === 'READY' ? 'Despliegue completado'
+              : deploy.readyState === 'ERROR' ? 'Error en despliegue'
+              : deploy.readyState === 'CANCELED' ? 'Despliegue cancelado'
+              : `Desplegando — ${deploy.readyState}`}
+          </p>
+        </div>
+        {isTerminal && (
+          <button onClick={onDismiss} className="text-[9px] text-muted-foreground hover:text-foreground transition-colors">
+            Cerrar
+          </button>
+        )}
+      </div>
+
+      {/* Indeterminate progress — Vercel API has no percentage, only states */}
+      {!isTerminal && (
+        <div className="h-1 rounded-full bg-muted overflow-hidden">
+          <div className="h-full bg-primary rounded-full animate-pulse w-2/3" />
+        </div>
+      )}
+
+      <p className="text-[9px] text-muted-foreground font-mono">
+        ID: {deploy.id}
+        {deploy.pollCount > 0 && ` · verificación ${deploy.pollCount}`}
+      </p>
+
+      {deploy.readyState === 'READY' && deploy.url && (
+        <a
+          href={deploy.url} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:underline"
+        >
+          <ExternalLink size={10} /> Abrir producción
+        </a>
+      )}
+
+      {deploy.errorMessage && (
+        <p className="text-[9px] text-destructive font-mono">{deploy.errorMessage}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── BOOTSTRAP GATE ──────────────────────────────────────────────────────────
+
+function BootstrapGate() {
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <AlertCircle size={14} className="text-amber-500 shrink-0" />
+        <p className="text-[11px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
+          Bootstrap requerido
+        </p>
+      </div>
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        <code className="bg-muted px-1 rounded text-[9px]">VERCEL_ACCESS_TOKEN</code> y{' '}
+        <code className="bg-muted px-1 rounded text-[9px]">VERCEL_PROJECT_ID</code> no detectados.
+        Configúralos manualmente en el Dashboard de Vercel <strong>una única vez</strong> para habilitar el guardado automático desde este panel.
+      </p>
+      <ol className="space-y-2.5">
+        {[
+          {
+            title: '1. Obtén tu Access Token',
+            body: 'Vercel Dashboard → Settings → Tokens → Create token (scope: Full Account).',
+            snippet: 'VERCEL_ACCESS_TOKEN=vercel_pat_...',
+          },
+          {
+            title: '2. Obtén el Project ID',
+            body: 'Vercel Dashboard → Tu proyecto → Settings → General → Project ID.',
+            snippet: 'VERCEL_PROJECT_ID=prj_...',
+          },
+          {
+            title: '3. (Condicional) Team ID',
+            body: 'Solo si usas cuenta de equipo: Settings → General → Team ID.',
+            snippet: 'VERCEL_TEAM_ID=team_...',
+          },
+        ].map(s => (
+          <li key={s.title} className="space-y-1">
+            <p className="text-[10px] font-bold text-foreground/80">{s.title}</p>
+            <p className="text-[10px] text-muted-foreground">{s.body}</p>
+            <CopySnippet text={s.snippet} />
+          </li>
+        ))}
+      </ol>
+      <p className="text-[9px] text-muted-foreground italic">
+        Las funciones de Probar Conexión funcionan sin bootstrap — solo el guardado a Vercel lo requiere.
+      </p>
+    </div>
+  );
+}
+
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
+
+type FormMap = {
+  github:  { GITHUB_TOKEN: string; GITHUB_REPO: string; GITHUB_BRANCH: string };
+  r2:      { CF_ACCOUNT_ID: string; CF_R2_BUCKET: string; CF_R2_ACCESS_KEY_ID: string; CF_R2_SECRET_ACCESS_KEY: string; CF_R2_PUBLIC_URL: string };
+  supabase:{ SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string };
+  auth:    { SESSION_SECRET: string };
+};
+
+const EMPTY_FORMS: FormMap = {
+  github:  { GITHUB_TOKEN: '', GITHUB_REPO: '', GITHUB_BRANCH: '' },
+  r2:      { CF_ACCOUNT_ID: '', CF_R2_BUCKET: '', CF_R2_ACCESS_KEY_ID: '', CF_R2_SECRET_ACCESS_KEY: '', CF_R2_PUBLIC_URL: '' },
+  supabase:{ SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '' },
+  auth:    { SESSION_SECRET: '' },
+};
+
+export function DeploySection() {
+  const [health, setHealth]       = useState<HealthData | null>(null);
+  const [loadingH, setLoadingH]   = useState(true);
+  const [forms, setForms]         = useState<FormMap>(EMPTY_FORMS);
+  const [testResults, setTestResults] = useState<Partial<Record<string, CheckResult>>>({});
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [savingId, setSavingId]   = useState<string | null>(null);
+  const [saveMsg, setSaveMsg]     = useState<string | null>(null);
+  const [deploy, setDeploy]       = useState<DeployState | null>(null);
+
+  const pollRef         = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollCount       = useRef(0);
+  const activeDeployRef = useRef<string | null>(null); // tracks deploy.id to avoid count reset on readyState changes
+
+  // process.env.VERCEL is server-only — never accessible in 'use client' bundles.
+  // We read isVercel from the health response (server sets it correctly).
+  // Default true (disabled) until health loads — prevents a flash of an enabled Save button in dev.
+  const isDevMode = !health?.isVercel;
+
+  // ── Health fetch ─────────────────────────────────────────────────────────────
+
+  const fetchHealth = useCallback(() => {
+    setLoadingH(true);
+    fetch('/api/admin/health')
+      .then(r => r.json())
+      .then(setHealth)
+      .catch(() => setHealth(null))
+      .finally(() => setLoadingH(false));
+  }, []);
+
+  useEffect(() => { fetchHealth(); }, [fetchHealth]);
+
+  // ── Deploy polling (terminates on terminal state or max attempts) ─────────────
+  // Dependencies: [deploy?.id, deploy?.readyState] — effect re-runs when state changes,
+  // but pollCount must NOT reset on readyState changes (only on new deployments).
+
+  useEffect(() => {
+    if (!deploy?.id || TERMINAL_STATES.has(deploy.readyState)) {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      return;
+    }
+
+    // Only reset counter when a genuinely new deployment starts, not on readyState transitions.
+    if (deploy.id !== activeDeployRef.current) {
+      pollCount.current = 0;
+      activeDeployRef.current = deploy.id;
+    }
+
+    const deployId = deploy.id; // capture to avoid stale closure
+    pollRef.current = setInterval(async () => {
+      pollCount.current += 1;
+      if (pollCount.current > MAX_POLL_ATTEMPTS) {
+        clearInterval(pollRef.current!);
+        setDeploy(d => d ? { ...d, readyState: 'ERROR', errorMessage: 'Timeout: el deploy tardó más de 6 minutos.' } : null);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/admin/config/deploy-status?deploymentId=${deployId}`);
+        const data = await res.json() as Partial<DeployState>;
+        setDeploy(d => d ? { ...d, ...data, pollCount: pollCount.current } : null);
+      } catch { /* network hiccup — keep polling */ }
+    }, POLL_INTERVAL_MS);
+
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [deploy?.id, deploy?.readyState]);
+
+  // ── Form helpers ─────────────────────────────────────────────────────────────
+
+  const setField = <S extends keyof FormMap>(section: S, key: keyof FormMap[S], value: string) => {
+    setForms(f => ({ ...f, [section]: { ...f[section], [key]: value } }));
+  };
+
+  const presence = health?.env_presence ?? {};
+
+  // ── Test ─────────────────────────────────────────────────────────────────────
+
+  const handleTest = async (strategy: string, credentials: Record<string, string>) => {
+    setTestingId(strategy);
+    setTestResults(r => ({ ...r, [strategy]: undefined }));
+    try {
+      const nonEmpty: Record<string, string> = {};
+      for (const [k, v] of Object.entries(credentials)) { if (v) nonEmpty[k] = v; }
+      const res = await fetch('/api/admin/health/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ strategy, credentials: nonEmpty }),
+      });
+      const data = await res.json() as CheckResult;
+      setTestResults(r => ({ ...r, [strategy]: data }));
+    } catch {
+      setTestResults(r => ({ ...r, [strategy]: { componentId: strategy, componentType: 'unknown', status: 'fail', output: 'Error de red', time: new Date().toISOString(), latency_ms: 0 } }));
+    } finally {
+      setTestingId(null);
+    }
+  };
+
+  // ── Save ─────────────────────────────────────────────────────────────────────
+
+  const handleSave = async (section: string, vars: Array<{ key: string; value: string; sensitive?: boolean }>, redeploy: boolean) => {
+    const nonEmpty = vars.filter(v => v.value.trim() !== '');
+    if (nonEmpty.length === 0) {
+      setSaveMsg('No hay valores nuevos para guardar. Ingresa al menos un valor.');
+      setTimeout(() => setSaveMsg(null), 4000);
+      return;
+    }
+    setSavingId(section);
+    setSaveMsg(null);
+    try {
+      const res = await fetch('/api/admin/config/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variables: nonEmpty, redeploy }),
+      });
+      const data = await res.json() as SaveResult;
+      if (data.deployment) {
+        pollCount.current = 0;
+        setDeploy({ id: data.deployment.id, readyState: data.deployment.readyState, url: data.deployment.url, errorMessage: null, pollCount: 0 });
+      }
+      if (data.warning) setSaveMsg(data.warning);
+      else if (data.failed > 0) setSaveMsg(`${data.failed} variable(s) no se guardaron: ${data.errors.join(', ')}`);
+      else setSaveMsg(`${data.saved} variable(s) guardadas correctamente.`);
+      setTimeout(() => setSaveMsg(null), 6000);
+      // Refresh health to reflect new env state
+      if (data.saved > 0 && !redeploy) fetchHealth();
+    } catch {
+      setSaveMsg('Error de red al guardar. Intenta nuevamente.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  // ─── RENDER ──────────────────────────────────────────────────────────────────
+
+  const checks    = health?.checks;
+  const githubCk  = checks?.['data:github'][0];
+  const r2Ck      = checks?.['storage:r2'][0];
+  const supabaseCk = checks?.['data:supabase'][0];
+  const sessionCk = checks?.['auth:session'][0];
+
+  const globalStatus = health?.status ?? 'fail';
+
+  return (
+    <div className="space-y-4 py-2 animate-in fade-in duration-500">
+
+      {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-1.5">
-            <Rocket size={14} className="text-primary" /> Estado del Despliegue
+            {loadingH
+              ? <Loader2 size={13} className="animate-spin text-muted-foreground" />
+              : <StatusDot status={globalStatus} />
+            }
+            Configurador de Servicios
           </h3>
-          <p className="text-[10px] text-muted-foreground">
-            {allOk
-              ? 'Todas las variables de entorno están configuradas.'
-              : `${configuredCount}/${totalCount} variables core configuradas — revisa las secciones en rojo.`}
-          </p>
+          {health && (
+            <p className="text-[9px] text-muted-foreground">
+              Estrategia activa: <span className="font-bold text-foreground/70">{health.activeDataStrategy}</span>
+              {' · '}
+              <span className={cn(
+                'font-bold',
+                globalStatus === 'pass' ? 'text-emerald-600' : globalStatus === 'warn' ? 'text-amber-600' : 'text-destructive',
+              )}>{globalStatus.toUpperCase()}</span>
+            </p>
+          )}
         </div>
-        <Button variant="ghost" size="sm" onClick={reload}
+        <Button variant="ghost" size="sm" onClick={fetchHealth} disabled={loadingH}
           className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3 text-muted-foreground hover:text-primary">
-          Actualizar
+          <RefreshCw size={10} className={cn(loadingH && 'animate-spin')} /> Actualizar
         </Button>
       </div>
 
-      {/* ── Progress bar ─────────────────────────────────────────── */}
-      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all duration-700', allOk ? 'bg-emerald-500' : 'bg-primary')}
-          style={{ width: `${(configuredCount / totalCount) * 100}%` }}
-        />
-      </div>
+      {/* ── Bootstrap gate ──────────────────────────────────────────── */}
+      {health && !presence['VERCEL_ACCESS_TOKEN'] && <BootstrapGate />}
 
-      {/* ── Auth ─────────────────────────────────────────────────── */}
-      <ServiceCard icon={Shield} title="Auth & Seguridad" vars={[status.auth.SESSION_SECRET]} ok={authOk}>
-        <EnvVar name="SESSION_SECRET" ok={status.auth.SESSION_SECRET} />
-        {!status.auth.SESSION_SECRET && (
-          <Tutorial steps={[
-            {
-              title: 'Genera un secreto de 64 caracteres hexadecimales',
-              body: (
-                <div className="space-y-2">
-                  <p className="text-[10px] text-muted-foreground">En PowerShell:</p>
-                  <CopySnippet text={`$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create(); $b = New-Object byte[] 32; $rng.GetBytes($b); [System.BitConverter]::ToString($b).Replace('-','').ToLower()`} />
-                  <p className="text-[10px] text-muted-foreground mt-1">En macOS/Linux:</p>
-                  <CopySnippet text="openssl rand -hex 32" />
-                </div>
-              ),
-            },
-            {
-              title: 'Añade SESSION_SECRET a tu archivo .env.local (dev) o en Vercel',
-              body: (
-                <div className="space-y-2">
-                  <CopySnippet text="SESSION_SECRET=aqui_pega_el_valor_generado" />
-                  <p>En Vercel: <strong>Settings → Environment Variables</strong> → añade <code className="text-[9px] bg-muted px-1 rounded">SESSION_SECRET</code> con el valor.</p>
-                </div>
-              ),
-            },
-            {
-              title: 'Sin SESSION_SECRET el sistema funciona en modo abierto (sin login)',
-              body: <p>Puedes operar sin él en desarrollo. Para producción con usuarios, esta variable es obligatoria.</p>,
-            },
-          ]} />
-        )}
-      </ServiceCard>
+      {/* ── Save feedback ───────────────────────────────────────────── */}
+      {saveMsg && (
+        <div className="px-3 py-2 rounded-xl bg-muted/50 text-[10px] text-muted-foreground border border-border/40">
+          {saveMsg}
+        </div>
+      )}
 
-      {/* ── GitHub Strategy ──────────────────────────────────────── */}
-      <ServiceCard icon={Github} title="Datos — GitHub Strategy" vars={[status.github.GITHUB_TOKEN, status.github.GITHUB_REPO]} ok={githubOk}>
-        <EnvVar name="GITHUB_TOKEN" ok={status.github.GITHUB_TOKEN} />
-        <EnvVar name="GITHUB_REPO"  ok={status.github.GITHUB_REPO} />
-        <EnvVar name="GITHUB_BRANCH (opcional)" ok={status.github.GITHUB_BRANCH} />
-        {!githubOk && (
-          <Tutorial steps={[
-            {
-              title: 'Crea un Personal Access Token en GitHub',
-              body: (
-                <div className="space-y-1.5">
-                  <p>Ir a <strong>github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens</strong>.</p>
-                  <p>Permisos mínimos requeridos: <code className="text-[9px] bg-muted px-1 rounded">Contents: Read and write</code></p>
-                  <p>Selecciona el repositorio del fork como repositorio objetivo.</p>
-                </div>
-              ),
-            },
-            {
-              title: 'Obtén el nombre del repositorio',
-              body: (
-                <div className="space-y-1.5">
-                  <p>El formato es <code className="text-[9px] bg-muted px-1 rounded">usuario/nombre-repo</code>. Por ejemplo:</p>
-                  <CopySnippet text="GITHUB_REPO=mi-org/mi-proyecto-clone" />
-                </div>
-              ),
-            },
-            {
-              title: 'Añade las variables al entorno',
-              body: (
-                <div className="space-y-1.5">
-                  <CopySnippet text={`GITHUB_TOKEN=github_pat_...\nGITHUB_REPO=usuario/repo\nGITHUB_BRANCH=main`} />
-                  <p>En Vercel: <strong>Settings → Environment Variables</strong>. No expongas GITHUB_TOKEN en el cliente.</p>
-                </div>
-              ),
-            },
-          ]} />
-        )}
-      </ServiceCard>
+      {/* ── Deploy status bar ───────────────────────────────────────── */}
+      {deploy && (
+        <DeployStatusBar deploy={deploy} onDismiss={() => setDeploy(null)} />
+      )}
 
-      {/* ── Cloudflare R2 ────────────────────────────────────────── */}
-      <ServiceCard icon={Cloud} title="Archivos — Cloudflare R2" vars={[status.r2.CF_ACCOUNT_ID, status.r2.CF_R2_BUCKET, status.r2.CF_R2_ACCESS_KEY_ID, status.r2.CF_R2_SECRET_ACCESS_KEY]} ok={r2Ok}>
-        <EnvVar name="CF_ACCOUNT_ID"           ok={status.r2.CF_ACCOUNT_ID} />
-        <EnvVar name="CF_R2_BUCKET"            ok={status.r2.CF_R2_BUCKET} />
-        <EnvVar name="CF_R2_ACCESS_KEY_ID"     ok={status.r2.CF_R2_ACCESS_KEY_ID} />
-        <EnvVar name="CF_R2_SECRET_ACCESS_KEY" ok={status.r2.CF_R2_SECRET_ACCESS_KEY} />
-        <EnvVar name="CF_R2_PUBLIC_URL (opcional)" ok={status.r2.CF_R2_PUBLIC_URL} />
-        {!r2Ok && (
-          <Tutorial steps={[
-            {
-              title: 'Crea una cuenta gratuita en Cloudflare (cloudflare.com)',
-              body: <p>El plan gratuito de R2 incluye 10 GB de almacenamiento y 1M de operaciones/mes.</p>,
-            },
-            {
-              title: 'Obtén tu Account ID',
-              body: (
-                <div className="space-y-1.5">
-                  <p>En el Dashboard de Cloudflare, en la barra lateral derecha (o en <strong>Workers & Pages → Overview</strong>), verás el <strong>Account ID</strong>.</p>
-                  <CopySnippet text="CF_ACCOUNT_ID=abc123def456..." />
-                </div>
-              ),
-            },
-            {
-              title: 'Crea un bucket R2',
-              body: (
-                <div className="space-y-1.5">
-                  <p><strong>R2 Object Storage → Create bucket</strong>. Elige un nombre único (sin espacios).</p>
-                  <CopySnippet text="CF_R2_BUCKET=mi-proyecto-assets" />
-                </div>
-              ),
-            },
-            {
-              title: 'Genera las API Keys de R2',
-              body: (
-                <div className="space-y-1.5">
-                  <p><strong>R2 → Manage R2 API Tokens → Create API Token</strong>.</p>
-                  <p>Permisos: <code className="text-[9px] bg-muted px-1 rounded">Object Read & Write</code> para el bucket específico.</p>
-                  <p>Guarda el <strong>Access Key ID</strong> y <strong>Secret Access Key</strong> — el secreto solo se muestra una vez.</p>
-                  <CopySnippet text={`CF_R2_ACCESS_KEY_ID=...\nCF_R2_SECRET_ACCESS_KEY=...`} />
-                </div>
-              ),
-            },
-            {
-              title: '(Opcional) Habilita acceso público al bucket',
-              body: (
-                <div className="space-y-1.5">
-                  <p>En la configuración del bucket → <strong>Public Access</strong>. Puedes usar el dominio <code className="text-[9px] bg-muted px-1 rounded">pub-xxx.r2.dev</code> de Cloudflare o conectar un dominio propio.</p>
-                  <CopySnippet text="CF_R2_PUBLIC_URL=https://pub-xxx.r2.dev" />
-                  <p>Sin esta variable, los uploads funcionan pero la URL devuelta es solo el nombre del archivo.</p>
-                </div>
-              ),
-            },
-          ]} />
-        )}
-      </ServiceCard>
-
-      {/* ── Supabase (optional) ──────────────────────────────────── */}
-      <ServiceCard
-        icon={Database}
-        title="Base de Datos — Supabase (Opcional)"
-        vars={[status.supabase.SUPABASE_URL, status.supabase.SUPABASE_SERVICE_ROLE_KEY]}
-        ok={supabaseOk}
+      {/* ── GitHub Strategy ─────────────────────────────────────────── */}
+      <StrategyCard
+        icon={Github}
+        title="Datos — GitHub Strategy"
+        subtitle={health?.activeDataStrategy === 'github' ? 'Estrategia activa' : undefined}
+        check={githubCk}
+        defaultOpen={!githubCk || githubCk.status !== 'pass'}
       >
-        <EnvVar name="SUPABASE_URL"              ok={status.supabase.SUPABASE_URL} />
-        <EnvVar name="SUPABASE_SERVICE_ROLE_KEY" ok={status.supabase.SUPABASE_SERVICE_ROLE_KEY} />
-        {!supabaseOk && (
-          <div className="mt-2 px-3 py-2 rounded-xl bg-muted/30 text-[10px] text-muted-foreground leading-relaxed">
-            Supabase es la estrategia de base de datos relacional. No es obligatoria si usas GitHub Strategy para los datos JSON.
-            Configura solo si el manifest del proyecto especifica <code className="text-[9px] bg-muted px-1 rounded">strategy: "supabase"</code>.
+        <div className="space-y-2">
+          <CredentialField name="GITHUB_TOKEN" value={forms.github.GITHUB_TOKEN} onChange={v => setField('github', 'GITHUB_TOKEN', v)} exists={!!presence['GITHUB_TOKEN']} sensitive />
+          <CredentialField name="GITHUB_REPO" value={forms.github.GITHUB_REPO} onChange={v => setField('github', 'GITHUB_REPO', v)} exists={!!presence['GITHUB_REPO']} sensitive={false} placeholder="usuario/repositorio" />
+          <CredentialField name="GITHUB_BRANCH" value={forms.github.GITHUB_BRANCH} onChange={v => setField('github', 'GITHUB_BRANCH', v)} exists={!!presence['GITHUB_BRANCH']} sensitive={false} placeholder="main (opcional)" />
+        </div>
+        <ActionRow
+          onTest={() => handleTest('github', { GITHUB_TOKEN: forms.github.GITHUB_TOKEN, GITHUB_REPO: forms.github.GITHUB_REPO, GITHUB_BRANCH: forms.github.GITHUB_BRANCH })}
+          onSave={(redeploy) => handleSave('github', [
+            { key: 'GITHUB_TOKEN', value: forms.github.GITHUB_TOKEN, sensitive: true },
+            { key: 'GITHUB_REPO', value: forms.github.GITHUB_REPO, sensitive: false },
+            { key: 'GITHUB_BRANCH', value: forms.github.GITHUB_BRANCH, sensitive: false },
+          ], redeploy)}
+          testResult={testResults['github'] ?? null}
+          testing={testingId === 'github'}
+          saving={savingId === 'github'}
+          isDevMode={isDevMode}
+        />
+      </StrategyCard>
+
+      {/* ── Cloudflare R2 ───────────────────────────────────────────── */}
+      <StrategyCard
+        icon={Cloud}
+        title="Archivos — Cloudflare R2"
+        check={r2Ck}
+        defaultOpen={!r2Ck || r2Ck.status !== 'pass'}
+      >
+        <div className="space-y-2">
+          <CredentialField name="CF_ACCOUNT_ID" value={forms.r2.CF_ACCOUNT_ID} onChange={v => setField('r2', 'CF_ACCOUNT_ID', v)} exists={!!presence['CF_ACCOUNT_ID']} sensitive={false} />
+          <CredentialField name="CF_R2_BUCKET" value={forms.r2.CF_R2_BUCKET} onChange={v => setField('r2', 'CF_R2_BUCKET', v)} exists={!!presence['CF_R2_BUCKET']} sensitive={false} />
+          <CredentialField name="CF_R2_ACCESS_KEY_ID" value={forms.r2.CF_R2_ACCESS_KEY_ID} onChange={v => setField('r2', 'CF_R2_ACCESS_KEY_ID', v)} exists={!!presence['CF_R2_ACCESS_KEY_ID']} sensitive />
+          <CredentialField name="CF_R2_SECRET_ACCESS_KEY" value={forms.r2.CF_R2_SECRET_ACCESS_KEY} onChange={v => setField('r2', 'CF_R2_SECRET_ACCESS_KEY', v)} exists={!!presence['CF_R2_SECRET_ACCESS_KEY']} sensitive />
+          <CredentialField name="CF_R2_PUBLIC_URL" value={forms.r2.CF_R2_PUBLIC_URL} onChange={v => setField('r2', 'CF_R2_PUBLIC_URL', v)} exists={!!presence['CF_R2_PUBLIC_URL']} sensitive={false} placeholder="https://pub-xxx.r2.dev (opcional)" />
+        </div>
+        <ActionRow
+          onTest={() => handleTest('r2', { CF_ACCOUNT_ID: forms.r2.CF_ACCOUNT_ID, CF_R2_BUCKET: forms.r2.CF_R2_BUCKET, CF_R2_ACCESS_KEY_ID: forms.r2.CF_R2_ACCESS_KEY_ID, CF_R2_SECRET_ACCESS_KEY: forms.r2.CF_R2_SECRET_ACCESS_KEY })}
+          onSave={(redeploy) => handleSave('r2', [
+            { key: 'CF_ACCOUNT_ID', value: forms.r2.CF_ACCOUNT_ID, sensitive: false },
+            { key: 'CF_R2_BUCKET', value: forms.r2.CF_R2_BUCKET, sensitive: false },
+            { key: 'CF_R2_ACCESS_KEY_ID', value: forms.r2.CF_R2_ACCESS_KEY_ID, sensitive: true },
+            { key: 'CF_R2_SECRET_ACCESS_KEY', value: forms.r2.CF_R2_SECRET_ACCESS_KEY, sensitive: true },
+            { key: 'CF_R2_PUBLIC_URL', value: forms.r2.CF_R2_PUBLIC_URL, sensitive: false },
+          ], redeploy)}
+          testResult={testResults['r2'] ?? null}
+          testing={testingId === 'r2'}
+          saving={savingId === 'r2'}
+          isDevMode={isDevMode}
+        />
+      </StrategyCard>
+
+      {/* ── Supabase ────────────────────────────────────────────────── */}
+      <StrategyCard
+        icon={Database}
+        title="Datos — Supabase (Opcional)"
+        subtitle={health?.activeDataStrategy === 'supabase' ? 'Estrategia activa' : 'Alternativa a GitHub Strategy'}
+        check={supabaseCk}
+        defaultOpen={health?.activeDataStrategy === 'supabase' && supabaseCk?.status !== 'pass'}
+      >
+        <div className="text-[9px] text-muted-foreground px-1 pb-1">
+          Prioridad: <code className="bg-muted px-1 rounded">GITHUB_REPO</code> &gt; <code className="bg-muted px-1 rounded">SUPABASE_URL</code> &gt; Local. Si ambas están configuradas, GitHub gana.
+        </div>
+        <div className="space-y-2">
+          <CredentialField name="SUPABASE_URL" value={forms.supabase.SUPABASE_URL} onChange={v => setField('supabase', 'SUPABASE_URL', v)} exists={!!presence['SUPABASE_URL']} sensitive={false} placeholder="https://xxxx.supabase.co" />
+          <CredentialField name="SUPABASE_SERVICE_ROLE_KEY" value={forms.supabase.SUPABASE_SERVICE_ROLE_KEY} onChange={v => setField('supabase', 'SUPABASE_SERVICE_ROLE_KEY', v)} exists={!!presence['SUPABASE_SERVICE_ROLE_KEY']} sensitive />
+        </div>
+        <ActionRow
+          onTest={() => handleTest('supabase', { SUPABASE_URL: forms.supabase.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: forms.supabase.SUPABASE_SERVICE_ROLE_KEY })}
+          onSave={(redeploy) => handleSave('supabase', [
+            { key: 'SUPABASE_URL', value: forms.supabase.SUPABASE_URL, sensitive: false },
+            { key: 'SUPABASE_SERVICE_ROLE_KEY', value: forms.supabase.SUPABASE_SERVICE_ROLE_KEY, sensitive: true },
+          ], redeploy)}
+          testResult={testResults['supabase'] ?? null}
+          testing={testingId === 'supabase'}
+          saving={savingId === 'supabase'}
+          isDevMode={isDevMode}
+        />
+      </StrategyCard>
+
+      {/* ── Auth ────────────────────────────────────────────────────── */}
+      <StrategyCard
+        icon={Shield}
+        title="Auth & Seguridad"
+        check={sessionCk}
+        defaultOpen={!sessionCk || sessionCk.status !== 'pass'}
+      >
+        <div className="space-y-2">
+          <CredentialField name="SESSION_SECRET" value={forms.auth.SESSION_SECRET} onChange={v => setField('auth', 'SESSION_SECRET', v)} exists={!!presence['SESSION_SECRET']} sensitive />
+        </div>
+        {!presence['SESSION_SECRET'] && (
+          <div className="space-y-1.5">
+            <p className="text-[9px] text-muted-foreground font-bold">Genera un secreto de 64 caracteres:</p>
+            <CopySnippet text={`# PowerShell\n$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()\n$b = New-Object byte[] 32; $rng.GetBytes($b)\n[System.BitConverter]::ToString($b).Replace('-','').ToLower()\n\n# macOS/Linux\nopenssl rand -hex 32`} />
           </div>
         )}
-        {!supabaseOk && (
-          <Tutorial steps={[
-            {
-              title: 'Crea un proyecto en supabase.com (plan gratuito disponible)',
-              body: <p>Proyecto nuevo → guarda el <strong>Project URL</strong> y la <strong>service_role key</strong> (en Settings → API).</p>,
-            },
-            {
-              title: 'Añade las variables al entorno',
-              body: (
-                <CopySnippet text={`SUPABASE_URL=https://xxxx.supabase.co\nSUPABASE_SERVICE_ROLE_KEY=eyJ...`} />
-              ),
-            },
-          ]} />
-        )}
-      </ServiceCard>
+        {/* Session check is purely local (length ≥ 32) — no external connection to test.
+            The health status shown in the card header IS the live check result. */}
+        <ActionRow
+          onTest={fetchHealth}
+          onSave={(redeploy) => handleSave('auth', [
+            { key: 'SESSION_SECRET', value: forms.auth.SESSION_SECRET, sensitive: true },
+          ], redeploy)}
+          testResult={sessionCk ?? null}
+          testing={loadingH}
+          saving={savingId === 'auth'}
+          isDevMode={isDevMode}
+        />
+      </StrategyCard>
 
-      {/* ── Quick reference .env template ───────────────────────── */}
-      <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
-        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Plantilla .env.local completa</p>
+      {/* ── .env.local template ─────────────────────────────────────── */}
+      <div className="rounded-2xl border bg-muted/20 p-4 space-y-2">
+        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Plantilla .env.local</p>
         <CopySnippet text={[
           '# Auth',
           'SESSION_SECRET=',
@@ -371,7 +705,7 @@ export function DeploySection() {
           'CF_R2_SECRET_ACCESS_KEY=',
           'CF_R2_PUBLIC_URL=',
           '',
-          '# Base de datos — Supabase (opcional)',
+          '# Datos — Supabase (alternativa a GitHub)',
           'SUPABASE_URL=',
           'SUPABASE_SERVICE_ROLE_KEY=',
         ].join('\n')} />

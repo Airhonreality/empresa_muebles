@@ -73,18 +73,28 @@ export function AppProvider({ children, initialData }: { children: React.ReactNo
    */
   const saveItem = useCallback(async (namespace: string, payload: any, options?: { silent?: boolean }) => {
     try {
+      const recordData = payload.data ?? payload;
+      const now = new Date().toISOString();
+      // Generate field-level timestamps for LWW merge at the adapter layer.
+      // All fields in this patch share the same wall-clock timestamp — concurrent
+      // edits from another user on a different field will win if their write arrives later.
+      const _meta: Record<string, string> = Object.fromEntries(
+        Object.keys(recordData).map(k => [k, now])
+      );
+
       const recordPayload = {
         id: payload.id,
-        data: payload.data ?? payload
+        data: recordData,
+        _meta,
       };
 
       const response = await fetch('/api/vault', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'WRITE', 
-          namespace, 
-          record: recordPayload 
+        body: JSON.stringify({
+          action: 'WRITE',
+          namespace,
+          record: recordPayload
         })
       });
       

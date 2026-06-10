@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { useDNAStore, useMateriaStore, useSystemStore } from '@/lib/agnostic/store';
 import { AgnosticRenderer } from '@/components/agnostic/engine/AgnosticRenderer';
 import { RouteResolution } from '@/lib/agnostic/resolver';
 import { cn } from '@/lib/utils';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
+import { useSyncPulse } from '@/hooks/useSyncPulse';
 
 interface ShellProps {
   initialData: Record<string, any>;
@@ -27,6 +28,15 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
   const { hydrate: hydrateDNA }             = useDNAStore();
   const { hydrate: hydrateMateria }         = useMateriaStore();
   const { setNavigation, setActiveRecord }  = useSystemStore();
+
+  // Watch the primary data context of this page for remote changes.
+  // When another user writes to the same namespace, the SHA changes and
+  // the store refreshes automatically — no full page reload required.
+  const watchedNamespaces = useMemo(
+    () => (resolution.context ? [resolution.context] : []),
+    [resolution.context]
+  );
+  useSyncPulse(watchedNamespaces);
 
   // Hydrate Zustand ONCE per navigation — SSR data flows into client stores
   useEffect(() => {

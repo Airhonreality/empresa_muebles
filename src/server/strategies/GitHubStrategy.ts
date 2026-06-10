@@ -2,34 +2,41 @@
  * 🏛️ ARTEFACTO: GitHubStrategy.ts
  * ────────────
  * CAPA: Server (GitHub Git Persistence Strategy)
- * VERSIÓN: 5.0
- * COMMIT: P3-M1.3-GITHUB-STRATEGY-AXIOMATIC
- * 
+ * VERSIÓN: 6.0
+ * COMMIT: P4-M1-FIELD-LWW-PULSE-HISTORY
+ *
  * 🎯 FUNCTIONAL_SCOPE:
  * - Implement standard data persistence utilizing JSON files hosted on a GitHub Repository.
- * - Restrict operations strictly to read, write, and remove using GitHub Contents API.
- * 
+ * - Field-Level LWW merge on write when _meta timestamps are present.
+ * - Lightweight SHA pulse for change detection without full content decode.
+ * - Commit-log history per namespace via GitHub Commits API.
+ *
  * 🛡️ AXIOMATIC_CONTRACT:
  * - MUST: Implement standard read, write, and remove operations securely.
  * - NEVER: Contain any DDL schema creation logic or auto-registration.
  * - ALWAYS: Keep operations consistent with read-modify-write cycles to simulate atomic writes over Git.
- * 
- * 📜 ADR: [2026-05-16] GIT_STRATEGY_PRUNING
- * - DECISIÓN: Align the Git backend with the simplified 3-method Adapter contract, purging old patch, evolve, wipe, inspect verbs.
- * - MOTIVO: Adherence to Suh's Independence Axiom, eliminating dynamic DDL and complex transaction capabilities from a pure storage engine.
- * - IMPACTO: 100+ lines of code deleted, simplified API interface, and unified terminology.
- * 
+ *
  * 🔗 RELATIONSHIPS:
- * - UPSTREAM: [storage.ts]
+ * - UPSTREAM: [storage.ts, fieldMerge.ts]
  * - DOWNSTREAM: [getStrategy.ts]
  */
 
-import type { 
-  DataItem, 
-  AgnosticBridge, 
-  AgnosticCapabilities, 
-  AgnosticQuery 
+import type {
+  DataItem,
+  AgnosticBridge,
+  AgnosticCapabilities,
+  AgnosticQuery
 } from '@agnostic/core';
+import { mergeFieldLWW } from '@/lib/agnostic/fieldMerge';
+
+export interface HistoryEntry {
+  sha: string;
+  message: string;
+  author: string;
+  email: string;
+  timestamp: string;
+  url: string;
+}
 
 export class GitHubStrategy implements AgnosticBridge {
   private get token(): string | undefined {
@@ -40,9 +47,6 @@ export class GitHubStrategy implements AgnosticBridge {
     return this.customBranch ?? process.env.GITHUB_BRANCH ?? 'main';
   }
 
-  /**
-   * Describes the GitHub Git storage capabilities.
-   */
   readonly capabilities: AgnosticCapabilities = {
     storageType: 'GIT',
     isRelational: false
@@ -95,7 +99,6 @@ export class GitHubStrategy implements AgnosticBridge {
       }),
     });
     if (res.status === 409 && attempt === 1) {
-      // Concurrency conflict (409 stale SHA) - auto-retry once with fresh SHA
       const fresh = await this.fetchFile(namespace);
       await this.putFile(namespace, items, fresh.sha, 2);
       return;
@@ -108,9 +111,6 @@ export class GitHubStrategy implements AgnosticBridge {
 
   // ─── CRUD OPERATIONS ───────────────────────────────────────────────────────
 
-  /**
-   * Reads raw JSON files from the GitHub repository contents.
-   */
   async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
       if (!this.owner || !this.repo) return [];
@@ -129,41 +129,85 @@ export class GitHubStrategy implements AgnosticBridge {
     }
   }
 
-  /**
-   * Writes a record by retrieving the remote JSON array, updating it in memory, and committing back.
-   */
   async write(namespace: string, record: Partial<DataItem> & { data: Record<string, unknown> }): Promise<DataItem> {
     if (!this.token || !this.owner || !this.repo) {
-       throw new Error('GitHubStrategy requires GITHUB_TOKEN, owner, and repo to write');
+      throw new Error('GitHubStrategy requires GITHUB_TOKEN, owner, and repo to write');
     }
 
     const id = record.id || globalThis.crypto.randomUUID();
-    const saved: DataItem = { 
-      id, 
-      context: namespace, 
-      data: record.data, 
-      updated_at: new Date().toISOString() 
-    };
-
     const { items, sha } = await this.fetchFile(namespace);
+    const existing = items.find(i => i.id === id);
+    const patchMeta = (record as any)._meta as Record<string, string> | undefined;
+
+    let saved: DataItem;
+    if (existing && patchMeta) {
+      // Field-Level LWW: merge only the fields present in the patch
+      const { data, _meta } = mergeFieldLWW(existing, { data: record.data, _meta: patchMeta });
+      saved = { ...existing, data, _meta, updated_at: new Date().toISOString() };
+    } else {
+      // Full replace — new record or legacy write without _meta
+      saved = {
+        id,
+        context: namespace,
+        data: record.data,
+        ...(patchMeta ? { _meta: patchMeta } : {}),
+        updated_at: new Date().toISOString(),
+      };
+    }
+
     const map = new Map(items.map(i => [i.id, i]));
     map.set(id, saved);
-
     await this.putFile(namespace, Array.from(map.values()), sha);
     return saved;
   }
 
-  /**
-   * Removes a record by filtering it out from the remote JSON array and committing the updated array back.
-   */
   async remove(namespace: string, id: string): Promise<void> {
     if (!this.token || !this.owner || !this.repo) {
-       throw new Error('GitHubStrategy requires GITHUB_TOKEN, owner, and repo to remove');
+      throw new Error('GitHubStrategy requires GITHUB_TOKEN, owner, and repo to remove');
     }
 
     const { items, sha } = await this.fetchFile(namespace);
     const filtered = items.filter(i => i.id !== id);
-
     await this.putFile(namespace, filtered, sha);
+  }
+
+  // ─── EXTENDED CAPABILITIES ────────────────────────────────────────────────
+
+  /**
+   * Returns the Git blob SHA of a namespace file without full content decode.
+   * Used by /api/pulse for lightweight change detection.
+   */
+  async getNamespaceSha(namespace: string): Promise<string | null> {
+    try {
+      if (!this.owner || !this.repo) return null;
+      const { sha } = await this.fetchFile(namespace);
+      return sha ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Returns the commit history for a namespace file via GitHub Commits API.
+   * Used by /api/history for version log.
+   */
+  async getHistory(namespace: string, limit = 20): Promise<HistoryEntry[]> {
+    try {
+      if (!this.token || !this.owner || !this.repo) return [];
+      const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/commits?path=db/${namespace}.json&per_page=${limit}&sha=${this.branch}`;
+      const res = await fetch(apiUrl, { headers: this.headers, cache: 'no-store' });
+      if (!res.ok) return [];
+      const commits = await res.json() as any[];
+      return commits.map(c => ({
+        sha: c.sha as string,
+        message: c.commit.message as string,
+        author: c.commit.author.name as string,
+        email: c.commit.author.email as string,
+        timestamp: c.commit.author.date as string,
+        url: c.html_url as string,
+      }));
+    } catch {
+      return [];
+    }
   }
 }
