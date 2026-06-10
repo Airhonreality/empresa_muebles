@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   CheckCircle2, XCircle, AlertCircle, Rocket, RefreshCw,
   Github, Cloud, Database, Shield, ChevronDown, ChevronRight,
-  Eye, EyeOff, Loader2, Copy, Check, ExternalLink,
+  Eye, EyeOff, Loader2, Copy, Check, ExternalLink, ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -369,6 +369,243 @@ function BootstrapGate() {
   );
 }
 
+// ─── MIGRATION PANEL ─────────────────────────────────────────────────────────
+
+type MigrationReport = {
+  namespace: string;
+  read: number;
+  written: number | string;
+  skipped: boolean;
+  errors: string[];
+};
+
+type MigrationResult = {
+  dryRun: boolean;
+  from: string;
+  to: string;
+  namespacesScanned: number;
+  totalRead: number;
+  totalWritten: number | string;
+  totalErrors: number;
+  success: boolean;
+  setup_hint?: string;
+  error?: string;
+  report: MigrationReport[];
+};
+
+const MIGRATE_STRATEGIES = ['github', 'supabase', 'local'] as const;
+type MigrateStrategy = typeof MIGRATE_STRATEGIES[number];
+
+function MigrationPanel() {
+  const [open, setOpen]             = useState(false);
+  const [from, setFrom]             = useState<MigrateStrategy>('github');
+  const [to, setTo]                 = useState<MigrateStrategy>('supabase');
+  const [running, setRunning]       = useState(false);
+  const [result, setResult]         = useState<MigrationResult | null>(null);
+  const [setupSql, setSetupSql]     = useState<string | null>(null);
+  const [loadingSql, setLoadingSql] = useState(false);
+
+  const run = async (dryRun: boolean) => {
+    if (from === to) return;
+    setRunning(true);
+    setResult(null);
+    try {
+      const res = await fetch('/api/admin/migrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to, dryRun }),
+      });
+      const data = await res.json() as MigrationResult;
+      setResult(data);
+    } catch {
+      setResult({ dryRun, from, to, namespacesScanned: 0, totalRead: 0, totalWritten: 0, totalErrors: 1, success: false, error: 'Error de red o timeout', report: [] });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const fetchSetupSql = async () => {
+    setLoadingSql(true);
+    setSetupSql(null);
+    try {
+      const res = await fetch(`/api/admin/migrate?from=${from}`);
+      setSetupSql(await res.text());
+    } finally {
+      setLoadingSql(false);
+    }
+  };
+
+  const activeNs = from !== to;
+
+  return (
+    <div className="rounded-2xl border border-border/40 overflow-hidden">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+      >
+        <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 bg-muted/40 text-muted-foreground">
+          <ArrowRight size={15} />
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Migrar datos</p>
+          <p className="text-[9px] text-muted-foreground mt-0.5">Mueve todos los registros de una estrategia a otra sin pérdida</p>
+        </div>
+        {open ? <ChevronDown size={14} className="text-muted-foreground/50 shrink-0" /> : <ChevronRight size={14} className="text-muted-foreground/50 shrink-0" />}
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border/30 pt-3 animate-in slide-in-from-top-1 duration-200">
+
+          {/* Strategy selectors */}
+          <div className="flex items-end gap-3">
+            <div className="space-y-1.5">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Desde</p>
+              <div className="flex gap-1">
+                {MIGRATE_STRATEGIES.map(s => (
+                  <button key={s} onClick={() => { setFrom(s); setResult(null); setSetupSql(null); }}
+                    className={cn(
+                      'text-[9px] px-2.5 py-1 rounded-lg font-mono font-bold border transition-all',
+                      from === s
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border/40 text-muted-foreground hover:border-primary/30',
+                    )}
+                  >{s}</button>
+                ))}
+              </div>
+            </div>
+
+            <ArrowRight size={12} className="text-muted-foreground/40 mb-2 shrink-0" />
+
+            <div className="space-y-1.5">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Hacia</p>
+              <div className="flex gap-1">
+                {MIGRATE_STRATEGIES.map(s => (
+                  <button key={s} onClick={() => { setTo(s); setResult(null); setSetupSql(null); }}
+                    disabled={s === from}
+                    className={cn(
+                      'text-[9px] px-2.5 py-1 rounded-lg font-mono font-bold border transition-all',
+                      to === s
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border/40 text-muted-foreground hover:border-primary/30',
+                      s === from && 'opacity-30 pointer-events-none',
+                    )}
+                  >{s}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Supabase setup SQL hint */}
+          {to === 'supabase' && (
+            <div className="rounded-xl bg-amber-50/30 dark:bg-amber-950/10 border border-amber-500/20 px-3 py-2.5 space-y-2">
+              <p className="text-[9px] text-amber-700 dark:text-amber-400">
+                Supabase requiere crear las tablas antes de migrar. Ejecuta el SQL de setup en el SQL Editor de tu proyecto Supabase.
+              </p>
+              <button
+                onClick={fetchSetupSql}
+                disabled={loadingSql}
+                className="flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-400 hover:underline"
+              >
+                {loadingSql && <Loader2 size={10} className="animate-spin" />}
+                Generar SQL de setup
+              </button>
+              {setupSql && <CopySnippet text={setupSql} />}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline" size="sm"
+              onClick={() => run(true)}
+              disabled={running || !activeNs}
+              className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
+            >
+              {running ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+              Simular
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => run(false)}
+              disabled={running || !activeNs}
+              className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
+            >
+              {running ? <Loader2 size={10} className="animate-spin" /> : <ArrowRight size={10} />}
+              Ejecutar migración
+            </Button>
+          </div>
+
+          {running && (
+            <p className="text-[9px] text-muted-foreground animate-pulse">
+              Migrando — esto puede tardar según el volumen de datos...
+            </p>
+          )}
+
+          {/* Results */}
+          {result && (
+            <div className={cn(
+              'rounded-xl border p-3 space-y-2',
+              result.success
+                ? 'border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/10'
+                : 'border-destructive/30 bg-destructive/5',
+            )}>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-foreground">
+                  {result.dryRun ? 'Simulación' : 'Migración'}: {result.from} → {result.to}
+                </span>
+                <span className={cn(
+                  'text-[9px] font-bold uppercase tracking-wider',
+                  result.success ? 'text-emerald-600' : 'text-destructive',
+                )}>
+                  {result.success ? 'OK' : 'ERROR'}
+                </span>
+              </div>
+
+              {result.error ? (
+                <p className="text-[9px] text-destructive font-mono">{result.error}</p>
+              ) : (
+                <div className="flex gap-4 text-[9px] font-mono text-muted-foreground">
+                  <span>espacios: <b className="text-foreground">{result.namespacesScanned}</b></span>
+                  <span>leídos: <b className="text-foreground">{result.totalRead}</b></span>
+                  <span>escritos: <b className="text-foreground">{result.totalWritten}</b></span>
+                  {result.totalErrors > 0 && (
+                    <span className="text-destructive">errores: <b>{result.totalErrors}</b></span>
+                  )}
+                </div>
+              )}
+
+              {result.setup_hint && (
+                <p className="text-[9px] text-amber-600 dark:text-amber-400">{result.setup_hint}</p>
+              )}
+
+              {/* Per-namespace detail — only show non-empty or errored */}
+              {result.report.filter(r => !r.skipped || r.errors.length > 0).length > 0 && (
+                <div className="space-y-0.5 max-h-44 overflow-y-auto">
+                  {result.report
+                    .filter(r => !r.skipped || r.errors.length > 0)
+                    .map(r => (
+                      <div key={r.namespace} className="flex items-center gap-2 py-0.5">
+                        <StatusDot status={r.errors.length > 0 ? 'fail' : 'pass'} />
+                        <span className="font-mono text-[9px] flex-1 text-foreground/70">{r.namespace}</span>
+                        <span className="text-[9px] font-mono text-muted-foreground">
+                          {r.read} → {r.written}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <p className="text-[9px] text-muted-foreground italic leading-relaxed">
+            La migración es idempotente — ejecutarla varias veces no duplica datos. Mantén ambas estrategias configuradas hasta verificar el destino, luego elimina las variables de la fuente y redesplega.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 type FormMap = {
@@ -685,6 +922,9 @@ export function DeploySection() {
           isDevMode={isDevMode}
         />
       </StrategyCard>
+
+      {/* ── Migration Panel ─────────────────────────────────────────── */}
+      <MigrationPanel />
 
       {/* ── .env.local template ─────────────────────────────────────── */}
       <div className="rounded-2xl border bg-muted/20 p-4 space-y-2">
