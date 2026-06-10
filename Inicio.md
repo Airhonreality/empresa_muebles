@@ -124,6 +124,19 @@ $rng.GetBytes($b)
 
 El panel muestra el snippet copiable si `SESSION_SECRET` no está configurado.
 
+### Migrar datos entre estrategias
+
+Si ya tienes datos reales en una estrategia (p. ej. GitHub) y quieres migrar a Supabase, el panel incluye una herramienta de migración controlada en la sección **Migrar datos**:
+
+1. **Configura el destino** — agrega las variables de la nueva estrategia en Vercel sin eliminar las de la fuente. GitHub sigue siendo activo porque tiene mayor prioridad.
+2. **(Solo Supabase)** Genera el SQL de setup y ejecútalo en el editor SQL de tu proyecto Supabase antes de migrar.
+3. **Simula** — revisa qué se migraría (namespace por namespace) sin escribir nada.
+4. **Ejecuta la migración** — copia todos los registros al destino. La operación es idempotente; ejecutarla varias veces no duplica datos.
+5. **Verifica** — confirma que los datos aparecen en el destino.
+6. **Corta la fuente** — elimina las variables de la estrategia original en Vercel y redesplega. La nueva estrategia queda activa.
+
+> La migración requiere que ambas estrategias estén configuradas simultáneamente durante el proceso. En datasets grandes (> 500 registros) puede exceder el límite de 10s de Vercel Hobby — en ese caso ejecuta desde un plan Pro o hazlo namespace por namespace vía la API.
+
 ### Dónde poner las variables
 
 - **Desarrollo local:** archivo `.env.local` en la raíz del proyecto (no se sube a git)
