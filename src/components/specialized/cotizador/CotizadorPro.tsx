@@ -9,6 +9,7 @@ import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Tra
 import { EspacioCard } from './EspacioCard'
 import { MoneyInput } from './MoneyInput'
 import { HybridClientSelector } from './HybridClientSelector'
+import { ApoyoTecnicoPanel } from './ApoyoTecnicoPanel'
 import { COP, useDebounce, vWrite, vRemove } from './utils'
 import type {
   Cotizaciones,
@@ -21,7 +22,7 @@ interface CotizadorProProps extends Partial<BlockProps> {
   forcedCotizacionId?: string
 }
 
-export default function CotizadorPro({ block = {}, forcedCotizacionId }: CotizadorProProps) {
+export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRecord }: CotizadorProProps) {
   // ── Data state ───────────────────────────────────────────────────
   const [cotizaciones, setCotizaciones] = useState<DataItem[]>([])
   const [clientes,     setClientes]     = useState<DataItem[]>([])
@@ -31,7 +32,10 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId }: Cotizad
   const [loading, setLoading] = useState(true)
 
   // ── Active quote ─────────────────────────────────────────────────
-  const [activeCotId, setActiveCotId]   = useState<string | null>(forcedCotizacionId || null)
+  // forcedCotizacionId > URL :id (activeRecord) > internal selection
+  const [activeCotId, setActiveCotId]   = useState<string | null>(
+    forcedCotizacionId || activeRecord?.id || null
+  )
   const [headerLocal, setHeaderLocal]   = useState<Cotizaciones>({ nombre_proyecto: '' })
   const [subOpen,     setSubOpen]       = useState(false)
   const [secretOpen,  setSecretOpen]    = useState(false)
@@ -87,6 +91,13 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId }: Cotizad
   useEffect(() => {
     if (activeCot) setHeaderLocal(activeCot.data as any as Cotizaciones)
   }, [activeCotId]) // eslint-disable-line
+
+  // Sync when engine provides a new activeRecord via URL :id navigation
+  useEffect(() => {
+    if (activeRecord?.id && !forcedCotizacionId && activeRecord.id !== activeCotId) {
+      setActiveCotId(activeRecord.id)
+    }
+  }, [activeRecord?.id]) // eslint-disable-line
 
   // ── Auto-save header (debounced 800ms) ───────────────────────────
   const dHeader = useDebounce(headerLocal, 800)
@@ -886,8 +897,13 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId }: Cotizad
         </div>
       </header>
 
+      {/* ── Apoyo Técnico panel ─────────────────────────────────────── */}
+      <div className={cn("max-w-4xl mx-auto w-full px-4 sm:px-6 pt-4", isEmbedded && "px-2 sm:px-3")}>
+        <ApoyoTecnicoPanel cotizacionId={activeCotId!} />
+      </div>
+
       {/* ── Body: espacios ─────────────────────────────────────────── */}
-      <main className={cn("flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 space-y-4", isEmbedded && "px-2 sm:px-3")}>
+      <main className={cn("flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-4 space-y-4", isEmbedded && "px-2 sm:px-3")}>
         {missingServiceSkus.length > 0 && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-800 flex items-start gap-3 shadow-sm transition-all duration-300">
             <span className="text-base select-none">⚠️</span>

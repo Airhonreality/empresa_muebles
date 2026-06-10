@@ -56,5 +56,25 @@
       "nombre_proyecto": "Cotización closets"
     },
     "updated_at": "2026-06-05T23:01:32.051Z"
+  },
+  {
+    "id": "e45d6bcc-cf37-49dd-b3d7-4a204b6d7e36",
+    "context": "cotizaciones",
+    "data": {
+      "imprevistos_instalacion": 100000,
+      "nombre_proyecto": "Cotización centro de entretenimiento",
+      "costos_operativos": 250000
+    },
+    "updated_at": "2026-06-09T21:14:05.775Z"
+  },
+  {
+    "id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Closets",
+      "costos_operativos": 35000,
+      "imprevistos_instalacion": 150000
+    },
+    "updated_at": "2026-06-10T00:35:23.493Z"
   }
 ]

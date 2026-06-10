@@ -16,10 +16,24 @@
       "Bash(curl -s \"http://localhost:3000/app\")",
       "Bash(npx tsx *)",
       "Bash(mkdir -p \"c:\\\\Users\\\\javir\\\\Documents\\\\DEVs\\\\empresa_muebles_clone\\\\src\\\\components\\\\specialized\\\\canvas\\\\sellos\" 2>&1; echo \"dirs created\")",
-      "Bash(node -e \"require\\('react-copy-to-clipboard'\\)\")"
+      "Bash(node -e \"require\\('react-copy-to-clipboard'\\)\")",
+      "Bash(npx next *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/app/quoting)",
+      "Bash(Invoke-WebRequest -Uri \"http://localhost:3002/app/quoting\" -UseBasicParsing)",
+      "Bash(curl -s -w \"\\\\n%{http_code}\" \"http://localhost:3002/app/quoting/9fd6375d-0f71-4f77-8ade-81f478b52406\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3002/app/quoting/9fd6375d-0f71-4f77-8ade-81f478b52406\")",
+      "Bash(curl -s \"http://localhost:3002/api/vault?namespace=apoyo_tecnico\")",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:3002/app/quoting\" -UseBasicParsing; $r.StatusCode; $r.Content | Select-String -Pattern \"error|Error|500\" | Select-Object -First 5)",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:3002/api/vault?namespace=apoyo_tecnico\" -UseBasicParsing; $r.StatusCode; $r.Content)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3003/app/quoting\")",
+      "PowerShell(Start-Sleep -Seconds 5; try { $r = Invoke-WebRequest -Uri \"http://localhost:3003/app/quoting\" -UseBasicParsing -TimeoutSec 30; \"HTTP $\\($r.StatusCode\\)\" } catch { \"ERROR: $_\" })",
+      "Bash(npm run dev -- --port 3003 > /tmp/dev-server.log 2>&1 & *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/app/quoting)",
+      "PowerShell(netstat -ano)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\javir\\Documents\\DEVs\\empresa_muebles_clone\\src\\components\\specialized\\canvas"
+      "c:\\Users\\javir\\Documents\\DEVs\\empresa_muebles_clone\\src\\components\\specialized\\canvas",
+      "\\tmp"
     ]
   }
 }

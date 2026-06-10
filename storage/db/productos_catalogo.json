@@ -4943,5 +4943,41 @@
       "precio_directo": 0
     },
     "updated_at": "2026-06-04T18:57:07.394Z"
+  },
+  {
+    "id": "7fd2e1f8-35f6-4b59-8c2d-dca1de59ffc8",
+    "context": "productos_catalogo",
+    "data": {
+      "descripcion": "tablemo 5mm",
+      "unidad_medida": "unidad",
+      "precio_publico": 0,
+      "precio_directo": 190000,
+      "tipo": "Tableros / Maderas"
+    },
+    "updated_at": "2026-06-09T21:33:21.566Z"
+  },
+  {
+    "id": "ec4463cd-2dc9-4716-a341-c69d897afe7c",
+    "context": "productos_catalogo",
+    "data": {
+      "descripcion": "tablero 5 mm",
+      "unidad_medida": "unidad",
+      "precio_publico": 190000,
+      "precio_directo": 0,
+      "tipo": "Tableros / Maderas"
+    },
+    "updated_at": "2026-06-09T21:35:47.491Z"
+  },
+  {
+    "id": "6dbea77e-01fb-4a60-b1d8-5acbfeac97f2",
+    "context": "productos_catalogo",
+    "data": {
+      "descripcion": "Riel de closet",
+      "unidad_medida": "unidad",
+      "precio_publico": 40000,
+      "precio_directo": 0,
+      "tipo": "Herrajes / Accesorios"
+    },
+    "updated_at": "2026-06-09T21:40:49.363Z"
   }
 ]

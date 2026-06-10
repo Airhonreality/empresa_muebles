@@ -1,106 +1,5 @@
 [
   {
-    "id": "e6f7a8b9-c0d1-2345-fabc-456789012346",
-    "context": "page_routes",
-    "data": {
-      "path": "/app/dashboard",
-      "title": "ERP — Panel de Control",
-      "isPrivate": true,
-      "layout_mode": "container",
-      "blocks": [
-        {
-          "id": "block_dash_header",
-          "type": "header",
-          "config": {
-            "title": "Panel de Control",
-            "subtitle": "Selecciona un módulo para comenzar o revisa el estado de tus proyectos activos.",
-            "label": "ERP Muebles"
-          }
-        },
-        {
-          "id": "b4f03aec-bbbd-449b-bcc3-d7ec4f64f7a3",
-          "type": "agnostic-navbar",
-          "blocks": []
-        },
-        {
-          "id": "cba3c3bf-7d5f-45a5-ae86-ef1db0116e0e",
-          "type": "agnostic-header",
-          "blocks": []
-        },
-        {
-          "id": "f9fec2ce-e983-4194-85c3-935f4db498bc",
-          "type": "frame",
-          "blocks": [
-            {
-              "id": "bc493a89-253d-45dd-814d-a83446e7c1b4",
-              "type": "card",
-              "blocks": [
-                {
-                  "id": "1e6dd9ed-e43e-4f11-965f-210b273a3f73",
-                  "type": "collection",
-                  "context": "ordenes_trabajo",
-                  "blocks": []
-                }
-              ],
-              "visual": {
-                "title": "Resumen"
-              }
-            },
-            {
-              "id": "9e2f4721-0dc7-47f8-a14a-6e257d07ed55",
-              "type": "card",
-              "blocks": [
-                {
-                  "id": "1aead897-16b9-49b9-861f-b2bf8b25ba31",
-                  "type": "collection",
-                  "blocks": [],
-                  "context": "registro_logistica"
-                },
-                {
-                  "id": "b9df73a3-3038-4f64-a63a-7993de501b87",
-                  "type": "yango-dispatcher",
-                  "blocks": []
-                }
-              ],
-              "visual": {
-                "title": "Logística"
-              }
-            },
-            {
-              "id": "7efd4083-e4d4-404c-9978-89f90a9be9fe",
-              "type": "card",
-              "blocks": [
-                {
-                  "id": "444e9831-0cb5-410b-95e2-f5d9bde623b5",
-                  "type": "chart",
-                  "blocks": [],
-                  "context": "compras_materiales"
-                },
-                {
-                  "id": "f7f7ef49-434f-459d-9024-80b17a407dbe",
-                  "type": "action",
-                  "blocks": [],
-                  "visual": {
-                    "label": "Actualizar"
-                  },
-                  "zap": "actualizar_catalogo_precio",
-                  "context": "compras_materiales"
-                }
-              ],
-              "visual": {
-                "title": "Compras"
-              }
-            }
-          ],
-          "config": {
-            "className": "grid grid-cols-1 md:grid-cols-3 gap-4"
-          }
-        }
-      ]
-    },
-    "updated_at": "2026-06-06T14:47:50.224Z"
-  },
-  {
     "id": "db6124ac-0139-4b04-b1aa-b25ae0a53fd0",
     "context": "page_routes",
     "data": {
@@ -182,173 +81,26 @@
     "context": "page_routes",
     "data": {
       "path": "/app/quoting/:id",
-      "title": "Cotizador Editor de Propuesta",
+      "title": "Cotizador — Editor de Propuesta",
       "isPrivate": false,
-      "layout_mode": "container",
+      "layout_mode": "full",
+      "layout": {
+        "max_width": "full",
+        "padding": [0, 0, 0, 0],
+        "gap": 0
+      },
       "blocks": [
         {
-          "id": "block_quote_selector",
-          "type": "project_selector",
+          "id": "block_cotizador_pro_id",
+          "type": "cotizador_pro",
           "context": "cotizaciones",
           "config": {
-            "singular": "cotizador",
-            "label": "Seleccionar Cotizacion Activa"
-          }
-        },
-        {
-          "id": "block_header_form",
-          "type": "form",
-          "context": "cotizaciones",
-          "schema_id": "03fa884c-e96e-43e4-8899-858d6d3be927",
-          "config": {
-            "intent": "edit",
-            "visible_fields": [
-              "cliente_id",
-              "nombre_proyecto",
-              "direccion_obra"
-            ],
-            "hideSubmit": true,
-            "isCollapsible": true,
-            "defaultCollapsed": false,
-            "title": "Ficha del Proyecto",
-            "subtitle": "Datos principales del cliente y condiciones generales de la obra",
-            "label": "Ficha del Proyecto"
-          }
-        },
-        {
-          "id": "block_spaces_collection",
-          "type": "collection",
-          "context": "espacio_variantes",
-          "schema_id": "6addc0dc-f61b-4a12-a3fe-9c4ea7eb07be",
-          "config": {
-            "view": "editor_stack",
-            "parent_key": "cotizacion_id",
-            "segmentation_key": "nombre_variante",
-            "segmentation_strategy": "tabs",
-            "segmentation_rename": true,
-            "group_by_key": "nombre_espacio",
-            "singular": "Espacio",
-            "title": "Espacios de Mobiliario",
-            "description": "Define los espacios del proyecto y sus respectivas alternativas de materiales",
-            "label": "Espacios de Mobiliario"
-          },
-          "blocks": [
-            {
-              "id": "block_materials_table",
-              "type": "table",
-              "context": "items_variante",
-              "schema_id": "1f4c3f96-5f6e-4d5f-816c-dc3334f40a6f",
-              "config": {
-                "parent_key": "variante_id",
-                "singular": "Material",
-                "searchable": false,
-                "intent": "edit",
-                "title": "Desglose de Materiales e Insumos",
-                "label": "Desglose de Materiales e Insumos"
-              }
-            },
-            {
-              "id": "block_labor_form",
-              "type": "form",
-              "context": "espacio_variantes",
-              "schema_id": "6addc0dc-f61b-4a12-a3fe-9c4ea7eb07be",
-              "config": {
-                "intent": "edit",
-                "visible_fields": [
-                  "activa",
-                  "jornadas_desarrollo_tecnico",
-                  "jornadas_ensamblaje_taller",
-                  "jornadas_instalacion_obra"
-                ],
-                "hideSubmit": true,
-                "isCollapsible": true,
-                "defaultCollapsed": true,
-                "title": "Calculo de Jornadas y Mano de Obra",
-                "label": "Calculo de Jornadas y Mano de Obra"
-              }
-            }
-          ]
-        },
-        {
-          "id": "block_footer_form",
-          "type": "form",
-          "context": "cotizaciones",
-          "schema_id": "03fa884c-e96e-43e4-8899-858d6d3be927",
-          "config": {
-            "intent": "edit",
-            "visible_fields": [
-              "costos_operativos",
-              "imprevistos_instalacion",
-              "descuento_comercial",
-              "ajuste_arbitrario"
-            ],
-            "hideSubmit": true,
-            "title": "Cierre Tecnico de Propuesta",
-            "subtitle": "Costos operativos globales, imprevistos y ajustes comerciales",
-            "label": "Cierre Tecnico de Propuesta"
-          }
-        },
-        {
-          "id": "block_export_pdf_btn",
-          "type": "action",
-          "context": "cotizaciones",
-          "schema_id": "03fa884c-e96e-43e4-8899-858d6d3be927",
-          "config": {
-            "label": "Exportar Propuesta PDF",
-            "zap": "exportar_propuesta_pdf",
-            "variant": "outline",
-            "theme": "veta_de_oro",
-            "icon": "Printer",
-            "className": "border-primary/50 text-primary hover:bg-primary/[0.05]"
-          }
-        },
-        {
-          "id": "7ebf18a2-afdd-4d8c-be68-3a425a5ff8d9",
-          "type": "action",
-          "context": "cotizaciones",
-          "schema_id": "03fa884c-e96e-43e4-8899-858d6d3be927",
-          "config": {
-            "label": "Exportar Propuesta PDF (Simplificada)",
-            "zap": "exportar_propuesta_pdf_simplificada",
-            "variant": "outline",
-            "theme": "veta_de_oro",
-            "icon": "Printer",
-            "className": "border-primary/50 text-primary hover:bg-primary/[0.05]"
-          }
-        },
-        {
-          "id": "a1b2c3d4-e5f6-7890-aaaa-bbbbccccdddd",
-          "type": "action",
-          "context": "cotizaciones",
-          "schema_id": "03fa884c-e96e-43e4-8899-858d6d3be927",
-          "config": {
-            "label": "Enviar a Producción",
-            "zap": "crear_orden_trabajo",
-            "variant": "outline",
-            "icon": "Factory"
-          }
-        },
-        {
-          "id": "f1a2b3c4-d5e6-7890-fabc-def012345601",
-          "type": "action",
-          "context": "cotizaciones",
-          "schema_id": "03fa884c-e96e-43e4-8899-858d6d3be927",
-          "config": {
-            "label": "Generar Contrato",
-            "zap": "generar_contrato",
-            "variant": "default",
-            "icon": "FileSignature"
+            "tarifa_jornada": 185000
           }
         }
       ]
     },
-    "updated_at": "2026-06-01T01:59:06.926Z"
-  },
-  {
-    "id": "886f4199-9b12-4d58-836d-2af9de225bdd",
-    "context": "page_routes",
-    "data": {},
-    "updated_at": "2026-06-06T17:13:57.303Z"
+    "updated_at": "2026-06-09T18:00:00.000Z"
   },
   {
     "id": "f3a92b11-8c4e-4d07-a561-e72b9f103d55",
@@ -457,60 +209,6 @@
     "updated_at": "2026-06-06T17:14:15.105Z"
   },
   {
-    "id": "a2b3c4d5-e6f7-8901-abcd-ef1234567801",
-    "context": "page_routes",
-    "data": {
-      "path": "/app/comercial",
-      "title": "Directorio Comercial",
-      "isPrivate": false,
-      "layout_mode": "container",
-      "blocks": [
-        {
-          "id": "block_comercial_header",
-          "type": "header",
-          "config": {
-            "title": "Seguimiento Comercial",
-            "subtitle": "Gestión del pipeline: leads, propuestas, contratos y registro de abonos.",
-            "label": "Área Comercial"
-          }
-        },
-        {
-          "id": "block_comercial_kanban",
-          "type": "comercial_kanban",
-          "context": "cotizaciones"
-        }
-      ]
-    },
-    "updated_at": "2026-06-01T02:18:37.813Z"
-  },
-  {
-    "id": "b3c4d5e6-f7a8-9012-bcde-f12345678902",
-    "context": "page_routes",
-    "data": {
-      "path": "/app/contratos",
-      "title": "Generador de Contrato",
-      "isPrivate": false,
-      "layout_mode": "container",
-      "blocks": [
-        {
-          "id": "block_contrato_selector",
-          "type": "project_selector",
-          "context": "contratos",
-          "config": {
-            "singular": "contrato",
-            "label": "Seleccionar Contrato"
-          }
-        },
-        {
-          "id": "block_contrato_generator",
-          "type": "contrato_generator",
-          "context": "contratos"
-        }
-      ]
-    },
-    "updated_at": "2026-05-31T00:00:00.000Z"
-  },
-  {
     "id": "70bdfb89-ab55-4e35-8909-f427acaa3ce5",
     "context": "page_routes",
     "data": {
@@ -530,19 +228,22 @@
     "updated_at": "2026-06-01T00:00:00.000Z"
   },
   {
-    "id": "f69fdf81-99a7-4628-a62a-66eb001296f1",
+    "id": "c80dd7ec-e6ac-4647-9e2c-751edb29f6b0",
     "context": "page_routes",
     "data": {
-      "path": "/app/dashboard",
-      "title": "Panel de Control",
-      "root": {
-        "id": "0ff17cd7-c021-4967-a3e0-60610d9a5d8b",
-        "kind": "frame",
-        "label": "root",
-        "style": {},
-        "children": []
-      }
+      "path": "/app/ficha/:id",
+      "title": "Ficha de Producción",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "92376842-424c-4139-8d78-f01e1813d70e",
+          "type": "ficha_produccion",
+          "context": "cotizaciones",
+          "blocks": []
+        }
+      ],
+      "order": 0
     },
-    "updated_at": "2026-06-05T20:21:30.785Z"
+    "updated_at": "2026-06-09T14:50:52.941Z"
   }
 ]

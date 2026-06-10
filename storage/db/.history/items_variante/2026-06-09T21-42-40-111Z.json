@@ -1,0 +1,790 @@
+[
+  {
+    "id": "e51ca78d-59e0-4b52-833f-139853ec8d77",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "5859d678-8ba3-42ae-bd28-6f15cabb06d7",
+      "catalogo_id": "341ba1dd-78b8-4ff8-b04c-d1cdbd64d135",
+      "cantidad": 4,
+      "precio_unitario": 109250,
+      "total_linea": 437000,
+      "unidad_medida": "metro lineal"
+    },
+    "updated_at": "2026-06-04T13:46:37.792Z"
+  },
+  {
+    "id": "e319092e-bea9-4106-8ea4-11ddca2668a1",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "b5f830ba-7720-44ed-b52a-9821730b8b1e",
+      "catalogo_id": "341ba1dd-78b8-4ff8-b04c-d1cdbd64d135",
+      "cantidad": 4,
+      "precio_unitario": 109250,
+      "total_linea": 437000,
+      "unidad_medida": "metro lineal"
+    },
+    "updated_at": "2026-06-04T13:46:43.901Z"
+  },
+  {
+    "id": "f65da50e-074f-4953-8307-e2d6fde75ad6",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "c19a6f94-ea3e-47fe-9334-dc8081bb2de7",
+      "catalogo_id": "341ba1dd-78b8-4ff8-b04c-d1cdbd64d135",
+      "cantidad": 3,
+      "precio_unitario": 109250,
+      "total_linea": 327750,
+      "unidad_medida": "metro lineal"
+    },
+    "updated_at": "2026-06-04T13:47:52.745Z"
+  },
+  {
+    "id": "f6d7ff18-59c4-4c6e-8932-e69425255875",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "c19a6f94-ea3e-47fe-9334-dc8081bb2de7",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 3.5,
+      "precio_unitario": 448500,
+      "total_linea": 1569750,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-04T13:48:53.854Z"
+  },
+  {
+    "id": "f0fbf833-b93f-4ee4-b898-90f1ee483a90",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "c19a6f94-ea3e-47fe-9334-dc8081bb2de7",
+      "catalogo_id": "d9d0f2ab-3aaf-48c5-a429-a82bac5cda41",
+      "cantidad": 4,
+      "precio_unitario": 11500,
+      "total_linea": 46000,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-04T13:49:10.719Z"
+  },
+  {
+    "id": "83cc4afe-91eb-4a48-8e90-c7e018e04b45",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8ff2d32e-f550-456b-ac15-9c6f8cc4c8fb",
+      "catalogo_id": "b3627cc4-8c78-4c29-be73-623e77c3f4e3",
+      "cantidad": 3.3,
+      "precio_unitario": 369150,
+      "total_linea": 1218195,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-04T13:51:56.914Z"
+  },
+  {
+    "id": "5e6cf070-ab99-49af-bf6f-1628d28e0778",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8ff2d32e-f550-456b-ac15-9c6f8cc4c8fb",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 0.2,
+      "precio_unitario": 448500,
+      "total_linea": 89700,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-04T13:52:03.834Z"
+  },
+  {
+    "id": "a6577f7b-9c2b-47e8-be31-390cb76dc260",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8ff2d32e-f550-456b-ac15-9c6f8cc4c8fb",
+      "catalogo_id": "49c1119e-ed19-4d6a-8fb2-9aeb7429257a",
+      "cantidad": 1,
+      "precio_unitario": 18400,
+      "total_linea": 18400,
+      "unidad_medida": "metro cuadrado"
+    },
+    "updated_at": "2026-06-04T13:51:37.220Z"
+  },
+  {
+    "id": "048b4129-85e6-480c-872e-b0562227347a",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "0df2d762-4656-40f1-b4cc-a453b292f443",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 8.2,
+      "precio_unitario": 448500,
+      "total_linea": 3677699.9999999995,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-04T13:58:08.920Z"
+  },
+  {
+    "id": "61cf09b4-d3ef-4443-bf33-84c4b9927cbf",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "0df2d762-4656-40f1-b4cc-a453b292f443",
+      "catalogo_id": "c478502f-0deb-4a94-89b5-7282e8d762a3",
+      "cantidad": 9,
+      "precio_unitario": 13800,
+      "total_linea": 124200,
+      "unidad_medida": "juego"
+    },
+    "updated_at": "2026-06-04T13:58:17.472Z"
+  },
+  {
+    "id": "dbb1b0d9-ee9e-45aa-bd3d-215f8137b8e1",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "0df2d762-4656-40f1-b4cc-a453b292f443",
+      "catalogo_id": "d28457d5-121c-45d8-a180-28499f4759be",
+      "cantidad": 1,
+      "precio_unitario": 72450,
+      "total_linea": 72450,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-04T13:52:39.479Z"
+  },
+  {
+    "id": "f940027f-204e-4bc0-80bb-a4c1bfeb53fd",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "0df2d762-4656-40f1-b4cc-a453b292f443",
+      "catalogo_id": "6dcd7cf9-b4a5-4dab-b245-acf74971e260",
+      "cantidad": 0.5,
+      "precio_unitario": 678500,
+      "total_linea": 339250,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-04T13:58:33.503Z"
+  },
+  {
+    "id": "809e6ef1-c670-4926-bb8c-2c0b2952ed76",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "0df2d762-4656-40f1-b4cc-a453b292f443",
+      "catalogo_id": "49c1119e-ed19-4d6a-8fb2-9aeb7429257a",
+      "cantidad": 1,
+      "precio_unitario": 18400,
+      "total_linea": 18400,
+      "unidad_medida": "metro cuadrado"
+    },
+    "updated_at": "2026-06-04T13:53:03.274Z"
+  },
+  {
+    "id": "6a6fb76a-38ba-4f6d-8d87-4dbb76133472",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "5859d678-8ba3-42ae-bd28-6f15cabb06d7",
+      "catalogo_id": "1ad5f81f-5d90-4568-9b82-1e09989e1e62",
+      "cantidad": 2,
+      "precio_unitario": 172500,
+      "total_linea": 345000,
+      "unidad_medida": ""
+    },
+    "updated_at": "2026-06-04T13:53:45.392Z"
+  },
+  {
+    "id": "805f9516-4691-426e-96b1-c06f930445e8",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "5859d678-8ba3-42ae-bd28-6f15cabb06d7",
+      "cantidad": 1.7,
+      "precio_unitario": 678500,
+      "total_linea": 1153450,
+      "unidad_medida": "tablero",
+      "catalogo_id": "6dcd7cf9-b4a5-4dab-b245-acf74971e260"
+    },
+    "updated_at": "2026-06-04T13:53:35.067Z"
+  },
+  {
+    "id": "4541153f-282e-4c45-a41d-c8196e270275",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "5859d678-8ba3-42ae-bd28-6f15cabb06d7",
+      "catalogo_id": "2cfe163a-ea4e-42b2-ae45-218763994a9e",
+      "cantidad": 3,
+      "precio_unitario": 13800,
+      "total_linea": 41400,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-04T13:59:59.662Z"
+  },
+  {
+    "id": "f067a785-0391-48fc-bf75-234a0d4f7933",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f403b08-b903-4ddd-b01f-109ae4c11bc2",
+      "catalogo_id": "d7f12cf9-e5cc-469e-b2a1-9bc3bb05186d",
+      "cantidad": 6,
+      "precio_unitario": 506000,
+      "total_linea": 3036000,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-04T17:50:20.027Z"
+  },
+  {
+    "id": "568c9250-7d1c-4aae-b639-5d43e7c5b40e",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f403b08-b903-4ddd-b01f-109ae4c11bc2",
+      "catalogo_id": "a022cc73-d383-427d-8bbc-e12ce21e701e",
+      "cantidad": 3,
+      "precio_unitario": 155250,
+      "total_linea": 465750,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-04T17:50:35.332Z"
+  },
+  {
+    "id": "fb587f04-2561-4d8d-9c0d-d751820389e7",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f403b08-b903-4ddd-b01f-109ae4c11bc2",
+      "catalogo_id": "7470fcca-16ae-4675-8e1f-933f9ccc2505",
+      "cantidad": 2.42,
+      "precio_unitario": 977500,
+      "total_linea": 2365550,
+      "unidad_medida": "metro lineal"
+    },
+    "updated_at": "2026-06-04T17:51:16.891Z"
+  },
+  {
+    "id": "efee68eb-e113-4e6a-a08f-105f8bbe8880",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f403b08-b903-4ddd-b01f-109ae4c11bc2",
+      "catalogo_id": "d9d0f2ab-3aaf-48c5-a429-a82bac5cda41",
+      "cantidad": 9,
+      "precio_unitario": 11500,
+      "total_linea": 103500,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-04T17:51:42.053Z"
+  },
+  {
+    "id": "e0137721-6e9f-4f54-a643-16d2dccc326a",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f403b08-b903-4ddd-b01f-109ae4c11bc2",
+      "catalogo_id": "dcdd7064-23eb-4a3a-ba86-2a8914240dac",
+      "cantidad": 1,
+      "precio_unitario": 264500,
+      "total_linea": 264500,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-04T17:51:49.026Z"
+  },
+  {
+    "id": "52791666-fca1-4461-8c97-8d876777d65d",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f403b08-b903-4ddd-b01f-109ae4c11bc2",
+      "catalogo_id": "3c8273dc-a7cd-4e9a-8bc8-a5d491d6dfdc",
+      "cantidad": 1,
+      "precio_unitario": 287500,
+      "total_linea": 287500,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-04T17:51:59.767Z"
+  },
+  {
+    "id": "c72b5677-c4be-43fd-b870-74e560bb7c5e",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f403b08-b903-4ddd-b01f-109ae4c11bc2",
+      "catalogo_id": "121882bd-070d-4002-969c-081e60d77c06",
+      "cantidad": 1,
+      "precio_unitario": 172500,
+      "total_linea": 172500,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-04T17:52:05.440Z"
+  },
+  {
+    "id": "bf4cb3dc-7c34-499c-851c-557fa038e55d",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f403b08-b903-4ddd-b01f-109ae4c11bc2",
+      "catalogo_id": "311cbbfa-106d-42c1-90bb-bb3be7ac771c",
+      "cantidad": 1,
+      "precio_unitario": 480000,
+      "total_linea": 480000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-04T18:45:38.330Z"
+  },
+  {
+    "id": "b8166512-7441-4243-b7f0-34ca8a451828",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "29209ca8-d9f3-422a-bca0-97d26c86c5e5",
+      "catalogo_id": "b3627cc4-8c78-4c29-be73-623e77c3f4e3",
+      "cantidad": 6,
+      "precio_unitario": 369150,
+      "total_linea": 2214900,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-09T19:08:35.718Z"
+  },
+  {
+    "id": "863a30c3-7f6f-4d48-86ed-e0d1b5f2e586",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "29209ca8-d9f3-422a-bca0-97d26c86c5e5",
+      "catalogo_id": "d28457d5-121c-45d8-a180-28499f4759be",
+      "cantidad": 3,
+      "precio_unitario": 72450,
+      "total_linea": 217350,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-09T19:01:04.461Z"
+  },
+  {
+    "id": "2b4a7e07-a7bf-4eb0-9aa0-d55c9fb75733",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "29209ca8-d9f3-422a-bca0-97d26c86c5e5",
+      "catalogo_id": "d9d0f2ab-3aaf-48c5-a429-a82bac5cda41",
+      "cantidad": 10,
+      "precio_unitario": 11500,
+      "total_linea": 115000,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-09T19:00:29.269Z"
+  },
+  {
+    "id": "86316ca2-b14a-4e7f-99d7-384d0e62f5a8",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "29209ca8-d9f3-422a-bca0-97d26c86c5e5",
+      "catalogo_id": "dcdd7064-23eb-4a3a-ba86-2a8914240dac",
+      "cantidad": 1,
+      "precio_unitario": 264500,
+      "total_linea": 264500,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-04T18:46:10.419Z"
+  },
+  {
+    "id": "fd05bf02-4301-4664-9b61-93e0655f046e",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 4,
+      "precio_unitario": 448500,
+      "total_linea": 1794000,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-05T22:40:13.935Z"
+  },
+  {
+    "id": "db9ecfba-33ef-4de0-b980-dc9c0d19370b",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
+      "catalogo_id": "e8a812d8-310a-44df-89de-455b965935e3",
+      "cantidad": 2,
+      "precio_unitario": 10350,
+      "total_linea": 20700,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-05T22:33:36.500Z"
+  },
+  {
+    "id": "a8494345-913c-4e87-aa0a-78006599a2bb",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
+      "catalogo_id": "e75bb0cc-5250-4c67-bb80-a0f38ffd2ab5",
+      "cantidad": 1,
+      "precio_unitario": 40250,
+      "total_linea": 40250,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-05T22:33:02.421Z"
+  },
+  {
+    "id": "5985317a-80a5-49c9-ab64-e880f18280e7",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
+      "catalogo_id": "7f27d366-34ab-4127-9952-0d62328dd796",
+      "cantidad": 1,
+      "precio_unitario": 172500,
+      "total_linea": 172500,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-05T22:33:08.378Z"
+  },
+  {
+    "id": "da2b0d4a-2de3-41de-aafd-83887c794fde",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8cc83927-809a-46d4-bada-d613d5d66272",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 2,
+      "precio_unitario": 448500,
+      "total_linea": 897000,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-05T22:34:03.468Z"
+  },
+  {
+    "id": "4213d032-a33b-4a80-8be8-e2bca64e87de",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8cc83927-809a-46d4-bada-d613d5d66272",
+      "catalogo_id": "e8a812d8-310a-44df-89de-455b965935e3",
+      "cantidad": 2,
+      "precio_unitario": 10350,
+      "total_linea": 20700,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-05T22:34:03.584Z"
+  },
+  {
+    "id": "cefe4866-f24d-43e4-9cc4-3cf13f8b1490",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8cc83927-809a-46d4-bada-d613d5d66272",
+      "catalogo_id": "e75bb0cc-5250-4c67-bb80-a0f38ffd2ab5",
+      "cantidad": 1,
+      "precio_unitario": 40250,
+      "total_linea": 40250,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-05T22:34:03.651Z"
+  },
+  {
+    "id": "c6eafcff-0c6f-4e6f-bd13-39a7327850bd",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8cc83927-809a-46d4-bada-d613d5d66272",
+      "catalogo_id": "7f27d366-34ab-4127-9952-0d62328dd796",
+      "cantidad": 1,
+      "precio_unitario": 172500,
+      "total_linea": 172500,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-05T22:34:03.714Z"
+  },
+  {
+    "id": "f1646cf2-f98c-4c62-888c-04930f459b69",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8cc83927-809a-46d4-bada-d613d5d66272",
+      "catalogo_id": "5c124215-9825-4af2-a218-6bd47004a65f",
+      "cantidad": 4,
+      "precio_unitario": 23000,
+      "total_linea": 92000,
+      "unidad_medida": "juego"
+    },
+    "updated_at": "2026-06-05T22:39:57.554Z"
+  },
+  {
+    "id": "c1648566-d88c-4a05-aca5-6503f5f4d63e",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
+      "catalogo_id": "5c124215-9825-4af2-a218-6bd47004a65f",
+      "cantidad": 8,
+      "precio_unitario": 23000,
+      "total_linea": 184000,
+      "unidad_medida": "juego"
+    },
+    "updated_at": "2026-06-05T22:40:11.825Z"
+  },
+  {
+    "id": "1e076c84-5c98-47e8-ad58-57d6b4656a28",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "a1cc8b6b-64d4-47c3-ad84-c1378bc83ef3"
+    },
+    "updated_at": "2026-06-09T18:31:39.348Z"
+  },
+  {
+    "id": "72b98777-78bb-4cd6-9768-8379c14224c9",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f694e93-cb42-4cd4-9f45-a079efadab8e",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 4,
+      "precio_unitario": 448500,
+      "total_linea": 1794000,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-09T21:11:17.732Z"
+  },
+  {
+    "id": "8dfd219b-835f-4e34-9cee-0dc40cea43c8",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f694e93-cb42-4cd4-9f45-a079efadab8e",
+      "catalogo_id": "dcdd7064-23eb-4a3a-ba86-2a8914240dac",
+      "cantidad": 1,
+      "precio_unitario": 264500,
+      "total_linea": 264500,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-09T21:12:05.146Z"
+  },
+  {
+    "id": "d828c32b-82ed-4646-9896-4e96cfcea155",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f694e93-cb42-4cd4-9f45-a079efadab8e",
+      "catalogo_id": "341ba1dd-78b8-4ff8-b04c-d1cdbd64d135",
+      "cantidad": 3.5,
+      "precio_unitario": 109250,
+      "total_linea": 382375,
+      "unidad_medida": "metro lineal"
+    },
+    "updated_at": "2026-06-09T21:12:50.982Z"
+  },
+  {
+    "id": "aa8db9fe-d65a-4da6-8f6e-4f4599dc65ff",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f694e93-cb42-4cd4-9f45-a079efadab8e",
+      "catalogo_id": "d9d0f2ab-3aaf-48c5-a429-a82bac5cda41",
+      "cantidad": 5,
+      "precio_unitario": 11500,
+      "total_linea": 57500,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-09T21:13:08.796Z"
+  },
+  {
+    "id": "e11fa296-0d65-4106-b5bf-19755a9388f3",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "8f694e93-cb42-4cd4-9f45-a079efadab8e",
+      "catalogo_id": "2fb5ef01-a3dc-4864-bb4e-caea526e2178",
+      "cantidad": 3,
+      "precio_unitario": 13800,
+      "total_linea": 41400,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:13:18.235Z"
+  },
+  {
+    "id": "989de8f7-5f17-426e-a8e6-8d77a20f60bc",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "6122d279-d1cd-44fc-b121-f0b558806e22",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 5,
+      "precio_unitario": 448500,
+      "total_linea": 2242500,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-09T21:29:22.787Z"
+  },
+  {
+    "id": "0c30fc19-ffba-45e9-843b-089f61c2dafe",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "6122d279-d1cd-44fc-b121-f0b558806e22",
+      "catalogo_id": "d9d0f2ab-3aaf-48c5-a429-a82bac5cda41",
+      "cantidad": 1,
+      "precio_unitario": 11500,
+      "total_linea": 11500,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-09T21:21:25.880Z"
+  },
+  {
+    "id": "9c2372f6-2217-4553-b40e-97809de85a8f",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "6122d279-d1cd-44fc-b121-f0b558806e22",
+      "catalogo_id": "d28457d5-121c-45d8-a180-28499f4759be",
+      "cantidad": 4,
+      "precio_unitario": 72450,
+      "total_linea": 289800,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-09T21:38:46.921Z"
+  },
+  {
+    "id": "0444aa95-0827-454e-bc67-3788552f5b97",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "6122d279-d1cd-44fc-b121-f0b558806e22",
+      "catalogo_id": "6dbea77e-01fb-4a60-b1d8-5acbfeac97f2",
+      "cantidad": 1,
+      "precio_unitario": 40000,
+      "total_linea": 40000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:41:00.843Z"
+  },
+  {
+    "id": "f263825b-b463-4734-bdd5-aa06f7f6a01f",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "6122d279-d1cd-44fc-b121-f0b558806e22",
+      "catalogo_id": "e75bb0cc-5250-4c67-bb80-a0f38ffd2ab5",
+      "cantidad": 1,
+      "precio_unitario": 40250,
+      "total_linea": 40250,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:21:46.307Z"
+  },
+  {
+    "id": "d420a60a-4b1e-4518-8079-99073ca23bd3",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "21520f28-8c23-41e8-938a-519636bf3047",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 5.5,
+      "precio_unitario": 448500,
+      "total_linea": 2466750,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-09T21:28:58.386Z"
+  },
+  {
+    "id": "14d74022-13dc-4889-a71e-67bd34f31c89",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "21520f28-8c23-41e8-938a-519636bf3047",
+      "catalogo_id": "d9d0f2ab-3aaf-48c5-a429-a82bac5cda41",
+      "cantidad": 1,
+      "precio_unitario": 11500,
+      "total_linea": 11500,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-09T21:22:12.432Z"
+  },
+  {
+    "id": "c5612d60-e6d7-4979-8e2e-3ec4701c6cd0",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "21520f28-8c23-41e8-938a-519636bf3047",
+      "catalogo_id": "d28457d5-121c-45d8-a180-28499f4759be",
+      "cantidad": 4,
+      "precio_unitario": 72450,
+      "total_linea": 289800,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-09T21:41:17.541Z"
+  },
+  {
+    "id": "5e503d5a-8ae8-44bd-a466-6034c07d288d",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "21520f28-8c23-41e8-938a-519636bf3047",
+      "catalogo_id": "6dbea77e-01fb-4a60-b1d8-5acbfeac97f2",
+      "cantidad": 1,
+      "precio_unitario": 40000,
+      "total_linea": 40000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:41:36.796Z"
+  },
+  {
+    "id": "974cb5d5-3f09-4974-8e2e-9c1b84cde9a0",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "21520f28-8c23-41e8-938a-519636bf3047",
+      "catalogo_id": "e75bb0cc-5250-4c67-bb80-a0f38ffd2ab5",
+      "cantidad": 1,
+      "precio_unitario": 40250,
+      "total_linea": 40250,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:22:12.876Z"
+  },
+  {
+    "id": "6c4af095-c5f6-4fa7-97de-a5ca21e35415",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "a4594878-8474-4e57-be77-2f0b7ce75929",
+      "catalogo_id": "4d66f2e7-0fe8-4995-b024-b09eaec2be4c",
+      "cantidad": 3.3,
+      "precio_unitario": 448500,
+      "total_linea": 1480050,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-06-09T21:42:39.652Z"
+  },
+  {
+    "id": "7ce7300b-0d9a-48db-bda4-abe8f404b157",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "a4594878-8474-4e57-be77-2f0b7ce75929",
+      "catalogo_id": "d28457d5-121c-45d8-a180-28499f4759be",
+      "cantidad": 4,
+      "precio_unitario": 72450,
+      "total_linea": 289800,
+      "unidad_medida": "juegos"
+    },
+    "updated_at": "2026-06-09T21:38:31.921Z"
+  },
+  {
+    "id": "89fc8e13-cea6-4e9c-a9a6-eb7e0c42e0cb",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "a4594878-8474-4e57-be77-2f0b7ce75929",
+      "catalogo_id": "6dbea77e-01fb-4a60-b1d8-5acbfeac97f2",
+      "cantidad": 1,
+      "precio_unitario": 40000,
+      "total_linea": 40000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:42:07.478Z"
+  },
+  {
+    "id": "fd13dfae-d9a6-4e6e-9dae-b6207509d344",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "a4594878-8474-4e57-be77-2f0b7ce75929",
+      "catalogo_id": "e75bb0cc-5250-4c67-bb80-a0f38ffd2ab5",
+      "cantidad": 1,
+      "precio_unitario": 40250,
+      "total_linea": 40250,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:22:27.661Z"
+  },
+  {
+    "id": "c164df7a-c356-4736-9f6d-f3ec5411c690",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "21520f28-8c23-41e8-938a-519636bf3047",
+      "catalogo_id": "ec4463cd-2dc9-4716-a341-c69d897afe7c",
+      "cantidad": 0.8,
+      "precio_unitario": 190000,
+      "total_linea": 152000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:37:22.853Z"
+  },
+  {
+    "id": "47cc2914-244a-4ec8-bc9c-b3cc37181828",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "6122d279-d1cd-44fc-b121-f0b558806e22",
+      "catalogo_id": "ec4463cd-2dc9-4716-a341-c69d897afe7c",
+      "cantidad": 0.7,
+      "precio_unitario": 190000,
+      "total_linea": 133000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:37:28.951Z"
+  },
+  {
+    "id": "0812d3bb-f340-4c8b-a5fb-1ca277ca709e",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "a4594878-8474-4e57-be77-2f0b7ce75929",
+      "catalogo_id": "ec4463cd-2dc9-4716-a341-c69d897afe7c",
+      "cantidad": 0.7,
+      "precio_unitario": 190000,
+      "total_linea": 133000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-06-09T21:37:47.374Z"
+  }
+]

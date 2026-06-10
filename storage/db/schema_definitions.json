@@ -992,34 +992,10 @@
           "width": "full",
           "section": "General",
           "config": {}
-        },
-        {
-          "id": "71521e4d-d1b6-4640-a10b-b6ddb9c52096",
-          "key": "costo_total_real",
-          "type": "number",
-          "label": "\"Costo",
-          "required": false
-        },
-        {
-          "id": "799e3ded-274e-4418-9476-23863db90510",
-          "key": "estado_flete",
-          "type": "select",
-          "label": "\"Estado",
-          "required": false,
-          "options": [
-            {
-              "label": "\"Programado",
-              "value": "\"Programado"
-            },
-            {
-              "label": "En",
-              "value": "En"
-            }
-          ]
         }
       ]
     },
-    "updated_at": "2026-06-05T21:58:26.179Z"
+    "updated_at": "2026-06-09T14:48:23.803Z"
   },
   {
     "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",

@@ -13,7 +13,6 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { DollarSign, FileText, Loader2, ExternalLink, LayoutDashboard } from 'lucide-react'
 import type { CotizacionesRecord, ClientesRecord, ContratosRecord } from '@/generated/agnostic-schemas'
-import ProjectCanvas from './canvas/ProjectCanvas'
 
 type CotEstado = 'activa' | 'enviada' | 'en_contrato' | 'pre_produccion' | 'produccion' | 'entregada'
 
@@ -213,8 +212,8 @@ function CotizacionCard({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              title="Abrir canvas del proyecto"
-              onClick={() => onOpenCanvas(cotizacion)}
+              title="Ver Ficha de Producción"
+              onClick={() => window.location.href = `/app/ficha/${cotizacion.id}`}
             >
               <LayoutDashboard className="h-4 w-4" />
             </Button>
@@ -260,8 +259,6 @@ export default function ComercialDirectory({ records }: BlockProps) {
 
   const isLoading = loadingCli || loadingCon
 
-  const [canvasCot, setCanvasCot] = useState<CotizacionesRecord | null>(null)
-
   const clientNameMap = useMemo(() => {
     const map: Record<string, string> = {}
     for (const cot of cotizaciones) {
@@ -290,7 +287,6 @@ export default function ComercialDirectory({ records }: BlockProps) {
   }
 
   return (
-    <>
     <Tabs defaultValue="leads" className="w-full">
       <TabsList className="flex-wrap h-auto gap-1">
         {TABS.map(tab => {
@@ -319,11 +315,11 @@ export default function ComercialDirectory({ records }: BlockProps) {
               <div className="flex flex-col gap-3 pt-2">
                 {filtered.map(cot => (
                   <CotizacionCard
-                    key={cot.id}
-                    cotizacion={cot}
-                    clientName={clientNameMap[cot.id] ?? '—'}
-                    contrato={contratoMap[cot.id]}
-                    onOpenCanvas={setCanvasCot}
+                     key={cot.id}
+                     cotizacion={cot}
+                     clientName={clientNameMap[cot.id] ?? '—'}
+                     contrato={contratoMap[cot.id]}
+                     onOpenCanvas={() => {}}
                   />
                 ))}
               </div>
@@ -332,13 +328,5 @@ export default function ComercialDirectory({ records }: BlockProps) {
         )
       })}
     </Tabs>
-
-    <ProjectCanvas
-      cotizacion={canvasCot}
-      clientName={canvasCot ? (clientNameMap[canvasCot.id] ?? '—') : ''}
-      open={!!canvasCot}
-      onClose={() => setCanvasCot(null)}
-    />
-    </>
   )
 }

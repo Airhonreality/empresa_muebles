@@ -1,0 +1,12 @@
+[
+  {
+    "id": "85954bc5-c1d5-4852-a113-c65763a7a933",
+    "context": "tareas_produccion",
+    "data": {
+      "orden_trabajo_id": "fake-orden-id",
+      "nombre_tarea": "Test tarea produccion",
+      "estado": "pendiente"
+    },
+    "updated_at": "2026-06-09T18:31:05.647Z"
+  }
+]

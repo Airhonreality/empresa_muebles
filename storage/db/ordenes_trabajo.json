@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "04a19ebe-1b66-4098-8c98-c6fe96e41b4e",
+    "context": "ordenes_trabajo",
+    "data": {
+      "cotizacion_id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+      "codigo_orden": "OT-2026-001",
+      "estado": "pendiente",
+      "fecha_entrega": "",
+      "notas": ""
+    },
+    "updated_at": "2026-06-09T18:48:12.989Z"
+  }
+]

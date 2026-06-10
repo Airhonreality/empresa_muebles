@@ -9,13 +9,13 @@
       "jornadas_desarrollo_tecnico": 1,
       "jornadas_ensamblaje_taller": 3,
       "jornadas_instalacion_obra": 2.5,
-      "imagenes": "[\"/api/assets/1780599273874-Sin título_4_Página 5.png\",\"/api/assets/1780599273879-Sin título_5_Página 4.png\"]",
-      "colores": "[{\"nombre\":\"Kallio\",\"imagen_url\":\"/api/assets/1780598678675-Kalio-1.jpg\"},{\"nombre\":\"Yutex\",\"imagen_url\":\"/api/assets/1780598690065-YUTEXT.jpg\"},{\"nombre\":\"Mesón\",\"imagen_url\":\"/api/assets/1780599351820-MESON SINTERIZADO.jpg\"}]",
+      "imagenes": "[]",
+      "colores": "[{\"nombre\":\"Kallio\",\"imagen_url\":\"/api/assets/1780598678675-Kalio-1.jpg\"}]",
       "activa": true,
       "descripcion_alternativa": "",
       "orden": 0
     },
-    "updated_at": "2026-06-04T19:47:32.113Z"
+    "updated_at": "2026-06-09T19:01:57.100Z"
   },
   {
     "id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
@@ -46,5 +46,81 @@
       "descripcion_alternativa": "Closet estándar con 4 cajones y tubo colgador, melamina calibre 18mm con cantos rígidos y puertas corredizas."
     },
     "updated_at": "2026-06-05T22:37:42.188Z"
+  },
+  {
+    "id": "a1cc8b6b-64d4-47c3-ad84-c1378bc83ef3",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "%3Aid",
+      "nombre_espacio": "Nuevo Espacio / Elemento",
+      "nombre_variante": "Con puerta corrediza"
+    },
+    "updated_at": "2026-06-09T18:31:32.070Z"
+  },
+  {
+    "id": "8f694e93-cb42-4cd4-9f45-a079efadab8e",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "e45d6bcc-cf37-49dd-b3d7-4a204b6d7e36",
+      "nombre_espacio": "Centro de entretenimiento",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_instalacion_obra": 2,
+      "descripcion": "Modulo torre, mueble inferior, panel alistonado, y panel liso para tv. Colores mate. Materiales madecor 18mm de espesor e Iluminación LED de alta gama. ",
+      "activa": true,
+      "descripcion_alternativa": "",
+      "imagenes": "[\"/api/assets/1781039467803-image.png\"]"
+    },
+    "updated_at": "2026-06-09T21:15:37.050Z"
+  },
+  {
+    "id": "6122d279-d1cd-44fc-b121-f0b558806e22",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+      "nombre_espacio": "Closet 160cm",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 1,
+      "jornadas_instalacion_obra": 1,
+      "descripcion": "",
+      "descripcion_alternativa": "",
+      "activa": true
+    },
+    "updated_at": "2026-06-09T22:34:54.354Z"
+  },
+  {
+    "id": "21520f28-8c23-41e8-938a-519636bf3047",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+      "nombre_espacio": "Closet 190cm (Copia)",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_instalacion_obra": 1.5,
+      "descripcion": "",
+      "descripcion_alternativa": "",
+      "activa": true,
+      "imagenes": "[\"/api/assets/1781040213389-image.png\",\"/api/assets/1781040226390-image.png\"]"
+    },
+    "updated_at": "2026-06-09T21:24:21.475Z"
+  },
+  {
+    "id": "a4594878-8474-4e57-be77-2f0b7ce75929",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+      "nombre_espacio": "Closet 160cm (Copia)",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 1,
+      "jornadas_instalacion_obra": 1,
+      "descripcion": "",
+      "descripcion_alternativa": "",
+      "activa": true
+    },
+    "updated_at": "2026-06-09T22:35:35.726Z"
   }
 ]

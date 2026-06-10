@@ -1,0 +1,176 @@
+[
+  {
+    "id": "0c9a5fca-0b62-4741-9249-947ba76fafa7",
+    "context": "app_navbars",
+    "data": {
+      "name": "nav_erp_main",
+      "links": [
+        {
+          "label": "Cotizaciones",
+          "path": "/app/quoting",
+          "icon": "FileText"
+        },
+        {
+          "label": "Catálogo",
+          "path": "/app/catalog",
+          "icon": "HardDrive"
+        },
+        {
+          "label": "Producción",
+          "path": "/app/production",
+          "icon": "Factory"
+        },
+        {
+          "label": "Analítica",
+          "path": "/app/analytics",
+          "icon": "Archive"
+        }
+      ],
+      "brand": {
+        "label": "ERP",
+        "path": "/"
+      }
+    },
+    "updated_at": "2026-06-09T14:51:42.917Z"
+  },
+  {
+    "id": "41fb1b32-d570-4e70-bf1d-1a751f7b8f79",
+    "context": "app_navbars",
+    "data": {
+      "name": "public_main",
+      "links": [
+        {
+          "label": "Portafolio",
+          "path": "/portfolio",
+          "icon": "GalleryHorizontal"
+        },
+        {
+          "label": "Diseño",
+          "path": "/design",
+          "icon": "Brush"
+        },
+        {
+          "label": "Contacto",
+          "path": "/contact",
+          "icon": "Mail"
+        }
+      ],
+      "brand": {
+        "label": "label",
+        "path": "Mi"
+      }
+    },
+    "updated_at": "2026-05-30T23:04:29.566Z"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8901-bcde-f12345678902",
+    "context": "app_navbars",
+    "data": {
+      "name": "nav_admin",
+      "links": [
+        {
+          "label": "Cotizaciones",
+          "path": "/app/quoting",
+          "icon": "FileText"
+        },
+        {
+          "label": "Catálogo",
+          "path": "/app/catalog",
+          "icon": "HardDrive"
+        },
+        {
+          "label": "Prefabricados",
+          "path": "/app/prefabricados",
+          "icon": "Layers"
+        },
+        {
+          "label": "Historial",
+          "path": "/app/analytics",
+          "icon": "Archive"
+        },
+        {
+          "label": "Producción",
+          "path": "/app/production",
+          "icon": "Factory"
+        }
+      ],
+      "brand": {
+        "label": "ERP Admin",
+        "path": "/app/quoting"
+      }
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9012-cdef-123456789013",
+    "context": "app_navbars",
+    "data": {
+      "name": "nav_produccion",
+      "links": [
+        {
+          "label": "Producción",
+          "path": "/app/production",
+          "icon": "Factory"
+        }
+      ],
+      "brand": {
+        "label": "Taller",
+        "path": "/app/production"
+      }
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  },
+  {
+    "id": "c4d5e6f7-a8b9-0123-defa-234567890124",
+    "context": "app_navbars",
+    "data": {
+      "name": "nav_comercial",
+      "links": [
+        {
+          "label": "Cotizaciones",
+          "path": "/app/quoting",
+          "icon": "FileText"
+        },
+        {
+          "label": "Comercial",
+          "path": "/app/comercial",
+          "icon": "Briefcase"
+        },
+        {
+          "label": "Catálogo",
+          "path": "/app/catalog",
+          "icon": "HardDrive"
+        },
+        {
+          "label": "Historial",
+          "path": "/app/analytics",
+          "icon": "Archive"
+        }
+      ],
+      "brand": {
+        "label": "Comercial",
+        "path": "/app/quoting"
+      }
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  },
+  {
+    "id": "d5e6f7a8-b9c0-1234-efab-345678901235",
+    "context": "app_navbars",
+    "data": {
+      "name": "nav_cliente",
+      "links": [
+        {
+          "label": "Mis Proyectos",
+          "path": "/app/mis-proyectos",
+          "icon": "FolderOpen"
+        }
+      ],
+      "brand": {
+        "label": "Mi Portal",
+        "path": "/app/mis-proyectos"
+      }
+    },
+    "updated_at": "2026-05-31T00:00:00.000Z"
+  }
+]

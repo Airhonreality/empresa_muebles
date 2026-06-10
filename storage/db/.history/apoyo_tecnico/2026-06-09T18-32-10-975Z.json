@@ -1,0 +1,12 @@
+[
+  {
+    "id": "96fd6785-8d77-4fad-a20c-efa51d016e2a",
+    "context": "apoyo_tecnico",
+    "data": {
+      "tipo_recurso": "Visita T�cnica",
+      "notas": "Test visit",
+      "cotizacion_id": "9fd6375d-0f71-4f77-8ade-81f478b52406"
+    },
+    "updated_at": "2026-06-09T18:32:10.864Z"
+  }
+]

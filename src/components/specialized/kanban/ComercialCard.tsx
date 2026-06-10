@@ -17,8 +17,6 @@ import type {
   AbonosContratoRecord, EspacioVariantesRecord,
 } from '@/generated/agnostic-schemas'
 import { useMateriaStore } from '@/lib/agnostic/store'
-import ProjectCanvas from '../canvas/ProjectCanvas'
-
 const fmt = (v: number) =>
   '$' + v.toLocaleString('es-CO', { minimumFractionDigits: 0 }) + ' COP'
 
@@ -162,7 +160,6 @@ export default function ComercialCard({
   client, contrato, abonos, espacios,
 }: Props) {
   const cot     = record as unknown as CotizacionesRecord
-  const [canvasOpen, setCanvasOpen] = useState(false)
   const [abonoOpen,  setAbonoOpen]  = useState(false)
   const colors = STAGE_COLORS[stage.color] ?? STAGE_COLORS.slate
 
@@ -230,8 +227,8 @@ export default function ComercialCard({
               variant="ghost"
               size="icon"
               className="h-6 w-6"
-              title="Abrir canvas del proyecto"
-              onClick={() => setCanvasOpen(true)}
+              title="Ver Ficha de Producción"
+              onClick={() => window.location.href = `/app/ficha/${cot.id}`}
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
             </Button>
@@ -255,13 +252,6 @@ export default function ComercialCard({
           <AbonoPanel contrato={contrato} onDone={() => setAbonoOpen(false)} />
         )}
       </Card>
-
-      <ProjectCanvas
-        cotizacion={cot}
-        clientName={client?.data.nombre ?? '—'}
-        open={canvasOpen}
-        onClose={() => setCanvasOpen(false)}
-      />
     </>
   )
 }
