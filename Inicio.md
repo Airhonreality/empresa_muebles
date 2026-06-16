@@ -89,9 +89,10 @@ El panel detecta si faltan y muestra el asistente de bootstrap paso a paso.
 |---|---|---|
 | **Local** (dev) | Desarrollo en tu máquina | Ninguna |
 | **GitHub** (prod) | Producción gratuita, datos en JSON | `GITHUB_TOKEN`, `GITHUB_REPO` |
-| **Supabase** (prod) | Producción con base de datos relacional | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| **PostgreSQL** (prod) | BD relacional universal (Neon, Supabase Postgres, etc.) | `DATABASE_URL` |
+| **Supabase** (prod) | API REST de Supabase (Legacy, requiere DDL manual) | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 
-Prioridad de resolución: `GITHUB_REPO` → `SUPABASE_URL` → Local (fallback). Si configuras ambas, GitHub gana.
+Prioridad de resolución: `GITHUB_REPO` → `DATABASE_URL` → `SUPABASE_URL` → Local (fallback). Si configuras ambas, GitHub gana.
 
 ### Archivos (subidas) — Cloudflare R2
 
@@ -126,11 +127,11 @@ El panel muestra el snippet copiable si `SESSION_SECRET` no está configurado.
 
 ### Migrar datos entre estrategias
 
-Si ya tienes datos reales en una estrategia (p. ej. GitHub) y quieres migrar a Supabase, el panel incluye una herramienta de migración controlada en la sección **Migrar datos**:
+Si ya tienes datos reales en una estrategia (p. ej. GitHub) y quieres migrar a otra (como PostgreSQL), el panel incluye una herramienta de migración controlada en la sección **Migrar datos**:
 
 1. **Configura el destino** — agrega las variables de la nueva estrategia en Vercel sin eliminar las de la fuente. GitHub sigue siendo activo porque tiene mayor prioridad.
-2. **(Solo Supabase)** Genera el SQL de setup y ejecútalo en el editor SQL de tu proyecto Supabase antes de migrar.
-3. **Simula** — revisa qué se migraría (namespace por namespace) sin escribir nada.
+2. **(Solo Supabase PostgREST)** Genera el SQL de setup y ejecútalo en el editor SQL de tu proyecto Supabase antes de migrar. Para PostgreSQL estándar (Neon, Supabase directo, etc.), la tabla única `agnostic_records` se crea de forma automática en el primer guardado de datos (Zero-DDL).
+3. **Simula** — revisa qué se migraría (namespace por namespace) sin escribir nada en el destino.
 4. **Ejecuta la migración** — copia todos los registros al destino. La operación es idempotente; ejecutarla varias veces no duplica datos.
 5. **Verifica** — confirma que los datos aparecen en el destino.
 6. **Corta la fuente** — elimina las variables de la estrategia original en Vercel y redesplega. La nueva estrategia queda activa.
