@@ -257,15 +257,14 @@ const fetchSecondary = useCallback(async () => {
 }, [])  // sin deps — solo se llama explícitamente
 
 useEffect(() => { fetchSecondary() }, [fetchSecondary])
-Escritura — siempre /api/vault
+Escritura — siempre vía saveItem (nunca fetch crudo)
+
+import { useAppDispatch } from '@/context/AppContext'
+const { saveItem } = useAppDispatch()
 
 const save = async (id: string | undefined, data: MiSchema) => {
-  await fetch('/api/vault', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ namespace: context, id, data }),
-  })
-  await refresh()  // re-fetch local — no mutar el store directamente
+  await saveItem(context, { id, data })
+  // saveItem actualiza Zustand y persiste en /api/vault — no se necesita refresh()
 }
 5. WebGL y canvas avanzado — patrón sin entropía
 La regla central: el estado de WebGL vive en useRef, nunca en useState.
@@ -350,20 +349,20 @@ useEffect(() => {
 El engine inyecta los tokens en dos pasos:
 
 1. globals.css (seed) define los --sat-* como fallbacks del engine (tracked en git)
-2. storage/{silo}/styles/tokens.css sobreescribe esos fallbacks con los valores del proyecto
+2. storage/styles/tokens.css sobreescribe esos fallbacks con los valores del proyecto
 
 layout.tsx los inyecta en orden:
-  <style>{tokenStyles}</style>   ← storage/{silo}/styles/tokens.css (tuyo)
+  <style>{tokenStyles}</style>   ← storage/styles/tokens.css (tuyo)
   globals.css                    ← defaults del engine (del seed)
 
 El archivo tokens.css se regenera con /api/tokens/sync cada vez que guardas en el TokensEditor.
-También puedes editarlo directamente en storage/{silo}/styles/tokens.css.
+También puedes editarlo directamente en storage/styles/tokens.css.
 
 Regla de sync: storage/ es gitignoreado → el sync nunca toca tokens.css.
 Tus variables CSS sobreviven cualquier merge del engine intactas.
 
 Donde editas	¿Sobrevive sync?	Cuándo usarlo
-storage/{silo}/styles/tokens.css	✅ Siempre	Customización de proyecto (--sat-bg, --sat-accent, etc.)
+storage/styles/tokens.css	✅ Siempre	Customización de proyecto (--sat-bg, --sat-accent, etc.)
 src/app/globals.css	⚠️ Conflicto si el seed también lo toca	Nunca para customizar un proyecto
 src/styles/layout_tokens.css	⚠️ Conflicto si el seed también lo toca	Nunca para customizar un proyecto
 
@@ -378,4 +377,4 @@ Config del bloque	block.config.mi_param	Props hardcodeados
 Cleanup de efectos	return () => cancelAnimationFrame(...)	No cleanup → memory leak
 Escritura de datos	POST /api/vault	Adapter importado directamente
 Lógica de negocio compleja	Script zap via POST /api/engine	Lógica en el componente
-Variables CSS del proyecto	storage/{silo}/styles/tokens.css	src/app/globals.css
+Variables CSS del proyecto	storage/styles/tokens.css	src/app/globals.css

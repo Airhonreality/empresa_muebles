@@ -10,6 +10,7 @@
  */
 
 import type React from 'react'
+import type { AgnosticAPI } from './indra'
 
 // Minimal props the engine passes to every block component.
 // Custom components must accept at least these.
@@ -19,7 +20,7 @@ export interface BlockProps {
   schema?:      Record<string, unknown> | null
   records?:     Array<{ id: string; context: string; data: Record<string, unknown> }>
   activeRecord?: { id: string; context: string; data: Record<string, unknown> } | null
-  api?:         Record<string, unknown>
+  api?:         AgnosticAPI
   [key: string]: unknown
 }
 

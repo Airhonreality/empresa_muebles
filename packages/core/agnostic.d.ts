@@ -1,4 +1,12 @@
 /**
+ * @deprecated FÓSIL ARQUITECTÓNICO — TypeScript NO importa este archivo.
+ * El contrato real vive en packages/core/src/ (apuntado por package.json#types).
+ * AgnosticBridge real: read / write / remove  (ver storage.ts).
+ * AgnosticAPI real: ver indra.ts.
+ * Este archivo existe solo como referencia histórica. No confiar en sus interfaces.
+ */
+
+/**
  * ╔══════════════════════════════════════════════════════════════════════════════╗
  * ║               AGNOSTIC SYSTEM — CANONICAL TYPE DECLARATIONS                 ║
  * ║                           @agnostic/core  v6.0                              ║
