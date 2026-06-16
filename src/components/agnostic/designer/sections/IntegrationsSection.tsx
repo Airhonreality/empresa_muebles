@@ -23,7 +23,10 @@ export function IntegrationsSection({ envPresence }: IntegrationsSectionProps) {
         if (!selected || modules[selected]) return;
         setLoading(selected);
         loaders[selected]!()
-            .then(mod => setModules(prev => ({ ...prev, [selected]: mod })))
+            .then(rawMod => {
+                const mod = (rawMod as any).default || rawMod;
+                setModules(prev => ({ ...prev, [selected]: mod }));
+            })
             .catch(() => toast.error(`Error cargando módulo ${selected}`))
             .finally(() => setLoading(null));
     }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps

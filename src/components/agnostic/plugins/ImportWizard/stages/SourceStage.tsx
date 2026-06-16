@@ -37,7 +37,8 @@ export function SourceStage({ session, onNext }: SourceStageProps) {
   useEffect(() => {
     for (const [id, loader] of Object.entries(loaders)) {
       loader()
-        .then(mod => {
+        .then(rawMod => {
+          const mod = (rawMod as any).default || rawMod;
           setIntegrationMetas(prev => ({ ...prev, [id]: mod.meta }));
         })
         .catch(() => {});
