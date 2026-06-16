@@ -75,6 +75,97 @@ delete-route <path>
 script <name>                       ver código
 script write <name> --file ruta.js  importar desde archivo
 script export <name> --file ruta.js exportar a archivo
+
+---
+
+## API del sandbox Zap — lo que vive dentro de un script
+
+Todo script ejecutado por `/api/engine` recibe estas variables en su contexto:
+
+```javascript
+// ─── CONSULTA ────────────────────────────────────────────────────────────────
+const records = await api.query('nombre_namespace')
+// Devuelve: [{ id, ...data }] — cada registro con sus campos aplanados
+
+// ─── ESCRITURA ────────────────────────────────────────────────────────────────
+const saved = await api.saveItem('nombre_namespace', {
+  id: 'existente-para-update',  // omitir para crear nuevo
+  data: { campo: 'valor' }
+})
+// Encola automáticamente un evento materia_sync — el UI se actualiza sin reload
+
+// ─── NOTIFICACIONES ───────────────────────────────────────────────────────────
+api.notify.success('Operación completada')
+api.notify.error('Algo falló')
+
+// ─── EVENTOS AL CLIENTE (ver §9 de Interfaces Custom.md) ─────────────────────
+api.dispatchEvent('print_pdf',    { html: htmlString })
+api.dispatchEvent('download_pdf', { template, inputs, filename })
+api.dispatchEvent('download_file',{ content, filename, mimeType })
+api.dispatchEvent('redirect',     { path: '/ruta' })
+api.dispatchEvent('open_url',     { url, target })
+api.dispatchEvent('clipboard',    { text })
+
+// ─── CONTEXTO DE ENTRADA ──────────────────────────────────────────────────────
+payload.record    // el DataItem que activó el botón (activeRecord del bloque)
+payload.context   // nombre del namespace
+payload.schema    // array de SchemaField[]
+state             // objeto mutable vacío — para pasar datos entre secciones del script
+console.log(...)  // visible en los logs del servidor
+```
+
+**Límites del sandbox:** timeout 5 segundos · no hay acceso a `fetch`, `fs`, `process` ni binarios nativos. Para lógica que necesite esos recursos (generar gráficas, llamar APIs externas) crea una ruta dedicada en `src/app/api/` y llámala desde el componente especializado, no desde el Zap.
+
+### Flujo típico de un Zap complejo
+
+```javascript
+// script: generar_reporte_mensual
+const [cotizaciones, clientes, config] = await Promise.all([
+  api.query('cotizaciones'),
+  api.query('clientes'),
+  api.query('config')
+]);
+
+// Procesar datos
+const resumen = clientes.map(c => ({
+  nombre: c.nombre,
+  total: cotizaciones
+    .filter(cot => cot.cliente_id === c.id)
+    .reduce((s, cot) => s + (cot.total_neto || 0), 0)
+}));
+
+// Guardar snapshot
+await api.saveItem('reportes', {
+  data: {
+    nombre: `Reporte ${new Date().toLocaleDateString('es-CO')}`,
+    datos_json: JSON.stringify(resumen),
+    fecha: new Date().toISOString()
+  }
+});
+
+api.notify.success(`Reporte generado — ${resumen.length} clientes procesados`);
+
+// Descargar CSV directamente
+const csv = ['nombre,total_compras']
+  .concat(resumen.map(r => `${r.nombre},${r.total}`))
+  .join('\n');
+
+api.dispatchEvent('download_file', {
+  content: csv,
+  filename: 'reporte_mensual.csv',
+  mimeType: 'text/csv'
+});
+```
+
+### Gestión de scripts desde CLI
+
+```
+agno> script mi_zap                          ver código actual
+agno> script write mi_zap --file ruta.js    sobreescribir desde archivo
+agno> script export mi_zap --file ruta.js   exportar para editar en IDE
+agno> create-record scripts name=mi_zap     crear entrada vacía (luego escribe el código)
+```
+
 Escrituras en Capas 4 y 5
 
 Todas las escrituras son inmediatas — no hay cola de staging activa.
