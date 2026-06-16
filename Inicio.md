@@ -61,27 +61,19 @@ Una vez dentro del panel (`http://localhost:3000/schema`), ve al tab **⚡ Deplo
 
 El **Configurador de Servicios** diagnostica cada servicio en tiempo real, te permite probar credenciales antes de guardarlas, y las escribe directamente en Vercel sin que salgas del panel.
 
-### Flujo normal (primera vez)
+### Asistente de Configuración Inicial (Setup Wizard)
 
-1. **Diagnóstico automático** — el panel carga el estado real de cada servicio (no solo si la variable existe, sino si la conexión funciona).
-2. **Ingresa las credenciales** en el formulario de la estrategia que quieres usar. Los campos vacíos con `✅` ya tienen valor — déjalos vacíos para no cambiarlos.
-3. **Probar conexión** — verifica las credenciales antes de guardar, sin tocar el entorno actual.
-4. **Guardar y redesplegar** — escribe las variables en la bóveda encriptada de Vercel y dispara un nuevo build automáticamente.
-5. El panel hace **polling del despliegue** cada 5 segundos y muestra cuando termina con el enlace de producción.
+Cuando levantas el sistema por primera vez en un nuevo fork, la interfaz detecta de forma autónoma si faltan las variables de entorno principales. En lugar de mostrar el panel vacío, el sistema inicia un **Setup Wizard interactivo** paso a paso:
 
-> En desarrollo local los botones "Guardar" están deshabilitados — agrega las variables a tu `.env.local` directamente.
+1. **Pantalla de Bienvenida:** Explica el modelo mental del sistema y el flujo que se va a seguir.
+2. **Paso 1: Vincular Vercel:** Solicita las claves de la API de Vercel (`VERCEL_ACCESS_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`). Esto permite que el panel pueda escribir automáticamente en tu entorno de producción. (Se omite automáticamente en desarrollo local).
+3. **Paso 2: Estrategia de Datos:** Permite elegir de forma visual tu persistencia de datos (PostgreSQL, GitHub o Local) y probar la conexión en tiempo real antes de continuar.
+4. **Paso 3: Archivos (Cloudflare R2):** Configura el bucket de almacenamiento para imágenes y archivos en producción.
+5. **Paso 4: Resumen y Despliegue:** Muestra un consolidado de las variables recolectadas. Al confirmar:
+   - **En Vercel:** Guarda todo mediante un único envío seguro y realiza el redespliegue automático de la aplicación.
+   - **En Local:** Genera un bloque de configuración listo para copiar y pegar directamente en tu archivo `.env.local`.
 
-### Bootstrap (una sola vez en Vercel)
-
-Para que el guardado automático funcione, configura estas tres variables manualmente en Vercel Dashboard → Settings → Environment Variables:
-
-| Variable | Dónde obtenerla |
-|---|---|
-| `VERCEL_ACCESS_TOKEN` | Vercel → Settings → Tokens |
-| `VERCEL_PROJECT_ID` | Vercel → Tu proyecto → Settings → General |
-| `VERCEL_TEAM_ID` | Solo si usas cuenta de equipo |
-
-El panel detecta si faltan y muestra el asistente de bootstrap paso a paso.
+> **Omitir Configuración:** Si estás en desarrollo y deseas ignorar el asistente, puedes hacer clic en "Omitir configuración". Esto persistirá tu elección en el navegador (`localStorage`) para que no te vuelva a molestar durante el desarrollo.
 
 ### Estrategias disponibles
 

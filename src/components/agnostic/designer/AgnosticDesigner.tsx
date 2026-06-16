@@ -21,6 +21,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { SystemSection } from './sections/SystemSection';
 import { DeploySection } from './sections/DeploySection';
 import { DocsSection } from './sections/DocsSection';
+import { SetupWizard } from './sections/SetupWizard';
 import { ImportWizard } from '@/components/agnostic/plugins/ImportWizard';
 import { RecursiveBlockComposer } from './components/RecursiveBlockComposer';
 import { cn } from '@/lib/utils';
@@ -126,6 +127,24 @@ export function ConfigManager({
   );
   type ActiveMode = 'dna' | 'users' | 'silo' | 'deploy' | 'docs';
   const [activeMode, setActiveMode] = useState<ActiveMode>('dna');
+
+  // ─── SETUP WIZARD GATE ────────────────────────────────────────────────────
+  type WizardHealth = { isVercel: boolean; env_presence: Record<string, boolean> };
+  const [wizardHealth, setWizardHealth] = useState<WizardHealth | null>(null);
+  const [setupDismissed, setSetupDismissed] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('setup_wizard_dismissed') === 'true'
+  );
+
+  useEffect(() => {
+    fetch('/api/admin/health')
+      .then(r => r.json())
+      .then((h: WizardHealth & { activeDataStrategy?: string }) => {
+        const hasVercel = h.env_presence.VERCEL_ACCESS_TOKEN && h.env_presence.VERCEL_PROJECT_ID;
+        const hasData   = h.env_presence.DATABASE_URL || h.env_presence.GITHUB_REPO || h.env_presence.SUPABASE_URL;
+        if ((h.isVercel && !hasVercel) || !hasData) setWizardHealth(h);
+      })
+      .catch(() => { /* health fail — don't block designer */ });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [pendingDelete, setPendingDelete] = useState<SelectedNode | null>(null);
   const [showImport, setShowImport] = useState(false);
 
@@ -269,6 +288,19 @@ const handleAddScript = async () => {
     { id: 'deploy' as const, icon: Zap,      label: 'Estado del Deploy' },
     { id: 'docs'   as const, icon: Info,     label: 'Guías & Ayuda'     },
   ];
+
+  if (wizardHealth && !setupDismissed) {
+    return (
+      <SetupWizard
+        health={wizardHealth}
+        onComplete={() => setWizardHealth(null)}
+        onSkip={() => {
+          localStorage.setItem('setup_wizard_dismissed', 'true');
+          setSetupDismissed(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full w-full bg-background overflow-hidden select-none">
