@@ -163,13 +163,17 @@ export interface SchemaFieldConfig {
   isPrimary?: boolean;
   /** Declarative computation applied read-time. Makes the field read-only in forms. */
   derivation?: LogicOperation;
+  /** For type 'image' | 'file': allow selecting multiple files. Stored as string[]. */
+  multiple?: boolean;
+  /** For type 'image' | 'file': MIME filter passed to the file picker. Default: image/*. */
+  accept?: string;
 }
 
 export interface SchemaField {
   id: string;
   key: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'date' | 'boolean' | 'textarea' | 'relation' | 'object' | 'array_of_objects';
+  type: 'text' | 'number' | 'select' | 'date' | 'boolean' | 'textarea' | 'relation' | 'object' | 'array_of_objects' | 'image' | 'file';
   width?: 'full' | 'half' | 'third';
   section?: string;
   required?: boolean;

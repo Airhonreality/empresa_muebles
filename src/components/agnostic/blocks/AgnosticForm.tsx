@@ -516,12 +516,23 @@ export function AgnosticForm({
                     isDerived && "cursor-default opacity-80"
                   )}
                 />
-              ) : field.type === 'image' ? (
-                <SmartImageInput
-                  value={formData[field.key] || ''}
-                  onChange={(url) => handleFieldChange(field.key, url)}
-                  placeholder={field.placeholder}
-                />
+              ) : (field.type === 'image' || field.type === 'file') ? (
+                field.config?.multiple ? (
+                  <SmartImageInput
+                    multiple
+                    value={(formData[field.key] as string[]) || []}
+                    onChange={(urls) => handleFieldChange(field.key, urls)}
+                    accept={field.config?.accept ?? (field.type === 'file' ? '*/*' : undefined)}
+                    placeholder={field.placeholder}
+                  />
+                ) : (
+                  <SmartImageInput
+                    value={(formData[field.key] as string) || ''}
+                    onChange={(url) => handleFieldChange(field.key, url)}
+                    accept={field.config?.accept ?? (field.type === 'file' ? '*/*' : undefined)}
+                    placeholder={field.placeholder}
+                  />
+                )
               ) : field.type === 'markdown' ? (
                 isDerived || field.readOnly ? (
                   <div className="rounded-md border border-border/30 bg-secondary/5 px-3 py-2 min-h-[80px] prose prose-xs prose-neutral dark:prose-invert max-w-none text-xs">

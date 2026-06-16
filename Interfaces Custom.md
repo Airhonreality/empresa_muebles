@@ -65,17 +65,40 @@ import { ScrubInput } from '@/components/ui/ScrubInput'
   placeholder="0"
 />
 // Click-drag arrastra el valor. Click sin movimiento → modo texto editable.
-SmartImageInput — input de imagen con tres modos (URL escrita, paste de portapapeles, file picker):
+SmartImageInput — selector multimedia unificado: URL, Ctrl+V, drag & drop, file picker. Single o múltiple:
 
 
 import { SmartImageInput } from '@/components/ui/SmartImageInput'
 
+// — Modo single (default) ——————————————————————————————————————
 <SmartImageInput
-  value={imageUrl}
-  onChange={setImageUrl}
-  placeholder="https://... o pega imagen (Ctrl+V)"
+  value={imageUrl}           // string
+  onChange={setImageUrl}     // (url: string) => void
+  accept="image/*"           // default — cualquier imagen
+  placeholder="https://..."
 />
-// Muestra preview, botón ✕ para limpiar, sube via POST /api/upload
+
+// — Modo múltiple ———————————————————————————————————————————————
+<SmartImageInput
+  multiple
+  value={urls}               // string[]
+  onChange={setUrls}         // (urls: string[]) => void
+  accept="image/*"
+/>
+
+// — Archivos no imagen (PDFs, vídeos…) ————————————————————————
+<SmartImageInput
+  accept="application/pdf,video/mp4"
+  value={fileUrl}
+  onChange={setFileUrl}
+/>
+
+// Interacciones soportadas automáticamente:
+// · Arrastra archivos al componente
+// · Ctrl+V para pegar imagen del portapapeles
+// · Escribe/pega URL y pulsa Enter (múltiple) o la editas en vivo (single)
+// · Botón de explorador de archivos
+// Sube via POST /api/upload · Muestra preview inline · ✕ por item
 TokenOrStaticInput — input dual: valor estático OR referencia a CSS variable del design token:
 
 
@@ -109,7 +132,7 @@ import { AgnosticForm } from '@/components/agnostic/blocks/AgnosticForm'
   onFieldChange={(key, val, all) => setPreview(all)}  // live preview hook
 />
 // Incluye RelationField: select con búsqueda interna + lazy load de entidad
-// Incluye SmartImageInput para campos imagen_url
+// Incluye SmartImageInput para campos type:'image' y type:'file' (single y múltiple)
 // Incluye ReactMarkdown preview para campos notas_markdown
 // registerForm() integrado para save_forms_first en AgnosticAction
 AgnosticCollection — orquestador de sets:
@@ -378,3 +401,243 @@ Cleanup de efectos	return () => cancelAnimationFrame(...)	No cleanup → memory 
 Escritura de datos	POST /api/vault	Adapter importado directamente
 Lógica de negocio compleja	Script zap via POST /api/engine	Lógica en el componente
 Variables CSS del proyecto	storage/styles/tokens.css	src/app/globals.css
+
+---
+
+## 8. Llamar a un Zap desde un componente especializado
+
+Un componente `specialized/` **nunca llama directamente a `/api/engine`**. La ruta correcta es usar un bloque `AgnosticAction` en la ruta, o dejar que el componente especializado llame a un endpoint propio (`/api/pdf`, `/api/chart`, etc.) que opera fuera del vm sandbox.
+
+Si el componente tiene un botón que necesita disparar un Zap:
+
+```typescript
+// ✅ Patrón correcto: usar AgnosticAction compuesto dentro del especializado
+import { AgnosticAction } from '@/components/agnostic/blocks/AgnosticAction'
+
+<AgnosticAction
+  zap="exportar_propuesta_pdf"
+  label="Exportar PDF"
+  visual={{ icon: 'Download', variant: 'default' }}
+  record={activeCotizacion}
+  context="cotizaciones"
+/>
+```
+
+Si necesitas capturar el resultado del Zap (por ejemplo para actualizar estado local):
+
+```typescript
+// POST directo cuando necesitas procesar la respuesta en el componente
+const runZap = async () => {
+  const res = await fetch('/api/engine', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      zap: 'calcular_totales',
+      payload: { record: activeCotizacion, context: 'cotizaciones' }
+    })
+  });
+  const { success, events } = await res.json();
+  // procesa los events directamente aquí — no dependas de AgnosticAction para esto
+  const syncEvent = events.find((e: any) => e.action === 'materia_sync');
+  if (syncEvent) setLocalState(syncEvent.item);
+};
+```
+
+**Regla:** si el Zap solo necesita efectos secundarios (toast + sync), usa `AgnosticAction`. Si el componente necesita reaccionar al resultado, llama `/api/engine` directamente y procesa `events` tú mismo.
+
+---
+
+## 9. Eventos nativos del engine — vocabulario de salida de Zaps
+
+`api.dispatchEvent(action, payload)` encola eventos que `AgnosticAction.tsx` procesa en el cliente después de que el Zap completa. Cada evento es stateless y sin dominio — el Zap empaqueta datos, el cliente sabe qué hacer.
+
+### Los 8 eventos disponibles
+
+```javascript
+// ─── FEEDBACK AL USUARIO ──────────────────────────────────────────────────
+api.dispatchEvent('notify', { type: 'success', message: 'Guardado' })
+api.dispatchEvent('notify', { type: 'error',   message: 'Falló X' })
+// → toast en el cliente (sonner)
+
+// ─── SINCRONIZACIÓN DE ESTADO ─────────────────────────────────────────────
+api.dispatchEvent('materia_sync', { context: 'cotizaciones', item: recordActualizado })
+// → actualiza Zustand sin reload — el UI refleja el cambio inmediatamente
+
+// ─── DOCUMENTOS ───────────────────────────────────────────────────────────
+api.dispatchEvent('print_pdf', { html: htmlString })
+// → iframe oculto → window.print() — espera fonts.ready antes de imprimir
+
+api.dispatchEvent('download_pdf', {
+  template: 'nombre_en_pdf_templates',  // DataItem en storage/db/pdf_templates.json
+  inputs: [{ campo1: 'valor1' }],       // array de objetos (uno por página)
+  filename: 'documento.pdf'             // opcional
+})
+// → POST /api/pdf → pdfme → descarga binaria sin diálogo del navegador
+
+api.dispatchEvent('download_file', {
+  content: csvString,
+  filename: 'reporte.csv',
+  mimeType: 'text/csv'   // text/plain | text/csv | application/json | ...
+})
+// → Blob → <a download> — cualquier texto generado en el Zap
+
+// ─── NAVEGACIÓN ───────────────────────────────────────────────────────────
+api.dispatchEvent('redirect', { path: '/cotizaciones' })
+// → window.location.href — navegación hard, refresca el estado completo
+
+api.dispatchEvent('open_url', { url: 'https://wa.me/57...', target: '_blank' })
+// → window.open — links externos (WhatsApp, Stripe, Drive, etc.)
+
+// ─── UTILIDADES ───────────────────────────────────────────────────────────
+api.dispatchEvent('clipboard', { text: codigoGenerado })
+// → navigator.clipboard.writeText + toast "Copiado al portapapeles"
+```
+
+### Regla de cuándo agregar un evento nativo
+
+Un evento es nativo solo si su handler en `AgnosticAction.tsx` es **stateless y sin dominio**. Si el handler necesita saber algo sobre el negocio para funcionar → no es nativo; el Zap debe resolver ese conocimiento antes de dispatchar.
+
+```
+✅ clipboard  → el handler solo llama navigator.clipboard.writeText(text)
+✅ redirect   → el handler solo hace window.location.href = path
+❌ confirm    → requiere abrir un modal (estado de UI) → pertenece al componente especializado
+❌ send_email → tiene dominio (credenciales, templates) → el Zap llama al servicio externo
+```
+
+### Múltiples eventos en un solo Zap
+
+Los eventos se procesan **secuencialmente** en el orden en que se dispatchan. Puedes combinarlos:
+
+```javascript
+// Un Zap puede emitir varios eventos — se ejecutan en orden
+await api.saveItem('cotizaciones', { id: cot.id, data: { estado: 'exportada' } });
+// ^ saveItem ya encola automáticamente un materia_sync
+
+api.notify.success('Propuesta exportada y guardada');
+
+api.dispatchEvent('download_pdf', {
+  template: 'propuesta_comercial',
+  inputs: [datosCalculados],
+  filename: `propuesta_${cliente.nombre}.pdf`
+});
+
+api.dispatchEvent('redirect', { path: '/cotizaciones' });
+// el redirect ocurre DESPUÉS de que el PDF se descargó
+```
+
+---
+
+## 10. Sistema de documentos PDF
+
+### Arquitectura completa
+
+```
+Zap (server-side)
+  ├─ api.dispatchEvent('print_pdf', { html })      ← HTML artesanal, imprime con ventana del navegador
+  └─ api.dispatchEvent('download_pdf', {           ← pdfme, descarga binaria directa
+       template, inputs, filename
+     })
+         ↓
+AgnosticAction.tsx procesa el evento
+  print_pdf  → iframe oculto → fonts.ready → window.print()
+  download_pdf → POST /api/pdf → pdfme.generate() → blob → <a download>
+```
+
+### Cómo usar `download_pdf` desde un Zap
+
+```javascript
+// storage/db/scripts.json — script: exportar_reporte_csv
+const clientes = await api.query('clientes');
+
+// Opción A: PDF desde template pdfme
+api.dispatchEvent('download_pdf', {
+  template: 'reporte_clientes',   // debe existir en pdf_templates namespace
+  inputs: clientes.map(c => ({
+    nombre: c.nombre,
+    email: c.email,
+    total_compras: c.total_compras
+  })),
+  filename: 'reporte_clientes.pdf'
+});
+
+// Opción B: CSV desde contenido generado
+const csv = ['nombre,email,total']
+  .concat(clientes.map(c => `${c.nombre},${c.email},${c.total_compras}`))
+  .join('\n');
+
+api.dispatchEvent('download_file', {
+  content: csv,
+  filename: 'clientes.csv',
+  mimeType: 'text/csv'
+});
+```
+
+### Estructura de un template pdfme
+
+Las plantillas viven en `storage/db/pdf_templates.json` como DataItems estándar:
+
+```json
+{
+  "id": "uuid-generado",
+  "context": "pdf_templates",
+  "data": {
+    "name": "reporte_clientes",
+    "description": "Reporte mensual de clientes",
+    "template": {
+      "basePdf": "BLANK_PDF",
+      "schemas": [[
+        {
+          "name": "nombre",
+          "type": "text",
+          "position": { "x": 20, "y": 20 },
+          "width": 100,
+          "height": 8,
+          "fontSize": 12
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "position": { "x": 20, "y": 32 },
+          "width": 100,
+          "height": 8,
+          "fontSize": 10
+        }
+      ]]
+    }
+  }
+}
+```
+
+Cada elemento del array `inputs` en el Zap debe tener las mismas claves que los `name` del schema de pdfme.
+
+### PdfTemplateManager — bloque especializado incluido
+
+El seed incluye `src/components/specialized/PdfTemplateManager.tsx`. Para usarlo:
+
+```
+# 1. Registrar en agnostic.config.ts
+blocks: {
+  pdf_template_manager: () => import('./src/components/specialized/PdfTemplateManager'),
+}
+
+# 2. Agregar a una ruta de administración
+agno> add-block /admin pdf_template_manager
+
+# 3. El bloque lee de pdf_templates, lista templates existentes,
+#    permite probar generación directamente y muestra snippets de Zap.
+```
+
+### Gráficas en PDFs — patrón server-side
+
+Para incluir charts en documentos (`print_pdf` o `download_file`):
+
+```javascript
+// Dentro del Zap — genera imagen del chart y la embebe en el HTML
+// Requiere: npm install chartjs-node-canvas (ver instrucciones en /api/pdf/chart/route.ts)
+
+// El Zap NO puede llamar fetch() interno — esto se resuelve en el componente
+// o en una ruta especializada fuera del sandbox.
+
+// Patrón recomendado: el componente genera la imagen y la pasa como payload al Zap
+// (ver CotizadorPro.tsx para referencia de cómo pasar datos al payload del engine)
+```
