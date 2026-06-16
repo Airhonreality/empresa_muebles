@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Route as RouteIcon, FileJson, Zap, Shield, RotateCcw, Box, Plus, Trash2,
   Sparkles, Layout, Database, Settings2, ChevronsUpDown, Check,
-  Users, Info, ExternalLink, Table2
+  Users, Info, ExternalLink, Table2, Upload, Plug2
 } from 'lucide-react';
 import { DataBrowser } from '@/components/specialized/DataBrowser';
 import type { DataItem } from '@agnostic/core';
@@ -23,6 +23,7 @@ import { DeploySection } from './sections/DeploySection';
 import { DocsSection } from './sections/DocsSection';
 import { SetupWizard } from './sections/SetupWizard';
 import { ImportWizard } from '@/components/agnostic/plugins/ImportWizard';
+import { IntegrationsSection } from './sections/IntegrationsSection';
 import { RecursiveBlockComposer } from './components/RecursiveBlockComposer';
 import { cn } from '@/lib/utils';
 import { SYSTEM_NS, FIELD_META_SCHEMA } from '@/lib/agnostic/constants';
@@ -125,12 +126,13 @@ export function ConfigManager({
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(
     initialRouteId ? { nodeType: 'route', id: initialRouteId } : null
   );
-  type ActiveMode = 'dna' | 'users' | 'silo' | 'deploy' | 'docs';
+  type ActiveMode = 'dna' | 'users' | 'import' | 'integrations' | 'infra' | 'docs';
   const [activeMode, setActiveMode] = useState<ActiveMode>('dna');
 
   // ─── SETUP WIZARD GATE ────────────────────────────────────────────────────
   type WizardHealth = { isVercel: boolean; env_presence: Record<string, boolean> };
   const [wizardHealth, setWizardHealth] = useState<WizardHealth | null>(null);
+  const [envPresence, setEnvPresence] = useState<Record<string, boolean>>({});
   const [setupDismissed, setSetupDismissed] = useState(
     () => typeof window !== 'undefined' && localStorage.getItem('setup_wizard_dismissed') === 'true'
   );
@@ -139,6 +141,7 @@ export function ConfigManager({
     fetch('/api/admin/health')
       .then(r => r.json())
       .then((h: WizardHealth & { activeDataStrategy?: string }) => {
+        setEnvPresence(h.env_presence ?? {});
         const hasVercel = h.env_presence.VERCEL_ACCESS_TOKEN && h.env_presence.VERCEL_PROJECT_ID;
         const hasData   = h.env_presence.DATABASE_URL || h.env_presence.GITHUB_REPO || h.env_presence.SUPABASE_URL;
         if ((h.isVercel && !hasVercel) || !hasData) setWizardHealth(h);
@@ -146,7 +149,6 @@ export function ConfigManager({
       .catch(() => { /* health fail — don't block designer */ });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [pendingDelete, setPendingDelete] = useState<SelectedNode | null>(null);
-  const [showImport, setShowImport] = useState(false);
 
   // ─── DATA CANVAS ─────────────────────────────────────────────────────────
   // When activeDataSchema is set, the canvas shows the DataBrowser inline
@@ -281,12 +283,15 @@ const handleAddScript = async () => {
 
   // ─── RAIL ─────────────────────────────────────────────────────────────────
 
-  const RAIL = [
-    { id: 'dna'    as const, icon: FileJson, label: 'DNA & Rutas'       },
-    { id: 'users'  as const, icon: Users,    label: 'Gestión de Acceso' },
-    { id: 'silo'   as const, icon: Shield,   label: 'Config del Silo'   },
-    { id: 'deploy' as const, icon: Zap,      label: 'Estado del Deploy' },
-    { id: 'docs'   as const, icon: Info,     label: 'Guías & Ayuda'     },
+  const RAIL_TOP: { id: ActiveMode; icon: React.ElementType; label: string }[] = [
+    { id: 'dna', icon: FileJson, label: 'DNA & Rutas' },
+    { id: 'users', icon: Users, label: 'Gestión de Acceso' },
+    { id: 'import', icon: Upload, label: 'Importar Datos' },
+    { id: 'integrations', icon: Plug2, label: 'Integraciones' },
+  ];
+  const RAIL_BOTTOM: { id: ActiveMode; icon: React.ElementType; label: string }[] = [
+    { id: 'infra', icon: Shield, label: 'Infraestructura' },
+    { id: 'docs', icon: Info, label: 'Guías & Ayuda' },
   ];
 
   if (wizardHealth && !setupDismissed) {
@@ -308,7 +313,17 @@ const handleAddScript = async () => {
       {/* ── RAIL ─────────────────────────────────────────────────── */}
       <aside className="w-14 border-r flex flex-col items-center pt-4 pb-5 bg-muted/15 shrink-0 gap-1">
         <div className="mb-4"><Shield size={18} className="text-primary animate-pulse" /></div>
-        {RAIL.map(({ id, icon: Icon, label }) => (
+        {RAIL_TOP.map(({ id, icon: Icon, label }) => (
+          <button key={id} onClick={() => setActiveMode(id)} title={label}
+            className={cn('w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+              activeMode === id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}>
+            <Icon size={16} />
+          </button>
+        ))}
+        {/* Separador visual */}
+        <div className="w-6 h-px bg-border/40 my-1" />
+        {RAIL_BOTTOM.map(({ id, icon: Icon, label }) => (
           <button key={id} onClick={() => setActiveMode(id)} title={label}
             className={cn('w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
               activeMode === id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -329,10 +344,6 @@ const handleAddScript = async () => {
         <aside className="w-72 border-r flex flex-col shrink-0 bg-background overflow-hidden">
           <div className="h-14 px-4 border-b flex items-center justify-between bg-muted/5 shrink-0">
             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Jerarquía del Sistema</span>
-            <button onClick={() => setShowImport(true)} title="Importar estructura externa (Wizard)"
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors">
-              <Database size={12} />
-            </button>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             <NavSection label="Rutas" icon={RouteIcon} count={routes.length} onAdd={handleAddRoute}>
@@ -449,15 +460,14 @@ const handleAddScript = async () => {
           );
         })()}
         {activeMode === 'users' && <UserManager />}
-        {activeMode === 'silo' && (
-          <div className="h-full overflow-y-auto p-8 max-w-2xl">
-            <SystemSection config={config} setConfig={handleUpdateConfig} />
-          </div>
+        {activeMode === 'import' && (
+          <ImportWizard mode="panel" open={true} onClose={() => setActiveMode('dna')} />
         )}
-        {activeMode === 'deploy' && (
-          <div className="h-full overflow-y-auto p-8 max-w-2xl">
-            <DeploySection />
-          </div>
+        {activeMode === 'integrations' && (
+          <IntegrationsSection envPresence={envPresence} />
+        )}
+        {activeMode === 'infra' && (
+          <InfraCanvas config={config} setConfig={handleUpdateConfig} />
         )}
         {activeMode === 'docs' && (
           <div className="h-full overflow-y-auto p-8 max-w-4xl">
@@ -487,7 +497,7 @@ const handleAddScript = async () => {
         </DialogContent>
       </Dialog>
 
-      <ImportWizard open={showImport} onClose={() => setShowImport(false)} />
+
     </div>
   );
 }
@@ -1635,3 +1645,30 @@ function NavItem({
     </div>
   );
 }
+
+function InfraCanvas({ config, setConfig }: { config: any; setConfig: (patch: any) => void }) {
+  const [tab, setTab] = useState<'silo' | 'deploy'>('silo');
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex gap-1 p-3 border-b bg-muted/10 shrink-0">
+        {(['silo', 'deploy'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              'px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors',
+              tab === t ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+            )}
+          >
+            {t === 'silo' ? 'Silo' : 'Deploy'}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
+        {tab === 'silo' && <SystemSection config={config} setConfig={setConfig} />}
+        {tab === 'deploy' && <DeploySection />}
+      </div>
+    </div>
+  );
+}
+

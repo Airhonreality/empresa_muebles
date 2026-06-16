@@ -28,9 +28,10 @@ const STAGE_ORDER = STAGES.map(s => s.key);
 interface ImportWizardProps {
   open: boolean;
   onClose: () => void;
+  mode?: 'dialog' | 'panel';
 }
 
-export function ImportWizard({ open, onClose }: ImportWizardProps) {
+export function ImportWizard({ open, onClose, mode = 'dialog' }: ImportWizardProps) {
   const [stage, setStage] = useState<Stage>('source');
   const [session, setSession] = useState<ImportSession>({
     source: null,
@@ -68,32 +69,45 @@ export function ImportWizard({ open, onClose }: ImportWizardProps) {
     });
   };
 
+  const content = (
+    <>
+      {/* Wizard Header and Track Map */}
+      <ImportWizardHeader stage={stage} />
+      
+      {/* Active Stage Viewport */}
+      <div className="flex-1 overflow-y-auto p-8 bg-muted/5">
+        {stage === 'source' && (
+          <SourceStage session={session} onNext={handleNext} />
+        )}
+        {stage === 'mapping' && (
+          <MappingStage session={session} schemas={schemas} onNext={handleNext} onBack={handleBack} />
+        )}
+        {stage === 'target' && (
+          <TargetStage session={session} schemas={schemas} onNext={handleNext} onBack={handleBack} />
+        )}
+        {stage === 'review' && (
+          <ReviewStage session={session} schemas={schemas} onNext={handleNext} onBack={handleBack} />
+        )}
+        {stage === 'execute' && (
+          <ExecuteStage session={session} schemas={schemas} saveItem={saveItem} onDone={onClose} onReset={handleReset} />
+        )}
+      </div>
+    </>
+  );
+
+  if (mode === 'panel') {
+    return (
+      <div className="h-full flex flex-col bg-background overflow-hidden">
+        {content}
+      </div>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 rounded-3xl overflow-hidden border border-border bg-background shadow-2xl">
         <DialogTitle className="sr-only">Asistente de Importacion de Catalogo</DialogTitle>
-        
-        {/* Wizard Header and Track Map */}
-        <ImportWizardHeader stage={stage} />
-        
-        {/* Active Stage Viewport */}
-        <div className="flex-1 overflow-y-auto p-8 bg-muted/5">
-          {stage === 'source' && (
-            <SourceStage session={session} onNext={handleNext} />
-          )}
-          {stage === 'mapping' && (
-            <MappingStage session={session} schemas={schemas} onNext={handleNext} onBack={handleBack} />
-          )}
-          {stage === 'target' && (
-            <TargetStage session={session} schemas={schemas} onNext={handleNext} onBack={handleBack} />
-          )}
-          {stage === 'review' && (
-            <ReviewStage session={session} schemas={schemas} onNext={handleNext} onBack={handleBack} />
-          )}
-          {stage === 'execute' && (
-            <ExecuteStage session={session} schemas={schemas} saveItem={saveItem} onDone={onClose} onReset={handleReset} />
-          )}
-        </div>
+        {content}
       </DialogContent>
     </Dialog>
   );

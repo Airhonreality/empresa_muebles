@@ -11,6 +11,7 @@
 
 import type React from 'react'
 import type { AgnosticAPI } from './indra'
+import type { IntegrationClientLoader } from './integration'
 
 // Minimal props the engine passes to every block component.
 // Custom components must accept at least these.
@@ -54,6 +55,13 @@ export interface AgnosticConfig {
     mail?: boolean
     pdf?:  boolean
   }
+
+  /**
+   * Custom integration modules registered in the project.
+   * Key: integration identifier (e.g. 'notion')
+   * Value: dynamic import loader returning the IntegrationClientModule.
+   */
+  integrations?: Record<string, IntegrationClientLoader>
 }
 
 /**

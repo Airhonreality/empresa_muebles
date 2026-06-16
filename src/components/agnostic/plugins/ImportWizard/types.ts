@@ -6,7 +6,13 @@ export interface ParsedSource {
   rows: Record<string, string>[];          // valores crudos como string
   rowCount: number;
   delimiter?: ';' | ',' | '\t';            // detectado automáticamente
+  // Metadata de origen de integración (opcional)
+  sourceType?: 'file' | 'integration';
+  integrationId?: string;
+  integrationSourceId?: string;
+  displayName?: string;
 }
+
 
 export interface FieldMapping {
   sourceKey: string;     // columna original del archivo: "Precio Directo"
