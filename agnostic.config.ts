@@ -44,4 +44,8 @@ export default defineConfig({
     pdf:  true,
     mail: false,
   },
+
+  integrations: {
+    notion: () => import('./src/integrations/notion'),
+  },
 })
