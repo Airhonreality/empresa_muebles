@@ -75,20 +75,17 @@ delete-route <path>
 script <name>                       ver código
 script write <name> --file ruta.js  importar desde archivo
 script export <name> --file ruta.js exportar a archivo
-La cola de cambios (Capas 4 y 5 solamente)
+Escrituras en Capas 4 y 5
 
-status          ver qué hay en cola
-commit          previsualizar sin ejecutar
-commit --force  ejecutar todos los staged
-drop            descartar cola
+Todas las escrituras son inmediatas — no hay cola de staging activa.
+Los comandos `status`, `commit` y `drop` son alias heredados sin efecto.
 Flujo típico nuevo schema + ruta
 
 npx tsx scripts/agno.ts
 agno> create-schema proveedores field:nombre:text field:nit:text field:categoria:select
-agno> commit --force
 agno> scaffold proveedores
 agno> context
-Las capas 2 y 3 (add-block, scaffold, create-route, etc.) no van a la cola — se escriben directo al storage. Solo los cambios de schema y datos van a la cola de staging.
+Todas las capas (add-block, scaffold, create-schema, etc.) se escriben directo al storage.
 
 ---
 
@@ -138,7 +135,7 @@ Modelo correcto: Los componentes specialized/ solo renderizan. La lógica que mu
 
 
 ❌ fetch('/api/vault?namespace=clientes') dentro de un specialized/
-✅ api.query('clientes') dentro de un script ejecutado por un action block
+✅ api.query('clientes') dentro de un script Zap (server-side — no disponible en componentes React)
 4. Bifurcación de vocabulario entre layers
 Entropía: Schema se llama cotizaciones, la ruta tiene context: "presupuestos", el componente busca quotes. El engine renderiza nada y no hay error visible.
 

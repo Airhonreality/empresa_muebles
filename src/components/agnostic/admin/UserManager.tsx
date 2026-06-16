@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Trash2, Users } from 'lucide-react';
 import { useMateriaStore } from '@/lib/agnostic/store';
 import { useAppDispatch } from '@/context/AppContext';
@@ -14,7 +14,11 @@ import { cn } from '@/lib/utils';
 
 export function UserManager() {
   const { data: materia } = useMateriaStore();
-  const { saveItem, deleteItem } = useAppDispatch();
+  const { saveItem, deleteItem, refreshStore } = useAppDispatch();
+
+  useEffect(() => {
+    refreshStore();
+  }, [refreshStore]);
 
   const users     = useMemo(() => materia[SYSTEM_NS.USERS]      ?? [], [materia]);
   const userLists = useMemo(() => materia[SYSTEM_NS.USER_LISTS] ?? [], [materia]);

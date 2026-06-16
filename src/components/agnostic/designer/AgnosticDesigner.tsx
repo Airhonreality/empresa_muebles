@@ -20,6 +20,7 @@ import { SchemaField } from '@agnostic/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { SystemSection } from './sections/SystemSection';
 import { DeploySection } from './sections/DeploySection';
+import { DocsSection } from './sections/DocsSection';
 import { ImportWizard } from '@/components/agnostic/plugins/ImportWizard';
 import { RecursiveBlockComposer } from './components/RecursiveBlockComposer';
 import { cn } from '@/lib/utils';
@@ -116,10 +117,14 @@ export function ConfigManager({
   const { data: materia } = useMateriaStore();
   const { saveItem, deleteItem, refreshStore } = useAppDispatch();
 
+  useEffect(() => {
+    refreshStore();
+  }, [refreshStore]);
+
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(
     initialRouteId ? { nodeType: 'route', id: initialRouteId } : null
   );
-  type ActiveMode = 'dna' | 'users' | 'silo' | 'deploy';
+  type ActiveMode = 'dna' | 'users' | 'silo' | 'deploy' | 'docs';
   const [activeMode, setActiveMode] = useState<ActiveMode>('dna');
   const [pendingDelete, setPendingDelete] = useState<SelectedNode | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -262,6 +267,7 @@ const handleAddScript = async () => {
     { id: 'users'  as const, icon: Users,    label: 'Gestión de Acceso' },
     { id: 'silo'   as const, icon: Shield,   label: 'Config del Silo'   },
     { id: 'deploy' as const, icon: Zap,      label: 'Estado del Deploy' },
+    { id: 'docs'   as const, icon: Info,     label: 'Guías & Ayuda'     },
   ];
 
   return (
@@ -419,6 +425,11 @@ const handleAddScript = async () => {
         {activeMode === 'deploy' && (
           <div className="h-full overflow-y-auto p-8 max-w-2xl">
             <DeploySection />
+          </div>
+        )}
+        {activeMode === 'docs' && (
+          <div className="h-full overflow-y-auto p-8 max-w-4xl">
+            <DocsSection />
           </div>
         )}
       </main>
