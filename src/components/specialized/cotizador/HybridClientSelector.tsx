@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import type { DataItem } from '@agnostic/core'
-import { User, Plus, Check } from 'lucide-react'
+import { User, Plus, Check, X } from 'lucide-react'
 import { vWrite } from './utils'
 import { toast } from 'sonner'
 import { fuzzySearch } from '@/lib/utils'
@@ -37,11 +37,14 @@ export function HybridClientSelector({ value, clientes, onChange, onClientCreate
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false)
+        if (search === '') {
+          onChange('')
+        }
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [search, onChange])
 
   const handleCreateClient = async () => {
     const name = search.trim()
@@ -92,9 +95,29 @@ export function HybridClientSelector({ value, clientes, onChange, onClientCreate
             setSearch(e.target.value)
             setIsOpen(true)
           }}
-          onFocus={() => {
-            setSearch('')
+          onFocus={(e) => {
+            setSearch(displayName)
             setIsOpen(true)
+            e.currentTarget.select()
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              if (search.trim()) {
+                if (filtered.length > 0) {
+                  onChange(filtered[0].id)
+                  setSearch('')
+                  setIsOpen(false)
+                } else {
+                  handleCreateClient()
+                }
+              } else {
+                onChange('')
+                setIsOpen(false)
+              }
+            } else if (e.key === 'Escape') {
+              setIsOpen(false)
+            }
           }}
           placeholder="Buscar o crear cliente…"
           className="w-full text-xs border border-stone-200 rounded-lg pl-2.5 pr-8 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700 placeholder:text-stone-300"
@@ -103,6 +126,7 @@ export function HybridClientSelector({ value, clientes, onChange, onClientCreate
         {/* Quick action button inside selector */}
         {isOpen && search.trim() ? (
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
@@ -112,6 +136,21 @@ export function HybridClientSelector({ value, clientes, onChange, onClientCreate
             title={`Crear cliente "${search.trim()}"`}
           >
             <Plus size={13} />
+          </button>
+        ) : value ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onChange('')
+              setSearch('')
+              setIsOpen(false)
+            }}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-md transition-colors animate-in fade-in zoom-in-75 duration-150"
+            title="Quitar cliente"
+          >
+            <X size={12} />
           </button>
         ) : (
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-300 pointer-events-none">

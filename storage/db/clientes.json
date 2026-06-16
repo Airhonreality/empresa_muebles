@@ -42,5 +42,21 @@
       "email": ""
     },
     "updated_at": "2026-05-25T15:49:20.619Z"
+  },
+  {
+    "id": "5d4425c8-7d9f-4deb-9c54-7ec7dd86b067",
+    "context": "clientes",
+    "data": {
+      "nombre": "Gildardo Pérez"
+    },
+    "updated_at": "2026-06-10T01:31:11.793Z"
+  },
+  {
+    "id": "59681ad4-48f7-45d9-9795-50d10c6a09f3",
+    "context": "clientes",
+    "data": {
+      "nombre": "Angie Rodriguez"
+    },
+    "updated_at": "2026-06-11T19:03:21.348Z"
   }
 ]

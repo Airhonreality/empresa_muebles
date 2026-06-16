@@ -4979,5 +4979,17 @@
       "tipo": "Herrajes / Accesorios"
     },
     "updated_at": "2026-06-09T21:40:49.363Z"
+  },
+  {
+    "id": "2b409f04-095d-46cd-aae0-7f7ecd61a371",
+    "context": "productos_catalogo",
+    "data": {
+      "descripcion": "Tablero OSB 18mm",
+      "unidad_medida": "tablero",
+      "precio_publico": 210000,
+      "precio_directo": 150000,
+      "imagen_url": "https://ventremaderas.com/wp-content/uploads/2016/02/obs.jpg"
+    },
+    "updated_at": "2026-06-16T03:39:50.335Z"
   }
 ]

@@ -2,8 +2,8 @@
  * 🏛️ ARTEFACTO: AgnosticAction.tsx
  * ────────────
  * CAPA: Projection (Decentralized Action Buttons)
- * VERSIÓN: 1.0
- * 
+ * VERSIÓN: 2.0
+ *
  * 🎯 FUNCTIONAL_SCOPE:
  * - Proyección de gatillos de acción agnósticos (Buttons) vinculados a Zaps (Scripts).
  * - Ejecución determinista libre de hardcode a través del orquestador.
@@ -60,12 +60,86 @@ export function AgnosticAction({
 
   const zap = propZap || logic?.zap;
   const buttonLabel = label || title || "Ejecutar Acción";
-  
-  // Resolve Lucide Icon
+
   const iconName = visual?.icon;
-  const IconComponent = iconName && iconName in Icons 
-    ? (Icons as any)[iconName] 
+  const IconComponent = iconName && iconName in Icons
+    ? (Icons as any)[iconName]
     : null;
+
+  const processEvent = React.useCallback(async (event: any) => {
+    switch (event.action) {
+
+      case 'notify':
+        event.type === 'success'
+          ? toast.success(event.message)
+          : toast.error(event.message);
+        break;
+
+      case 'materia_sync':
+        updateItem(event.context, event.item);
+        break;
+
+      case 'print_pdf': {
+        const html = event.payload?.html || '';
+        // Hidden iframe avoids popup blocker — works from async context
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;';
+        await new Promise<void>((resolve) => {
+          iframe.onload = async () => {
+            // Wait for web fonts before printing — prevents blank-font output with Google Fonts
+            await (iframe.contentDocument as any)?.fonts?.ready;
+            iframe.contentWindow!.focus();
+            iframe.contentWindow!.print();
+            setTimeout(() => { document.body.removeChild(iframe); resolve(); }, 500);
+          };
+          document.body.appendChild(iframe);
+          iframe.contentDocument!.open();
+          iframe.contentDocument!.write(html);
+          iframe.contentDocument!.close();
+        });
+        break;
+      }
+
+      case 'download_pdf': {
+        const { template, inputs, filename = 'documento.pdf' } = event.payload || {};
+        const res = await fetch('/api/pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ template, inputs })
+        });
+        if (!res.ok) { toast.error('Error generando PDF'); break; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+        break;
+      }
+
+      case 'download_file': {
+        const { content, filename = 'archivo.txt', mimeType = 'text/plain' } = event.payload || {};
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+        break;
+      }
+
+      case 'redirect':
+        window.location.href = event.payload?.path || '/';
+        break;
+
+      case 'open_url':
+        window.open(event.payload?.url, event.payload?.target ?? '_blank');
+        break;
+
+      case 'clipboard':
+        await navigator.clipboard.writeText(event.payload?.text || '');
+        toast.success('Copiado al portapapeles');
+        break;
+    }
+  }, [updateItem]);
 
   const handleExecute = async () => {
     if (!zap) {
@@ -88,11 +162,7 @@ export function AgnosticAction({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           zap,
-          payload: {
-            record: effectiveRecord,
-            context,
-            schema
-          }
+          payload: { record: effectiveRecord, context, schema }
         })
       });
 
@@ -102,34 +172,8 @@ export function AgnosticAction({
         throw new Error(result.error || 'Execution failed');
       }
 
-      // Process transaction audit events returned from the server-side engine
-      if (Array.isArray(result.events)) {
-        for (const event of result.events) {
-          if (event.action === 'notify') {
-            if (event.type === 'success') {
-              toast.success(event.message);
-            } else {
-              toast.error(event.message);
-            }
-          } else if (event.action === 'materia_sync') {
-            // Keep frontend in perfect sync with backend changes!
-            updateItem(event.context, event.item);
-          } else if (event.action === 'print_pdf') {
-            const htmlContent = event.payload?.html || '';
-            // Hidden iframe avoids popup blocker — works from async context
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;';
-            document.body.appendChild(iframe);
-            iframe.contentDocument!.open();
-            iframe.contentDocument!.write(htmlContent);
-            iframe.contentDocument!.close();
-            iframe.contentWindow!.focus();
-            setTimeout(() => {
-              iframe.contentWindow!.print();
-              setTimeout(() => document.body.removeChild(iframe), 2000);
-            }, 500);
-          }
-        }
+      for (const event of result.events ?? []) {
+        await processEvent(event);
       }
 
     } catch (e: any) {

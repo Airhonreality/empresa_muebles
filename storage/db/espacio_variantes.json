@@ -75,27 +75,11 @@
     "updated_at": "2026-06-09T21:15:37.050Z"
   },
   {
-    "id": "6122d279-d1cd-44fc-b121-f0b558806e22",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
-      "nombre_espacio": "Closet 160cm",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 1,
-      "jornadas_instalacion_obra": 1,
-      "descripcion": "",
-      "descripcion_alternativa": "",
-      "activa": true
-    },
-    "updated_at": "2026-06-09T22:34:54.354Z"
-  },
-  {
     "id": "21520f28-8c23-41e8-938a-519636bf3047",
     "context": "espacio_variantes",
     "data": {
       "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
-      "nombre_espacio": "Closet 190cm (Copia)",
+      "nombre_espacio": "Closet 190cm",
       "nombre_variante": "Inicial",
       "jornadas_desarrollo_tecnico": 1,
       "jornadas_ensamblaje_taller": 2,
@@ -103,24 +87,99 @@
       "descripcion": "",
       "descripcion_alternativa": "",
       "activa": true,
-      "imagenes": "[\"/api/assets/1781040213389-image.png\",\"/api/assets/1781040226390-image.png\"]"
+      "imagenes": "[\"/api/assets/1781040226390-image.png\",\"/api/assets/1781040213389-image.png\"]"
     },
-    "updated_at": "2026-06-09T21:24:21.475Z"
+    "updated_at": "2026-06-10T01:22:10.314Z"
   },
   {
-    "id": "a4594878-8474-4e57-be77-2f0b7ce75929",
+    "id": "e2254123-ef00-476a-87c5-c83dbd8594a1",
     "context": "espacio_variantes",
     "data": {
       "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
-      "nombre_espacio": "Closet 160cm (Copia)",
+      "nombre_espacio": "Closet 160cm 2",
       "nombre_variante": "Inicial",
       "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 1,
-      "jornadas_instalacion_obra": 1,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_instalacion_obra": 1.2,
       "descripcion": "",
       "descripcion_alternativa": "",
       "activa": true
     },
-    "updated_at": "2026-06-09T22:35:35.726Z"
+    "updated_at": "2026-06-10T01:26:46.855Z"
+  },
+  {
+    "id": "cc1d6171-ff40-4eee-a8c0-d236c48d9b13",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+      "nombre_espacio": "Closet 160cm 1",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_instalacion_obra": 1.2,
+      "descripcion": "",
+      "descripcion_alternativa": "",
+      "activa": true
+    },
+    "updated_at": "2026-06-10T01:27:00.102Z"
+  },
+  {
+    "id": "afab2777-c7ce-4fd8-8591-bd5d5ac30d0c",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "8399a364-75ee-4479-b42c-7eb39816a094",
+      "nombre_espacio": "Nuevo Espacio",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_instalacion_obra": 1,
+      "descripcion": "Barra en madera y marco en melamina",
+      "imagenes": "[\"/api/assets/1781204508562-image.png\"]"
+    },
+    "updated_at": "2026-06-11T19:02:19.676Z"
+  },
+  {
+    "id": "cd97f435-b294-452e-90fb-2534c4993cab",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "43aad4be-bbb1-44db-b78d-7da56315cb31",
+      "nombre_espacio": "Nuevo Espacio",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 0,
+      "jornadas_ensamblaje_taller": 0,
+      "jornadas_instalacion_obra": 0
+    },
+    "updated_at": "2026-06-11T20:36:15.281Z"
+  },
+  {
+    "id": "485c0a99-b700-4c46-8d3c-4eb27f5320f0",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "49fe5eb3-34da-4608-87bd-494673322ce3",
+      "nombre_espacio": "Closet 200cm",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 2,
+      "jornadas_instalacion_obra": 1.5,
+      "descripcion": "Se cotiza con cajones gama alta (riel oculto x4),  estructura en madecor de 18mm de calibre, y puertas corredizas",
+      "descripcion_alternativa": "",
+      "activa": true,
+      "imagenes": "[\"/api/assets/1781040226390-image.png\",\"/api/assets/1781040213389-image.png\"]"
+    },
+    "updated_at": "2026-06-12T15:55:48.907Z"
+  },
+  {
+    "id": "d2b77f23-869c-4ef0-b812-62f2e976d8d0",
+    "context": "espacio_variantes",
+    "data": {
+      "cotizacion_id": "1ea5ae52-2fa0-402e-a92c-169df8c39461",
+      "nombre_espacio": "Mesa de trabajo en OSB",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 0,
+      "jornadas_ensamblaje_taller": 0,
+      "jornadas_instalacion_obra": 0,
+      "imagenes": "[\"/api/assets/1781581061547-image.png\"]"
+    },
+    "updated_at": "2026-06-16T03:37:41.863Z"
   }
 ]

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import type { BlockProps, DataItem } from '@agnostic/core'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Trash2, Edit3, X } from 'lucide-react'
+import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Trash2, Edit3, X, Copy } from 'lucide-react'
 
 import { EspacioCard } from './EspacioCard'
 import { MoneyInput } from './MoneyInput'
@@ -445,7 +445,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
       nombre_variante: name,
       activa: true,
       orden: siblings.length
-    }
+    } as any
 
     // Deactivate other variants in the same space
     await Promise.all(siblings.map(async (sibling) => {
@@ -647,34 +647,100 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     }
   }
 
+  const deleteCotizacionById = async (cotId: string, confirmFirst = true) => {
+    if (confirmFirst && !confirm('¿Estás seguro de que deseas eliminar esta cotización y todos sus espacios de forma permanente?')) return
+    
+    try {
+      // Delete all items of all variants belonging to this quotation
+      const toDelVariants = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === cotId)
+      for (const v of toDelVariants) {
+        const vItems = items.filter(it => (it.data as any as ItemsVariante).variante_id === v.id)
+        for (const it of vItems) {
+          await vRemove('items_variante', it.id)
+        }
+        await vRemove('espacio_variantes', v.id)
+      }
+      
+      // Delete the quotation record itself
+      await vRemove('cotizaciones', cotId)
+      
+      // Update local state
+      setCotizaciones(prev => prev.filter(c => c.id !== cotId))
+      setVariantes(prev => prev.filter(v => (v.data as any as EspacioVariantes).cotizacion_id !== cotId))
+      setItems(prev => prev.filter(it => {
+        const varId = (it.data as any as ItemsVariante).variante_id
+        const vari = variantes.find(v => v.id === varId)
+        return vari ? (vari.data as any as EspacioVariantes).cotizacion_id !== cotId : true
+      }))
+      
+      if (activeCotId === cotId) {
+        setActiveCotId(null)
+      }
+      
+      toast.success('Cotización eliminada con éxito')
+    } catch (error: any) {
+      toast.error('Error al eliminar la cotización: ' + error.message)
+    }
+  }
+
   const deleteCotizacion = async () => {
     if (!activeCotId) return
-    if (!confirm('¿Estás seguro de que deseas eliminar esta cotización y todos sus espacios de forma permanente?')) return
+    await deleteCotizacionById(activeCotId, true)
+  }
+
+  const duplicateCotizacion = async (cotId: string) => {
+    const orig = cotizaciones.find(c => c.id === cotId)
+    if (!orig) return
+    const origData = orig.data as any as Cotizaciones
     
-    // Delete all items of all variants belonging to this quotation
-    const toDelVariants = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === activeCotId)
-    for (const v of toDelVariants) {
-      const vItems = items.filter(it => (it.data as any as ItemsVariante).variante_id === v.id)
-      for (const it of vItems) {
-        await vRemove('items_variante', it.id)
-      }
-      await vRemove('espacio_variantes', v.id)
+    const newCotId = crypto.randomUUID()
+    const newCotData: Cotizaciones = {
+      ...origData,
+      nombre_proyecto: origData.nombre_proyecto ? `${origData.nombre_proyecto} (Copia)` : 'Proyecto (Copia)'
     }
     
-    // Delete the quotation record itself
-    await vRemove('cotizaciones', activeCotId)
+    // Find all spaces / variants belonging to the original cotizacion
+    const origVariants = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === cotId)
+    const newVariants: DataItem[] = []
+    const newItems: DataItem[] = []
     
-    // Update local state
-    setCotizaciones(prev => prev.filter(c => c.id !== activeCotId))
-    setVariantes(prev => prev.filter(v => (v.data as any as EspacioVariantes).cotizacion_id !== activeCotId))
-    setItems(prev => prev.filter(it => {
-      const varId = (it.data as any as ItemsVariante).variante_id
-      const vari = variantes.find(v => v.id === varId)
-      return vari ? (vari.data as any as EspacioVariantes).cotizacion_id !== activeCotId : true
-    }))
-    
-    setActiveCotId(null)
-    toast.success('Cotización eliminada con éxito')
+    try {
+      // 1. Write the new cotizacion
+      await vWrite('cotizaciones', newCotId, newCotData)
+      
+      // 2. Clone each space/variant and its items
+      for (const v of origVariants) {
+        const vd = v.data as any as EspacioVariantes
+        const newVarId = crypto.randomUUID()
+        const newVarData: EspacioVariantes = {
+          ...vd,
+          cotizacion_id: newCotId
+        }
+        await vWrite('espacio_variantes', newVarId, newVarData)
+        newVariants.push({ id: newVarId, context: 'espacio_variantes', data: newVarData as any })
+        
+        // Find items for this variant
+        const origItems = items.filter(it => (it.data as any as ItemsVariante).variante_id === v.id)
+        for (const it of origItems) {
+          const newItemId = crypto.randomUUID()
+          const newItemData: ItemsVariante = {
+            ...(it.data as any as ItemsVariante),
+            variante_id: newVarId
+          }
+          await vWrite('items_variante', newItemId, newItemData)
+          newItems.push({ id: newItemId, context: 'items_variante', data: newItemData as any })
+        }
+      }
+      
+      // 3. Update local states
+      setCotizaciones(prev => [...prev, { id: newCotId, context: 'cotizaciones', data: newCotData as any }])
+      setVariantes(prev => [...prev, ...newVariants])
+      setItems(prev => [...prev, ...newItems])
+      
+      toast.success('Cotización duplicada con éxito')
+    } catch (error: any) {
+      toast.error('Error al duplicar la cotización: ' + error.message)
+    }
   }
 
   const handleEditCatalogItem = (id: string) => {
@@ -778,26 +844,46 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
               const cli = clientes.find(cl => cl.id === d.cliente_id)?.data as any
               const spacesCount = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === c.id).length
               return (
-                <button key={c.id} onClick={() => { setActiveCotId(c.id); setHeaderLocal(d) }}
-                  className="text-left p-5 bg-white border border-stone-200 rounded-2xl hover:border-amber-300 hover:shadow-md transition-all group">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
-                      <FileText size={13} className="text-amber-500" />
+                <div key={c.id}
+                  className="relative p-5 bg-white border border-stone-200 rounded-2xl hover:border-amber-300 hover:shadow-md transition-all group flex flex-col justify-between min-h-[140px]">
+                  <div onClick={() => { setActiveCotId(c.id); setHeaderLocal(d) }} className="cursor-pointer flex-1 flex flex-col justify-start">
+                    <div className="flex items-center justify-between mb-3" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setActiveCotId(c.id); setHeaderLocal(d) }}>
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
+                          <FileText size={13} className="text-amber-500" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-300 group-hover:text-amber-400 transition-colors truncate">
+                          {c.id.slice(0, 8)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => duplicateCotizacion(c.id)}
+                          className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                          title="Duplicar cotización"
+                        >
+                          <Copy size={13} />
+                        </button>
+                        <button
+                          onClick={() => deleteCotizacionById(c.id)}
+                          className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar cotización"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-300 group-hover:text-amber-400 transition-colors truncate">
-                      {c.id.slice(0, 8)}
-                    </span>
+                    <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors text-sm leading-tight mb-2 line-clamp-2">
+                      {d.nombre_proyecto || <span className="italic text-stone-300">Sin nombre</span>}
+                    </h3>
                   </div>
-                  <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors text-sm leading-tight mb-2 line-clamp-2">
-                    {d.nombre_proyecto || <span className="italic text-stone-300">Sin nombre</span>}
-                  </h3>
-                  <div className="flex items-center justify-between text-xs text-stone-300">
+                  <div className="flex items-center justify-between text-xs text-stone-400 mt-2 pt-2 border-t border-stone-50">
                     {cli ? (
                       <span className="flex items-center gap-1"><User size={9} /> {cli.nombre}</span>
                     ) : <span />}
                     {spacesCount > 0 && <span>{spacesCount} espacio{spacesCount !== 1 ? 's' : ''}</span>}
                   </div>
-                </button>
+                </div>
               )
             })}
             {sorted.length === 0 && (
@@ -879,7 +965,10 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase tracking-widest text-stone-400">Días entrega</label>
                 <input type="number" value={headerLocal.dias_entrega_estimados ?? ''}
-                  onChange={e => setHeaderLocal(p => ({ ...p, dias_entrega_estimados: Number(e.target.value) }))}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setHeaderLocal(p => ({ ...p, dias_entrega_estimados: val === '' ? undefined : Number(val) }));
+                  }}
                   placeholder="0" min={0}
                   className="text-xs border border-stone-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700"
                 />
@@ -887,7 +976,10 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase tracking-widest text-stone-400">Garantía (años)</label>
                 <input type="number" value={headerLocal.garantia_anios ?? ''}
-                  onChange={e => setHeaderLocal(p => ({ ...p, garantia_anios: Number(e.target.value) }))}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setHeaderLocal(p => ({ ...p, garantia_anios: val === '' ? undefined : Number(val) }));
+                  }}
                   placeholder="0" min={0}
                   className="text-xs border border-stone-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700"
                 />

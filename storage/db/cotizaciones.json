@@ -14,10 +14,13 @@
     "id": "8399a364-75ee-4479-b42c-7eb39816a094",
     "context": "cotizaciones",
     "data": {
-      "nombre_proyecto": "Barra y pintura",
-      "estado": "activa"
+      "nombre_proyecto": "Barra",
+      "estado": "activa",
+      "costos_operativos": 260000,
+      "imprevistos_instalacion": 60000,
+      "cliente_id": "59681ad4-48f7-45d9-9795-50d10c6a09f3"
     },
-    "updated_at": "2026-06-02T14:40:43.159Z"
+    "updated_at": "2026-06-11T19:03:22.439Z"
   },
   {
     "id": "e2929178-aaf6-430d-ae98-f1cc4173bc6e",
@@ -72,9 +75,44 @@
     "context": "cotizaciones",
     "data": {
       "nombre_proyecto": "Closets",
-      "costos_operativos": 35000,
-      "imprevistos_instalacion": 150000
+      "costos_operativos": 350000,
+      "imprevistos_instalacion": 150000,
+      "descuento_comercial": 0,
+      "ajuste_arbitrario": 0,
+      "cliente_id": "5d4425c8-7d9f-4deb-9c54-7ec7dd86b067",
+      "dias_entrega_estimados": 25
     },
-    "updated_at": "2026-06-10T00:35:23.493Z"
+    "updated_at": "2026-06-10T01:31:59.411Z"
+  },
+  {
+    "id": "43aad4be-bbb1-44db-b78d-7da56315cb31",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Nuevo Proyecto"
+    },
+    "updated_at": "2026-06-11T20:27:48.725Z"
+  },
+  {
+    "id": "49fe5eb3-34da-4608-87bd-494673322ce3",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Closets (Copia)",
+      "costos_operativos": 350000,
+      "imprevistos_instalacion": 150000,
+      "descuento_comercial": 0,
+      "ajuste_arbitrario": 0,
+      "cliente_id": "",
+      "dias_entrega_estimados": 25
+    },
+    "updated_at": "2026-06-12T15:59:13.955Z"
+  },
+  {
+    "id": "1ea5ae52-2fa0-402e-a92c-169df8c39461",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Cotización mesa de trabajo",
+      "cliente_id": ""
+    },
+    "updated_at": "2026-06-16T03:37:24.814Z"
   }
 ]

@@ -9,5 +9,5 @@ export default async function HomePage() {
       if (cfg.home_slug) redirect(`/${cfg.home_slug}`);
     }
   } catch { /* no system_config → fall through */ }
-  redirect('/schema');
+  redirect('/login');
 }
