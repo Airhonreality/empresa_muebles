@@ -59,7 +59,7 @@ const TERMINAL_STATES   = new Set(['READY', 'ERROR', 'CANCELED']);
 
 // ─── PRIMITIVES ───────────────────────────────────────────────────────────────
 
-function StatusDot({ status }: { status: 'pass' | 'warn' | 'fail' | 'loading' }) {
+export function StatusDot({ status }: { status: 'pass' | 'warn' | 'fail' | 'loading' }) {
   if (status === 'loading') return <Loader2 size={12} className="animate-spin text-muted-foreground" />;
   if (status === 'pass')    return <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />;
   if (status === 'warn')    return <AlertCircle  size={12} className="text-amber-500 shrink-0" />;
@@ -72,7 +72,7 @@ function ExistsBadge({ exists }: { exists: boolean }) {
     : <span className="w-[11px] h-[11px] rounded-full border border-muted-foreground/30 shrink-0 block" />;
 }
 
-function CopySnippet({ text }: { text: string }) {
+export function CopySnippet({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     navigator.clipboard.writeText(text).then(() => {
@@ -92,7 +92,7 @@ function CopySnippet({ text }: { text: string }) {
 
 // ─── CREDENTIAL FIELD ─────────────────────────────────────────────────────────
 
-function CredentialField({
+export function CredentialField({
   name, value, onChange, exists, sensitive = true, placeholder,
 }: {
   name: string;
@@ -267,7 +267,7 @@ function ActionRow({
 
 // ─── DEPLOY STATUS BAR ────────────────────────────────────────────────────────
 
-function DeployStatusBar({ deploy, onDismiss }: { deploy: DeployState; onDismiss: () => void }) {
+export function DeployStatusBar({ deploy, onDismiss }: { deploy: DeployState; onDismiss: () => void }) {
   const isTerminal = TERMINAL_STATES.has(deploy.readyState);
 
   return (
