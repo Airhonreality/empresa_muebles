@@ -50,7 +50,31 @@ Sheet	@/components/ui/sheet	Panel lateral deslizante. side: right|left|top|botto
 Popover	@/components/ui/popover	Popover + PopoverTrigger + PopoverContent (Radix, floating)
 Tooltip	@/components/ui/tooltip	TooltipProvider + Tooltip + TooltipTrigger + TooltipContent
 Capa 2 — Inputs especializados (src/components/ui/)
-Estos tres son los que probablemente no conocías:
+Estos componentes resuelven interacciones complejas de datos sin acoplamiento ni fugas de foco:
+
+Combobox — select con búsqueda filtrada y opción de creación inline accesible:
+
+```typescript
+import { Combobox } from '@/components/ui/combobox'
+
+const options = [
+  { value: 'cliente_1', label: 'Juan Pérez' },
+  { value: 'cliente_2', label: 'María Gómez' }
+]
+
+<Combobox
+  options={options}
+  value={selectedClient}
+  onValueChange={setSelectedClient}
+  placeholder="Seleccionar cliente..."
+  searchPlaceholder="Buscar por nombre..."
+  emptyMessage="No se encontraron clientes."
+  // Opcional: permite crear un cliente nuevo si no existe en la lista
+  onCreateOption={(newLabel) => handleCreate(newLabel)}
+  createLabel="Crear cliente"
+/>
+```
+// Resuelve la accesibilidad ARIA y el click-outside nativo usando Radix Popover + cmdk (sin listeners manuales).
 
 ScrubInput — input numérico con drag horizontal estilo Figma/Blender:
 
@@ -189,6 +213,20 @@ const filtered = useRecordFilter(records, schema.fields, filterState)
 // Registro de forms para save_forms_first
 import { registerForm, saveAllForms } from '@/lib/agnostic/formRegistry'
 useEffect(() => registerForm('mi-form-id', async () => await save()), [])
+
+// Autoguardado con debounce contextual (evita race conditions al cambiar de ID o desmontar)
+import { useAutoSave } from '@/hooks/useAutoSave'
+
+useAutoSave({
+  key: activeCotizacionId,   // Identificador de contexto activo
+  data: formValues,           // Datos a guardar
+  delay: 1500,                // Opcional: debounce en ms (default: 1500)
+  onSave: async (latestData) => {
+    await saveItem('cotizaciones', { id: activeCotizacionId, data: latestData })
+  }
+})
+// Si key cambia, guarda inmediatamente los cambios pendientes del ID anterior.
+// Al desmontarse el componente, guarda automáticamente los datos si hay cambios pendientes.
 Patrón compuesto más útil — Sheet Editor
 La combinación que el sistema usa internamente en AgnosticTable para edición:
 

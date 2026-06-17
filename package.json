@@ -47,6 +47,7 @@
     "ai": "^6.0.190",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.0.0",
     "drizzle-orm": "^0.45.2",
     "iron-session": "^8.0.4",
     "lucide-react": "^0.344.0",
