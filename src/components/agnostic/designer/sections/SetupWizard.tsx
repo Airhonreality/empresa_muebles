@@ -655,10 +655,12 @@ function SummaryStep({ buffer, isVercel, onComplete }: {
       }));
       const res  = await fetch('/api/admin/config/save', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variables, redeploy: true }),
+        body: JSON.stringify({ variables, redeploy: isVercel }),
       });
       const data = await res.json();
-      if (data.deployment) {
+      if (data.isLocal) {
+        setSaveMsg(data.message ?? 'Configuración guardada en .env.local.');
+      } else if (data.deployment) {
         pollCount.current = 0;
         setDeploy({ id: data.deployment.id, readyState: data.deployment.readyState,
           url: data.deployment.url, errorMessage: null, pollCount: 0 });
@@ -678,7 +680,7 @@ function SummaryStep({ buffer, isVercel, onComplete }: {
         title="Resumen & Deploy"
         desc={isVercel
           ? 'Se guardarán todas las variables en Vercel en un único redespliegue.'
-          : 'Copia el bloque de variables a tu .env.local y reinicia el servidor de desarrollo.'}
+          : 'Guarda automáticamente o copia el bloque de variables a tu .env.local y reinicia el servidor de desarrollo.'}
       />
 
       {entries.length > 0 ? (
@@ -718,8 +720,16 @@ function SummaryStep({ buffer, isVercel, onComplete }: {
           <div className="space-y-4">
             {entries.length > 0 && (
               <>
-                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Copia a tu .env.local</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Copia o Guarda en .env.local</p>
                 <CopySnippet text={localEnvBlock} />
+                
+                <div className="flex items-center gap-4">
+                  <Button onClick={handleSave} disabled={saving}
+                    className="h-9 text-[10px] font-black uppercase tracking-widest gap-2">
+                    {saving ? <Loader2 size={12} className="animate-spin" /> : <Database size={12} />}
+                    Guardar automáticamente en .env.local
+                  </Button>
+                </div>
               </>
             )}
             <Button onClick={onComplete} className="h-9 text-[10px] font-black uppercase tracking-widest gap-2">

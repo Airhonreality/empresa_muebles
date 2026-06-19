@@ -36,7 +36,7 @@ export async function GET() {
       status: globalStatus,
       description: 'Estado de los servicios del sistema',
       activeDataStrategy,
-      isVercel: !!process.env.VERCEL,
+      isVercel: !!process.env.VERCEL && !!process.env.NOW_REGION,
       env_presence: {
         VERCEL_ACCESS_TOKEN:       !!process.env.VERCEL_ACCESS_TOKEN,
         VERCEL_PROJECT_ID:         !!process.env.VERCEL_PROJECT_ID,

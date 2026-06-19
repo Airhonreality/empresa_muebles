@@ -121,7 +121,7 @@ export async function checkLocal(siloPath: string): Promise<CheckResult> {
   // In Vercel, the filesystem is read-only after build. LocalStrategy is not persistent.
   // This is expected behaviour — return warn (not fail) so it doesn't fail the global status
   // when LocalStrategy is the active fallback and the user hasn't set cloud vars yet.
-  if (process.env.VERCEL) {
+  if (process.env.VERCEL && process.env.NOW_REGION) {
     return {
       componentId: id, componentType: type, status: 'warn',
       output: 'LocalStrategy no es persistente en Vercel (filesystem de solo lectura). Configura GITHUB_REPO para persistencia real.',

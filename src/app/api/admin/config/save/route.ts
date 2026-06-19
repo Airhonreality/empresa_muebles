@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +11,62 @@ interface EnvVarPayload {
 }
 
 export async function POST(req: NextRequest) {
+  const body = await req.json() as { variables: EnvVarPayload[]; redeploy?: boolean };
+  const { variables = [], redeploy = false } = body;
+
+  if (variables.length === 0) {
+    return NextResponse.json({ error: 'No se recibieron variables para guardar' }, { status: 400 });
+  }
+
+  // Determine if we are running in a local environment.
+  const isLocal = !process.env.VERCEL || !process.env.NOW_REGION || process.env.NODE_ENV === 'development';
+
+  if (isLocal) {
+    try {
+      const envPath = path.resolve(process.cwd(), '.env.local');
+      let content = '';
+      if (fs.existsSync(envPath)) {
+        content = fs.readFileSync(envPath, 'utf8');
+      }
+
+      const lines = content.split(/\r?\n/);
+      
+      for (const { key, value } of variables) {
+        let found = false;
+        const escapedValue = value.replace(/"/g, '\\"');
+        const targetLine = `${key}="${escapedValue}"`;
+
+        for (let i = 0; i < lines.length; i++) {
+          const match = lines[i].match(/^\s*([A-Za-z0-9_]+)\s*=/);
+          if (match && match[1] === key) {
+            lines[i] = targetLine;
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          lines.push(targetLine);
+        }
+      }
+
+      fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
+
+      return NextResponse.json({
+        saved: variables.length,
+        failed: 0,
+        errors: [],
+        deployment: null,
+        isLocal: true,
+        message: 'Variables guardadas localmente en .env.local. Por favor reinicia tu servidor de desarrollo para aplicar los cambios.'
+      });
+    } catch (err: any) {
+      return NextResponse.json({
+        error: `Error al guardar localmente en .env.local: ${err.message}`
+      }, { status: 500 });
+    }
+  }
+
   const accessToken = process.env.VERCEL_ACCESS_TOKEN;
   const projectId   = process.env.VERCEL_PROJECT_ID;
   const teamId      = process.env.VERCEL_TEAM_ID;
@@ -17,13 +75,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       error: 'VERCEL_ACCESS_TOKEN y VERCEL_PROJECT_ID deben configurarse manualmente en el Dashboard de Vercel (Settings → Environment Variables) una única vez.',
     }, { status: 503 });
-  }
-
-  const body = await req.json() as { variables: EnvVarPayload[]; redeploy?: boolean };
-  const { variables = [], redeploy = false } = body;
-
-  if (variables.length === 0) {
-    return NextResponse.json({ error: 'No se recibieron variables para guardar' }, { status: 400 });
   }
 
   const teamQ  = teamId ? `&teamId=${teamId}` : '';
