@@ -679,3 +679,100 @@ Para incluir charts en documentos (`print_pdf` o `download_file`):
 // Patrón recomendado: el componente genera la imagen y la pasa como payload al Zap
 // (ver CotizadorPro.tsx para referencia de cómo pasar datos al payload del engine)
 ```
+
+---
+
+## 11. Procesamiento de eventos del engine — `eventProcessor.ts`
+
+### Ubicación canónica
+
+```
+src/lib/agnostic/eventProcessor.ts
+```
+
+Este módulo exporta las funciones `processEvent()` y `processEvents()` que interpretan el vocabulario de salida del engine (los 8 tipos de eventos documentados en la sección 9).
+
+### Por qué existe
+
+Cuando un componente especializado llama directamente a `/api/engine` (en lugar de usar `AgnosticAction`), necesita procesar los `events[]` de la respuesta. Sin este módulo, cada componente reimplementaría su propio switch/case con el ciclo de vida del iframe, las notificaciones, la descarga de archivos, etc. — generando duplicación y divergencia.
+
+### Uso — 3 patrones según el contexto
+
+**Patrón 1: Vía AgnosticAction (no necesitas hacer nada)**
+
+Si usas `<AgnosticAction zap="..." />` en tu componente, el procesamiento ya está resuelto internamente. No importas nada.
+
+**Patrón 2: Llamada directa a `/api/engine` con sync a Zustand**
+
+```typescript
+import { processEvents } from '@/lib/agnostic/eventProcessor'
+import { useMateriaStore } from '@/lib/agnostic/store'
+
+// Dentro del componente:
+const updateItem = useMateriaStore((state) => state.updateItem)
+
+const runZap = async () => {
+  const res = await fetch('/api/engine', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zap: 'mi_script', payload: { record, context } })
+  })
+  const { success, events } = await res.json()
+  if (!success) return
+
+  // Procesa todos los eventos (notify, print_pdf, download, redirect, etc.)
+  // Pasa updateItem para que materia_sync actualice el store global
+  await processEvents(events ?? [], updateItem)
+}
+```
+
+**Patrón 3: Llamada directa sin sync global (estado local)**
+
+```typescript
+import { processEvents } from '@/lib/agnostic/eventProcessor'
+
+// Componente con estado local (ej: un cotizador que maneja sus propios arrays)
+const handleExport = async () => {
+  const res = await fetch('/api/engine', { ... })
+  const { events } = await res.json()
+
+  // Sin segundo argumento: materia_sync se ignora silenciosamente
+  // Los eventos de UI (notify, print_pdf, download) se procesan normalmente
+  await processEvents(events ?? [])
+}
+```
+
+### Anti-patrones — NO reimplementar el event loop
+
+```typescript
+// ❌ NUNCA: switch/case propio que duplica el vocabulario de eventos
+if (event.action === 'notify') toast.success(event.message)
+else if (event.action === 'print_pdf') {
+  const iframe = document.createElement('iframe')  // ← duplicación
+  // ...30 líneas de ciclo de vida del iframe
+}
+
+// ✅ SIEMPRE: una sola línea
+await processEvents(result.events ?? [], updateItem)
+```
+
+### Referencia: firma completa
+
+```typescript
+// Procesa un evento individual
+async function processEvent(
+  event: any,
+  onMateriaSync?: (context: string, item: any) => void
+): Promise<void>
+
+// Procesa un array de eventos secuencialmente
+async function processEvents(
+  events: any[],
+  onMateriaSync?: (context: string, item: any) => void
+): Promise<void>
+```
+
+### Relación con la sección 8
+
+La sección 8 documenta cuándo usar `AgnosticAction` vs. llamada directa. Esta sección complementa: **cuando eliges la llamada directa**, usa `processEvents` para no reimplementar la interpretación de eventos.
+
