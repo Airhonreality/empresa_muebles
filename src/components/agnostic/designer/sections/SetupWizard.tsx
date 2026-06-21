@@ -308,9 +308,25 @@ function VercelStep({ presence, isVercel, onAdvance }: {
           exists={presence.VERCEL_TEAM_ID} sensitive={false} placeholder="team_... (solo cuentas de equipo)" />
       </div>
 
-      <div className="text-[9px] text-muted-foreground space-y-1 leading-relaxed">
-        <p>Vercel Dashboard → Settings → Tokens → Create (scope: Full Account)</p>
-        <p>Project ID: tu proyecto → Settings → General → Project ID</p>
+      <div className="text-[9px] text-muted-foreground space-y-2 leading-relaxed bg-muted/40 p-4 rounded-2xl border border-dashed">
+        <p className="font-bold text-foreground">¿Cómo obtener estos datos en Vercel?</p>
+        <ul className="list-disc pl-4 space-y-1 text-muted-foreground/80">
+          <li>
+            <strong>VERCEL_ACCESS_TOKEN:</strong> Ve a{' '}
+            <a href="https://vercel.com/account/tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+              Vercel Account Tokens ↗
+            </a>. En el formulario, ingresa un nombre (ej. <code>Agnostic Engine</code>), en <em>Scope</em> selecciona <code>Full Account</code>, expira <code>No expiration</code>, haz clic en Create y copia el token.
+          </li>
+          <li>
+            <strong>VERCEL_PROJECT_ID:</strong> Ve al{' '}
+            <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+              Dashboard de Vercel ↗
+            </a>, entra a tu proyecto, ve a <strong>Settings</strong> ➔ <strong>General</strong> y copia el Project ID (empieza por <code>prj_...</code>).
+          </li>
+          <li>
+            <strong>VERCEL_TEAM_ID:</strong> Solo si tu proyecto pertenece a un equipo en Vercel. Lo encuentras en los Ajustes del Equipo ➔ General ➔ <strong>Team ID</strong> (empieza por <code>team_...</code>). Si es cuenta personal Hobby, déjalo vacío.
+          </li>
+        </ul>
       </div>
 
       <p className="text-[9px] text-muted-foreground/50 italic">
@@ -438,15 +454,45 @@ function DataStrategyStep({ presence, onAdvance }: {
       </div>
 
       {selected === 'postgres' && (
-        <div className="rounded-2xl border bg-muted/20 p-4 animate-in fade-in duration-200">
-          <CredentialField name="DATABASE_URL" value={pgUrl} onChange={setPgUrl}
-            exists={presence.DATABASE_URL} sensitive placeholder="postgresql://user:pass@host/db" />
+        <div className="space-y-3 animate-in fade-in duration-200">
+          <div className="rounded-2xl border bg-muted/20 p-4">
+            <CredentialField name="DATABASE_URL" value={pgUrl} onChange={setPgUrl}
+              exists={presence.DATABASE_URL} sensitive placeholder="postgresql://user:pass@host/db" />
+          </div>
+          <div className="text-[9px] text-muted-foreground leading-relaxed space-y-1.5 bg-muted/40 p-4 rounded-2xl border border-dashed">
+            <p className="font-bold text-foreground">¿No tienes una base de datos PostgreSQL activa?</p>
+            <p className="text-muted-foreground/80">Puedes crear una base de datos PostgreSQL totalmente gratuita en segundos en:</p>
+            <div className="flex gap-2">
+              <a href="https://neon.tech" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Neon PostgreSQL ↗</a>
+              <span>·</span>
+              <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Supabase ↗</a>
+              <span>·</span>
+              <a href="https://railway.app" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Railway ↗</a>
+            </div>
+            <p className="text-[8px] text-muted-foreground/65 italic mt-1">Nota: Recuerda cambiar el marcador de contraseña temporal por tu contraseña real en la URL provista.</p>
+          </div>
         </div>
       )}
       {selected === 'github' && (
-        <div className="rounded-2xl border bg-muted/20 p-4 space-y-3 animate-in fade-in duration-200">
-          <CredentialField name="GITHUB_TOKEN" value={ghToken} onChange={setGhToken} exists={presence.GITHUB_TOKEN} sensitive />
-          <CredentialField name="GITHUB_REPO"  value={ghRepo}  onChange={setGhRepo}  exists={presence.GITHUB_REPO}  sensitive={false} placeholder="usuario/repositorio" />
+        <div className="space-y-3 animate-in fade-in duration-200">
+          <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+            <CredentialField name="GITHUB_TOKEN" value={ghToken} onChange={setGhToken} exists={presence.GITHUB_TOKEN} sensitive />
+            <CredentialField name="GITHUB_REPO"  value={ghRepo}  onChange={setGhRepo}  exists={presence.GITHUB_REPO}  sensitive={false} placeholder="usuario/repositorio" />
+          </div>
+          <div className="text-[9px] text-muted-foreground leading-relaxed space-y-2 bg-muted/40 p-4 rounded-2xl border border-dashed">
+            <p className="font-bold text-foreground">¿Cómo configurar la base de datos Git-JSON?</p>
+            <ul className="list-disc pl-4 space-y-1 text-muted-foreground/80">
+              <li>
+                <strong>GITHUB_TOKEN:</strong> Ve a{' '}
+                <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+                  Personal Access Tokens (classic) ↗
+                </a>, haz clic en <em>Generate new token (classic)</em>, asígnale un nombre, marca la casilla de permisos <strong>repo</strong> (completa) y genera el token.
+              </li>
+              <li>
+                <strong>GITHUB_REPO:</strong> El nombre de tu fork del proyecto en formato <code>propietario/repositorio</code> (ejemplo: <code>Airhonreality/empresa_muebles</code>), cópialo directamente de la barra de direcciones de tu repositorio en GitHub.
+              </li>
+            </ul>
+          </div>
         </div>
       )}
       {selected === 'local' && (
@@ -561,6 +607,27 @@ function R2Step({ presence, dataStrategy, onAdvance, onSkip }: {
         <CredentialField name="CF_R2_ACCESS_KEY_ID"      value={accessKey}  onChange={setAccessKey}  exists={presence.CF_R2_ACCESS_KEY_ID}      sensitive />
         <CredentialField name="CF_R2_SECRET_ACCESS_KEY"  value={secretKey}  onChange={setSecretKey}  exists={presence.CF_R2_SECRET_ACCESS_KEY}  sensitive />
         <CredentialField name="CF_R2_PUBLIC_URL"         value={publicUrl}  onChange={setPublicUrl}  exists={presence.CF_R2_PUBLIC_URL}         sensitive={false} placeholder="https://pub-xxx.r2.dev (opcional)" />
+      </div>
+
+      <div className="text-[9px] text-muted-foreground leading-relaxed space-y-2 bg-muted/40 p-4 rounded-2xl border border-dashed">
+        <p className="font-bold text-foreground">¿Cómo configurar Cloudflare R2?</p>
+        <ul className="list-disc pl-4 space-y-1 text-muted-foreground/80">
+          <li>
+            <strong>CF_ACCOUNT_ID:</strong> Inicia sesión en el{' '}
+            <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+              Cloudflare Dashboard ↗
+            </a>, haz clic en <strong>R2</strong> en el menú izquierdo y a la derecha copia tu <em>Account ID</em>.
+          </li>
+          <li>
+            <strong>CF_R2_BUCKET:</strong> En el apartado R2 haz clic en <strong>Create bucket</strong>, dale un nombre descriptivo en minúsculas y pon ese mismo nombre aquí.
+          </li>
+          <li>
+            <strong>CF_R2_ACCESS_KEY_ID y SECRET_ACCESS_KEY:</strong> En el menú de R2 haz clic en <strong>Manage R2 API Tokens</strong> (a la derecha) ➔ <strong>Create API Token</strong>. Dale un nombre, marca el permiso <strong>Edit</strong>, haz clic en Create y copia el <em>Access Key ID</em> y el <em>Secret Access Key</em>.
+          </li>
+          <li>
+            <strong>CF_R2_PUBLIC_URL:</strong> Para renderizar las imágenes, ve a la pestaña <strong>Settings</strong> de tu bucket en Cloudflare ➔ sección <strong>Public Access</strong> y activa el subdominio gratuito de Cloudflare (ej. <code>https://pub-xxx.r2.dev</code>). Cópialo aquí.
+          </li>
+        </ul>
       </div>
 
       {testResult && (
