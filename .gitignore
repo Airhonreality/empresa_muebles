@@ -48,8 +48,11 @@ storage/*
 
 # Project-specific custom blocks built with AI
 # Exception: _TEMPLATE.tsx is part of the seed (shows the pattern to follow)
-src/components/specialized/
+src/components/specialized/*
 !src/components/specialized/_TEMPLATE.tsx
+!src/components/specialized/DataBrowser.tsx
+
+
 
 # local Claude Code settings (machine-specific, never committed)
 .claude/
