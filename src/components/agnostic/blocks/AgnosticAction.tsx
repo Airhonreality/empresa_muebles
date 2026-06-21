@@ -66,81 +66,6 @@ export function AgnosticAction({
     ? (Icons as any)[iconName]
     : null;
 
-  const processEvent = React.useCallback(async (event: any) => {
-    switch (event.action) {
-
-      case 'notify':
-        event.type === 'success'
-          ? toast.success(event.message)
-          : toast.error(event.message);
-        break;
-
-      case 'materia_sync':
-        updateItem(event.context, event.item);
-        break;
-
-      case 'print_pdf': {
-        const html = event.payload?.html || '';
-        // Hidden iframe avoids popup blocker — works from async context
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;';
-        await new Promise<void>((resolve) => {
-          iframe.onload = async () => {
-            // Wait for web fonts before printing — prevents blank-font output with Google Fonts
-            await (iframe.contentDocument as any)?.fonts?.ready;
-            iframe.contentWindow!.focus();
-            iframe.contentWindow!.print();
-            setTimeout(() => { document.body.removeChild(iframe); resolve(); }, 500);
-          };
-          document.body.appendChild(iframe);
-          iframe.contentDocument!.open();
-          iframe.contentDocument!.write(html);
-          iframe.contentDocument!.close();
-        });
-        break;
-      }
-
-      case 'download_pdf': {
-        const { template, inputs, filename = 'documento.pdf' } = event.payload || {};
-        const res = await fetch('/api/pdf', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ template, inputs })
-        });
-        if (!res.ok) { toast.error('Error generando PDF'); break; }
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-        break;
-      }
-
-      case 'download_file': {
-        const { content, filename = 'archivo.txt', mimeType = 'text/plain' } = event.payload || {};
-        const blob = new Blob([content], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-        break;
-      }
-
-      case 'redirect':
-        window.location.href = event.payload?.path || '/';
-        break;
-
-      case 'open_url':
-        window.open(event.payload?.url, event.payload?.target ?? '_blank');
-        break;
-
-      case 'clipboard':
-        await navigator.clipboard.writeText(event.payload?.text || '');
-        toast.success('Copiado al portapapeles');
-        break;
-    }
-  }, [updateItem]);
-
   const handleExecute = async () => {
     if (!zap) {
       toast.error("Ningún script de acción (Zap) configurado para este botón");
@@ -172,9 +97,8 @@ export function AgnosticAction({
         throw new Error(result.error || 'Execution failed');
       }
 
-      for (const event of result.events ?? []) {
-        await processEvent(event);
-      }
+      const { processEvents } = await import('@/lib/agnostic/eventProcessor');
+      await processEvents(result.events ?? [], updateItem);
 
     } catch (e: any) {
       console.error(`[AgnosticAction] Error executing Server-Side Zap "${zap}":`, e);
