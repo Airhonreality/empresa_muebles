@@ -16,5 +16,14 @@
       "is_permanent": true
     },
     "updated_at": "2026-06-17T20:31:55.674Z"
+  },
+  {
+    "id": "94af01fa-381c-4bfa-acdf-01f2f2726171",
+    "context": "user_lists",
+    "data": {
+      "name": "admin",
+      "is_permanent": true
+    },
+    "updated_at": "2026-06-21T18:01:15.562Z"
   }
 ]
