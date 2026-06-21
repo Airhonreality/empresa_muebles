@@ -114,6 +114,14 @@
           "label": "Descripción de Alternativa",
           "type": "text",
           "required": false
+        },
+        {
+          "key": "visible_pdf",
+          "label": "Visible en el PDF de Cotización",
+          "type": "boolean",
+          "required": false,
+          "width": "full",
+          "config": {}
         }
       ]
     },
@@ -292,6 +300,10 @@
             {
               "label": "Servicio",
               "value": "Servicio"
+            },
+            {
+              "label": "Mueble Terminado",
+              "value": "Mueble Terminado"
             }
           ]
         },
@@ -466,10 +478,38 @@
               "value": "Dalver Fonseca"
             }
           ]
+        },
+        {
+          "id": "f15-cat-comercial",
+          "key": "categoria_comercial",
+          "label": "Categoría Comercial Web",
+          "type": "select",
+          "required": false,
+          "width": "full",
+          "section": "General",
+          "config": {},
+          "options": [
+            {
+              "label": "Consolas / Recibidores",
+              "value": "consolas"
+            },
+            {
+              "label": "Cavas / Bares",
+              "value": "cavas"
+            },
+            {
+              "label": "Comedores",
+              "value": "mesas"
+            },
+            {
+              "label": "Camas",
+              "value": "camas"
+            }
+          ]
         }
       ]
     },
-    "updated_at": "2026-06-04T18:44:12.038Z"
+    "updated_at": "2026-06-18T05:00:11.205Z"
   },
   {
     "id": "9328a3a3-c62a-45d7-b8c8-018d6ab19a3a",
@@ -525,81 +565,6 @@
       ]
     },
     "updated_at": "2026-05-21T23:48:44.498Z"
-  },
-  {
-    "id": "45fe6e43-ec9f-43e7-bee7-c2768bd1f940",
-    "context": "schema_definitions",
-    "data": {
-      "name": "cotizaciones_snapshot",
-      "fields": [
-        {
-          "id": "s1_cotizacion",
-          "key": "cotizacion_id",
-          "label": "CotizaciÃ³n",
-          "type": "relation",
-          "required": true,
-          "width": "full",
-          "section": "General",
-          "config": {
-            "relation": {
-              "entity": "cotizaciones",
-              "parent_key": "id"
-            }
-          }
-        },
-        {
-          "id": "s2_fecha",
-          "key": "fecha_exportacion",
-          "label": "Fecha de ExportaciÃ³n",
-          "type": "date",
-          "required": true,
-          "width": "full",
-          "section": "General",
-          "config": {}
-        },
-        {
-          "id": "s3_variant",
-          "key": "variant_name",
-          "label": "Variante Seleccionada",
-          "type": "text",
-          "required": false,
-          "width": "full",
-          "section": "General",
-          "config": {}
-        },
-        {
-          "id": "s4_total",
-          "key": "total_neto",
-          "label": "Total Neto",
-          "type": "number",
-          "required": false,
-          "width": "full",
-          "section": "General",
-          "config": {}
-        },
-        {
-          "id": "s5_detalle",
-          "key": "detalle_json",
-          "label": "Detalle (JSON)",
-          "type": "text",
-          "required": true,
-          "width": "full",
-          "section": "General",
-          "config": {}
-        },
-        {
-          "id": "s6_html",
-          "key": "html_pdf",
-          "label": "HTML PDF",
-          "type": "text",
-          "required": false,
-          "width": "full",
-          "section": "General",
-          "config": {}
-        }
-      ]
-    },
-    "updated_at": "2026-05-21T23:48:44.506Z"
   },
   {
     "id": "fc1dcb7e-aca8-4235-93bd-e3cc28aa79be",
@@ -1636,5 +1601,139 @@
       ]
     },
     "updated_at": "2026-06-05T21:58:50.378Z"
+  },
+  {
+    "id": "a5833b35-436e-489a-90de-8eb738fe5cac",
+    "context": "schema_definitions",
+    "data": {
+      "name": "leads",
+      "fields": [
+        {
+          "id": "d5e60f22-3c6b-4fb8-a058-2e0cde996389",
+          "key": "nombre_completo",
+          "type": "text",
+          "label": "Nombre Completo",
+          "required": false
+        },
+        {
+          "id": "d4791f50-ac3b-416c-aec2-a60a5903c490",
+          "key": "telefono_whatsapp",
+          "type": "text",
+          "label": "Telefono Whatsapp",
+          "required": false
+        },
+        {
+          "id": "2ec85d1b-6b49-4a12-9bc8-4624e816fbf0",
+          "key": "email",
+          "type": "text",
+          "label": "Email",
+          "required": false
+        },
+        {
+          "id": "b1e8a4ae-305c-4fe0-8b84-f35591acb7f4",
+          "key": "barrio_zona",
+          "type": "text",
+          "label": "Barrio Zona",
+          "required": false
+        },
+        {
+          "id": "fff09178-25b6-4f1e-9af7-d66f26546581",
+          "key": "tipo_espacio",
+          "type": "select",
+          "label": "Tipo de Espacio",
+          "required": false,
+          "options": [
+            {
+              "label": "Cocina Integral",
+              "value": "Cocina"
+            },
+            {
+              "label": "Cava de Vinos / Bar",
+              "value": "Cava"
+            },
+            {
+              "label": "Dormitorio / Closet",
+              "value": "Dormitorio"
+            },
+            {
+              "label": "Mesa de Comedor",
+              "value": "Comedor"
+            },
+            {
+              "label": "Consola / Recibidor",
+              "value": "Consola"
+            },
+            {
+              "label": "Otro Proyecto a Medida",
+              "value": "Otro"
+            }
+          ]
+        },
+        {
+          "id": "cf27aebf-8759-4385-ae65-78953691a9d2",
+          "key": "mensaje",
+          "type": "textarea",
+          "label": "Mensaje",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-06-18T04:57:51.817Z"
+  },
+  {
+    "id": "d7b4e9f3-8b7c-4a3d-9e2f-51829471ab63",
+    "context": "schema_definitions",
+    "data": {
+      "name": "configuracion_comercial",
+      "fields": [
+        {
+          "id": "c1_llave",
+          "key": "llave",
+          "type": "text",
+          "label": "Clave única",
+          "required": true
+        },
+        {
+          "id": "c1_valor",
+          "key": "valor",
+          "type": "textarea",
+          "label": "Valor",
+          "required": true
+        },
+        {
+          "id": "c1_grupo",
+          "key": "grupo",
+          "type": "select",
+          "label": "Grupo de Ajustes",
+          "required": true,
+          "options": [
+            {
+              "label": "Identidad y Branding",
+              "value": "Branding"
+            },
+            {
+              "label": "Contacto Directo",
+              "value": "Contacto"
+            },
+            {
+              "label": "Redes Sociales",
+              "value": "Redes"
+            },
+            {
+              "label": "Datos Legales",
+              "value": "Legal"
+            }
+          ]
+        },
+        {
+          "id": "c1_etiqueta",
+          "key": "etiqueta",
+          "type": "text",
+          "label": "Etiqueta Descriptiva",
+          "required": true
+        }
+      ]
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
   }
 ]

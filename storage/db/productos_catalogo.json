@@ -4991,5 +4991,181 @@
       "imagen_url": "https://ventremaderas.com/wp-content/uploads/2016/02/obs.jpg"
     },
     "updated_at": "2026-06-16T03:39:50.335Z"
+  },
+  {
+    "id": "veta-prod-milano-console-01",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "VD-REC-MIL01",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Consola Milano",
+      "unidad_medida": "unidad",
+      "ancho": "120 cm",
+      "alto": "75 cm",
+      "profundo": "35 cm",
+      "stock_actual": 5,
+      "precio_directo": 1884615,
+      "precio_publico": 2450000,
+      "imagen_url": "/api/assets/milano_console.png",
+      "modelo_3d": null,
+      "url_referencia": null,
+      "proveedor": null,
+      "categoria_comercial": "consolas"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-prod-vento-console-02",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "VD-REC-VEN02",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Consola Vento",
+      "unidad_medida": "unidad",
+      "ancho": "110 cm",
+      "alto": "80 cm",
+      "profundo": "30 cm",
+      "stock_actual": 4,
+      "precio_directo": 1453846,
+      "precio_publico": 1890000,
+      "imagen_url": "/api/assets/vento_console.png",
+      "modelo_3d": null,
+      "url_referencia": null,
+      "proveedor": null,
+      "categoria_comercial": "consolas"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-prod-sommelier-cava-01",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "VD-CAV-SOM01",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Cava Sommelier",
+      "unidad_medida": "unidad",
+      "ancho": "80 cm",
+      "alto": "120 cm",
+      "profundo": "40 cm",
+      "stock_actual": 3,
+      "precio_directo": 2992307,
+      "precio_publico": 3890000,
+      "imagen_url": "/api/assets/sommelier_cava.png",
+      "modelo_3d": null,
+      "url_referencia": null,
+      "proveedor": null,
+      "categoria_comercial": "cavas"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-prod-baco-cava-02",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "VD-CAV-BAC02",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Cava Baco",
+      "unidad_medida": "unidad",
+      "ancho": "60 cm",
+      "alto": "100 cm",
+      "profundo": "35 cm",
+      "stock_actual": 6,
+      "precio_directo": 1615384,
+      "precio_publico": 2100000,
+      "imagen_url": "/api/assets/baco_cava.png",
+      "modelo_3d": null,
+      "url_referencia": null,
+      "proveedor": null,
+      "categoria_comercial": "cavas"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-prod-toscana-table-01",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "VD-MES-TOS01",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Mesa Toscana",
+      "unidad_medida": "unidad",
+      "ancho": "200 cm",
+      "alto": "76 cm",
+      "profundo": "100 cm",
+      "stock_actual": 2,
+      "precio_directo": 4000000,
+      "precio_publico": 5200000,
+      "imagen_url": "/api/assets/toscana_table.png",
+      "modelo_3d": null,
+      "url_referencia": null,
+      "proveedor": null,
+      "categoria_comercial": "mesas"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-prod-nordic-table-02",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "VD-MES-NOR02",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Mesa Nordic",
+      "unidad_medida": "unidad",
+      "ancho": "160 cm",
+      "alto": "76 cm",
+      "profundo": "90 cm",
+      "stock_actual": 5,
+      "precio_directo": 2615384,
+      "precio_publico": 3400000,
+      "imagen_url": "/api/assets/nordic_table.png",
+      "modelo_3d": null,
+      "url_referencia": null,
+      "proveedor": null,
+      "categoria_comercial": "mesas"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-prod-majestic-bed-01",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "VD-CAM-MAJ01",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Cama Majestic",
+      "unidad_medida": "unidad",
+      "ancho": "200 cm",
+      "alto": "130 cm",
+      "profundo": "210 cm",
+      "stock_actual": 2,
+      "precio_directo": 5000000,
+      "precio_publico": 6500000,
+      "imagen_url": "/api/assets/majestic_bed.png",
+      "modelo_3d": null,
+      "url_referencia": null,
+      "proveedor": null,
+      "categoria_comercial": "camas"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-prod-lino-bed-02",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "VD-CAM-LIN02",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Cama Lino",
+      "unidad_medida": "unidad",
+      "ancho": "160 cm",
+      "alto": "110 cm",
+      "profundo": "200 cm",
+      "stock_actual": 4,
+      "precio_directo": 3230769,
+      "precio_publico": 4200000,
+      "imagen_url": "/api/assets/lino_bed.png",
+      "modelo_3d": null,
+      "url_referencia": null,
+      "proveedor": null,
+      "categoria_comercial": "camas"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
   }
 ]

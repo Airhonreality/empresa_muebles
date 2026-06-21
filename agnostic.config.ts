@@ -43,6 +43,10 @@ export default defineConfig({
     'agnostic-header': () => import('./src/components/specialized/AgnosticHeader'),
     'yango-dispatcher':() => import('./src/components/specialized/YangoDispatcher'),
     'chart':           () => import('./src/components/specialized/Chart'),
+    veta_home:         () => import('./src/components/specialized/VetaHome'),
+    veta_spaces:       () => import('./src/components/specialized/VetaSpaces'),
+    veta_catalog:      () => import('./src/components/specialized/VetaCatalog'),
+    veta_agendar:      () => import('./src/components/specialized/VetaAgendar'),
   },
 
   features: {

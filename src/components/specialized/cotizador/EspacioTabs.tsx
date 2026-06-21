@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react'
 import type { DataItem } from '@agnostic/core'
-import { Copy, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Copy, Plus, X, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { EspacioVariantes } from '@/generated/agnostic-schemas'
 
-export function EspacioTabs({ variants, activeId, onSelect, onAdd, onDuplicate, onDelete, onRename, onMove }: {
+export function EspacioTabs({ variants, activeId, onSelect, onAdd, onDuplicate, onDelete, onRename, onMove, onUpdate }: {
   variants: DataItem[]; activeId: string
   onSelect: (id: string) => void; onAdd: () => void; onDuplicate: () => void; onDelete: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onMove?: (id: string, direction: 'left' | 'right') => void;
+  onUpdate?: (id: string, patch: Partial<EspacioVariantes>) => void;
 }) {
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [ind, setInd] = useState({ left: 0, width: 0 })
@@ -49,7 +50,7 @@ export function EspacioTabs({ variants, activeId, onSelect, onAdd, onDuplicate, 
         const isActive = v.id === activeId
 
         return (
-          <div key={v.id} className="relative flex flex-col justify-center group pr-3 min-h-[38px]">
+          <div key={v.id} className="relative flex flex-col justify-center group pr-7 min-h-[38px]">
             {isEditing ? (
               <input
                 ref={inputRef}
@@ -64,18 +65,38 @@ export function EspacioTabs({ variants, activeId, onSelect, onAdd, onDuplicate, 
                 className="px-2 py-1 text-sm border border-amber-300 rounded focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-stone-800 font-semibold max-w-[120px] mx-2"
               />
             ) : (
-              <button
-                ref={el => { tabRefs.current[v.id] = el }}
-                onClick={() => onSelect(v.id)}
-                onDoubleClick={() => isActive && handleStartEdit(v)}
-                title="Doble clic para renombrar la variante"
-                className={cn(
-                  'px-4 py-2 text-sm transition-colors duration-200 whitespace-nowrap cursor-pointer',
-                  isActive ? 'text-amber-700 font-semibold' : 'text-stone-400 hover:text-stone-600',
+              <div className="flex items-center gap-1">
+                <button
+                  ref={el => { tabRefs.current[v.id] = el }}
+                  onClick={() => onSelect(v.id)}
+                  onDoubleClick={() => isActive && handleStartEdit(v)}
+                  title="Doble clic para renombrar la variante"
+                  className={cn(
+                    'px-4 py-2 text-sm transition-colors duration-200 whitespace-nowrap cursor-pointer flex items-center gap-1',
+                    isActive ? 'text-amber-700 font-semibold' : 'text-stone-400 hover:text-stone-600',
+                  )}
+                >
+                  {vd.nombre_variante || 'Variante'}
+                </button>
+                
+                {onUpdate && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onUpdate(v.id, { visible_pdf: vd.visible_pdf === false })
+                    }}
+                    title={vd.visible_pdf === false ? "Mostrar en PDF" : "Ocultar del PDF"}
+                    className={cn(
+                      "p-1 rounded-md transition-all cursor-pointer shrink-0",
+                      vd.visible_pdf === false 
+                        ? "text-stone-400 hover:text-amber-600 bg-stone-50" 
+                        : "text-stone-300 hover:text-amber-600 opacity-0 group-hover:opacity-100"
+                    )}
+                  >
+                    {vd.visible_pdf === false ? <EyeOff size={11} /> : <Eye size={11} />}
+                  </button>
                 )}
-              >
-                {vd.nombre_variante || 'Variante'}
-              </button>
+              </div>
             )}
             {!isEditing && variants.length > 1 && (
               <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-stone-200 px-1 py-0.5 rounded shadow-sm z-10">
@@ -99,7 +120,7 @@ export function EspacioTabs({ variants, activeId, onSelect, onAdd, onDuplicate, 
               <button
                 onClick={() => onDelete(v.id)}
                 title="Eliminar variante"
-                className="absolute top-1/2 right-0 -translate-y-1/2 text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1/2 right-1 -translate-y-1/2 text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X size={12} />
               </button>
@@ -122,4 +143,3 @@ export function EspacioTabs({ variants, activeId, onSelect, onAdd, onDuplicate, 
     </div>
   )
 }
-

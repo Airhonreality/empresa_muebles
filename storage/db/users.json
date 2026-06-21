@@ -1,14 +1,1 @@
-[
-  {
-    "id": "6111a466-138c-4ad1-a2c7-05fd929334df",
-    "context": "users",
-    "data": {
-      "email": "admin@ejemplo.com",
-      "password": "admin1234",
-      "type": [
-        "admin"
-      ]
-    },
-    "updated_at": "2026-06-17T20:31:55.862Z"
-  }
-]
+[]

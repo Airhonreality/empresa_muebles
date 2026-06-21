@@ -35,7 +35,7 @@ export function getStrategy(): AgnosticBridge {
     return new SupabaseStrategy(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   }
 
-  if (process.env.VERCEL) {
+  if (process.env.VERCEL && process.env.NOW_REGION) {
     console.warn('[getStrategy] WARNING: LocalStrategy on Vercel read-only filesystem. Set GITHUB_REPO or DATABASE_URL for persistent storage.');
   }
 

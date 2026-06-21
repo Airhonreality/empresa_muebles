@@ -1,8 +1,8 @@
 // ============================================================
 // AUTO-GENERATED — do not edit manually.
-// Source: .\storage\empresa-2\db\schema_definitions.json
+// Source: .\storage\db\schema_definitions.json
 // Run:    npm run agnostic:compile
-// Generated: 2026-06-05T21:59:37.039Z
+// Generated: 2026-06-21T15:15:30.465Z
 // ============================================================
 
 // DataItem is the universal record wrapper used by the engine.
@@ -30,6 +30,7 @@ export interface EspacioVariantes {
   colores?: string  // Colores
   descripcion?: string  // Descripción del Espacio
   descripcion_alternativa?: string  // Descripción de Alternativa
+  visible_pdf?: boolean  // Visible en el PDF de Cotización
 }
 
 export type EspacioVariantesRecord = AgnosticDataItem<EspacioVariantes>
@@ -64,6 +65,7 @@ export interface ProductosCatalogo {
   modelo_3d?: string  // Modelo 3D (.glb / .obj)
   url_referencia?: string  // URL de Referencia / Ficha
   proveedor?: string  // Proveedor
+  categoria_comercial?: string  // Categoría Comercial Web
 }
 
 export type ProductosCatalogoRecord = AgnosticDataItem<ProductosCatalogo>
@@ -77,18 +79,6 @@ export interface ImagenesEspacio {
 }
 
 export type ImagenesEspacioRecord = AgnosticDataItem<ImagenesEspacio>
-
-// ─── Schema: "cotizaciones_snapshot" 
-export interface CotizacionesSnapshot {
-  cotizacion_id: string  // CotizaciÃ³n
-  fecha_exportacion: string  // Fecha de ExportaciÃ³n
-  variant_name?: string  // Variante Seleccionada
-  total_neto?: number  // Total Neto
-  detalle_json: string  // Detalle (JSON)
-  html_pdf?: string  // HTML PDF
-}
-
-export type CotizacionesSnapshotRecord = AgnosticDataItem<CotizacionesSnapshot>
 
 // ─── Schema: "clientes" 
 export interface Clientes {
@@ -144,8 +134,6 @@ export interface OrdenesTrabajo {
   estado: string  // Estado
   fecha_entrega?: string  // Fecha de Entrega
   notas?: string  // Notas
-  costo_total_real?: number  // "Costo
-  estado_flete?: string  // "Estado
 }
 
 export type OrdenesTrabajoRecord = AgnosticDataItem<OrdenesTrabajo>
@@ -256,6 +244,28 @@ export interface ComprasMateriales {
 
 export type ComprasMaterialesRecord = AgnosticDataItem<ComprasMateriales>
 
+// ─── Schema: "leads" 
+export interface Leads {
+  nombre_completo?: string  // Nombre Completo
+  telefono_whatsapp?: string  // Telefono Whatsapp
+  email?: string  // Email
+  barrio_zona?: string  // Barrio Zona
+  tipo_espacio?: string  // Tipo de Espacio
+  mensaje?: string  // Mensaje
+}
+
+export type LeadsRecord = AgnosticDataItem<Leads>
+
+// ─── Schema: "configuracion_comercial" 
+export interface ConfiguracionComercial {
+  llave: string  // Clave única
+  valor: string  // Valor
+  grupo: string  // Grupo de Ajustes
+  etiqueta: string  // Etiqueta Descriptiva
+}
+
+export type ConfiguracionComercialRecord = AgnosticDataItem<ConfiguracionComercial>
+
 // ============================================================
 // AgnosticSchemas — complete project schema map
 //
@@ -269,7 +279,6 @@ export interface AgnosticSchemas {
   items_variante: ItemsVariante
   productos_catalogo: ProductosCatalogo
   imagenes_espacio: ImagenesEspacio
-  cotizaciones_snapshot: CotizacionesSnapshot
   clientes: Clientes
   cotizaciones: Cotizaciones
   prefabricados: Prefabricados
@@ -283,8 +292,10 @@ export interface AgnosticSchemas {
   proveedores: Proveedores
   registro_logistica: RegistroLogistica
   compras_materiales: ComprasMateriales
+  leads: Leads
+  configuracion_comercial: ConfiguracionComercial
 }
 
 // Valid values for block.context and fetch(`/api/vault?namespace=${ctx}`)
 export type SchemaName = keyof AgnosticSchemas
-// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'cotizaciones_snapshot' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales'
+// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial'

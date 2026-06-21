@@ -4,6 +4,15 @@ if (!activeRecord || !activeRecord.id) {
   return;
 }
 
+function safeEncodeURI(url) {
+  if (!url) return "";
+  try {
+    return encodeURI(decodeURI(url));
+  } catch (e) {
+    return encodeURI(url);
+  }
+}
+
 api.notify.success("Generando Layout Premium para Veta de Oro...");
 
 const cotizaciones = await api.query("cotizaciones");
@@ -38,7 +47,7 @@ const RATE_INSTALL = Number(installService.precio_publico);
 
 // 1. Group items by variants and spaces
 const mySpaces = espacioVariantes
-  .filter(ev => ev.cotizacion_id === activeCotizacion.id)
+  .filter(ev => ev.cotizacion_id === activeCotizacion.id && ev.visible_pdf !== false)
   .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0));
 
 // Resolve all variant names present in this quote (e.g. "Inicial", etc.)
@@ -233,7 +242,7 @@ for (const vName of variantNames) {
             ${space.colors.map(col => ' \
               <div style="display: flex; flex-direction: column; background-color: #FCFAF6; border: 1px solid #E5DEC9; border-radius: 8px; width: 120px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03); text-align: center; page-break-inside: avoid; break-inside: avoid;">' +
                 '<div style="width: 100%; height: 90px; border-bottom: 1px solid #E5DEC9; overflow: hidden; background-color: #eee;">' +
-                  '<img src="' + encodeURI(col.imagen_url) + '" style="width: 100%; height: 100%; object-fit: cover;" />' +
+                  '<img src="' + safeEncodeURI(col.imagen_url) + '" style="width: 100%; height: 100%; object-fit: cover;" />' +
                 '</div>' +
                 '<div style="padding: 6px 4px; font-size: 10px; font-weight: 600; color: #4A4238; word-break: break-word; line-height: 1.2;">' +
                   col.nombre +
@@ -250,7 +259,7 @@ for (const vName of variantNames) {
         <div class="space-gallery" style="width: 100%; margin-bottom: 25px;">
           ${space.images.map(img => ' \
             <div style="width: 100%; margin-bottom: 15px; border-radius: 8px; overflow: hidden;">' +
-              '<img src="' + encodeURI(img.imagen_url) + '" style="width: 100%; height: auto; display: block;" />' +
+              '<img src="' + safeEncodeURI(img.imagen_url) + '" style="width: 100%; height: auto; display: block;" />' +
             '</div>'
           ).join("")}
         </div>
@@ -411,10 +420,11 @@ if (clientHtml && obraHtml) {
 
 // Spaces list on cover
 const activeSpacesList = variantSpacesBreakdown[activeVariantName] || [];
-const spacesListHtml = activeSpacesList.map(space => `
+const uniqueSpaceNames = Array.from(new Set(mySpaces.map(ev => ev.nombre_espacio?.trim()).filter(Boolean)));
+const spacesListHtml = uniqueSpaceNames.map(name => `
   <div class="cover-space-item">
     <span class="bullet">✦</span>
-    <span class="name">${space.name}</span>
+    <span class="name">${name}</span>
   </div>
 `).join("");
 
@@ -428,49 +438,6 @@ const fullHtml = template
   .replace('{{activeVariantName}}', 'Alternativas')
   .replace('{{activeVariantName}}', 'Alternativas')
   .replace('{{spacesHtml}}', spacesHtml);
-
-const snapshot = {
-  cotizacion_id: activeCotizacion.id,
-  fecha_exportacion: new Date().toISOString(),
-  variant_name: activeVariantName,
-  totals: activeTotals,
-  tarifas: {
-    dev: RATE_DEV,
-    assembly: RATE_ASSEMBLY,
-    install: RATE_INSTALL
-  },
-  costos: {
-    costos_operativos: Number(activeCotizacion.costos_operativos || 0),
-    imprevistos_instalacion: Number(activeCotizacion.imprevistos_instalacion || 0),
-    descuento_comercial: Number(activeCotizacion.descuento_comercial || 0),
-    ajuste_arbitrario: Number(activeCotizacion.ajuste_arbitrario || 0)
-  },
-  cliente: client ? {
-    id: client.id,
-    nombre: client.nombre || "",
-    documento: client.documento || "",
-    telefono: client.telefono || "",
-    email: client.email || ""
-  } : {},
-  proyecto: {
-    nombre_proyecto: projectName,
-    direccion_obra: obraAddress,
-    dias_entrega_estimados: activeCotizacion.dias_entrega_estimados || "",
-    garantia_anios: activeCotizacion.garantia_anios || ""
-  },
-  espacios: activeSpacesList
-};
-
-await api.saveItem('cotizaciones_snapshot', {
-  data: {
-    cotizacion_id: activeCotizacion.id,
-    fecha_exportacion: snapshot.fecha_exportacion,
-    variant_name: activeVariantName,
-    total_neto: activeTotals.grandTotal,
-    detalle_json: JSON.stringify(snapshot),
-    html_pdf: fullHtml
-  }
-});
 
 api.dispatchEvent("print_pdf", { html: fullHtml });
 api.notify.success("¡Propuesta Comercial exportada exitosamente a PDF!");

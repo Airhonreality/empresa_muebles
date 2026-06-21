@@ -58,5 +58,58 @@
       "nombre": "Angie Rodriguez"
     },
     "updated_at": "2026-06-11T19:03:21.348Z"
+  },
+  {
+    "id": "98bf5727-a4b8-47f6-8148-c16116b451f9",
+    "context": "clientes",
+    "data": {
+      "nombre": "Lorena Vaca"
+    },
+    "updated_at": "2026-06-16T23:19:20.815Z"
+  },
+  {
+    "id": "c7241055-0c5c-467b-a500-4e227bb1e21d",
+    "context": "clientes",
+    "data": {
+      "nombre": "Catalina Bayona"
+    },
+    "updated_at": "2026-06-18T18:25:45.896Z"
+  },
+  {
+    "id": "8153411d-d096-432e-8c5b-59452c0392f5",
+    "context": "clientes",
+    "data": {
+      "nombre": "Lorena Vaca",
+      "documento": "",
+      "domicilio": "",
+      "email": "",
+      "telefono": ""
+    },
+    "updated_at": "2026-06-19T15:59:18.924Z"
+  },
+  {
+    "id": "6cc1e737-a7b1-4241-8685-56e38de374b5",
+    "context": "clientes",
+    "data": {
+      "nombre": "Lorena Vaca",
+      "documento": "",
+      "domicilio": "",
+      "email": "",
+      "telefono": ""
+    },
+    "updated_at": "2026-06-19T16:33:05.677Z"
+  },
+  {
+    "id": "5fc1b7cb-5a9e-441e-a519-9329105c7c08",
+    "context": "clientes",
+    "data": {
+      "id": "5fc1b7cb-5a9e-441e-a519-9329105c7c08",
+      "nombre": "Lorena Vaca",
+      "documento": "1013639307",
+      "domicilio": "cra 81 B N 19B 80 - Portal de Modelia 2 - Interior 6 apartamentos 103",
+      "email": "dadny333@gmail.com",
+      "telefono": "3012487529"
+    },
+    "updated_at": "2026-06-19T20:00:50.535Z"
   }
 ]

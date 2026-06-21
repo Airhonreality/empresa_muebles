@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
 import type { DataItem } from '@agnostic/core'
-import { Briefcase, Copy, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Loader2, Image as ImageIcon, ClipboardList, Palette } from 'lucide-react'
+import { Briefcase, Copy, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Loader2, Image as ImageIcon, ClipboardList, Palette, Eye, EyeOff, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { COP } from './utils'
 import { EspacioTabs } from './EspacioTabs'
@@ -9,6 +9,7 @@ import { DayCounter } from './DayCounter'
 import { CollapseStrip } from './CollapseStrip'
 import { toast } from 'sonner'
 import type { EspacioVariantes, ItemsVariante } from '@/generated/agnostic-schemas'
+import { SmartImageInput } from '@/components/ui/SmartImageInput'
 
 export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   activeVarId, onSelectVarId,
@@ -147,20 +148,27 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
 
   const [colorNameInput, setColorNameInput] = useState('')
   const [colorUrlInput, setColorUrlInput] = useState('')
-  const [colorUploading, setColorUploading] = useState(false)
   const [colorsOpen, setColorsOpen] = useState(false)
-  const colorFileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAddColor = (url?: string) => {
     const targetUrl = url || colorUrlInput.trim()
-    if (!colorNameInput.trim() || !targetUrl) {
-      toast.error('Debes ingresar el nombre del color y su imagen')
+    if (!colorNameInput.trim()) {
+      toast.error('Debes ingresar el nombre del color')
+      return
+    }
+    if (!targetUrl) {
+      toast.error('Debes ingresar o subir una imagen para el color')
+      return
+    }
+    if (colors.some(c => c.nombre.toLowerCase() === colorNameInput.trim().toLowerCase())) {
+      toast.error('Ya existe un color con este nombre en este espacio')
       return
     }
     const next = [...colors, { nombre: colorNameInput.trim(), imagen_url: targetUrl }]
     onUpdateVariante(activeVarIdResolved, { colores: JSON.stringify(next) })
     setColorNameInput('')
     setColorUrlInput('')
+    toast.success(`Color "${colorNameInput.trim()}" agregado con éxito`)
   }
 
   const handleDeleteColor = (idx: number) => {
@@ -198,7 +206,10 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   const totalEsp = totalMat + totalMO
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+    <div className={cn(
+      "bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden transition-all duration-300",
+      vd.visible_pdf === false && "opacity-75 border-dashed border-stone-300"
+    )}>
 
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-4 pb-0">
@@ -210,12 +221,29 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
             className="flex-1 text-base font-semibold text-stone-800 bg-transparent border-b-2 border-amber-400 focus:outline-none pb-0.5"
           />
         ) : (
-          <h3 onClick={() => setEditName(true)}
-            className="flex-1 text-base font-semibold text-stone-800 cursor-text hover:text-amber-700 transition-colors select-none">
-            {nombre}
-          </h3>
+          <div className="flex-1 flex items-center gap-2">
+            <h3 onClick={() => setEditName(true)}
+              className="text-base font-semibold text-stone-800 cursor-text hover:text-amber-700 transition-colors select-none">
+              {nombre}
+            </h3>
+            {vd.visible_pdf === false && (
+              <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 bg-stone-100/80 px-2 py-0.5 rounded-lg border border-stone-200/50 shrink-0 select-none">
+                Oculto en PDF
+              </span>
+            )}
+          </div>
         )}
         <span className="text-[10px] tabular-nums text-stone-300 font-medium">{COP(totalEsp)}</span>
+        <button 
+          onClick={() => onUpdateVariante(activeVarIdResolved, { visible_pdf: vd.visible_pdf === false })}
+          title={vd.visible_pdf === false ? "Mostrar en PDF" : "Ocultar en PDF"}
+          className={cn(
+            "p-1 transition-colors",
+            vd.visible_pdf === false ? "text-stone-300 hover:text-amber-600" : "text-stone-200 hover:text-amber-600"
+          )}
+        >
+          {vd.visible_pdf === false ? <EyeOff size={13} /> : <Eye size={13} />}
+        </button>
         <button onClick={onDuplicate} title="Duplicar espacio"
           className="text-stone-200 hover:text-amber-600 transition-colors p-1">
           <Copy size={13} />
@@ -250,6 +278,7 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
           onDelete={onDeleteVariante}
           onRename={(id, name) => onUpdateVariante(id, { nombre_variante: name })}
           onMove={onReorderVariante}
+          onUpdate={onUpdateVariante}
         />
       </div>
 
@@ -352,97 +381,17 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
             </div>
           )}
 
-          {/* Add image bar */}
-          <div className="flex gap-2">
-            <div className="flex-1 relative flex items-center">
-              <input
-                type="text"
-                value={urlInput}
-                onChange={e => setUrlInput(e.target.value)}
-                placeholder="Pegar URL o presiona Ctrl+V para pegar archivo de imagen..."
-                onKeyDown={e => { if (e.key === 'Enter') handleAddUrl() }}
-                onPaste={async (e) => {
-                  const files = Array.from(e.clipboardData.files)
-                  if (files.length > 0) {
-                    e.preventDefault()
-                    setUploading(true)
-                    try {
-                      const uploadPromises = files.map(async (file) => {
-                        const fd = new FormData()
-                        fd.append('file', file)
-                        const res = await fetch('/api/upload', { method: 'POST', body: fd })
-                        const json = await res.json()
-                        if (!res.ok) throw new Error(json.error || 'Upload failed')
-                        return json.url
-                      })
-                      const uploadedUrls = await Promise.all(uploadPromises)
-                      const next = [...images, ...uploadedUrls]
-                      onUpdateVariante(activeVarIdResolved, { imagenes: JSON.stringify(next) })
-                      toast.success(`${files.length} imagen${files.length !== 1 ? 'es' : ''} pegada${files.length !== 1 ? 's' : ''} con éxito`)
-                    } catch (err: any) {
-                      toast.error(err.message || 'Error al subir imagen pegada')
-                    } finally {
-                      setUploading(false)
-                    }
-                  }
-                }}
-                className="w-full text-xs border border-stone-200 rounded-lg pl-2.5 pr-8 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700 placeholder:text-stone-300"
-              />
-              {urlInput && (
-                <button
-                  type="button"
-                  onClick={handleAddUrl}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-amber-600 rounded"
-                >
-                  <Plus size={14} />
-                </button>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="px-3 py-2 border border-stone-200 rounded-lg bg-stone-50 hover:bg-stone-100 disabled:opacity-50 text-stone-600 hover:text-stone-800 text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0"
-            >
-              {uploading ? (
-                <Loader2 size={13} className="animate-spin text-amber-600" />
-              ) : (
-                <Upload size={13} />
-              )}
-              <span>Subir</span>
-            </button>
-             <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              className="hidden"
-              multiple
-              onChange={async (e) => {
-                const files = Array.from(e.target.files || [])
-                if (files.length === 0) return
-                setUploading(true)
-                try {
-                  const uploadPromises = files.map(async (file) => {
-                    const fd = new FormData()
-                    fd.append('file', file)
-                    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-                    const json = await res.json()
-                    if (!res.ok) throw new Error(json.error || 'Upload failed')
-                    return json.url
-                  })
-                  const uploadedUrls = await Promise.all(uploadPromises)
-                  const next = [...images, ...uploadedUrls]
-                  onUpdateVariante(activeVarIdResolved, { imagenes: JSON.stringify(next) })
-                  toast.success(`${files.length} imagen${files.length !== 1 ? 'es' : ''} subida${files.length !== 1 ? 's' : ''} con éxito`)
-                } catch (err: any) {
-                  toast.error(err.message || 'Error al subir imágenes')
-                } finally {
-                  setUploading(false)
-                  e.target.value = ''
-                }
-              }}
-            />
-          </div>
+          <SmartImageInput
+            multiple
+            value={[]}
+            onChange={(uploadedUrls) => {
+              const next = [...images, ...uploadedUrls]
+              onUpdateVariante(activeVarIdResolved, { imagenes: JSON.stringify(next) })
+              toast.success(`${uploadedUrls.length} imagen${uploadedUrls.length !== 1 ? 'es' : ''} agregada${uploadedUrls.length !== 1 ? 's' : ''}`)
+            }}
+            accept="image/*"
+            placeholder="Pegar URL y pulsar Enter — o arrastra/pega imagen de referencia"
+          />
         </div>
       </CollapseStrip>
 
@@ -526,10 +475,10 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
 
       {/* Colores del espacio */}
       <CollapseStrip open={colorsOpen} onToggle={() => setColorsOpen(o => !o)}
-        label="Colores del espacio" icon={Palette}
+        label="Colores y Acabados del Espacio" icon={Palette}
         summary={colors.length > 0 && (
           <span className="ml-2 text-amber-600 font-medium tabular-nums">
-            {colors.length} color{colors.length !== 1 ? 'es' : ''}
+            {colors.length} acabado{colors.length !== 1 ? 'os' : ''}
           </span>
         )}
       >
@@ -582,130 +531,90 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
             </div>
           )}
 
-          {/* Form to add color swatch */}
-          <div className="bg-stone-50/50 border border-stone-100 rounded-xl p-3 space-y-3">
-            <div className="flex items-center justify-between">
+          {/* Muestrario de colores existentes en el catálogo global */}
+          {allExistingColors && allExistingColors.length > 0 && (
+            <div className="space-y-2">
               <span className="text-[9px] uppercase tracking-widest text-stone-400 font-bold block">
-                Agregar color / textura de muestra
+                Colores del catálogo (Haz clic para agregar)
               </span>
-              {allExistingColors && allExistingColors.length > 0 && (
-                <select
-                  value=""
-                  onChange={e => {
-                    const val = e.target.value
-                    if (!val) return
-                    const found = allExistingColors.find(c => c.nombre === val)
-                    if (found) {
-                      setColorNameInput(found.nombre)
-                      setColorUrlInput(found.imagen_url)
-                      toast.success(`Color "${found.nombre}" cargado del catálogo`)
-                    }
-                  }}
-                  className="text-[10px] font-semibold border border-stone-200 rounded-lg px-2 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-amber-700 bg-amber-50/30 cursor-pointer"
-                >
-                  <option value="">🎨 Cargar del catálogo...</option>
-                  {allExistingColors.map(c => (
-                    <option key={c.nombre} value={c.nombre}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 flex flex-col gap-1">
-                <input
-                  type="text"
-                  value={colorNameInput}
-                  onChange={e => setColorNameInput(e.target.value)}
-                  placeholder="Nombre del color (e.g. Roble Ahumado)"
-                  className="w-full text-xs border border-stone-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700 font-medium"
-                />
+              <div className="flex flex-wrap gap-2 p-3 bg-stone-50/40 border border-stone-100 rounded-xl max-h-36 overflow-y-auto">
+                {allExistingColors.map((col, idx) => {
+                  const alreadyAdded = colors.some(c => c.nombre.toLowerCase() === col.nombre.toLowerCase())
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={alreadyAdded}
+                      onClick={() => {
+                        const next = [...colors, col]
+                        onUpdateVariante(activeVarIdResolved, { colores: JSON.stringify(next) })
+                        toast.success(`Color "${col.nombre}" agregado`)
+                      }}
+                      className={cn(
+                        "group relative flex items-center gap-2 px-2 py-1.5 rounded-lg border text-left transition-all text-xs font-medium",
+                        alreadyAdded
+                          ? "bg-stone-50 border-stone-200 text-stone-300 cursor-not-allowed opacity-50"
+                          : "bg-white border-stone-200 text-stone-600 hover:border-amber-400 hover:bg-amber-50/10 hover:shadow-sm"
+                      )}
+                      title={alreadyAdded ? "Ya agregado" : `Agregar ${col.nombre}`}
+                    >
+                      <div className="w-6 h-6 rounded bg-stone-100 border border-stone-200 overflow-hidden shrink-0">
+                        <img src={col.imagen_url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <span className="truncate max-w-[90px]">{col.nombre}</span>
+                    </button>
+                  )
+                })}
               </div>
+            </div>
+          )}
 
-              <div className="flex-1 flex items-center gap-2">
-                <input
-                  type="text"
-                  value={colorUrlInput}
-                  onChange={e => setColorUrlInput(e.target.value)}
-                  placeholder="URL de la muestra o presiona Ctrl+V para pegar..."
-                  onPaste={async (e) => {
-                    const files = Array.from(e.clipboardData.files)
-                    if (files.length > 0) {
-                      e.preventDefault()
-                      if (!colorNameInput.trim()) {
-                        toast.error('Por favor escribe primero el nombre del color')
-                        return
-                      }
-                      setColorUploading(true)
-                      try {
-                        const fd = new FormData()
-                        fd.append('file', files[0])
-                        const res = await fetch('/api/upload', { method: 'POST', body: fd })
-                        const json = await res.json()
-                        if (!res.ok) throw new Error(json.error || 'Upload failed')
-                        handleAddColor(json.url)
-                        toast.success('Muestra de color pegada y subida con éxito')
-                      } catch (err: any) {
-                        toast.error(err.message || 'Error al subir imagen pegada')
-                      } finally {
-                        setColorUploading(false)
-                      }
-                    }
-                  }}
-                  className="flex-1 text-xs border border-stone-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700"
-                />
-                <span className="text-stone-300 text-xs font-semibold select-none">o</span>
-                
+          {/* Form to create a new custom color */}
+          <div className="bg-stone-50/50 border border-stone-100 rounded-xl p-4 space-y-4">
+            <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold block">
+              Crear Nuevo Color / Acabado
+            </span>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+              {/* Left Column: Color Name & Button (Occupies 2/3 of space on desktop) */}
+              <div className="md:col-span-2 space-y-3 w-full">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">
+                    Nombre del color / acabado
+                  </label>
+                  <input
+                    type="text"
+                    value={colorNameInput}
+                    onChange={e => setColorNameInput(e.target.value)}
+                    placeholder="e.g. Melamina Roble, Fórmica Gris..."
+                    className="w-full text-xs border border-stone-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700 font-medium h-9"
+                  />
+                </div>
                 <button
                   type="button"
-                  disabled={colorUploading}
-                  onClick={() => colorFileInputRef.current?.click()}
-                  className="px-3 py-1.5 bg-white border border-stone-200 text-stone-600 hover:text-stone-800 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-sm disabled:opacity-50"
+                  onClick={() => handleAddColor()}
+                  className="w-full h-9 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 justify-center shadow-sm"
                 >
-                  {colorUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                  <span>Subir</span>
+                  <Plus size={14} />
+                  <span>Añadir Color / Acabado</span>
                 </button>
-                <input
-                  type="file"
-                  ref={colorFileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={async e => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
-                    if (!colorNameInput.trim()) {
-                      toast.error('Por favor escribe primero el nombre del color')
-                      e.target.value = ''
-                      return
-                    }
-                    setColorUploading(true)
-                    try {
-                      const fd = new FormData()
-                      fd.append('file', file)
-                      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-                      const json = await res.json()
-                      if (!res.ok) throw new Error(json.error || 'Upload failed')
-                      handleAddColor(json.url)
-                      toast.success('Muestra de color subida con éxito')
-                    } catch (err: any) {
-                      toast.error(err.message || 'Error al subir imagen de color')
-                    } finally {
-                      setColorUploading(false)
-                      e.target.value = ''
-                    }
-                  }}
-                />
               </div>
 
-              <button
-                type="button"
-                onClick={() => handleAddColor()}
-                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 justify-center shrink-0 shadow-sm"
-              >
-                <Plus size={13} />
-                <span>Agregar</span>
-              </button>
+              {/* Right Column: Texture / Image Upload (Occupies 1/3 of space on desktop) */}
+              <div className="md:col-span-1 space-y-1.5 w-full max-w-[240px]">
+                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">
+                  Imagen / Muestra de textura
+                </label>
+                <div className="w-full">
+                  <SmartImageInput
+                    multiple={false}
+                    value={colorUrlInput}
+                    onChange={setColorUrlInput}
+                    accept="image/*"
+                    placeholder="Subir muestra..."
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

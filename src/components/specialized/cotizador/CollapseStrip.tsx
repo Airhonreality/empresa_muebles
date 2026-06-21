@@ -17,7 +17,7 @@ export function CollapseStrip({ open, onToggle, label, icon: Icon, summary, chil
         </div>
         {open ? <ChevronUp size={12} className="text-stone-300" /> : <ChevronDown size={12} className="text-stone-300" />}
       </button>
-      <div className={cn('overflow-hidden transition-all duration-300', open ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0')}>
+      <div className={cn('overflow-hidden transition-all duration-300', open ? 'max-h-[1500px] opacity-100' : 'max-h-0 opacity-0')}>
         {children}
       </div>
     </div>

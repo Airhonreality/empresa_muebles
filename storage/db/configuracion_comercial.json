@@ -1,0 +1,90 @@
+[
+  {
+    "id": "veta-config-whatsapp-num",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "whatsapp_number",
+      "valor": "+57 300 123 4567",
+      "grupo": "Contacto",
+      "etiqueta": "Número de WhatsApp Comercial"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-config-whatsapp-link",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "whatsapp_link",
+      "valor": "https://wa.me/573001234567",
+      "grupo": "Contacto",
+      "etiqueta": "Enlace Directo de WhatsApp"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-config-instagram-url",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "instagram_url",
+      "valor": "https://instagram.com/vetadorada",
+      "grupo": "Redes",
+      "etiqueta": "Enlace de Instagram"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-config-tiktok-url",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "tiktok_url",
+      "valor": "https://tiktok.com/@vetadorada",
+      "grupo": "Redes",
+      "etiqueta": "Enlace de TikTok"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-config-nit-legal",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "nit_legal",
+      "valor": "901421357",
+      "grupo": "Legal",
+      "etiqueta": "NIT de Facturación Legal"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-config-nombre-empresa",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "nombre_empresa",
+      "valor": "Hermanos García González SAS",
+      "grupo": "Legal",
+      "etiqueta": "Razón Social de la Empresa"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-config-logo-negativo",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "logo_negativo_url",
+      "valor": "/api/assets/logo_veta_dorada_negative.svg",
+      "grupo": "Branding",
+      "etiqueta": "Logotipo Vectorial Negativo (Fondo Oscuro)"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "veta-config-logo-positivo",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "logo_positivo_url",
+      "valor": "/api/assets/logo_veta_dorada_positive.svg",
+      "grupo": "Branding",
+      "etiqueta": "Logotipo Vectorial Positivo (Fondo Claro)"
+    },
+    "updated_at": "2026-06-18T05:00:00.000Z"
+  }
+]

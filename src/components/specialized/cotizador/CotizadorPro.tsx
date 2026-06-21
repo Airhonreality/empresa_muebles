@@ -10,7 +10,11 @@ import { EspacioCard } from './EspacioCard'
 import { MoneyInput } from './MoneyInput'
 import { HybridClientSelector } from './HybridClientSelector'
 import { ApoyoTecnicoPanel } from './ApoyoTecnicoPanel'
-import { COP, useDebounce, vWrite, vRemove } from './utils'
+import { ContratoModal } from './ContratoModal'
+import { ContratoEmailModal } from './ContratoEmailModal'
+import { COP, vWrite, vRemove } from './utils'
+import { useAutoSave } from '@/hooks/useAutoSave'
+import { processEvents } from '@/lib/agnostic/eventProcessor'
 import type {
   Cotizaciones,
   EspacioVariantes,
@@ -41,6 +45,10 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
   const [secretOpen,  setSecretOpen]    = useState(false)
   const [activeVarMap, setActiveVarMap] = useState<Record<string, string>>({})
   const [isExporting, setIsExporting]   = useState(false)
+  const [isContratoOpen, setIsContratoOpen] = useState(false)
+  const [isEmailOpen, setIsEmailOpen] = useState(false)
+  const [generatedContratoId, setGeneratedContratoId] = useState<string | null>(null)
+  const [emailModalData, setEmailModalData] = useState<{ email: string; subject: string; body: string } | null>(null)
   const [catalogModal, setCatalogModal] = useState<{
     isOpen: boolean
     mode: 'create' | 'edit'
@@ -57,7 +65,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
   const clienteData = useMemo(() => {
     if (!headerLocal?.cliente_id) return null
     const cl = clientes.find(c => c.id === headerLocal.cliente_id)
-    return cl ? (cl.data as any) : null
+    return cl ? { id: cl.id, ...((cl.data || {}) as any) } : null
   }, [clientes, headerLocal?.cliente_id])
 
   const missingServiceSkus = useMemo(() => {
@@ -87,10 +95,10 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
 
   useEffect(() => { loadAll() }, [loadAll])
 
-  // Sync local header when switching quotes
+  // Sync local header when switching quotes or when database updates activeCot
   useEffect(() => {
     if (activeCot) setHeaderLocal(activeCot.data as any as Cotizaciones)
-  }, [activeCotId]) // eslint-disable-line
+  }, [activeCotId, activeCot])
 
   // Sync when engine provides a new activeRecord via URL :id navigation
   useEffect(() => {
@@ -99,16 +107,20 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     }
   }, [activeRecord?.id]) // eslint-disable-line
 
-  // ── Auto-save header (debounced 800ms) ───────────────────────────
-  const dHeader = useDebounce(headerLocal, 800)
+  // ── Auto-save header using useAutoSave hook ───────────────────────────
   const isDirty = !!activeCot && JSON.stringify(headerLocal) !== JSON.stringify(activeCot.data)
 
-  useEffect(() => {
-    if (!isDirty || !activeCotId) return
-    vWrite('cotizaciones', activeCotId, dHeader).then(() =>
-      setCotizaciones(prev => prev.map(c => c.id === activeCotId ? { ...c, data: dHeader as any } : c))
-    )
-  }, [dHeader]) // eslint-disable-line
+  useAutoSave({
+    key: activeCotId || '',
+    // Bundle the active ID with the headerLocal data to ensure atomic saves
+    data: { id: activeCotId || '', header: headerLocal },
+    delay: 800,
+    onSave: async (bundle) => {
+      if (!bundle.id) return
+      await vWrite('cotizaciones', bundle.id, bundle.header)
+      setCotizaciones(prev => prev.map(c => c.id === bundle.id ? { ...c, data: bundle.header as any } : c))
+    }
+  })
 
   // ── Derived ──────────────────────────────────────────────────────
   const activeVariantes = useMemo(
@@ -249,9 +261,11 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     for (const { nombre, vars } of espacios) {
       const activeId = activeVarMap[nombre] || vars[0]?.id
       const av = vars.find(v => v.id === activeId) || vars[0]; if (!av) continue
+      const vd = av.data as any as EspacioVariantes
+      if (vd.visible_pdf === false) continue
+
       const vItems = items.filter(it => (it.data as any as ItemsVariante).variante_id === av.id)
       mat += vItems.reduce((s, it) => s + (Number((it.data as any as ItemsVariante).total_linea) || 0), 0)
-      const vd = av.data as any as EspacioVariantes
       mo += (Number(vd.jornadas_desarrollo_tecnico) || 0) * tarifas.dev
           + (Number(vd.jornadas_ensamblaje_taller)  || 0) * tarifas.assembly
           + (Number(vd.jornadas_instalacion_obra)   || 0) * tarifas.install
@@ -269,7 +283,26 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
   const addEspacio = async () => {
     if (!activeCotId) return
     const id = crypto.randomUUID()
-    const data: EspacioVariantes = { cotizacion_id: activeCotId, nombre_espacio: 'Nuevo Espacio', nombre_variante: 'Inicial', jornadas_desarrollo_tecnico: 0, jornadas_ensamblaje_taller: 0, jornadas_instalacion_obra: 0 }
+
+    // Generate a unique name for the new space to avoid collision upon renaming
+    let baseName = 'Nuevo Espacio'
+    let nombreEspacio = baseName
+    let counter = 1
+    const existingNames = new Set(activeVariantes.map(v => (v.data as any as EspacioVariantes).nombre_espacio?.trim()).filter(Boolean))
+    while (existingNames.has(nombreEspacio)) {
+      counter++
+      nombreEspacio = `${baseName} ${counter}`
+    }
+
+    const data: EspacioVariantes = {
+      cotizacion_id: activeCotId,
+      nombre_espacio: nombreEspacio,
+      nombre_variante: 'Inicial',
+      jornadas_desarrollo_tecnico: 0,
+      jornadas_ensamblaje_taller: 0,
+      jornadas_instalacion_obra: 0,
+      activa: true
+    }
     await vWrite('espacio_variantes', id, data)
     setVariantes(prev => [...prev, { id, context: 'espacio_variantes', data: data as any }])
   }
@@ -601,6 +634,12 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     setIsExporting(true)
     const toastId = toast.loading('Generando propuesta comercial premium en PDF...')
     try {
+      // Bug 1 fix: flush pending header changes before Zap reads from DB
+      if (isDirty) {
+        await vWrite('cotizaciones', activeCotId, headerLocal)
+        setCotizaciones(prev => prev.map(c => c.id === activeCotId ? { ...c, data: headerLocal as any } : c))
+      }
+
       const response = await fetch('/api/engine', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -619,31 +658,40 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
       }
 
       if (Array.isArray(result.events)) {
-        for (const event of result.events) {
-          if (event.action === 'notify') {
-            if (event.type === 'success') toast.success(event.message)
-            else toast.error(event.message)
-          } else if (event.action === 'print_pdf') {
-            const htmlContent = event.payload?.html || ''
-            const iframe = document.createElement('iframe')
-            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;'
-            document.body.appendChild(iframe)
-            iframe.contentDocument!.open()
-            iframe.contentDocument!.write(htmlContent)
-            iframe.contentDocument!.close()
-            iframe.contentWindow!.focus()
-            setTimeout(() => {
-              iframe.contentWindow!.print()
-              setTimeout(() => document.body.removeChild(iframe), 2000)
-            }, 500)
-          }
-        }
+        await processEvents(result.events)
       }
     } catch (e: any) {
       toast.dismiss(toastId)
       toast.error(`Error al exportar: ${e.message}`)
     } finally {
       setIsExporting(false)
+    }
+  }
+
+  const handleExportContratoPdf = async (contratoId: string) => {
+    const toastId = toast.loading('Generando contrato legal en PDF...')
+    try {
+      const response = await fetch('/api/engine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          zap: 'exportar_contrato_pdf',
+          payload: {
+            contratoId
+          }
+        })
+      })
+      const result = await response.json()
+      toast.dismiss(toastId)
+      if (!result.success) {
+        throw new Error(result.error || 'No se pudo generar el documento del contrato.')
+      }
+
+      if (Array.isArray(result.events)) {
+        await processEvents(result.events)
+      }
+    } catch (err: any) {
+      toast.error('Error al generar PDF del contrato: ' + err.message, { id: toastId })
     }
   }
 
@@ -842,7 +890,13 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
             {sorted.map(c => {
               const d = c.data as any as Cotizaciones
               const cli = clientes.find(cl => cl.id === d.cliente_id)?.data as any
-              const spacesCount = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === c.id).length
+
+              // Count unique physical space names in this quotation
+              const spacesList = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === c.id)
+              const uniqueSpaceNames = new Set(
+                spacesList.map(v => (v.data as any as EspacioVariantes).nombre_espacio?.trim()).filter(Boolean)
+              )
+              const spacesCount = uniqueSpaceNames.size
               return (
                 <div key={c.id}
                   className="relative p-5 bg-white border border-stone-200 rounded-2xl hover:border-amber-300 hover:shadow-md transition-all group flex flex-col justify-between min-h-[140px]">
@@ -950,17 +1004,25 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
                 <HybridClientSelector
                   value={headerLocal.cliente_id || ''}
                   clientes={clientes}
-                  onChange={clientId => setHeaderLocal(p => ({ ...p, cliente_id: clientId }))}
-                  onClientCreated={newClient => setClientes(prev => [...prev, newClient])}
-                />
-              </div>
-              <div className="col-span-2 md:col-span-1 flex flex-col gap-1">
-                <label className="text-[9px] uppercase tracking-widest text-stone-400">Dirección de obra</label>
-                <input type="text" value={headerLocal.direccion_obra || ''}
-                  onChange={e => setHeaderLocal(p => ({ ...p, direccion_obra: e.target.value }))}
-                  placeholder="Ciudad, barrio…"
-                  className="text-xs border border-stone-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700"
-                />
+                onChange={clientId => {
+                  const cl = clientes.find(c => c.id === clientId)
+                  const clDom = cl?.data?.domicilio || cl?.domicilio || ''
+                  setHeaderLocal(p => ({
+                    ...p,
+                    cliente_id: clientId,
+                    direccion_obra: p.direccion_obra || clDom
+                  }))
+                }}
+                onClientCreated={newClient => setClientes(prev => [...prev, newClient])}
+              />
+            </div>
+            <div className="col-span-2 md:col-span-1 flex flex-col gap-1">
+              <label className="text-[9px] uppercase tracking-widest text-stone-400">Dirección de obra</label>
+              <input type="text" value={headerLocal.direccion_obra || clienteData?.domicilio || ''}
+                onChange={e => setHeaderLocal(p => ({ ...p, direccion_obra: e.target.value }))}
+                placeholder="Ciudad, barrio…"
+                className="text-xs border border-stone-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700"
+              />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase tracking-widest text-stone-400">Días entrega</label>
@@ -1077,19 +1139,27 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
             </div>
 
             {/* Total + CTA */}
-            <div className="flex items-center gap-4 ml-auto shrink-0">
-              <div className="text-right">
-                <div className="text-[9px] uppercase tracking-widest text-stone-400">Total cotización</div>
-                <div className="text-2xl font-bold text-amber-700 tabular-nums tracking-tight leading-none mt-0.5">
+            <div className="flex items-center gap-3 ml-auto shrink-0">
+              <div className="text-right mr-1">
+                <div className="text-[9px] uppercase tracking-widest text-stone-400 font-bold">Total cotización</div>
+                <div className="text-xl font-bold text-amber-700 tabular-nums tracking-tight leading-none mt-0.5">
                   {COP(gt.total)}
                 </div>
               </div>
               <button
                 onClick={handleExportPdf}
-                disabled={isExporting}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                disabled={isExporting || !activeCotId}
+                className="flex items-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                {isExporting ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
                 Generar cotización
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsContratoOpen(true)}
+                disabled={isExporting || !activeCotId}
+                className="flex items-center gap-2 px-3.5 py-2 bg-stone-900 hover:bg-stone-800 text-white border border-stone-850 rounded-xl text-xs font-semibold transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                <FileText size={13} className="text-amber-500" />
+                Generar contrato
               </button>
             </div>
           </div>
@@ -1281,6 +1351,47 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
             </div>
           </div>
         </div>
+      )}
+
+      {/* Contrato Modals */}
+      {isContratoOpen && (
+        <ContratoModal
+          isOpen={isContratoOpen}
+          onClose={() => {
+            setIsContratoOpen(false)
+            loadAll()
+          }}
+          cotizacion={activeCot}
+          cliente={clienteData}
+          espacios={espacios}
+          activeVarMap={activeVarMap}
+          items={items}
+          catalogo={catalogo}
+          calculatedTotal={gt.total}
+          onSaveSuccess={async (contratoId, emailData) => {
+            await loadAll()
+            setGeneratedContratoId(contratoId)
+            setEmailModalData(emailData)
+            setIsContratoOpen(false)
+            // Ejecutar la generación e impresión del PDF
+            await handleExportContratoPdf(contratoId)
+            // Abrir el modal de correo
+            setIsEmailOpen(true)
+          }}
+        />
+      )}
+
+      {isEmailOpen && generatedContratoId && emailModalData && (
+        <ContratoEmailModal
+          isOpen={isEmailOpen}
+          onClose={() => setIsEmailOpen(false)}
+          contratoId={generatedContratoId}
+          emailData={emailModalData}
+          onSuccess={() => {
+            setIsEmailOpen(false)
+            loadAll()
+          }}
+        />
       )}
     </div>
   )

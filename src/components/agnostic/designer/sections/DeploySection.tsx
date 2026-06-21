@@ -235,13 +235,12 @@ function ActionRow({
 
         <Button
           size="sm"
-          onClick={() => onSave(true)}
-          disabled={saving || testing || isDevMode}
-          title={isDevMode ? 'Solo disponible en producción — agrega las variables a tu .env.local' : undefined}
+          onClick={() => onSave(!isDevMode)}
+          disabled={saving || testing}
           className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
         >
-          {saving ? <Loader2 size={10} className="animate-spin" /> : <Rocket size={10} />}
-          {isDevMode ? 'Solo en producción' : 'Guardar y redesplegar'}
+          {saving ? <Loader2 size={10} className="animate-spin" /> : isDevMode ? <Database size={10} /> : <Rocket size={10} />}
+          {isDevMode ? 'Guardar en .env.local' : 'Guardar y redesplegar'}
         </Button>
 
         {!isDevMode && (
@@ -258,7 +257,7 @@ function ActionRow({
 
       {isDevMode && (
         <p className="text-[9px] text-muted-foreground italic">
-          En desarrollo, agrega las variables a tu <code className="bg-muted px-1 rounded">.env.local</code>.
+          En desarrollo, se guardará directamente en tu archivo <code className="bg-muted px-1 rounded">.env.local</code>. Deberás reiniciar el servidor de desarrollo para aplicar los cambios.
         </p>
       )}
     </div>

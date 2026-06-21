@@ -18,6 +18,26 @@ export function ItemRow({ item, catalogo, onUpdate, onDelete, onEditCatalogItem,
   const [catOpen, setCatOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const [priceFocused, setPriceFocused] = useState(false)
+  const [priceVal, setPriceVal] = useState('')
+
+  useEffect(() => {
+    if (!priceFocused) {
+      setPriceVal(d.precio_unitario !== undefined && d.precio_unitario !== 0 ? COP(d.precio_unitario) : '')
+    }
+  }, [d.precio_unitario, priceFocused])
+
+  const handlePriceBlur = () => {
+    setPriceFocused(false)
+    const p = parseFloat(priceVal.replace(/[^0-9.-]/g, '')) || 0
+    onUpdate({ precio_unitario: p, total_linea: (Number(d.cantidad) || 1) * p })
+  }
+
+  const handlePriceFocus = () => {
+    setPriceFocused(true)
+    setPriceVal(d.precio_unitario !== undefined && d.precio_unitario !== 0 ? String(d.precio_unitario) : '')
+  }
+
   useEffect(() => {
     if (autoFocus && inputRef.current) {
       // Small timeout to ensure the DOM is ready and prevent potential render race conditions
@@ -125,13 +145,18 @@ export function ItemRow({ item, catalogo, onUpdate, onDelete, onEditCatalogItem,
       </td>
       {/* Precio */}
       <td className="py-2 px-1 w-28">
-        <input type="number" value={d.precio_unitario ?? ''}
-          onChange={e => {
-            const p = parseFloat(e.target.value) || 0
-            onUpdate({ precio_unitario: p, total_linea: (Number(d.cantidad) || 1) * p })
+        <input type="text"
+          value={priceVal}
+          onFocus={handlePriceFocus}
+          onBlur={handlePriceBlur}
+          onChange={e => setPriceVal(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              e.currentTarget.blur()
+            }
           }}
+          placeholder="$ 0"
           className="w-full text-right text-xs font-medium text-stone-700 bg-transparent focus:outline-none tabular-nums"
-          min={0}
         />
       </td>
       {/* Total */}

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import vm from 'vm';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 import { getStrategy } from '@/server/getStrategy';
 
 export async function POST(req: NextRequest) {
@@ -11,7 +14,38 @@ export async function POST(req: NextRequest) {
     }
 
     const tenantKey = req.headers.get('x-tenant') ?? undefined;
-    const strategy = getStrategy(tenantKey);
+    const strategy = getStrategy();
+
+    // Dev Sinc: Sync local filesystem JS scripts into database vault in development
+    if (process.env.NODE_ENV === 'development') {
+      const pathsToSearch = [
+        path.join(process.cwd(), 'src', 'components', 'specialized', 'cotizador', `${zap}.js`),
+        path.join(process.cwd(), 'src', 'server', 'scripts', `${zap}.js`),
+        path.join(process.cwd(), 'src', 'scripts', `${zap}.js`),
+      ];
+      let localCode: string | null = null;
+      for (const p of pathsToSearch) {
+        if (fs.existsSync(p)) {
+          localCode = fs.readFileSync(p, 'utf8');
+          break;
+        }
+      }
+      if (localCode) {
+        const scripts = await strategy.read('scripts');
+        const existingRecord = scripts.find((s: any) => s.data?.name === zap || s.name === zap);
+        const recordId = existingRecord?.id || crypto.randomUUID();
+        const existingData = existingRecord?.data ?? (existingRecord || {});
+        
+        await strategy.write('scripts', {
+          id: recordId,
+          data: {
+            ...existingData,
+            name: zap,
+            code: localCode
+          }
+        });
+      }
+    }
 
     // 1. Fetch scripts from strategy
     const scripts = await strategy.read('scripts');

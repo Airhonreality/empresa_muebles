@@ -1,1 +1,25 @@
-[]
+[
+  {
+    "id": "da87530b-9d31-4c5a-87c7-3b7b57a6a6aa",
+    "context": "contratos",
+    "data": {
+      "cotizacion_id": "286b5b77-02da-49e4-a32e-d54020e713a7",
+      "codigo_contrato": "CT-2026-001",
+      "fecha_contrato": "2026-06-19",
+      "contratante_domicilio": "cra 81 B N 19B 80 - Portal de Modelia 2 - Interior 6 apartamentos 103",
+      "plazo_ejecucion_texto": "4 a 5",
+      "holgura_dias": 8,
+      "garantia_anios": 2,
+      "objeto_items": "Cocina integral; muebles inferior y superior con iluminación LED cálida, torre de electrodomésticos, torre para canastilla piso techo y su respectiva instalación, suministro e instalación de mesones.",
+      "especificaciones_estructura": "Estructura modular y frentes fabricados en: Tablero melamínico 18mm RH, Lamina HQ 18mm.",
+      "especificaciones_herrajes": "Sistema de herrajes incluyendo: Grifería Estandar, Lavaplatos estándar y complementos, Bisagras puerta batiente, Corredera cajón cierre suave aluminio, Platillero organizador de loza, Kit rodamientos x und puerta corrediza, Cubiertero.",
+      "especificaciones_mesones": "Suministro e instalación de mesón en: Sinterizado.",
+      "condiciones_desmonte": "",
+      "valor_total": 15436750,
+      "estado": "borrador",
+      "email_asunto": "Contrato de Fabricación e Instalación — Cocina integral",
+      "email_cuerpo": "Estimado/a Lorena Vaca,\n\nNos complace adjuntar el contrato digital correspondiente al proyecto **Cocina integral**.\n\n**Estructura de Abonos:**\n- Valor total: $15.436.750 COP\n- Primer anticipo (50%): $7.718.375 COP (Activa fabricación)\n- Segundo pago (25%): $3.859.188 COP (Al iniciar instalación)\n- Pago final (25%): $3.859.187 COP (Al finalizar la instalación)\n\nPor favor revise el documento legal y nos confirma su aceptación para proceder.\n\nCordialmente,\n**Hermanos García González S.A.S**\nvetadeoro.co@gmail.com"
+    },
+    "updated_at": "2026-06-19T20:00:50.801Z"
+  }
+]

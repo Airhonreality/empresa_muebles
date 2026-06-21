@@ -28,7 +28,7 @@
         }
       ]
     },
-    "updated_at": "2026-06-11T20:16:37.090Z",
+    "updated_at": "2026-06-19T14:48:21.704Z",
     "_meta": {
       "path": "2026-06-11T20:16:36.836Z",
       "title": "2026-06-11T20:16:36.836Z",
@@ -114,49 +114,6 @@
       ]
     },
     "updated_at": "2026-06-09T18:00:00.000Z"
-  },
-  {
-    "id": "f3a92b11-8c4e-4d07-a561-e72b9f103d55",
-    "context": "page_routes",
-    "data": {
-      "path": "/app/analytics",
-      "title": "Historial de Propuestas",
-      "isPrivate": false,
-      "layout_mode": "container",
-      "blocks": [
-        {
-          "id": "block_snap_table",
-          "type": "table",
-          "context": "cotizaciones_snapshot",
-          "schema_id": "45fe6e43-ec9f-43e7-bee7-c2768bd1f940",
-          "config": {
-            "intent": "edit",
-            "title": "Propuestas Exportadas",
-            "subtitle": "Registro inmutable de cada cotización exportada — precios congelados al momento de la exportación",
-            "label": "Historial de Exportaciones",
-            "visible_fields": [
-              "cotizacion_id",
-              "fecha_exportacion",
-              "variant_name",
-              "total_neto"
-            ]
-          }
-        },
-        {
-          "id": "block_snap_reprint",
-          "type": "action",
-          "context": "cotizaciones_snapshot",
-          "schema_id": "45fe6e43-ec9f-43e7-bee7-c2768bd1f940",
-          "config": {
-            "label": "Re-imprimir PDF archivado",
-            "zap": "reimprimir_snapshot",
-            "variant": "outline",
-            "icon": "Printer"
-          }
-        }
-      ]
-    },
-    "updated_at": "2026-05-22T04:00:00.000Z"
   },
   {
     "id": "12fcb5a0-9d95-45aa-a3a2-ec13de7a8485",
@@ -258,5 +215,81 @@
       "order": 0
     },
     "updated_at": "2026-06-09T14:50:52.941Z"
+  },
+  {
+    "id": "fc504cea-b6cb-4aa0-930d-073fdaddd500",
+    "context": "page_routes",
+    "data": {
+      "path": "/",
+      "title": "Veta Dorada",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "062b2cab-3b36-44ce-9568-5c8702c77d6b",
+          "type": "veta_home",
+          "blocks": []
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-06-18T18:01:31.619Z",
+    "_meta": {}
+  },
+  {
+    "id": "fcbb5943-b7ce-43d1-a302-872b782ff791",
+    "context": "page_routes",
+    "data": {
+      "path": "/espacios-a-medida",
+      "title": "Espacios a Medida",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "a6719596-e4a7-417b-9104-62809a14bf0e",
+          "type": "veta_spaces",
+          "blocks": [],
+          "context": "espacio_variantes"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-06-18T04:58:30.947Z"
+  },
+  {
+    "id": "ac7a21f7-a9b5-45ae-a506-339ef9f41073",
+    "context": "page_routes",
+    "data": {
+      "path": "/colecciones",
+      "title": "Colecciones",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "e8fc7a82-8baf-422c-b3d3-515ae2feb7d2",
+          "type": "veta_catalog",
+          "blocks": [],
+          "context": "productos_catalogo"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-06-18T04:58:32.966Z"
+  },
+  {
+    "id": "97be570c-4392-4fda-a2aa-8e0a66595183",
+    "context": "page_routes",
+    "data": {
+      "path": "/agendar",
+      "title": "Agendar Asesoría",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "4c9f0987-1b14-4c7f-bf2e-5addebb16154",
+          "type": "veta_agendar",
+          "blocks": [],
+          "context": "leads"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-06-18T04:58:34.560Z"
   }
 ]
