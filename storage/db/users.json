@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "cb2ca535-0959-431e-86fd-d86c5a90d63b",
+    "context": "users",
+    "data": {
+      "email": "hgarciagonzalezsas@gmail.com",
+      "password": "Colombia2023*",
+      "type": [
+        "admin"
+      ]
+    },
+    "updated_at": "2026-06-21T18:01:16.547Z"
+  }
+]
