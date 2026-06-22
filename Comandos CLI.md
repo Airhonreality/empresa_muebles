@@ -169,6 +169,21 @@ agno> create-record scripts name=mi_zap     crear entrada vacía (luego escribe 
 Escrituras en Capas 4 y 5
 
 Todas las escrituras son inmediatas — no hay cola de staging activa.
+
+## 🚀 Despliegue de Lógica a Producción (Zaps)
+
+En la arquitectura *Code-As-Data*, **no se usa Git** para migrar la lógica de negocio a la nube. El despliegue de un script de lógica (Zap) es un evento de Datos.
+
+**Flujo Canónico de Despliegue:**
+1. Tú (o tu IA) programa el Zap localmente y pruebas que funciona bien en tu PC.
+2. Usas la utilidad `push-zap` conectándote directamente al API Gateway (Vault) de tu aplicación de producción.
+
+```bash
+npm run push-zap nombre_del_zap --target=https://mi-dominio-en-vercel.com
+```
+
+**Variables de entorno (Opcional):**
+Si agregas `PRODUCTION_URL=https://mi-dominio.com` en tu archivo `.env`, ya no necesitas escribir `--target` y solo tienes que correr `npm run push-zap mi_zap`.
 Los comandos `status`, `commit` y `drop` son alias heredados sin efecto.
 Flujo típico nuevo schema + ruta
 

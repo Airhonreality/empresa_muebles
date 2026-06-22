@@ -13,6 +13,7 @@
     "start": "next start",
     "lint": "next lint",
     "mcp:bridge": "tsx scripts/mcp-bridge.ts",
+    "push-zap": "tsx scripts/push-zap.ts",
     "sync-forks": "tsx scripts/sync-forks.ts",
     "test": "vitest run",
     "test:watch": "vitest"

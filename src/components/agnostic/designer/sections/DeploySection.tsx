@@ -795,12 +795,6 @@ export function DeploySection() {
                   </div>
                 </details>
               </div>
-              <CredentialField
-                name="VERCEL_ACCESS_TOKEN"
-                value={forms.vercel.VERCEL_ACCESS_TOKEN}
-                onChange={v => setField('vercel', 'VERCEL_ACCESS_TOKEN', v)}
-                exists={!!presence['VERCEL_ACCESS_TOKEN']}
-              </div>
               <div className="space-y-3">
                 <CredentialField name="VERCEL_ACCESS_TOKEN" value={forms.vercel.VERCEL_ACCESS_TOKEN} onChange={v => setField('vercel', 'VERCEL_ACCESS_TOKEN', v)} exists={!!presence['VERCEL_ACCESS_TOKEN']} sensitive />
                 <CredentialField name="VERCEL_PROJECT_ID" value={forms.vercel.VERCEL_PROJECT_ID} onChange={v => setField('vercel', 'VERCEL_PROJECT_ID', v)} exists={!!presence['VERCEL_PROJECT_ID']} sensitive={false} placeholder="prj_..." />
@@ -820,13 +814,36 @@ export function DeploySection() {
                 testing={testingId === 'vercel'}
                 saving={savingId === 'vercel'}
                 isDevMode={isDevMode}
+                isCloudBootstrapped={isCloudBootstrapped}
+              />
+            </div>
+          )}
+
+          {activeProviderTab === 'netlify' && (
+            <div className="space-y-3">
               <div className="text-[9px] text-muted-foreground leading-relaxed px-1 pb-1">
-                Configura tu token de acceso personal de Netlify y el Site ID para habilitar el guardado automático de variables y los redespliegues.
+                Configura tu token personal de Netlify y el Site ID para habilitar el guardado automático de variables y los redespliegues.
                 <details className="mt-1.5 text-muted-foreground/60 cursor-pointer">
-                  <summary className="hover:text-primary font-bold">¿Cómo obtener estos datos?</summary>
-                  <div className="mt-1.5 space-y-2 pl-2.5 border-l border-border/40 text-[9px]">
-                    <p><b>1. Token:</b> Netlify Dashboard → User Settings → Applications → Personal access tokens → New access token.</p>
-                    <p><b>2. Site ID:</b> Netlify Dashboard → Tu sitio → Site configuration → General → Site details → Site ID.</p>
+                  <summary className="hover:text-primary font-bold">Guía de Integración Netlify</summary>
+                  <div className="mt-2 space-y-2.5 pl-3 border-l border-border/40 text-[9px] text-muted-foreground">
+                    <div>
+                      <b className="text-foreground">Paso 1: Obtener el Site ID</b>
+                      <ol className="list-decimal ml-3 mt-1 space-y-0.5">
+                        <li>Entra a Netlify y ve a la pestaña <b className="text-foreground">Projects</b> en el menú izquierdo.</li>
+                        <li>Haz clic en tu proyecto.</li>
+                        <li>En su menú interno izquierdo, entra a <b className="text-foreground">Project configuration</b>.</li>
+                        <li>En la pestaña <b className="text-foreground">General</b>, baja hasta <b className="text-foreground">Site details</b>. El código largo con guiones (UUID) es tu Site ID.</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <b className="text-foreground">Paso 2: Obtener el Auth Key (Personal Access Token)</b>
+                      <ol className="list-decimal ml-3 mt-1 space-y-0.5">
+                        <li>Ve a la esquina inferior izquierda y haz clic en tu avatar de usuario.</li>
+                        <li>Entra a <b className="text-foreground">User settings</b> → <b className="text-foreground">Applications</b> → pestaña <b className="text-foreground">Personal access tokens</b>.</li>
+                        <li>Haz clic en <b className="text-foreground">New access token</b>, ponle un nombre descriptivo y genéralo.</li>
+                        <li className="text-destructive font-bold">Nota crítica: Cópialo de inmediato; no se vuelve a mostrar jamás.</li>
+                      </ol>
+                    </div>
                   </div>
                 </details>
               </div>
@@ -1069,8 +1086,44 @@ export function DeploySection() {
           defaultOpen={!r2Ck || r2Ck.status !== 'pass'}
         >
           <div className="text-[9.5px] text-muted-foreground leading-relaxed mb-1">
-            Indispensable para el manejo correcto de imágenes y archivos cargados desde el panel dinámico. 
-            Previene almacenamiento ineficiente en disco o base de datos.
+            Indispensable para el manejo correcto de imágenes y archivos. Evita bloqueos y garantiza alta disponibilidad.
+            <details className="mt-1.5 text-muted-foreground/60 cursor-pointer">
+              <summary className="hover:text-primary font-bold">🗺️ Guía de Integración R2 (Cloudflare)</summary>
+              <div className="mt-2 space-y-3 pl-3 border-l border-border/40 text-[9px] text-muted-foreground">
+                <p>🔗 <b>Enlace Inicial Directo:</b> Para empezar, usa su <a href="https://dash.cloudflare.com/" target="_blank" rel="noreferrer" className="text-primary hover:underline">Panel de Control de Cloudflare (Dashboard)</a>.</p>
+                <div>
+                  <b className="text-foreground">🔐 Paso 1: El Account ID (ID de la cuenta)</b>
+                  <p className="mt-0.5">Se encuentra visible en la URL al iniciar sesión. En <code className="bg-muted px-1 rounded">https://dash.cloudflare.com/4dc31a.../home/...</code>, el fragmento de texto entre <code className="bg-muted px-1 rounded">dash.cloudflare.com/</code> y <code className="bg-muted px-1 rounded">/home/...</code> es tu <b>CF_ACCOUNT_ID</b>.</p>
+                </div>
+                <div>
+                  <b className="text-foreground">💳 Paso 2: Activación del Servicio R2</b>
+                  <p className="mt-0.5">En el menú izquierdo ve a <b>Almacenamiento y base de datos</b> → <b>R2 Almacenamiento de objetos</b>. Si es tu primera vez, Cloudflare te exigirá hacer clic en el botón azul <b>Agregar suscripción a R2 a mi cuenta</b> (es nivel gratuito de 10GB, pero requiere tarjeta de respaldo para verificar identidad).</p>
+                </div>
+                <div>
+                  <b className="text-foreground">📦 Paso 3: Crear el Contenedor (Bucket)</b>
+                  <p className="mt-0.5">Haz clic en <b>Crear contenedor</b>. Asígnale el nombre exacto de tu proyecto en minúsculas y con guiones (ej. <code className="bg-muted px-1 rounded">veta-dorada</code>). Este es tu <b>CF_R2_BUCKET</b>.</p>
+                </div>
+                <div>
+                  <b className="text-foreground">🔑 Paso 4: Generar las Claves de Acceso S3 (Tokens)</b>
+                  <ol className="list-decimal ml-3 mt-1 space-y-0.5">
+                    <li>Ve a la pantalla principal de R2 (Información general).</li>
+                    <li>En la columna derecha, sección <b>Detalles de la cuenta</b>, busca <b>Tokens de la API</b> y haz clic en <b>&#123; &#125; Gestionar</b>.</li>
+                    <li>Selecciona <b>Crear token de API</b>.</li>
+                    <li><b className="text-destructive">Configuración crucial:</b> Ponle nombre y cambia los permisos obligatoriamente a <b>Editar</b> (si lo dejas en Solo lectura, tu app fallará al subir imágenes).</li>
+                    <li>Al guardar, copia los dos valores resultantes a los campos correspondientes.</li>
+                  </ol>
+                </div>
+                <div>
+                  <b className="text-foreground">🌐 Paso 5: Habilitar la URL Pública de Desarrollo</b>
+                  <ol className="list-decimal ml-3 mt-1 space-y-0.5">
+                    <li>Haz clic en tu contenedor (en la lista de Buckets).</li>
+                    <li>Ve a la pestaña superior <b>Configuración</b>.</li>
+                    <li>Busca la sección <b>URL pública de desarrollo</b> y haz clic en <b>Habilitar</b>.</li>
+                    <li>Tras confirmar, copia esa URL terminada en <code className="bg-muted px-1 rounded">.r2.dev</code> y pégala en <b>CF_R2_PUBLIC_URL</b>.</li>
+                  </ol>
+                </div>
+              </div>
+            </details>
           </div>
           <div className="space-y-3">
             <CredentialField name="CF_ACCOUNT_ID" value={forms.r2.CF_ACCOUNT_ID} onChange={v => setField('r2', 'CF_ACCOUNT_ID', v)} exists={!!presence['CF_ACCOUNT_ID']} sensitive={false} />

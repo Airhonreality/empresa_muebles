@@ -41,7 +41,6 @@ next-env.d.ts
 # These directories belong to project forks. The seed has them empty (.gitkeep).
 # Merging upstream/main into a project fork will NEVER touch these paths.
 
-# Tenant storage — data files stay out of the seed repo.
 # In a project fork, all storage/ is yours to commit freely.
 storage/*
 !storage/.gitkeep
