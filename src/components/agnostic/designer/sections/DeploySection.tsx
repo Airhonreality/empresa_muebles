@@ -453,8 +453,8 @@ type FormMap = {
   r2:       { CF_ACCOUNT_ID: string; CF_R2_BUCKET: string; CF_R2_ACCESS_KEY_ID: string; CF_R2_SECRET_ACCESS_KEY: string; CF_R2_PUBLIC_URL: string };
   supabase: { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string };
   auth:     { SESSION_SECRET: string };
-  vercel:   { VERCEL_ACCESS_TOKEN: string; VERCEL_PROJECT_ID: string; VERCEL_TEAM_ID: string };
-  netlify:  { NETLIFY_AUTH_TOKEN: string; NETLIFY_SITE_ID: string };
+  vercel:   { VERCEL_ACCESS_TOKEN: string; VERCEL_PROJECT_ID: string; VERCEL_TEAM_ID: string; API_SECRET_KEY: string };
+  netlify:  { NETLIFY_AUTH_TOKEN: string; NETLIFY_SITE_ID: string; API_SECRET_KEY: string };
 };
 
 const EMPTY_FORMS: FormMap = {
@@ -463,8 +463,8 @@ const EMPTY_FORMS: FormMap = {
   r2:       { CF_ACCOUNT_ID: '', CF_R2_BUCKET: '', CF_R2_ACCESS_KEY_ID: '', CF_R2_SECRET_ACCESS_KEY: '', CF_R2_PUBLIC_URL: '' },
   supabase: { SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '' },
   auth:     { SESSION_SECRET: '' },
-  vercel:   { VERCEL_ACCESS_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '' },
-  netlify:  { NETLIFY_AUTH_TOKEN: '', NETLIFY_SITE_ID: '' },
+  vercel:   { VERCEL_ACCESS_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '', API_SECRET_KEY: '' },
+  netlify:  { NETLIFY_AUTH_TOKEN: '', NETLIFY_SITE_ID: '', API_SECRET_KEY: '' },
 };
 
 export function DeploySection() {
@@ -799,6 +799,11 @@ export function DeploySection() {
                 <CredentialField name="VERCEL_ACCESS_TOKEN" value={forms.vercel.VERCEL_ACCESS_TOKEN} onChange={v => setField('vercel', 'VERCEL_ACCESS_TOKEN', v)} exists={!!presence['VERCEL_ACCESS_TOKEN']} sensitive />
                 <CredentialField name="VERCEL_PROJECT_ID" value={forms.vercel.VERCEL_PROJECT_ID} onChange={v => setField('vercel', 'VERCEL_PROJECT_ID', v)} exists={!!presence['VERCEL_PROJECT_ID']} sensitive={false} placeholder="prj_..." />
                 <CredentialField name="VERCEL_TEAM_ID" value={forms.vercel.VERCEL_TEAM_ID} onChange={v => setField('vercel', 'VERCEL_TEAM_ID', v)} exists={!!presence['VERCEL_TEAM_ID']} sensitive={false} placeholder="team_... (opcional)" />
+                <div className="pt-2 border-t border-border/30 mt-3 space-y-1">
+                  <p className="text-[9px] text-muted-foreground pb-0.5">Seguridad M2M (Opcional): Contraseña para inyectar Zaps mediante CLI/IA.</p>
+                  <CredentialField name="API_SECRET_KEY" value={forms.vercel.API_SECRET_KEY} onChange={v => setField('vercel', 'API_SECRET_KEY', v)} exists={!!presence['API_SECRET_KEY']} sensitive={true} placeholder="Escribe tu secreto o autogenéralo..." />
+                  <button onClick={() => setField('vercel', 'API_SECRET_KEY', crypto.randomUUID().replace(/-/g, '') + 'A1')} className="text-[8px] font-bold uppercase tracking-widest text-primary hover:underline px-1">✨ Autogenerar Llave Segura</button>
+                </div>
               </div>
               <ActionRow
                 onTest={() => handleTest('vercel', { VERCEL_ACCESS_TOKEN: forms.vercel.VERCEL_ACCESS_TOKEN, VERCEL_PROJECT_ID: forms.vercel.VERCEL_PROJECT_ID, VERCEL_TEAM_ID: forms.vercel.VERCEL_TEAM_ID })}
@@ -807,6 +812,7 @@ export function DeploySection() {
                     { key: 'VERCEL_ACCESS_TOKEN', value: forms.vercel.VERCEL_ACCESS_TOKEN, sensitive: true },
                     { key: 'VERCEL_PROJECT_ID', value: forms.vercel.VERCEL_PROJECT_ID, sensitive: false },
                     { key: 'VERCEL_TEAM_ID', value: forms.vercel.VERCEL_TEAM_ID, sensitive: false },
+                    { key: 'API_SECRET_KEY', value: forms.vercel.API_SECRET_KEY, sensitive: true },
                   ], redeploy);
                   setEditing({ ...editing, hosting: false });
                 }}
@@ -862,6 +868,11 @@ export function DeploySection() {
                 sensitive={false}
                 placeholder="site-uuid-..."
               />
+              <div className="pt-2 border-t border-border/30 mt-3 space-y-1">
+                <p className="text-[9px] text-muted-foreground pb-0.5">Seguridad M2M (Opcional): Contraseña para inyectar Zaps mediante CLI/IA.</p>
+                <CredentialField name="API_SECRET_KEY" value={forms.netlify.API_SECRET_KEY} onChange={v => setField('netlify', 'API_SECRET_KEY', v)} exists={!!presence['API_SECRET_KEY']} sensitive={true} placeholder="Escribe tu secreto o autogenéralo..." />
+                <button onClick={() => setField('netlify', 'API_SECRET_KEY', crypto.randomUUID().replace(/-/g, '') + 'A1')} className="text-[8px] font-bold uppercase tracking-widest text-primary hover:underline px-1">✨ Autogenerar Llave Segura</button>
+              </div>
               <ActionRow
                 onTest={() => handleTest('netlify', {
                   NETLIFY_AUTH_TOKEN: forms.netlify.NETLIFY_AUTH_TOKEN,
@@ -870,7 +881,8 @@ export function DeploySection() {
                 onSave={(redeploy) => {
                   handleSave('netlify', [
                     { key: 'NETLIFY_AUTH_TOKEN', value: forms.netlify.NETLIFY_AUTH_TOKEN, sensitive: true },
-                    { key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false }
+                    { key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false },
+                    { key: 'API_SECRET_KEY', value: forms.netlify.API_SECRET_KEY, sensitive: true }
                   ], redeploy);
                   setEditing({ ...editing, hosting: false });
                 }}
