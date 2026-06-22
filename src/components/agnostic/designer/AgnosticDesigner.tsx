@@ -130,7 +130,7 @@ export function ConfigManager({
   const [activeMode, setActiveMode] = useState<ActiveMode>('dna');
 
   // ─── SETUP WIZARD GATE ────────────────────────────────────────────────────
-  type WizardHealth = { isVercel: boolean; env_presence: Record<string, boolean> };
+  type WizardHealth = { isVercel: boolean; isNetlify?: boolean; env_presence: Record<string, boolean> };
   const [wizardHealth, setWizardHealth] = useState<WizardHealth | null>(null);
   const [envPresence, setEnvPresence] = useState<Record<string, boolean>>({});
   const [setupDismissed, setSetupDismissed] = useState(
@@ -142,9 +142,12 @@ export function ConfigManager({
       .then(r => r.json())
       .then((h: WizardHealth & { activeDataStrategy?: string }) => {
         setEnvPresence(h.env_presence ?? {});
-        const hasVercel = h.env_presence.VERCEL_ACCESS_TOKEN && h.env_presence.VERCEL_PROJECT_ID;
-        const hasData   = h.env_presence.DATABASE_URL || h.env_presence.GITHUB_REPO || h.env_presence.SUPABASE_URL;
-        if ((h.isVercel && !hasVercel) || !hasData) setWizardHealth(h);
+        const hasVercel  = h.env_presence.VERCEL_ACCESS_TOKEN && h.env_presence.VERCEL_PROJECT_ID;
+        const hasNetlify = h.env_presence.NETLIFY_AUTH_TOKEN && h.env_presence.NETLIFY_SITE_ID;
+        const isCloud    = h.isVercel || h.isNetlify;
+        const hasCloud   = hasVercel || hasNetlify;
+        const hasData    = h.env_presence.DATABASE_URL || h.env_presence.GITHUB_REPO || h.env_presence.SUPABASE_URL;
+        if ((isCloud && !hasCloud) || !hasData) setWizardHealth(h);
       })
       .catch(() => { /* health fail — don't block designer */ });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

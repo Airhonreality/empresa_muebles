@@ -23,7 +23,7 @@ interface DeployState {
 }
 
 type DataStrategy = 'postgres' | 'github' | 'local';
-type WizardStep   = 'vercel' | 'data' | 'r2' | 'summary';
+type WizardStep   = 'cloud' | 'data' | 'r2' | 'summary';
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
@@ -32,13 +32,13 @@ const MAX_POLL_ATTEMPTS = 72;
 const TERMINAL_STATES   = new Set(['READY', 'ERROR', 'CANCELED']);
 
 const SENSITIVE_KEYS = new Set([
-  'VERCEL_ACCESS_TOKEN', 'DATABASE_URL', 'GITHUB_TOKEN',
+  'VERCEL_ACCESS_TOKEN', 'NETLIFY_AUTH_TOKEN', 'DATABASE_URL', 'GITHUB_TOKEN',
   'CF_R2_ACCESS_KEY_ID', 'CF_R2_SECRET_ACCESS_KEY',
   'SESSION_SECRET', 'SUPABASE_SERVICE_ROLE_KEY',
 ]);
 
 const STEP_LABELS: Record<WizardStep, string> = {
-  vercel:  'Vercel API',
+  cloud:   'Proveedor Cloud',
   data:    'Datos',
   r2:      'Archivos',
   summary: 'Deploy',
@@ -47,7 +47,7 @@ const STEP_LABELS: Record<WizardStep, string> = {
 // ─── PUBLIC PROPS ─────────────────────────────────────────────────────────────
 
 export interface SetupWizardProps {
-  health: { isVercel: boolean; env_presence: Record<string, boolean> };
+  health: { isVercel: boolean; isNetlify?: boolean; env_presence: Record<string, boolean> };
   onComplete: () => void;
   onSkip: () => void;
 }
@@ -55,14 +55,18 @@ export interface SetupWizardProps {
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 
 export function SetupWizard({ health, onComplete, onSkip }: SetupWizardProps) {
-  const { isVercel, env_presence: presence } = health;
+  const { isVercel, isNetlify, env_presence: presence } = health;
 
   const hasVercel = presence.VERCEL_ACCESS_TOKEN && presence.VERCEL_PROJECT_ID;
+  const hasNetlify = presence.NETLIFY_AUTH_TOKEN && presence.NETLIFY_SITE_ID;
+  const hasCloud = hasVercel || hasNetlify;
+  const isCloud = isVercel || isNetlify;
+
   const hasData   = presence.DATABASE_URL || presence.GITHUB_REPO || presence.SUPABASE_URL;
   const hasR2     = presence.CF_R2_ACCESS_KEY_ID && presence.CF_R2_BUCKET;
 
   const steps: WizardStep[] = [];
-  if (isVercel && !hasVercel) steps.push('vercel');
+  if (isCloud && !hasCloud)   steps.push('cloud');
   if (!hasData)               steps.push('data');
   if (!hasR2)                 steps.push('r2');
   steps.push('summary');
@@ -85,6 +89,7 @@ export function SetupWizard({ health, onComplete, onSkip }: SetupWizardProps) {
     return (
       <WelcomeScreen
         isVercel={isVercel}
+        isNetlify={isNetlify}
         steps={steps}
         onStart={() => setShowWelcome(false)}
         onSkip={onSkip}
@@ -95,10 +100,11 @@ export function SetupWizard({ health, onComplete, onSkip }: SetupWizardProps) {
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
       <StepShell steps={steps} current={current} onBack={stepIdx > 0 ? goBack : undefined} onSkip={onSkip}>
-        {current === 'vercel' && (
-          <VercelStep
+        {current === 'cloud' && (
+          <CloudStep
             presence={presence}
             isVercel={isVercel}
+            isNetlify={isNetlify}
             onAdvance={(vars) => { addToBuffer(vars); advance(); }}
           />
         )}
@@ -119,7 +125,7 @@ export function SetupWizard({ health, onComplete, onSkip }: SetupWizardProps) {
         {current === 'summary' && (
           <SummaryStep
             buffer={buffer}
-            isVercel={isVercel}
+            isVercel={isCloud}
             onComplete={onComplete}
           />
         )}
@@ -130,14 +136,15 @@ export function SetupWizard({ health, onComplete, onSkip }: SetupWizardProps) {
 
 // ─── WELCOME SCREEN ───────────────────────────────────────────────────────────
 
-function WelcomeScreen({ isVercel, steps, onStart, onSkip }: {
-  isVercel: boolean; steps: WizardStep[];
+function WelcomeScreen({ isVercel, isNetlify, steps, onStart, onSkip }: {
+  isVercel: boolean; isNetlify?: boolean; steps: WizardStep[];
   onStart: () => void; onSkip: () => void;
 }) {
+  const isCloud = isVercel || isNetlify;
   const ROWS: { icon: React.ElementType; label: string; desc: string; key: WizardStep; cond: boolean }[] = [
-    { icon: Server,   label: 'Vercel API',          desc: 'Token para que el panel guarde variables en tu proyecto sin tocar el dashboard.',        key: 'vercel',  cond: isVercel },
-    { icon: Database, label: 'Estrategia de datos',  desc: 'PostgreSQL, GitHub o Local — donde viven los registros de tu aplicación.',               key: 'data',    cond: true },
-    { icon: Cloud,    label: 'Cloudflare R2',         desc: 'Archivos, imágenes y PDFs subidos por tus usuarios. 10 GB gratis al mes.',               key: 'r2',      cond: true },
+    { icon: Server,   label: 'Proveedor Cloud',     desc: 'Acceso API a tu proveedor (Vercel o Netlify) para guardar variables de entorno sin tocar su panel.', key: 'cloud',  cond: isCloud },
+    { icon: Database, label: 'Estrategia de datos',  desc: 'PostgreSQL, GitHub o Local — donde viven los registros de tu aplicación.',               key: 'data',   cond: true },
+    { icon: Cloud,    label: 'Cloudflare R2',         desc: 'Archivos, imágenes y PDFs subidos por tus usuarios. 10 GB gratis al mes.',               key: 'r2',     cond: true },
   ];
 
   return (
@@ -267,21 +274,31 @@ function StepHeader({ title, desc }: { title: string; desc: string }) {
 
 // ─── VERCEL STEP ─────────────────────────────────────────────────────────────
 
-function VercelStep({ presence, isVercel, onAdvance }: {
+function CloudStep({ presence, isVercel, isNetlify, onAdvance }: {
   presence: Record<string, boolean>;
   isVercel: boolean;
+  isNetlify?: boolean;
   onAdvance: (vars: Record<string, string>) => void;
 }) {
-  const [token,     setToken]     = useState('');
-  const [projectId, setProjectId] = useState('');
-  const [teamId,    setTeamId]    = useState('');
+  const [provider, setProvider] = useState<'vercel' | 'netlify'>(isNetlify ? 'netlify' : 'vercel');
 
-  if (!isVercel) {
+  // Vercel State
+  const [vToken,     setVToken]     = useState('');
+  const [vProjectId, setVProjectId] = useState('');
+  const [vTeamId,    setVTeamId]    = useState('');
+
+  // Netlify State
+  const [nToken,     setNToken]     = useState('');
+  const [nSiteId,    setNSiteId]    = useState('');
+
+  const isCloud = isVercel || isNetlify;
+
+  if (!isCloud) {
     return (
       <div className="space-y-5">
-        <StepHeader title="Vercel API" desc="Entorno detectado: desarrollo local." />
+        <StepHeader title="Proveedor Cloud" desc="Entorno detectado: desarrollo local." />
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-[10px] text-muted-foreground leading-relaxed">
-          Las variables se gestionan en <code className="bg-muted px-1 rounded">.env.local</code> — no necesitas tokens de Vercel en este entorno.
+          Las variables se gestionan en <code className="bg-muted px-1 rounded">.env.local</code> — no necesitas configurar tokens cloud en este entorno.
         </div>
         <Button onClick={() => onAdvance({})} className="h-9 text-[10px] font-black uppercase tracking-widest gap-2">
           Continuar <ArrowRight size={12} />
@@ -290,55 +307,141 @@ function VercelStep({ presence, isVercel, onAdvance }: {
     );
   }
 
-  const canAdvance = (!!token || presence.VERCEL_ACCESS_TOKEN) && (!!projectId || presence.VERCEL_PROJECT_ID);
+  const canAdvance = provider === 'vercel'
+    ? (!!vToken || presence.VERCEL_ACCESS_TOKEN) && (!!vProjectId || presence.VERCEL_PROJECT_ID)
+    : (!!nToken || presence.NETLIFY_AUTH_TOKEN) && (!!nSiteId || presence.NETLIFY_SITE_ID);
+
+  const handleAdvance = () => {
+    if (provider === 'vercel') {
+      onAdvance({
+        ...(vToken     ? { VERCEL_ACCESS_TOKEN: vToken }   : {}),
+        ...(vProjectId ? { VERCEL_PROJECT_ID: vProjectId } : {}),
+        ...(vTeamId    ? { VERCEL_TEAM_ID: vTeamId }       : {}),
+        NETLIFY_AUTH_TOKEN: '',
+        NETLIFY_SITE_ID: '',
+      });
+    } else {
+      onAdvance({
+        ...(nToken  ? { NETLIFY_AUTH_TOKEN: nToken } : {}),
+        ...(nSiteId ? { NETLIFY_SITE_ID: nSiteId }   : {}),
+        VERCEL_ACCESS_TOKEN: '',
+        VERCEL_PROJECT_ID: '',
+        VERCEL_TEAM_ID: '',
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
       <StepHeader
-        title="Conectar Vercel API"
+        title="Conectar Proveedor Cloud"
         desc="Permite que el panel guarde variables de entorno directamente en tu proyecto sin tocar el dashboard manualmente."
       />
 
-      <div className="rounded-2xl border bg-muted/20 p-5 space-y-3">
-        <CredentialField name="VERCEL_ACCESS_TOKEN" value={token} onChange={setToken}
-          exists={presence.VERCEL_ACCESS_TOKEN} sensitive placeholder="vercel_pat_..." />
-        <CredentialField name="VERCEL_PROJECT_ID" value={projectId} onChange={setProjectId}
-          exists={presence.VERCEL_PROJECT_ID} sensitive={false} placeholder="prj_..." />
-        <CredentialField name="VERCEL_TEAM_ID" value={teamId} onChange={setTeamId}
-          exists={presence.VERCEL_TEAM_ID} sensitive={false} placeholder="team_... (solo cuentas de equipo)" />
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setProvider('vercel')}
+          className={cn(
+            'flex items-center gap-3 p-4 rounded-2xl border text-left transition-all',
+            provider === 'vercel'
+              ? 'border-primary bg-primary/5 shadow-sm'
+              : 'border-border/60 hover:border-primary/30 hover:bg-muted/30'
+          )}
+        >
+          <div className={cn('h-8 w-8 rounded-xl flex items-center justify-center shrink-0',
+            provider === 'vercel' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground')}>
+            <svg viewBox="0 0 75 65" className="h-3.5 w-3.5 fill-current"><path d="M37.5 0L75 65H0L37.5 0Z"/></svg>
+          </div>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Vercel</p>
+            <p className="text-[8px] text-muted-foreground">Serverless Cloud</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setProvider('netlify')}
+          className={cn(
+            'flex items-center gap-3 p-4 rounded-2xl border text-left transition-all',
+            provider === 'netlify'
+              ? 'border-primary bg-primary/5 shadow-sm'
+              : 'border-border/60 hover:border-primary/30 hover:bg-muted/30'
+          )}
+        >
+          <div className={cn('h-8 w-8 rounded-xl flex items-center justify-center shrink-0',
+            provider === 'netlify' ? 'bg-teal-500/10 text-teal-600' : 'bg-muted text-muted-foreground')}>
+            <svg viewBox="0 0 32 32" className="h-4 w-4 fill-current"><path d="M25.1 11.2h-3.9l-2.6-4.6c-.4-.7-1.1-1.1-1.9-1.1h-.2c-.8 0-1.5.4-1.9 1.1l-2.6 4.6H8c-1.3 0-2.4 1.1-2.4 2.4v1.8l-1.9 3.3c-.6 1 .1 2.3 1.3 2.3h1.3v4.6c0 1.3 1.1 2.4 2.4 2.4h15.2c1.3 0 2.4-1.1 2.4-2.4v-4.6h1.3c1.2 0 1.9-1.3 1.3-2.3l-1.9-3.3v-1.8c0-1.3-1.1-2.4-2.4-2.4zm-9.3-3.4l2.1 3.7h-4.2l2.1-3.7zm-6.2 5.8h13.2v1.8H9.6v-1.8zm13.2 11.8H9.6v-4.6h13.2v4.6z"/></svg>
+          </div>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Netlify</p>
+            <p className="text-[8px] text-muted-foreground">Free Commercial</p>
+          </div>
+        </button>
       </div>
 
-      <div className="text-[9px] text-muted-foreground space-y-2 leading-relaxed bg-muted/40 p-4 rounded-2xl border border-dashed">
-        <p className="font-bold text-foreground">¿Cómo obtener estos datos en Vercel?</p>
-        <ul className="list-disc pl-4 space-y-1 text-muted-foreground/80">
-          <li>
-            <strong>VERCEL_ACCESS_TOKEN:</strong> Ve a{' '}
-            <a href="https://vercel.com/account/tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
-              Vercel Account Tokens ↗
-            </a>. En el formulario, ingresa un nombre (ej. <code>Agnostic Engine</code>), en <em>Scope</em> selecciona <code>Full Account</code>, expira <code>No expiration</code>, haz clic en Create y copia el token.
-          </li>
-          <li>
-            <strong>VERCEL_PROJECT_ID:</strong> Ve al{' '}
-            <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
-              Dashboard de Vercel ↗
-            </a>, entra a tu proyecto, ve a <strong>Settings</strong> ➔ <strong>General</strong> y copia el Project ID (empieza por <code>prj_...</code>).
-          </li>
-          <li>
-            <strong>VERCEL_TEAM_ID:</strong> Solo si tu proyecto pertenece a un equipo en Vercel. Lo encuentras en los Ajustes del Equipo ➔ General ➔ <strong>Team ID</strong> (empieza por <code>team_...</code>). Si es cuenta personal Hobby, déjalo vacío.
-          </li>
-        </ul>
-      </div>
+      {provider === 'vercel' ? (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="rounded-2xl border bg-muted/20 p-5 space-y-3">
+            <CredentialField name="VERCEL_ACCESS_TOKEN" value={vToken} onChange={setVToken}
+              exists={presence.VERCEL_ACCESS_TOKEN} sensitive placeholder="vercel_pat_..." />
+            <CredentialField name="VERCEL_PROJECT_ID" value={vProjectId} onChange={setVProjectId}
+              exists={presence.VERCEL_PROJECT_ID} sensitive={false} placeholder="prj_..." />
+            <CredentialField name="VERCEL_TEAM_ID" value={vTeamId} onChange={setVTeamId}
+              exists={presence.VERCEL_TEAM_ID} sensitive={false} placeholder="team_... (solo cuentas de equipo)" />
+          </div>
+
+          <div className="text-[9px] text-muted-foreground space-y-2 leading-relaxed bg-muted/40 p-4 rounded-2xl border border-dashed">
+            <p className="font-bold text-foreground">¿Cómo obtener estos datos en Vercel?</p>
+            <ul className="list-disc pl-4 space-y-1 text-muted-foreground/80">
+              <li>
+                <strong>VERCEL_ACCESS_TOKEN:</strong> Ve a{' '}
+                <a href="https://vercel.com/account/tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+                  Vercel Account Tokens ↗
+                </a>. En el formulario, ingresa un nombre (ej. <code>Agnostic Engine</code>), en <em>Scope</em> selecciona <code>Full Account</code>, expira <code>No expiration</code>, haz clic en Create y copia el token.
+              </li>
+              <li>
+                <strong>VERCEL_PROJECT_ID:</strong> Ve al{' '}
+                <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+                  Dashboard de Vercel ↗
+                </a>, entra a tu proyecto, ve a <strong>Settings</strong> ➔ <strong>General</strong> y copia el Project ID (empieza por <code>prj_...</code>).
+              </li>
+              <li>
+                <strong>VERCEL_TEAM_ID:</strong> Solo si tu proyecto pertenece a un equipo en Vercel. Lo encuentras en los Ajustes del Equipo ➔ General ➔ <strong>Team ID</strong> (empieza por <code>team_...</code>). Si es cuenta personal Hobby, déjalo vacío.
+              </li>
+            </ul>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="rounded-2xl border bg-muted/20 p-5 space-y-3">
+            <CredentialField name="NETLIFY_AUTH_TOKEN" value={nToken} onChange={setNToken}
+              exists={presence.NETLIFY_AUTH_TOKEN} sensitive placeholder="nla_..." />
+            <CredentialField name="NETLIFY_SITE_ID" value={nSiteId} onChange={setNSiteId}
+              exists={presence.NETLIFY_SITE_ID} sensitive={false} placeholder="site-id-uuid..." />
+          </div>
+
+          <div className="text-[9px] text-muted-foreground space-y-2 leading-relaxed bg-muted/40 p-4 rounded-2xl border border-dashed">
+            <p className="font-bold text-foreground">¿Cómo obtener estos datos en Netlify?</p>
+            <ul className="list-disc pl-4 space-y-1 text-muted-foreground/80">
+              <li>
+                <strong>NETLIFY_AUTH_TOKEN:</strong> Ve a{' '}
+                <a href="https://app.netlify.com/user/applications#personal-access-tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+                  Netlify Personal Access Tokens ↗
+                </a>. Haz clic en <strong>New access token</strong>, ingresa una descripción (ej. <code>Agnostic Engine</code>), haz clic en Generate y copia el token generado.
+              </li>
+              <li>
+                <strong>NETLIFY_SITE_ID:</strong> Ve al Dashboard de Netlify, entra a tu sitio, ve a <strong>Site configuration</strong> ➔ <strong>Site details</strong> y copia el <strong>Site ID</strong> (empieza por formato UUID, ej. <code>f1b4c92...</code>).
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       <p className="text-[9px] text-muted-foreground/50 italic">
         Las credenciales se validan al guardar en el último paso — se envían todas juntas en un único redespliegue.
       </p>
 
       <Button disabled={!canAdvance}
-        onClick={() => onAdvance({
-          ...(token     ? { VERCEL_ACCESS_TOKEN: token }   : {}),
-          ...(projectId ? { VERCEL_PROJECT_ID: projectId } : {}),
-          ...(teamId    ? { VERCEL_TEAM_ID: teamId }       : {}),
-        })}
+        onClick={handleAdvance}
         className="h-9 text-[10px] font-black uppercase tracking-widest gap-2">
         Continuar <ArrowRight size={12} />
       </Button>
@@ -616,13 +719,13 @@ function R2Step({ presence, dataStrategy, onAdvance, onSkip }: {
             <strong>CF_ACCOUNT_ID:</strong> Inicia sesión en el{' '}
             <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
               Cloudflare Dashboard ↗
-            </a>, haz clic en <strong>R2</strong> en el menú izquierdo y a la derecha copia tu <em>Account ID</em>.
+            </a>. En la página <strong>Inicio de la cuenta</strong> verás tu <strong>Account ID</strong> a la derecha (también es la cadena alfanumérica de la URL justo después de <code>dash.cloudflare.com/</code>).
           </li>
           <li>
-            <strong>CF_R2_BUCKET:</strong> En el apartado R2 haz clic en <strong>Create bucket</strong>, dale un nombre descriptivo en minúsculas y pon ese mismo nombre aquí.
+            <strong>CF_R2_BUCKET:</strong> En el menú lateral izquierdo, ve a <strong>Almacenamiento y base de datos</strong> ➔ <strong>R2</strong>. Haz clic en <strong>Create bucket</strong>, asígnale un nombre descriptivo en minúsculas y pon ese mismo nombre aquí.
           </li>
           <li>
-            <strong>CF_R2_ACCESS_KEY_ID y SECRET_ACCESS_KEY:</strong> En el menú de R2 haz clic en <strong>Manage R2 API Tokens</strong> (a la derecha) ➔ <strong>Create API Token</strong>. Dale un nombre, marca el permiso <strong>Edit</strong>, haz clic en Create y copia el <em>Access Key ID</em> y el <em>Secret Access Key</em>.
+            <strong>CF_R2_ACCESS_KEY_ID y SECRET_ACCESS_KEY:</strong> Dentro de <strong>Almacenamiento y base de datos</strong> ➔ <strong>R2</strong>, haz clic en el enlace <strong>Manage R2 API Tokens</strong> (a la derecha) ➔ <strong>Create API Token</strong>. Dale un nombre, selecciona los permisos de <strong>Edit</strong>, haz clic en <strong>Create API Token</strong> y copia los valores del <em>Access Key ID</em> y <em>Secret Access Key</em>.
           </li>
           <li>
             <strong>CF_R2_PUBLIC_URL:</strong> Para renderizar las imágenes, ve a la pestaña <strong>Settings</strong> de tu bucket en Cloudflare ➔ sección <strong>Public Access</strong> y activa el subdominio gratuito de Cloudflare (ej. <code>https://pub-xxx.r2.dev</code>). Cópialo aquí.

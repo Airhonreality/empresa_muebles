@@ -24,6 +24,7 @@ interface HealthData {
   status: 'pass' | 'warn' | 'fail';
   activeDataStrategy: 'github' | 'postgres' | 'supabase' | 'local';
   isVercel: boolean;
+  isNetlify?: boolean;
   env_presence: Record<string, boolean>;
   checks: {
     'data:github':    CheckResult[];
@@ -648,7 +649,7 @@ export function DeploySection() {
   // process.env.VERCEL is server-only — never accessible in 'use client' bundles.
   // We read isVercel from the health response (server sets it correctly).
   // Default true (disabled) until health loads — prevents a flash of an enabled Save button in dev.
-  const isDevMode = !health?.isVercel;
+  const isDevMode = !health?.isVercel && !health?.isNetlify;
 
   // ── Health fetch ─────────────────────────────────────────────────────────────
 
@@ -804,7 +805,7 @@ export function DeploySection() {
       </div>
 
       {/* ── Bootstrap gate ──────────────────────────────────────────── */}
-      {health && !presence['VERCEL_ACCESS_TOKEN'] && <BootstrapGate />}
+      {health && !presence['VERCEL_ACCESS_TOKEN'] && !presence['NETLIFY_AUTH_TOKEN'] && <BootstrapGate />}
 
       {/* ── Save feedback ───────────────────────────────────────────── */}
       {saveMsg && (
