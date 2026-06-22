@@ -32,6 +32,8 @@ interface CheckResult {
 interface HealthData {
   status: 'pass' | 'warn' | 'fail';
   activeDataStrategy: 'github' | 'postgres' | 'supabase' | 'local';
+  isDevelopment: boolean;
+  isCustomDeploy: boolean;
   isVercel: boolean;
   isNetlify?: boolean;
   env_presence: Record<string, boolean>;
@@ -227,7 +229,7 @@ function StrategyCard({
 // ─── ACTION ROW ───────────────────────────────────────────────────────────────
 
 function ActionRow({
-  onTest, onSave, testResult, testing, saving, isDevMode,
+  onTest, onSave, testResult, testing, saving, isDevMode, isCustomDeploy
 }: {
   onTest: () => void;
   onSave: (redeploy: boolean) => void;
@@ -235,6 +237,7 @@ function ActionRow({
   testing: boolean;
   saving: boolean;
   isDevMode: boolean;
+  isCustomDeploy?: boolean;
 }) {
   const testOk = testResult?.status === 'pass';
   const testWarn = testResult?.status === 'warn';
@@ -266,15 +269,15 @@ function ActionRow({
 
         <Button
           size="sm"
-          onClick={() => onSave(!isDevMode)}
+          onClick={() => onSave(!isDevMode && !isCustomDeploy)}
           disabled={saving || testing}
           className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
         >
-          {saving ? <Loader2 size={10} className="animate-spin" /> : isDevMode ? <Database size={10} /> : <Rocket size={10} />}
-          {isDevMode ? 'Guardar en .env.local' : 'Guardar y redesplegar'}
+          {saving ? <Loader2 size={10} className="animate-spin" /> : isDevMode || isCustomDeploy ? <Database size={10} /> : <Rocket size={10} />}
+          {isDevMode ? 'Guardar en .env.local' : isCustomDeploy ? 'Aplicar localmente' : 'Guardar y redesplegar'}
         </Button>
 
-        {!isDevMode && (
+        {(!isDevMode && !isCustomDeploy) && (
           <Button
             variant="ghost" size="sm"
             onClick={() => onSave(false)}
@@ -289,6 +292,11 @@ function ActionRow({
       {isDevMode && (
         <p className="text-[9px] text-muted-foreground italic">
           En desarrollo, se guardará directamente en tu archivo <code className="bg-muted px-1 rounded">.env.local</code>. Deberás reiniciar el servidor de desarrollo para aplicar los cambios.
+        </p>
+      )}
+      {isCustomDeploy && (
+        <p className="text-[9px] text-muted-foreground italic text-amber-600/80">
+          Entorno custom detectado. Se guardará en <code className="bg-muted px-1 rounded">.env.local</code>. Deberás reiniciar el contenedor o servidor manualmente para aplicar.
         </p>
       )}
     </div>
@@ -402,7 +410,8 @@ export function DeploySection() {
   const pollCount       = useRef(0);
   const activeDeployRef = useRef<string | null>(null);
 
-  const isDevMode = !health?.isVercel && !health?.isNetlify;
+  const isDevMode = !!health?.isDevelopment;
+  const isCustomDeploy = !!health?.isCustomDeploy;
 
   // ── Health fetch ─────────────────────────────────────────────────────────────
 
@@ -502,7 +511,7 @@ export function DeploySection() {
       const res = await fetch('/api/admin/config/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variables: nonEmpty, redeploy }),
+        body: JSON.stringify({ provider: section, variables: nonEmpty, redeploy }),
       });
       const data = await res.json() as SaveResult;
       if (data.deployment) {
@@ -728,6 +737,7 @@ export function DeploySection() {
                 testing={testingId === 'vercel'}
                 saving={savingId === 'vercel'}
                 isDevMode={isDevMode}
+                isCustomDeploy={false} // Explicitly false to allow bootstrapping Vercel in production
               />
             </div>
           ) : (
@@ -770,6 +780,7 @@ export function DeploySection() {
                 testing={testingId === 'netlify'}
                 saving={savingId === 'netlify'}
                 isDevMode={isDevMode}
+                isCustomDeploy={false} // Explicitly false to allow bootstrapping Netlify in production
               />
             </div>
           )}
@@ -866,6 +877,10 @@ export function DeploySection() {
                 testing={testingId === 'github'}
                 saving={savingId === 'github'}
                 isDevMode={isDevMode}
+<<<<<<< HEAD
+=======
+                isCustomDeploy={isCustomDeploy}
+>>>>>>> upstream/feature/agile-rendering-engine
               />
             </div>
           )}
@@ -894,6 +909,10 @@ export function DeploySection() {
                 testing={testingId === 'postgres'}
                 saving={savingId === 'postgres'}
                 isDevMode={isDevMode}
+<<<<<<< HEAD
+=======
+                isCustomDeploy={isCustomDeploy}
+>>>>>>> upstream/feature/agile-rendering-engine
               />
             </div>
           )}
@@ -917,6 +936,10 @@ export function DeploySection() {
                 testing={testingId === 'supabase'}
                 saving={savingId === 'supabase'}
                 isDevMode={isDevMode}
+<<<<<<< HEAD
+=======
+                isCustomDeploy={isCustomDeploy}
+>>>>>>> upstream/feature/agile-rendering-engine
               />
             </div>
           )}
@@ -961,6 +984,10 @@ export function DeploySection() {
             testing={testingId === 'r2'}
             saving={savingId === 'r2'}
             isDevMode={isDevMode}
+<<<<<<< HEAD
+=======
+            isCustomDeploy={isCustomDeploy}
+>>>>>>> upstream/feature/agile-rendering-engine
           />
         </StrategyCard>
       </div>
@@ -996,6 +1023,10 @@ export function DeploySection() {
             testing={loadingH}
             saving={savingId === 'auth'}
             isDevMode={isDevMode}
+<<<<<<< HEAD
+=======
+            isCustomDeploy={isCustomDeploy}
+>>>>>>> upstream/feature/agile-rendering-engine
           />
         </StrategyCard>
       </div>

@@ -175,6 +175,36 @@ export class PostgresStrategy implements AgnosticBridge {
       DELETE FROM agnostic_records WHERE namespace = ${namespace} AND id = ${id}
     `;
   }
+
+  // ─── REFACTORING OPERATIONS (Optimized SQL) ────────────────────────────────
+
+  async renameCollection(fromNamespace: string, toNamespace: string): Promise<void> {
+    await ensureTable(this.sql, this.url);
+    await this.sql`
+      UPDATE agnostic_records 
+      SET namespace = ${toNamespace}, context = ${toNamespace} 
+      WHERE namespace = ${fromNamespace}
+    `;
+  }
+
+  async renameField(namespace: string, oldKey: string, newKey: string): Promise<void> {
+    await ensureTable(this.sql, this.url);
+    // Uses jsonb_set to inject the old value under the new key, and - operator to remove the old key.
+    await this.sql`
+      UPDATE agnostic_records 
+      SET data = (data - ${oldKey}) || jsonb_build_object(${newKey}, data->${oldKey}) 
+      WHERE namespace = ${namespace} AND data ? ${oldKey}
+    `;
+  }
+
+  async deleteField(namespace: string, key: string): Promise<void> {
+    await ensureTable(this.sql, this.url);
+    await this.sql`
+      UPDATE agnostic_records 
+      SET data = data - ${key} 
+      WHERE namespace = ${namespace} AND data ? ${key}
+    `;
+  }
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
