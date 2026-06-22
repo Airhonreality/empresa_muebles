@@ -1188,14 +1188,11 @@ export function DeploySection() {
           defaultOpen={!sessionCk || sessionCk.status !== 'pass'}
         >
           <div className="space-y-3">
-            <CredentialField name="SESSION_SECRET" value={forms.auth.SESSION_SECRET} onChange={v => setField('auth', 'SESSION_SECRET', v)} exists={!!presence['SESSION_SECRET']} sensitive />
-          </div>
-          {!presence['SESSION_SECRET'] && (
-            <div className="space-y-1.5 pt-1">
-              <p className="text-[9px] text-muted-foreground font-bold">Genera un secreto seguro de 64 caracteres:</p>
-              <CopySnippet text={`# PowerShell\n$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()\n$b = New-Object byte[] 32; $rng.GetBytes($b)\n[System.BitConverter]::ToString($b).Replace('-','').ToLower()\n\n# macOS/Linux\nopenssl rand -hex 32`} />
+            <div>
+              <CredentialField name="SESSION_SECRET" value={forms.auth.SESSION_SECRET} onChange={v => setField('auth', 'SESSION_SECRET', v)} exists={!!presence['SESSION_SECRET']} sensitive placeholder="Escribe tu secreto o autogenéralo..." />
+              <button onClick={() => setField('auth', 'SESSION_SECRET', crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''))} className="text-[8px] font-bold uppercase tracking-widest text-primary hover:underline px-1 mt-2">✨ Autogenerar Secreto Seguro</button>
             </div>
-          )}
+          </div>
           <ActionRow
             onTest={fetchHealth}
             onSave={(redeploy) => {
