@@ -226,10 +226,43 @@ function StrategyCard({
   );
 }
 
+// ─── CONNECTED SERVICE CARD ───────────────────────────────────────────────────
+
+function ConnectedServiceCard({
+  icon: Icon, title, subtitle, onEdit, idLabel, idValue,
+}: {
+  icon: React.ElementType; title: string; subtitle: string; onEdit: () => void; idLabel?: string; idValue?: string;
+}) {
+  return (
+    <div className="rounded-[2rem] border border-emerald-500/20 bg-emerald-50/10 dark:bg-emerald-950/20 shadow-sm overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 gap-4 animate-in fade-in zoom-in-95 duration-300">
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+          <Icon size={20} />
+        </div>
+        <div>
+          <p className="text-[12px] font-black uppercase tracking-widest text-foreground">{title}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <CheckCircle2 size={11} className="text-emerald-500" />
+            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">{subtitle}</p>
+          </div>
+          {idLabel && idValue && (
+             <p className="text-[10px] text-muted-foreground mt-1 font-mono bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md w-fit">
+               {idLabel}: {idValue}
+             </p>
+          )}
+        </div>
+      </div>
+      <Button variant="outline" size="sm" onClick={onEdit} className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest px-4 border-dashed hover:border-solid hover:bg-muted/50">
+        Modificar
+      </Button>
+    </div>
+  );
+}
+
 // ─── ACTION ROW ───────────────────────────────────────────────────────────────
 
 function ActionRow({
-  onTest, onSave, testResult, testing, saving, isDevMode, isCustomDeploy
+  onTest, onSave, testResult, testing, saving, isDevMode, isCloudBootstrapped
 }: {
   onTest: () => void;
   onSave: (redeploy: boolean) => void;
@@ -237,22 +270,22 @@ function ActionRow({
   testing: boolean;
   saving: boolean;
   isDevMode: boolean;
-  isCustomDeploy?: boolean;
+  isCloudBootstrapped?: boolean;
 }) {
   const testOk = testResult?.status === 'pass';
   const testWarn = testResult?.status === 'warn';
 
   return (
-    <div className="space-y-2 pt-1">
+    <div className="space-y-3 pt-2">
       {testResult && (
         <div className={cn(
-          'flex items-start gap-2 px-3 py-2 rounded-xl text-[10px]',
+          'flex items-start gap-2 px-3 py-2.5 rounded-xl text-[10px] animate-in fade-in',
           testOk ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
           : testWarn ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
           : 'bg-destructive/10 text-destructive',
         )}>
           <StatusDot status={testResult.status} />
-          <span>{testOk ? `Conexión exitosa (${testResult.latency_ms}ms)` : testResult.output ?? 'Error desconocido'}</span>
+          <span className="leading-tight">{testOk ? `Conexión validada exitosamente (${testResult.latency_ms}ms)` : testResult.output ?? 'Error desconocido'}</span>
         </div>
       )}
 
@@ -261,28 +294,28 @@ function ActionRow({
           variant="outline" size="sm"
           onClick={onTest}
           disabled={testing || saving}
-          className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
+          className="h-8 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-4 shadow-sm"
         >
-          {testing ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+          {testing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           Probar conexión
         </Button>
 
         <Button
           size="sm"
-          onClick={() => onSave(!isDevMode && !isCustomDeploy)}
+          onClick={() => onSave(!!isCloudBootstrapped)}
           disabled={saving || testing}
-          className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
+          className="h-8 text-[9px] font-black uppercase tracking-widest rounded-xl gap-2 px-4 shadow-sm"
         >
-          {saving ? <Loader2 size={10} className="animate-spin" /> : isDevMode || isCustomDeploy ? <Database size={10} /> : <Rocket size={10} />}
-          {isDevMode ? 'Guardar en .env.local' : isCustomDeploy ? 'Aplicar localmente' : 'Guardar y redesplegar'}
+          {saving ? <Loader2 size={12} className="animate-spin" /> : isCloudBootstrapped ? <Rocket size={12} /> : <Database size={12} />}
+          {isDevMode ? 'Guardar en .env.local' : isCloudBootstrapped ? 'Inyectar y Reiniciar' : 'Guardar y Redesplegar'}
         </Button>
 
-        {(!isDevMode && !isCustomDeploy) && (
+        {!isCloudBootstrapped && !isDevMode && (
           <Button
             variant="ghost" size="sm"
             onClick={() => onSave(false)}
             disabled={saving || testing}
-            className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3 text-muted-foreground"
+            className="h-8 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3 text-muted-foreground"
           >
             Solo guardar
           </Button>
@@ -290,15 +323,60 @@ function ActionRow({
       </div>
 
       {isDevMode && (
-        <p className="text-[9px] text-muted-foreground italic">
-          En desarrollo, se guardará directamente en tu archivo <code className="bg-muted px-1 rounded">.env.local</code>. Deberás reiniciar el servidor de desarrollo para aplicar los cambios.
+        <p className="text-[9px] text-muted-foreground italic bg-muted/30 px-3 py-2 rounded-lg">
+          En desarrollo, se guardará directamente en <code className="bg-muted px-1 rounded font-bold">.env.local</code>. Reinicia el servidor para aplicar.
         </p>
       )}
-      {isCustomDeploy && (
-        <p className="text-[9px] text-muted-foreground italic text-amber-600/80">
-          Entorno custom detectado. Se guardará en <code className="bg-muted px-1 rounded">.env.local</code>. Deberás reiniciar el contenedor o servidor manualmente para aplicar.
-        </p>
-      )}
+    </div>
+  );
+}
+
+// ─── DEPLOY ACTION OVERLAY ──────────────────────────────────────────────────────
+
+function DeployActionOverlay({ deploy }: { deploy: DeployState }) {
+  const isTerminal = TERMINAL_STATES.has(deploy.readyState);
+  
+  return (
+    <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-[2rem] animate-in fade-in zoom-in-95 duration-500">
+      <div className="bg-card border shadow-xl rounded-3xl p-8 max-w-sm w-full space-y-6 text-center">
+        <div className="relative mx-auto w-16 h-16 flex items-center justify-center">
+          {deploy.readyState === 'READY' ? (
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center animate-in zoom-in">
+              <CheckCircle2 size={32} />
+            </div>
+          ) : deploy.readyState === 'ERROR' ? (
+             <div className="w-16 h-16 rounded-full bg-destructive/20 text-destructive flex items-center justify-center animate-in zoom-in">
+              <XCircle size={32} />
+            </div>
+          ) : (
+            <>
+              <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-pulse" />
+              <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+              <Rocket size={24} className="text-primary animate-pulse" />
+            </>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <h3 className="text-sm font-black uppercase tracking-widest text-foreground">
+            {deploy.readyState === 'READY' ? '¡Despliegue Exitoso!' : deploy.readyState === 'ERROR' ? 'Falla en Despliegue' : 'Inyectando y Reiniciando...'}
+          </h3>
+          <p className="text-[11px] text-muted-foreground font-mono">
+            {deploy.readyState === 'INITIALIZING' && '[1/3] Preparando compilación en la nube...'}
+            {deploy.readyState === 'BUILDING' && '[2/3] Compilando bundle de producción...'}
+            {deploy.readyState === 'DEPLOYING' && '[3/3] Instanciando contenedores edge...'}
+            {(!['READY', 'ERROR', 'INITIALIZING', 'BUILDING', 'DEPLOYING'].includes(deploy.readyState)) && `Procesando: ${deploy.readyState}`}
+            {deploy.readyState === 'READY' && 'Tu servidor está corriendo la nueva versión.'}
+            {deploy.readyState === 'ERROR' && deploy.errorMessage}
+          </p>
+        </div>
+
+        {!isTerminal && (
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full animate-pulse w-2/3" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -397,6 +475,8 @@ export function DeploySection() {
   const [activeProviderTab, setActiveProviderTab] = useState<'vercel' | 'netlify'>('vercel');
   const [activeDataTab, setActiveDataTab] = useState<'github' | 'postgres' | 'supabase'>('github');
 
+  const [editing, setEditing]     = useState<Record<string, boolean>>({});
+
   // Auto-migration state
   const [migrationPrompt, setMigrationPrompt] = useState<{
     from: string;
@@ -411,7 +491,7 @@ export function DeploySection() {
   const activeDeployRef = useRef<string | null>(null);
 
   const isDevMode = !!health?.isDevelopment;
-  const isCustomDeploy = !!health?.isCustomDeploy;
+  const isCloudBootstrapped = !!health?.isNetlify || !!health?.isVercel;
 
   // ── Health fetch ─────────────────────────────────────────────────────────────
 
@@ -704,44 +784,26 @@ export function DeploySection() {
                 value={forms.vercel.VERCEL_ACCESS_TOKEN}
                 onChange={v => setField('vercel', 'VERCEL_ACCESS_TOKEN', v)}
                 exists={!!presence['VERCEL_ACCESS_TOKEN']}
-                sensitive
-              />
-              <CredentialField
-                name="VERCEL_PROJECT_ID"
-                value={forms.vercel.VERCEL_PROJECT_ID}
-                onChange={v => setField('vercel', 'VERCEL_PROJECT_ID', v)}
-                exists={!!presence['VERCEL_PROJECT_ID']}
-                sensitive={false}
-                placeholder="prj_..."
-              />
-              <CredentialField
-                name="VERCEL_TEAM_ID"
-                value={forms.vercel.VERCEL_TEAM_ID}
-                onChange={v => setField('vercel', 'VERCEL_TEAM_ID', v)}
-                exists={!!presence['VERCEL_TEAM_ID']}
-                sensitive={false}
-                placeholder="team_... (opcional)"
-              />
+              </div>
+              <div className="space-y-3">
+                <CredentialField name="VERCEL_ACCESS_TOKEN" value={forms.vercel.VERCEL_ACCESS_TOKEN} onChange={v => setField('vercel', 'VERCEL_ACCESS_TOKEN', v)} exists={!!presence['VERCEL_ACCESS_TOKEN']} sensitive />
+                <CredentialField name="VERCEL_PROJECT_ID" value={forms.vercel.VERCEL_PROJECT_ID} onChange={v => setField('vercel', 'VERCEL_PROJECT_ID', v)} exists={!!presence['VERCEL_PROJECT_ID']} sensitive={false} placeholder="prj_..." />
+                <CredentialField name="VERCEL_TEAM_ID" value={forms.vercel.VERCEL_TEAM_ID} onChange={v => setField('vercel', 'VERCEL_TEAM_ID', v)} exists={!!presence['VERCEL_TEAM_ID']} sensitive={false} placeholder="team_... (opcional)" />
+              </div>
               <ActionRow
-                onTest={() => handleTest('vercel', {
-                  VERCEL_ACCESS_TOKEN: forms.vercel.VERCEL_ACCESS_TOKEN,
-                  VERCEL_PROJECT_ID: forms.vercel.VERCEL_PROJECT_ID,
-                  VERCEL_TEAM_ID: forms.vercel.VERCEL_TEAM_ID
-                })}
-                onSave={(redeploy) => handleSave('vercel', [
-                  { key: 'VERCEL_ACCESS_TOKEN', value: forms.vercel.VERCEL_ACCESS_TOKEN, sensitive: true },
-                  { key: 'VERCEL_PROJECT_ID', value: forms.vercel.VERCEL_PROJECT_ID, sensitive: false },
-                  { key: 'VERCEL_TEAM_ID', value: forms.vercel.VERCEL_TEAM_ID, sensitive: false }
-                ], redeploy)}
+                onTest={() => handleTest('vercel', { VERCEL_ACCESS_TOKEN: forms.vercel.VERCEL_ACCESS_TOKEN, VERCEL_PROJECT_ID: forms.vercel.VERCEL_PROJECT_ID, VERCEL_TEAM_ID: forms.vercel.VERCEL_TEAM_ID })}
+                onSave={(redeploy) => {
+                  handleSave('vercel', [
+                    { key: 'VERCEL_ACCESS_TOKEN', value: forms.vercel.VERCEL_ACCESS_TOKEN, sensitive: true },
+                    { key: 'VERCEL_PROJECT_ID', value: forms.vercel.VERCEL_PROJECT_ID, sensitive: false },
+                    { key: 'VERCEL_TEAM_ID', value: forms.vercel.VERCEL_TEAM_ID, sensitive: false },
+                  ], redeploy);
+                  setEditing({ ...editing, hosting: false });
+                }}
                 testResult={testResults['vercel'] ?? null}
                 testing={testingId === 'vercel'}
                 saving={savingId === 'vercel'}
                 isDevMode={isDevMode}
-                isCustomDeploy={false} // Explicitly false to allow bootstrapping Vercel in production
-              />
-            </div>
-          ) : (
-            <div className="space-y-3">
               <div className="text-[9px] text-muted-foreground leading-relaxed px-1 pb-1">
                 Configura tu token de acceso personal de Netlify y el Site ID para habilitar el guardado automático de variables y los redespliegues.
                 <details className="mt-1.5 text-muted-foreground/60 cursor-pointer">
@@ -794,6 +856,16 @@ export function DeploySection() {
           <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Persistencia de Datos (Base de Datos / DNA)</h4>
         </div>
 
+        {health?.activeDataStrategy !== 'local' && !editing.data ? (
+          <ConnectedServiceCard
+            icon={Database}
+            title={health?.activeDataStrategy === 'github' ? 'GitHub Strategy' : health?.activeDataStrategy === 'postgres' ? 'PostgreSQL' : 'Supabase SDK'}
+            subtitle="Sincronizado y Activo"
+            idLabel={health?.activeDataStrategy === 'github' ? 'Repositorio' : health?.activeDataStrategy === 'postgres' ? 'Host' : 'Proyecto Supabase'}
+            idValue={health?.activeDataStrategy === 'github' ? (presence['GITHUB_REPO'] ? forms.github.GITHUB_REPO || 'Activo' : 'Protegido') : 'Protegido'}
+            onEdit={() => setEditing({ ...editing, data: true })}
+          />
+        ) : (
         <StrategyCard
           icon={Database}
           title="Persistencia & Base de Datos"
@@ -868,16 +940,19 @@ export function DeploySection() {
               
               <ActionRow
                 onTest={() => handleTest('github', { GITHUB_TOKEN: forms.github.GITHUB_TOKEN, GITHUB_REPO: forms.github.GITHUB_REPO, GITHUB_BRANCH: forms.github.GITHUB_BRANCH })}
-                onSave={(redeploy) => handleSave('github', [
-                  { key: 'GITHUB_TOKEN', value: forms.github.GITHUB_TOKEN, sensitive: true },
-                  { key: 'GITHUB_REPO', value: forms.github.GITHUB_REPO, sensitive: false },
-                  { key: 'GITHUB_BRANCH', value: forms.github.GITHUB_BRANCH, sensitive: false },
-                ], redeploy)}
+                onSave={(redeploy) => {
+                  handleSave('github', [
+                    { key: 'GITHUB_TOKEN', value: forms.github.GITHUB_TOKEN, sensitive: true },
+                    { key: 'GITHUB_REPO', value: forms.github.GITHUB_REPO, sensitive: false },
+                    { key: 'GITHUB_BRANCH', value: forms.github.GITHUB_BRANCH, sensitive: false },
+                  ], redeploy);
+                  setEditing({ ...editing, data: false });
+                }}
                 testResult={testResults['github'] ?? null}
                 testing={testingId === 'github'}
                 saving={savingId === 'github'}
                 isDevMode={isDevMode}
-                isCustomDeploy={isCustomDeploy}
+                isCloudBootstrapped={isCloudBootstrapped}
               />
             </div>
           )}
@@ -899,14 +974,17 @@ export function DeploySection() {
               
               <ActionRow
                 onTest={() => handleTest('postgres', { DATABASE_URL: forms.postgres.DATABASE_URL })}
-                onSave={(redeploy) => handleSave('postgres', [
-                  { key: 'DATABASE_URL', value: forms.postgres.DATABASE_URL, sensitive: true },
-                ], redeploy)}
+                onSave={(redeploy) => {
+                  handleSave('postgres', [
+                    { key: 'DATABASE_URL', value: forms.postgres.DATABASE_URL, sensitive: true },
+                  ], redeploy);
+                  setEditing({ ...editing, data: false });
+                }}
                 testResult={testResults['postgres'] ?? null}
                 testing={testingId === 'postgres'}
                 saving={savingId === 'postgres'}
                 isDevMode={isDevMode}
-                isCustomDeploy={isCustomDeploy}
+                isCloudBootstrapped={isCloudBootstrapped}
               />
             </div>
           )}
@@ -922,19 +1000,23 @@ export function DeploySection() {
               
               <ActionRow
                 onTest={() => handleTest('supabase', { SUPABASE_URL: forms.supabase.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: forms.supabase.SUPABASE_SERVICE_ROLE_KEY })}
-                onSave={(redeploy) => handleSave('supabase', [
-                  { key: 'SUPABASE_URL', value: forms.supabase.SUPABASE_URL, sensitive: false },
-                  { key: 'SUPABASE_SERVICE_ROLE_KEY', value: forms.supabase.SUPABASE_SERVICE_ROLE_KEY, sensitive: true },
-                ], redeploy)}
+                onSave={(redeploy) => {
+                  handleSave('supabase', [
+                    { key: 'SUPABASE_URL', value: forms.supabase.SUPABASE_URL, sensitive: false },
+                    { key: 'SUPABASE_SERVICE_ROLE_KEY', value: forms.supabase.SUPABASE_SERVICE_ROLE_KEY, sensitive: true },
+                  ], redeploy);
+                  setEditing({ ...editing, data: false });
+                }}
                 testResult={testResults['supabase'] ?? null}
                 testing={testingId === 'supabase'}
                 saving={savingId === 'supabase'}
                 isDevMode={isDevMode}
-                isCustomDeploy={isCustomDeploy}
+                isCloudBootstrapped={isCloudBootstrapped}
               />
             </div>
           )}
         </StrategyCard>
+        )}
       </div>
 
       {/* ── PASO 3: Almacenamiento de Archivos (Multimedia) ──────────── */}
@@ -944,6 +1026,16 @@ export function DeploySection() {
           <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Archivos & Multimedia (Cloudflare R2) — Paso Crítico</h4>
         </div>
 
+        {r2Ck?.status === 'pass' && !editing.r2 ? (
+          <ConnectedServiceCard
+            icon={Cloud}
+            title="Cloudflare R2"
+            subtitle="Sincronizado y listo"
+            idLabel="Cuenta ID"
+            idValue={presence['CF_ACCOUNT_ID'] ? (forms.r2.CF_ACCOUNT_ID ? `${forms.r2.CF_ACCOUNT_ID.substring(0, 8)}...` : 'Protegido') : 'Protegido'}
+            onEdit={() => setEditing({ ...editing, r2: true })}
+          />
+        ) : (
         <StrategyCard
           icon={Cloud}
           title="Cloudflare R2"
@@ -964,20 +1056,24 @@ export function DeploySection() {
           </div>
           <ActionRow
             onTest={() => handleTest('r2', { CF_ACCOUNT_ID: forms.r2.CF_ACCOUNT_ID, CF_R2_BUCKET: forms.r2.CF_R2_BUCKET, CF_R2_ACCESS_KEY_ID: forms.r2.CF_R2_ACCESS_KEY_ID, CF_R2_SECRET_ACCESS_KEY: forms.r2.CF_R2_SECRET_ACCESS_KEY })}
-            onSave={(redeploy) => handleSave('r2', [
-              { key: 'CF_ACCOUNT_ID', value: forms.r2.CF_ACCOUNT_ID, sensitive: false },
-              { key: 'CF_R2_BUCKET', value: forms.r2.CF_R2_BUCKET, sensitive: false },
-              { key: 'CF_R2_ACCESS_KEY_ID', value: forms.r2.CF_R2_ACCESS_KEY_ID, sensitive: true },
-              { key: 'CF_R2_SECRET_ACCESS_KEY', value: forms.r2.CF_R2_SECRET_ACCESS_KEY, sensitive: true },
-              { key: 'CF_R2_PUBLIC_URL', value: forms.r2.CF_R2_PUBLIC_URL, sensitive: false },
-            ], redeploy)}
+            onSave={(redeploy) => {
+              handleSave('r2', [
+                { key: 'CF_ACCOUNT_ID', value: forms.r2.CF_ACCOUNT_ID, sensitive: false },
+                { key: 'CF_R2_BUCKET', value: forms.r2.CF_R2_BUCKET, sensitive: false },
+                { key: 'CF_R2_ACCESS_KEY_ID', value: forms.r2.CF_R2_ACCESS_KEY_ID, sensitive: true },
+                { key: 'CF_R2_SECRET_ACCESS_KEY', value: forms.r2.CF_R2_SECRET_ACCESS_KEY, sensitive: true },
+                { key: 'CF_R2_PUBLIC_URL', value: forms.r2.CF_R2_PUBLIC_URL, sensitive: false },
+              ], redeploy);
+              setEditing({ ...editing, r2: false });
+            }}
             testResult={testResults['r2'] ?? null}
             testing={testingId === 'r2'}
             saving={savingId === 'r2'}
             isDevMode={isDevMode}
-            isCustomDeploy={isCustomDeploy}
+            isCloudBootstrapped={isCloudBootstrapped}
           />
         </StrategyCard>
+        )}
       </div>
 
       {/* ── PASO 4: Seguridad y Auth ────────────────────────────────── */}
@@ -987,6 +1083,14 @@ export function DeploySection() {
           <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Seguridad & Sesiones</h4>
         </div>
 
+        {sessionCk?.status === 'pass' && !editing.auth ? (
+          <ConnectedServiceCard
+            icon={Shield}
+            title="Auth & Seguridad"
+            subtitle="Llaves seguras y activas"
+            onEdit={() => setEditing({ ...editing, auth: true })}
+          />
+        ) : (
         <StrategyCard
           icon={Shield}
           title="Auth & Seguridad"
@@ -1004,16 +1108,20 @@ export function DeploySection() {
           )}
           <ActionRow
             onTest={fetchHealth}
-            onSave={(redeploy) => handleSave('auth', [
-              { key: 'SESSION_SECRET', value: forms.auth.SESSION_SECRET, sensitive: true },
-            ], redeploy)}
+            onSave={(redeploy) => {
+              handleSave('auth', [
+                { key: 'SESSION_SECRET', value: forms.auth.SESSION_SECRET, sensitive: true },
+              ], redeploy);
+              setEditing({ ...editing, auth: false });
+            }}
             testResult={sessionCk ?? null}
             testing={loadingH}
             saving={savingId === 'auth'}
             isDevMode={isDevMode}
-            isCustomDeploy={isCustomDeploy}
+            isCloudBootstrapped={isCloudBootstrapped}
           />
         </StrategyCard>
+        )}
       </div>
 
       {/* ── .env.local template ─────────────────────────────────────── */}
