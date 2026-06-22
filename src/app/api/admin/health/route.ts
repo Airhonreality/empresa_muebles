@@ -37,7 +37,7 @@ export async function GET() {
       description: 'Estado de los servicios del sistema',
       activeDataStrategy,
       isDevelopment: process.env.NODE_ENV === 'development',
-      isCustomDeploy: process.env.NODE_ENV === 'production' && !process.env.VERCEL && !process.env.NETLIFY,
+      isCustomDeploy: process.env.NODE_ENV === 'production' && !process.env.VERCEL && !process.env.NETLIFY && !process.env.NETLIFY_AUTH_TOKEN && !process.env.VERCEL_ACCESS_TOKEN,
       isVercel: !!process.env.VERCEL && !!process.env.NOW_REGION,
       isNetlify: !!process.env.NETLIFY || !!process.env.NETLIFY_AUTH_TOKEN,
       env_presence: {
