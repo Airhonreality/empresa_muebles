@@ -1,50 +1,18 @@
 [
   {
-    "id": "9c00b5d2-21b8-4d90-86f3-3215699fc593",
+    "id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
-      "nombre_espacio": "Camarote",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2.5,
-      "jornadas_instalacion_obra": 2.5,
-      "activa": true,
-      "descripcion": "Estructura en hierro pintada en electrostática (tubo estructural calibre 18), estructura de camarote en madecor y escalera en madera flor morado.",
-      "descripcion_alternativa": ""
-    },
-    "updated_at": "2026-06-22T02:42:00.027Z"
-  },
-  {
-    "id": "b93f8bb7-f625-41b0-bce1-6af05d50382b",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
-      "nombre_espacio": "Escritorio",
-      "nombre_variante": "Inicial",
+      "cotizacion_id": "da6b8131-1800-43c0-9dd3-7b1a0c896669",
+      "nombre_espacio": "Mueble inferior",
+      "nombre_variante": "Cocina completa",
       "jornadas_desarrollo_tecnico": 0.5,
-      "jornadas_ensamblaje_taller": 1,
-      "jornadas_instalacion_obra": 0.5,
-      "activa": true,
-      "descripcion": "Escritorio fabricado en melamina madecor con tapas en poliuretano.",
-      "descripcion_alternativa": ""
-    },
-    "updated_at": "2026-06-22T02:41:31.619Z"
-  },
-  {
-    "id": "f38a772a-6850-434c-aac4-d0b5ba4b0f3d",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
-      "nombre_espacio": "Recibidor",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
       "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 1.5,
+      "jornadas_instalacion_obra": 2.6,
       "activa": true,
-      "descripcion": "Recibidor con tres líneas de zapatero, repisas bajas, panel con repisas e iluminación led, puf con cojín y perchero con colgadero extraíble (las piezas extraíbles son en madera.",
-      "descripcion_alternativa": ""
+      "descripcion": "",
+      "orden": 1
     },
-    "updated_at": "2026-06-22T02:41:11.981Z"
+    "updated_at": "2026-06-22T14:46:15.323Z"
   }
 ]

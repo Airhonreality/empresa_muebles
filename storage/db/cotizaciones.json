@@ -160,5 +160,15 @@
       "imprevistos_instalacion": 150000
     },
     "updated_at": "2026-06-22T01:26:22.127Z"
+  },
+  {
+    "id": "da6b8131-1800-43c0-9dd3-7b1a0c896669",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Cocina inregral patricia",
+      "costos_operativos": 250000,
+      "imprevistos_instalacion": 0
+    },
+    "updated_at": "2026-06-22T14:43:28.711Z"
   }
 ]
