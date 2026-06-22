@@ -877,10 +877,7 @@ export function DeploySection() {
                 testing={testingId === 'github'}
                 saving={savingId === 'github'}
                 isDevMode={isDevMode}
-<<<<<<< HEAD
-=======
                 isCustomDeploy={isCustomDeploy}
->>>>>>> upstream/feature/agile-rendering-engine
               />
             </div>
           )}
@@ -909,10 +906,7 @@ export function DeploySection() {
                 testing={testingId === 'postgres'}
                 saving={savingId === 'postgres'}
                 isDevMode={isDevMode}
-<<<<<<< HEAD
-=======
                 isCustomDeploy={isCustomDeploy}
->>>>>>> upstream/feature/agile-rendering-engine
               />
             </div>
           )}
@@ -936,10 +930,7 @@ export function DeploySection() {
                 testing={testingId === 'supabase'}
                 saving={savingId === 'supabase'}
                 isDevMode={isDevMode}
-<<<<<<< HEAD
-=======
                 isCustomDeploy={isCustomDeploy}
->>>>>>> upstream/feature/agile-rendering-engine
               />
             </div>
           )}
@@ -984,10 +975,7 @@ export function DeploySection() {
             testing={testingId === 'r2'}
             saving={savingId === 'r2'}
             isDevMode={isDevMode}
-<<<<<<< HEAD
-=======
             isCustomDeploy={isCustomDeploy}
->>>>>>> upstream/feature/agile-rendering-engine
           />
         </StrategyCard>
       </div>
@@ -1023,10 +1011,7 @@ export function DeploySection() {
             testing={loadingH}
             saving={savingId === 'auth'}
             isDevMode={isDevMode}
-<<<<<<< HEAD
-=======
             isCustomDeploy={isCustomDeploy}
->>>>>>> upstream/feature/agile-rendering-engine
           />
         </StrategyCard>
       </div>
