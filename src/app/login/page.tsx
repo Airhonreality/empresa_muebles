@@ -71,38 +71,13 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      // Create 'admin' list
-      await fetch('/api/vault', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'WRITE',
-          namespace: 'user_lists',
-          record: { id: crypto.randomUUID(), data: { name: 'admin', is_permanent: true } },
-        }),
-      });
-
-      // Create admin user
-      const res = await fetch('/api/vault', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'WRITE',
-          namespace: 'users',
-          record: { id: crypto.randomUUID(), data: { email: bEmail.trim(), password: bPass, type: ['admin'] } },
-        }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? 'Error al crear usuario');
-
-      // Auto-login after creating admin
-      const loginRes  = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/bootstrap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: bEmail.trim(), password: bPass }),
       });
-      const loginJson = await loginRes.json();
-      if (!loginRes.ok) throw new Error(loginJson.error);
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error ?? 'Error al crear usuario');
 
       toast.success('Administrador creado. Bienvenido.');
       router.push('/schema');

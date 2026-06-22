@@ -5,9 +5,18 @@ import {
   CheckCircle2, XCircle, AlertCircle, Rocket, RefreshCw,
   Github, Cloud, Database, Shield, ChevronDown, ChevronRight,
   Eye, EyeOff, Loader2, Copy, Check, ExternalLink, ArrowRight,
+  ArrowLeftRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +32,8 @@ interface CheckResult {
 interface HealthData {
   status: 'pass' | 'warn' | 'fail';
   activeDataStrategy: 'github' | 'postgres' | 'supabase' | 'local';
+  isDevelopment: boolean;
+  isCustomDeploy: boolean;
   isVercel: boolean;
   isNetlify?: boolean;
   env_presence: Record<string, boolean>;
@@ -44,13 +55,35 @@ interface DeployState {
   pollCount: number;
 }
 
-type SaveResult = {
+interface SaveResult {
   saved: number;
   failed: number;
   errors: string[];
   deployment: { id: string; url: string | null; readyState: string } | null;
   warning?: string;
-};
+}
+
+interface MigrationReport {
+  namespace: string;
+  read: number;
+  written: number | string;
+  skipped: boolean;
+  errors: string[];
+}
+
+interface MigrationResult {
+  dryRun: boolean;
+  from: string;
+  to: string;
+  namespacesScanned: number;
+  totalRead: number;
+  totalWritten: number | string;
+  totalErrors: number;
+  success: boolean;
+  setup_hint?: string;
+  error?: string;
+  report: MigrationReport[];
+}
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
@@ -61,7 +94,7 @@ const TERMINAL_STATES   = new Set(['READY', 'ERROR', 'CANCELED']);
 // ─── PRIMITIVES ───────────────────────────────────────────────────────────────
 
 export function StatusDot({ status }: { status: 'pass' | 'warn' | 'fail' | 'loading' }) {
-  if (status === 'loading') return <Loader2 size={12} className="animate-spin text-muted-foreground" />;
+  if (status === 'loading') return <Loader2 size={12} className="animate-spin text-muted-foreground shrink-0" />;
   if (status === 'pass')    return <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />;
   if (status === 'warn')    return <AlertCircle  size={12} className="text-amber-500 shrink-0" />;
   return                           <XCircle      size={12} className="text-destructive/70 shrink-0" />;
@@ -82,7 +115,7 @@ export function CopySnippet({ text }: { text: string }) {
     });
   };
   return (
-    <div className="flex items-center gap-2 bg-muted/40 border rounded-lg px-3 py-2 font-mono text-[10px] text-muted-foreground">
+    <div className="flex items-center gap-2 bg-muted/40 border rounded-xl px-3 py-2 font-mono text-[10px] text-muted-foreground">
       <span className="flex-1 break-all whitespace-pre-wrap">{text}</span>
       <button onClick={handleCopy} className="shrink-0 text-muted-foreground/50 hover:text-primary transition-colors">
         {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
@@ -109,7 +142,7 @@ export function CredentialField({
   return (
     <div className="flex items-center gap-2 group">
       <span className="font-mono text-[9px] font-bold w-48 shrink-0 text-foreground/60 leading-tight">{name}</span>
-      <div className="flex-1 flex items-center gap-1 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1.5 focus-within:ring-1 focus-within:ring-primary/50 transition-all">
+      <div className="flex-1 flex items-center gap-1 bg-muted/30 border border-border/40 rounded-xl px-3 py-1.5 focus-within:ring-1 focus-within:ring-primary/50 transition-all">
         <input
           type={type}
           value={value}
@@ -145,14 +178,14 @@ function StrategyCard({
 
   return (
     <div className={cn(
-      'rounded-2xl border shadow-sm overflow-hidden transition-all',
-      status === 'pass' ? 'border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/10'
-      : status === 'warn' ? 'border-amber-500/20 bg-amber-50/20 dark:bg-amber-950/10'
-      : 'border-destructive/20 bg-destructive/5',
+      'rounded-[2rem] border shadow-sm overflow-hidden transition-all bg-card',
+      status === 'pass' ? 'border-emerald-500/20 bg-emerald-50/5 dark:bg-emerald-950/5'
+      : status === 'warn' ? 'border-amber-500/20 bg-amber-50/5 dark:bg-amber-950/5'
+      : 'border-destructive/20 bg-destructive/[0.02]',
     )}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
       >
         <div className={cn(
           'h-8 w-8 rounded-xl flex items-center justify-center shrink-0',
@@ -179,7 +212,7 @@ function StrategyCard({
       </button>
 
       {open && (
-        <div className="px-4 pb-4 space-y-3 border-t border-border/30 pt-3 animate-in slide-in-from-top-1 duration-200">
+        <div className="px-5 pb-5 space-y-4 border-t border-border/30 pt-4 animate-in slide-in-from-top-1 duration-200">
           {check?.output && (
             <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-muted/30 text-[10px] text-muted-foreground">
               <AlertCircle size={12} className="shrink-0 mt-0.5 text-amber-500" />
@@ -196,7 +229,7 @@ function StrategyCard({
 // ─── ACTION ROW ───────────────────────────────────────────────────────────────
 
 function ActionRow({
-  onTest, onSave, testResult, testing, saving, isDevMode,
+  onTest, onSave, testResult, testing, saving, isDevMode, isCustomDeploy
 }: {
   onTest: () => void;
   onSave: (redeploy: boolean) => void;
@@ -204,13 +237,13 @@ function ActionRow({
   testing: boolean;
   saving: boolean;
   isDevMode: boolean;
+  isCustomDeploy?: boolean;
 }) {
   const testOk = testResult?.status === 'pass';
   const testWarn = testResult?.status === 'warn';
 
   return (
     <div className="space-y-2 pt-1">
-      {/* Test result message */}
       {testResult && (
         <div className={cn(
           'flex items-start gap-2 px-3 py-2 rounded-xl text-[10px]',
@@ -236,15 +269,15 @@ function ActionRow({
 
         <Button
           size="sm"
-          onClick={() => onSave(!isDevMode)}
+          onClick={() => onSave(!isDevMode && !isCustomDeploy)}
           disabled={saving || testing}
           className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
         >
-          {saving ? <Loader2 size={10} className="animate-spin" /> : isDevMode ? <Database size={10} /> : <Rocket size={10} />}
-          {isDevMode ? 'Guardar en .env.local' : 'Guardar y redesplegar'}
+          {saving ? <Loader2 size={10} className="animate-spin" /> : isDevMode || isCustomDeploy ? <Database size={10} /> : <Rocket size={10} />}
+          {isDevMode ? 'Guardar en .env.local' : isCustomDeploy ? 'Aplicar localmente' : 'Guardar y redesplegar'}
         </Button>
 
-        {!isDevMode && (
+        {(!isDevMode && !isCustomDeploy) && (
           <Button
             variant="ghost" size="sm"
             onClick={() => onSave(false)}
@@ -261,6 +294,11 @@ function ActionRow({
           En desarrollo, se guardará directamente en tu archivo <code className="bg-muted px-1 rounded">.env.local</code>. Deberás reiniciar el servidor de desarrollo para aplicar los cambios.
         </p>
       )}
+      {isCustomDeploy && (
+        <p className="text-[9px] text-muted-foreground italic text-amber-600/80">
+          Entorno custom detectado. Se guardará en <code className="bg-muted px-1 rounded">.env.local</code>. Deberás reiniciar el contenedor o servidor manualmente para aplicar.
+        </p>
+      )}
     </div>
   );
 }
@@ -272,31 +310,34 @@ export function DeployStatusBar({ deploy, onDismiss }: { deploy: DeployState; on
 
   return (
     <div className={cn(
-      'rounded-2xl border p-4 space-y-2',
-      deploy.readyState === 'READY' ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/10'
-      : deploy.readyState === 'ERROR' ? 'border-destructive/30 bg-destructive/5'
-      : 'border-primary/20 bg-primary/5',
+      'rounded-xl border p-4 flex flex-col gap-2 transition-all',
+      deploy.readyState === 'READY'
+        ? 'border-emerald-500/20 bg-emerald-500/5'
+        : deploy.readyState === 'ERROR'
+          ? 'border-destructive/20 bg-destructive/5'
+          : 'border-primary/20 bg-primary/5',
     )}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Rocket size={13} className={cn(deploy.readyState === 'READY' ? 'text-emerald-600' : deploy.readyState === 'ERROR' ? 'text-destructive' : 'text-primary animate-bounce')} />
-          <p className="text-[10px] font-black uppercase tracking-widest text-foreground">
-            {deploy.readyState === 'READY' ? 'Despliegue completado'
-              : deploy.readyState === 'ERROR' ? 'Error en despliegue'
-              : deploy.readyState === 'CANCELED' ? 'Despliegue cancelado'
-              : `Desplegando — ${deploy.readyState}`}
-          </p>
+          {deploy.readyState === 'READY' && <CheckCircle2 size={14} className="text-emerald-500" />}
+          {deploy.readyState === 'ERROR' && <XCircle size={14} className="text-destructive" />}
+          {!isTerminal && <Loader2 size={14} className="animate-spin text-primary" />}
+          <span className="text-[10px] font-bold text-foreground">
+            {deploy.readyState === 'READY' && 'Despliegue completado con éxito'}
+            {deploy.readyState === 'ERROR' && 'El despliegue falló'}
+            {deploy.readyState === 'INITIALIZING' && 'Iniciando compilación en la nube...'}
+            {deploy.readyState === 'BUILDING' && 'Compilando bundle de producción...'}
+            {deploy.readyState === 'DEPLOYING' && 'Instanciando contenedores edge...'}
+            {(!['READY', 'ERROR', 'INITIALIZING', 'BUILDING', 'DEPLOYING'].includes(deploy.readyState)) && `Procesando: ${deploy.readyState}`}
+          </span>
         </div>
-        {isTerminal && (
-          <button onClick={onDismiss} className="text-[9px] text-muted-foreground hover:text-foreground transition-colors">
-            Cerrar
-          </button>
-        )}
+        <button onClick={onDismiss} className="text-[9px] font-black uppercase text-muted-foreground hover:text-foreground">
+          Cerrar
+        </button>
       </div>
 
-      {/* Indeterminate progress — Vercel API has no percentage, only states */}
       {!isTerminal && (
-        <div className="h-1 rounded-full bg-muted overflow-hidden">
+        <div className="h-1 bg-muted rounded-full overflow-hidden">
           <div className="h-full bg-primary rounded-full animate-pulse w-2/3" />
         </div>
       )}
@@ -309,7 +350,7 @@ export function DeployStatusBar({ deploy, onDismiss }: { deploy: DeployState; on
       {deploy.readyState === 'READY' && deploy.url && (
         <a
           href={deploy.url} target="_blank" rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:underline"
+          className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:underline w-fit"
         >
           <ExternalLink size={10} /> Abrir producción
         </a>
@@ -322,299 +363,7 @@ export function DeployStatusBar({ deploy, onDismiss }: { deploy: DeployState; on
   );
 }
 
-// ─── BOOTSTRAP GATE ──────────────────────────────────────────────────────────
-
-function BootstrapGate() {
-  return (
-    <div className="rounded-2xl border border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10 p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <AlertCircle size={14} className="text-amber-500 shrink-0" />
-        <p className="text-[11px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
-          Bootstrap requerido
-        </p>
-      </div>
-      <p className="text-[10px] text-muted-foreground leading-relaxed">
-        <code className="bg-muted px-1 rounded text-[9px]">VERCEL_ACCESS_TOKEN</code> y{' '}
-        <code className="bg-muted px-1 rounded text-[9px]">VERCEL_PROJECT_ID</code> no detectados.
-        Configúralos manualmente en el Dashboard de Vercel <strong>una única vez</strong> para habilitar el guardado automático desde este panel.
-      </p>
-      <ol className="space-y-2.5">
-        {[
-          {
-            title: '1. Obtén tu Access Token',
-            body: 'Vercel Dashboard → Settings → Tokens → Create token (scope: Full Account).',
-            snippet: 'VERCEL_ACCESS_TOKEN=vercel_pat_...',
-          },
-          {
-            title: '2. Obtén el Project ID',
-            body: 'Vercel Dashboard → Tu proyecto → Settings → General → Project ID.',
-            snippet: 'VERCEL_PROJECT_ID=prj_...',
-          },
-          {
-            title: '3. (Condicional) Team ID',
-            body: 'Solo si usas cuenta de equipo: Settings → General → Team ID.',
-            snippet: 'VERCEL_TEAM_ID=team_...',
-          },
-        ].map(s => (
-          <li key={s.title} className="space-y-1">
-            <p className="text-[10px] font-bold text-foreground/80">{s.title}</p>
-            <p className="text-[10px] text-muted-foreground">{s.body}</p>
-            <CopySnippet text={s.snippet} />
-          </li>
-        ))}
-      </ol>
-      <p className="text-[9px] text-muted-foreground italic">
-        Las funciones de Probar Conexión funcionan sin bootstrap — solo el guardado a Vercel lo requiere.
-      </p>
-    </div>
-  );
-}
-
-// ─── MIGRATION PANEL ─────────────────────────────────────────────────────────
-
-type MigrationReport = {
-  namespace: string;
-  read: number;
-  written: number | string;
-  skipped: boolean;
-  errors: string[];
-};
-
-type MigrationResult = {
-  dryRun: boolean;
-  from: string;
-  to: string;
-  namespacesScanned: number;
-  totalRead: number;
-  totalWritten: number | string;
-  totalErrors: number;
-  success: boolean;
-  setup_hint?: string;
-  error?: string;
-  report: MigrationReport[];
-};
-
-const MIGRATE_STRATEGIES = ['github', 'postgres', 'supabase', 'local'] as const;
-type MigrateStrategy = typeof MIGRATE_STRATEGIES[number];
-
-function MigrationPanel() {
-  const [open, setOpen]             = useState(false);
-  const [from, setFrom]             = useState<MigrateStrategy>('github');
-  const [to, setTo]                 = useState<MigrateStrategy>('supabase');
-  const [running, setRunning]       = useState(false);
-  const [result, setResult]         = useState<MigrationResult | null>(null);
-  const [setupSql, setSetupSql]     = useState<string | null>(null);
-  const [loadingSql, setLoadingSql] = useState(false);
-
-  const run = async (dryRun: boolean) => {
-    if (from === to) return;
-    setRunning(true);
-    setResult(null);
-    try {
-      const res = await fetch('/api/admin/migrate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to, dryRun }),
-      });
-      const data = await res.json() as MigrationResult;
-      setResult(data);
-    } catch {
-      setResult({ dryRun, from, to, namespacesScanned: 0, totalRead: 0, totalWritten: 0, totalErrors: 1, success: false, error: 'Error de red o timeout', report: [] });
-    } finally {
-      setRunning(false);
-    }
-  };
-
-  const fetchSetupSql = async () => {
-    setLoadingSql(true);
-    setSetupSql(null);
-    try {
-      const res = await fetch(`/api/admin/migrate?from=${from}&to=${to}`);
-      setSetupSql(await res.text());
-    } finally {
-      setLoadingSql(false);
-    }
-  };
-
-  const activeNs = from !== to;
-
-  return (
-    <div className="rounded-2xl border border-border/40 overflow-hidden">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-      >
-        <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 bg-muted/40 text-muted-foreground">
-          <ArrowRight size={15} />
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Migrar datos</p>
-          <p className="text-[9px] text-muted-foreground mt-0.5">Mueve todos los registros de una estrategia a otra sin pérdida</p>
-        </div>
-        {open ? <ChevronDown size={14} className="text-muted-foreground/50 shrink-0" /> : <ChevronRight size={14} className="text-muted-foreground/50 shrink-0" />}
-      </button>
-
-      {open && (
-        <div className="px-4 pb-4 space-y-3 border-t border-border/30 pt-3 animate-in slide-in-from-top-1 duration-200">
-
-          {/* Strategy selectors */}
-          <div className="flex items-end gap-3">
-            <div className="space-y-1.5">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Desde</p>
-              <div className="flex gap-1">
-                {MIGRATE_STRATEGIES.map(s => (
-                  <button key={s} onClick={() => { setFrom(s); setResult(null); setSetupSql(null); }}
-                    className={cn(
-                      'text-[9px] px-2.5 py-1 rounded-lg font-mono font-bold border transition-all',
-                      from === s
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border/40 text-muted-foreground hover:border-primary/30',
-                    )}
-                  >{s}</button>
-                ))}
-              </div>
-            </div>
-
-            <ArrowRight size={12} className="text-muted-foreground/40 mb-2 shrink-0" />
-
-            <div className="space-y-1.5">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Hacia</p>
-              <div className="flex gap-1">
-                {MIGRATE_STRATEGIES.map(s => (
-                  <button key={s} onClick={() => { setTo(s); setResult(null); setSetupSql(null); }}
-                    disabled={s === from}
-                    className={cn(
-                      'text-[9px] px-2.5 py-1 rounded-lg font-mono font-bold border transition-all',
-                      to === s
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border/40 text-muted-foreground hover:border-primary/30',
-                      s === from && 'opacity-30 pointer-events-none',
-                    )}
-                  >{s}</button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Setup notes per target */}
-          {to === 'postgres' && (
-            <div className="rounded-xl bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-500/20 px-3 py-2.5">
-              <p className="text-[9px] text-emerald-700 dark:text-emerald-400">
-                PostgreSQL — no necesitas preparar nada. La tabla <code className="bg-muted px-1 rounded">agnostic_records</code> se crea automáticamente en el primer write.
-              </p>
-            </div>
-          )}
-          {to === 'supabase' && (
-            <div className="rounded-xl bg-amber-50/30 dark:bg-amber-950/10 border border-amber-500/20 px-3 py-2.5 space-y-2">
-              <p className="text-[9px] text-amber-700 dark:text-amber-400">
-                Supabase (PostgREST) requiere crear las tablas antes de migrar. Considera usar <code className="bg-muted px-1 rounded">DATABASE_URL</code> con la URL de Postgres directa para evitar este paso.
-              </p>
-              <button
-                onClick={fetchSetupSql}
-                disabled={loadingSql}
-                className="flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-400 hover:underline"
-              >
-                {loadingSql && <Loader2 size={10} className="animate-spin" />}
-                Generar SQL de setup (PostgREST)
-              </button>
-              {setupSql && <CopySnippet text={setupSql} />}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline" size="sm"
-              onClick={() => run(true)}
-              disabled={running || !activeNs}
-              className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
-            >
-              {running ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
-              Simular
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => run(false)}
-              disabled={running || !activeNs}
-              className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3"
-            >
-              {running ? <Loader2 size={10} className="animate-spin" /> : <ArrowRight size={10} />}
-              Ejecutar migración
-            </Button>
-          </div>
-
-          {running && (
-            <p className="text-[9px] text-muted-foreground animate-pulse">
-              Migrando — esto puede tardar según el volumen de datos...
-            </p>
-          )}
-
-          {/* Results */}
-          {result && (
-            <div className={cn(
-              'rounded-xl border p-3 space-y-2',
-              result.success
-                ? 'border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/10'
-                : 'border-destructive/30 bg-destructive/5',
-            )}>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-foreground">
-                  {result.dryRun ? 'Simulación' : 'Migración'}: {result.from} → {result.to}
-                </span>
-                <span className={cn(
-                  'text-[9px] font-bold uppercase tracking-wider',
-                  result.success ? 'text-emerald-600' : 'text-destructive',
-                )}>
-                  {result.success ? 'OK' : 'ERROR'}
-                </span>
-              </div>
-
-              {result.error ? (
-                <p className="text-[9px] text-destructive font-mono">{result.error}</p>
-              ) : (
-                <div className="flex gap-4 text-[9px] font-mono text-muted-foreground">
-                  <span>espacios: <b className="text-foreground">{result.namespacesScanned}</b></span>
-                  <span>leídos: <b className="text-foreground">{result.totalRead}</b></span>
-                  <span>escritos: <b className="text-foreground">{result.totalWritten}</b></span>
-                  {result.totalErrors > 0 && (
-                    <span className="text-destructive">errores: <b>{result.totalErrors}</b></span>
-                  )}
-                </div>
-              )}
-
-              {result.setup_hint && (
-                <p className="text-[9px] text-amber-600 dark:text-amber-400">{result.setup_hint}</p>
-              )}
-
-              {/* Per-namespace detail — only show non-empty or errored */}
-              {result.report.filter(r => !r.skipped || r.errors.length > 0).length > 0 && (
-                <div className="space-y-0.5 max-h-44 overflow-y-auto">
-                  {result.report
-                    .filter(r => !r.skipped || r.errors.length > 0)
-                    .map(r => (
-                      <div key={r.namespace} className="flex items-center gap-2 py-0.5">
-                        <StatusDot status={r.errors.length > 0 ? 'fail' : 'pass'} />
-                        <span className="font-mono text-[9px] flex-1 text-foreground/70">{r.namespace}</span>
-                        <span className="text-[9px] font-mono text-muted-foreground">
-                          {r.read} → {r.written}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <p className="text-[9px] text-muted-foreground italic leading-relaxed">
-            La migración es idempotente — ejecutarla varias veces no duplica datos. Mantén ambas estrategias configuradas hasta verificar el destino, luego elimina las variables de la fuente y redesplega.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 type FormMap = {
   github:   { GITHUB_TOKEN: string; GITHUB_REPO: string; GITHUB_BRANCH: string };
@@ -622,6 +371,8 @@ type FormMap = {
   r2:       { CF_ACCOUNT_ID: string; CF_R2_BUCKET: string; CF_R2_ACCESS_KEY_ID: string; CF_R2_SECRET_ACCESS_KEY: string; CF_R2_PUBLIC_URL: string };
   supabase: { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string };
   auth:     { SESSION_SECRET: string };
+  vercel:   { VERCEL_ACCESS_TOKEN: string; VERCEL_PROJECT_ID: string; VERCEL_TEAM_ID: string };
+  netlify:  { NETLIFY_AUTH_TOKEN: string; NETLIFY_SITE_ID: string };
 };
 
 const EMPTY_FORMS: FormMap = {
@@ -630,6 +381,8 @@ const EMPTY_FORMS: FormMap = {
   r2:       { CF_ACCOUNT_ID: '', CF_R2_BUCKET: '', CF_R2_ACCESS_KEY_ID: '', CF_R2_SECRET_ACCESS_KEY: '', CF_R2_PUBLIC_URL: '' },
   supabase: { SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '' },
   auth:     { SESSION_SECRET: '' },
+  vercel:   { VERCEL_ACCESS_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '' },
+  netlify:  { NETLIFY_AUTH_TOKEN: '', NETLIFY_SITE_ID: '' },
 };
 
 export function DeploySection() {
@@ -641,15 +394,24 @@ export function DeploySection() {
   const [savingId, setSavingId]   = useState<string | null>(null);
   const [saveMsg, setSaveMsg]     = useState<string | null>(null);
   const [deploy, setDeploy]       = useState<DeployState | null>(null);
+  const [activeProviderTab, setActiveProviderTab] = useState<'vercel' | 'netlify'>('vercel');
+  const [activeDataTab, setActiveDataTab] = useState<'github' | 'postgres' | 'supabase'>('github');
+
+  // Auto-migration state
+  const [migrationPrompt, setMigrationPrompt] = useState<{
+    from: string;
+    to: string;
+    credentials: Record<string, string>;
+  } | null>(null);
+  const [migrationRunning, setMigrationRunning] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
 
   const pollRef         = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollCount       = useRef(0);
-  const activeDeployRef = useRef<string | null>(null); // tracks deploy.id to avoid count reset on readyState changes
+  const activeDeployRef = useRef<string | null>(null);
 
-  // process.env.VERCEL is server-only — never accessible in 'use client' bundles.
-  // We read isVercel from the health response (server sets it correctly).
-  // Default true (disabled) until health loads — prevents a flash of an enabled Save button in dev.
-  const isDevMode = !health?.isVercel && !health?.isNetlify;
+  const isDevMode = !!health?.isDevelopment;
+  const isCustomDeploy = !!health?.isCustomDeploy;
 
   // ── Health fetch ─────────────────────────────────────────────────────────────
 
@@ -662,11 +424,18 @@ export function DeploySection() {
       .finally(() => setLoadingH(false));
   }, []);
 
-  useEffect(() => { fetchHealth(); }, [fetchHealth]);
+  useEffect(() => {
+    fetchHealth();
+  }, [fetchHealth]);
 
-  // ── Deploy polling (terminates on terminal state or max attempts) ─────────────
-  // Dependencies: [deploy?.id, deploy?.readyState] — effect re-runs when state changes,
-  // but pollCount must NOT reset on readyState changes (only on new deployments).
+  // Synchronize dynamic active tab based on server activeDataStrategy
+  useEffect(() => {
+    if (health?.activeDataStrategy && health.activeDataStrategy !== 'local') {
+      setActiveDataTab(health.activeDataStrategy);
+    }
+  }, [health?.activeDataStrategy]);
+
+  // ── Deploy polling ───────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!deploy?.id || TERMINAL_STATES.has(deploy.readyState)) {
@@ -674,13 +443,12 @@ export function DeploySection() {
       return;
     }
 
-    // Only reset counter when a genuinely new deployment starts, not on readyState transitions.
     if (deploy.id !== activeDeployRef.current) {
       pollCount.current = 0;
       activeDeployRef.current = deploy.id;
     }
 
-    const deployId = deploy.id; // capture to avoid stale closure
+    const deployId = deploy.id;
     pollRef.current = setInterval(async () => {
       pollCount.current += 1;
       if (pollCount.current > MAX_POLL_ATTEMPTS) {
@@ -706,7 +474,7 @@ export function DeploySection() {
 
   const presence = health?.env_presence ?? {};
 
-  // ── Test ─────────────────────────────────────────────────────────────────────
+  // ── Test connection ──────────────────────────────────────────────────────────
 
   const handleTest = async (strategy: string, credentials: Record<string, string>) => {
     setTestingId(strategy);
@@ -722,13 +490,13 @@ export function DeploySection() {
       const data = await res.json() as CheckResult;
       setTestResults(r => ({ ...r, [strategy]: data }));
     } catch {
-      setTestResults(r => ({ ...r, [strategy]: { componentId: strategy, componentType: 'unknown', status: 'fail', output: 'Error de red', time: new Date().toISOString(), latency_ms: 0 } }));
+      setTestResults(r => ({ ...r, [strategy]: { componentId: strategy, componentType: 'unknown', status: 'fail', output: 'Error de red o falló respuesta de prueba', time: new Date().toISOString(), latency_ms: 0 } }));
     } finally {
       setTestingId(null);
     }
   };
 
-  // ── Save ─────────────────────────────────────────────────────────────────────
+  // ── Save environment ──────────────────────────────────────────────────────────
 
   const handleSave = async (section: string, vars: Array<{ key: string; value: string; sensitive?: boolean }>, redeploy: boolean) => {
     const nonEmpty = vars.filter(v => v.value.trim() !== '');
@@ -743,7 +511,7 @@ export function DeploySection() {
       const res = await fetch('/api/admin/config/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variables: nonEmpty, redeploy }),
+        body: JSON.stringify({ provider: section, variables: nonEmpty, redeploy }),
       });
       const data = await res.json() as SaveResult;
       if (data.deployment) {
@@ -754,12 +522,67 @@ export function DeploySection() {
       else if (data.failed > 0) setSaveMsg(`${data.failed} variable(s) no se guardaron: ${data.errors.join(', ')}`);
       else setSaveMsg(`${data.saved} variable(s) guardadas correctamente.`);
       setTimeout(() => setSaveMsg(null), 6000);
+
+      // Trigger active strategy change detection for automated migration dialog
+      const previousStrategy = health?.activeDataStrategy || 'local';
+      if (data.saved > 0 && previousStrategy !== section && (section === 'postgres' || section === 'github' || section === 'supabase')) {
+        // Collect targeted credentials to feed the migrator POST directly
+        const targetCreds: Record<string, string> = {};
+        vars.forEach(v => { targetCreds[v.key] = v.value; });
+
+        setMigrationPrompt({
+          from: previousStrategy,
+          to: section,
+          credentials: targetCreds
+        });
+      }
+
       // Refresh health to reflect new env state
       if (data.saved > 0 && !redeploy) fetchHealth();
     } catch {
       setSaveMsg('Error de red al guardar. Intenta nuevamente.');
     } finally {
       setSavingId(null);
+    }
+  };
+
+  // ── Run Auto Migration ───────────────────────────────────────────────────────
+
+  const handleRunMigration = async () => {
+    if (!migrationPrompt) return;
+    setMigrationRunning(true);
+    setMigrationResult(null);
+    try {
+      const res = await fetch('/api/admin/migrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: migrationPrompt.from,
+          to: migrationPrompt.to,
+          credentials: migrationPrompt.credentials,
+          dryRun: false
+        })
+      });
+      const data = await res.json() as MigrationResult;
+      setMigrationResult(data);
+      if (data.success) {
+        fetchHealth(); // Update strategy status
+      }
+    } catch {
+      setMigrationResult({
+        dryRun: false,
+        from: migrationPrompt.from,
+        to: migrationPrompt.to,
+        namespacesScanned: 0,
+        totalRead: 0,
+        totalWritten: 0,
+        totalErrors: 1,
+        success: false,
+        error: 'La petición de migración falló debido a problemas de red o un timeout.',
+        report: []
+      });
+    } finally {
+      setMigrationRunning(false);
     }
   };
 
@@ -775,41 +598,36 @@ export function DeploySection() {
   const globalStatus = health?.status ?? 'fail';
 
   return (
-    <div className="space-y-4 py-2 animate-in fade-in duration-500">
+    <div className="space-y-8 py-2 animate-in fade-in duration-500">
 
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-1.5">
+      {/* ── HEADER ──────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between border-b pb-4">
+        <div className="space-y-1">
+          <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             {loadingH
               ? <Loader2 size={13} className="animate-spin text-muted-foreground" />
               : <StatusDot status={globalStatus} />
             }
-            Configurador de Servicios
+            Configurador de Infraestructura
           </h3>
           {health && (
-            <p className="text-[9px] text-muted-foreground">
-              Estrategia activa: <span className="font-bold text-foreground/70">{health.activeDataStrategy}</span>
-              {' · '}
-              <span className={cn(
-                'font-bold',
-                globalStatus === 'pass' ? 'text-emerald-600' : globalStatus === 'warn' ? 'text-amber-600' : 'text-destructive',
-              )}>{globalStatus.toUpperCase()}</span>
+            <p className="text-[10px] text-muted-foreground">
+              Persistencia Activa:{' '}
+              <span className="font-black text-foreground capitalize bg-primary/10 text-primary px-2.5 py-0.5 rounded-full ml-1 text-[8px] uppercase tracking-wider">
+                {health.activeDataStrategy === 'local' ? 'Local (Archivos JSON)' : health.activeDataStrategy}
+              </span>
             </p>
           )}
         </div>
         <Button variant="ghost" size="sm" onClick={fetchHealth} disabled={loadingH}
-          className="h-7 text-[9px] font-black uppercase tracking-widest rounded-xl gap-1.5 px-3 text-muted-foreground hover:text-primary">
+          className="h-8 text-[9px] font-black uppercase tracking-widest rounded-xl gap-2 px-4 text-muted-foreground hover:text-primary">
           <RefreshCw size={10} className={cn(loadingH && 'animate-spin')} /> Actualizar
         </Button>
       </div>
 
-      {/* ── Bootstrap gate ──────────────────────────────────────────── */}
-      {health && !presence['VERCEL_ACCESS_TOKEN'] && !presence['NETLIFY_AUTH_TOKEN'] && <BootstrapGate />}
-
       {/* ── Save feedback ───────────────────────────────────────────── */}
       {saveMsg && (
-        <div className="px-3 py-2 rounded-xl bg-muted/50 text-[10px] text-muted-foreground border border-border/40">
+        <div className="px-4 py-3 rounded-2xl bg-primary/5 text-[10px] text-primary border border-primary/20 animate-in fade-in duration-200">
           {saveMsg}
         </div>
       )}
@@ -819,168 +637,398 @@ export function DeploySection() {
         <DeployStatusBar deploy={deploy} onDismiss={() => setDeploy(null)} />
       )}
 
-      {/* ── GitHub Strategy ─────────────────────────────────────────── */}
-      <StrategyCard
-        icon={Github}
-        title="Datos — GitHub Strategy"
-        subtitle={health?.activeDataStrategy === 'github' ? 'Estrategia activa' : undefined}
-        check={githubCk}
-        defaultOpen={!githubCk || githubCk.status !== 'pass'}
-      >
-        <div className="space-y-2">
-          <CredentialField name="GITHUB_TOKEN" value={forms.github.GITHUB_TOKEN} onChange={v => setField('github', 'GITHUB_TOKEN', v)} exists={!!presence['GITHUB_TOKEN']} sensitive />
-          <CredentialField name="GITHUB_REPO" value={forms.github.GITHUB_REPO} onChange={v => setField('github', 'GITHUB_REPO', v)} exists={!!presence['GITHUB_REPO']} sensitive={false} placeholder="usuario/repositorio" />
-          <CredentialField name="GITHUB_BRANCH" value={forms.github.GITHUB_BRANCH} onChange={v => setField('github', 'GITHUB_BRANCH', v)} exists={!!presence['GITHUB_BRANCH']} sensitive={false} placeholder="main (opcional)" />
+      {/* ── PASO 1: Hosting Cloud ────────────────────────────────────── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-black">1</span>
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Hosting & Plataforma Cloud</h4>
         </div>
-        <ActionRow
-          onTest={() => handleTest('github', { GITHUB_TOKEN: forms.github.GITHUB_TOKEN, GITHUB_REPO: forms.github.GITHUB_REPO, GITHUB_BRANCH: forms.github.GITHUB_BRANCH })}
-          onSave={(redeploy) => handleSave('github', [
-            { key: 'GITHUB_TOKEN', value: forms.github.GITHUB_TOKEN, sensitive: true },
-            { key: 'GITHUB_REPO', value: forms.github.GITHUB_REPO, sensitive: false },
-            { key: 'GITHUB_BRANCH', value: forms.github.GITHUB_BRANCH, sensitive: false },
-          ], redeploy)}
-          testResult={testResults['github'] ?? null}
-          testing={testingId === 'github'}
-          saving={savingId === 'github'}
-          isDevMode={isDevMode}
-        />
-      </StrategyCard>
 
-      {/* ── PostgreSQL / Neon ───────────────────────────────────────── */}
-      <StrategyCard
-        icon={Database}
-        title="Datos — PostgreSQL"
-        subtitle={
-          health?.activeDataStrategy === 'postgres'
-            ? 'Estrategia activa'
-            : 'Neon · Supabase · Railway · Render'
-        }
-        check={postgresCk}
-        defaultOpen={health?.activeDataStrategy === 'postgres' && postgresCk?.status !== 'pass'}
-      >
-        <div className="text-[9px] text-muted-foreground px-1 pb-1 leading-relaxed">
-          Un único <code className="bg-muted px-1 rounded">DATABASE_URL</code> conecta con cualquier proveedor Postgres estándar.
-          Las tablas se crean automáticamente — no necesitas ejecutar SQL de setup.
-        </div>
-        <div className="space-y-2">
-          <CredentialField
-            name="DATABASE_URL"
-            value={forms.postgres.DATABASE_URL}
-            onChange={v => setField('postgres', 'DATABASE_URL', v)}
-            exists={!!presence['DATABASE_URL']}
-            sensitive
-            placeholder="postgresql://user:pass@host/db"
-          />
-        </div>
-        <ActionRow
-          onTest={() => handleTest('postgres', { DATABASE_URL: forms.postgres.DATABASE_URL })}
-          onSave={(redeploy) => handleSave('postgres', [
-            { key: 'DATABASE_URL', value: forms.postgres.DATABASE_URL, sensitive: true },
-          ], redeploy)}
-          testResult={testResults['postgres'] ?? null}
-          testing={testingId === 'postgres'}
-          saving={savingId === 'postgres'}
-          isDevMode={isDevMode}
-        />
-      </StrategyCard>
-
-      {/* ── Cloudflare R2 ───────────────────────────────────────────── */}
-      <StrategyCard
-        icon={Cloud}
-        title="Archivos — Cloudflare R2"
-        check={r2Ck}
-        defaultOpen={!r2Ck || r2Ck.status !== 'pass'}
-      >
-        <div className="space-y-2">
-          <CredentialField name="CF_ACCOUNT_ID" value={forms.r2.CF_ACCOUNT_ID} onChange={v => setField('r2', 'CF_ACCOUNT_ID', v)} exists={!!presence['CF_ACCOUNT_ID']} sensitive={false} />
-          <CredentialField name="CF_R2_BUCKET" value={forms.r2.CF_R2_BUCKET} onChange={v => setField('r2', 'CF_R2_BUCKET', v)} exists={!!presence['CF_R2_BUCKET']} sensitive={false} />
-          <CredentialField name="CF_R2_ACCESS_KEY_ID" value={forms.r2.CF_R2_ACCESS_KEY_ID} onChange={v => setField('r2', 'CF_R2_ACCESS_KEY_ID', v)} exists={!!presence['CF_R2_ACCESS_KEY_ID']} sensitive />
-          <CredentialField name="CF_R2_SECRET_ACCESS_KEY" value={forms.r2.CF_R2_SECRET_ACCESS_KEY} onChange={v => setField('r2', 'CF_R2_SECRET_ACCESS_KEY', v)} exists={!!presence['CF_R2_SECRET_ACCESS_KEY']} sensitive />
-          <CredentialField name="CF_R2_PUBLIC_URL" value={forms.r2.CF_R2_PUBLIC_URL} onChange={v => setField('r2', 'CF_R2_PUBLIC_URL', v)} exists={!!presence['CF_R2_PUBLIC_URL']} sensitive={false} placeholder="https://pub-xxx.r2.dev (opcional)" />
-        </div>
-        <ActionRow
-          onTest={() => handleTest('r2', { CF_ACCOUNT_ID: forms.r2.CF_ACCOUNT_ID, CF_R2_BUCKET: forms.r2.CF_R2_BUCKET, CF_R2_ACCESS_KEY_ID: forms.r2.CF_R2_ACCESS_KEY_ID, CF_R2_SECRET_ACCESS_KEY: forms.r2.CF_R2_SECRET_ACCESS_KEY })}
-          onSave={(redeploy) => handleSave('r2', [
-            { key: 'CF_ACCOUNT_ID', value: forms.r2.CF_ACCOUNT_ID, sensitive: false },
-            { key: 'CF_R2_BUCKET', value: forms.r2.CF_R2_BUCKET, sensitive: false },
-            { key: 'CF_R2_ACCESS_KEY_ID', value: forms.r2.CF_R2_ACCESS_KEY_ID, sensitive: true },
-            { key: 'CF_R2_SECRET_ACCESS_KEY', value: forms.r2.CF_R2_SECRET_ACCESS_KEY, sensitive: true },
-            { key: 'CF_R2_PUBLIC_URL', value: forms.r2.CF_R2_PUBLIC_URL, sensitive: false },
-          ], redeploy)}
-          testResult={testResults['r2'] ?? null}
-          testing={testingId === 'r2'}
-          saving={savingId === 'r2'}
-          isDevMode={isDevMode}
-        />
-      </StrategyCard>
-
-      {/* ── Supabase ────────────────────────────────────────────────── */}
-      <StrategyCard
-        icon={Database}
-        title="Datos — Supabase (Opcional)"
-        subtitle={health?.activeDataStrategy === 'supabase' ? 'Estrategia activa' : 'Alternativa a GitHub Strategy'}
-        check={supabaseCk}
-        defaultOpen={health?.activeDataStrategy === 'supabase' && supabaseCk?.status !== 'pass'}
-      >
-        <div className="text-[9px] text-muted-foreground px-1 pb-1">
-          Prioridad: <code className="bg-muted px-1 rounded">GITHUB_REPO</code> &gt; <code className="bg-muted px-1 rounded">SUPABASE_URL</code> &gt; Local. Si ambas están configuradas, GitHub gana.
-        </div>
-        <div className="space-y-2">
-          <CredentialField name="SUPABASE_URL" value={forms.supabase.SUPABASE_URL} onChange={v => setField('supabase', 'SUPABASE_URL', v)} exists={!!presence['SUPABASE_URL']} sensitive={false} placeholder="https://xxxx.supabase.co" />
-          <CredentialField name="SUPABASE_SERVICE_ROLE_KEY" value={forms.supabase.SUPABASE_SERVICE_ROLE_KEY} onChange={v => setField('supabase', 'SUPABASE_SERVICE_ROLE_KEY', v)} exists={!!presence['SUPABASE_SERVICE_ROLE_KEY']} sensitive />
-        </div>
-        <ActionRow
-          onTest={() => handleTest('supabase', { SUPABASE_URL: forms.supabase.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: forms.supabase.SUPABASE_SERVICE_ROLE_KEY })}
-          onSave={(redeploy) => handleSave('supabase', [
-            { key: 'SUPABASE_URL', value: forms.supabase.SUPABASE_URL, sensitive: false },
-            { key: 'SUPABASE_SERVICE_ROLE_KEY', value: forms.supabase.SUPABASE_SERVICE_ROLE_KEY, sensitive: true },
-          ], redeploy)}
-          testResult={testResults['supabase'] ?? null}
-          testing={testingId === 'supabase'}
-          saving={savingId === 'supabase'}
-          isDevMode={isDevMode}
-        />
-      </StrategyCard>
-
-      {/* ── Auth ────────────────────────────────────────────────────── */}
-      <StrategyCard
-        icon={Shield}
-        title="Auth & Seguridad"
-        check={sessionCk}
-        defaultOpen={!sessionCk || sessionCk.status !== 'pass'}
-      >
-        <div className="space-y-2">
-          <CredentialField name="SESSION_SECRET" value={forms.auth.SESSION_SECRET} onChange={v => setField('auth', 'SESSION_SECRET', v)} exists={!!presence['SESSION_SECRET']} sensitive />
-        </div>
-        {!presence['SESSION_SECRET'] && (
-          <div className="space-y-1.5">
-            <p className="text-[9px] text-muted-foreground font-bold">Genera un secreto de 64 caracteres:</p>
-            <CopySnippet text={`# PowerShell\n$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()\n$b = New-Object byte[] 32; $rng.GetBytes($b)\n[System.BitConverter]::ToString($b).Replace('-','').ToLower()\n\n# macOS/Linux\nopenssl rand -hex 32`} />
+        <StrategyCard
+          icon={Rocket}
+          title="Proveedor de Hosting Cloud"
+          subtitle={
+            presence['VERCEL_ACCESS_TOKEN']
+              ? 'Vercel — Bootstrap Habilitado'
+              : presence['NETLIFY_AUTH_TOKEN']
+                ? 'Netlify — Bootstrap Habilitado'
+                : 'Sin bootstrap — Haz clic para configurar Vercel o Netlify'
+          }
+          check={
+            presence['VERCEL_ACCESS_TOKEN'] || presence['NETLIFY_AUTH_TOKEN']
+              ? { componentId: 'hosting', componentType: 'hosting', status: 'pass', time: '', latency_ms: 0 }
+              : { componentId: 'hosting', componentType: 'hosting', status: 'fail', output: 'Requiere configurar Vercel o Netlify para habilitar redespliegues automáticos.', time: '', latency_ms: 0 }
+          }
+          defaultOpen={!presence['VERCEL_ACCESS_TOKEN'] && !presence['NETLIFY_AUTH_TOKEN']}
+        >
+          {/* Provider selector tabs */}
+          <div className="flex border-b border-border/30 pb-2 mb-3 gap-2">
+            <button
+              onClick={() => setActiveProviderTab('vercel')}
+              className={cn(
+                'text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-xl border transition-all',
+                activeProviderTab === 'vercel'
+                  ? 'border-primary bg-primary/10 text-primary font-black'
+                  : 'border-transparent text-muted-foreground hover:text-foreground font-normal'
+              )}
+            >
+              Vercel
+            </button>
+            <button
+              onClick={() => setActiveProviderTab('netlify')}
+              className={cn(
+                'text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-xl border transition-all',
+                activeProviderTab === 'netlify'
+                  ? 'border-primary bg-primary/10 text-primary font-black'
+                  : 'border-transparent text-muted-foreground hover:text-foreground font-normal'
+              )}
+            >
+              Netlify
+            </button>
           </div>
-        )}
-        {/* Session check is purely local (length ≥ 32) — no external connection to test.
-            The health status shown in the card header IS the live check result. */}
-        <ActionRow
-          onTest={fetchHealth}
-          onSave={(redeploy) => handleSave('auth', [
-            { key: 'SESSION_SECRET', value: forms.auth.SESSION_SECRET, sensitive: true },
-          ], redeploy)}
-          testResult={sessionCk ?? null}
-          testing={loadingH}
-          saving={savingId === 'auth'}
-          isDevMode={isDevMode}
-        />
-      </StrategyCard>
 
-      {/* ── Migration Panel ─────────────────────────────────────────── */}
-      <MigrationPanel />
+          {activeProviderTab === 'vercel' ? (
+            <div className="space-y-3">
+              <div className="text-[9px] text-muted-foreground leading-relaxed px-1 pb-1">
+                Configura tu token personal de Vercel y el ID del proyecto para habilitar el guardado automático de variables y los redespliegues.
+                <details className="mt-1.5 text-muted-foreground/60 cursor-pointer">
+                  <summary className="hover:text-primary font-bold">¿Cómo obtener estos datos?</summary>
+                  <div className="mt-1.5 space-y-2 pl-2.5 border-l border-border/40 text-[9px]">
+                    <p><b>1. Token:</b> Vercel Dashboard → Settings → Tokens → Create token (scope: Full Account).</p>
+                    <p><b>2. Project ID:</b> Vercel Dashboard → Tu proyecto → Settings → General → Project ID.</p>
+                  </div>
+                </details>
+              </div>
+              <CredentialField
+                name="VERCEL_ACCESS_TOKEN"
+                value={forms.vercel.VERCEL_ACCESS_TOKEN}
+                onChange={v => setField('vercel', 'VERCEL_ACCESS_TOKEN', v)}
+                exists={!!presence['VERCEL_ACCESS_TOKEN']}
+                sensitive
+              />
+              <CredentialField
+                name="VERCEL_PROJECT_ID"
+                value={forms.vercel.VERCEL_PROJECT_ID}
+                onChange={v => setField('vercel', 'VERCEL_PROJECT_ID', v)}
+                exists={!!presence['VERCEL_PROJECT_ID']}
+                sensitive={false}
+                placeholder="prj_..."
+              />
+              <CredentialField
+                name="VERCEL_TEAM_ID"
+                value={forms.vercel.VERCEL_TEAM_ID}
+                onChange={v => setField('vercel', 'VERCEL_TEAM_ID', v)}
+                exists={!!presence['VERCEL_TEAM_ID']}
+                sensitive={false}
+                placeholder="team_... (opcional)"
+              />
+              <ActionRow
+                onTest={() => handleTest('vercel', {
+                  VERCEL_ACCESS_TOKEN: forms.vercel.VERCEL_ACCESS_TOKEN,
+                  VERCEL_PROJECT_ID: forms.vercel.VERCEL_PROJECT_ID,
+                  VERCEL_TEAM_ID: forms.vercel.VERCEL_TEAM_ID
+                })}
+                onSave={(redeploy) => handleSave('vercel', [
+                  { key: 'VERCEL_ACCESS_TOKEN', value: forms.vercel.VERCEL_ACCESS_TOKEN, sensitive: true },
+                  { key: 'VERCEL_PROJECT_ID', value: forms.vercel.VERCEL_PROJECT_ID, sensitive: false },
+                  { key: 'VERCEL_TEAM_ID', value: forms.vercel.VERCEL_TEAM_ID, sensitive: false }
+                ], redeploy)}
+                testResult={testResults['vercel'] ?? null}
+                testing={testingId === 'vercel'}
+                saving={savingId === 'vercel'}
+                isDevMode={isDevMode}
+                isCustomDeploy={false} // Explicitly false to allow bootstrapping Vercel in production
+              />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="text-[9px] text-muted-foreground leading-relaxed px-1 pb-1">
+                Configura tu token de acceso personal de Netlify y el Site ID para habilitar el guardado automático de variables y los redespliegues.
+                <details className="mt-1.5 text-muted-foreground/60 cursor-pointer">
+                  <summary className="hover:text-primary font-bold">¿Cómo obtener estos datos?</summary>
+                  <div className="mt-1.5 space-y-2 pl-2.5 border-l border-border/40 text-[9px]">
+                    <p><b>1. Token:</b> Netlify Dashboard → User Settings → Applications → Personal access tokens → New access token.</p>
+                    <p><b>2. Site ID:</b> Netlify Dashboard → Tu sitio → Site configuration → General → Site details → Site ID.</p>
+                  </div>
+                </details>
+              </div>
+              <CredentialField
+                name="NETLIFY_AUTH_TOKEN"
+                value={forms.netlify.NETLIFY_AUTH_TOKEN}
+                onChange={v => setField('netlify', 'NETLIFY_AUTH_TOKEN', v)}
+                exists={!!presence['NETLIFY_AUTH_TOKEN']}
+                sensitive
+              />
+              <CredentialField
+                name="NETLIFY_SITE_ID"
+                value={forms.netlify.NETLIFY_SITE_ID}
+                onChange={v => setField('netlify', 'NETLIFY_SITE_ID', v)}
+                exists={!!presence['NETLIFY_SITE_ID']}
+                sensitive={false}
+                placeholder="site-uuid-..."
+              />
+              <ActionRow
+                onTest={() => handleTest('netlify', {
+                  NETLIFY_AUTH_TOKEN: forms.netlify.NETLIFY_AUTH_TOKEN,
+                  NETLIFY_SITE_ID: forms.netlify.NETLIFY_SITE_ID
+                })}
+                onSave={(redeploy) => handleSave('netlify', [
+                  { key: 'NETLIFY_AUTH_TOKEN', value: forms.netlify.NETLIFY_AUTH_TOKEN, sensitive: true },
+                  { key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false }
+                ], redeploy)}
+                testResult={testResults['netlify'] ?? null}
+                testing={testingId === 'netlify'}
+                saving={savingId === 'netlify'}
+                isDevMode={isDevMode}
+                isCustomDeploy={false} // Explicitly false to allow bootstrapping Netlify in production
+              />
+            </div>
+          )}
+        </StrategyCard>
+      </div>
+
+      {/* ── PASO 2: Persistencia de Datos ────────────────────────────── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-black">2</span>
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Persistencia de Datos (Base de Datos / DNA)</h4>
+        </div>
+
+        <StrategyCard
+          icon={Database}
+          title="Persistencia & Base de Datos"
+          subtitle={
+            health?.activeDataStrategy === 'local'
+              ? 'Local (Archivos JSON) — Cambia a un motor en la nube abajo'
+              : `${health?.activeDataStrategy === 'github' ? 'GitHub Repo' : health?.activeDataStrategy === 'postgres' ? 'PostgreSQL' : 'Supabase SDK'} — Sincronizado y Activo`
+          }
+          check={
+            health?.activeDataStrategy === 'github' ? githubCk
+            : health?.activeDataStrategy === 'postgres' ? postgresCk
+            : health?.activeDataStrategy === 'supabase' ? supabaseCk
+            : { componentId: 'local', componentType: 'data', status: 'warn', output: 'Persistencia en archivos JSON locales. Los datos se perderán al redesplegar en la nube.', time: '', latency_ms: 0 }
+          }
+          defaultOpen={true}
+        >
+          {/* Strategy tab selector */}
+          <div className="flex border-b border-border/30 pb-2 mb-3 gap-2">
+            <button
+              onClick={() => setActiveDataTab('github')}
+              className={cn(
+                'text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5',
+                activeDataTab === 'github'
+                  ? 'border-primary bg-primary/10 text-primary font-black'
+                  : 'border-transparent text-muted-foreground hover:text-foreground font-normal'
+              )}
+            >
+              GitHub Strategy
+              {health?.activeDataStrategy === 'github' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveDataTab('postgres')}
+              className={cn(
+                'text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5',
+                activeDataTab === 'postgres'
+                  ? 'border-primary bg-primary/10 text-primary font-black'
+                  : 'border-transparent text-muted-foreground hover:text-foreground font-normal'
+              )}
+            >
+              PostgreSQL
+              {health?.activeDataStrategy === 'postgres' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveDataTab('supabase')}
+              className={cn(
+                'text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5',
+                activeDataTab === 'supabase'
+                  ? 'border-primary bg-primary/10 text-primary font-black'
+                  : 'border-transparent text-muted-foreground hover:text-foreground font-normal'
+              )}
+            >
+              Supabase SDK
+              {health?.activeDataStrategy === 'supabase' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </button>
+          </div>
+
+          {activeDataTab === 'github' && (
+            <div className="space-y-3">
+              <div className="text-[9px] text-muted-foreground leading-relaxed px-1 pb-1">
+                Guarda los registros y configuraciones como archivos JSON dentro de tu repositorio GitHub. 
+                Es el método recomendado para mantener versionados y agnósticos los datos de tu proyecto.
+              </div>
+              <CredentialField name="GITHUB_TOKEN" value={forms.github.GITHUB_TOKEN} onChange={v => setField('github', 'GITHUB_TOKEN', v)} exists={!!presence['GITHUB_TOKEN']} sensitive />
+              <CredentialField name="GITHUB_REPO" value={forms.github.GITHUB_REPO} onChange={v => setField('github', 'GITHUB_REPO', v)} exists={!!presence['GITHUB_REPO']} sensitive={false} placeholder="usuario/repositorio" />
+              <CredentialField name="GITHUB_BRANCH" value={forms.github.GITHUB_BRANCH} onChange={v => setField('github', 'GITHUB_BRANCH', v)} exists={!!presence['GITHUB_BRANCH']} sensitive={false} placeholder="main (opcional)" />
+              
+              <ActionRow
+                onTest={() => handleTest('github', { GITHUB_TOKEN: forms.github.GITHUB_TOKEN, GITHUB_REPO: forms.github.GITHUB_REPO, GITHUB_BRANCH: forms.github.GITHUB_BRANCH })}
+                onSave={(redeploy) => handleSave('github', [
+                  { key: 'GITHUB_TOKEN', value: forms.github.GITHUB_TOKEN, sensitive: true },
+                  { key: 'GITHUB_REPO', value: forms.github.GITHUB_REPO, sensitive: false },
+                  { key: 'GITHUB_BRANCH', value: forms.github.GITHUB_BRANCH, sensitive: false },
+                ], redeploy)}
+                testResult={testResults['github'] ?? null}
+                testing={testingId === 'github'}
+                saving={savingId === 'github'}
+                isDevMode={isDevMode}
+                isCustomDeploy={isCustomDeploy}
+              />
+            </div>
+          )}
+
+          {activeDataTab === 'postgres' && (
+            <div className="space-y-3">
+              <div className="text-[9px] text-muted-foreground leading-relaxed px-1 pb-1">
+                Un único <code className="bg-muted px-1 rounded">DATABASE_URL</code> conecta con cualquier proveedor Postgres estándar (Supabase, Neon, Railway, Render).
+                Las tablas se crean automáticamente en la primera consulta.
+              </div>
+              <CredentialField
+                name="DATABASE_URL"
+                value={forms.postgres.DATABASE_URL}
+                onChange={v => setField('postgres', 'DATABASE_URL', v)}
+                exists={!!presence['DATABASE_URL']}
+                sensitive
+                placeholder="postgresql://user:pass@host/db"
+              />
+              
+              <ActionRow
+                onTest={() => handleTest('postgres', { DATABASE_URL: forms.postgres.DATABASE_URL })}
+                onSave={(redeploy) => handleSave('postgres', [
+                  { key: 'DATABASE_URL', value: forms.postgres.DATABASE_URL, sensitive: true },
+                ], redeploy)}
+                testResult={testResults['postgres'] ?? null}
+                testing={testingId === 'postgres'}
+                saving={savingId === 'postgres'}
+                isDevMode={isDevMode}
+                isCustomDeploy={isCustomDeploy}
+              />
+            </div>
+          )}
+
+          {activeDataTab === 'supabase' && (
+            <div className="space-y-3">
+              <div className="text-[9px] text-muted-foreground leading-relaxed px-1 pb-1">
+                Interactúa directamente con la API PostgREST a través del SDK de Supabase.
+                Nota: Si tienes configurado tanto GitHub como Supabase, GitHub tiene prioridad de resolución.
+              </div>
+              <CredentialField name="SUPABASE_URL" value={forms.supabase.SUPABASE_URL} onChange={v => setField('supabase', 'SUPABASE_URL', v)} exists={!!presence['SUPABASE_URL']} sensitive={false} placeholder="https://xxxx.supabase.co" />
+              <CredentialField name="SUPABASE_SERVICE_ROLE_KEY" value={forms.supabase.SUPABASE_SERVICE_ROLE_KEY} onChange={v => setField('supabase', 'SUPABASE_SERVICE_ROLE_KEY', v)} exists={!!presence['SUPABASE_SERVICE_ROLE_KEY']} sensitive />
+              
+              <ActionRow
+                onTest={() => handleTest('supabase', { SUPABASE_URL: forms.supabase.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: forms.supabase.SUPABASE_SERVICE_ROLE_KEY })}
+                onSave={(redeploy) => handleSave('supabase', [
+                  { key: 'SUPABASE_URL', value: forms.supabase.SUPABASE_URL, sensitive: false },
+                  { key: 'SUPABASE_SERVICE_ROLE_KEY', value: forms.supabase.SUPABASE_SERVICE_ROLE_KEY, sensitive: true },
+                ], redeploy)}
+                testResult={testResults['supabase'] ?? null}
+                testing={testingId === 'supabase'}
+                saving={savingId === 'supabase'}
+                isDevMode={isDevMode}
+                isCustomDeploy={isCustomDeploy}
+              />
+            </div>
+          )}
+        </StrategyCard>
+      </div>
+
+      {/* ── PASO 3: Almacenamiento de Archivos (Multimedia) ──────────── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-black">3</span>
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Archivos & Multimedia (Cloudflare R2) — Paso Crítico</h4>
+        </div>
+
+        <StrategyCard
+          icon={Cloud}
+          title="Cloudflare R2"
+          subtitle={r2Ck?.status === 'pass' ? 'Sincronizado y listo' : 'Requerido para la carga de multimedia y adjuntos'}
+          check={r2Ck}
+          defaultOpen={!r2Ck || r2Ck.status !== 'pass'}
+        >
+          <div className="text-[9.5px] text-muted-foreground leading-relaxed mb-1">
+            Indispensable para el manejo correcto de imágenes y archivos cargados desde el panel dinámico. 
+            Previene almacenamiento ineficiente en disco o base de datos.
+          </div>
+          <div className="space-y-3">
+            <CredentialField name="CF_ACCOUNT_ID" value={forms.r2.CF_ACCOUNT_ID} onChange={v => setField('r2', 'CF_ACCOUNT_ID', v)} exists={!!presence['CF_ACCOUNT_ID']} sensitive={false} />
+            <CredentialField name="CF_R2_BUCKET" value={forms.r2.CF_R2_BUCKET} onChange={v => setField('r2', 'CF_R2_BUCKET', v)} exists={!!presence['CF_R2_BUCKET']} sensitive={false} />
+            <CredentialField name="CF_R2_ACCESS_KEY_ID" value={forms.r2.CF_R2_ACCESS_KEY_ID} onChange={v => setField('r2', 'CF_R2_ACCESS_KEY_ID', v)} exists={!!presence['CF_R2_ACCESS_KEY_ID']} sensitive />
+            <CredentialField name="CF_R2_SECRET_ACCESS_KEY" value={forms.r2.CF_R2_SECRET_ACCESS_KEY} onChange={v => setField('r2', 'CF_R2_SECRET_ACCESS_KEY', v)} exists={!!presence['CF_R2_SECRET_ACCESS_KEY']} sensitive />
+            <CredentialField name="CF_R2_PUBLIC_URL" value={forms.r2.CF_R2_PUBLIC_URL} onChange={v => setField('r2', 'CF_R2_PUBLIC_URL', v)} exists={!!presence['CF_R2_PUBLIC_URL']} sensitive={false} placeholder="https://pub-xxx.r2.dev (opcional)" />
+          </div>
+          <ActionRow
+            onTest={() => handleTest('r2', { CF_ACCOUNT_ID: forms.r2.CF_ACCOUNT_ID, CF_R2_BUCKET: forms.r2.CF_R2_BUCKET, CF_R2_ACCESS_KEY_ID: forms.r2.CF_R2_ACCESS_KEY_ID, CF_R2_SECRET_ACCESS_KEY: forms.r2.CF_R2_SECRET_ACCESS_KEY })}
+            onSave={(redeploy) => handleSave('r2', [
+              { key: 'CF_ACCOUNT_ID', value: forms.r2.CF_ACCOUNT_ID, sensitive: false },
+              { key: 'CF_R2_BUCKET', value: forms.r2.CF_R2_BUCKET, sensitive: false },
+              { key: 'CF_R2_ACCESS_KEY_ID', value: forms.r2.CF_R2_ACCESS_KEY_ID, sensitive: true },
+              { key: 'CF_R2_SECRET_ACCESS_KEY', value: forms.r2.CF_R2_SECRET_ACCESS_KEY, sensitive: true },
+              { key: 'CF_R2_PUBLIC_URL', value: forms.r2.CF_R2_PUBLIC_URL, sensitive: false },
+            ], redeploy)}
+            testResult={testResults['r2'] ?? null}
+            testing={testingId === 'r2'}
+            saving={savingId === 'r2'}
+            isDevMode={isDevMode}
+            isCustomDeploy={isCustomDeploy}
+          />
+        </StrategyCard>
+      </div>
+
+      {/* ── PASO 4: Seguridad y Auth ────────────────────────────────── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-black">4</span>
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Seguridad & Sesiones</h4>
+        </div>
+
+        <StrategyCard
+          icon={Shield}
+          title="Auth & Seguridad"
+          check={sessionCk}
+          defaultOpen={!sessionCk || sessionCk.status !== 'pass'}
+        >
+          <div className="space-y-3">
+            <CredentialField name="SESSION_SECRET" value={forms.auth.SESSION_SECRET} onChange={v => setField('auth', 'SESSION_SECRET', v)} exists={!!presence['SESSION_SECRET']} sensitive />
+          </div>
+          {!presence['SESSION_SECRET'] && (
+            <div className="space-y-1.5 pt-1">
+              <p className="text-[9px] text-muted-foreground font-bold">Genera un secreto seguro de 64 caracteres:</p>
+              <CopySnippet text={`# PowerShell\n$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()\n$b = New-Object byte[] 32; $rng.GetBytes($b)\n[System.BitConverter]::ToString($b).Replace('-','').ToLower()\n\n# macOS/Linux\nopenssl rand -hex 32`} />
+            </div>
+          )}
+          <ActionRow
+            onTest={fetchHealth}
+            onSave={(redeploy) => handleSave('auth', [
+              { key: 'SESSION_SECRET', value: forms.auth.SESSION_SECRET, sensitive: true },
+            ], redeploy)}
+            testResult={sessionCk ?? null}
+            testing={loadingH}
+            saving={savingId === 'auth'}
+            isDevMode={isDevMode}
+            isCustomDeploy={isCustomDeploy}
+          />
+        </StrategyCard>
+      </div>
 
       {/* ── .env.local template ─────────────────────────────────────── */}
-      <div className="rounded-2xl border bg-muted/20 p-4 space-y-2">
-        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Plantilla .env.local</p>
+      <div className="rounded-[2rem] border bg-muted/20 p-5 space-y-3">
+        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Plantilla .env.local de Referencia</p>
         <CopySnippet text={[
-          '# Auth',
+          '# Auth & Sessions',
           'SESSION_SECRET=',
+          '',
+          '# Hosting Cloud',
+          'VERCEL_ACCESS_TOKEN=',
+          'VERCEL_PROJECT_ID=',
+          'VERCEL_TEAM_ID=',
+          'NETLIFY_AUTH_TOKEN=',
+          'NETLIFY_SITE_ID=',
           '',
           '# Datos — GitHub Strategy',
           'GITHUB_TOKEN=',
@@ -994,11 +1042,109 @@ export function DeploySection() {
           'CF_R2_SECRET_ACCESS_KEY=',
           'CF_R2_PUBLIC_URL=',
           '',
-          '# Datos — Supabase (alternativa a GitHub)',
+          '# Datos — Supabase (alternativa a GitHub/Postgres)',
           'SUPABASE_URL=',
           'SUPABASE_SERVICE_ROLE_KEY=',
         ].join('\n')} />
       </div>
+
+      {/* ── DIÁLOGO MIGRACIÓN AUTOMÁTICA ─────────────────────────────── */}
+      <Dialog open={!!migrationPrompt} onOpenChange={(o) => { if (!o && !migrationRunning) setMigrationPrompt(null); }}>
+        <DialogContent className="max-w-md rounded-[2rem] p-6 bg-card border shadow-xl">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+              <ArrowLeftRight size={14} className="text-primary animate-pulse" /> Sincronización de Datos Detectada
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground leading-relaxed mt-2">
+              Detectamos un cambio de persistencia hacia <span className="font-bold text-foreground uppercase">{migrationPrompt?.to}</span>. 
+              ¿Deseas migrar y sincronizar los datos de <span className="font-bold text-foreground uppercase">{migrationPrompt?.from}</span> a su nueva ubicación?
+            </p>
+          </DialogHeader>
+
+          {/* Estado de la Migración en Ejecución */}
+          {migrationRunning && (
+            <div className="py-6 flex flex-col items-center gap-3">
+              <Loader2 size={24} className="animate-spin text-primary" />
+              <p className="text-[10px] font-bold text-muted-foreground animate-pulse">Sincronizando registros en la base de datos...</p>
+            </div>
+          )}
+
+          {/* Resultado de la Migración */}
+          {migrationResult && (
+            <div className={cn(
+              'rounded-xl border p-4 space-y-2.5 text-xs',
+              migrationResult.success
+                ? 'border-emerald-500/20 bg-emerald-500/5'
+                : 'border-destructive/25 bg-destructive/5'
+            )}>
+              <div className="flex items-center justify-between">
+                <span className="font-bold uppercase text-[10px]">
+                  Resultado de Sincronización
+                </span>
+                <span className={cn(
+                  'font-black text-[9px] uppercase tracking-wider',
+                  migrationResult.success ? 'text-emerald-600' : 'text-destructive'
+                )}>
+                  {migrationResult.success ? 'ÉXITO' : 'ERROR'}
+                </span>
+              </div>
+
+              {migrationResult.error ? (
+                <p className="text-[9px] font-mono text-destructive leading-normal">{migrationResult.error}</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 text-[9px] font-mono text-muted-foreground bg-muted/20 p-2 rounded-lg">
+                  <div>Tablas: <b className="text-foreground">{migrationResult.namespacesScanned}</b></div>
+                  <div>Leídos: <b className="text-foreground">{migrationResult.totalRead}</b></div>
+                  <div>Escritos: <b className="text-foreground">{migrationResult.totalWritten}</b></div>
+                </div>
+              )}
+
+              {migrationResult.report.filter(r => !r.skipped || r.errors.length > 0).length > 0 && (
+                <div className="space-y-1.5 max-h-32 overflow-y-auto mt-2 border-t pt-2">
+                  {migrationResult.report
+                    .filter(r => !r.skipped || r.errors.length > 0)
+                    .map(r => (
+                      <div key={r.namespace} className="flex items-center justify-between py-0.5 text-[9px]">
+                        <span className="font-mono text-foreground/75 truncate max-w-[200px]">{r.namespace}</span>
+                        <span className="font-mono text-muted-foreground shrink-0">{r.read} → {r.written}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-4 flex gap-2 justify-end">
+            {!migrationResult ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  disabled={migrationRunning}
+                  onClick={() => setMigrationPrompt(null)}
+                  className="flex-1 text-[9px] font-black uppercase tracking-widest h-9 rounded-xl"
+                >
+                  Omitir e Iniciar Vacío
+                </Button>
+                <Button 
+                  onClick={handleRunMigration}
+                  disabled={migrationRunning}
+                  className="flex-1 text-[9px] font-black uppercase tracking-widest h-9 rounded-xl"
+                >
+                  {migrationRunning ? <Loader2 size={10} className="animate-spin mr-1.5" /> : null}
+                  Sincronizar Datos ahora
+                </Button>
+              </>
+            ) : (
+              <Button 
+                onClick={() => { setMigrationPrompt(null); setMigrationResult(null); }}
+                className="w-full text-[9px] font-black uppercase tracking-widest h-9 rounded-xl"
+              >
+                Cerrar
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

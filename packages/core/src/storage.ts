@@ -67,4 +67,15 @@ export interface AgnosticBridge {
    * Deletes a record from a specific namespace using its unique identifier.
    */
   remove(namespace: string, id: string): Promise<void>;
+
+  // ─── OPTIONAL REFACTORING API (Optimized Operations) ──────────────────────
+  
+  /** Renames a collection physically without iterating records */
+  renameCollection?(fromNamespace: string, toNamespace: string): Promise<void>;
+  
+  /** Renames a field across all records in a collection */
+  renameField?(namespace: string, oldKey: string, newKey: string): Promise<void>;
+  
+  /** Deletes a field from all records in a collection */
+  deleteField?(namespace: string, key: string): Promise<void>;
 }

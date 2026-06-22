@@ -12,18 +12,42 @@ interface EnvVarPayload {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json() as { variables: EnvVarPayload[]; redeploy?: boolean };
-  const { variables = [], redeploy = false } = body;
+  const body = await req.json() as { provider?: string; variables: EnvVarPayload[]; redeploy?: boolean };
+  const { provider: hintProvider, variables = [], redeploy = false } = body;
 
   if (variables.length === 0) {
     return NextResponse.json({ error: 'No se recibieron variables para guardar' }, { status: 400 });
   }
 
-  // Determine if we are running in a local environment.
-  const isLocal = (
-    (!process.env.VERCEL || !process.env.NOW_REGION) &&
-    !process.env.NETLIFY
-  ) || process.env.NODE_ENV === 'development';
+  // Determine active cloud provider (either from env or from the incoming payload for bootstrapping)
+  let activeCloud = getActiveProvider();
+  
+  if (!activeCloud && (hintProvider === 'vercel' || hintProvider === 'netlify')) {
+    if (hintProvider === 'vercel') {
+      const vToken = variables.find(v => v.key === 'VERCEL_ACCESS_TOKEN')?.value;
+      const vProjectId = variables.find(v => v.key === 'VERCEL_PROJECT_ID')?.value;
+      const vTeamId = variables.find(v => v.key === 'VERCEL_TEAM_ID')?.value;
+      if (vToken && vProjectId) {
+        activeCloud = {
+          provider: 'vercel',
+          credentials: { token: vToken, projectId: vProjectId, teamId: vTeamId }
+        };
+      }
+    } else if (hintProvider === 'netlify') {
+      const nToken = variables.find(v => v.key === 'NETLIFY_AUTH_TOKEN')?.value;
+      const nSiteId = variables.find(v => v.key === 'NETLIFY_SITE_ID')?.value;
+      if (nToken && nSiteId) {
+        activeCloud = {
+          provider: 'netlify',
+          credentials: { token: nToken, siteId: nSiteId }
+        };
+      }
+    }
+  }
+
+  // Determine if we are running in a local/custom environment that should save to .env.local
+  // We only fallback to local save if we are explicitly in development OR if there is no cloud provider available/configured.
+  const isLocal = process.env.NODE_ENV === 'development' || !activeCloud;
 
   if (isLocal) {
     try {
@@ -61,8 +85,9 @@ export async function POST(req: NextRequest) {
         failed: 0,
         errors: [],
         deployment: null,
-        isLocal: true,
-        message: 'Variables guardadas localmente en .env.local. Por favor reinicia tu servidor de desarrollo para aplicar los cambios.'
+        message: process.env.NODE_ENV === 'development' 
+          ? 'Variables guardadas localmente en .env.local. Por favor reinicia tu servidor de desarrollo para aplicar los cambios.'
+          : 'Variables guardadas en .env.local. Por favor reinicia el contenedor o proceso del servidor manualmente para aplicar los cambios.'
       });
     } catch (err: any) {
       return NextResponse.json({
@@ -71,7 +96,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const activeCloud = getActiveProvider();
+  // (If activeCloud is still null here, isLocal would have been true and we would have returned early above,
+  // except if process.env.NODE_ENV === 'development' and they provided activeCloud. Wait, if development and they provide cloud creds,
+  // we still save locally above. If they are in production and no activeCloud, they get the local custom deploy logic.)
+  
   if (!activeCloud) {
     return NextResponse.json({
       error: 'Debe configurar las credenciales del proveedor cloud (Vercel o Netlify) en las variables de entorno de producción una única vez.',
