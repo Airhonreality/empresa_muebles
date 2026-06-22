@@ -14,29 +14,35 @@ export const netlifyProvider: DeployProvider = {
     const { token, siteId } = credentials;
     const authH = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
+    // 1. Get Account ID from Site Info
+    const siteRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}`, { headers: authH });
+    if (!siteRes.ok) return { saved: 0, failed: variables.length, errors: ['No se pudo verificar el sitio en Netlify. Revisa tu Token y Site ID.'] };
+    const site = await siteRes.json();
+    const accountId = site.account_slug || site.account_name || site.account_id;
+
     const errors: string[] = [];
     let saved = 0;
 
     for (const v of variables) {
+      // 2. Prepare payload WITHOUT scopes (Free tier compatible)
       const payload = {
         key: v.key,
-        scopes: ['builds', 'functions', 'runtime', 'post_processing'],
         values: [{ value: v.value, context: 'all' }]
       };
 
-      // Try to update existing variable first
-      let res = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/envvars/${v.key}`, {
+      // 3. Try to update existing variable first
+      let res = await fetch(`https://api.netlify.com/api/v1/accounts/${accountId}/env/${v.key}?site_id=${siteId}`, {
         method: 'PUT',
         headers: authH,
         body: JSON.stringify(payload)
       });
 
       if (res.status === 404 || res.status === 422 || !res.ok) {
-        // If it doesn't exist or failed, try creating it
-        res = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/envvars`, {
+        // 4. If it doesn't exist, try creating it
+        res = await fetch(`https://api.netlify.com/api/v1/accounts/${accountId}/env?site_id=${siteId}`, {
           method: 'POST',
           headers: authH,
-          body: JSON.stringify([payload]) // POST accepts an array
+          body: JSON.stringify([payload]) // POST requires an array
         });
       }
 
