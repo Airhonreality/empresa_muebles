@@ -56,10 +56,15 @@ async function push() {
   console.log(`📡 Destino (Vault API): ${targetUrl}/api/vault`);
   console.log(`📦 Payload a enviar: ${Buffer.byteLength(JSON.stringify(miZap))} bytes`);
 
+  const secretKey = process.env.API_SECRET_KEY || '';
+
   try {
     const response = await fetch(`${targetUrl}/api/vault`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-api-secret': secretKey
+      },
       body: JSON.stringify({
         action: 'WRITE',
         namespace: 'scripts',

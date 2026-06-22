@@ -22,6 +22,14 @@ export function middleware(request: NextRequest) {
     const isPublic    = PUBLIC_PATHS.some(p => pathname.startsWith(p));
 
     if (isProtected && !isPublic) {
+      // ── M2toM2 (CLI/API) Auth Bypass ────────────────────────────────────────
+      const apiSecret = process.env.API_SECRET_KEY;
+      const requestSecret = request.headers.get('x-api-secret');
+      if (apiSecret && requestSecret === apiSecret) {
+        return NextResponse.next();
+      }
+
+      // ── B2B (Browser) Auth ──────────────────────────────────────────────────
       const cookie = request.cookies.get(SESSION_COOKIE);
       if (!cookie?.value) {
         const loginUrl = new URL('/login', request.url);
