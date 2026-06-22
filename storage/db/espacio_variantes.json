@@ -13,7 +13,7 @@
       "descripcion": "Estructura en hierro pintada en electrostática (tubo estructural calibre 18), estructura de camarote en madecor y escalera en madera flor morado.",
       "descripcion_alternativa": ""
     },
-    "updated_at": "2026-06-22T01:25:56.028Z"
+    "updated_at": "2026-06-22T02:42:00.027Z"
   },
   {
     "id": "b93f8bb7-f625-41b0-bce1-6af05d50382b",
@@ -29,78 +29,22 @@
       "descripcion": "Escritorio fabricado en melamina madecor con tapas en poliuretano.",
       "descripcion_alternativa": ""
     },
-    "updated_at": "2026-06-22T01:38:40.439Z"
-  },
-  {
-    "id": "b50ffe6a-77fa-4b3a-803e-81529c4c01fa",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
-      "nombre_espacio": "Nuevo Espacio",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 0,
-      "jornadas_ensamblaje_taller": 0,
-      "jornadas_instalacion_obra": 0,
-      "activa": true
-    },
-    "updated_at": "2026-06-22T01:33:02.856Z"
-  },
-  {
-    "id": "6fa5df94-4fe3-4c1d-a66a-d59556b44e99",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
-      "nombre_espacio": "Nuevo Espacio 2",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 0,
-      "jornadas_ensamblaje_taller": 0,
-      "jornadas_instalacion_obra": 0,
-      "activa": true
-    },
-    "updated_at": "2026-06-22T01:33:05.131Z"
-  },
-  {
-    "id": "97a42b25-d82c-4472-98e2-d0522334dda9",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
-      "nombre_espacio": "Nuevo Espacio 3",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 0,
-      "jornadas_ensamblaje_taller": 0,
-      "jornadas_instalacion_obra": 0,
-      "activa": true
-    },
-    "updated_at": "2026-06-22T01:33:08.040Z"
-  },
-  {
-    "id": "ad873d36-605d-429e-8f37-ea449cfd3ab3",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
-      "nombre_espacio": "Nuevo Espacio 4",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 0,
-      "jornadas_ensamblaje_taller": 0,
-      "jornadas_instalacion_obra": 0,
-      "activa": true
-    },
-    "updated_at": "2026-06-22T01:38:49.194Z"
+    "updated_at": "2026-06-22T02:41:31.619Z"
   },
   {
     "id": "f38a772a-6850-434c-aac4-d0b5ba4b0f3d",
     "context": "espacio_variantes",
     "data": {
       "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
-      "nombre_espacio": "Recobidor",
+      "nombre_espacio": "Recibidor",
       "nombre_variante": "Inicial",
       "jornadas_desarrollo_tecnico": 1,
       "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 1,
+      "jornadas_instalacion_obra": 1.5,
       "activa": true,
-      "descripcion": "Recibidor con tres lineas de zapatero, repizas bajas, panel con repisas e iluminación led, puf con cojin y perchero con colgadero extraible (las piezas extraibles son en madera.",
+      "descripcion": "Recibidor con tres líneas de zapatero, repisas bajas, panel con repisas e iluminación led, puf con cojín y perchero con colgadero extraíble (las piezas extraíbles son en madera.",
       "descripcion_alternativa": ""
     },
-    "updated_at": "2026-06-22T02:10:26.682Z"
+    "updated_at": "2026-06-22T02:41:11.981Z"
   }
 ]

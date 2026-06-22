@@ -1,4 +1,4 @@
-import { getStrategy } from '../src/server/getStrategy';
+"import { getStrategy } from '../src/server/getStrategy';
 import crypto from 'crypto';
 
 async function injectPrefabricado(prefabricadoId: string, varianteId: string) {
@@ -72,4 +72,4 @@ if (args.length < 2) {
 const prefabricadoId = args[0];
 const varianteId = args[1];
 
-injectPrefabricado(prefabricadoId, varianteId).catch(console.error);
+injectPrefabricado(prefabricadoId, varianteId).catch(console.error);"

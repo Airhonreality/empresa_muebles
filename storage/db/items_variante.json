@@ -1737,16 +1737,16 @@
     "updated_at": "2026-06-22T01:47:37.640Z"
   },
   {
-    "id": "637b88bf-1936-416a-af48-2bdc7ce74e13",
+    "id": "a5d79317-58a3-4384-9d5c-2f4fde6af8b0",
     "context": "items_variante",
     "data": {
       "variante_id": "f38a772a-6850-434c-aac4-d0b5ba4b0f3d",
-      "catalogo_id": "",
-      "cantidad": 1,
-      "precio_unitario": 0,
-      "total_linea": 0,
-      "unidad_medida": ""
+      "catalogo_id": "341ba1dd-78b8-4ff8-b04c-d1cdbd64d135",
+      "cantidad": 1.4,
+      "precio_unitario": 109250,
+      "total_linea": 152950,
+      "unidad_medida": "metro lineal"
     },
-    "updated_at": "2026-06-22T01:47:40.409Z"
+    "updated_at": "2026-06-22T02:40:14.518Z"
   }
 ]

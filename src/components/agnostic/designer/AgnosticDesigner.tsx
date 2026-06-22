@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Route as RouteIcon, FileJson, Zap, Shield, RotateCcw, Box, Plus, Trash2,
   Sparkles, Layout, Database, Settings2, ChevronsUpDown, Check,
-  Users, Info, ExternalLink, Table2, Upload, Plug2
+  Users, Info, ExternalLink, Table2, Upload, Plug2, Palette
 } from 'lucide-react';
 import { DataBrowser } from '@/components/specialized/DataBrowser';
 import type { DataItem } from '@agnostic/core';
@@ -21,7 +21,6 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { SystemSection } from './sections/SystemSection';
 import { DeploySection } from './sections/DeploySection';
 import { DocsSection } from './sections/DocsSection';
-import { SetupWizard } from './sections/SetupWizard';
 import { ImportWizard } from '@/components/agnostic/plugins/ImportWizard';
 import { IntegrationsSection } from './sections/IntegrationsSection';
 import { RecursiveBlockComposer } from './components/RecursiveBlockComposer';
@@ -126,28 +125,17 @@ export function ConfigManager({
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(
     initialRouteId ? { nodeType: 'route', id: initialRouteId } : null
   );
-  type ActiveMode = 'dna' | 'users' | 'import' | 'integrations' | 'infra' | 'docs';
+  type ActiveMode = 'dna' | 'users' | 'import' | 'integrations' | 'infra' | 'docs' | 'theme';
   const [activeMode, setActiveMode] = useState<ActiveMode>('dna');
 
-  // ─── SETUP WIZARD GATE ────────────────────────────────────────────────────
-  type WizardHealth = { isVercel: boolean; isNetlify?: boolean; env_presence: Record<string, boolean> };
-  const [wizardHealth, setWizardHealth] = useState<WizardHealth | null>(null);
+  // ─── ENVIRONMENT HEALTH CHECK ──────────────────────────────────────────────
   const [envPresence, setEnvPresence] = useState<Record<string, boolean>>({});
-  const [setupDismissed, setSetupDismissed] = useState(
-    () => typeof window !== 'undefined' && localStorage.getItem('setup_wizard_dismissed') === 'true'
-  );
 
   useEffect(() => {
     fetch('/api/admin/health')
       .then(r => r.json())
-      .then((h: WizardHealth & { activeDataStrategy?: string }) => {
+      .then((h: { env_presence?: Record<string, boolean> }) => {
         setEnvPresence(h.env_presence ?? {});
-        const hasVercel  = h.env_presence.VERCEL_ACCESS_TOKEN && h.env_presence.VERCEL_PROJECT_ID;
-        const hasNetlify = h.env_presence.NETLIFY_AUTH_TOKEN && h.env_presence.NETLIFY_SITE_ID;
-        const isCloud    = h.isVercel || h.isNetlify;
-        const hasCloud   = hasVercel || hasNetlify;
-        const hasData    = h.env_presence.DATABASE_URL || h.env_presence.GITHUB_REPO || h.env_presence.SUPABASE_URL;
-        if ((isCloud && !hasCloud) || !hasData) setWizardHealth(h);
       })
       .catch(() => { /* health fail — don't block designer */ });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -293,22 +281,10 @@ const handleAddScript = async () => {
     { id: 'integrations', icon: Plug2, label: 'Integraciones' },
   ];
   const RAIL_BOTTOM: { id: ActiveMode; icon: React.ElementType; label: string }[] = [
+    { id: 'theme', icon: Palette, label: 'Aspecto Visual' },
     { id: 'infra', icon: Shield, label: 'Infraestructura' },
     { id: 'docs', icon: Info, label: 'Guías & Ayuda' },
   ];
-
-  if (wizardHealth && !setupDismissed) {
-    return (
-      <SetupWizard
-        health={wizardHealth}
-        onComplete={() => setWizardHealth(null)}
-        onSkip={() => {
-          localStorage.setItem('setup_wizard_dismissed', 'true');
-          setSetupDismissed(true);
-        }}
-      />
-    );
-  }
 
   return (
     <div className="flex h-full w-full bg-background overflow-hidden select-none">
@@ -470,7 +446,14 @@ const handleAddScript = async () => {
           <IntegrationsSection envPresence={envPresence} />
         )}
         {activeMode === 'infra' && (
-          <InfraCanvas config={config} setConfig={handleUpdateConfig} />
+          <div className="h-full overflow-y-auto p-8 max-w-3xl">
+            <DeploySection />
+          </div>
+        )}
+        {activeMode === 'theme' && (
+          <div className="h-full overflow-y-auto p-8 max-w-3xl">
+            <SystemSection config={config} setConfig={handleUpdateConfig} />
+          </div>
         )}
         {activeMode === 'docs' && (
           <div className="h-full overflow-y-auto p-8 max-w-4xl">
@@ -1649,29 +1632,4 @@ function NavItem({
   );
 }
 
-function InfraCanvas({ config, setConfig }: { config: any; setConfig: (patch: any) => void }) {
-  const [tab, setTab] = useState<'silo' | 'deploy'>('silo');
-  return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex gap-1 p-3 border-b bg-muted/10 shrink-0">
-        {(['silo', 'deploy'] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              'px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors',
-              tab === t ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
-            )}
-          >
-            {t === 'silo' ? 'Silo' : 'Deploy'}
-          </button>
-        ))}
-      </div>
-      <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
-        {tab === 'silo' && <SystemSection config={config} setConfig={setConfig} />}
-        {tab === 'deploy' && <DeploySection />}
-      </div>
-    </div>
-  );
-}
 

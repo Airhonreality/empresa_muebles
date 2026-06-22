@@ -14,24 +14,24 @@ export const maxDuration = 60;
 
 // ─── ADAPTER FACTORY ─────────────────────────────────────────────────────────
 
-function buildAdapter(strategy: string): { adapter: AgnosticBridge } | { error: string } {
+function buildAdapter(strategy: string, credentials?: Record<string, string>): { adapter: AgnosticBridge } | { error: string } {
   switch (strategy) {
     case 'github': {
-      const repo  = process.env.GITHUB_REPO;
-      const token = process.env.GITHUB_TOKEN;
+      const repo  = credentials?.GITHUB_REPO || process.env.GITHUB_REPO;
+      const token = credentials?.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
       if (!repo || !token) return { error: 'GITHUB_REPO y GITHUB_TOKEN no configurados' };
       const [owner, repoName] = repo.split('/');
       if (!owner || !repoName) return { error: 'GITHUB_REPO debe tener formato "owner/repo"' };
-      return { adapter: new GitHubStrategy(owner, repoName, token, process.env.GITHUB_BRANCH) };
+      return { adapter: new GitHubStrategy(owner, repoName, token, credentials?.GITHUB_BRANCH || process.env.GITHUB_BRANCH) };
     }
     case 'supabase': {
-      const url = process.env.SUPABASE_URL;
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const url = credentials?.SUPABASE_URL || process.env.SUPABASE_URL;
+      const key = credentials?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!url || !key) return { error: 'SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY no configurados' };
       return { adapter: new SupabaseStrategy(url, key) };
     }
     case 'postgres': {
-      const url = process.env.DATABASE_URL;
+      const url = credentials?.DATABASE_URL || process.env.DATABASE_URL;
       if (!url) return { error: 'DATABASE_URL no configurado' };
       return { adapter: new PostgresStrategy(url) };
     }
@@ -112,9 +112,10 @@ export async function POST(req: NextRequest) {
     to: string;
     dryRun?: boolean;
     namespaces?: string[];
+    credentials?: Record<string, string>;
   };
 
-  const { from, to, dryRun = false, namespaces: nsOverride } = body;
+  const { from, to, dryRun = false, namespaces: nsOverride, credentials } = body;
 
   if (!from || !to) {
     return NextResponse.json({ error: '"from" y "to" son obligatorios' }, { status: 400 });
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
   }
 
   const srcResult = buildAdapter(from);
-  const dstResult = buildAdapter(to);
+  const dstResult = buildAdapter(to, credentials);
 
   if ('error' in srcResult) return NextResponse.json({ error: `[origen] ${srcResult.error}` }, { status: 400 });
   if ('error' in dstResult) return NextResponse.json({ error: `[destino] ${dstResult.error}` }, { status: 400 });
