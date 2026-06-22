@@ -229,9 +229,9 @@ function StrategyCard({
 // ─── CONNECTED SERVICE CARD ───────────────────────────────────────────────────
 
 function ConnectedServiceCard({
-  icon: Icon, title, subtitle, onEdit, idLabel, idValue,
+  icon: Icon, title, subtitle, onEdit, metadata,
 }: {
-  icon: React.ElementType; title: string; subtitle: string; onEdit: () => void; idLabel?: string; idValue?: string;
+  icon: React.ElementType; title: string; subtitle: string; onEdit: () => void; metadata?: Record<string, string>;
 }) {
   return (
     <div className="rounded-[2rem] border border-emerald-500/20 bg-emerald-50/10 dark:bg-emerald-950/20 shadow-sm overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 gap-4 animate-in fade-in zoom-in-95 duration-300">
@@ -241,18 +241,22 @@ function ConnectedServiceCard({
         </div>
         <div>
           <p className="text-[12px] font-black uppercase tracking-widest text-foreground">{title}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-0.5 mb-1.5">
             <CheckCircle2 size={11} className="text-emerald-500" />
             <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">{subtitle}</p>
           </div>
-          {idLabel && idValue && (
-             <p className="text-[10px] text-muted-foreground mt-1 font-mono bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md w-fit">
-               {idLabel}: {idValue}
-             </p>
+          {metadata && Object.keys(metadata).length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              {Object.entries(metadata).map(([k, v]) => (
+                <span key={k} className="text-[9.5px] text-muted-foreground font-mono bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md flex items-center gap-1.5 border border-border/40 shadow-sm">
+                  <span className="font-bold uppercase tracking-widest opacity-60 text-[8px]">{k}:</span> <span className="text-foreground font-medium">{v}</span>
+                </span>
+              ))}
+            </div>
           )}
         </div>
       </div>
-      <Button variant="outline" size="sm" onClick={onEdit} className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest px-4 border-dashed hover:border-solid hover:bg-muted/50">
+      <Button variant="outline" size="sm" onClick={onEdit} className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest px-4 border-dashed hover:border-solid hover:bg-muted/50 shrink-0">
         Modificar
       </Button>
     </div>
@@ -669,11 +673,12 @@ export function DeploySection() {
   // ─── RENDER ──────────────────────────────────────────────────────────────────
 
   const checks      = health?.checks;
-  const githubCk    = checks?.['data:github'][0];
-  const postgresCk  = checks?.['data:postgres'][0];
-  const r2Ck        = checks?.['storage:r2'][0];
-  const supabaseCk  = checks?.['data:supabase'][0];
-  const sessionCk   = checks?.['auth:session'][0];
+  const githubCk    = checks?.['data:github']?.[0];
+  const postgresCk  = checks?.['data:postgres']?.[0];
+  const r2Ck        = checks?.['storage:r2']?.[0];
+  const supabaseCk  = checks?.['data:supabase']?.[0];
+  const sessionCk   = checks?.['auth:session']?.[0];
+  const cloudCk     = checks?.['hosting:cloud']?.[0];
 
   const globalStatus = health?.status ?? 'fail';
 
@@ -724,6 +729,17 @@ export function DeploySection() {
           <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Hosting & Plataforma Cloud</h4>
         </div>
 
+        {isCloudBootstrapped && !editing.hosting ? (
+          <ConnectedServiceCard
+            icon={health?.isNetlify ? Cloud : Box}
+            title={health?.isNetlify ? 'Netlify' : 'Vercel'}
+            subtitle="Plataforma Conectada y Activa"
+            metadata={cloudCk?.metadata ?? {
+              'Site ID': health?.isNetlify ? forms.netlify.NETLIFY_SITE_ID : forms.vercel.VERCEL_PROJECT_ID
+            }}
+            onEdit={() => setEditing({ ...editing, hosting: true })}
+          />
+        ) : (
         <StrategyCard
           icon={Rocket}
           title="Proveedor de Hosting Cloud"
@@ -834,19 +850,23 @@ export function DeploySection() {
                   NETLIFY_AUTH_TOKEN: forms.netlify.NETLIFY_AUTH_TOKEN,
                   NETLIFY_SITE_ID: forms.netlify.NETLIFY_SITE_ID
                 })}
-                onSave={(redeploy) => handleSave('netlify', [
-                  { key: 'NETLIFY_AUTH_TOKEN', value: forms.netlify.NETLIFY_AUTH_TOKEN, sensitive: true },
-                  { key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false }
-                ], redeploy)}
+                onSave={(redeploy) => {
+                  handleSave('netlify', [
+                    { key: 'NETLIFY_AUTH_TOKEN', value: forms.netlify.NETLIFY_AUTH_TOKEN, sensitive: true },
+                    { key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false }
+                  ], redeploy);
+                  setEditing({ ...editing, hosting: false });
+                }}
                 testResult={testResults['netlify'] ?? null}
                 testing={testingId === 'netlify'}
                 saving={savingId === 'netlify'}
                 isDevMode={isDevMode}
-                isCustomDeploy={false} // Explicitly false to allow bootstrapping Netlify in production
+                isCloudBootstrapped={isCloudBootstrapped}
               />
             </div>
           )}
         </StrategyCard>
+        )}
       </div>
 
       {/* ── PASO 2: Persistencia de Datos ────────────────────────────── */}
@@ -861,8 +881,11 @@ export function DeploySection() {
             icon={Database}
             title={health?.activeDataStrategy === 'github' ? 'GitHub Strategy' : health?.activeDataStrategy === 'postgres' ? 'PostgreSQL' : 'Supabase SDK'}
             subtitle="Sincronizado y Activo"
-            idLabel={health?.activeDataStrategy === 'github' ? 'Repositorio' : health?.activeDataStrategy === 'postgres' ? 'Host' : 'Proyecto Supabase'}
-            idValue={health?.activeDataStrategy === 'github' ? (presence['GITHUB_REPO'] ? forms.github.GITHUB_REPO || 'Activo' : 'Protegido') : 'Protegido'}
+            metadata={
+              health?.activeDataStrategy === 'github' ? githubCk?.metadata ?? { 'Repositorio': forms.github.GITHUB_REPO || 'Activo' }
+              : health?.activeDataStrategy === 'postgres' ? postgresCk?.metadata ?? { 'Host': forms.postgres.DATABASE_URL ? '********' : 'Protegido' }
+              : supabaseCk?.metadata ?? { 'Proyecto': forms.supabase.SUPABASE_URL || 'Protegido' }
+            }
             onEdit={() => setEditing({ ...editing, data: true })}
           />
         ) : (
@@ -1031,8 +1054,10 @@ export function DeploySection() {
             icon={Cloud}
             title="Cloudflare R2"
             subtitle="Sincronizado y listo"
-            idLabel="Cuenta ID"
-            idValue={presence['CF_ACCOUNT_ID'] ? (forms.r2.CF_ACCOUNT_ID ? `${forms.r2.CF_ACCOUNT_ID.substring(0, 8)}...` : 'Protegido') : 'Protegido'}
+            metadata={r2Ck?.metadata ?? {
+              'Identificador': presence['CF_ACCOUNT_ID'] ? (forms.r2.CF_ACCOUNT_ID ? `${forms.r2.CF_ACCOUNT_ID.substring(0, 8)}...` : 'Protegido') : 'Protegido',
+              'Bucket': presence['CF_R2_BUCKET'] ? forms.r2.CF_R2_BUCKET || 'Activo' : 'Protegido'
+            }}
             onEdit={() => setEditing({ ...editing, r2: true })}
           />
         ) : (

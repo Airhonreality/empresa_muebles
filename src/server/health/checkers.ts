@@ -8,6 +8,7 @@ export interface CheckResult {
   output?: string;
   time: string;
   latency_ms: number;
+  metadata?: Record<string, string>;
 }
 
 const TIMEOUT_MS = 5000;
@@ -62,7 +63,7 @@ export async function checkGitHub(
       return { componentId: id, componentType: type, status: 'fail', output: `HTTP ${res.status}: ${res.statusText}`, time, latency_ms };
     }
 
-    const data = await res.json() as { permissions?: { push?: boolean; maintain?: boolean; admin?: boolean } };
+    const data = await res.json() as { full_name?: string; owner?: { login?: string }; permissions?: { push?: boolean; maintain?: boolean; admin?: boolean } };
     const canWrite = data.permissions?.push === true || data.permissions?.maintain === true || data.permissions?.admin === true;
 
     if (!canWrite) {
@@ -70,7 +71,11 @@ export async function checkGitHub(
       return { componentId: id, componentType: type, status: 'warn', output: 'Sin permiso de escritura confirmado. Verifica que el token tenga "Contents: Read and write".', time, latency_ms };
     }
 
-    return { componentId: id, componentType: type, status: 'pass', time, latency_ms };
+    const metadata: Record<string, string> = {};
+    if (data.full_name) metadata['Repositorio'] = data.full_name;
+    if (data.owner?.login) metadata['Propietario'] = data.owner.login;
+
+    return { componentId: id, componentType: type, status: 'pass', time, latency_ms, metadata };
   } catch (err: unknown) {
     return { componentId: id, componentType: type, status: 'fail', output: err instanceof Error ? err.message : 'Error desconocido', time, latency_ms: Date.now() - start };
   }
@@ -225,4 +230,67 @@ export async function checkSession(
     return { componentId: id, componentType: type, status: 'warn', output: `SESSION_SECRET demasiado corto (${secret.length} chars). Mínimo: 32`, time, latency_ms: 0 };
   }
   return { componentId: id, componentType: type, status: 'pass', time, latency_ms: 0 };
+}
+
+// ─── CLOUD DEPLOYER CHECKER ──────────────────────────────────────────────────
+
+export async function checkCloudDeployer(): Promise<CheckResult> {
+  const id = 'cloud-deployer';
+  const type = 'hosting';
+  const time = new Date().toISOString();
+  const start = Date.now();
+
+  const netlifyToken = process.env.NETLIFY_AUTH_TOKEN;
+  const netlifySiteId = process.env.NETLIFY_SITE_ID;
+
+  if (netlifyToken && netlifySiteId) {
+    try {
+      const res = await withTimeout(fetch(`https://api.netlify.com/api/v1/sites/${netlifySiteId}`, {
+        headers: { Authorization: `Bearer ${netlifyToken}` },
+        cache: 'no-store'
+      }), TIMEOUT_MS);
+      const latency_ms = Date.now() - start;
+      
+      if (res.ok) {
+        const data = await res.json() as any;
+        const metadata: Record<string, string> = {
+          'Sitio': data.name || netlifySiteId,
+          'Cuenta': data.account_name || data.account_slug || 'Autorizada'
+        };
+        return { componentId: id, componentType: type, status: 'pass', time, latency_ms, metadata };
+      }
+      return { componentId: id, componentType: type, status: 'warn', output: 'Conectado pero falló lectura de metadata', time, latency_ms };
+    } catch {
+      return { componentId: id, componentType: type, status: 'warn', output: 'Timeout API Netlify', time, latency_ms: Date.now() - start };
+    }
+  }
+
+  const vercelToken = process.env.VERCEL_ACCESS_TOKEN;
+  const vercelProjectId = process.env.VERCEL_PROJECT_ID;
+  const vercelTeamId = process.env.VERCEL_TEAM_ID;
+
+  if (vercelToken && vercelProjectId) {
+    try {
+      const teamQuery = vercelTeamId ? `?teamId=${vercelTeamId}` : '';
+      const res = await withTimeout(fetch(`https://api.vercel.com/v9/projects/${vercelProjectId}${teamQuery}`, {
+        headers: { Authorization: `Bearer ${vercelToken}` },
+        cache: 'no-store'
+      }), TIMEOUT_MS);
+      const latency_ms = Date.now() - start;
+      
+      if (res.ok) {
+        const data = await res.json() as any;
+        const metadata: Record<string, string> = {
+          'Proyecto': data.name || vercelProjectId,
+          'Framework': data.framework || 'Next.js'
+        };
+        return { componentId: id, componentType: type, status: 'pass', time, latency_ms, metadata };
+      }
+      return { componentId: id, componentType: type, status: 'warn', output: 'Conectado pero falló lectura de metadata', time, latency_ms };
+    } catch {
+      return { componentId: id, componentType: type, status: 'warn', output: 'Timeout API Vercel', time, latency_ms: Date.now() - start };
+    }
+  }
+
+  return { componentId: id, componentType: type, status: 'fail', output: 'No hay proveedor configurado', time, latency_ms: 0 };
 }

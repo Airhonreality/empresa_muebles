@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkGitHub, checkSupabase, checkPostgres, checkLocal, checkR2, checkSession } from '@/server/health/checkers';
+import { checkGitHub, checkSupabase, checkPostgres, checkLocal, checkR2, checkSession, checkCloudDeployer } from '@/server/health/checkers';
 import { getSiloPath } from '@/server/activeProject';
 
 export const dynamic = 'force-dynamic';
@@ -12,13 +12,14 @@ export async function GET() {
     : process.env.SUPABASE_URL  ? 'supabase'
     : 'local';
 
-  const [github, postgres, r2, supabase, local, session] = await Promise.all([
+  const [github, postgres, r2, supabase, local, session, cloud] = await Promise.all([
     checkGitHub(),
     checkPostgres(),
     checkR2(),
     checkSupabase(),
     checkLocal(getSiloPath()),
     checkSession(),
+    checkCloudDeployer(),
   ]);
 
   const activeDataCheck =
@@ -71,6 +72,7 @@ export async function GET() {
         'data:supabase':  [supabase],
         'data:local':     [local],
         'auth:session':   [session],
+        'hosting:cloud':  [cloud],
       },
     },
     { status: dataFails ? 503 : 200 },
