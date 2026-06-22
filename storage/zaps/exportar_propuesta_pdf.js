@@ -45,140 +45,126 @@ const RATE_DEV = Number(devService.precio_publico);
 const RATE_ASSEMBLY = Number(assemblyService.precio_publico);
 const RATE_INSTALL = Number(installService.precio_publico);
 
-// 1. Group items by variants and spaces
+// 1. Group items by spaces and pick the ACTIVE variant for each space
 const mySpaces = espacioVariantes
   .filter(ev => ev.cotizacion_id === activeCotizacion.id && ev.visible_pdf !== false)
-  .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0));
+  .sort((a, b) => (Number(a.orden_espacio) || 0) - (Number(b.orden_espacio) || 0));
 
-// Resolve all variant names present in this quote (e.g. "Inicial", etc.)
-const variantNames = Array.from(new Set(mySpaces.map(ev => ev.nombre_variante).filter(Boolean)));
-
-const variantTotals = {};
-const variantSpacesBreakdown = {};
-
-// Calculate totals for each variant option
-for (const vName of variantNames) {
-  let subtotalMaterials = 0;
-  let subtotalLabor = 0;
-  const spacesList = [];
-
-  const spacesInVariant = mySpaces.filter(ev => ev.nombre_variante === vName);
-
-  for (const sv of spacesInVariant) {
-    const items = itemsVariante.filter(item => item.variante_id === sv.id);
-    let spaceMaterialsSum = 0;
-
-    const itemsDetail = items.map(item => {
-      const prod = productosCatalogo.find(p => p.id === item.catalogo_id);
-      const desc = prod ? prod.descripcion : (item.nombre_personalizado || "Insumo");
-      const unit = prod ? prod.unidad_medida : (item.unidad_medida || "ud");
-      const qty = Number(item.cantidad || 0);
-      const price = Number(item.precio_unitario || 0);
-      const lineTotal = qty * price;
-
-      spaceMaterialsSum += lineTotal;
-      return {
-        desc,
-        unit,
-        qty,
-        price,
-        lineTotal,
-        catalogo_id: item.catalogo_id,
-        sku: prod ? (prod.sku || "") : "",
-        imagen_url: prod ? (prod.imagen_url || "") : ""
-      };
-    });
-
-    let images = [];
-    if (sv.imagenes) {
-      try {
-        const parsed = JSON.parse(sv.imagenes);
-        if (Array.isArray(parsed)) {
-          images = parsed.map((url, idx) => ({
-            id: `sv-img-${idx}`,
-            imagen_url: url,
-            descripcion: "",
-            orden: idx
-          }));
-        }
-      } catch (e) {
-        images = sv.imagenes.split(',').map((url, idx) => ({
-          id: `sv-img-${idx}`,
-          imagen_url: url.trim(),
-          descripcion: "",
-          orden: idx
-        })).filter(img => img.imagen_url);
-      }
-    }
-    if (images.length === 0) {
-      images = imagenesEspacio
-        .filter(img => img.espacio_variante_id === sv.id)
-        .map(img => ({
-          id: img.id,
-          imagen_url: img.imagen_url || "",
-          descripcion: img.descripcion || "",
-          orden: Number(img.orden || 0)
-        }))
-        .sort((a, b) => a.orden - b.orden);
-    }
-
-    let colorsList = [];
-    if (sv.colores) {
-      try {
-        const parsed = JSON.parse(sv.colores);
-        if (Array.isArray(parsed)) {
-          colorsList = parsed;
-        }
-      } catch (e) {}
-    }
-
-    const daysDev = Number(sv.jornadas_desarrollo_tecnico || 0);
-    const daysAssembly = Number(sv.jornadas_ensamblaje_taller || 0);
-    const daysInstall = Number(sv.jornadas_instalacion_obra || 0);
-
-    const spaceLaborSum = (daysDev * RATE_DEV) + (daysAssembly * RATE_ASSEMBLY) + (daysInstall * RATE_INSTALL);
-    const spaceTotal = spaceMaterialsSum + spaceLaborSum;
-
-    subtotalMaterials += spaceMaterialsSum;
-    subtotalLabor += spaceLaborSum;
-
-    spacesList.push({
-      id: sv.id,
-      name: sv.nombre_espacio || "Espacio sin nombre",
-      descripcion: sv.descripcion || "",
-      descripcion_alternativa: sv.descripcion_alternativa || "",
-      items: itemsDetail,
-      images,
-      colors: colorsList,
-      materialsSum: spaceMaterialsSum,
-      laborSum: spaceLaborSum,
-      days: { dev: daysDev, assembly: daysAssembly, install: daysInstall },
-      total: spaceTotal,
-      isActive: !!sv.activa
-    });
-  }
-
-  const baseSubtotal = subtotalMaterials + subtotalLabor;
-  const opCosts = Number(activeCotizacion.costos_operativos || 0);
-  const imprevistos = Number(activeCotizacion.imprevistos_instalacion || 0);
-  const discount = Number(activeCotizacion.descuento_comercial || 0);
-  const adjustment = Number(activeCotizacion.ajuste_arbitrario || 0);
-
-  const grandTotal = baseSubtotal + opCosts + imprevistos - discount + adjustment;
-
-  variantTotals[vName] = {
-    materials: subtotalMaterials,
-    labor: subtotalLabor,
-    subtotal: baseSubtotal,
-    grandTotal: grandTotal
-  };
-  variantSpacesBreakdown[vName] = spacesList;
+const spacesMap = new Map();
+for (const sv of mySpaces) {
+  const k = sv.nombre_espacio || "Sin nombre";
+  if (!spacesMap.has(k)) spacesMap.set(k, []);
+  spacesMap.get(k).push(sv);
 }
 
-// 2. Identify the active/selected variant
-const activeSpace = mySpaces.find(ev => ev.activa);
-let activeVariantName = activeSpace ? (activeSpace.nombre_variante || "Inicial") : (variantNames[0] || "Inicial");
-const activeTotals = variantTotals[activeVariantName] || { materials: 0, labor: 0, subtotal: 0, grandTotal: 0 };
+let subtotalMaterials = 0;
+let subtotalLabor = 0;
+const spacesList = [];
+
+for (const [sName, vars] of spacesMap.entries()) {
+  const activeVar = vars.find(v => v.activa) || vars[0];
+  if (!activeVar) continue;
+
+  const items = itemsVariante.filter(item => item.variante_id === activeVar.id);
+  let spaceMaterialsSum = 0;
+
+  const itemsDetail = items.map(item => {
+    const prod = productosCatalogo.find(p => p.id === item.catalogo_id);
+    const desc = prod ? prod.descripcion : (item.nombre_personalizado || "Insumo");
+    const unit = prod ? prod.unidad_medida : (item.unidad_medida || "ud");
+    const qty = Number(item.cantidad || 0);
+    const price = Number(item.precio_unitario || 0);
+    const lineTotal = qty * price;
+
+    spaceMaterialsSum += lineTotal;
+    return {
+      desc,
+      unit,
+      qty,
+      price,
+      lineTotal,
+      catalogo_id: item.catalogo_id,
+      sku: prod ? (prod.sku || "") : "",
+      imagen_url: prod ? (prod.imagen_url || "") : ""
+    };
+  });
+
+  let images = [];
+  if (activeVar.imagenes) {
+    try {
+      const parsed = JSON.parse(activeVar.imagenes);
+      if (Array.isArray(parsed)) {
+        images = parsed.map((url, idx) => ({
+          id: `sv-img-${idx}`,
+          imagen_url: url,
+          descripcion: "",
+          orden: idx
+        }));
+      }
+    } catch (e) {
+      images = activeVar.imagenes.split(',').map((url, idx) => ({
+        id: `sv-img-${idx}`,
+        imagen_url: url.trim(),
+        descripcion: "",
+        orden: idx
+      })).filter(img => img.imagen_url);
+    }
+  }
+  if (images.length === 0) {
+    images = imagenesEspacio
+      .filter(img => img.espacio_variante_id === activeVar.id)
+      .map(img => ({
+        id: img.id,
+        imagen_url: img.imagen_url || "",
+        descripcion: img.descripcion || "",
+        orden: Number(img.orden || 0)
+      }))
+      .sort((a, b) => a.orden - b.orden);
+  }
+
+  let colorsList = [];
+  if (activeVar.colores) {
+    try {
+      const parsed = JSON.parse(activeVar.colores);
+      if (Array.isArray(parsed)) {
+        colorsList = parsed;
+      }
+    } catch (e) {}
+  }
+
+  const daysDev = Number(activeVar.jornadas_desarrollo_tecnico || 0);
+  const daysAssembly = Number(activeVar.jornadas_ensamblaje_taller || 0);
+  const daysInstall = Number(activeVar.jornadas_instalacion_obra || 0);
+
+  const spaceLaborSum = (daysDev * RATE_DEV) + (daysAssembly * RATE_ASSEMBLY) + (daysInstall * RATE_INSTALL);
+  const spaceTotal = spaceMaterialsSum + spaceLaborSum;
+
+  subtotalMaterials += spaceMaterialsSum;
+  subtotalLabor += spaceLaborSum;
+
+  spacesList.push({
+    id: activeVar.id,
+    name: activeVar.nombre_espacio || "Espacio sin nombre",
+    descripcion: activeVar.descripcion || "",
+    descripcion_alternativa: activeVar.descripcion_alternativa || "",
+    items: itemsDetail,
+    images,
+    colors: colorsList,
+    materialsSum: spaceMaterialsSum,
+    laborSum: spaceLaborSum,
+    days: { dev: daysDev, assembly: daysAssembly, install: daysInstall },
+    total: spaceTotal,
+    isActive: true
+  });
+}
+
+const baseSubtotal = subtotalMaterials + subtotalLabor;
+const opCosts = Number(activeCotizacion.costos_operativos || 0);
+const imprevistos = Number(activeCotizacion.imprevistos_instalacion || 0);
+const discount = Number(activeCotizacion.descuento_comercial || 0);
+const adjustment = Number(activeCotizacion.ajuste_arbitrario || 0);
+
+const grandTotal = baseSubtotal + opCosts + imprevistos - discount + adjustment;
 
 // 3. Compile dynamic pdfTitle using project name + client name
 const projectName = activeCotizacion.nombre_proyecto || "";
@@ -186,40 +172,23 @@ const clientName = client ? (client.nombre || "") : "";
 const pdfTitle = [projectName, clientName].filter(Boolean).join(" - ").trim() || "Propuesta Comercial";
 
 // 4. Compile executive options delta
-const baselineName = variantNames[0] || "Inicial";
-const optionsHtml = Object.entries(variantTotals).map(([vName, totals]) => {
-  const isSelected = vName === activeVariantName;
-  const diff = totals.grandTotal - (variantTotals[baselineName] ? variantTotals[baselineName].grandTotal : totals.grandTotal);
-  const diffFormatted = diff === 0 
-    ? "Línea Base" 
-    : (diff > 0 ? "+ $" + diff.toLocaleString('en-US', { minimumFractionDigits: 2 }) : "- $" + Math.abs(diff).toLocaleString('en-US', { minimumFractionDigits: 2 }));
-
-  return `
-    <div class="option-card ${isSelected ? 'selected' : ''}">
-      <div class="option-header">
-        <span class="option-title">${vName.toUpperCase()}</span>
-        ${isSelected && variantNames.length > 1 ? '<span class="selected-badge">SELECCIONADA</span>' : ''}
-      </div>
-      <div class="option-price">$ ${totals.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-      <div class="option-diff">Ajuste sobre ${baselineName}: <strong>${diffFormatted}</strong></div>
+const optionsHtml = `
+  <div class="option-card selected" style="max-width: 400px; margin: 0 auto;">
+    <div class="option-header">
+      <span class="option-title">PROPUESTA COMERCIAL</span>
+      <span class="selected-badge">ACTIVA</span>
     </div>
-  `;
-}).join("");
+    <div class="option-price">$ ${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+    <div class="option-diff">Incluye <strong>${spacesList.length}</strong> espacios definidos</div>
+  </div>
+`;
 
-// 5. Compile detailed spaces breakdown HTML for ALL variants
-let spacesHtml = '';
-let isFirstVariant = true;
-for (const vName of variantNames) {
-  const spacesList = variantSpacesBreakdown[vName] || [];
-  
-  const pageBreakStyle = isFirstVariant ? '' : 'page-break-before: always; break-before: page; ';
-  isFirstVariant = false;
-  
-  spacesHtml += ' \
-    <div class="variant-breakdown-section" style="' + pageBreakStyle + 'margin-top: 30px;">' +
-      '<h3 class="section-title" style="margin-bottom: 25px; border-bottom: 2px solid #C5A059; padding-bottom: 8px; font-size: 15px; color: #4A4238;">' +
-        'Detalle de Propuesta: Alternativa ' + vName.toUpperCase() +
-      '</h3>';
+// 5. Compile detailed spaces breakdown HTML
+let spacesHtml = ' \
+  <div class="variant-breakdown-section" style="margin-top: 30px;">' +
+    '<h3 class="section-title" style="margin-bottom: 25px; border-bottom: 2px solid #C5A059; padding-bottom: 8px; font-size: 15px; color: #4A4238;">' +
+      'Detalle de Propuesta' +
+    '</h3>';
   
   const spacesBreakdownHtml = spacesList.map((space, sIdx) => {
     const itemsRows = space.items.map(item => `
@@ -312,7 +281,6 @@ for (const vName of variantNames) {
 
   spacesHtml += spacesBreakdownHtml;
 
-  const totals = variantTotals[vName] || { materials: 0, labor: 0, subtotal: 0, grandTotal: 0 };
   const discountVal = Number(activeCotizacion.descuento_comercial || 0);
   const descuentoRow = discountVal > 0 
     ? `
@@ -334,16 +302,16 @@ for (const vName of variantNames) {
   const consolidatedCardHtml = `
     <div class="final-totals-container" style="margin-top: 40px; page-break-inside: avoid; break-inside: avoid;">
       <div class="final-totals-card">
-        <div class="final-totals-header">Resumen Financiero (${vName.toUpperCase()})</div>
+        <div class="final-totals-header">Resumen Financiero Consolidado</div>
         <div class="totals-grid-layout">
           <div class="totals-details-col">
             <div class="final-line">
               <span>Subtotal Materiales:</span>
-              <span>$ ${totals.materials.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span>$ ${subtotalMaterials.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
             <div class="final-line">
               <span>Subtotal Mano de Obra:</span>
-              <span>$ ${totals.labor.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span>$ ${subtotalLabor.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
             <div class="final-line">
               <span>Costos Operativos Globales:</span>
@@ -359,7 +327,7 @@ for (const vName of variantNames) {
             ${ajusteRow}
             <div class="final-line grand-total">
               <span>Total Neto Propuesta:</span>
-              <span>$ ${totals.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>$ ${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>
@@ -369,7 +337,6 @@ for (const vName of variantNames) {
 
   spacesHtml += consolidatedCardHtml;
   spacesHtml += '</div>'; // Close variant-breakdown-section
-}
 
 const _tpls = await api.query('templates');
 const _tpl = _tpls.find(t => t.name === 'propuesta_comercial');
@@ -419,8 +386,7 @@ if (clientHtml && obraHtml) {
 }
 
 // Spaces list on cover
-const activeSpacesList = variantSpacesBreakdown[activeVariantName] || [];
-const uniqueSpaceNames = Array.from(new Set(mySpaces.map(ev => ev.nombre_espacio?.trim()).filter(Boolean)));
+const uniqueSpaceNames = Array.from(spacesMap.keys());
 const spacesListHtml = uniqueSpaceNames.map(name => `
   <div class="cover-space-item">
     <span class="bullet">✦</span>
