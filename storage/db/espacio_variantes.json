@@ -1,317 +1,106 @@
 [
   {
-    "id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
+    "id": "9c00b5d2-21b8-4d90-86f3-3215699fc593",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "959f0044-05cf-44e6-aefd-6d1087eb668c",
-      "nombre_espacio": "Closet 220 cm",
+      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+      "nombre_espacio": "Camarote",
       "nombre_variante": "Inicial",
       "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 1.5,
+      "jornadas_ensamblaje_taller": 2.5,
+      "jornadas_instalacion_obra": 2.5,
       "activa": true,
-      "descripcion_alternativa": "Closet estándar con 8 cajones y tubo colgador, melamina calibre 18mm con cantos rígidos y puertas corredizas.",
-      "visible_pdf": true
+      "descripcion": "Estructura en hierro pintada en electrostática (tubo estructural calibre 18), estructura de camarote en madecor y escalera en madera flor morado.",
+      "descripcion_alternativa": ""
     },
-    "updated_at": "2026-06-05T22:42:46.731Z"
+    "updated_at": "2026-06-22T01:25:56.028Z"
   },
   {
-    "id": "8cc83927-809a-46d4-bada-d613d5d66272",
+    "id": "b93f8bb7-f625-41b0-bce1-6af05d50382b",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "959f0044-05cf-44e6-aefd-6d1087eb668c",
-      "nombre_espacio": "Closet 107 cm (Copia)",
+      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+      "nombre_espacio": "Escritorio",
       "nombre_variante": "Inicial",
       "jornadas_desarrollo_tecnico": 0.5,
       "jornadas_ensamblaje_taller": 1,
-      "jornadas_instalacion_obra": 1,
+      "jornadas_instalacion_obra": 0.5,
       "activa": true,
-      "descripcion_alternativa": "Closet estándar con 4 cajones y tubo colgador, melamina calibre 18mm con cantos rígidos y puertas corredizas.",
-      "visible_pdf": true
+      "descripcion": "Escritorio fabricado en melamina madecor con tapas en poliuretano.",
+      "descripcion_alternativa": ""
     },
-    "updated_at": "2026-06-05T22:37:42.188Z"
+    "updated_at": "2026-06-22T01:38:40.439Z"
   },
   {
-    "id": "a1cc8b6b-64d4-47c3-ad84-c1378bc83ef3",
+    "id": "b50ffe6a-77fa-4b3a-803e-81529c4c01fa",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "%3Aid",
-      "nombre_espacio": "Nuevo Espacio / Elemento",
-      "nombre_variante": "Con puerta corrediza",
-      "visible_pdf": true
-    },
-    "updated_at": "2026-06-09T18:31:32.070Z"
-  },
-  {
-    "id": "8f694e93-cb42-4cd4-9f45-a079efadab8e",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "e45d6bcc-cf37-49dd-b3d7-4a204b6d7e36",
-      "nombre_espacio": "Centro de entretenimiento",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 2,
-      "descripcion": "Modulo torre, mueble inferior, panel alistonado, y panel liso para tv. Colores mate. Materiales madecor 18mm de espesor e Iluminación LED de alta gama. ",
-      "activa": true,
-      "descripcion_alternativa": "",
-      "imagenes": "[\"/api/assets/1781039467803-image.png\"]",
-      "visible_pdf": true
-    },
-    "updated_at": "2026-06-09T21:15:37.050Z"
-  },
-  {
-    "id": "21520f28-8c23-41e8-938a-519636bf3047",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
-      "nombre_espacio": "Closet 190cm",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 1.5,
-      "descripcion": "",
-      "descripcion_alternativa": "",
-      "activa": true,
-      "imagenes": "[\"/api/assets/1781040226390-image.png\",\"/api/assets/1781040213389-image.png\"]",
-      "visible_pdf": true
-    },
-    "updated_at": "2026-06-10T01:22:10.314Z"
-  },
-  {
-    "id": "e2254123-ef00-476a-87c5-c83dbd8594a1",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
-      "nombre_espacio": "Closet 160cm 2",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 1.2,
-      "descripcion": "",
-      "descripcion_alternativa": "",
-      "activa": true,
-      "visible_pdf": true
-    },
-    "updated_at": "2026-06-10T01:26:46.855Z"
-  },
-  {
-    "id": "cc1d6171-ff40-4eee-a8c0-d236c48d9b13",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
-      "nombre_espacio": "Closet 160cm 1",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 1.2,
-      "descripcion": "",
-      "descripcion_alternativa": "",
-      "activa": true,
-      "visible_pdf": true
-    },
-    "updated_at": "2026-06-10T01:27:00.102Z"
-  },
-  {
-    "id": "afab2777-c7ce-4fd8-8591-bd5d5ac30d0c",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "8399a364-75ee-4479-b42c-7eb39816a094",
+      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
       "nombre_espacio": "Nuevo Espacio",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 1,
-      "descripcion": "Barra en madera y marco en melamina",
-      "imagenes": "[\"/api/assets/1781204508562-image.png\"]",
-      "visible_pdf": true,
-      "activa": true
-    },
-    "updated_at": "2026-06-19T14:55:30.255Z"
-  },
-  {
-    "id": "485c0a99-b700-4c46-8d3c-4eb27f5320f0",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "49fe5eb3-34da-4608-87bd-494673322ce3",
-      "nombre_espacio": "Closet 200cm",
-      "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2,
-      "jornadas_instalacion_obra": 1.5,
-      "descripcion": "Se cotiza con cajones gama alta (riel oculto x4),  estructura en madecor de 18mm de calibre, y puertas corredizas",
-      "descripcion_alternativa": "",
-      "activa": true,
-      "imagenes": "[\"/api/assets/1781040226390-image.png\",\"/api/assets/1781040213389-image.png\"]",
-      "visible_pdf": true
-    },
-    "updated_at": "2026-06-12T15:55:48.907Z"
-  },
-  {
-    "id": "d2b77f23-869c-4ef0-b812-62f2e976d8d0",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "1ea5ae52-2fa0-402e-a92c-169df8c39461",
-      "nombre_espacio": "Mesa de trabajo en OSB",
       "nombre_variante": "Inicial",
       "jornadas_desarrollo_tecnico": 0,
       "jornadas_ensamblaje_taller": 0,
       "jornadas_instalacion_obra": 0,
-      "imagenes": "[\"/api/assets/1781582499181-image.png\"]",
-      "descripcion_alternativa": "Material tablero OSB 18mm Lacado anti humedad",
-      "visible_pdf": true
+      "activa": true
     },
-    "updated_at": "2026-06-16T04:01:46.051Z"
+    "updated_at": "2026-06-22T01:33:02.856Z"
   },
   {
-    "id": "70153ef7-7750-4212-83ec-e181e29c6f34",
+    "id": "6fa5df94-4fe3-4c1d-a66a-d59556b44e99",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "1ea5ae52-2fa0-402e-a92c-169df8c39461",
-      "nombre_espacio": "Mesa de trabajo en OSB (Copia)",
+      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+      "nombre_espacio": "Nuevo Espacio 2",
       "nombre_variante": "Inicial",
       "jornadas_desarrollo_tecnico": 0,
       "jornadas_ensamblaje_taller": 0,
       "jornadas_instalacion_obra": 0,
-      "imagenes": "[\"/api/assets/1781581061547-image.png\"]",
-      "descripcion": "Material tablero OSB 18mm Lacado anti humedad",
-      "visible_pdf": true
+      "activa": true
     },
-    "updated_at": "2026-06-16T04:01:48.758Z"
+    "updated_at": "2026-06-22T01:33:05.131Z"
   },
   {
-    "id": "1ef241d8-9414-4be1-b1d9-6ba26dcae366",
+    "id": "97a42b25-d82c-4472-98e2-d0522334dda9",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "8b817bd3-95d9-43bf-8c13-2db0cf00bad4",
-      "nombre_espacio": "Nuevo Espacio",
+      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+      "nombre_espacio": "Nuevo Espacio 3",
       "nombre_variante": "Inicial",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 1,
-      "jornadas_instalacion_obra": 1,
-      "descripcion_alternativa": "",
-      "imagenes": "[\"/api/assets/1781616263656-image.png\",\"/api/assets/1781616366747-image.png\",\"/api/assets/1781616456425-image.png\"]",
-      "descripcion": "Reemplazo total del modulo superior estufa y esquina, se fabrica con fachadas y bisagras de apertura 180°",
-      "visible_pdf": true
+      "jornadas_desarrollo_tecnico": 0,
+      "jornadas_ensamblaje_taller": 0,
+      "jornadas_instalacion_obra": 0,
+      "activa": true
     },
-    "updated_at": "2026-06-16T13:28:19.234Z"
+    "updated_at": "2026-06-22T01:33:08.040Z"
   },
   {
-    "id": "44a9e3b1-2531-4932-bfe6-53309831c0c6",
+    "id": "ad873d36-605d-429e-8f37-ea449cfd3ab3",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "286b5b77-02da-49e4-a32e-d54020e713a7",
-      "nombre_espacio": "Cocina integral",
-      "nombre_variante": "Estadar",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 5,
-      "jornadas_instalacion_obra": 4,
-      "imagenes": "[\"/api/assets/1781651073675-image.png\"]",
-      "activa": false,
-      "visible_pdf": false
+      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+      "nombre_espacio": "Nuevo Espacio 4",
+      "nombre_variante": "Inicial",
+      "jornadas_desarrollo_tecnico": 0,
+      "jornadas_ensamblaje_taller": 0,
+      "jornadas_instalacion_obra": 0,
+      "activa": true
     },
-    "updated_at": "2026-06-17T20:21:52.844Z"
+    "updated_at": "2026-06-22T01:38:49.194Z"
   },
   {
-    "id": "d5fda24c-a532-4951-803e-7d9a3c065f3c",
+    "id": "f38a772a-6850-434c-aac4-d0b5ba4b0f3d",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "286b5b77-02da-49e4-a32e-d54020e713a7",
-      "nombre_espacio": "Cocina integral",
-      "nombre_variante": "Gama Alta",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 5,
-      "jornadas_instalacion_obra": 5,
-      "imagenes": "[\"/api/assets/1781651073675-image.png\"]",
-      "activa": false,
-      "orden": 1,
-      "descripcion": "",
-      "visible_pdf": false
-    },
-    "updated_at": "2026-06-17T20:21:54.857Z"
-  },
-  {
-    "id": "92bd4c65-f314-40c3-98a6-a1fb252ba33b",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "b69695ea-0ed5-4613-80b0-82d20b213b66",
-      "nombre_espacio": "Cocina integral",
-      "nombre_variante": "Estadar",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 3,
-      "jornadas_instalacion_obra": 3,
-      "imagenes": "[]",
-      "activa": true,
-      "visible_pdf": true
-    },
-    "updated_at": "2026-06-17T00:26:06.165Z"
-  },
-  {
-    "id": "0198d4ab-d9b6-4bc2-bba0-fef7c4dbe2bf",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "286b5b77-02da-49e4-a32e-d54020e713a7",
-      "nombre_espacio": "Cocina integral",
-      "nombre_variante": "Gama Alta",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 5,
-      "jornadas_instalacion_obra": 5,
-      "imagenes": "[\"/api/assets/1781727787463-modelados 3d_1_Página 1.jpg\",\"/api/assets/1781727787461-modelados 3d_2_Página 2.jpg\",\"/api/assets/1781727787462-modelados 3d_3_Página 3.jpg\",\"/api/assets/1781727787462-modelados 3d_4_Página 4.jpg\"]",
-      "activa": true,
-      "orden": 2,
-      "descripcion": "",
-      "descripcion_alternativa": "",
-      "visible_pdf": true,
-      "colores": "[{\"nombre\":\"Sagano\",\"imagen_url\":\"/api/assets/1781729690819-sagano.png\"},{\"nombre\":\"Mesón Sinterizado Petra Rossa\",\"imagen_url\":\"/api/assets/1781729949440-MESON SINTERIZADO.jpg\"},{\"nombre\":\"Ambar semi mate HQ\",\"imagen_url\":\"/api/assets/1781730484466-63024m hq.jpg\"}]"
-    },
-    "updated_at": "2026-06-17T21:08:15.116Z"
-  },
-  {
-    "id": "3cf5cc74-9149-41ec-826a-05681cc7b5fc",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "2761b7ec-62f8-4758-8ad7-02ea53d36465",
-      "nombre_espacio": "Hall Entrada",
-      "nombre_variante": "Opción sin luz",
+      "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+      "nombre_espacio": "Recobidor",
+      "nombre_variante": "Inicial",
       "jornadas_desarrollo_tecnico": 1,
       "jornadas_ensamblaje_taller": 2,
       "jornadas_instalacion_obra": 1,
-      "descripcion_alternativa": "",
-      "imagenes": "[\"/api/assets/1781806114895-image.png\",\"/api/assets/1781806177316-image.png\",\"/api/assets/1781806192487-image.png\",\"/api/assets/1781806219292-image.png\"]",
-      "activa": true
-    },
-    "updated_at": "2026-06-18T18:31:20.448Z"
-  },
-  {
-    "id": "93580a37-4a21-4064-8fa3-e04151ec8637",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "2761b7ec-62f8-4758-8ad7-02ea53d36465",
-      "nombre_espacio": "Hall Entrada",
-      "nombre_variante": "Opción con iluminación LED",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 2.2,
-      "jornadas_instalacion_obra": 2,
-      "descripcion_alternativa": "",
-      "imagenes": "[\"/api/assets/1781806831172-vista con luces.png\"]",
       "activa": true,
-      "orden": 1
+      "descripcion": "Recibidor con tres lineas de zapatero, repizas bajas, panel con repisas e iluminación led, puf con cojin y perchero con colgadero extraible (las piezas extraibles son en madera.",
+      "descripcion_alternativa": ""
     },
-    "updated_at": "2026-06-18T18:31:31.104Z"
-  },
-  {
-    "id": "0b9f13b0-ae97-426f-8fe6-d88903a86280",
-    "context": "espacio_variantes",
-    "data": {
-      "cotizacion_id": "ead24f73-2633-43ea-9bc8-12375103c4da",
-      "nombre_espacio": "Cocina integral",
-      "nombre_variante": "Estándar",
-      "jornadas_desarrollo_tecnico": 1,
-      "jornadas_ensamblaje_taller": 1,
-      "jornadas_instalacion_obra": 2,
-      "activa": true,
-      "orden": 0
-    },
-    "updated_at": "2026-06-19T15:00:42.676Z"
+    "updated_at": "2026-06-22T02:10:26.682Z"
   }
 ]

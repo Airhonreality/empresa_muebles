@@ -5167,5 +5167,17 @@
       "categoria_comercial": "camas"
     },
     "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "9423d854-1106-4764-9296-455d76b1fd64",
+    "context": "productos_catalogo",
+    "data": {
+      "descripcion": "Pintura electrostática",
+      "unidad_medida": "metro lineal",
+      "precio_publico": 110000,
+      "precio_directo": 100000,
+      "tipo": "Servicio"
+    },
+    "updated_at": "2026-06-22T01:23:36.218Z"
   }
 ]

@@ -111,5 +111,13 @@
       "telefono": "3012487529"
     },
     "updated_at": "2026-06-19T20:00:50.535Z"
+  },
+  {
+    "id": "38e9da41-9b7d-4ac1-b7fd-fe43072e5ebf",
+    "context": "clientes",
+    "data": {
+      "nombre": "Carlos Alberto Mesa"
+    },
+    "updated_at": "2026-06-22T01:08:32.434Z"
   }
 ]

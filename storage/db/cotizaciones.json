@@ -148,5 +148,17 @@
       "costos_operativos": 120000
     },
     "updated_at": "2026-06-19T15:00:45.191Z"
+  },
+  {
+    "id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+    "context": "cotizaciones",
+    "data": {
+      "nombre_proyecto": "Camarote-escritorio-recibidor",
+      "cliente_id": "38e9da41-9b7d-4ac1-b7fd-fe43072e5ebf",
+      "direccion_obra": "",
+      "costos_operativos": 350000,
+      "imprevistos_instalacion": 150000
+    },
+    "updated_at": "2026-06-22T01:26:22.127Z"
   }
 ]
