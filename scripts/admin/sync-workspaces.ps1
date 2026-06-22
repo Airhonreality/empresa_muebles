@@ -123,10 +123,27 @@ foreach ($ws in $registry.workspaces) {
 
         $synced++
     } else {
-        Write-Fail "Conflictos detectados. Archivos afectados:"
-        git diff --name-only --diff-filter=U | ForEach-Object { Write-Host "      $_" -ForegroundColor Red }
-        Write-Step "Ejecuta 'git merge --abort' para cancelar, o resuelve y haz commit."
-        $conflicts++
+        # Auto-resolve package.json conflicts to preserve fork dependencies
+        $conflictedFiles = git diff --name-only --diff-filter=U
+        
+        if ($conflictedFiles -contains "package.json") {
+            Write-Step "Resolviendo conflicto en package.json (preservando dependencias del fork)..."
+            node (Join-Path $seedDir "scripts/admin/resolve-package.js") $wsPath
+        }
+
+        # Re-check remaining conflicts
+        $remainingConflicts = git diff --name-only --diff-filter=U
+        
+        if (-not $remainingConflicts) {
+            git commit --no-edit | Out-Null
+            Write-Ok "Conflictos de dependencias resueltos automaticamente."
+            $synced++
+        } else {
+            Write-Fail "Conflictos detectados que requieren resolucion manual:"
+            $remainingConflicts | ForEach-Object { Write-Host "      $_" -ForegroundColor Red }
+            Write-Step "Ve al proyecto, ejecuta 'git merge --abort' para cancelar, o resuelve y haz commit."
+            $conflicts++
+        }
     }
 
     Pop-Location

@@ -14,36 +14,41 @@ export const netlifyProvider: DeployProvider = {
     const { token, siteId } = credentials;
     const authH = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-    // Netlify REST API format for environment variables:
-    // POST /api/v1/sites/{site_id}/envvars
-    // Body: Array of { key, values: [ { value, context: 'all' } ] }
-    const body = variables.map(v => ({
-      key: v.key,
-      values: [
-        {
-          value: v.value,
-          context: 'all'
-        }
-      ]
-    }));
+    const errors: string[] = [];
+    let saved = 0;
 
-    const res = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/envvars`, {
-      method: 'POST',
-      headers: authH,
-      body: JSON.stringify(body)
-    });
-
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({})) as any;
-      const errMsg = errBody.message ?? res.statusText;
-      return {
-        saved: 0,
-        failed: variables.length,
-        errors: [`Netlify API Error: ${errMsg}`]
+    for (const v of variables) {
+      const payload = {
+        key: v.key,
+        scopes: ['builds', 'functions', 'runtime', 'post_processing'],
+        values: [{ value: v.value, context: 'all' }]
       };
+
+      // Try to update existing variable first
+      let res = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/envvars/${v.key}`, {
+        method: 'PUT',
+        headers: authH,
+        body: JSON.stringify(payload)
+      });
+
+      if (res.status === 404 || res.status === 422 || !res.ok) {
+        // If it doesn't exist or failed, try creating it
+        res = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/envvars`, {
+          method: 'POST',
+          headers: authH,
+          body: JSON.stringify([payload]) // POST accepts an array
+        });
+      }
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as any;
+        errors.push(`Netlify API Error (${v.key}): ${errBody.message || res.statusText}`);
+      } else {
+        saved++;
+      }
     }
 
-    return { saved: variables.length, failed: 0, errors: [] };
+    return { saved, failed: variables.length - saved, errors };
   },
 
   async redeploy(credentials) {
