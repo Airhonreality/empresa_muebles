@@ -45,9 +45,9 @@ function analyzeConnectionString(connectionString: string): ParsedString | null 
       const isPooled = hostname.includes('-pooler') || url.searchParams.get('pgbouncer') === 'true';
       if (!isPooled) {
         warning = 'Estás utilizando la URL de conexión Directa de Neon.';
-        suggestion = 'Para despliegues en Vercel (Serverless), Neon proporciona una URL "Pooled" (que contiene \'-pooler\' en el host). Úsala en producción para evitar agotar el pool de conexiones del plan gratuito.';
+        suggestion = 'Para despliegues serverless (Vercel / Netlify), Neon proporciona una URL "Pooled" (que contiene \'-pooler\' en el host). Úsala en producción para evitar agotar el pool de conexiones del plan gratuito.';
       } else {
-        suggestion = '¡Excelente! Estás utilizando la URL Pooled (Serverless-optimized), ideal para Vercel.';
+        suggestion = '¡Excelente! Estás utilizando la URL Pooled (Serverless-optimized), ideal para despliegues serverless.';
       }
     } else if (hostname.includes('.supabase.')) {
       provider = 'Supabase Postgres (Directo)';
@@ -135,30 +135,38 @@ function MarkdownContent({ text }: { text: string }) {
 
 const GUIDES = {
   vercel: {
-    title: 'Vincular Vercel',
+    title: 'Vincular Cloud',
     icon: Rocket,
-    content: `# Paso 0: Integración con la API de Vercel (Obligatorio)
+    content: `# Paso 0: Integración con la API Cloud (Vercel o Netlify)
 
-Para que el panel de **Agnostic System** pueda escribir y guardar variables de entorno en tu servidor en producción de manera automática, **debes vincular el panel con tu cuenta de Vercel**.
+Para que el panel de **Agnostic System** pueda escribir y guardar variables de entorno en tu servidor en producción de manera automática, **debes vincular el panel con tu proveedor cloud (Vercel o Netlify)**.
 
-Si no haces esta vinculación, las credenciales de base de datos o almacenamiento que configures en el panel no se aplicarán en tu servidor de producción, y tendrás que escribirlas manualmente una a una en el panel de control de Vercel.
+Si no haces esta vinculación, las credenciales de base de datos o almacenamiento que configures en el panel no se aplicarán en tu servidor de producción, y tendrás que escribirlas manualmente una a una en sus respectivos paneles de control.
 
 ---
 
-### 🔑 Credenciales de Vercel Requeridas:
+### 🔺 Si usas Vercel (Requerido):
 
 1. **\`VERCEL_ACCESS_TOKEN\`**:
-   * *Dónde obtenerlo:* Ve a tu cuenta de Vercel, entra en **Settings** ➔ **Tokens** y genera un nuevo token con alcance (scope) global o de tu equipo.
+   * *Dónde obtenerlo:* Ve a tu cuenta de Vercel, entra en **Settings** ➔ **Tokens** y genera un nuevo token con alcance (*scope*) global o de tu equipo.
 2. **\`VERCEL_PROJECT_ID\`**:
-   * *Dónde obtenerlo:* Entra a tu proyecto en Vercel, ve a **Settings** ➔ **General** y copia el ID del proyecto en la sección superior.
-3. **\`VERCEL_TEAM_ID\`**:
-   * *Dónde obtenerlo:* Solo es necesario si tu proyecto pertenece a un equipo u organización de Vercel (no a un perfil personal). Lo encuentras en el panel de configuración de tu equipo.
+   * *Dónde obtenerlo:* Entra a tu proyecto en Vercel, ve a **Settings** ➔ **General** y copia el ID del proyecto.
+3. **\`VERCEL_TEAM_ID\`** (Opcional):
+   * *Dónde obtenerlo:* Solo si tu proyecto pertenece a un equipo. Lo encuentras en el panel de configuración de tu equipo.
+
+---
+
+### 🌐 Si usas Netlify (Requerido):
+
+1. **\`NETLIFY_AUTH_TOKEN\`**:
+   * *Dónde obtenerlo:* Ve al panel de Netlify ➔ Haz clic en tu avatar arriba a la derecha ➔ **User settings** ➔ **Applications** ➔ **Personal access tokens** ➔ **Generate new token**.
+2. **\`NETLIFY_SITE_ID\`**:
+   * *Dónde obtenerlo:* Entra a tu sitio en Netlify ➔ **Site configuration** ➔ **Site details** ➔ copia el **API ID** (ej: \`a1b2c3d4-e5f6...\`).
 
 ---
 
 ### 🤖 Asistente de Configuración
-
-Si visitas la pestaña **"Estado del Deploy"** y estas variables no se encuentran activadas, el panel de forma automática te mostrará un asistente paso a paso para pegarlas y guardarlas.
+Si visitas la pestaña **"Estado del Deploy"** y estas variables no se encuentran activadas, el panel te mostrará de forma automática un asistente paso a paso para pegarlas y guardarlas.
 `,
   },
   postgres: {
@@ -197,9 +205,9 @@ No necesitas ejecutar ningún comando \`CREATE TABLE\` ni importar archivos SQL.
 Si utilizas **Neon** (el proveedor recomendado), notarás que te ofrecen dos URLs en su dashboard:
 
 1. **Directa (\`ep-xxx...\`):** Úsala para desarrollo local o scripts de larga duración.
-2. **Pooled / Serverless (\`ep-xxx-pooler...\`):** **Úsala en Vercel.** En entornos Serverless, cada petición web de un usuario puede levantar una función nueva. Si usas la URL Directa, agotarás rápidamente el límite de conexiones concurrentes de tu base de datos. La URL Pooled utiliza *PgBouncer* para multiplexar conexiones de forma inteligente.
+2. **Pooled / Serverless (\`ep-xxx-pooler...\`):** **Úsala en producción.** En entornos Serverless, cada petición web de un usuario puede levantar una función nueva. Si usas la URL Directa, agotarás rápidamente el límite de conexiones concurrentes de tu base de datos. La URL Pooled utiliza *PgBouncer* para multiplexar conexiones de forma inteligente.
 
-> 💡 **Consejo:** Neon te permite activar el switch "Pooled Connection" o "Serverless" al copiar tu URL. Asegúrate de copiar la URL Serverless antes de pegarla en tu panel de Deploy de Vercel.
+> 💡 **Consejo:** Neon te permite activar el switch "Pooled Connection" o "Serverless" al copiar tu URL. Asegúrate de copiar la URL Serverless antes de pegarla en tu panel de Deploy.
 `,
   },
   github: {
@@ -250,8 +258,8 @@ Agnostic System incluye un panel de migración que te permite mover toda tu base
 
 ### 📋 El Proceso Paso a Paso (ej. GitHub → PostgreSQL)
 
-1. **Configura el Destino en Vercel:**
-   Agrega la variable \`DATABASE_URL\` en tu panel de **Deploy** o en las variables de entorno de Vercel.
+1. **Configura el Destino en Producción:**
+   Agrega la variable \`DATABASE_URL\` en tu panel de **Deploy** o en las variables de entorno de tu proveedor cloud.
    * *Nota:* No elimines \`GITHUB_REPO\` todavía. Como GitHub tiene mayor prioridad, el sistema seguirá usando GitHub para leer y escribir mientras configuras el resto.
 
 2. **Accede al Panel de Migración:**
@@ -269,7 +277,7 @@ Agnostic System incluye un panel de migración que te permite mover toda tu base
 
 6. **Desconecta el Origen:**
    Una vez que verifiques en tu base de datos que todo se copió correctamente:
-   * Ve a Vercel Dashboard y elimina la variable \`GITHUB_REPO\`.
+   * Ve al panel de control de tu proveedor cloud (Vercel o Netlify) y elimina la variable \`GITHUB_REPO\`.
    * Vuelve a desplegar tu proyecto.
    * El sistema resolverá la siguiente estrategia en prioridad: \`DATABASE_URL\` (PostgreSQL) y estará activa.
 `,
@@ -279,7 +287,7 @@ Agnostic System incluye un panel de migración que te permite mover toda tu base
     icon: Cloud,
     content: `# Almacenamiento de Archivos en Cloudflare R2
 
-Por defecto, los archivos subidos al sistema se guardan en el sistema de archivos local (solo en desarrollo) o fallan en producción (ya que el disco duro de Vercel es de solo lectura). Para producción, debes configurar **Cloudflare R2**.
+Por defecto, los archivos subidos al sistema se guardan en el sistema de archivos local (solo en desarrollo) o fallan en producción (ya que el disco duro en entornos serverless como Vercel o Netlify es de solo lectura). Para producción, debes configurar **Cloudflare R2**.
 
 ---
 
@@ -406,7 +414,7 @@ export function DocsSection() {
                 </p>
               </div>
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Pega tu cadena de conexión a continuación para verificar qué proveedor es y si está correctamente optimizada para Vercel Serverless:
+                Pega tu cadena de conexión a continuación para verificar qué proveedor es y si está correctamente optimizada para entornos Serverless (Vercel / Netlify):
               </p>
               <div className="flex items-center gap-2">
                 <Input
@@ -483,19 +491,19 @@ export function DocsSection() {
           <div className="space-y-1.5">
             <p className="font-bold text-foreground/80 uppercase tracking-wide">1. Conexión Directa en Serverless (Neon)</p>
             <p>
-              Si usas la URL directa en Vercel, cada carga en frío abre conexiones que agotan rápidamente los límites. Usa siempre la URL pooled en Vercel. En local, puedes usar la directa para testing sin PgBouncer.
+              Si usas la URL directa en producción, cada carga en frío abre conexiones que agotan rápidamente los límites. Usa siempre la URL pooled en producción. En local, puedes usar la directa para testing sin PgBouncer.
             </p>
           </div>
           <div className="space-y-1.5">
             <p className="font-bold text-foreground/80 uppercase tracking-wide">2. Prioridad de Variables</p>
             <p>
-              El motor resuelve de izquierda a derecha: <code>GITHUB_REPO &gt; DATABASE_URL &gt; SUPABASE_URL</code>. Si configuras PostgreSQL pero dejas el repo de GitHub configurado en Vercel, el motor usará GitHub. Elimina las variables obsoletas.
+              El motor resuelve de izquierda a derecha: <code>GITHUB_REPO &gt; DATABASE_URL &gt; SUPABASE_URL</code>. Si configuras PostgreSQL pero dejas el repo de GitHub configurado en tu proveedor cloud, el motor usará GitHub. Elimina las variables obsoletas.
             </p>
           </div>
           <div className="space-y-1.5">
-            <p className="font-bold text-foreground/80 uppercase tracking-wide">3. Límite de Ejecución en Vercel (Timeouts)</p>
+            <p className="font-bold text-foreground/80 uppercase tracking-wide">3. Límite de Ejecución Cloud (Timeouts)</p>
             <p>
-              Vercel en su plan gratuito corta las peticiones API a los 10 segundos. Si tienes una migración masiva (&gt;500 filas), hazla localmente conectándote a ambas bases de datos remotas. Localmente no tienes límite de ejecución.
+              Tanto Vercel como Netlify en sus planes gratuitos cortan las peticiones API a los 10 o 26 segundos. Si tienes una migración masiva (&gt;500 filas), hazla localmente conectándote a ambas bases de datos remotas. Localmente no tienes límite de ejecución.
             </p>
           </div>
           <div className="space-y-1.5">
