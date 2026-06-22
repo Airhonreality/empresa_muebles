@@ -1,0 +1,23 @@
+[
+  {
+    "id": "471c7a56-1d90-4ae1-82e8-fe2185c9f651",
+    "context": "leads",
+    "data": {
+      "nombre_completo": "",
+      "telefono_whatsapp": "",
+      "email": "",
+      "barrio_zona": "",
+      "tipo_espacio": "Cocina",
+      "mensaje": ""
+    },
+    "_meta": {
+      "nombre_completo": "2026-06-22T04:24:17.642Z",
+      "telefono_whatsapp": "2026-06-22T04:24:17.642Z",
+      "email": "2026-06-22T04:24:17.642Z",
+      "barrio_zona": "2026-06-22T04:24:17.642Z",
+      "tipo_espacio": "2026-06-22T04:24:17.642Z",
+      "mensaje": "2026-06-22T04:24:17.642Z"
+    },
+    "updated_at": "2026-06-22T04:24:21.367Z"
+  }
+]
