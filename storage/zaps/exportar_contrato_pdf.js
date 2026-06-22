@@ -394,8 +394,8 @@ const fullHtml = `<!DOCTYPE html>
     </p>
 
     <p>
-      <strong>Exclusiones y Suministros del Cliente:</strong> Se excluyen del alcance de este contrato todo tipo de obras civiles, plomería, instalaciones de gas, conexiones eléctricas y pintura de muros ajenos al mobiliario en sí. 
-      <em>Importante:</em> Los electrodomésticos, lavaplatos, herrajes especiales o cubiertas suministrados por el Contratante deberán contar con sus respectivas fichas técnicas oficiales entregadas al Contratista antes del inicio de la fabricación. Cualquier reproceso, ajuste o retraso derivado de medidas erróneas, omisión de fichas técnicas o entrega tardía de estos elementos por parte del Contratante generará un cobro adicional por concepto de mano de obra y materiales de modificación, y suspenderá los plazos pactados.
+      <strong>Alcance y Suministros del Cliente:</strong> Nuestro servicio se enfoca en la excelencia del mobiliario, por lo que las obras civiles, plomería, instalaciones de gas, conexiones eléctricas y acabados de muros de la vivienda no están incluidos. 
+      <em>Trabajo en equipo:</em> Para garantizar que su proyecto quede perfecto, le solicitamos amablemente compartirnos las fichas técnicas de los electrodomésticos, lavaplatos o herrajes que usted adquiera por su cuenta antes de iniciar la fabricación. Esto nos permite diseñar a la medida exacta y evitar posibles reprocesos, costos adicionales o tiempos de espera originados por elementos que no encajen. ¡Su colaboración oportuna es clave para el éxito del diseño!
     </p>
 
     ${(contrato.especificaciones_estructura || contrato.especificaciones_herrajes || contrato.especificaciones_mesones || contrato.condiciones_desmonte) ? `

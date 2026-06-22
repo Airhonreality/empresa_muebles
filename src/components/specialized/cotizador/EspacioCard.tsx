@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
 import type { DataItem } from '@agnostic/core'
-import { Briefcase, Copy, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Loader2, Image as ImageIcon, ClipboardList, Palette, Eye, EyeOff, X } from 'lucide-react'
+import { Briefcase, Copy, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Loader2, Image as ImageIcon, ClipboardList, Palette, Eye, EyeOff, X, ChevronUp, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { COP } from './utils'
 import { EspacioTabs } from './EspacioTabs'
@@ -14,6 +14,7 @@ import { SmartImageInput } from '@/components/ui/SmartImageInput'
 export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   activeVarId, onSelectVarId,
   onRename, onAddVariante, onUpdateVariante, onDuplicateVariante, onDeleteVariante, onReorderVariante, onAddItem, onUpdateItem, onDeleteItem, onDelete, onDuplicate,
+  onMoveUp, onMoveDown,
   onEditCatalogItem, onAddCatalogItem,
   allExistingColors = [],
 }: {
@@ -31,6 +32,8 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   onDeleteItem: (id: string) => void
   onDelete: () => void
   onDuplicate: () => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
   onEditCatalogItem: (id: string) => void
   onAddCatalogItem: (initialSearch: string) => void
   allExistingColors?: { nombre: string; imagen_url: string }[]
@@ -248,6 +251,14 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
           className="text-stone-200 hover:text-amber-600 transition-colors p-1">
           <Copy size={13} />
         </button>
+        <div className="flex flex-col gap-0 border-l border-stone-200 pl-1 ml-1 items-center justify-center">
+          <button onClick={onMoveUp} title="Mover arriba" className="text-stone-300 hover:text-amber-600">
+            <ChevronUp size={14} />
+          </button>
+          <button onClick={onMoveDown} title="Mover abajo" className="text-stone-300 hover:text-amber-600">
+            <ChevronDown size={14} />
+          </button>
+        </div>
         <button onClick={onDelete} title="Eliminar espacio"
           className="text-stone-200 hover:text-red-400 transition-colors p-1">
           <Trash2 size={13} />

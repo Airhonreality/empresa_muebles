@@ -47,9 +47,8 @@ El Contratista se obliga a realizar la fabricación e instalación del siguiente
 [Ítem 3 - Ej: Closets habitación principal]
 (Especificaciones detalladas en la Propuesta de Diseño y Presupuesto anexa).
 
-Exclusiones y Suministros del Cliente:
-Se excluyen elementos de obra civil, plomería, gas y electricidad ajenos a los muebles. Importante: Los electrodomésticos, lavaplatos, herrajes especiales o cualquier elemento suministrado por el Contratante deberán contar con sus respectivas fichas técnicas entregadas antes del inicio de fabricación. Cualquier reproceso, ajuste o retraso derivado de medidas erróneas, omisión de fichas técnicas o entregas tardías por parte del Contratante generará un cobro adicional y suspenderá los plazos de entrega.
-
+Alcance y Suministros del Cliente:
+Nuestro servicio se enfoca en la excelencia del mobiliario, por lo que elementos de obra civil, plomería, gas y electricidad ajenos a los muebles no están incluidos. Trabajo en equipo: Para garantizar que su proyecto quede perfecto, le solicitamos amablemente compartirnos las fichas técnicas de los electrodomésticos, lavaplatos o herrajes que usted adquiera por su cuenta antes de iniciar la fabricación. Esto nos permite diseñar a la medida exacta y evitar posibles reprocesos, costos adicionales o tiempos de espera originados por elementos que no encajen. ¡Su colaboración oportuna es clave para el éxito del diseño!
 SEGUNDA. PLAZOS Y CONDICIONES DE ENTREGA
 El contrato entrará en vigencia a partir de la confirmación del pago del primer anticipo y validación de diseños en sitio. El plazo de ejecución estimado es de [Número] semanas hábiles.
 

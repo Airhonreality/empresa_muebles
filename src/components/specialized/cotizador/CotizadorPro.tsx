@@ -143,7 +143,15 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
       if (!map.has(k)) map.set(k, [])
       map.get(k)!.push(v)
     }
-    return Array.from(map.entries()).map(([nombre, vars]) => ({ nombre, vars }))
+    return Array.from(map.entries()).map(([nombre, vars]) => ({ nombre, vars })).sort((a, b) => {
+      const oa = (a.vars[0].data as any).orden_espacio !== undefined ? Number((a.vars[0].data as any).orden_espacio) : 0
+      const ob = (b.vars[0].data as any).orden_espacio !== undefined ? Number((b.vars[0].data as any).orden_espacio) : 0
+      if (oa !== ob) return oa - ob
+      const cta = (a.vars[0].data as any).created_at || ''
+      const ctb = (b.vars[0].data as any).created_at || ''
+      if (cta !== ctb) return cta.localeCompare(ctb)
+      return a.vars[0].id.localeCompare(b.vars[0].id)
+    })
   }, [activeVariantes])
 
   // Sync activeVarMap from database when variants load or activeCotId changes
@@ -301,8 +309,10 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
       jornadas_desarrollo_tecnico: 0,
       jornadas_ensamblaje_taller: 0,
       jornadas_instalacion_obra: 0,
-      activa: true
-    }
+      activa: true,
+      orden_espacio: espacios.length,
+      created_at: new Date().toISOString()
+    } as any
     await vWrite('espacio_variantes', id, data)
     setVariantes(prev => [...prev, { id, context: 'espacio_variantes', data: data as any }])
   }
@@ -364,7 +374,9 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
       const newVarData: EspacioVariantes = {
         ...vd,
         nombre_espacio: newSpaceName,
-      }
+        orden_espacio: espacios.length,
+        created_at: new Date().toISOString()
+      } as any
       await vWrite('espacio_variantes', newVarId, newVarData)
       newVariants.push({ id: newVarId, context: 'espacio_variantes', data: newVarData as any })
 
@@ -388,6 +400,32 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     setVariantes(prev => [...prev, ...newVariants])
     setItems(prev => [...prev, ...newItems])
     toast.success('Espacio duplicado con éxito')
+  }
+
+  const reorderEspacio = async (nombreEspacio: string, direction: 'up' | 'down') => {
+    const idx = espacios.findIndex(e => e.nombre === nombreEspacio)
+    if (idx === -1) return
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (targetIdx < 0 || targetIdx >= espacios.length) return
+
+    const newSpaces = [...espacios]
+    const temp = newSpaces[idx]
+    newSpaces[idx] = newSpaces[targetIdx]
+    newSpaces[targetIdx] = temp
+
+    const toUpdate: any[] = []
+    newSpaces.forEach((space, index) => {
+      space.vars.forEach(v => {
+        toUpdate.push({ id: v.id, data: { ...(v.data as any), orden_espacio: index } })
+      })
+    })
+
+    setVariantes(prev => prev.map(x => {
+      const match = toUpdate.find(u => u.id === x.id)
+      return match ? { ...x, data: match.data as any } : x
+    }))
+
+    await Promise.all(toUpdate.map(u => vWrite('espacio_variantes', u.id, u.data)))
   }
 
   // ── Handlers: variantes ──────────────────────────────────────────
@@ -1082,6 +1120,8 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
               onDuplicateVariante={duplicateVariante}
               onDeleteVariante={deleteVariante}
               onReorderVariante={reorderVariante}
+              onMoveUp={() => reorderEspacio(nombre, 'up')}
+              onMoveDown={() => reorderEspacio(nombre, 'down')}
               onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}
               onDelete={() => deleteEspacio(nombre)}
               onDuplicate={() => duplicateEspacio(nombre)}
