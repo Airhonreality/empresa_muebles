@@ -1361,14 +1361,14 @@ export function DeploySection() {
                 ], redeploy);
                 setEditing({ ...editing, auth: false });
               }}
-            testResult={sessionCk ?? null}
-            testing={loadingH}
-            saving={savingId === 'auth'}
-            isDevMode={isDevMode}
-            isCloudBootstrapped={isCloudBootstrapped}
-          />
+              testResult={sessionCk ?? null}
+              testing={loadingH}
+              saving={savingId === 'auth'}
+              isDevMode={isDevMode}
+              isCloudBootstrapped={isCloudBootstrapped}
+            />
+          </div>
         </StrategyCard>
-        )}
       </div>
 
       {/* ── .env.local template ─────────────────────────────────────── */}
