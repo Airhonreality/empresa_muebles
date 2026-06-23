@@ -1216,24 +1216,21 @@ export function DeploySection() {
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/80">M2M: Llave de Nube para Zaps (Vault API)</p>
                 <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-6 text-[9px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-1" onClick={() => handleTestM2M()}>
+                    {testingId === 'm2m' ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+                    Validar
+                  </Button>
                   <Button variant="ghost" size="sm" className="h-6 text-[9px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-1" onClick={() => setField('auth', 'API_SECRET_KEY', crypto.randomUUID().replace(/-/g, '') + 'A1')}>
                     <Key size={10} /> Autogenerar Llave
                   </Button>
                 </div>
               </div>
               <CredentialField name="API_SECRET_KEY" value={forms.auth.API_SECRET_KEY} onChange={v => setField('auth', 'API_SECRET_KEY', v)} exists={!!presence['API_SECRET_KEY']} sensitive placeholder="Secreto de Inyección CLI..." />
-              
-              <div className="pt-2">
-                <ActionRow
-                  onTest={handleTestM2M}
-                  onSave={(redeploy) => handleSave('auth', [{ key: 'API_SECRET_KEY', value: forms.auth.API_SECRET_KEY, sensitive: true }], redeploy)}
-                  testResult={testResults['m2m'] ?? null}
-                  testing={testingId === 'm2m'}
-                  saving={savingId === 'auth'}
-                  isDevMode={isDevMode}
-                  isCloudBootstrapped={isCloudBootstrapped}
-                />
-              </div>
+              {testResults['m2m'] && (
+                <div className={`text-[9px] px-2 py-1.5 mt-1 rounded-md font-medium border ${testResults['m2m'].status === 'pass' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-destructive/10 text-destructive border-destructive/20'}`}>
+                  {testResults['m2m'].output}
+                </div>
+              )}
             </div>
           </div>
           
