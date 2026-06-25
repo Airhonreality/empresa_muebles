@@ -47,6 +47,8 @@ export default defineConfig({
     veta_spaces:       () => import('./src/components/specialized/VetaSpaces'),
     veta_catalog:      () => import('./src/components/specialized/VetaCatalog'),
     veta_agendar:      () => import('./src/components/specialized/VetaAgendar'),
+    workspace_switcher:() => import('./src/components/specialized/WorkspaceSwitcher'),
+    widget_armado_orden_compra: () => import('./src/components/specialized/WidgetArmadoOrdenCompra'),
   },
 
   features: {

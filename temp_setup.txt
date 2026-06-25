@@ -1,0 +1,6 @@
+set usuarios_equipo.rol.options Comercial,Taller / Producción,Diseño,Administrador,Finanzas
+create-record usuarios_equipo nombre="Airhon (Admin)" email="airhon@vetadorada.com" rol="Administrador" estado="Activo"
+create-record usuarios_equipo nombre="Harold (Producción)" email="harold@vetadorada.com" rol="Taller / Producción" estado="Activo"
+create-record usuarios_equipo nombre="Finanzas Veta" email="finanzas@vetadorada.com" rol="Finanzas" estado="Activo"
+create-record usuarios_equipo nombre="Comercial Veta" email="comercial@vetadorada.com" rol="Comercial" estado="Activo"
+commit --force

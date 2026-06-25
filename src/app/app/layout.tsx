@@ -1,5 +1,4 @@
 import { AppNavbarDynamic } from "@/components/agnostic/blocks/AppNavbarDynamic";
-import { AgnosticBelt } from "@/components/agnostic/blocks/AgnosticBelt";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +21,7 @@ export default function AppLayout({
         <AppNavbarDynamic />
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
           <div className="ml-auto flex-1 sm:flex-initial">
-            <AgnosticBelt />
+            
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -1,0 +1,2 @@
+create-record categorias_financieras {"data": {"nombre": "Comisiones y Bonificaciones", "tipo_flujo": "egreso", "subtipo": "costos_directos", "descripcion_semantica": "Costo variable. Incentivo por rendimiento productivo o comercial. Aumenta la friccion motivacional positiva del sistema (Recompensa por output TGS)."}}
+commit --force

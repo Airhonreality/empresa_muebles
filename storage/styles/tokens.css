@@ -38,8 +38,9 @@
   --sat-input:          hsl(var(--input));
   --sat-radius:         var(--radius);
 
-  /* 🪚 Tipografía Premium */
-  --sat-font-sans: 'Outfit', 'Inter', sans-serif;
+  /* 🪚 Tipografía Premium Japandi */
+  --sat-font-sans: var(--font-sans), sans-serif;
+  --sat-font-heading: var(--font-heading), sans-serif;
 
   /* ✨ VETA DORADA PREMIUM DARK TOKENS */
   --veta-bg-dark: 0 0% 4%;            /* Obsidiana (#0A0A0A) */

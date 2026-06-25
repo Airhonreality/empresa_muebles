@@ -1,0 +1,175 @@
+[
+  {
+    "id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Legale",
+      "costos_operativos": 360000,
+      "imprevistos_instalacion": 150000,
+      "estado": "enviada"
+    },
+    "updated_at": "2026-06-02T14:40:44.711Z"
+  },
+  {
+    "id": "8399a364-75ee-4479-b42c-7eb39816a094",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Barra",
+      "estado": "activa",
+      "costos_operativos": 260000,
+      "imprevistos_instalacion": 60000,
+      "cliente_id": "59681ad4-48f7-45d9-9795-50d10c6a09f3"
+    },
+    "updated_at": "2026-06-11T19:03:22.439Z"
+  },
+  {
+    "id": "e2929178-aaf6-430d-ae98-f1cc4173bc6e",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Cocina integral Carlos Flórez",
+      "costos_operativos": 350000,
+      "imprevistos_instalacion": 100000
+    },
+    "updated_at": "2026-06-03T19:40:46.350Z"
+  },
+  {
+    "id": "ef144cee-5671-4a93-8599-d5771b998a5b",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Cotización Cava"
+    },
+    "updated_at": "2026-06-03T19:47:38.489Z"
+  },
+  {
+    "id": "959f0044-05cf-44e6-aefd-6d1087eb668c",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Cotización closets",
+      "cliente_id": ""
+    },
+    "updated_at": "2026-06-16T13:15:15.651Z"
+  },
+  {
+    "id": "e45d6bcc-cf37-49dd-b3d7-4a204b6d7e36",
+    "context": "proyectos",
+    "data": {
+      "imprevistos_instalacion": 100000,
+      "nombre_proyecto": "Cotización centro de entretenimiento",
+      "costos_operativos": 250000
+    },
+    "updated_at": "2026-06-09T21:14:05.775Z"
+  },
+  {
+    "id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Closets",
+      "costos_operativos": 350000,
+      "imprevistos_instalacion": 150000,
+      "descuento_comercial": 0,
+      "ajuste_arbitrario": 0,
+      "cliente_id": "5d4425c8-7d9f-4deb-9c54-7ec7dd86b067",
+      "dias_entrega_estimados": 25
+    },
+    "updated_at": "2026-06-10T01:31:59.411Z"
+  },
+  {
+    "id": "49fe5eb3-34da-4608-87bd-494673322ce3",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Closet 200 cm",
+      "costos_operativos": 350000,
+      "imprevistos_instalacion": 150000,
+      "descuento_comercial": 0,
+      "ajuste_arbitrario": 0,
+      "cliente_id": "",
+      "dias_entrega_estimados": 25
+    },
+    "updated_at": "2026-06-16T13:15:38.436Z"
+  },
+  {
+    "id": "1ea5ae52-2fa0-402e-a92c-169df8c39461",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Cotización mesas de trabajo",
+      "cliente_id": "",
+      "costos_operativos": 120000
+    },
+    "updated_at": "2026-06-16T04:02:20.845Z"
+  },
+  {
+    "id": "8b817bd3-95d9-43bf-8c13-2db0cf00bad4",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Modulo superior de cocina",
+      "cliente_id": ""
+    },
+    "updated_at": "2026-06-16T13:14:01.182Z"
+  },
+  {
+    "id": "286b5b77-02da-49e4-a32e-d54020e713a7",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Cocina integral",
+      "cliente_id": "5fc1b7cb-5a9e-441e-a519-9329105c7c08",
+      "garantia_anios": 2,
+      "estado": "en_contrato",
+      "direccion_obra": "cra 81 B N 19B 80 - Portal de Modelia 2 - Interior 6 apartamentos 103",
+      "costos_operativos": 0
+    },
+    "updated_at": "2026-06-19T20:00:50.900Z"
+  },
+  {
+    "id": "b69695ea-0ed5-4613-80b0-82d20b213b66",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Cocina integral metro lineal",
+      "cliente_id": "",
+      "costos_operativos": 250000,
+      "imprevistos_instalacion": 0
+    },
+    "updated_at": "2026-06-17T00:25:44.214Z"
+  },
+  {
+    "id": "2761b7ec-62f8-4758-8ad7-02ea53d36465",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Hall entrada",
+      "costos_operativos": 190000,
+      "cliente_id": "c7241055-0c5c-467b-a500-4e227bb1e21d"
+    },
+    "updated_at": "2026-06-18T18:25:46.847Z"
+  },
+  {
+    "id": "ead24f73-2633-43ea-9bc8-12375103c4da",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Cocina integral",
+      "costos_operativos": 120000
+    },
+    "updated_at": "2026-06-19T15:00:45.191Z"
+  },
+  {
+    "id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+    "context": "Proyectos",
+    "data": {
+      "nombre_proyecto": "Camarote-escritorio-recibidor",
+      "cliente_id": "38e9da41-9b7d-4ac1-b7fd-fe43072e5ebf",
+      "direccion_obra": "",
+      "costos_operativos": 350000,
+      "imprevistos_instalacion": 150000,
+      "estado": "visita_tecnica"
+    },
+    "updated_at": "2026-06-23T22:45:14.855Z"
+  },
+  {
+    "id": "da6b8131-1800-43c0-9dd3-7b1a0c896669",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Cocina inregral patricia",
+      "costos_operativos": 250000,
+      "imprevistos_instalacion": 0
+    },
+    "updated_at": "2026-06-22T14:43:28.711Z"
+  }
+]

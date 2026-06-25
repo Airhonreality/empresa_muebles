@@ -1,0 +1,11 @@
+create-schema cuentas_financieras field:descripcion_semantica:markdown field:nombre:text field:tipo:select options:banco,efectivo,pasarela,billetera_digital field:saldo_inicial:number field:estado:select options:activa,inactiva
+create-schema categorias_financieras field:descripcion_semantica:markdown field:nombre:text field:tipo_flujo:select options:ingreso,egreso field:subtipo:select options:capex,opex,costos_directos,impuestos
+create-schema comprobantes_financieros field:descripcion_semantica:markdown field:numero_referencia:text field:tipo:select options:factura_electronica,cuenta_cobro,recibo_caja,comprobante_bancario field:archivo_soporte:text
+create-schema obligaciones_pendientes field:descripcion_semantica:markdown field:descripcion:text field:tipo:select options:por_pagar,por_cobrar field:monto_total:number field:monto_pagado:number field:fecha_vencimiento:date field:estado:select options:pendiente,parcial,pagado,anulado field:proveedor_id:relation entity:proveedores field:usuario_id:relation entity:usuarios_equipo field:contrato_id:relation entity:contratos field:cliente_id:relation entity:clientes
+create-schema movimientos_financieros field:descripcion_semantica:markdown field:fecha:date field:tipo:select options:ingreso,egreso,transferencia field:monto:number field:cuenta_origen_id:relation entity:cuentas_financieras field:cuenta_destino_id:relation entity:cuentas_financieras field:categoria_id:relation entity:categorias_financieras field:obligacion_id:relation entity:obligaciones_pendientes field:comprobante_id:relation entity:comprobantes_financieros
+add-field clientes descripcion_semantica markdown
+add-field proveedores descripcion_semantica markdown
+add-field usuarios_equipo descripcion_semantica markdown
+add-field proyectos descripcion_semantica markdown
+add-field contratos descripcion_semantica markdown
+commit --force
