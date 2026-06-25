@@ -42,6 +42,7 @@ Los 7 niveles de comandos
 🔍 Capa 0 — Introspección (empezar aquí siempre)
 
 context                          snapshot completo (schemas, routes, scripts, navs)
+diff-env                         comparar conteos y fechas de Almacenamiento Local vs Nube
 block-types                      todos los tipos de bloque disponibles
 block-schema <type>              params detallados de un tipo
 list-navs                        navbars registradas

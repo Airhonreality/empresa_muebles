@@ -21,6 +21,9 @@
  */
 
 import { getStrategy } from '../src/server/getStrategy';
+import { LocalStrategy } from '../src/server/strategies/LocalStrategy';
+import { PostgresStrategy } from '../src/server/strategies/PostgresStrategy';
+import { getSiloPath } from '../src/server/activeProject';
 import readline from 'readline';
 import crypto   from 'crypto';
 import fs       from 'fs/promises';
@@ -564,6 +567,68 @@ async function cmdContext() {
   for (const [cat, types] of Object.entries(byCategory)) {
     console.log(`  ${cat.padEnd(8)} ${types.join('  ')}`);
   }
+}
+
+async function cmdDiffEnv() {
+  if (!process.env.DATABASE_URL) {
+    console.log('[DIFF-ENV] DATABASE_URL no está definida en process.env.');
+    console.log('  -> Para auditar divergencias con Neon Postgres, pasa tu archivo de entorno al invocar:');
+    console.log('  -> npx tsx --env-file=.env.local scripts/agno.ts diff-env');
+    return;
+  }
+
+  const local = new LocalStrategy(getSiloPath());
+  const cloud = new PostgresStrategy(process.env.DATABASE_URL);
+
+  console.log('[DIFF-ENV] Comparando Almacenamiento Local (disco) vs Nube (Postgres)\n');
+
+  let schemas: any[] = [];
+  try { schemas = (await local.read('schema_definitions')) as any[]; } catch {}
+
+  const nsSet = new Set<string>(['schema_definitions', 'page_routes', 'scripts', 'app_navbars']);
+  for (const s of schemas) {
+    if (s?.data?.name) nsSet.add(s.data.name);
+  }
+
+  const namespaces = [...nsSet];
+  console.log(`Auditando ${namespaces.length} namespaces...\n`);
+  console.log(`${'NAMESPACE'.padEnd(24)} ${'LOCAL (DISCO)'.padEnd(16)} ${'NUBE (NEON)'.padEnd(16)} ESTADO`);
+  console.log('-------------------------------------------------------------------------');
+
+  for (const ns of namespaces) {
+    let localItems: any[] = [];
+    let cloudItems: any[] = [];
+    try { localItems = (await local.read(ns)) as any[]; } catch {}
+    try { cloudItems = (await cloud.read(ns)) as any[]; } catch {}
+
+    const lCount = localItems?.length ?? 0;
+    const cCount = cloudItems?.length ?? 0;
+
+    let getLatestTs = (items: any[]) => {
+      if (!items?.length) return '—';
+      let max = '';
+      for (const it of items) {
+        const ts = it?.updated_at ?? it?.created_at ?? it?.data?.updated_at ?? '';
+        if (ts > max) max = ts;
+      }
+      return max ? max.slice(0, 19).replace('T', ' ') : '—';
+    };
+
+    const lTs = getLatestTs(localItems);
+    const cTs = getLatestTs(cloudItems);
+
+    let status = 'Sincronizado';
+    if (lCount === 0 && cCount > 0) status = 'Solo en Nube';
+    else if (lCount > 0 && cCount === 0) status = 'Solo en Local';
+    else if (lCount !== cCount) status = `Diff conteo (${lCount} vs ${cCount})`;
+    else if (lTs !== cTs && lTs !== '—' && cTs !== '—') status = 'Desfase fecha';
+
+    const lStr = `${String(lCount).padStart(3)} (${lTs.slice(11, 16) || '—'})`;
+    const cStr = `${String(cCount).padStart(3)} (${cTs.slice(11, 16) || '—'})`;
+
+    console.log(`${ns.padEnd(24)} ${lStr.padEnd(16)} ${cStr.padEnd(16)} ${status}`);
+  }
+  console.log('');
 }
 
 function cmdBlockTypes() {
@@ -1792,6 +1857,7 @@ async function dispatch(line: string) {
   switch (cmd) {
     // Introspección
     case 'context':       return cmdContext();
+    case 'diff-env':      return cmdDiffEnv();
     case 'block-types':   return cmdBlockTypes();
     case 'block-schema':  return cmdBlockSchema(args[0]);
     case 'list-navs':     return cmdListNavs();
