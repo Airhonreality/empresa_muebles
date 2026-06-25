@@ -1369,6 +1369,7 @@ export function DeploySection() {
             />
           </div>
         </StrategyCard>
+        )}
       </div>
 
       {/* ── .env.local template ─────────────────────────────────────── */}
