@@ -1,0 +1,4 @@
+add-field usuarios_equipo costo_hora number
+add-field usuarios_equipo horas_estimadas_mes number
+create-schema registro_horas field:fecha:date field:usuario_id:relation entity:usuarios_equipo field:proyecto_id:relation entity:proyectos field:horas_ordinarias:number field:horas_extras:number field:descripcion_semantica:markdown field:estado_pago:select options:pendiente,liquidado
+commit --force

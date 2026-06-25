@@ -1,0 +1,2 @@
+add-field movimientos_financieros estado select options:valido,anulado
+commit --force
