@@ -22,6 +22,22 @@ npx tsx scripts/agno.ts
 
 # Pipe de comandos
 echo -e "ls\nschema cotizaciones" | npx tsx scripts/agno.ts
+
+> [!IMPORTANT]
+> **Conexión a Base de Datos en Nube (Postgres / Supabase) desde CLI:**
+> Cuando ejecutas la aplicación web (`npm run dev`), Next.js carga tu archivo `.env.local` automáticamente. Sin embargo, **Node.js en consola no lee archivos `.env` por defecto**. 
+> 
+> Si corres comandos CLI sueltos o scripts en un fork y necesitas que impacten tu base de datos remota (`DATABASE_URL`), debes hidratar el entorno en la llamada:
+>
+> ```bash
+> # Opción Canónica (Flag nativa de TSX/Node):
+> npx tsx --env-file=.env.local scripts/agno.ts context
+>
+> # Opción vía Dotenv CLI (en pipelines o forks precargados):
+> npx dotenv tsx scripts/agno.ts ls
+> ```
+> *(Si omites esto, al ser `DATABASE_URL === undefined`, el motor protegerá la ejecución cayendo silenciosamente a la estrategia de disco `LocalStrategy`).*
+
 Los 7 niveles de comandos
 🔍 Capa 0 — Introspección (empezar aquí siempre)
 
