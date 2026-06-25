@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, AlertCircle, Rocket, RefreshCw,
   Github, Cloud, Database, Shield, ChevronDown, ChevronRight,
   Eye, EyeOff, Loader2, Copy, Check, ExternalLink, ArrowRight,
-  ArrowLeftRight
+  ArrowLeftRight, Key
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -452,9 +452,9 @@ type FormMap = {
   postgres: { DATABASE_URL: string };
   r2:       { CF_ACCOUNT_ID: string; CF_R2_BUCKET: string; CF_R2_ACCESS_KEY_ID: string; CF_R2_SECRET_ACCESS_KEY: string; CF_R2_PUBLIC_URL: string };
   supabase: { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string };
-  auth:     { SESSION_SECRET: string };
-  vercel:   { VERCEL_ACCESS_TOKEN: string; VERCEL_PROJECT_ID: string; VERCEL_TEAM_ID: string; API_SECRET_KEY: string };
-  netlify:  { NETLIFY_AUTH_TOKEN: string; NETLIFY_SITE_ID: string; API_SECRET_KEY: string };
+  auth:     { SESSION_SECRET: string; API_SECRET_KEY: string };
+  vercel:   { VERCEL_ACCESS_TOKEN: string; VERCEL_PROJECT_ID: string; VERCEL_TEAM_ID: string };
+  netlify:  { NETLIFY_AUTH_TOKEN: string; NETLIFY_SITE_ID: string };
 };
 
 const EMPTY_FORMS: FormMap = {
@@ -462,9 +462,9 @@ const EMPTY_FORMS: FormMap = {
   postgres: { DATABASE_URL: '' },
   r2:       { CF_ACCOUNT_ID: '', CF_R2_BUCKET: '', CF_R2_ACCESS_KEY_ID: '', CF_R2_SECRET_ACCESS_KEY: '', CF_R2_PUBLIC_URL: '' },
   supabase: { SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '' },
-  auth:     { SESSION_SECRET: '' },
-  vercel:   { VERCEL_ACCESS_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '', API_SECRET_KEY: '' },
-  netlify:  { NETLIFY_AUTH_TOKEN: '', NETLIFY_SITE_ID: '', API_SECRET_KEY: '' },
+  auth:     { SESSION_SECRET: '', API_SECRET_KEY: '' },
+  vercel:   { VERCEL_ACCESS_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '' },
+  netlify:  { NETLIFY_AUTH_TOKEN: '', NETLIFY_SITE_ID: '' },
 };
 
 export function DeploySection() {
@@ -577,6 +577,102 @@ export function DeploySection() {
       setTestResults(r => ({ ...r, [strategy]: { componentId: strategy, componentType: 'unknown', status: 'fail', output: 'Error de red o falló respuesta de prueba', time: new Date().toISOString(), latency_ms: 0 } }));
     } finally {
       setTestingId(null);
+    }
+  };
+
+  const handleTestM2M = async () => {
+    setTestingId('m2m');
+    setTestResults(r => ({ ...r, m2m: undefined }));
+    const start = Date.now();
+    try {
+      const res = await fetch('/api/vault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-secret': forms.auth.API_SECRET_KEY },
+        body: JSON.stringify({ action: 'PING' }) // No valid action, we just want to bypass auth
+      });
+      // 401 means blocked. Anything else (even 400 Bad Request) means we passed the middleware
+      const latency_ms = Date.now() - start;
+      if (res.status !== 401) {
+        setTestResults(r => ({ ...r, m2m: { componentId: 'm2m', componentType: 'auth', status: 'pass', output: 'Llave validada y operativa. Listo para inyectar Zaps.', time: new Date().toISOString(), latency_ms } }));
+      } else {
+        setTestResults(r => ({ ...r, m2m: { componentId: 'm2m', componentType: 'auth', status: 'fail', output: 'La llave fue rechazada por el servidor.', time: new Date().toISOString(), latency_ms } }));
+      }
+    } catch {
+      setTestResults(r => ({ ...r, m2m: { componentId: 'm2m', componentType: 'auth', status: 'fail', output: 'Error de red al intentar validar.', time: new Date().toISOString(), latency_ms: 0 } }));
+    } finally {
+      setTestingId(null);
+    }
+  };
+
+  // ── Master Deploy Orchestrator ───────────────────────────────────────────────
+  
+  const [orchestrator, setOrchestrator] = useState<{ active: boolean; step: number; log: string[]; error: string | null; done: boolean }>({ active: false, step: 0, log: [], error: null, done: false });
+
+  const runMasterDeploy = async () => {
+    setOrchestrator({ active: true, step: 1, log: ['[1/5] Iniciando Sniper Mode... Validando Host.'], error: null, done: false });
+    
+    const hasVercel = forms.vercel.VERCEL_ACCESS_TOKEN && forms.vercel.VERCEL_PROJECT_ID;
+    const hasNetlify = forms.netlify.NETLIFY_AUTH_TOKEN && forms.netlify.NETLIFY_SITE_ID;
+    
+    if (!hasVercel && !hasNetlify) {
+      setOrchestrator(prev => ({ ...prev, error: 'Host no detectado. Por favor, configura Vercel o Netlify en la sección 1.' }));
+      return;
+    }
+
+    const provider = hasVercel ? 'vercel' : 'netlify';
+
+    setOrchestrator(prev => ({ ...prev, step: 2, log: [...prev.log, '[2/5] Generando llaves criptográficas seguras...'] }));
+    
+    const sessionSecret = forms.auth.SESSION_SECRET || crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+    const apiSecret = forms.auth.API_SECRET_KEY || crypto.randomUUID().replace(/-/g, '') + 'A1';
+    
+    if (!forms.auth.SESSION_SECRET) setField('auth', 'SESSION_SECRET', sessionSecret);
+    if (!forms.auth.API_SECRET_KEY) setField('auth', 'API_SECRET_KEY', apiSecret);
+
+    let vars = [
+      { key: 'SESSION_SECRET', value: sessionSecret, sensitive: true },
+      { key: 'API_SECRET_KEY', value: apiSecret, sensitive: true }
+    ];
+
+    if (hasVercel) {
+      vars.push({ key: 'VERCEL_ACCESS_TOKEN', value: forms.vercel.VERCEL_ACCESS_TOKEN, sensitive: true });
+      vars.push({ key: 'VERCEL_PROJECT_ID', value: forms.vercel.VERCEL_PROJECT_ID, sensitive: false });
+      if (forms.vercel.VERCEL_TEAM_ID) vars.push({ key: 'VERCEL_TEAM_ID', value: forms.vercel.VERCEL_TEAM_ID, sensitive: false });
+    } else {
+      vars.push({ key: 'NETLIFY_AUTH_TOKEN', value: forms.netlify.NETLIFY_AUTH_TOKEN, sensitive: true });
+      vars.push({ key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false });
+    }
+
+    if (forms.postgres.DATABASE_URL) vars.push({ key: 'DATABASE_URL', value: forms.postgres.DATABASE_URL, sensitive: true });
+    if (forms.supabase.SUPABASE_URL) {
+      vars.push({ key: 'SUPABASE_URL', value: forms.supabase.SUPABASE_URL, sensitive: false });
+      vars.push({ key: 'SUPABASE_SERVICE_ROLE_KEY', value: forms.supabase.SUPABASE_SERVICE_ROLE_KEY, sensitive: true });
+    }
+
+    setOrchestrator(prev => ({ ...prev, step: 3, log: [...prev.log, `[3/5] Inyectando batch de ${vars.length} variables en ${provider}...`] }));
+
+    try {
+      const res = await fetch('/api/admin/config/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, variables: vars, redeploy: true }),
+      });
+      const data = await res.json() as SaveResult;
+      
+      if (!res.ok) throw new Error(data.error || 'Fallo en inyección API');
+      
+      setOrchestrator(prev => ({ ...prev, step: 4, log: [...prev.log, `[4/5] Redespliegue iniciado (ID: ${data.deployment?.id || '?'}). Esperando contenedor...`] }));
+      
+      if (data.deployment) {
+        pollCount.current = 0;
+        setDeploy({ id: data.deployment.id, readyState: data.deployment.readyState, url: data.deployment.url, errorMessage: null, pollCount: 0 });
+      }
+
+      setOrchestrator(prev => ({ ...prev, step: 5, log: [...prev.log, '[5/5] Infraestructura aprovisionada exitosamente.'], done: true }));
+      fetchHealth();
+
+    } catch (err: any) {
+      setOrchestrator(prev => ({ ...prev, error: err.message || 'Error desconocido al aprovisionar.' }));
     }
   };
 
@@ -722,6 +818,51 @@ export function DeploySection() {
         <DeployStatusBar deploy={deploy} onDismiss={() => setDeploy(null)} />
       )}
 
+      {/* ── Orquestador ─────────────────────────────────────────────── */}
+      <div className="rounded-[2rem] border-2 border-primary/30 bg-primary/5 p-6 space-y-4 mb-8 shadow-sm relative overflow-hidden">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+              <Rocket className="w-5 h-5 text-primary" /> One-Click Provisioning
+            </h3>
+            <p className="text-[10px] text-muted-foreground mt-2 max-w-2xl font-medium leading-relaxed">
+              Configura tus credenciales de Hosting abajo. Cuando estés listo, presiona este botón. 
+              El Sniper Mode bloqueará la interfaz, autogenerará la seguridad faltante, inyectará en batch todas las variables y lanzará el redespliegue global.
+            </p>
+          </div>
+          <Button 
+            onClick={runMasterDeploy} 
+            disabled={orchestrator.active && !orchestrator.done}
+            className="font-bold uppercase tracking-widest text-[10px] h-10 px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+          >
+            {orchestrator.active && !orchestrator.done ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Rocket className="w-4 h-4 mr-2" />}
+            Aprovisionar Todo
+          </Button>
+        </div>
+
+        {orchestrator.active && (
+          <div className="bg-zinc-950 text-emerald-400 p-4 rounded-xl font-mono text-[10px] space-y-2 mt-4 shadow-inner border border-zinc-800">
+            {orchestrator.log.map((l, i) => (
+              <div key={i} className="flex gap-3">
+                <span className="text-zinc-600 select-none">$</span>
+                <span className={i === orchestrator.log.length - 1 && !orchestrator.done && !orchestrator.error ? "animate-pulse text-emerald-300" : "text-emerald-500"}>{l}</span>
+              </div>
+            ))}
+            {orchestrator.error && (
+              <div className="text-rose-400 font-bold flex gap-3 mt-2 bg-rose-950/30 p-2 rounded">
+                <span className="select-none">!</span>
+                <span>ERROR: {orchestrator.error}</span>
+              </div>
+            )}
+            {orchestrator.done && (
+              <div className="text-emerald-300 font-bold mt-3 pt-3 border-t border-emerald-900/50 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" /> Listo. Monitorea el progreso de construcción arriba.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* ── PASO 1: Hosting Cloud ────────────────────────────────────── */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -799,11 +940,6 @@ export function DeploySection() {
                 <CredentialField name="VERCEL_ACCESS_TOKEN" value={forms.vercel.VERCEL_ACCESS_TOKEN} onChange={v => setField('vercel', 'VERCEL_ACCESS_TOKEN', v)} exists={!!presence['VERCEL_ACCESS_TOKEN']} sensitive />
                 <CredentialField name="VERCEL_PROJECT_ID" value={forms.vercel.VERCEL_PROJECT_ID} onChange={v => setField('vercel', 'VERCEL_PROJECT_ID', v)} exists={!!presence['VERCEL_PROJECT_ID']} sensitive={false} placeholder="prj_..." />
                 <CredentialField name="VERCEL_TEAM_ID" value={forms.vercel.VERCEL_TEAM_ID} onChange={v => setField('vercel', 'VERCEL_TEAM_ID', v)} exists={!!presence['VERCEL_TEAM_ID']} sensitive={false} placeholder="team_... (opcional)" />
-                <div className="pt-2 border-t border-border/30 mt-3 space-y-1">
-                  <p className="text-[9px] text-muted-foreground pb-0.5">Seguridad M2M (Opcional): Contraseña para inyectar Zaps mediante CLI/IA.</p>
-                  <CredentialField name="API_SECRET_KEY" value={forms.vercel.API_SECRET_KEY} onChange={v => setField('vercel', 'API_SECRET_KEY', v)} exists={!!presence['API_SECRET_KEY']} sensitive={true} placeholder="Escribe tu secreto o autogenéralo..." />
-                  <button onClick={() => setField('vercel', 'API_SECRET_KEY', crypto.randomUUID().replace(/-/g, '') + 'A1')} className="text-[8px] font-bold uppercase tracking-widest text-primary hover:underline px-1">✨ Autogenerar Llave Segura</button>
-                </div>
               </div>
               <ActionRow
                 onTest={() => handleTest('vercel', { VERCEL_ACCESS_TOKEN: forms.vercel.VERCEL_ACCESS_TOKEN, VERCEL_PROJECT_ID: forms.vercel.VERCEL_PROJECT_ID, VERCEL_TEAM_ID: forms.vercel.VERCEL_TEAM_ID })}
@@ -812,7 +948,6 @@ export function DeploySection() {
                     { key: 'VERCEL_ACCESS_TOKEN', value: forms.vercel.VERCEL_ACCESS_TOKEN, sensitive: true },
                     { key: 'VERCEL_PROJECT_ID', value: forms.vercel.VERCEL_PROJECT_ID, sensitive: false },
                     { key: 'VERCEL_TEAM_ID', value: forms.vercel.VERCEL_TEAM_ID, sensitive: false },
-                    { key: 'API_SECRET_KEY', value: forms.vercel.API_SECRET_KEY, sensitive: true },
                   ], redeploy);
                   setEditing({ ...editing, hosting: false });
                 }}
@@ -868,11 +1003,6 @@ export function DeploySection() {
                 sensitive={false}
                 placeholder="site-uuid-..."
               />
-              <div className="pt-2 border-t border-border/30 mt-3 space-y-1">
-                <p className="text-[9px] text-muted-foreground pb-0.5">Seguridad M2M (Opcional): Contraseña para inyectar Zaps mediante CLI/IA.</p>
-                <CredentialField name="API_SECRET_KEY" value={forms.netlify.API_SECRET_KEY} onChange={v => setField('netlify', 'API_SECRET_KEY', v)} exists={!!presence['API_SECRET_KEY']} sensitive={true} placeholder="Escribe tu secreto o autogenéralo..." />
-                <button onClick={() => setField('netlify', 'API_SECRET_KEY', crypto.randomUUID().replace(/-/g, '') + 'A1')} className="text-[8px] font-bold uppercase tracking-widest text-primary hover:underline px-1">✨ Autogenerar Llave Segura</button>
-              </div>
               <ActionRow
                 onTest={() => handleTest('netlify', {
                   NETLIFY_AUTH_TOKEN: forms.netlify.NETLIFY_AUTH_TOKEN,
@@ -882,7 +1012,6 @@ export function DeploySection() {
                   handleSave('netlify', [
                     { key: 'NETLIFY_AUTH_TOKEN', value: forms.netlify.NETLIFY_AUTH_TOKEN, sensitive: true },
                     { key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false },
-                    { key: 'API_SECRET_KEY', value: forms.netlify.API_SECRET_KEY, sensitive: true }
                   ], redeploy);
                   setEditing({ ...editing, hosting: false });
                 }}
@@ -1187,28 +1316,59 @@ export function DeploySection() {
           check={sessionCk}
           defaultOpen={!sessionCk || sessionCk.status !== 'pass'}
         >
-          <div className="space-y-3">
-            <div>
-              <CredentialField name="SESSION_SECRET" value={forms.auth.SESSION_SECRET} onChange={v => setField('auth', 'SESSION_SECRET', v)} exists={!!presence['SESSION_SECRET']} sensitive placeholder="Escribe tu secreto o autogenéralo..." />
-              <button onClick={() => setField('auth', 'SESSION_SECRET', crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''))} className="text-[8px] font-bold uppercase tracking-widest text-primary hover:underline px-1 mt-2">✨ Autogenerar Secreto Seguro</button>
+          <div className="space-y-4">
+            {/* Session Secret */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/80">B2B: Sesión de Usuario (Cookies)</p>
+                <Button variant="ghost" size="sm" className="h-6 text-[9px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-1" onClick={() => setField('auth', 'SESSION_SECRET', crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''))}>
+                  <Key size={10} /> Autogenerar Secreto
+                </Button>
+              </div>
+              <CredentialField name="SESSION_SECRET" value={forms.auth.SESSION_SECRET} onChange={v => setField('auth', 'SESSION_SECRET', v)} exists={!!presence['SESSION_SECRET']} sensitive placeholder="Secreto de 64 caracteres..." />
+            </div>
+
+            {/* M2M API Key */}
+            <div className="space-y-2 pt-2 border-t border-border/30">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/80">M2M: Llave de Nube para Zaps (Vault API)</p>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-6 text-[9px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-1" onClick={() => handleTestM2M()}>
+                    {testingId === 'm2m' ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+                    Validar
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-6 text-[9px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-1" onClick={() => setField('auth', 'API_SECRET_KEY', crypto.randomUUID().replace(/-/g, '') + 'A1')}>
+                    <Key size={10} /> Autogenerar Llave
+                  </Button>
+                </div>
+              </div>
+              <CredentialField name="API_SECRET_KEY" value={forms.auth.API_SECRET_KEY} onChange={v => setField('auth', 'API_SECRET_KEY', v)} exists={!!presence['API_SECRET_KEY']} sensitive placeholder="Secreto de Inyección CLI..." />
+              {testResults['m2m'] && (
+                <div className={`text-[9px] px-2 py-1.5 mt-1 rounded-md font-medium border ${testResults['m2m'].status === 'pass' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-destructive/10 text-destructive border-destructive/20'}`}>
+                  {testResults['m2m'].output}
+                </div>
+              )}
             </div>
           </div>
-          <ActionRow
-            onTest={fetchHealth}
-            onSave={(redeploy) => {
-              handleSave('auth', [
-                { key: 'SESSION_SECRET', value: forms.auth.SESSION_SECRET, sensitive: true },
-              ], redeploy);
-              setEditing({ ...editing, auth: false });
-            }}
-            testResult={sessionCk ?? null}
-            testing={loadingH}
-            saving={savingId === 'auth'}
-            isDevMode={isDevMode}
-            isCloudBootstrapped={isCloudBootstrapped}
-          />
+          
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <ActionRow
+              onTest={fetchHealth}
+              onSave={(redeploy) => {
+                handleSave('auth', [
+                  { key: 'SESSION_SECRET', value: forms.auth.SESSION_SECRET, sensitive: true },
+                  { key: 'API_SECRET_KEY', value: forms.auth.API_SECRET_KEY, sensitive: true },
+                ], redeploy);
+                setEditing({ ...editing, auth: false });
+              }}
+              testResult={sessionCk ?? null}
+              testing={loadingH}
+              saving={savingId === 'auth'}
+              isDevMode={isDevMode}
+              isCloudBootstrapped={isCloudBootstrapped}
+            />
+          </div>
         </StrategyCard>
-        )}
       </div>
 
       {/* ── .env.local template ─────────────────────────────────────── */}

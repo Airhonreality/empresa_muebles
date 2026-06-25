@@ -37,14 +37,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# ── PROJECT LAYER — this IS a project fork, not the seed ────────────────────
-# storage/ and src/components/specialized/ ARE tracked in project repos.
-# They are only excluded in the seed (Agnostic_System_Seed).
-# When pulling upstream/main from the seed, these paths are never touched
-# because the seed never has files there.
+# ── PROJECT LAYER — never lives in the seed ──────────────────────────────────
+# These directories belong to project forks. The seed has them empty (.gitkeep).
+# Merging upstream/main into a project fork will NEVER touch these paths.
 
-# Nothing to exclude here — storage/ and specialized/ are yours, commit them.
-# system_config.json is tracked (silo persists in git → Vercel never shows setup screen).
+# In a project fork, all storage/ is yours to commit freely.
+storage/*
+!storage/.gitkeep
+
+# Project-specific custom blocks built with AI
+# Exception: _TEMPLATE.tsx is part of the seed (shows the pattern to follow)
+src/components/specialized/*
+!src/components/specialized/_TEMPLATE.tsx
+!src/components/specialized/DataBrowser.tsx
+
 
 
 # local Claude Code settings (machine-specific, never committed)
