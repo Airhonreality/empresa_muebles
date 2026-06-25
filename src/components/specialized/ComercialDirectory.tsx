@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMateriaStore } from '@/lib/agnostic/store'
+import { processEvents } from '@/lib/agnostic/eventProcessor'
 import { useRelationData } from '@/lib/agnostic/hooks/useRelationData'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -50,14 +51,7 @@ async function zapCall(zap: string, payload: Record<string, unknown>) {
     body: JSON.stringify({ zap, payload }),
   })
   const { events = [] } = await res.json()
-  for (const event of events) {
-    if (event.action === 'materia_sync') {
-      useMateriaStore.getState().updateItem(event.context, event.item)
-    }
-    if (event.action === 'notify') {
-      event.type === 'success' ? toast.success(event.message) : toast.error(event.message)
-    }
-  }
+  await processEvents(events, useMateriaStore.getState().updateItem)
 }
 
 // ─── AbonoForm — panel inline para registrar un abono ────────────────────────

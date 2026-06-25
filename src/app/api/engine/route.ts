@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     // Dev Sinc: Sync local filesystem JS scripts into database vault in development
     if (process.env.NODE_ENV === 'development') {
       const pathsToSearch = [
+        path.join(process.cwd(), 'storage', 'zaps', `${zap}.js`),
         path.join(process.cwd(), 'src', 'components', 'specialized', 'cotizador', `${zap}.js`),
         path.join(process.cwd(), 'src', 'server', 'scripts', `${zap}.js`),
         path.join(process.cwd(), 'src', 'scripts', `${zap}.js`),

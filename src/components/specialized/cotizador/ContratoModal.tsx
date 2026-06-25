@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Loader2, X, FileText, Mail, Info } from 'lucide-react'
 import { toast } from 'sonner'
-import { COP, vWrite } from './utils'
+import { COP } from './utils'
+import { processEvents } from '@/lib/agnostic/eventProcessor'
+import { useMateriaStore } from '@/lib/agnostic/store'
 
 interface ContratoModalProps {
   isOpen: boolean
@@ -212,85 +214,72 @@ export function ContratoModal({
     const toastId = toast.loading(actionMsg)
 
     try {
-      const cotData = cotizacion?.data || cotizacion
-
-      // 1. Guardar/Actualizar datos faltantes indispensables del Cliente
-      const clientId = cliente?.id || crypto.randomUUID()
-      const clientData = {
-        ...(cliente?.data || cliente || {}),
-        nombre: clienteNombre,
-        documento: clienteDoc,
-        domicilio: clienteDom,
-        email: clienteEmail,
-        telefono: clienteTel
-      }
-      await vWrite('clientes', clientId, clientData)
-
-      // Actualizar cotización asociándole el cliente si no lo tenía y la dirección de obra
-      const updatedCot = {
-        ...cotData,
-        cliente_id: clientId,
-        direccion_obra: clienteDom,
-        garantia_anios: garantiaAnios
-      }
-      await vWrite('cotizaciones', cotizacion.id, updatedCot)
-
-      // 2. Buscar si ya existe un contrato para esta cotización
-      const resContratos = await fetch('/api/vault?namespace=contratos')
-      const jsonContratos = await resContratos.json()
-      const allContratos = jsonContratos.records || []
-      const existingContrato = allContratos.find((c: any) => (c.data?.cotizacion_id || c.cotizacion_id) === cotizacion.id)
-
-      const year = new Date().getFullYear()
-      const count = allContratos.length + 1
-      const codigo = existingContrato 
-        ? (existingContrato.data?.codigo_contrato || existingContrato.codigo_contrato)
-        : `CT-${year}-${String(count).padStart(3, '0')}`
-
-      const fmt = (v: number) => '$' + v.toLocaleString('es-CO') + ' COP'
-
-      const emailAsunto = `Contrato de Fabricación e Instalación — ${cotData.nombre_proyecto || 'Proyecto'}`
-      const emailCuerpo = `Estimado/a ${clienteNombre},\n\nNos complace adjuntar el contrato digital correspondiente al proyecto **${cotData.nombre_proyecto || ''}**.\n\n**Estructura de Abonos:**\n- Valor total: ${fmt(valorTotal)}\n- Primer anticipo (50%): ${fmt(abono1)} (Activa fabricación)\n- Segundo pago (25%): ${fmt(abono2)} (Al iniciar instalación)\n- Pago final (25%): ${fmt(abono3)} (Al finalizar la instalación)\n\nPor favor revise el documento legal y nos confirma su aceptación para proceder.\n\nCordialmente,\n**Hermanos García González S.A.S**\nvetadeoro.co@gmail.com`
-
-      const contratoId = existingContrato?.id || crypto.randomUUID()
-      const newContratoData = {
-        cotizacion_id: cotizacion.id,
-        codigo_contrato: codigo,
-        fecha_contrato: new Date().toISOString().split('T')[0],
-        contratante_domicilio: clienteDom,
-        plazo_ejecucion_texto: plazoSemanas,
-        holgura_dias: holguraDias,
-        garantia_anios: garantiaAnios,
-        objeto_items: objetoItems,
-        especificaciones_estructura: especEstructura,
-        especificaciones_herrajes: especHerrajes,
-        especificaciones_mesones: especMesones,
-        condiciones_desmonte: condDesmonte,
-        valor_total: valorTotal,
-        estado: 'borrador',
-        email_asunto: emailAsunto,
-        email_cuerpo: emailCuerpo
-      }
-
-      // 3. Escribir registro de contrato en la base de datos
-      await vWrite('contratos', contratoId, newContratoData)
-
-      // 4. Cambiar el estado de la cotización a 'en_contrato'
-      await vWrite('cotizaciones', cotizacion.id, {
-        ...updatedCot,
-        estado: 'en_contrato'
+      // Despacho axiomático al Zap canónico en el servidor
+      const res = await fetch('/api/engine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          zap: 'generar_contrato',
+          payload: {
+            record: cotizacion?.data || cotizacion,
+            cliente: {
+              nombre: clienteNombre,
+              documento: clienteDoc,
+              domicilio: clienteDom,
+              email: clienteEmail,
+              telefono: clienteTel
+            },
+            contrato: {
+              plazo_ejecucion_texto: plazoSemanas,
+              holgura_dias: holguraDias,
+              garantia_anios: garantiaAnios,
+              objeto_items: objetoItems,
+              especificaciones_estructura: especEstructura,
+              especificaciones_herrajes: especHerrajes,
+              especificaciones_mesones: especMesones,
+              condiciones_desmonte: condDesmonte,
+              valor_total: valorTotal
+            }
+          }
+        })
       })
 
+      if (!res.ok) throw new Error(await res.text())
+      const result = await res.json()
+
+      toast.dismiss(toastId)
+      const store = useMateriaStore.getState()
+      let contratoIdGenerated = ''
+      let emailSub = ''
+      let emailBod = ''
+
+      for (const event of result.events || []) {
+        if (event.action === 'materia_sync') {
+          store.updateItem(event.context, event.item)
+          if (event.context === 'contratos') {
+            contratoIdGenerated = event.item.id
+            emailSub = event.item.data?.email_asunto || ''
+            emailBod = event.item.data?.email_cuerpo || ''
+          }
+        }
+        if (event.action === 'notify') {
+          if (event.type === 'success') toast.success(event.message)
+          else toast.error(event.message)
+        }
+      }
+
       if (isBorradorOnly) {
-        toast.success('Borrador de contrato guardado con éxito.', { id: toastId })
         onClose()
       } else {
-        toast.success('Contrato guardado correctamente en la base de datos.', { id: toastId })
-        onSaveSuccess(contratoId, {
-          email: clienteEmail,
-          subject: emailAsunto,
-          body: emailCuerpo
-        })
+        if (contratoIdGenerated) {
+          onSaveSuccess(contratoIdGenerated, {
+            email: clienteEmail,
+            subject: emailSub,
+            body: emailBod
+          })
+        } else {
+          onClose()
+        }
       }
 
     } catch (err: any) {

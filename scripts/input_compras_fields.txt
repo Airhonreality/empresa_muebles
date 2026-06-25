@@ -1,0 +1,3 @@
+add-field compras_materiales estado select "options:solicitado,en_transito,recibido"
+add-field compras_materiales origen_proyecto text
+commit --force

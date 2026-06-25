@@ -18,7 +18,8 @@
     "test:watch": "vitest",
     "sync-zaps": "tsx scripts/sync-zaps.ts",
     "push-zap": "tsx scripts/push-zap.ts",
-    "push-data": "tsx scripts/push-data.ts"
+    "push-data": "tsx scripts/push-data.ts",
+    "agnostic:pull-schemas": "tsx scripts/pull-schemas.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.78",

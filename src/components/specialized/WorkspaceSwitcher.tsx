@@ -17,9 +17,9 @@ export default function WorkspaceSwitcher({ records }: BlockProps) {
   const activeUser = usuarios.find(u => u.id === activeUserId)
 
   const workspaces = [
-    { id: 'comercial', label: 'Cotizaciones y Ventas', icon: ShoppingCart, roles: ['Admin', 'Comercial'], path: '/app/proyectos' },
-    { id: 'produccion', label: 'Taller y Producción', icon: Hammer, roles: ['Admin', 'Producci'], path: '/app/production' },
-    { id: 'finanzas', label: 'Ledger Financiero', icon: Wallet, roles: ['Admin', 'Finanzas'], path: '/app/finanzas' }
+    { id: 'comercial', label: 'Cotizaciones y Ventas', icon: ShoppingCart, roles: ['Admin', 'Comercial'], path: '/app/erp/comercial' },
+    { id: 'produccion', label: 'Taller y Producción', icon: Hammer, roles: ['Admin', 'Producci'], path: '/app/erp/taller' },
+    { id: 'finanzas', label: 'Ledger Financiero', icon: Wallet, roles: ['Admin', 'Finanzas'], path: '/app/erp/finanzas' }
   ]
 
   if (!activeUser) {

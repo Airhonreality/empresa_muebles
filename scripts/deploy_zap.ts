@@ -11,13 +11,15 @@ if (items.length === 0) {
   return;
 }
 
+const projName = payload.projectName || "Stock / Compras Generales";
 const total = items.reduce((acc, item) => acc + (item.cantidad * item.precio_unitario), 0);
 
-let semantica = "### Orden de Compra Taller\\n\\n";
-semantica += "| Cantidad | Ítem | Unitario | Subtotal |\\n";
-semantica += "|---|---|---|---|\\n";
+let semantica = "### Orden de Compra Taller\\n";
+semantica += \`**Proyecto Vinculado:** \${projName}\\n\\n\`;
+semantica += "| Cantidad | Ítem | Unitario | Subtotal | Origen |\\n";
+semantica += "|---|---|---|---|---|\\n";
 items.forEach(item => {
-  semantica += \`| **\${item.cantidad}** | \${item.nombre} | $\${item.precio_unitario} | $\${item.cantidad * item.precio_unitario} |\\n\`;
+  semantica += \`| **\${item.cantidad}** | \${item.nombre} | $\${item.precio_unitario} | $\${item.cantidad * item.precio_unitario} | \${item.origen || '-'} |\\n\`;
 });
 semantica += \`\\n**Total Orden:** $\${total}\`;
 

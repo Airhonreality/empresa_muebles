@@ -2,7 +2,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: .\storage\db\schema_definitions.json
 // Run:    npm run agnostic:compile
-// Generated: 2026-06-22T22:52:35.452Z
+// Generated: 2026-06-25T12:30:59.132Z
 // ============================================================
 
 // DataItem is the universal record wrapper used by the engine.

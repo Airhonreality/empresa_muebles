@@ -12,6 +12,9 @@ import type {
   CotizacionesRecord, ClientesRecord,
 } from '@/generated/agnostic-schemas'
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import CentralAbastecimientoGlobal from '../WidgetArmadoOrdenCompra'
+
 const STAGES: KanbanStage[] = [
   { value: 'pendiente',   label: 'Pendiente',    color: 'slate'  },
   { value: 'en_proceso',  label: 'En proceso',   color: 'blue'   },
@@ -96,25 +99,50 @@ export default function ProductionKanban({ records, api }: BlockProps) {
   }
 
   return (
-    <KanbanCanvas
-      records={localOrders}
-      stages={STAGES}
-      stageKey="estado"
-      defaultStage="pendiente"
-      onMoveCard={handleMove}
-      renderCard={(record, stage, onMove, nextStage) => (
-        <ProductionCard
-          record={record}
-          stage={stage}
-          onMove={onMove}
-          nextStage={nextStage}
-          allStages={STAGES}
-          api={api}
-          tasks={allTasks as TareasProduccionRecord[]}
-          cotizacion={cotizacionMap[record.id]}
-          clientName={clientNameMap[record.id] ?? '—'}
-        />
-      )}
-    />
+    <div className="flex flex-col w-full h-full space-y-4">
+      <Tabs defaultValue="kanban" className="w-full flex-1 flex flex-col">
+        <div className="flex justify-between items-center px-4 py-2 border-b bg-white">
+          <h2 className="text-xl font-bold text-stone-800 tracking-tight">Centro de Taller</h2>
+          <TabsList className="bg-stone-100 p-1 rounded-lg">
+            <TabsTrigger value="kanban" className="px-6 py-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-semibold">
+              Tablero de Producción
+            </TabsTrigger>
+            <TabsTrigger value="abastecimiento" className="px-6 py-2 rounded-md data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm text-sm font-semibold transition-colors">
+              Central de Abastecimiento
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="kanban" className="flex-1 overflow-hidden m-0 p-4 outline-none">
+          <KanbanCanvas
+            records={localOrders}
+            stages={STAGES}
+            stageKey="estado"
+            defaultStage="pendiente"
+            onMoveCard={handleMove}
+            renderCard={(record, stage, onMove, nextStage) => (
+              <ProductionCard
+                record={record}
+                stage={stage}
+                onMove={onMove}
+                nextStage={nextStage}
+                allStages={STAGES}
+                api={api}
+                tasks={allTasks as TareasProduccionRecord[]}
+                cotizacion={cotizacionMap[record.id]}
+                clientName={clientNameMap[record.id] ?? '—'}
+              />
+            )}
+          />
+        </TabsContent>
+
+        <TabsContent value="abastecimiento" className="m-0 p-4 outline-none flex-1 overflow-y-auto">
+          <CentralAbastecimientoGlobal 
+            context="obligaciones_pendientes"
+            schema={{} as any} // Agnostic schema bypass as the component loads data natively
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }

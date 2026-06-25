@@ -17,6 +17,7 @@ import type {
   AbonosContratoRecord, EspacioVariantesRecord,
 } from '@/generated/agnostic-schemas'
 import { useMateriaStore } from '@/lib/agnostic/store'
+import { processEvents } from '@/lib/agnostic/eventProcessor'
 const fmt = (v: number) =>
   '$' + v.toLocaleString('es-CO', { minimumFractionDigits: 0 }) + ' COP'
 
@@ -38,12 +39,7 @@ async function zapCall(zap: string, payload: Record<string, unknown>) {
     body: JSON.stringify({ zap, payload }),
   })
   const { events = [] } = await res.json()
-  for (const event of events) {
-    if (event.action === 'materia_sync') useMateriaStore.getState().updateItem(event.context, event.item)
-    if (event.action === 'notify') {
-      event.type === 'success' ? toast.success(event.message) : toast.error(event.message)
-    }
-  }
+  await processEvents(events, useMateriaStore.getState().updateItem)
 }
 
 // ─── Inline abono form ────────────────────────────────────────────────────────

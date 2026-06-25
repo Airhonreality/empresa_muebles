@@ -6,10 +6,6 @@ if (!cotizacion?.id) {
 
 const existingContratos = await api.query('contratos');
 const existing = existingContratos.find(c => c.cotizacion_id === cotizacion.id);
-if (existing) {
-  api.notify.error('Ya existe el contrato ' + existing.codigo_contrato + ' para esta cotización. Ve a Comercial.');
-  return;
-}
 
 const clientes = await api.query('clientes');
 const client = clientes.find(c => c.id === cotizacion.cliente_id);
@@ -50,42 +46,64 @@ if (devService && assemblyService && installService) {
   return;
 }
 
-const abono1 = Math.round(grandTotal * 0.50);
-const abono2 = Math.round(grandTotal * 0.25);
-const abono3 = grandTotal - abono1 - abono2;
+// Si el usuario proporcionó datos del cliente en el payload, sincronizar cliente primero
+let clientId = cotizacion.cliente_id || (client ? client.id : 'cli_' + Date.now());
+if (payload.cliente && payload.cliente.nombre) {
+  const existingCliData = client ? (client.data || client) : {};
+  await api.saveItem('clientes', {
+    id: clientId,
+    data: {
+      ...existingCliData,
+      nombre: payload.cliente.nombre,
+      documento: payload.cliente.documento || existingCliData.documento || '',
+      domicilio: payload.cliente.domicilio || existingCliData.domicilio || '',
+      email: payload.cliente.email || existingCliData.email || '',
+      telefono: payload.cliente.telefono || existingCliData.telefono || ''
+    }
+  });
+}
+
+const cForm = payload.contrato || {};
+const valorTotalFinal = Number(cForm.valor_total || grandTotal);
+
+const abono1 = Math.round(valorTotalFinal * 0.50);
+const abono2 = Math.round(valorTotalFinal * 0.25);
+const abono3 = valorTotalFinal - abono1 - abono2;
 
 const year = new Date().getFullYear();
-const count = existingContratos.length + 1;
-const codigo = 'CT-' + year + '-' + String(count).padStart(3, '0');
+const count = existingContratos.length + (existing ? 0 : 1);
+const codigo = existing ? (existing.codigo_contrato || existing.data?.codigo_contrato) : ('CT-' + year + '-' + String(count).padStart(3, '0'));
 
-const clientNombre = client ? (client.nombre || '') : '';
-const clientDoc = client ? (client.documento || '') : '';
-const clientEmail = client ? (client.email || '') : '';
-const clientDomicilio = client ? (client.domicilio || '') : '';
+const clientNombre = payload.cliente?.nombre || (client ? (client.nombre || '') : '');
+const clientEmail = payload.cliente?.email || (client ? (client.email || '') : '');
+const clientDomicilio = payload.cliente?.domicilio || (client ? (client.domicilio || '') : '');
 
-const objetoItems = mySpaces.map((s, i) => (i + 1) + '. ' + (s.nombre_espacio || 'Espacio')).join('\n');
+const defaultObjeto = mySpaces.map((s, i) => (i + 1) + '. ' + (s.nombre_espacio || 'Espacio')).join('\n');
+const objetoItems = cForm.objeto_items || defaultObjeto;
 
 const fmt = v => '$' + Number(v).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' COP';
 
-const emailAsunto = 'Contrato de Fabricación e Instalación — ' + (cotizacion.nombre_proyecto || 'Proyecto');
-const emailCuerpo = 'Estimado/a ' + (clientNombre || '{{nombre_cliente}}') + ',\n\nNos complace presentarle el contrato correspondiente al proyecto **' + (cotizacion.nombre_proyecto || '') + '**. Adjunto encontrará el documento con todas las cláusulas acordadas.\n\n**Resumen financiero:**\n- Valor total: ' + fmt(grandTotal) + '\n- Primer anticipo (50%): ' + fmt(abono1) + ' — *Este pago activa el contrato e inicia la fabricación.*\n- Segundo pago (25%): ' + fmt(abono2) + ' — Al despachar los muebles.\n- Pago final (25%): ' + fmt(abono3) + ' — Al finalizar la instalación.\n\nPor favor revise el contrato y ante cualquier duda no dude en contactarnos.\n\nCordialmente,\n**Hermanos García González S.A.S**\nhgarciasas@gmail.com';
+const emailAsunto = cForm.email_asunto || ('Contrato de Fabricación e Instalación — ' + (cotizacion.nombre_proyecto || 'Proyecto'));
+const emailCuerpo = cForm.email_cuerpo || ('Estimado/a ' + (clientNombre || '{{nombre_cliente}}') + ',\n\nNos complace adjuntar el contrato digital correspondiente al proyecto **' + (cotizacion.nombre_proyecto || '') + '**.\n\n**Estructura de Abonos:**\n- Valor total: ' + fmt(valorTotalFinal) + '\n- Primer anticipo (50%): ' + fmt(abono1) + ' (Activa fabricación)\n- Segundo pago (25%): ' + fmt(abono2) + ' (Al iniciar instalación)\n- Pago final (25%): ' + fmt(abono3) + ' (Al finalizar la instalación)\n\nPor favor revise el documento legal y nos confirma su aceptación para proceder.\n\nCordialmente,\n**Hermanos García González S.A.S**\nvetadeoro.co@gmail.com');
 
-await api.saveItem('contratos', {
+const contratoId = existing ? existing.id : 'con_' + Date.now();
+const savedContrato = await api.saveItem('contratos', {
+  id: contratoId,
   data: {
     cotizacion_id: cotizacion.id,
     codigo_contrato: codigo,
-    fecha_contrato: new Date().toISOString().split('T')[0],
+    fecha_contrato: cForm.fecha_contrato || (existing?.fecha_contrato || new Date().toISOString().split('T')[0]),
     contratante_domicilio: clientDomicilio,
-    plazo_ejecucion_texto: '',
-    holgura_dias: 6,
-    garantia_anios: Number(cotizacion.garantia_anios || 2),
+    plazo_ejecucion_texto: cForm.plazo_ejecucion_texto || '4 a 5',
+    holgura_dias: Number(cForm.holgura_dias ?? 8),
+    garantia_anios: Number(cForm.garantia_anios ?? cotizacion.garantia_anios ?? 2),
     objeto_items: objetoItems,
-    especificaciones_estructura: '',
-    especificaciones_herrajes: '',
-    especificaciones_mesones: '',
-    condiciones_desmonte: '',
-    valor_total: grandTotal,
-    estado: 'borrador',
+    especificaciones_estructura: cForm.especificaciones_estructura || '',
+    especificaciones_herrajes: cForm.especificaciones_herrajes || '',
+    especificaciones_mesones: cForm.especificaciones_mesones || '',
+    condiciones_desmonte: cForm.condiciones_desmonte || '',
+    valor_total: valorTotalFinal,
+    estado: existing ? (existing.estado || existing.data?.estado || 'borrador') : 'borrador',
     email_asunto: emailAsunto,
     email_cuerpo: emailCuerpo
   }
@@ -93,7 +111,13 @@ await api.saveItem('contratos', {
 
 await api.saveItem('cotizaciones', {
   id: cotizacion.id,
-  data: { ...cotizacion, estado: 'en_contrato' }
+  data: {
+    ...cotizacion,
+    cliente_id: clientId,
+    direccion_obra: clientDomicilio || cotizacion.direccion_obra || '',
+    garantia_anios: Number(cForm.garantia_anios ?? cotizacion.garantia_anios ?? 2),
+    estado: 'en_contrato'
+  }
 });
 
-api.notify.success('Contrato ' + codigo + ' creado. Ve a Comercial para completarlo y enviarlo.');
+api.notify.success('Contrato ' + codigo + ' compilado y guardado axiomáticamente.');
