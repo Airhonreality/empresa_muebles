@@ -215,6 +215,55 @@ Todas las capas (add-block, scaffold, create-schema, etc.) se escriben directo a
 
 ---
 
+# 🛡️ DOCTRINA CANÓNICA DE ENTORNOS DE DATOS (Local vs. Nube)
+
+En la arquitectura Agnostic, el código (`src/`) y la lógica (`scripts/`) conviven con persistencias mutables. Para evitar la catástrofe industrial de **destruir o contaminar datos reales de producción desde localhost**, todo agente de IA y desarrollador debe acatar esta ley:
+
+> [!CAUTION]
+> **LEY DE AISLAMIENTO ABSOLUTO:**  
+> Queda terminantemente prohibido conectar un servidor `localhost` (`npm run dev`) con credenciales de escritura (`DATABASE_URL`) apuntando directamente a la base de datos `main` productiva.
+
+## 1. Los 2 Patrones Oficiales de Trabajo en Local
+
+Al desarrollar en un fork hijo, debes optar explícitamente por uno de estos dos modelos:
+
+### Patrón A: Ramas de Base de Datos / Database Branching (⭐ RECOMENDADO)
+Aprovecha la capacidad nativa de **Neon Postgres** de clonar bases de datos en 1 segundo mediante *Copy-on-Write*.
+
+1. **En la Nube (Producción):** Vive la rama `main` con los datos reales de los clientes.
+2. **En tu Panel de Neon:** Crea una rama llamada `dev_local` (clon exacto de `main`).
+3. **En tu archivo `.env.local`:** Pones exclusivamente la `DATABASE_URL` de la rama `dev_local`.
+* **Superpoder Dev:** Puedes probar botones de *"Eliminar"*, ejecutar Zaps financieros experimentales, alterar tablas o corromper datos en tu `localhost`. **La producción `main` jamás se entera.** Si deseas refrescar tus datos locales con las últimas ventas reales, ejecutas *"Reset dev_local to main"* en Neon.
+
+### Patrón B: Offline JSON Snapshots (Desarrollo Desconectado)
+Para programación en aviones, sin internet o purismo *Code-As-Data* en estrategia `Local`.
+
+1. **En tu archivo `.env.local`:** Comentas o eliminas la variable `DATABASE_URL`.
+2. El sistema caerá automáticamente a leer los archivos `storage/{project}/db/*.json`.
+3. **Regla de Sincronía:** Si notas disonancia (ej: *ves Proyectos pero sus Ítems están vacíos*), significa que tu disco local está desactualizado respecto a la nube. Para hidratarlo, debes realizar un volcado de lectura desde la base de datos productiva hacia tus archivos `.json` locales antes de programar.
+
+## 2. Parámetros CLI de Diagnóstico y Auditoría Previas
+
+Antes de tirar comandos de mutación (`create-record`, `scaffold`, `script write`), verifica en qué terreno estás parado:
+
+```bash
+# 1. Auditar estrategia activa y conteo de nodos en memoria:
+npx tsx --env-file=.env.local scripts/agno.ts context
+
+# 2. Validar coherencia de invariantes (nombres snake_case vs contextos):
+npx tsx --env-file=.env.local scripts/agno.ts validate
+```
+
+### Tabla de Diagnóstico de Disonancias Comúnmente Observadas
+
+| Síntoma Observado en UI Local | Causa Raíz Axiomática | Acción Correctiva Inmediata |
+|---|---|---|
+| **Veo Proyectos pero sus listas de Ítems salen vacías** | Trabajas en Patrón B (`LocalStrategy`). Los proyectos se crearon en tu disco viejo, pero los ítems reales nacieron en la nube (`Postgres`). | Sincroniza tu base local o cambia tu `.env.local` a una rama Neon (`Patrón A`). |
+| **Hago cambios en un Zap local y no se reflejan en la web** | Estás editando un archivo `.js` suelto en vez de actualizar el registro en la base de datos viva. | Ejecuta `npm run push-data scripts <nombre_zap>`. |
+| **El CLI arroja `LocalStrategy` pese a tener Postgres** | Corriste `tsx` desnudo sin pasar la variable de entorno. | Usa la flag canónica: `--env-file=.env.local`. |
+
+---
+
 ## Bloques especializados (agnostic.config.ts)
 
 Los bloques creados en `src/components/specialized/` y registrados en `agnostic.config.ts` se añaden con `add-block` exactamente igual que los del engine. agno los reconocerá con aviso `[CUSTOM]` — eso es normal, no es un error.
