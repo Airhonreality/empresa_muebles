@@ -73,6 +73,10 @@ const RADIUS_OPTIONS = [
   { label: 'Extra redondo (1.0rem)', value: '1.0rem' }
 ];
 
+function asString(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
 export function SystemSection() {
   const { data } = useAppState();
   const { saveItem } = useAppDispatch();
@@ -91,20 +95,20 @@ export function SystemSection() {
   // Hydrate local state when store tokens load/change
   useEffect(() => {
     if (primaryToken?.data?.value) {
-      setPrimaryColor(hslToHex(primaryToken.data.value));
+      setPrimaryColor(hslToHex(asString(primaryToken.data.value, '')));
     }
     if (radiusToken?.data?.value) {
-      setRadius(radiusToken.data.value);
+      setRadius(asString(radiusToken.data.value, '0.5rem'));
     }
     if (fontToken?.data?.value) {
-      setFontFamily(fontToken.data.value);
+      setFontFamily(asString(fontToken.data.value, 'Inter, sans-serif'));
     }
   }, [primaryToken, radiusToken, fontToken]);
 
   const isDirty =
-    hslToHex(primaryToken?.data?.value || '') !== primaryColor ||
-    (radiusToken?.data?.value || '0.5rem') !== radius ||
-    (fontToken?.data?.value || 'Inter, sans-serif') !== fontFamily;
+    hslToHex(asString(primaryToken?.data?.value, '')) !== primaryColor ||
+    asString(radiusToken?.data?.value, '0.5rem') !== radius ||
+    asString(fontToken?.data?.value, 'Inter, sans-serif') !== fontFamily;
 
   const handleSaveTheme = async () => {
     setIsSaving(true);

@@ -4,7 +4,7 @@ import { SupabaseStrategy } from '@/server/strategies/SupabaseStrategy';
 import { PostgresStrategy } from '@/server/strategies/PostgresStrategy';
 import { LocalStrategy }   from '@/server/strategies/LocalStrategy';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
-import { getSiloPath } from '@/server/activeProject';
+import { getProjectStorageRoot } from '@/server/activeProject';
 import type { AgnosticBridge } from '@agnostic/core';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +36,7 @@ function buildAdapter(strategy: string, credentials?: Record<string, string>): {
       return { adapter: new PostgresStrategy(url) };
     }
     case 'local': {
-      return { adapter: new LocalStrategy(getSiloPath()) };
+      return { adapter: new LocalStrategy(getProjectStorageRoot()) };
     }
     default:
       return { error: `Estrategia desconocida: "${strategy}". Válidas: github, supabase, local` };

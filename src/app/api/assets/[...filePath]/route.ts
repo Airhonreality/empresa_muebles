@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSiloPath } from '@/server/activeProject';
+import { getProjectStorageRoot } from '@/server/activeProject';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -19,7 +19,7 @@ export async function GET(
 ) {
   const { filePath } = await params;
   const safeParts = filePath.map(p => path.basename(p));
-  const absPath = path.join(getSiloPath(), 'assets', ...safeParts);
+  const absPath = path.join(getProjectStorageRoot(), 'assets', ...safeParts);
 
   try {
     const data = await fs.readFile(absPath);

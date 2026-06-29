@@ -11,8 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'template is required' }, { status: 400 });
     }
 
-    const tenantKey = req.headers.get('x-tenant') ?? undefined;
-    const strategy = getStrategy(tenantKey);
+    const strategy = getStrategy();
 
     const records = await strategy.read('pdf_templates');
     const record = records.find((r: any) => r.data?.name === templateName);
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { generate } = await import('@pdfme/generator');
-    const pdfBuffer = await generate({ template: record.data.template, inputs });
+    const pdfBuffer = await generate({ template: record.data.template as Parameters<typeof generate>[0]['template'], inputs });
 
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {

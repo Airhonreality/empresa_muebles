@@ -6,7 +6,7 @@ import { useAppState } from '@/context/AppContext';
 /**
  * Agnostic Google Login (Canon v1.0)
  * 
- * Projects a Google Login button ONLY if the current tenant 
+ * Projects a Google Login button only if the current fork configuration
  * has a googleClientId configured in its DNA.
  */
 export function AgnosticGoogleLogin() {

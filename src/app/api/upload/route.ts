@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSiloPath } from '@/server/activeProject';
+import { getProjectStorageRoot } from '@/server/activeProject';
 import fs   from 'fs/promises';
 import path from 'path';
 
@@ -14,7 +14,7 @@ const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export async function GET() {
   try {
-    const assetsDir = path.join(getSiloPath(), 'assets');
+    const assetsDir = path.join(getProjectStorageRoot(), 'assets');
     await fs.mkdir(assetsDir, { recursive: true });
     const files = await fs.readdir(assetsDir);
     const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']);
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Local filesystem fallback ────────────────────────────────────────────
-    const uploadsDir = path.join(getSiloPath(), 'assets');
+    const uploadsDir = path.join(getProjectStorageRoot(), 'assets');
     await fs.mkdir(uploadsDir, { recursive: true });
     const dest = path.join(uploadsDir, filename);
     await fs.writeFile(dest, Buffer.from(await file.arrayBuffer()));
