@@ -16,19 +16,19 @@ import { COP, vWrite, vRemove } from './utils'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
 import type {
-  Cotizaciones,
+  Proyectos as ProyectoData,
   EspacioVariantes,
   ItemsVariante,
   ProductosCatalogo,
 } from '@/generated/agnostic-schemas'
 
 interface CotizadorProProps extends Partial<BlockProps> {
-  forcedCotizacionId?: string
+  forcedProyectoId?: string
 }
 
-export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRecord }: CotizadorProProps) {
+export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecord }: CotizadorProProps) {
   // ── Data state ───────────────────────────────────────────────────
-  const [cotizaciones, setCotizaciones] = useState<DataItem[]>([])
+  const [proyectosList, setProyectos] = useState<DataItem[]>([])
   const [clientes,     setClientes]     = useState<DataItem[]>([])
   const [catalogo,     setCatalogo]     = useState<DataItem[]>([])
   const [variantes,    setVariantes]    = useState<DataItem[]>([])
@@ -36,11 +36,11 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
   const [loading, setLoading] = useState(true)
 
   // ── Active quote ─────────────────────────────────────────────────
-  // forcedCotizacionId > URL :id (activeRecord) > internal selection
+  // forcedProyectoId > URL :id (activeRecord) > internal selection
   const [activeCotId, setActiveCotId]   = useState<string | null>(
-    forcedCotizacionId || activeRecord?.id || null
+    forcedProyectoId || activeRecord?.id || null
   )
-  const [headerLocal, setHeaderLocal]   = useState<Cotizaciones>({ nombre_proyecto: '' })
+  const [headerLocal, setHeaderLocal]   = useState<ProyectoData>({ nombre_proyecto: '', estado: 'activa' })
   const [subOpen,     setSubOpen]       = useState(false)
   const [secretOpen,  setSecretOpen]    = useState(false)
   const [activeVarMap, setActiveVarMap] = useState<Record<string, string>>({})
@@ -60,7 +60,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     data: {}
   })
 
-  const activeCot = cotizaciones.find(c => c.id === activeCotId)
+  const activeCot = proyectosList.find(c => c.id === activeCotId)
 
   const clienteData = useMemo(() => {
     if (!headerLocal?.cliente_id) return null
@@ -78,14 +78,14 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     setLoading(true)
     try {
       const [rc, rci, rcat, rv, ri] = await Promise.all([
-        fetch('/api/vault?namespace=cotizaciones'),
+        fetch('/api/vault?namespace=proyectos'),
         fetch('/api/vault?namespace=clientes'),
         fetch('/api/vault?namespace=productos_catalogo'),
         fetch('/api/vault?namespace=espacio_variantes'),
         fetch('/api/vault?namespace=items_variante'),
       ])
       const [jc, jci, jcat, jv, ji] = await Promise.all([rc.json(), rci.json(), rcat.json(), rv.json(), ri.json()])
-      setCotizaciones(jc.records  ?? [])
+      setProyectos(jc.records  ?? [])
       setClientes(    jci.records ?? [])
       setCatalogo(    jcat.records?? [])
       setVariantes(   jv.records  ?? [])
@@ -97,12 +97,12 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
 
   // Sync local header when switching quotes or when database updates activeCot
   useEffect(() => {
-    if (activeCot) setHeaderLocal(activeCot.data as any as Cotizaciones)
+    if (activeCot) setHeaderLocal(activeCot.data as any as ProyectoData)
   }, [activeCotId, activeCot])
 
   // Sync when engine provides a new activeRecord via URL :id navigation
   useEffect(() => {
-    if (activeRecord?.id && !forcedCotizacionId && activeRecord.id !== activeCotId) {
+    if (activeRecord?.id && !forcedProyectoId && activeRecord.id !== activeCotId) {
       setActiveCotId(activeRecord.id)
     }
   }, [activeRecord?.id]) // eslint-disable-line
@@ -117,15 +117,15 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     delay: 800,
     onSave: async (bundle) => {
       if (!bundle.id) return
-      await vWrite('cotizaciones', bundle.id, bundle.header)
-      setCotizaciones(prev => prev.map(c => c.id === bundle.id ? { ...c, data: bundle.header as any } : c))
+      await vWrite('proyectos', bundle.id, bundle.header)
+      setProyectos(prev => prev.map(c => c.id === bundle.id ? { ...c, data: bundle.header as any } : c))
     }
   })
 
   // ── Derived ──────────────────────────────────────────────────────
   const activeVariantes = useMemo(
     () => {
-      const filtered = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === activeCotId)
+      const filtered = variantes.filter(v => (v.data as any as EspacioVariantes).proyecto_id === activeCotId)
       return [...filtered].sort((a, b) => {
         const oa = Number((a.data as any).orden) || 0
         const ob = Number((b.data as any).orden) || 0
@@ -303,7 +303,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     }
 
     const data: EspacioVariantes = {
-      cotizacion_id: activeCotId,
+      proyecto_id: activeCotId,
       nombre_espacio: nombreEspacio,
       nombre_variante: 'Inicial',
       jornadas_desarrollo_tecnico: 0,
@@ -323,7 +323,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     // 1. Instant optimistic local React state update
     setVariantes(prev => prev.map(x => {
       const vd = x.data as any as EspacioVariantes
-      if (vd.cotizacion_id === activeCotId && vd.nombre_espacio === oldName) {
+      if (vd.proyecto_id === activeCotId && vd.nombre_espacio === oldName) {
         return { ...x, data: { ...vd, nombre_espacio: newName } as any }
       }
       return x
@@ -449,7 +449,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     const existingDesc = existing.length > 0 ? (existing[0].data as any as EspacioVariantes).descripcion : undefined
     const id = crypto.randomUUID()
     const data: EspacioVariantes = {
-      cotizacion_id: activeCotId,
+      proyecto_id: activeCotId,
       nombre_espacio: nombreEspacio,
       nombre_variante: `Variante ${existing.length + 1}`,
       jornadas_desarrollo_tecnico: 0,
@@ -661,9 +661,9 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
   // ── Handlers: new quote ──────────────────────────────────────────
   const newCot = async () => {
     const id = crypto.randomUUID()
-    const data: Cotizaciones = { nombre_proyecto: 'Nuevo Proyecto' }
-    await vWrite('cotizaciones', id, data)
-    setCotizaciones(prev => [...prev, { id, context: 'cotizaciones', data: data as any }])
+    const data: ProyectoData = { nombre_proyecto: 'Nuevo Proyecto', estado: 'activa' }
+    await vWrite('proyectos', id, data)
+    setProyectos(prev => [...prev, { id, context: 'proyectos', data: data as any }])
     setActiveCotId(id); setHeaderLocal(data)
   }
 
@@ -674,8 +674,8 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     try {
       // Bug 1 fix: flush pending header changes before Zap reads from DB
       if (isDirty) {
-        await vWrite('cotizaciones', activeCotId, headerLocal)
-        setCotizaciones(prev => prev.map(c => c.id === activeCotId ? { ...c, data: headerLocal as any } : c))
+        await vWrite('proyectos', activeCotId, headerLocal)
+        setProyectos(prev => prev.map(c => c.id === activeCotId ? { ...c, data: headerLocal as any } : c))
       }
 
       const response = await fetch('/api/engine', {
@@ -685,7 +685,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
           zap: 'exportar_propuesta_pdf',
           payload: {
             record: { id: activeCotId },
-            context: 'cotizaciones'
+            context: 'proyectos'
           }
         })
       })
@@ -738,7 +738,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     
     try {
       // Delete all items of all variants belonging to this quotation
-      const toDelVariants = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === cotId)
+      const toDelVariants = variantes.filter(v => (v.data as any as EspacioVariantes).proyecto_id === cotId)
       for (const v of toDelVariants) {
         const vItems = items.filter(it => (it.data as any as ItemsVariante).variante_id === v.id)
         for (const it of vItems) {
@@ -748,15 +748,15 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
       }
       
       // Delete the quotation record itself
-      await vRemove('cotizaciones', cotId)
+      await vRemove('proyectos', cotId)
       
       // Update local state
-      setCotizaciones(prev => prev.filter(c => c.id !== cotId))
-      setVariantes(prev => prev.filter(v => (v.data as any as EspacioVariantes).cotizacion_id !== cotId))
+      setProyectos(prev => prev.filter(c => c.id !== cotId))
+      setVariantes(prev => prev.filter(v => (v.data as any as EspacioVariantes).proyecto_id !== cotId))
       setItems(prev => prev.filter(it => {
         const varId = (it.data as any as ItemsVariante).variante_id
         const vari = variantes.find(v => v.id === varId)
-        return vari ? (vari.data as any as EspacioVariantes).cotizacion_id !== cotId : true
+        return vari ? (vari.data as any as EspacioVariantes).proyecto_id !== cotId : true
       }))
       
       if (activeCotId === cotId) {
@@ -775,24 +775,24 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
   }
 
   const duplicateCotizacion = async (cotId: string) => {
-    const orig = cotizaciones.find(c => c.id === cotId)
+    const orig = proyectosList.find(c => c.id === cotId)
     if (!orig) return
-    const origData = orig.data as any as Cotizaciones
+    const origData = orig.data as any as ProyectoData
     
     const newCotId = crypto.randomUUID()
-    const newCotData: Cotizaciones = {
+    const newCotData: ProyectoData = {
       ...origData,
       nombre_proyecto: origData.nombre_proyecto ? `${origData.nombre_proyecto} (Copia)` : 'Proyecto (Copia)'
     }
     
     // Find all spaces / variants belonging to the original cotizacion
-    const origVariants = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === cotId)
+    const origVariants = variantes.filter(v => (v.data as any as EspacioVariantes).proyecto_id === cotId)
     const newVariants: DataItem[] = []
     const newItems: DataItem[] = []
     
     try {
       // 1. Write the new cotizacion
-      await vWrite('cotizaciones', newCotId, newCotData)
+      await vWrite('proyectos', newCotId, newCotData)
       
       // 2. Clone each space/variant and its items
       for (const v of origVariants) {
@@ -800,7 +800,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
         const newVarId = crypto.randomUUID()
         const newVarData: EspacioVariantes = {
           ...vd,
-          cotizacion_id: newCotId
+          proyecto_id: newCotId
         }
         await vWrite('espacio_variantes', newVarId, newVarData)
         newVariants.push({ id: newVarId, context: 'espacio_variantes', data: newVarData as any })
@@ -819,7 +819,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
       }
       
       // 3. Update local states
-      setCotizaciones(prev => [...prev, { id: newCotId, context: 'cotizaciones', data: newCotData as any }])
+      setProyectos(prev => [...prev, { id: newCotId, context: 'proyectos', data: newCotData as any }])
       setVariantes(prev => [...prev, ...newVariants])
       setItems(prev => [...prev, ...newItems])
       
@@ -908,15 +908,15 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
   // ──────────────────────────────────────────────────────────────────
   // RENDER — selector
   if (!activeCotId) {
-    const sorted = [...cotizaciones].sort((a, b) =>
+    const sorted = [...proyectosList].sort((a, b) =>
       (b as any).updated_at?.localeCompare?.((a as any).updated_at) ?? 0
     )
     return (
       <div className="min-h-screen bg-stone-50 p-6">
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-stone-800 tracking-tight">Cotizaciones</h1>
+            <div className="w-full min-w-0 flex-1">
+              <h1 className="text-2xl font-bold text-stone-800 tracking-tight w-full max-w-full break-words text-balance">Proyectos</h1>
               <p className="text-stone-400 text-sm mt-1">Selecciona o crea una nueva</p>
             </div>
             <button onClick={newCot}
@@ -926,11 +926,11 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {sorted.map(c => {
-              const d = c.data as any as Cotizaciones
+              const d = c.data as any as ProyectoData
               const cli = clientes.find(cl => cl.id === d.cliente_id)?.data as any
 
               // Count unique physical space names in this quotation
-              const spacesList = variantes.filter(v => (v.data as any as EspacioVariantes).cotizacion_id === c.id)
+              const spacesList = variantes.filter(v => (v.data as any as EspacioVariantes).proyecto_id === c.id)
               const uniqueSpaceNames = new Set(
                 spacesList.map(v => (v.data as any as EspacioVariantes).nombre_espacio?.trim()).filter(Boolean)
               )
@@ -965,13 +965,13 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
                         </button>
                       </div>
                     </div>
-                    <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors text-sm leading-tight mb-2 line-clamp-2">
+                    <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors text-sm leading-tight mb-2 w-full max-w-full break-words text-balance">
                       {d.nombre_proyecto || <span className="italic text-stone-300">Sin nombre</span>}
                     </h3>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-stone-400 mt-2 pt-2 border-t border-stone-50">
+                  <div className="flex items-center justify-between text-xs text-stone-400 mt-2 pt-2 border-t border-stone-50 w-full min-w-0">
                     {cli ? (
-                      <span className="flex items-center gap-1"><User size={9} /> {cli.nombre}</span>
+                      <span className="flex items-center gap-1 min-w-0 max-w-full"><User size={9} className="shrink-0" /> <span className="truncate">{cli.nombre}</span></span>
                     ) : <span />}
                     {spacesCount > 0 && <span>{spacesCount} espacio{spacesCount !== 1 ? 's' : ''}</span>}
                   </div>
@@ -980,7 +980,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
             })}
             {sorted.length === 0 && (
               <div className="col-span-3 text-center py-16 text-stone-300 text-sm">
-                Sin cotizaciones. Crea la primera.
+                Sin proyectos. Crea el primero.
               </div>
             )}
           </div>
@@ -989,7 +989,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
     )
   }
 
-  const isEmbedded = !!forcedCotizacionId
+  const isEmbedded = !!forcedProyectoId
 
   return (
     <div className={cn("flex flex-col flex-1", isEmbedded ? "pb-24 bg-transparent" : "min-h-screen bg-stone-50 pb-36")}>
@@ -1091,7 +1091,7 @@ export default function CotizadorPro({ block = {}, forcedCotizacionId, activeRec
 
       {/* ── Apoyo Técnico panel ─────────────────────────────────────── */}
       <div className={cn("max-w-4xl mx-auto w-full px-4 sm:px-6 pt-4", isEmbedded && "px-2 sm:px-3")}>
-        <ApoyoTecnicoPanel cotizacionId={activeCotId!} />
+        <ApoyoTecnicoPanel proyectoId={activeCotId!} />
       </div>
 
       {/* ── Body: espacios ─────────────────────────────────────────── */}

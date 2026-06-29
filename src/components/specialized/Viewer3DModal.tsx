@@ -137,9 +137,9 @@ export default function Viewer3DModal({ isOpen, onClose, order }: {
 
   const activeSpaces = useMemo(
     () => (allSpaces as EspacioVariantesRecord[]).filter(
-      s => s.data.cotizacion_id === order.data.cotizacion_id && s.data.activa
+      s => s.data.proyecto_id === order.data.proyecto_id && s.data.activa
     ),
-    [allSpaces, order.data.cotizacion_id]
+    [allSpaces, order.data.proyecto_id]
   )
 
   // Un solo tab activo → un solo WebGL context activo

@@ -13,7 +13,7 @@ import { useRelationData } from '@/lib/agnostic/hooks/useRelationData'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { DollarSign, FileText, Loader2, ExternalLink, LayoutDashboard } from 'lucide-react'
-import type { CotizacionesRecord, ClientesRecord, ContratosRecord } from '@/generated/agnostic-schemas'
+import type { ProyectosRecord, ClientesRecord, ContratosRecord } from '@/generated/agnostic-schemas'
 
 type CotEstado = 'activa' | 'enviada' | 'en_contrato' | 'pre_produccion' | 'produccion' | 'entregada'
 
@@ -173,10 +173,10 @@ function CotizacionCard({
   contrato,
   onOpenCanvas,
 }: {
-  cotizacion: CotizacionesRecord
+  cotizacion: ProyectosRecord
   clientName: string
   contrato?: ContratosRecord
-  onOpenCanvas: (cot: CotizacionesRecord) => void
+  onOpenCanvas: (cot: ProyectosRecord) => void
 }) {
   const [showAbono, setShowAbono] = useState(false)
   const estado = (cotizacion.data.estado ?? 'activa') as CotEstado
@@ -246,7 +246,7 @@ function CotizacionCard({
 
 // ─── ComercialDirectory ───────────────────────────────────────────────────────
 export default function ComercialDirectory({ records }: BlockProps) {
-  const cotizaciones = (records ?? []) as unknown as CotizacionesRecord[]
+  const proyectosList = (records ?? []) as unknown as ProyectosRecord[]
 
   const { data: allClientes,  isLoading: loadingCli } = useRelationData('clientes')
   const { data: allContratos, isLoading: loadingCon } = useRelationData('contratos')
@@ -255,22 +255,22 @@ export default function ComercialDirectory({ records }: BlockProps) {
 
   const clientNameMap = useMemo(() => {
     const map: Record<string, string> = {}
-    for (const cot of cotizaciones) {
+    for (const cot of proyectosList) {
       const client = (allClientes as ClientesRecord[]).find(c => c.id === cot.data.cliente_id)
       map[cot.id] = client?.data.nombre ?? cot.data.nombre_proyecto ?? '—'
     }
     return map
-  }, [cotizaciones, allClientes])
+  }, [proyectosList, allClientes])
 
   const contratoMap = useMemo(() => {
     const map: Record<string, ContratosRecord | undefined> = {}
-    for (const cot of cotizaciones) {
+    for (const cot of proyectosList) {
       map[cot.id] = (allContratos as ContratosRecord[]).find(
-        c => c.data.cotizacion_id === cot.id
+        c => c.data.proyecto_id === cot.id
       )
     }
     return map
-  }, [cotizaciones, allContratos])
+  }, [proyectosList, allContratos])
 
   if (isLoading) {
     return (
@@ -284,7 +284,7 @@ export default function ComercialDirectory({ records }: BlockProps) {
     <Tabs defaultValue="leads" className="w-full">
       <TabsList className="flex-wrap h-auto gap-1">
         {TABS.map(tab => {
-          const count = cotizaciones.filter(c =>
+          const count = proyectosList.filter(c =>
             tab.estados.includes((c.data.estado ?? 'activa') as CotEstado)
           ).length
           return (
@@ -296,7 +296,7 @@ export default function ComercialDirectory({ records }: BlockProps) {
       </TabsList>
 
       {TABS.map(tab => {
-        const filtered = cotizaciones.filter(c =>
+        const filtered = proyectosList.filter(c =>
           tab.estados.includes((c.data.estado ?? 'activa') as CotEstado)
         )
         return (

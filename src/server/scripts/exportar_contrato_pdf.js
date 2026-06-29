@@ -83,8 +83,8 @@ if (!contrato) {
   return;
 }
 
-const cotizaciones = await api.query('cotizaciones');
-const cotizacion = cotizaciones.find(c => c.id === contrato.cotizacion_id);
+const proyectos = await api.query('proyectos');
+const cotizacion = proyectos.find(c => c.id === contrato.proyecto_id);
 if (!cotizacion) {
   api.notify.error('Cotización origen no encontrada.');
   return;

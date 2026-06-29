@@ -13,11 +13,11 @@ export default function WorkspaceSwitcher({ records }: BlockProps) {
   // Login mockeado temporal para probar la Matrushka
   const [activeUserId, setActiveUserId] = useState<string | null>(null)
 
-  const usuarios = (records as UsuariosEquipoRecord[]) || []
+  const usuarios = (records as unknown as UsuariosEquipoRecord[]) || []
   const activeUser = usuarios.find(u => u.id === activeUserId)
 
   const workspaces = [
-    { id: 'comercial', label: 'Cotizaciones y Ventas', icon: ShoppingCart, roles: ['Admin', 'Comercial'], path: '/app/erp/comercial' },
+    { id: 'comercial', label: 'Proyectos y Ventas', icon: ShoppingCart, roles: ['Admin', 'Comercial'], path: '/app/erp/comercial' },
     { id: 'produccion', label: 'Taller y Producción', icon: Hammer, roles: ['Admin', 'Producci'], path: '/app/erp/taller' },
     { id: 'finanzas', label: 'Ledger Financiero', icon: Wallet, roles: ['Admin', 'Finanzas'], path: '/app/erp/finanzas' }
   ]
@@ -25,9 +25,9 @@ export default function WorkspaceSwitcher({ records }: BlockProps) {
   if (!activeUser) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 w-full animate-in fade-in zoom-in duration-300">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold tracking-tight mb-2">Veta Dorada ERP</h1>
-          <p className="text-muted-foreground">Selecciona tu usuario operativo</p>
+        <div className="text-center mb-10 w-full max-w-full min-w-0">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2 w-full max-w-full break-words text-balance">Veta Dorada ERP</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Selecciona tu usuario operativo</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
           {usuarios.map(u => (
@@ -58,10 +58,10 @@ export default function WorkspaceSwitcher({ records }: BlockProps) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
-      <div className="flex items-center justify-between w-full max-w-4xl border-b pb-6">
-        <div>
-          <h2 className="text-3xl font-semibold tracking-tight">Hola, {activeUser.data.nombre.split(' ')[0]}</h2>
-          <p className="text-muted-foreground mt-1">Tu rol actual es <strong className="text-foreground">{rolUsuario}</strong></p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full max-w-4xl border-b pb-6">
+        <div className="min-w-0 flex-1 w-full max-w-full">
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight w-full max-w-full break-words text-balance">Hola, {activeUser.data.nombre.split(' ')[0]}</h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Tu rol actual es <strong className="text-foreground">{rolUsuario}</strong></p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setActiveUserId(null)}>
           <LogOut className="mr-2 h-4 w-4" /> Cambiar

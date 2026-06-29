@@ -64,7 +64,7 @@ export default function ProjectDetails({
     <div className="flex flex-col gap-4 p-4">
       <div className="flex justify-between items-center border-b pb-2">
         <span className="font-bold text-base text-stone-700">Orden #{order.data?.codigo_orden || order.id?.substring(0,6)}</span>
-        <SemaforoSuministrosBadge proyectoId={order.data?.cotizacion_id} />
+        <SemaforoSuministrosBadge proyectoId={order.data?.proyecto_id} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

@@ -3,18 +3,18 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { useMemo, useState } from 'react'
-import type { OrdenesTrabajoRecord, TareasProduccionRecord, CotizacionesRecord } from '@/generated/agnostic-schemas'
+import type { OrdenesTrabajoRecord, TareasProduccionRecord, ProyectosRecord } from '@/generated/agnostic-schemas'
 import ProjectDetails from './ProjectDetails'
 
 interface Props {
   record: OrdenesTrabajoRecord
   api?: Record<string, unknown>
   allTasks: TareasProduccionRecord[]
-  cotizacion?: CotizacionesRecord
+  proyecto?: ProyectosRecord
   clientName: string
 }
 
-export default function ProjectNode({ record, api, allTasks, cotizacion, clientName }: Props) {
+export default function ProjectNode({ record, api, allTasks, proyecto, clientName }: Props) {
   const [expanded, setExpanded] = useState(false)
 
   // Filtrado local — no hay hooks de datos aquí
@@ -58,7 +58,7 @@ export default function ProjectNode({ record, api, allTasks, cotizacion, clientN
               order={record}
               tasks={tasks}
               api={api}
-              direccion_obra={cotizacion?.data?.direccion_obra as string | undefined}
+              direccion_obra={proyecto?.data?.direccion_obra as string | undefined}
             />
           )}
         </AccordionContent>

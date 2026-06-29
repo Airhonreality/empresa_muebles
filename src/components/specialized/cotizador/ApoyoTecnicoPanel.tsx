@@ -32,7 +32,7 @@ const TIPO_CONFIG: Record<TipoRecurso, { Icon: React.ElementType; badge: string 
 
 interface ApoyoItem extends DataItem {
   data: {
-    cotizacion_id:     string
+    proyecto_id:       string
     tipo_recurso:      string
     fecha_visita?:     string
     notas?:            string
@@ -51,7 +51,7 @@ const EMPTY_FORM = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function ApoyoTecnicoPanel({ cotizacionId }: { cotizacionId: string }) {
+export function ApoyoTecnicoPanel({ proyectoId }: { proyectoId: string }) {
   const [registros,   setRegistros]   = useState<ApoyoItem[]>([])
   const [loading,     setLoading]     = useState(false)
   const [saving,      setSaving]      = useState(false)
@@ -62,17 +62,17 @@ export function ApoyoTecnicoPanel({ cotizacionId }: { cotizacionId: string }) {
 
   // ── Fetch ────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
-    if (!cotizacionId) return
+    if (!proyectoId) return
     setLoading(true)
     try {
       const res  = await fetch('/api/vault?namespace=apoyo_tecnico')
       const json = await res.json()
       const all  = (json.records ?? []) as ApoyoItem[]
-      setRegistros(all.filter(r => r.data.cotizacion_id === cotizacionId))
+      setRegistros(all.filter(r => r.data.proyecto_id === proyectoId))
     } finally {
       setLoading(false)
     }
-  }, [cotizacionId])
+  }, [proyectoId])
 
   useEffect(() => { load() }, [load])
 
@@ -87,7 +87,7 @@ export function ApoyoTecnicoPanel({ cotizacionId }: { cotizacionId: string }) {
         body:    JSON.stringify({
           action:    'WRITE',
           namespace: 'apoyo_tecnico',
-          record:    { data: { cotizacion_id: cotizacionId, ...form } },
+          record:    { data: { proyecto_id: proyectoId, ...form } },
         }),
       })
       const json = await res.json()

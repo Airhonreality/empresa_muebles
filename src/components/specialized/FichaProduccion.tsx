@@ -32,17 +32,16 @@ import {
 } from 'lucide-react'
 
 interface FichaProduccionProps extends BlockProps {
-  forcedCotizacionId?: string
+  forcedProyectoId?: string
 }
 
-export default function FichaProduccion({ block, activeRecord, forcedCotizacionId }: FichaProduccionProps) {
-  // 1. Resolve active cotizacion ID
-  const cotizacionId = useMemo(() => {
-    return forcedCotizacionId || activeRecord?.id || (block as any)?.config?.cotizacionId || ''
-  }, [forcedCotizacionId, activeRecord, block])
+export default function FichaProduccion({ block, activeRecord, forcedProyectoId }: FichaProduccionProps) {
+  const proyectoId = useMemo(() => {
+    return forcedProyectoId || activeRecord?.id || (block as any)?.config?.proyectoId || ''
+  }, [forcedProyectoId, activeRecord, block])
 
   // 2. Fetch primary project data using the pre-existing hook
-  const { data: projectData, isLoading: loadingProject, refresh } = useProjectData(cotizacionId, !!cotizacionId)
+  const { data: projectData, isLoading: loadingProject, refresh } = useProjectData(proyectoId, !!proyectoId)
 
   // 3. Fetch secondary data for items, catalog, and clients
   const [items, setItems] = useState<any[]>([])
@@ -74,10 +73,10 @@ export default function FichaProduccion({ block, activeRecord, forcedCotizacionI
   }, [])
 
   useEffect(() => {
-    if (cotizacionId) {
+    if (proyectoId) {
       fetchSecondaryData()
     }
-  }, [cotizacionId, fetchSecondaryData])
+  }, [proyectoId, fetchSecondaryData])
 
   // 4. Local state for editing
   const [orderNotes, setOrderNotes] = useState('')
@@ -101,27 +100,17 @@ export default function FichaProduccion({ block, activeRecord, forcedCotizacionI
     }
   }, [activeOrder])
 
-  // Resolve client information
-  const activeCotizacion = useMemo(() => {
-    if (!cotizacionId) return null
-    // We can fetch from allQuotes, but since we have useProjectData, we can resolve it.
-    // However, we can also query the cotizacion details directly if needed.
-    // Let's assume we can fetch the cotizaciones to get the name and cliente_id.
-    return activeRecord?.id === cotizacionId ? activeRecord : null
-  }, [activeRecord, cotizacionId])
-
-  // Alternatively, let's load all cotizaciones to resolve active cotización data
-  const { data: allQuotes } = useRelationData('cotizaciones')
-  const cotizacionDetails = useMemo(() => {
-    const q = (allQuotes as any[])?.find(x => x.id === cotizacionId)
-    return q ? q.data : null
-  }, [allQuotes, cotizacionId])
+  const { data: allProjects } = useRelationData('proyectos')
+  const proyectoDetails = useMemo(() => {
+    const project = (allProjects as any[])?.find(x => x.id === proyectoId)
+    return project ? project.data : null
+  }, [allProjects, proyectoId])
 
   const clientDetails = useMemo(() => {
-    if (!cotizacionDetails?.cliente_id) return null
-    const c = clientes.find(x => x.id === cotizacionDetails.cliente_id)
+    if (!proyectoDetails?.cliente_id) return null
+    const c = clientes.find(x => x.id === proyectoDetails.cliente_id)
     return c ? c.data : null
-  }, [clientes, cotizacionDetails])
+  }, [clientes, proyectoDetails])
 
   // 5. Action Handlers
   const handleUpdateOrderStatus = async (newStatus: string) => {
@@ -318,12 +307,12 @@ export default function FichaProduccion({ block, activeRecord, forcedCotizacionI
 
   const isLoading = loadingProject || loadingSecondary
 
-  if (!cotizacionId) {
+  if (!proyectoId) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-stone-500 bg-white rounded-3xl border border-stone-200 shadow-sm">
         <AlertCircle size={48} className="text-amber-500 mb-4" />
         <h2 className="text-xl font-bold text-stone-800">Ficha de Producción Inactiva</h2>
-        <p className="text-sm text-stone-400 mt-2">Esta vista requiere un identificador de proyecto o cotización válido en la URL.</p>
+        <p className="text-sm text-stone-400 mt-2">Esta vista requiere un identificador de proyecto válido en la URL.</p>
       </div>
     )
   }
@@ -342,19 +331,19 @@ export default function FichaProduccion({ block, activeRecord, forcedCotizacionI
       
       {/* 1. TOP HEADER & BACK NAVIGATION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1 w-full">
           <a
             href="/app/production"
-            className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:shadow-sm transition-all"
+            className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:shadow-sm transition-all shrink-0"
             title="Volver a Producción"
           >
             <ArrowLeft size={18} />
           </a>
-          <div>
-            <span className="text-[10px] font-bold tracking-widest uppercase text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">
+          <div className="min-w-0 flex-1 w-full max-w-full">
+            <span className="text-[10px] font-bold tracking-widest uppercase text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 block w-fit">
               Módulo de Taller y Carpintería
             </span>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight mt-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight mt-1 w-full max-w-full break-words text-balance leading-tight">
               Ficha de Fabricación
             </h1>
           </div>
@@ -386,14 +375,14 @@ export default function FichaProduccion({ block, activeRecord, forcedCotizacionI
         <div className="relative z-10 grid md:grid-cols-3 gap-6 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-700/60">
           
           {/* Section A: Project & Client */}
-          <div className="space-y-4 pr-2">
+          <div className="space-y-4 pr-2 min-w-0 w-full">
             <div className="flex items-center gap-2">
               <FileText className="text-amber-500 shrink-0" size={20} />
               <span className="text-xs font-bold text-stone-400 tracking-wider uppercase">Proyecto Activo</span>
             </div>
-            <div>
-              <h2 className="text-xl md:text-2xl font-black tracking-tight leading-tight">
-                {cotizacionDetails?.nombre_proyecto || 'Sin Nombre de Proyecto'}
+            <div className="min-w-0 w-full max-w-full">
+              <h2 className="text-xl md:text-2xl font-black tracking-tight leading-tight w-full max-w-full break-words text-balance">
+                {proyectoDetails?.nombre_proyecto || 'Sin Nombre de Proyecto'}
               </h2>
               {clientDetails && (
                 <div className="flex items-center gap-1.5 mt-2 text-stone-300 text-sm">
@@ -413,7 +402,7 @@ export default function FichaProduccion({ block, activeRecord, forcedCotizacionI
             <div className="space-y-2 text-sm text-stone-200">
               <p className="flex items-start gap-1.5 leading-snug">
                 <span className="font-semibold text-white">Dirección:</span>{' '}
-                {cotizacionDetails?.direccion_obra || 'No registrada'}
+                {proyectoDetails?.direccion_obra || 'No registrada'}
               </p>
               {activeOrder?.data?.fecha_entrega && (
                 <p className="flex items-center gap-1.5 mt-1 text-amber-400 font-medium">
@@ -484,7 +473,7 @@ export default function FichaProduccion({ block, activeRecord, forcedCotizacionI
 
           {activeSpacesWithMaterials.length === 0 ? (
             <div className="bg-white border border-stone-200 rounded-3xl p-8 text-center text-stone-400 text-sm">
-              No hay variantes o espacios activos registrados en la cotización.
+              No hay variantes o espacios activos registrados en el proyecto.
             </div>
           ) : (
             <div className="space-y-6">

@@ -2,7 +2,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: .\storage\db\schema_definitions.json
 // Run:    npm run agnostic:compile
-// Generated: 2026-06-25T12:30:59.132Z
+// Generated: 2026-06-29T00:58:17.196Z
 // ============================================================
 
 // DataItem is the universal record wrapper used by the engine.
@@ -18,15 +18,15 @@ export interface AgnosticDataItem<T = Record<string, unknown>> {
 
 // ─── Schema: "espacio_variantes" — primary field: "nombre_variante" 
 export interface EspacioVariantes {
-  cotizacion_id: string  // Cotizacion Perteneciente
+  proyecto_id: string  // Proyecto Perteneciente
   nombre_espacio: string  // Nombre del Espacio (e.g. Cocina)
   nombre_variante: string  // Nombre de la Variante / Alternativa
-  activa?: boolean  // Variante Seleccionada para Cotizacion
+  activa?: boolean  // Variante Seleccionada para Proyecto
   jornadas_desarrollo_tecnico?: number  // Jornadas de Desarrollo Tecnico (Dias)
   jornadas_ensamblaje_taller?: number  // Jornadas de Ensamblaje en Taller (Dias)
   jornadas_instalacion_obra?: number  // Jornadas de Instalacion en Obra (Dias)
   notas_markdown?: string  // Notas en Markdown
-  imagenes?: string  // Im?genes
+  imagenes?: string  // Diseños / Planos del Proyecto
   colores?: string  // Colores
   descripcion?: string  // Descripción del Espacio
   descripcion_alternativa?: string  // Descripción de Alternativa
@@ -87,12 +87,13 @@ export interface Clientes {
   telefono?: string  // TelÃ©fono
   email?: string  // Email
   domicilio?: string  // Domicilio / Dirección
+  descripcion_semantica?: string  // Descripcion Semantica
 }
 
 export type ClientesRecord = AgnosticDataItem<Clientes>
 
-// ─── Schema: "cotizaciones" 
-export interface Cotizaciones {
+// ─── Schema: "proyectos" 
+export interface Proyectos {
   cliente_id?: string  // Cliente
   nombre_proyecto: string  // Nombre del Proyecto
   direccion_obra?: string  // DirecciÃ³n de la Obra
@@ -102,10 +103,11 @@ export interface Cotizaciones {
   imprevistos_instalacion?: number  // Imprevistos de InstalaciÃ³n
   descuento_comercial?: number  // Descuento Comercial
   ajuste_arbitrario?: number  // Ajuste Técnico
-  estado?: string  // Estado Comercial
+  estado: string  // Estado del Proyecto
+  descripcion_semantica?: string  // Descripcion Semantica
 }
 
-export type CotizacionesRecord = AgnosticDataItem<Cotizaciones>
+export type ProyectosRecord = AgnosticDataItem<Proyectos>
 
 // ─── Schema: "prefabricados" 
 export interface Prefabricados {
@@ -129,7 +131,7 @@ export type PrefabricadosItemsRecord = AgnosticDataItem<PrefabricadosItems>
 
 // ─── Schema: "ordenes_trabajo" — primary field: "codigo_orden" 
 export interface OrdenesTrabajo {
-  cotizacion_id: string  // Cotización Origen
+  proyecto_id: string  // Proyecto Origen
   codigo_orden: string  // Código de Orden
   estado: string  // Estado
   fecha_entrega?: string  // Fecha de Entrega
@@ -152,7 +154,7 @@ export type TareasProduccionRecord = AgnosticDataItem<TareasProduccion>
 
 // ─── Schema: "contratos" — primary field: "codigo_contrato" 
 export interface Contratos {
-  cotizacion_id: string  // Cotización Origen
+  proyecto_id: string  // Proyecto Origen
   codigo_contrato: string  // Código de Contrato
   fecha_contrato: string  // Fecha del Contrato
   contratante_domicilio?: string  // Domicilio del Contratante
@@ -168,6 +170,7 @@ export interface Contratos {
   estado: string  // Estado del Contrato
   email_asunto?: string  // Asunto del Correo
   email_cuerpo?: string  // Cuerpo del Correo
+  descripcion_semantica?: string  // Descripcion Semantica
 }
 
 export type ContratosRecord = AgnosticDataItem<Contratos>
@@ -197,12 +200,12 @@ export type NavLinksRecord = AgnosticDataItem<NavLinks>
 
 // ─── Schema: "apoyo_tecnico" 
 export interface ApoyoTecnico {
-  cotizacion_id: string  // Cotizacion
   tipo_recurso: string  // Tipo
   imagen_url?: string  // Imagen
   fecha_visita?: string  // Fecha_de_Visita
   notas?: string  // Notas
   lista_requisitos?: string  // Lista_de_Requisitos
+  proyecto_id: string  // Proyecto
 }
 
 export type ApoyoTecnicoRecord = AgnosticDataItem<ApoyoTecnico>
@@ -214,6 +217,7 @@ export interface Proveedores {
   telefono?: string  // Telefono
   direccion?: string  // Direccion
   categoria?: string  // Categoria
+  descripcion_semantica?: string  // Descripcion Semantica
 }
 
 export type ProveedoresRecord = AgnosticDataItem<Proveedores>
@@ -240,6 +244,8 @@ export interface ComprasMateriales {
   proveedor_id?: string  // Proveedor Id
   fecha_compra?: string  // Fecha Compra
   notas?: string  // Notas
+  estado?: string  // Estado
+  origen_proyecto?: string  // Origen Proyecto
 }
 
 export type ComprasMaterialesRecord = AgnosticDataItem<ComprasMateriales>
@@ -266,6 +272,141 @@ export interface ConfiguracionComercial {
 
 export type ConfiguracionComercialRecord = AgnosticDataItem<ConfiguracionComercial>
 
+// ─── Schema: "registros_tecnicos" 
+export interface RegistrosTecnicos {
+  variante_id: string  // Espacio/Variante
+  etiqueta_evento: string  // Etiqueta de Levantamiento
+  responsable: string  // Registrado por
+  archivos_multimedia?: string  // Fotos y Diagramas
+  notas?: string  // Notas Adicionales
+}
+
+export type RegistrosTecnicosRecord = AgnosticDataItem<RegistrosTecnicos>
+
+// ─── Schema: "project_tasks" 
+export interface ProjectTasks {
+  variante_id: string  // Espacio/Variante
+  descripcion: string  // Ítem / Tarea
+  estado: string  // Estado
+  creado_por?: string  // Añadido por
+}
+
+export type ProjectTasksRecord = AgnosticDataItem<ProjectTasks>
+
+// ─── Schema: "usuarios_equipo" — primary field: "nombre" 
+export interface UsuariosEquipo {
+  nombre: string  // Nombre Completo
+  email: string  // Correo Electrónico
+  rol: unknown  // Rol del Sistema
+  estado: unknown  // Estado
+  descripcion_semantica?: string  // Descripcion Semantica
+  costo_hora?: number  // Costo Hora
+  horas_estimadas_mes?: number  // Horas Estimadas Mes
+}
+
+export type UsuariosEquipoRecord = AgnosticDataItem<UsuariosEquipo>
+
+// ─── Schema: "tareas_operativas" — primary field: "titulo" 
+export interface TareasOperativas {
+  proyecto_id: string  // Proyecto
+  titulo: string  // Título de la Tarea
+  departamento: unknown  // Departamento
+  estado: unknown  // Estado
+  fase_kanban?: string  // Fase Kanban Asociada
+  fecha_limite?: string  // Fecha Límite
+  asignado_a?: string  // Asignado a
+}
+
+export type TareasOperativasRecord = AgnosticDataItem<TareasOperativas>
+
+// ─── Schema: "plantillas_tareas" — primary field: "titulo_tarea" 
+export interface PlantillasTareas {
+  fase_kanban_trigger: string  // Fase Disparadora
+  titulo_tarea: string  // Título de Tarea a Generar
+  departamento: unknown  // Departamento Responsable
+  dias_offset?: number  // Días para vencer
+}
+
+export type PlantillasTareasRecord = AgnosticDataItem<PlantillasTareas>
+
+// ─── Schema: "cuentas_financieras" — primary field: "nombre" 
+export interface CuentasFinancieras {
+  nombre: string  // Nombre de Cuenta
+  tipo: string  // Tipo
+  saldo_inicial: number  // Saldo Inicial
+  saldo_actual?: number  // Saldo Actual
+  estado?: string  // Estado
+  descripcion_semantica?: string  // Descripción Semántica
+}
+
+export type CuentasFinancierasRecord = AgnosticDataItem<CuentasFinancieras>
+
+// ─── Schema: "categorias_financieras" — primary field: "nombre" 
+export interface CategoriasFinancieras {
+  nombre: string  // Nombre Categoría
+  tipo_flujo: string  // Tipo de Flujo
+  subtipo: string  // Subtipo
+  descripcion_semantica?: string  // Propósito Semántico
+}
+
+export type CategoriasFinancierasRecord = AgnosticDataItem<CategoriasFinancieras>
+
+// ─── Schema: "comprobantes_financieros" — primary field: "numero_referencia" 
+export interface ComprobantesFinancieros {
+  numero_referencia: string  // Ref / Factura
+  tipo?: string  // Tipo Comprobante
+  archivo_soporte?: string  // Archivo Soporte URL
+  descripcion_semantica?: string  // Notas
+}
+
+export type ComprobantesFinancierosRecord = AgnosticDataItem<ComprobantesFinancieros>
+
+// ─── Schema: "obligaciones_pendientes" — primary field: "descripcion" 
+export interface ObligacionesPendientes {
+  descripcion: string  // Obligación / Concepto
+  tipo: string  // Naturaleza
+  monto_total: number  // Monto Total Estimado
+  monto_pagado?: number  // Monto Pagado Real
+  fecha_vencimiento?: string  // Fecha Vencimiento
+  estado: string  // Estado
+  proveedor_id?: string  // Proveedor
+  cliente_id?: string  // Cliente
+  usuario_id?: string  // Miembro Equipo
+  descripcion_semantica?: string  // Soporte Semántico
+}
+
+export type ObligacionesPendientesRecord = AgnosticDataItem<ObligacionesPendientes>
+
+// ─── Schema: "movimientos_financieros" — primary field: "descripcion" 
+export interface MovimientosFinancieros {
+  fecha: string  // Fecha Asentado
+  descripcion: string  // Descripción del Movimiento
+  tipo: string  // Tipo
+  monto: number  // Monto Real ($)
+  estado: string  // Estado Ledger
+  cuenta_origen_id?: string  // Cuenta Origen
+  cuenta_destino_id?: string  // Cuenta Destino (Solo Traslado)
+  categoria_id?: string  // Categoría
+  obligacion_id?: string  // Obligación Saldada
+  comprobante_ref?: string  // Enlace Comprobante
+  descripcion_semantica?: string  // Auditoría
+}
+
+export type MovimientosFinancierosRecord = AgnosticDataItem<MovimientosFinancieros>
+
+// ─── Schema: "registro_horas" 
+export interface RegistroHoras {
+  fecha?: string  // Fecha
+  usuario_id?: string  // Usuario Id
+  proyecto_id?: string  // Proyecto Id
+  horas_ordinarias?: number  // Horas Ordinarias
+  horas_extras?: number  // Horas Extras
+  descripcion_semantica?: string  // Descripcion Semantica
+  estado_pago?: string  // Estado Pago
+}
+
+export type RegistroHorasRecord = AgnosticDataItem<RegistroHoras>
+
 // ============================================================
 // AgnosticSchemas — complete project schema map
 //
@@ -280,7 +421,7 @@ export interface AgnosticSchemas {
   productos_catalogo: ProductosCatalogo
   imagenes_espacio: ImagenesEspacio
   clientes: Clientes
-  cotizaciones: Cotizaciones
+  proyectos: Proyectos
   prefabricados: Prefabricados
   prefabricados_items: PrefabricadosItems
   ordenes_trabajo: OrdenesTrabajo
@@ -294,8 +435,19 @@ export interface AgnosticSchemas {
   compras_materiales: ComprasMateriales
   leads: Leads
   configuracion_comercial: ConfiguracionComercial
+  registros_tecnicos: RegistrosTecnicos
+  project_tasks: ProjectTasks
+  usuarios_equipo: UsuariosEquipo
+  tareas_operativas: TareasOperativas
+  plantillas_tareas: PlantillasTareas
+  cuentas_financieras: CuentasFinancieras
+  categorias_financieras: CategoriasFinancieras
+  comprobantes_financieros: ComprobantesFinancieros
+  obligaciones_pendientes: ObligacionesPendientes
+  movimientos_financieros: MovimientosFinancieros
+  registro_horas: RegistroHoras
 }
 
 // Valid values for block.context and fetch(`/api/vault?namespace=${ctx}`)
 export type SchemaName = keyof AgnosticSchemas
-// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'cotizaciones' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial'
+// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'proyectos' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial' | 'registros_tecnicos' | 'project_tasks' | 'usuarios_equipo' | 'tareas_operativas' | 'plantillas_tareas' | 'cuentas_financieras' | 'categorias_financieras' | 'comprobantes_financieros' | 'obligaciones_pendientes' | 'movimientos_financieros' | 'registro_horas'

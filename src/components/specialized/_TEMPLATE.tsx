@@ -11,7 +11,7 @@
  *    - src/components/specialized/_TEMPLATE.tsx  (this file)
  *
  * 2. Write a prompt like:
- *    "Create a CotizadorDashboard component for the 'cotizaciones' schema.
+ *    "Create a ProjectDashboard component for the 'proyectos' schema.
  *     Show a table with cotizacion records, a 'Nueva Cotización' button that
  *     opens a form, and an 'Exportar PDF' action button that runs the zap
  *     'exportar_cotizacion'. Use the pattern from _TEMPLATE.tsx."

@@ -160,7 +160,7 @@ export function ContratoModal({
         const res = await fetch('/api/vault?namespace=contratos')
         const json = await res.json()
         const allContratos = json.records || []
-        const existing = allContratos.find((c: any) => (c.data?.cotizacion_id || c.cotizacion_id) === cotizacion.id)
+        const existing = allContratos.find((c: any) => (c.data?.proyecto_id || c.proyecto_id) === cotizacion.id)
 
         if (existing) {
           const d = existing.data || {}

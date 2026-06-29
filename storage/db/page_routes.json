@@ -21,14 +21,14 @@
         {
           "id": "block_cotizador_pro",
           "type": "cotizador_pro",
-          "context": "cotizaciones",
+          "context": "proyectos",
           "config": {
             "tarifa_jornada": 185000
           }
         }
       ]
     },
-    "updated_at": "2026-06-19T14:48:21.704Z",
+    "updated_at": "2026-06-29T00:24:16.751Z",
     "_meta": {
       "path": "2026-06-11T20:16:36.836Z",
       "title": "2026-06-11T20:16:36.836Z",
@@ -52,7 +52,7 @@
           "type": "header",
           "config": {
             "title": "CatÃ¡logo de Productos y Servicios",
-            "subtitle": "AdministraciÃ³n centralizada de materia prima, herrajes, maderas y mano de obra para cotizaciones.",
+            "subtitle": "AdministraciÃ³n centralizada de materia prima, herrajes, maderas y mano de obra para proyectos.",
             "label": "CatÃ¡logo Maestro de Insumos"
           }
         },
@@ -82,7 +82,7 @@
         }
       ]
     },
-    "updated_at": "2026-06-02T01:47:24.940Z"
+    "updated_at": "2026-06-29T00:48:39.922Z"
   },
   {
     "id": "966c3d81-e7a7-431d-8172-05b55a964d2e",
@@ -106,14 +106,14 @@
         {
           "id": "block_cotizador_pro_id",
           "type": "cotizador_pro",
-          "context": "cotizaciones",
+          "context": "proyectos",
           "config": {
             "tarifa_jornada": 185000
           }
         }
       ]
     },
-    "updated_at": "2026-06-09T18:00:00.000Z"
+    "updated_at": "2026-06-29T00:24:17.138Z"
   },
   {
     "id": "12fcb5a0-9d95-45aa-a3a2-ec13de7a8485",
@@ -208,13 +208,13 @@
         {
           "id": "92376842-424c-4139-8d78-f01e1813d70e",
           "type": "ficha_produccion",
-          "context": "cotizaciones",
+          "context": "proyectos",
           "blocks": []
         }
       ],
       "order": 0
     },
-    "updated_at": "2026-06-09T14:50:52.941Z"
+    "updated_at": "2026-06-29T00:24:16.687Z"
   },
   {
     "id": "fc504cea-b6cb-4aa0-930d-073fdaddd500",
@@ -291,5 +291,34 @@
       "order": 0
     },
     "updated_at": "2026-06-18T04:58:34.560Z"
+  },
+  {
+    "id": "6f2da2ef-55ea-4d4a-9f43-6bcf7dbb9b2d",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/finanzas",
+      "title": "Finanzas Operativas",
+      "isPrivate": false,
+      "layout_mode": "full",
+      "layout": {
+        "max_width": "full",
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "gap": 0
+      },
+      "blocks": [
+        {
+          "id": "block_finanzas_shell",
+          "type": "finanzas_shell",
+          "context": "movimientos_financieros"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-06-29T00:00:00.000Z"
   }
 ]

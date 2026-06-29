@@ -2,37 +2,79 @@
   {
     "id": "7735f7cf-218e-486e-9245-48da71861c8c",
     "context": "cuentas_financieras",
-    "data": {},
+    "data": {
+      "nombre": "Bancolombia Negocios",
+      "tipo": "banco",
+      "saldo_inicial": 0,
+      "saldo_actual": 0,
+      "estado": "activa",
+      "descripcion_semantica": "Cuenta empresarial principal para anticipos, saldos de contratos y pagos operativos."
+    },
     "updated_at": "2026-06-24T20:35:24.182Z"
   },
   {
     "id": "fd064fce-cd69-403c-9e1f-ab4f009fc3b9",
     "context": "cuentas_financieras",
-    "data": {},
+    "data": {
+      "nombre": "Bancolombia Personal Javier",
+      "tipo": "banco",
+      "saldo_inicial": 0,
+      "saldo_actual": 0,
+      "estado": "activa",
+      "descripcion_semantica": "Cuenta auxiliar para pagos oficiales, contingencias y caja menor controlada."
+    },
     "updated_at": "2026-06-24T20:35:24.188Z"
   },
   {
     "id": "3fb996b5-e877-4494-a5a6-fc25b67c9605",
     "context": "cuentas_financieras",
-    "data": {},
+    "data": {
+      "nombre": "Nu Victor",
+      "tipo": "billetera_digital",
+      "saldo_inicial": 0,
+      "saldo_actual": 0,
+      "estado": "activa",
+      "descripcion_semantica": "Cuenta operativa para dispersion de pagos y gastos de ejecucion."
+    },
     "updated_at": "2026-06-24T20:35:24.194Z"
   },
   {
     "id": "31a911b2-b1bf-4830-8cfb-45e583c7e9c3",
     "context": "cuentas_financieras",
-    "data": {},
+    "data": {
+      "nombre": "Nu Javier Reservas",
+      "tipo": "billetera_digital",
+      "saldo_inicial": 0,
+      "saldo_actual": 0,
+      "estado": "activa",
+      "descripcion_semantica": "Cuenta de reserva y liquidez preventiva."
+    },
     "updated_at": "2026-06-24T20:35:24.199Z"
   },
   {
     "id": "2a51d7c2-f977-439b-98aa-a921c2acea7e",
     "context": "cuentas_financieras",
-    "data": {},
+    "data": {
+      "nombre": "Nequi Javier",
+      "tipo": "billetera_digital",
+      "saldo_inicial": 0,
+      "saldo_actual": 0,
+      "estado": "activa",
+      "descripcion_semantica": "Billetera digital para cobros rapidos y egresos menores."
+    },
     "updated_at": "2026-06-24T20:35:24.207Z"
   },
   {
     "id": "d2c71b2d-9440-46f7-8401-6f986655c9b6",
     "context": "cuentas_financieras",
-    "data": {},
+    "data": {
+      "nombre": "Nequi Victor Caja Menor",
+      "tipo": "billetera_digital",
+      "saldo_inicial": 0,
+      "saldo_actual": 0,
+      "estado": "activa",
+      "descripcion_semantica": "Billetera digital para caja menor, transporte y compras inmediatas."
+    },
     "updated_at": "2026-06-24T20:35:24.212Z"
   }
 ]

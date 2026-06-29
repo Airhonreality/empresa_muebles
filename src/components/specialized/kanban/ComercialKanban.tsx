@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import KanbanCanvas, { type KanbanStage, type KanbanRecord } from './KanbanCanvas'
 import ComercialCard from './ComercialCard'
 import type {
-  CotizacionesRecord, ClientesRecord, ContratosRecord,
+  ProyectosRecord, ClientesRecord, ContratosRecord,
   AbonosContratoRecord, EspacioVariantesRecord,
 } from '@/generated/agnostic-schemas'
 
@@ -32,7 +32,7 @@ async function vaultWrite(namespace: string, id: string, data: Record<string, un
 }
 
 export default function ComercialKanban({ records }: BlockProps) {
-  const [localCotizaciones, setLocalCotizaciones] = useState<KanbanRecord[]>(
+  const [localProyectos, setLocalProyectos] = useState<KanbanRecord[]>(
     () => (records ?? []) as KanbanRecord[]
   )
 
@@ -51,13 +51,13 @@ export default function ComercialKanban({ records }: BlockProps) {
 
   const contratoMap = useMemo(() => {
     const map: Record<string, ContratosRecord | undefined> = {}
-    for (const cot of localCotizaciones) {
+    for (const cot of localProyectos) {
       map[cot.id] = (allContratos as ContratosRecord[]).find(
-        c => c.data.cotizacion_id === cot.id
+        c => c.data.proyecto_id === cot.id
       )
     }
     return map
-  }, [localCotizaciones, allContratos])
+  }, [localProyectos, allContratos])
 
   const abonosMap = useMemo(() => {
     const map: Record<string, AbonosContratoRecord[]> = {}
@@ -71,24 +71,24 @@ export default function ComercialKanban({ records }: BlockProps) {
   const espaciosByCot = useMemo(() => {
     const map: Record<string, EspacioVariantesRecord[]> = {}
     for (const s of allEspacios as EspacioVariantesRecord[]) {
-      const cid = s.data.cotizacion_id as string
+      const cid = s.data.proyecto_id as string
       map[cid] = [...(map[cid] ?? []), s]
     }
     return map
   }, [allEspacios])
 
   const handleMove = async (record: KanbanRecord, newStage: string) => {
-    const previous = localCotizaciones
-    setLocalCotizaciones(prev =>
+    const previous = localProyectos
+    setLocalProyectos(prev =>
       prev.map(c => c.id === record.id ? { ...c, data: { ...c.data, estado: newStage } } : c)
     )
     try {
-      const saved = await vaultWrite('cotizaciones', record.id, { ...record.data, estado: newStage })
-      useMateriaStore.getState().updateItem('cotizaciones', saved)
+      const saved = await vaultWrite('proyectos', record.id, { ...record.data, estado: newStage })
+      useMateriaStore.getState().updateItem('proyectos', saved)
       const stageLabel = STAGES.find(s => s.value === newStage)?.label ?? newStage
       toast.success(`Proyecto movido a "${stageLabel}"`)
     } catch {
-      setLocalCotizaciones(previous)
+      setLocalProyectos(previous)
       toast.error('Error al mover el proyecto.')
     }
   }
@@ -111,13 +111,13 @@ export default function ComercialKanban({ records }: BlockProps) {
 
   return (
     <KanbanCanvas
-      records={localCotizaciones}
+      records={localProyectos}
       stages={STAGES}
       stageKey="estado"
       defaultStage="activa"
       onMoveCard={handleMove}
       renderCard={(record, stage, onMove, nextStage) => {
-        const cot     = record as unknown as CotizacionesRecord
+        const cot     = record as unknown as ProyectosRecord
         const client  = clientMap[(cot.data.cliente_id ?? '') as string]
         const contrato = contratoMap[cot.id]
         const abonos  = contrato ? (abonosMap[contrato.id] ?? []) : []

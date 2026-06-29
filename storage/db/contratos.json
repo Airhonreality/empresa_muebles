@@ -3,7 +3,6 @@
     "id": "da87530b-9d31-4c5a-87c7-3b7b57a6a6aa",
     "context": "contratos",
     "data": {
-      "cotizacion_id": "286b5b77-02da-49e4-a32e-d54020e713a7",
       "codigo_contrato": "CT-2026-001",
       "fecha_contrato": "2026-06-19",
       "contratante_domicilio": "cra 81 B N 19B 80 - Portal de Modelia 2 - Interior 6 apartamentos 103",
@@ -18,8 +17,9 @@
       "valor_total": 15436750,
       "estado": "borrador",
       "email_asunto": "Contrato de Fabricación e Instalación — Cocina integral",
-      "email_cuerpo": "Estimado/a Lorena Vaca,\n\nNos complace adjuntar el contrato digital correspondiente al proyecto **Cocina integral**.\n\n**Estructura de Abonos:**\n- Valor total: $15.436.750 COP\n- Primer anticipo (50%): $7.718.375 COP (Activa fabricación)\n- Segundo pago (25%): $3.859.188 COP (Al iniciar instalación)\n- Pago final (25%): $3.859.187 COP (Al finalizar la instalación)\n\nPor favor revise el documento legal y nos confirma su aceptación para proceder.\n\nCordialmente,\n**Hermanos García González S.A.S**\nvetadeoro.co@gmail.com"
+      "email_cuerpo": "Estimado/a Lorena Vaca,\n\nNos complace adjuntar el contrato digital correspondiente al proyecto **Cocina integral**.\n\n**Estructura de Abonos:**\n- Valor total: $15.436.750 COP\n- Primer anticipo (50%): $7.718.375 COP (Activa fabricación)\n- Segundo pago (25%): $3.859.188 COP (Al iniciar instalación)\n- Pago final (25%): $3.859.187 COP (Al finalizar la instalación)\n\nPor favor revise el documento legal y nos confirma su aceptación para proceder.\n\nCordialmente,\n**Hermanos García González S.A.S**\nvetadeoro.co@gmail.com",
+      "proyecto_id": "286b5b77-02da-49e4-a32e-d54020e713a7"
     },
-    "updated_at": "2026-06-19T20:00:50.801Z"
+    "updated_at": "2026-06-29T00:44:34.963Z"
   }
 ]

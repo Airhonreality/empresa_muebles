@@ -1,6 +1,6 @@
 'use client'
 import type { BlockProps } from '@agnostic/core'
-import type { ContratosRecord, CotizacionesRecord, ClientesRecord, EspacioVariantesRecord } from '@/generated/agnostic-schemas'
+import type { ContratosRecord, ProyectosRecord, ClientesRecord, EspacioVariantesRecord } from '@/generated/agnostic-schemas'
 import { useRelationData } from '@/lib/agnostic/hooks/useRelationData'
 import { useMateriaStore } from '@/lib/agnostic/store'
 import { useState, useMemo, useEffect } from 'react'
@@ -32,15 +32,15 @@ async function vaultWrite(namespace: string, id: string | undefined, data: Recor
 export default function ContratoGenerator({ activeRecord }: BlockProps) {
   const contrato = activeRecord as ContratosRecord | null | undefined
 
-  const { data: allCotizaciones, isLoading: loadingCot } = useRelationData('cotizaciones')
+  const { data: allProyectos, isLoading: loadingCot } = useRelationData('proyectos')
   const { data: allClientes, isLoading: loadingCli } = useRelationData('clientes')
   const { data: allEspacios, isLoading: loadingEsp } = useRelationData('espacio_variantes')
 
   const isLoading = loadingCot || loadingCli || loadingEsp
 
   const cotizacion = useMemo(
-    () => (allCotizaciones as CotizacionesRecord[]).find(q => q.id === contrato?.data.cotizacion_id),
-    [allCotizaciones, contrato]
+    () => (allProyectos as ProyectosRecord[]).find(q => q.id === contrato?.data.proyecto_id),
+    [allProyectos, contrato]
   )
   const client = useMemo(
     () => (allClientes as ClientesRecord[]).find(c => c.id === cotizacion?.data.cliente_id),
@@ -48,7 +48,7 @@ export default function ContratoGenerator({ activeRecord }: BlockProps) {
   )
   const activeSpaces = useMemo(
     () => (allEspacios as EspacioVariantesRecord[]).filter(
-      s => s.data.cotizacion_id === cotizacion?.id && s.data.activa
+      s => s.data.proyecto_id === cotizacion?.id && s.data.activa
     ),
     [allEspacios, cotizacion]
   )
@@ -121,11 +121,11 @@ export default function ContratoGenerator({ activeRecord }: BlockProps) {
       })
       useMateriaStore.getState().updateItem('contratos', saved)
 
-      const savedCot = await vaultWrite('cotizaciones', cotizacion.id, {
+      const savedCot = await vaultWrite('proyectos', cotizacion.id, {
         ...cotizacion.data,
         estado: 'pre_produccion',
       })
-      useMateriaStore.getState().updateItem('cotizaciones', savedCot)
+      useMateriaStore.getState().updateItem('proyectos', savedCot)
 
       toast.success('Contrato marcado como enviado. Proyecto en pre-producción.')
     } catch {

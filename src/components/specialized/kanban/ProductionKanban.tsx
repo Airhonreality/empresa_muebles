@@ -9,7 +9,7 @@ import KanbanCanvas, { type KanbanStage, type KanbanRecord } from './KanbanCanva
 import ProductionCard from './ProductionCard'
 import type {
   OrdenesTrabajoRecord, TareasProduccionRecord,
-  CotizacionesRecord, ClientesRecord,
+  ProyectosRecord, ClientesRecord,
 } from '@/generated/agnostic-schemas'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -40,31 +40,31 @@ export default function ProductionKanban({ records, api }: BlockProps) {
   )
 
   const { data: allTasks,   isLoading: loadingTasks  } = useRelationData('tareas_produccion')
-  const { data: allQuotes,  isLoading: loadingQuotes } = useRelationData('cotizaciones')
+  const { data: allProjects,  isLoading: loadingProjects } = useRelationData('proyectos')
   const { data: allClients                            } = useRelationData('clientes')
 
-  const isLoading = loadingTasks || loadingQuotes
+  const isLoading = loadingTasks || loadingProjects
 
   const clientNameMap = useMemo(() => {
     const map: Record<string, string> = {}
     for (const order of localOrders) {
-      const cot = (allQuotes as CotizacionesRecord[]).find(q => q.id === order.data.cotizacion_id)
-      if (!cot) { map[order.id] = '—'; continue }
-      const client = (allClients as ClientesRecord[]).find(c => c.id === cot.data.cliente_id)
-      map[order.id] = client?.data?.nombre ?? cot.data.nombre_proyecto ?? '—'
+      const project = (allProjects as ProyectosRecord[]).find(q => q.id === order.data.proyecto_id)
+      if (!project) { map[order.id] = '—'; continue }
+      const client = (allClients as ClientesRecord[]).find(c => c.id === project.data.cliente_id)
+      map[order.id] = client?.data?.nombre ?? project.data.nombre_proyecto ?? '—'
     }
     return map
-  }, [localOrders, allQuotes, allClients])
+  }, [localOrders, allProjects, allClients])
 
-  const cotizacionMap = useMemo(() => {
-    const map: Record<string, CotizacionesRecord | undefined> = {}
+  const projectMap = useMemo(() => {
+    const map: Record<string, ProyectosRecord | undefined> = {}
     for (const order of localOrders) {
-      map[order.id] = (allQuotes as CotizacionesRecord[]).find(
-        q => q.id === order.data.cotizacion_id
+      map[order.id] = (allProjects as ProyectosRecord[]).find(
+        q => q.id === order.data.proyecto_id
       )
     }
     return map
-  }, [localOrders, allQuotes])
+  }, [localOrders, allProjects])
 
   const handleMove = async (record: KanbanRecord, newStage: string) => {
     const previous = localOrders
@@ -127,9 +127,9 @@ export default function ProductionKanban({ records, api }: BlockProps) {
                 onMove={onMove}
                 nextStage={nextStage}
                 allStages={STAGES}
-                api={api}
+                api={api as unknown as Record<string, unknown>}
                 tasks={allTasks as TareasProduccionRecord[]}
-                cotizacion={cotizacionMap[record.id]}
+                proyecto={projectMap[record.id]}
                 clientName={clientNameMap[record.id] ?? '—'}
               />
             )}
@@ -138,6 +138,7 @@ export default function ProductionKanban({ records, api }: BlockProps) {
 
         <TabsContent value="abastecimiento" className="m-0 p-4 outline-none flex-1 overflow-y-auto">
           <CentralAbastecimientoGlobal 
+            block={{} as any}
             context="obligaciones_pendientes"
             schema={{} as any} // Agnostic schema bypass as the component loads data natively
           />

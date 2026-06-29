@@ -35,7 +35,7 @@ const NAMESPACES = [
   'ordenes_trabajo', 'tareas_produccion', 'espacio_variantes',
 ] as const
 
-export function useProjectData(cotizacionId: string | undefined, isOpen: boolean) {
+export function useProjectData(proyectoId: string | undefined, isOpen: boolean) {
   // Leverage Zustand cache via useRelationData
   const { data: allApoyo,     isLoading: l1 } = useRelationData(isOpen ? 'apoyo_tecnico' : null)
   const { data: allContratos, isLoading: l2 } = useRelationData(isOpen ? 'contratos' : null)
@@ -46,30 +46,30 @@ export function useProjectData(cotizacionId: string | undefined, isOpen: boolean
 
   const isLoading = l1 || l2 || l3 || l4 || l5 || l6
 
-  // Client-side filter: only data belonging to this cotizacion
+  // Client-side filter: only data belonging to this project
   const data = useMemo<ProjectData>(() => {
-    if (!cotizacionId || !isOpen) return EMPTY_DATA
+    if (!proyectoId || !isOpen) return EMPTY_DATA
 
     const contratoRec = (allContratos as ContratosRecord[]).find(
-      r => r.data.cotizacion_id === cotizacionId
+      r => r.data.proyecto_id === proyectoId
     ) ?? null
 
     const projectOrdenes = (allOrdenes as OrdenesTrabajoRecord[]).filter(
-      o => o.data.cotizacion_id === cotizacionId
+      o => o.data.proyecto_id === proyectoId
     )
     const ordenIds = new Set(projectOrdenes.map(o => o.id))
 
     return {
-      apoyo:    (allApoyo    as ApoyoTecnicoRecord[]).filter(r => r.data.cotizacion_id === cotizacionId),
+      apoyo:    (allApoyo    as ApoyoTecnicoRecord[]).filter(r => r.data.proyecto_id === proyectoId),
       contrato: contratoRec,
       abonos:   contratoRec
         ? (allAbonos as AbonosContratoRecord[]).filter(r => r.data.contrato_id === contratoRec.id)
         : [],
       ordenes:  projectOrdenes,
       tareas:   (allTareas as TareasProduccionRecord[]).filter(r => ordenIds.has(r.data.orden_trabajo_id)),
-      espacios: (allEspacios as EspacioVariantesRecord[]).filter(r => r.data.cotizacion_id === cotizacionId),
+      espacios: (allEspacios as EspacioVariantesRecord[]).filter(r => r.data.proyecto_id === proyectoId),
     }
-  }, [cotizacionId, isOpen, allApoyo, allContratos, allAbonos, allOrdenes, allTareas, allEspacios])
+  }, [proyectoId, isOpen, allApoyo, allContratos, allAbonos, allOrdenes, allTareas, allEspacios])
 
   // Manual refresh: forces re-fetch from server by invalidating Zustand cache
   const [, setRefreshKey] = useState(0)

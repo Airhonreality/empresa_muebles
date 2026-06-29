@@ -3,7 +3,6 @@
     "id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
     "context": "espacio_variantes",
     "data": {
-      "cotizacion_id": "da6b8131-1800-43c0-9dd3-7b1a0c896669",
       "nombre_espacio": "Mueble inferior",
       "nombre_variante": "Cocina completa",
       "jornadas_desarrollo_tecnico": 0.5,
@@ -11,8 +10,9 @@
       "jornadas_instalacion_obra": 2.6,
       "activa": true,
       "descripcion": "",
-      "orden": 1
+      "orden": 1,
+      "proyecto_id": "da6b8131-1800-43c0-9dd3-7b1a0c896669"
     },
-    "updated_at": "2026-06-22T14:46:15.323Z"
+    "updated_at": "2026-06-29T00:44:35.035Z"
   }
 ]

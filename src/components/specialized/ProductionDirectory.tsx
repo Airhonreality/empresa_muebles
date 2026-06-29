@@ -3,7 +3,7 @@ import type { BlockProps } from '@agnostic/core'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMemo } from 'react'
 import { useRelationData } from '@/lib/agnostic/hooks/useRelationData'
-import type { OrdenesTrabajoRecord, TareasProduccionRecord, CotizacionesRecord, ClientesRecord } from '@/generated/agnostic-schemas'
+import type { OrdenesTrabajoRecord, TareasProduccionRecord, ProyectosRecord, ClientesRecord } from '@/generated/agnostic-schemas'
 import ProjectNode from './ProjectNode'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -12,7 +12,7 @@ export default function ProductionDirectory({ records, api }: BlockProps) {
 
   // Datos compartidos cargados UNA vez aquí — no en cada ProjectNode
   const { data: allTasks,  isLoading: loadingTasks  } = useRelationData('tareas_produccion')
-  const { data: allQuotes, isLoading: loadingQuotes } = useRelationData('cotizaciones')
+  const { data: allQuotes, isLoading: loadingQuotes } = useRelationData('proyectos')
   const { data: allClients                           } = useRelationData('clientes')
 
   const isLoading = loadingTasks || loadingQuotes
@@ -31,7 +31,7 @@ export default function ProductionDirectory({ records, api }: BlockProps) {
   const clientNameMap = useMemo(() => {
     const map: Record<string, string> = {}
     for (const order of orders) {
-      const cotizacion = (allQuotes as CotizacionesRecord[]).find(q => q.id === order.data.cotizacion_id)
+      const cotizacion = (allQuotes as ProyectosRecord[]).find(q => q.id === order.data.proyecto_id)
       if (!cotizacion) { map[order.id] = 'Cargando...'; continue }
       const client = (allClients as ClientesRecord[]).find(c => c.id === cotizacion.data.cliente_id)
       map[order.id] = client?.data?.nombre ?? cotizacion.data.nombre_proyecto
@@ -40,9 +40,9 @@ export default function ProductionDirectory({ records, api }: BlockProps) {
   }, [orders, allQuotes, allClients])
 
   const cotizacionMap = useMemo(() => {
-    const map: Record<string, CotizacionesRecord | undefined> = {}
+    const map: Record<string, ProyectosRecord | undefined> = {}
     for (const order of orders) {
-      map[order.id] = (allQuotes as CotizacionesRecord[]).find(q => q.id === order.data.cotizacion_id)
+      map[order.id] = (allQuotes as ProyectosRecord[]).find(q => q.id === order.data.proyecto_id)
     }
     return map
   }, [orders, allQuotes])
@@ -70,9 +70,9 @@ export default function ProductionDirectory({ records, api }: BlockProps) {
               <ProjectNode
                 key={order.id}
                 record={order}
-                api={api}
+                api={api as unknown as Record<string, unknown>}
                 allTasks={allTasks as TareasProduccionRecord[]}
-                cotizacion={cotizacionMap[order.id]}
+                proyecto={cotizacionMap[order.id]}
                 clientName={clientNameMap[order.id] ?? ''}
               />
             ))}
@@ -88,9 +88,9 @@ export default function ProductionDirectory({ records, api }: BlockProps) {
               <ProjectNode
                 key={order.id}
                 record={order}
-                api={api}
+                api={api as unknown as Record<string, unknown>}
                 allTasks={allTasks as TareasProduccionRecord[]}
-                cotizacion={cotizacionMap[order.id]}
+                proyecto={cotizacionMap[order.id]}
                 clientName={clientNameMap[order.id] ?? ''}
               />
             ))}

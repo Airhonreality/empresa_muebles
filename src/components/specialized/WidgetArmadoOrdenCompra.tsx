@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { AgnosticBlockProps } from "@/lib/agnostic/blocks/types";
+import type { BlockProps } from "@agnostic/core";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,25 +17,25 @@ interface CartItem {
   catalogo_id?: string;
 }
 
-export default function CentralAbastecimientoGlobal({ context, schema }: AgnosticBlockProps) {
+export default function CentralAbastecimientoGlobal({ context, schema }: BlockProps) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isDeploying, setIsDeploying] = useState(false);
   
-  const [cotizaciones, setCotizaciones] = useState<any[]>([]);
+  const [proyectos, setProyectos] = useState<any[]>([]);
   const [catalogoMaestro, setCatalogoMaestro] = useState<any[]>([]);
   const [comprasExistentes, setComprasExistentes] = useState<any[]>([]);
-  const [selectedCotizacionId, setSelectedCotizacionId] = useState<string>('');
+  const [selectedProyectoId, setSelectedProyectoId] = useState<string>('');
   const [suggestedItems, setSuggestedItems] = useState<CartItem[]>([]);
   const [isLoadingSugs, setIsLoadingSugs] = useState(false);
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/vault?namespace=cotizaciones').then(r => r.json()),
+      fetch('/api/vault?namespace=proyectos').then(r => r.json()),
       fetch('/api/vault?namespace=productos_catalogo').then(r => r.json()),
       fetch('/api/vault?namespace=compras_materiales').then(r => r.json())
     ])
-    .then(([dataCot, dataCat, dataComp]) => {
-      setCotizaciones(dataCot.records || []);
+    .then(([dataProyectos, dataCat, dataComp]) => {
+      setProyectos(dataProyectos.records || []);
       setCatalogoMaestro(dataCat.records || []);
       setComprasExistentes(dataComp.records || []);
     })
@@ -44,7 +44,7 @@ export default function CentralAbastecimientoGlobal({ context, schema }: Agnosti
 
   // Motor de Diffing inteligente
   useEffect(() => {
-    if (!selectedCotizacionId) {
+    if (!selectedProyectoId) {
       setSuggestedItems([]);
       return;
     }
@@ -60,9 +60,9 @@ export default function CentralAbastecimientoGlobal({ context, schema }: Agnosti
         const dataV = await resV.json();
         const dataI = await resI.json();
         
-        const projName = cotizaciones.find(c => c.id === selectedCotizacionId)?.data?.nombre_proyecto || selectedCotizacionId;
+        const projName = proyectos.find(c => c.id === selectedProyectoId)?.data?.nombre_proyecto || selectedProyectoId;
 
-        const variants = (dataV.records || []).filter((v: any) => v.data.cotizacion_id === selectedCotizacionId && v.data.activa === true);
+        const variants = (dataV.records || []).filter((v: any) => v.data.proyecto_id === selectedProyectoId && v.data.activa === true);
         const variantIds = variants.map((v: any) => v.id);
         const projItems = (dataI.records || []).filter((i: any) => variantIds.includes(i.data.variante_id));
 
@@ -110,7 +110,7 @@ export default function CentralAbastecimientoGlobal({ context, schema }: Agnosti
       }
     }
     loadProjectData();
-  }, [selectedCotizacionId, catalogoMaestro, cotizaciones, comprasExistentes]);
+  }, [selectedProyectoId, catalogoMaestro, proyectos, comprasExistentes]);
 
   const total = items.reduce((acc, item) => acc + (item.cantidad * item.precio_unitario), 0);
 
@@ -196,7 +196,7 @@ export default function CentralAbastecimientoGlobal({ context, schema }: Agnosti
       }
 
       setItems([]);
-      setSelectedCotizacionId('');
+      setSelectedProyectoId('');
       toast.success("✅ Pedido consolidado transmitido a Compras y Finanzas");
       
       // Refrescar compras existentes
@@ -239,17 +239,17 @@ export default function CentralAbastecimientoGlobal({ context, schema }: Agnosti
                   </label>
                   <select 
                     className="w-full h-11 px-4 rounded-lg border-2 border-stone-200 bg-stone-50 text-stone-800 text-sm font-semibold outline-none focus:border-amber-500"
-                    value={selectedCotizacionId}
-                    onChange={(e) => setSelectedCotizacionId(e.target.value)}
+                    value={selectedProyectoId}
+                    onChange={(e) => setSelectedProyectoId(e.target.value)}
                   >
                     <option value="">-- Seleccionar proyecto en producción --</option>
-                    {cotizaciones.map(c => (
-                      <option key={c.id} value={c.id}>{c.data.nombre_proyecto || `Cotización ${c.data.consecutivo}`}</option>
+                    {proyectos.map(c => (
+                      <option key={c.id} value={c.id}>{c.data.nombre_proyecto || `Proyecto ${c.id.slice(0, 8)}`}</option>
                     ))}
                   </select>
                 </div>
 
-                {selectedCotizacionId && (
+                {selectedProyectoId && (
                   <div className="border border-stone-200 rounded-lg bg-stone-50/50 p-2 max-h-60 overflow-y-auto">
                     {isLoadingSugs ? (
                       <div className="text-sm p-6 text-center text-stone-500 font-semibold animate-pulse">Calculando deltas de inventario...</div>

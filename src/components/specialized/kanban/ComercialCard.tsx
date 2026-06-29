@@ -13,7 +13,7 @@ import { ChevronDown, ChevronRight, DollarSign, LayoutDashboard, Loader2 } from 
 import type { KanbanStage, KanbanRecord } from './KanbanCanvas'
 import { STAGE_COLORS } from './KanbanCanvas'
 import type {
-  CotizacionesRecord, ClientesRecord, ContratosRecord,
+  ProyectosRecord, ClientesRecord, ContratosRecord,
   AbonosContratoRecord, EspacioVariantesRecord,
 } from '@/generated/agnostic-schemas'
 import { useMateriaStore } from '@/lib/agnostic/store'
@@ -155,7 +155,7 @@ export default function ComercialCard({
   record, stage, onMove, nextStage, allStages,
   client, contrato, abonos, espacios,
 }: Props) {
-  const cot     = record as unknown as CotizacionesRecord
+  const cot     = record as unknown as ProyectosRecord
   const [abonoOpen,  setAbonoOpen]  = useState(false)
   const colors = STAGE_COLORS[stage.color] ?? STAGE_COLORS.slate
 

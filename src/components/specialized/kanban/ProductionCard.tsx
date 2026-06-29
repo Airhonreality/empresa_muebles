@@ -14,7 +14,7 @@ import {
 import { ChevronDown, ChevronRight, LayoutList } from 'lucide-react'
 import type { KanbanStage, KanbanRecord } from './KanbanCanvas'
 import { STAGE_COLORS } from './KanbanCanvas'
-import type { OrdenesTrabajoRecord, TareasProduccionRecord, CotizacionesRecord } from '@/generated/agnostic-schemas'
+import type { OrdenesTrabajoRecord, TareasProduccionRecord, ProyectosRecord } from '@/generated/agnostic-schemas'
 // Reuse existing ProjectDetails — cero duplicación
 import ProjectDetails from '../ProjectDetails'
 
@@ -26,13 +26,13 @@ interface Props {
   allStages: KanbanStage[]
   api?:      Record<string, unknown>
   tasks:     TareasProduccionRecord[]
-  cotizacion?: CotizacionesRecord
+  proyecto?: ProyectosRecord
   clientName: string
 }
 
 export default function ProductionCard({
   record, stage, onMove, nextStage, allStages,
-  api, tasks, cotizacion, clientName,
+  api, tasks, proyecto, clientName,
 }: Props) {
   const order  = record as unknown as OrdenesTrabajoRecord
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -145,7 +145,7 @@ export default function ProductionCard({
             order={order}
             tasks={orderTasks}
             api={api}
-            direccion_obra={cotizacion?.data?.direccion_obra as string | undefined}
+            direccion_obra={proyecto?.data?.direccion_obra as string | undefined}
           />
         </SheetContent>
       </Sheet>
