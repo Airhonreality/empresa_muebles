@@ -15,6 +15,11 @@
                            "name":  "Airhon_web_site",
                            "path":  "../Airhon_web_site",
                            "branch":  "feature/agile-rendering-engine"
+                       },
+                       {
+                           "name":  "nomon_clone",
+                           "path":  "../nomon_clone",
+                           "branch":  "main"
                        }
                    ]
 }
