@@ -43,12 +43,10 @@ for (const file of staged) {
   // 2. Invariant: block.context must match a known schema name ─────────────────
   if (!file.endsWith('page_routes.json')) continue
 
-  // Derive tenant from path: storage/{tenant}/db/page_routes.json
-  const parts  = file.split('/')
-  const tenant = parts[1]
-  const schemaFile = `storage/${tenant}/db/schema_definitions.json`
+  // Current seed/fork contract: routes and schemas live under storage/db.
+  const schemaFile = 'storage/db/schema_definitions.json'
 
-  const schemaNames = new Set(['page_routes', 'schemas', 'scripts', 'system_config'])
+  const schemaNames = new Set(['page_routes', 'schema_definitions', 'scripts', 'system_config'])
 
   try {
     const schemaRaw = execSync(`git show :${schemaFile}`, { encoding: 'utf-8' })

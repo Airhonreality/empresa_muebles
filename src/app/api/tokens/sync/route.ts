@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStrategy } from '@/server/getStrategy';
-import { getSiloPath } from '@/server/activeProject';
+import { getProjectStorageRoot } from '@/server/activeProject';
 import fs from 'fs/promises';
 import path from 'path';
 
 /**
  * POST /api/tokens/sync
- * Reads all design_tokens records and regenerates tokens.css for the active tenant.
+ * Reads all design_tokens records and regenerates tokens.css for the active fork.
  * Called by TokensEditor after every token save or delete.
  */
 export async function POST(_req: NextRequest) {
@@ -26,8 +26,8 @@ export async function POST(_req: NextRequest) {
       '',
     ].join('\n');
 
-    const siloPath = getSiloPath();
-    const stylesDir = path.join(siloPath, 'styles');
+    const storageRoot = getProjectStorageRoot();
+    const stylesDir = path.join(storageRoot, 'styles');
     await fs.mkdir(stylesDir, { recursive: true });
     await fs.writeFile(path.join(stylesDir, 'tokens.css'), css, 'utf-8');
 

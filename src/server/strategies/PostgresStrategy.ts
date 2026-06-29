@@ -7,6 +7,14 @@ import type {
 import { mergeFieldLWW } from '@/lib/agnostic/fieldMerge';
 import postgres from 'postgres';
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: JsonValue }
+  | JsonValue[];
+
 // ─── SINGLETON CONNECTION ─────────────────────────────────────────────────────
 // One pool per process (shared across requests in the same Vercel function instance).
 
@@ -145,16 +153,12 @@ export class PostgresStrategy implements AgnosticBridge {
     }
 
     const now = new Date().toISOString();
-    const payload = {
-      id,
-      namespace,
-      context: record.context ?? namespace,
-      data: mergedMeta ? { ...mergedData, _meta: mergedMeta } : mergedData,
-      updated_at: now,
-    };
+    const context = record.context ?? namespace;
+    const data = mergedMeta ? { ...mergedData, _meta: mergedMeta } : mergedData;
 
     await this.sql`
-      INSERT INTO agnostic_records ${this.sql(payload)}
+      INSERT INTO agnostic_records (id, namespace, context, data, updated_at)
+      VALUES (${id}, ${namespace}, ${context}, ${this.sql.json(data as JsonValue)}, ${now})
       ON CONFLICT (namespace, id) DO UPDATE SET
         data       = EXCLUDED.data,
         context    = EXCLUDED.context,
@@ -164,7 +168,7 @@ export class PostgresStrategy implements AgnosticBridge {
     return {
       id,
       context: namespace,
-      data: payload.data,
+      data,
       updated_at: now,
     };
   }

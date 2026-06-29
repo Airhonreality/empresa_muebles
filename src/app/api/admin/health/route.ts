@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checkGitHub, checkSupabase, checkPostgres, checkLocal, checkR2, checkSession, checkCloudDeployer } from '@/server/health/checkers';
-import { getSiloPath } from '@/server/activeProject';
+import { getProjectStorageRoot } from '@/server/activeProject';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ export async function GET() {
     checkPostgres(),
     checkR2(),
     checkSupabase(),
-    checkLocal(getSiloPath()),
+    checkLocal(getProjectStorageRoot()),
     checkSession(),
     checkCloudDeployer(),
   ]);

@@ -13,7 +13,7 @@ const MAX_ENTRIES = 500;
 
 export interface LogEntry {
   ts:      string;
-  src:     'vault' | 'agno';
+  src:     'vault' | 'agno' | 'refactor';
   action:  string;          // WRITE | REMOVE | add-block | patch-blocks | …
   ns:      string;          // namespace / context
   id?:     string;          // record id when available

@@ -44,6 +44,11 @@ next-env.d.ts
 # In a project fork, all storage/ is yours to commit freely.
 storage/*
 !storage/.gitkeep
+!storage/AGENTS.md
+!storage/progreso/
+!storage/progreso/**
+!storage/fork_doc/
+!storage/fork_doc/**
 
 # Project-specific custom blocks built with AI
 # Exception: _TEMPLATE.tsx is part of the seed (shows the pattern to follow)
@@ -60,5 +65,4 @@ src/components/specialized/*
 .env*.local
 /.history/
 .codex/
-AGENTS.md
 

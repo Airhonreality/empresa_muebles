@@ -41,10 +41,10 @@ export class LocalStrategy implements AgnosticBridge {
     isRelational: false
   };
 
-  constructor(siloPath: string) {
-    this.dbDir = path.isAbsolute(siloPath)
-      ? path.join(siloPath, 'db')
-      : path.join(process.cwd(), siloPath, 'db');
+  constructor(storageRoot: string) {
+    this.dbDir = path.isAbsolute(storageRoot)
+      ? path.join(storageRoot, 'db')
+      : path.join(process.cwd(), storageRoot, 'db');
   }
 
   private getFilePath(namespace: string): string {

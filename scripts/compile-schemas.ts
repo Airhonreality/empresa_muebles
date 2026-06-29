@@ -84,23 +84,9 @@ function resolveProjectPath(): string {
   // Respect explicit override
   if (process.env.STORAGE_PATH) return process.env.STORAGE_PATH
 
-  // Read active project from system_config.json (same logic as activeProject.ts)
-  const configPath = path.join(process.cwd(), 'storage', 'system_config.json')
-  if (!fs.existsSync(configPath)) {
-    console.warn('[agnostic:compile] storage/system_config.json not found — fresh workspace, skipping compile.')
-    process.exit(0)
-  }
-  const raw = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
-  const items = Array.isArray(raw) ? raw : [raw]
-  const passport = items.find((i: any) => i.id === 'master_passport')
-  const identity = passport?.data?.project_identity
-
-  if (!identity) {
-    console.warn('[agnostic:compile] master_passport.project_identity not found — skipping compile.')
-    process.exit(0)
-  }
-
-  return path.join(process.cwd(), 'storage', identity, 'db')
+  // Current seed/fork contract: each fork owns one storage root.
+  // Runtime LocalStrategy reads storage/db, so the compiler must read the same path.
+  return path.join(process.cwd(), 'storage', 'db')
 }
 
 function compile(): void {
@@ -109,12 +95,12 @@ function compile(): void {
   const outputPath  = process.env.OUTPUT_PATH
     ?? path.join(process.cwd(), 'src', 'generated', 'agnostic-schemas.ts')
 
+  const raw: SchemaItem[] = fs.existsSync(schemasPath)
+    ? JSON.parse(fs.readFileSync(schemasPath, 'utf-8'))
+    : []
   if (!fs.existsSync(schemasPath)) {
-    console.warn(`[agnostic:compile] schema_definitions.json not found — skipping compile.`)
-    process.exit(0)
+    console.warn('[agnostic:compile] schema_definitions.json not found - generating empty contract.')
   }
-
-  const raw: SchemaItem[] = JSON.parse(fs.readFileSync(schemasPath, 'utf-8'))
   const schemas = raw
     .filter(item => item.data?.name)
     .map(item => item.data)
@@ -128,7 +114,6 @@ function compile(): void {
     `// AUTO-GENERATED — do not edit manually.`,
     `// Source: ${schemasPath.replace(process.cwd(), '.')}`,
     `// Run:    npm run agnostic:compile`,
-    `// Generated: ${new Date().toISOString()}`,
     `// ============================================================`,
     ``,
     `// DataItem is the universal record wrapper used by the engine.`,
@@ -196,9 +181,23 @@ function compile(): void {
     ``,
   )
 
-  // ── Write output ──────────────────────────────────────────────────────────
   fs.mkdirSync(path.dirname(outputPath), { recursive: true })
-  fs.writeFileSync(outputPath, lines.join('\n'), 'utf-8')
+  const content = lines.join('\n')
+
+  // Check if content is already identical to avoid redundant writes and EPERM errors
+  if (fs.existsSync(outputPath)) {
+    try {
+      const existing = fs.readFileSync(outputPath, 'utf-8')
+      if (existing === content) {
+        console.log(`\n✓ agnostic:compile — Schema contract is up to date (no changes, write skipped).`)
+        return
+      }
+    } catch {
+      // If reading fails, proceed to write
+    }
+  }
+
+  fs.writeFileSync(outputPath, content, 'utf-8')
 
   console.log(`\n✓ agnostic:compile — ${schemas.length} schemas → ${outputPath.replace(process.cwd(), '.')}`)
   for (const s of schemas) {

@@ -257,7 +257,8 @@ const handleAddScript = async () => {
           const newRoot = removeNodeFromV3Tree(route.data.root, id);
           await saveItem(SYSTEM_NS.ROUTES, { ...route, data: { ...route.data, root: newRoot } }, { silent: true });
         } else {
-          const updatedBlocks = deepRemoveBlock(route.data?.blocks ?? [], id);
+          const routeBlocks = Array.isArray(route.data?.blocks) ? route.data.blocks : [];
+          const updatedBlocks = deepRemoveBlock(routeBlocks, id);
           await saveItem(SYSTEM_NS.ROUTES, { ...route, data: { ...route.data, blocks: updatedBlocks } }, { silent: true });
         }
         toast.success('Nodo eliminado');
@@ -452,7 +453,7 @@ const handleAddScript = async () => {
         )}
         {activeMode === 'theme' && (
           <div className="h-full overflow-y-auto p-8 max-w-3xl">
-            <SystemSection config={config} setConfig={handleUpdateConfig} />
+            <SystemSection />
           </div>
         )}
         {activeMode === 'docs' && (
@@ -1631,5 +1632,4 @@ function NavItem({
     </div>
   );
 }
-
 

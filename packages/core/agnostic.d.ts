@@ -405,7 +405,7 @@ export interface CollectionBlock {
 /** Renders a guest module (.js file from /api/modules). Full API access. */
 export interface CustomBlock {
   type: 'custom';
-  /** Name of the module file in storage/[tenant]/modules/. Without extension. */
+  /** Name of the module file in storage/modules/. Without extension. */
   moduleName: string;
   /** Passed as block config; accessible via api.getBlockConfig(). */
   [key: string]: unknown;
@@ -600,10 +600,10 @@ export interface AgnosticBridge {
 }
 
 /**
- * Manifest configuration. Lives at `storage/[tenant]/manifest.json`.
- * Drives strategy resolution on every server start (cached for 5 min).
+ * Legacy manifest configuration.
+ * @deprecated Runtime tenant manifest strategy selection was removed.
  *
- * @example  storage/default/manifest.json
+ * @example  storage/manifest.json
  * ```json
  * {
  *   "config": {
@@ -621,7 +621,7 @@ export interface AgnosticBridge {
  *   1. strategy='HYBRID' + supabase credentials  →  HybridStrategy (local DNA + cloud materia)
  *   2. supabase credentials only                 →  SupabaseStrategy (full cloud)
  *   3. STORAGE_URL env var, no manifest          →  RemoteJSONStrategy (static JSON CDN)
- *   4. default                                   →  LocalStrategy (file system, storage/[tenant]/db/)
+ *   4. default                                   →  LocalStrategy (file system, storage/db/)
  */
 export interface TenantManifest {
   config?: {
@@ -732,7 +732,7 @@ export declare function createAgnosticAPI(config: BridgeConfig): AgnosticAPI;
  *                                     │ CSS Custom Properties Bridge
  *                                     │ (20 variables públicas --sat-*)
  * ┌───────────────────────────────────▼─────────────────────────────────────────┐
- * │  CAPA 2: SATÉLITE (cargada en runtime por tenant)                           │
+ * │  CAPA 2: PROYECTO/FORK (cargada desde storage/)                             │
  * │  tokens.css    → overrides de var(--sat-*) — inyectado inline (sin FOUC)   │
  * │  compiled.css  → clases propias del negocio — inyectado como <link>         │
  * └─────────────────────────────────────────────────────────────────────────────┘
@@ -774,23 +774,23 @@ export declare function createAgnosticAPI(config: BridgeConfig): AgnosticAPI;
  * FLUJO DE IMPLEMENTACIÓN PARA UN SATÉLITE NUEVO:
  *
  * 1. MÍNIMO (solo branding via tokens):
- *    Crea storage/[tenant]/styles/tokens.css con los --sat-* que quieras cambiar.
+ *    Crea storage/styles/tokens.css con los --sat-* que quieras cambiar.
  *    NO necesitas recompilar nada. El Seed lo inyecta automáticamente.
  *
  * 2. COMPLETO (clases propias para módulos guest):
- *    a. Crea storage/[tenant]/styles/tailwind.config.js con tu config
- *    b. Crea storage/[tenant]/styles/satellite.css con @tailwind directives
- *    c. Ejecuta: npm run satellite:build [tenant]
+ *    a. Crea storage/styles/tailwind.config.js con tu config
+ *    b. Crea storage/styles/satellite.css con @tailwind directives
+ *    c. Ejecuta: npm run satellite:build
  *    d. Se genera compiled.css → el Seed lo sirve vía /api/satellite-styles
  *
  * 3. FRAMEWORK LIBRE (Bootstrap, vanilla CSS, etc.):
  *    a. Genera tu CSS con el tool que prefieras
- *    b. Guarda el output como storage/[tenant]/styles/satellite.css
- *    c. Ejecuta: npm run satellite:build [tenant]  (lo copia a compiled.css)
+ *    b. Guarda el output como storage/styles/satellite.css
+ *    c. Ejecuta: npm run satellite:build  (lo copia a compiled.css)
  *
  *
  * API ENDPOINTS DE ESTILOS:
- *   GET /api/satellite-styles   → Sirve compiled.css del tenant activo
+ *   GET /api/satellite-styles   → Sirve storage/styles/compiled.css
  *                                  Retorna 204 si no existe.
  *   GET /api/theme-styles       → Legacy. Sirve theme.css si existe.
  *
@@ -826,9 +826,9 @@ export declare function createAgnosticAPI(config: BridgeConfig): AgnosticAPI;
  * │ Slug format                 │ lowercase, NFD-normalized, hyphenated        │
  * │ Route path parameter        │ :paramName  e.g. '/pedidos/:id'             │
  * │ Foreign key convention      │ '{parentContext}_id'  e.g. 'pedidos_id'     │
- * │ Module file location        │ storage/[tenant]/modules/[name].js          │
- * │ Theme CSS location          │ storage/[tenant]/styles/theme.css           │
- * │ Manifest location           │ storage/[tenant]/manifest.json              │
+ * │ Module file location        │ storage/modules/[name].js                   │
+ * │ Theme CSS location          │ storage/styles/theme.css                    │
+ * │ Manifest location           │ storage/manifest.json (optional metadata)   │
  * └─────────────────────────────┴─────────────────────────────────────────────┘
  *
  * DNA vs MATERIA split (HybridStrategy):

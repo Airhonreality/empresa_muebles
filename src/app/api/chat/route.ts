@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     tools: {
       observe: {
         description: 'Lee el estado actual del sistema: schemas existentes con sus campos, rutas con sus bloques e IDs reales. Llama esto antes de ejecutar comandos.',
-        parameters: z.object({}),
+        inputSchema: z.object({}),
         execute: async () => executeObserve(adapter),
       },
       execute_agno: {
@@ -169,7 +169,7 @@ BLOQUES DE DATOS (requieren schema:<nombre>):
 REGLA CRÍTICA: NUNCA pases title:/subtitle:/content:/image: directamente en add-block.
 Agrega el bloque primero, luego setea sus params con update-block usando visual.KEY.
 La respuesta de add-block incluye required_visual_params y next_steps con los comandos exactos.`,
-        parameters: z.object({
+        inputSchema: z.object({
           command: z.string().describe('El comando exacto.'),
         }),
         execute: async ({ command }) => executeAgnoCommand(command, adapter),

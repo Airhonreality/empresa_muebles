@@ -23,7 +23,7 @@
 import { getStrategy } from '../src/server/getStrategy';
 import { LocalStrategy } from '../src/server/strategies/LocalStrategy';
 import { PostgresStrategy } from '../src/server/strategies/PostgresStrategy';
-import { getSiloPath } from '../src/server/activeProject';
+import { getProjectStorageRoot } from '../src/server/activeProject';
 import readline from 'readline';
 import crypto   from 'crypto';
 import fs       from 'fs/promises';
@@ -577,7 +577,7 @@ async function cmdDiffEnv() {
     return;
   }
 
-  const local = new LocalStrategy(getSiloPath());
+  const local = new LocalStrategy(getProjectStorageRoot());
   const cloud = new PostgresStrategy(process.env.DATABASE_URL);
 
   console.log('[DIFF-ENV] Comparando Almacenamiento Local (disco) vs Nube (Postgres)\n');

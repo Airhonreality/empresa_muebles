@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       const coreContexts = [SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.USERS, SYSTEM_NS.USER_LISTS];
       const activeContexts: string[] = [...coreContexts];
 
-      const systemNamespaces = new Set(Object.values(SYSTEM_NS));
+      const systemNamespaces: Set<string> = new Set(Object.values(SYSTEM_NS));
       try {
         const schemas = await strategy.read(SYSTEM_NS.SCHEMAS);
         if (Array.isArray(schemas)) {

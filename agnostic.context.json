@@ -1,147 +1,119 @@
 {
   "_comment": "Machine-readable architectural contract for Agnostic Seed. Read before any code change.",
   "system_id": "agnostic-seed",
-  "branch": "v2-sovereign-rebirth",
-
+  "distribution_model": {
+    "paradigm": "Seed repo with project forks",
+    "runtime_tenancy": false,
+    "rule": "Each project is a separate fork. The running app has one project storage root.",
+    "storage_root": "storage",
+    "db_root": "storage/db",
+    "custom_ui_root": "src/components/specialized",
+    "engine_roots": [
+      "packages",
+      "src/components/agnostic",
+      "src/lib/agnostic",
+      "src/app/api"
+    ]
+  },
   "source_of_truth": {
-    "types":   "packages/core/src/indra.ts",
-    "bridge":  "packages/core/src/bridge.ts",
-    "state":   "src/context/AppContext.tsx",
-    "gateway": "src/app/api/vault/route.ts"
-  },
-
-  "architecture": {
-    "paradigm": "Schema-Driven Agnostic UI — Multi-Tenant, Local-First",
-    "runtime": "Next.js 15 App Router (RSC + Client Components)",
-    "state_layers": [
-      {
-        "name": "SSR_HYDRATION",
-        "mechanism": "getVaultData() -> AppProvider(initialData)",
-        "files": ["src/core/server/vault.ts", "src/app/layout.tsx"],
-        "note": "Full DB read at request time. Client receives pre-populated state."
-      },
-      {
-        "name": "PAGE_RECORD",
-        "mechanism": "MasterRoute useMemo -> PageRecordContext.Provider",
-        "files": ["src/app/[...slug]/page.tsx", "src/context/AppContext.tsx"],
-        "critical": "Computed during render (useMemo), NOT in useEffect. Zero flash on first paint.",
-        "hook": "usePageRecord() — import from src/context/AppContext.tsx"
-      },
-      {
-        "name": "GLOBAL_STATE",
-        "mechanism": "useReducer + dispatch(SET_SYSTEM_STATE)",
-        "file": "src/context/AppContext.tsx",
-        "note": "Kept in sync with PAGE_RECORD via useEffect. Exists for custom modules only."
-      }
-    ],
-    "persistence_flow": [
-      "1. Component calls saveItem(context, item)",
-      "2. AppContext POSTs to /api/vault",
-      "3. Vault assigns UUID if absent, derives _slug from schema.identitySource",
-      "4. Vault reads current items, upserts, calls strategy.writeContext()",
-      "5. strategy.writeContext() writes to temp file then renames (atomic)",
-      "6. Vault returns saved record with stable UUID",
-      "7. AppContext dispatches SET_DATA to update local state"
-    ]
-  },
-
-  "identity_laws": {
-    "primary_key": {
-      "type": "UUID v4",
-      "generation": "Server-side in /api/vault — never client-generated",
-      "file": "src/app/api/vault/route.ts"
-    },
-    "secondary_key": {
-      "type": "_slug",
-      "generation": "Server-side, derived from schema.identitySource || schema.slug_source",
-      "purpose": "URL navigation ONLY",
-      "forbidden": ["filtering", "FK references", "state identity", "data mutations"]
-    },
-    "lookup_precedence": [
-      "usePageRecord() — synchronous, MasterRoute useMemo",
-      "state.system.activeRecord — async, reducer (fires one render after)",
-      "r.data._slug === activeSlug — last-resort fallback, mutable, avoid"
-    ]
-  },
-
-  "schema_contract": {
-    "context_name": "schema_definitions",
-    "file": "storage/{tenant}/db/schema_definitions.json",
-    "naming_rule": "Schema name = plain entity name. Use 'projects', never 'schema_projects'.",
-    "child_schema_required_field": {
-      "relation": {
-        "foreignKey": "Field name in child.data that stores parent UUID",
-        "parentContext": "Context name of the parent entity"
-      }
-    },
-    "fk_auto_resolution": "AgnosticCollection reads schema.relation.foreignKey automatically. Manual parentKey only needed as fallback.",
-    "example": {
-      "id": "schema-def-001",
-      "context": "schema_definitions",
-      "data": {
-        "name": "environments",
-        "slug_source": "name",
-        "relation": { "foreignKey": "projectId", "parentContext": "projects" },
-        "fields": []
-      }
-    }
-  },
-
-  "strategy_layer": {
-    "interface": "packages/core/src/indra.ts -> DataStrategy",
+    "agent_root": "AGENTS.md",
+    "fork_agent_root": "storage/AGENTS.md",
+    "fork_progress_state": "storage/progreso/current_state.md",
+    "fork_progress_index": "storage/progreso/INDEX.md",
+    "types": "packages/core/src/indra.ts",
+    "bridge": "agnostic.config.ts",
+    "schemas": "storage/db/schema_definitions.json",
+    "routes": "storage/db/page_routes.json",
+    "scripts": "storage/db/scripts.json",
     "gateway": "src/app/api/vault/route.ts",
-    "rule": "ONLY entry point for mutations. Never write to storage/ from components.",
-    "resolution": "src/server/getStrategy.ts reads manifest.json",
-    "implementations": {
-      "LOCAL":    { "file": "src/server/strategies/LocalStrategy.ts",    "write": "atomic via temp-rename" },
-      "SUPABASE": { "file": "src/server/strategies/SupabaseStrategy.ts", "write": "DB upsert, ACID" },
-      "HYBRID":   { "file": "src/server/strategies/HybridStrategy.ts",  "write": "delegates to active silo" },
-      "GITHUB":   { "file": "src/server/strategies/GitHubStrategy.ts",  "write": "READ-ONLY, DNA versioning" }
-    }
+    "strategy_resolution": "src/server/getStrategy.ts"
   },
-
-  "block_registry": {
-    "router": "src/components/agnostic/engine/AgnosticRenderer.tsx",
-    "types": {
-      "form":       "src/components/agnostic/blocks/AgnosticForm.tsx",
-      "collection": "src/components/agnostic/blocks/AgnosticCollection.tsx",
-      "table":      "src/components/agnostic/blocks/AgnosticTable.tsx",
-      "belt":       "src/components/agnostic/blocks/AgnosticBelt.tsx",
-      "sheet":      "src/components/agnostic/blocks/AgnosticSheet.tsx",
-      "custom":     "src/components/agnostic/engine/AgnosticModuleLoader.tsx"
+  "architecture": {
+    "paradigm": "Schema-driven agnostic UI for one fork-owned project",
+    "runtime": "Next.js 15 App Router",
+    "persistence_flow": [
+      "1. Component calls saveItem(context, item) or POST /api/vault",
+      "2. Vault validates WRITE or REMOVE",
+      "3. getStrategy() selects persistence from environment variables",
+      "4. Adapter reads/writes the namespace",
+      "5. Vault returns the saved record",
+      "6. Client state syncs through AppContext/AgnosticShell"
+    ]
+  },
+  "storage_contract": {
+    "local_layout": {
+      "agent_harness": "storage/AGENTS.md",
+      "db": "storage/db/*.json",
+      "progress": "storage/progreso",
+      "fork_docs": "storage/fork_doc",
+      "assets": "storage/assets",
+      "styles": "storage/styles",
+      "modules": "storage/modules"
     },
-    "config_source": "storage/{tenant}/db/page_routes.json"
+    "schema_namespace": "schema_definitions",
+    "schema_file": "storage/db/schema_definitions.json",
+    "route_file": "storage/db/page_routes.json",
+    "script_file": "storage/db/scripts.json",
+    "invariant": "block.context === schema.data.name === data_file_name_without_json"
   },
-
-  "tenant_model": {
-    "env_var": "ACTIVE_TENANT",
-    "default": "default",
-    "silo_root": "storage/{ACTIVE_TENANT}/",
-    "structure": {
-      "manifest.json":         "Tenant DNA: strategy selection, feature flags",
-      "db/*.json":             "One file per context. Filename = context name.",
-      "modules/*.js":          "Vanilla JS guest modules — no React, bridge-only",
-      "styles/tokens.css":     "CSS variable overrides (--sat-*)",
-      "assets/":               "Static resources (images, PDFs)"
-    }
+  "strategy_layer": {
+    "interface": "AgnosticBridge",
+    "gateway": "src/app/api/vault/route.ts",
+    "rule": "Only /api/vault and server-side tools mutate storage through the adapter.",
+    "resolution_order": [
+      "GITHUB_REPO -> GitHubStrategy",
+      "DATABASE_URL -> PostgresStrategy",
+      "SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY -> SupabaseStrategy",
+      "fallback -> LocalStrategy(storage)"
+    ],
+    "not_used_for_strategy_selection": [
+      "ACTIVE_TENANT",
+      "storage/{tenant}/manifest.json"
+    ]
   },
-
-  "naming_conventions": {
-    "schema_name":             "{entity} — e.g., 'projects', 'environments'",
-    "db_file":                 "storage/{tenant}/db/{context}.json",
-    "page_routes":             "storage/{tenant}/db/page_routes.json",
-    "schema_definitions":      "storage/{tenant}/db/schema_definitions.json",
-    "module_file":             "storage/{tenant}/modules/{name}.js"
+  "agent_harness": {
+    "root_contract": "AGENTS.md",
+    "compatibility_copy": "CLAUDE.md",
+    "support_docs": [
+      "Comandos CLI.md",
+      "Interfaces Custom.md"
+    ],
+    "fork_context_order": [
+      "storage/AGENTS.md",
+      "storage/progreso/current_state.md",
+      "storage/progreso/INDEX.md"
+    ],
+    "rule": "Load fork context deliberately. Do not read historical plans or research archives by default."
   },
-
+  "schema_compiler": {
+    "input": "storage/db/schema_definitions.json",
+    "output": "src/generated/agnostic-schemas.ts",
+    "command": "npm run agnostic:compile",
+    "rule": "Never edit generated schema types manually."
+  },
+  "fork_update_contract": {
+    "preferred": "git fetch upstream && git merge upstream/main",
+    "admin_script": "scripts/admin/sync-workspaces.ps1",
+    "avoid": "copying whole engine folders into forks outside git history",
+    "project_owned_paths": [
+      "storage",
+      "src/components/specialized",
+      "agnostic.config.ts"
+    ]
+  },
+  "legacy_terms": {
+    "tenant": "obsolete runtime concept",
+    "silo": "obsolete runtime concept; use storage root",
+    "schemas.json": "obsolete; use schema_definitions.json",
+    "ACTIVE_TENANT": "obsolete; strategy is selected by deployment env vars"
+  },
   "critical_restrictions": [
-    "NEVER use _slug for internal identity, filtering, or FK references",
-    "NEVER call strategy.write() with a partial array — use vault route for all mutations",
-    "NEVER write to storage/ from a component",
-    "NEVER add schema_ prefix to schema names in schema_definitions.json",
-    "NEVER import from src/app/[...slug]/page.tsx — export hooks from src/context/",
-    "NEVER remove the useEffect activeRecord sync in MasterRoute",
-    "NEVER generate UUIDs on the client",
-    "AgnosticCollection returns empty without an active pageRecord — intentional, not a bug"
+    "Never create runtime tenant selection.",
+    "Never reintroduce storage/{tenant}/db as the default local layout.",
+    "Never use schemas.json as the schema source of truth.",
+    "Never write business logic into packages/ for a project fork.",
+    "Never bypass /api/vault or the adapter for storage mutations.",
+    "Never generate IDs with Math.random() or Date.now().",
+    "Never add camelCase aliases beside snake_case storage keys."
   ]
 }

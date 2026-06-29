@@ -61,7 +61,7 @@
           "key": "zap",
           "label": "Script Vinculado (Zap)",
           "type": "select",
-          "description": "Selecciona el script a ejecutar en el servidor al presionar este botón. Los scripts se administran en storage/{tenant}/db/scripts.json.",
+          "description": "Selecciona el script a ejecutar en el servidor al presionar este botón. Los scripts se administran en storage/db/scripts.json.",
           "options_source": "logic_engine_registry"
         },
         {

@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, AlertCircle, Rocket, RefreshCw,
   Github, Cloud, Database, Shield, ChevronDown, ChevronRight,
   Eye, EyeOff, Loader2, Copy, Check, ExternalLink, ArrowRight,
-  ArrowLeftRight, Key
+  ArrowLeftRight, Key, Box
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ interface CheckResult {
   output?: string;
   time: string;
   latency_ms: number;
+  metadata?: Record<string, string>;
 }
 
 interface HealthData {
@@ -44,6 +45,7 @@ interface HealthData {
     'data:supabase':  CheckResult[];
     'data:local':     CheckResult[];
     'auth:session':   CheckResult[];
+    'hosting:cloud':  CheckResult[];
   };
 }
 
@@ -61,6 +63,7 @@ interface SaveResult {
   errors: string[];
   deployment: { id: string; url: string | null; readyState: string } | null;
   warning?: string;
+  error?: string;
 }
 
 interface MigrationReport {

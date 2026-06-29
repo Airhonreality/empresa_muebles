@@ -20,7 +20,7 @@ export function AgnosticEmbed({ context }: Props) {
   const { routes } = useDNAStore();
 
   const route = routes.find((r: any) => r.data?.path === context);
-  const blocks: any[] = route?.data?.blocks || [];
+  const blocks = Array.isArray(route?.data?.blocks) ? route.data.blocks : [];
 
   if (!route) {
     if (process.env.NODE_ENV === 'development') {

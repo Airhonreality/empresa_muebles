@@ -10,8 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'zap name is required' }, { status: 400 });
     }
 
-    const tenantKey = req.headers.get('x-tenant') ?? undefined;
-    const strategy = getStrategy(tenantKey);
+    const strategy = getStrategy();
 
     // 1. Fetch scripts from strategy
     const scripts = await strategy.read('scripts');
