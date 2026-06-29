@@ -6,7 +6,7 @@
  * CAPABILITY: Supports Local Disk and Remote HTTP fetching.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSiloPath } from '@/server/activeProject';
+import { getProjectStorageRoot } from '@/server/activeProject';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -39,7 +39,7 @@ export async function GET(
     /**
      * 🏠 LOCAL MODULE LOADING (Default)
      */
-    const moduleDir = path.join(getSiloPath(), 'modules');
+    const moduleDir = path.join(getProjectStorageRoot(), 'modules');
     const modulePath = path.join(moduleDir, `${name}.js`);
     
     try {

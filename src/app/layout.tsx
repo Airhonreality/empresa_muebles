@@ -19,7 +19,7 @@ import { Toaster }        from "sonner";
 import { AdminGear }               from "@/components/agnostic/admin/AdminGear";
 import { AgnoChat }               from "@/components/agnostic/admin/AgnoChat";
 import { getVaultData }   from "@/core/server/vault";
-import { getSiloPath }    from "@/server/activeProject";
+import { getProjectStorageRoot } from "@/server/activeProject";
 import fs   from "fs/promises";
 import path from "path";
 import { SYSTEM_NS } from "@/lib/agnostic/constants";
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const siloPath     = getSiloPath();
+  const storageRoot  = getProjectStorageRoot();
   const vaultData    = await getVaultData([SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.TOKENS]);
 
   // ── CAPA 1: Tokens CSS (inyectado inline — sin latencia de red) ──────────
@@ -40,14 +40,14 @@ export default async function RootLayout({
   // Se inyecta como <style> en el <head> para evitar FOUC.
   let tokenStyles = "";
   try {
-    const tokensPath = path.join(siloPath, "styles", "tokens.css");
+    const tokensPath = path.join(storageRoot, "styles", "tokens.css");
     tokenStyles = await fs.readFile(tokensPath, "utf-8");
   } catch { /* El satélite aún no tiene tokens → usa defaults del Seed */ }
 
   // ── Manifest (DNA del satélite) ───────────────────────────────────────────
   let dna: Record<string, unknown> = {};
   try {
-    const manifestPath    = path.join(siloPath, "manifest.json");
+    const manifestPath    = path.join(storageRoot, "manifest.json");
     const manifestContent = await fs.readFile(manifestPath, "utf-8");
     dna = JSON.parse(manifestContent.replace(/^﻿/, ""));
   } catch { /* Sin manifest → estrategia local por defecto */ }

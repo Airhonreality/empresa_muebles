@@ -117,7 +117,7 @@ export async function checkSupabase(
   }
 }
 
-export async function checkLocal(siloPath: string): Promise<CheckResult> {
+export async function checkLocal(storageRoot: string): Promise<CheckResult> {
   const id = 'local-strategy';
   const type = 'datastore';
   const time = new Date().toISOString();
@@ -135,10 +135,10 @@ export async function checkLocal(siloPath: string): Promise<CheckResult> {
   }
 
   try {
-    await fs.access(siloPath, fs.constants.W_OK);
+    await fs.access(storageRoot, fs.constants.W_OK);
     return { componentId: id, componentType: type, status: 'pass', time, latency_ms: Date.now() - start };
   } catch {
-    return { componentId: id, componentType: type, status: 'fail', output: `Directorio no escribible: ${siloPath}`, time, latency_ms: Date.now() - start };
+    return { componentId: id, componentType: type, status: 'fail', output: `Directorio no escribible: ${storageRoot}`, time, latency_ms: Date.now() - start };
   }
 }
 

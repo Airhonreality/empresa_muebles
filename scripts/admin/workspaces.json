@@ -1,4 +1,4 @@
-﻿{
+{
     "_comment":  "Paths son relativos a la raÃ­z del engine seed. Agrega una entrada por cada workspace.",
     "workspaces":  [
                        {
@@ -10,6 +10,11 @@
                            "name":  "HUG_WORKS",
                            "path":  "../HUG_WORKS",
                            "branch":  "main"
+                       },
+                       {
+                           "name":  "Airhon_web_site",
+                           "path":  "../Airhon_web_site",
+                           "branch":  "feature/agile-rendering-engine"
                        }
                    ]
 }

@@ -11,10 +11,18 @@ import path from 'path';
 
 const STORAGE_ROOT = path.join(process.cwd(), 'storage');
 
-export function getSiloPath(): string {
+export function getProjectStorageRoot(): string {
   return STORAGE_ROOT;
 }
 
 export function getStorageRoot(): string {
   return STORAGE_ROOT;
+}
+
+/**
+ * @deprecated Runtime tenancy/silo selection was removed. Use
+ * getProjectStorageRoot() or getStorageRoot() for the single fork storage root.
+ */
+export function getSiloPath(): string {
+  return getProjectStorageRoot();
 }

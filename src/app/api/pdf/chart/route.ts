@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-// Requires: npm install chartjs-node-canvas
-// On Windows: also requires node-gyp build tools (npm install --global windows-build-tools)
 export async function POST(req: NextRequest) {
   try {
     const { config, width = 800, height = 400 } = await req.json();
@@ -12,11 +10,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'config is required' }, { status: 400 });
     }
 
-    const { ChartJSNodeCanvas } = await import('chartjs-node-canvas');
+    const { ChartJSNodeCanvas } = await import('chartjs-node-canvas').catch(() => {
+      throw new Error('PDF chart renderer is not installed');
+    });
     const renderer = new ChartJSNodeCanvas({ width, height, backgroundColour: 'white' });
     const buffer = await renderer.renderToBuffer(config);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'no-store',
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error('[/api/pdf/chart]', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const status = err.message === 'PDF chart renderer is not installed' ? 503 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
 }

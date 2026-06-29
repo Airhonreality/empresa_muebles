@@ -4,7 +4,7 @@
  * Sirve el CSS compilado del satélite activo.
  *
  * Archivos que lee (en orden de prioridad):
- *   1. storage/[tenant]/styles/compiled.css  → CSS compilado por el satélite
+ *   1. storage/styles/compiled.css  → CSS compilado del fork
  *      (puede ser output de Tailwind, PostCSS, Bootstrap, vanilla CSS, etc.)
  *   2. Si no existe compiled.css → retorna 204 (No Content), sin error.
  *
@@ -12,7 +12,7 @@
  * este endpoint es sólo para el CSS de utilidades/clases propias del satélite.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSiloPath } from '@/server/activeProject';
+import { getProjectStorageRoot } from '@/server/activeProject';
 import fs   from 'fs/promises';
 import path from 'path';
 
@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const compiledPath = path.join(
-    getSiloPath(),
+    getProjectStorageRoot(),
     'styles',
     'compiled.css',
   );

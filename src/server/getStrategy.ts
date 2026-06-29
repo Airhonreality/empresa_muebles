@@ -12,7 +12,7 @@ import { LocalStrategy }    from './strategies/LocalStrategy';
 import { SupabaseStrategy } from './strategies/SupabaseStrategy';
 import { GitHubStrategy }   from './strategies/GitHubStrategy';
 import { PostgresStrategy } from './strategies/PostgresStrategy';
-import { getSiloPath }      from './activeProject';
+import { getProjectStorageRoot } from './activeProject';
 
 /**
  * Resolves the persistence strategy from environment variables.
@@ -39,5 +39,5 @@ export function getStrategy(): AgnosticBridge {
     console.warn('[getStrategy] WARNING: LocalStrategy on Vercel read-only filesystem. Set GITHUB_REPO or DATABASE_URL for persistent storage.');
   }
 
-  return new LocalStrategy(getSiloPath());
+  return new LocalStrategy(getProjectStorageRoot());
 }
