@@ -15,6 +15,8 @@ export default function LoginPage() {
 
   const [mode, setMode]         = useState<Mode>('login');
   const [loading, setLoading]   = useState(true); // true while checking status
+  const [bootstrapAllowed, setBootstrapAllowed] = useState(false);
+  const [bootstrapBlockers, setBootstrapBlockers] = useState<string[]>([]);
 
   // Login fields
   const [email, setEmail]       = useState('');
@@ -35,7 +37,11 @@ export default function LoginPage() {
       // Check if any users exist to decide mode
       const statusRes = await fetch('/api/auth/status').catch(() => null);
       const status    = statusRes ? await statusRes.json().catch(() => null) : null;
-      if (status && !status.has_users) setMode('bootstrap');
+      if (status && !status.has_users) {
+        setMode('bootstrap');
+        setBootstrapAllowed(status.can_bootstrap_admin !== false);
+        setBootstrapBlockers(Array.isArray(status.blockers) ? status.blockers : []);
+      }
 
       setLoading(false);
     }
@@ -142,15 +148,26 @@ export default function LoginPage() {
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
               <UserPlus size={13} className="text-primary shrink-0 mt-0.5" />
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                No hay usuarios registrados. Crea el primer administrador para habilitar el panel.
+                {bootstrapAllowed
+                  ? 'No hay usuarios registrados. Crea el primer administrador para habilitar el panel.'
+                  : 'El primer administrador se habilita cuando el bootstrap de produccion queda listo.'}
               </p>
             </div>
+            {!bootstrapAllowed && bootstrapBlockers.length > 0 && (
+              <div className="flex flex-col gap-1 p-3 rounded-2xl bg-destructive/5 border border-destructive/10">
+                {bootstrapBlockers.map((blocker, idx) => (
+                  <p key={idx} className="text-[10px] text-muted-foreground leading-relaxed">
+                    {blocker}
+                  </p>
+                ))}
+              </div>
+            )}
             <div className="flex flex-col gap-2">
               <Label htmlFor="bEmail" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email</Label>
               <Input
                 id="bEmail" type="email" placeholder="admin@ejemplo.com"
                 value={bEmail} onChange={e => setBEmail(e.target.value)}
-                disabled={loading} autoFocus className="font-bold text-xs h-10 rounded-xl"
+                disabled={loading || !bootstrapAllowed} autoFocus className="font-bold text-xs h-10 rounded-xl"
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -158,7 +175,7 @@ export default function LoginPage() {
               <Input
                 id="bPass" type="password" placeholder="••••••••"
                 value={bPass} onChange={e => setBPass(e.target.value)}
-                disabled={loading} className="font-bold text-xs h-10 rounded-xl"
+                disabled={loading || !bootstrapAllowed} className="font-bold text-xs h-10 rounded-xl"
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -166,13 +183,13 @@ export default function LoginPage() {
               <Input
                 id="bConfirm" type="password" placeholder="••••••••"
                 value={bConfirm} onChange={e => setBConfirm(e.target.value)}
-                disabled={loading}
+                disabled={loading || !bootstrapAllowed}
                 className={`font-bold text-xs h-10 rounded-xl ${bConfirm && bPass !== bConfirm ? 'border-destructive/50' : ''}`}
               />
             </div>
             <Button
               type="submit"
-              disabled={loading || !bEmail.trim() || bPass.length < 8 || bPass !== bConfirm}
+              disabled={loading || !bootstrapAllowed || !bEmail.trim() || bPass.length < 8 || bPass !== bConfirm}
               className="w-full h-10 font-bold uppercase text-[10px] tracking-widest gap-2 rounded-xl mt-1"
             >
               <UserPlus size={14} />

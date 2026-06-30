@@ -125,10 +125,10 @@ function RelationField({
       onValueChange={(val) => handleFieldChange(field.key, val)}
       required={field.required}
     >
-      <SelectTrigger className="flex-1 rounded-md border-border/30 bg-secondary/5 h-9 font-bold text-xs focus:ring-0 focus:border-primary/40 px-3">
+      <SelectTrigger className="flex-1 border-border/40 bg-secondary/5 font-medium text-xs focus:ring-0 focus:border-primary/40">
         <SelectValue placeholder={isLoading ? 'Cargando...' : 'Seleccionar...'} />
       </SelectTrigger>
-      <SelectContent className="rounded-md border border-border bg-popover shadow-md max-h-60 overflow-y-auto z-[9999]">
+      <SelectContent className="rounded-md border border-border bg-popover max-h-60 overflow-y-auto z-[9999]">
         <div className="p-2 border-b sticky top-0 bg-popover z-50">
           <Input
             placeholder="Buscar..."
@@ -403,7 +403,7 @@ export function AgnosticForm({
   };
 
   const renderGrid = (fieldList: any[]) => (
-    <div className="grid grid-cols-12 gap-x-4 gap-y-4">
+    <div className="ag-form-grid">
       {fieldList.map((field) => {
         const spanMap: Record<string, string> = {
           'full':    'col-span-12',
@@ -459,12 +459,12 @@ export function AgnosticForm({
                   required={field.required} 
                 >
                   <SelectTrigger className={cn(
-                    "rounded-md border-border/30 bg-secondary/5 h-9 font-bold text-xs focus:ring-0 focus:border-primary/40 px-3",
+                    "border-border/40 bg-secondary/5 font-medium text-xs focus:ring-0 focus:border-primary/40",
                     isDerived && "opacity-80 grayscale-[0.5]"
                   )}>
                     <SelectValue placeholder={formData[field.key] || '...'} />
                   </SelectTrigger>
-                  <SelectContent className="rounded-md border border-border bg-popover shadow-md">
+                  <SelectContent className="rounded-md border border-border bg-popover">
                     {field.options
                       ?.filter((opt: any) => (typeof opt === 'object' ? opt.value : opt) !== undefined)
                       .map((opt: any, idx: number) => {
@@ -498,7 +498,7 @@ export function AgnosticForm({
                       variant="outline"
                       size="icon"
                       onClick={() => setRelationModalField(field)}
-                      className="h-9 w-9 shrink-0 rounded-md border-border/30 bg-secondary/5 text-muted-foreground hover:text-primary transition-all duration-300"
+                      className="h-9 w-9 shrink-0 border-border/40 bg-secondary/5 text-muted-foreground hover:text-primary transition-all duration-300"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </Button>
@@ -512,7 +512,7 @@ export function AgnosticForm({
                   readOnly={isDerived || field.readOnly}
                   required={field.required}
                   className={cn(
-                    "rounded-md border-border/30 bg-secondary/5 min-h-[80px] py-2 font-bold text-xs focus:ring-0 focus:border-primary/40 resize-none px-3",
+                    "border-border/40 bg-secondary/5 min-h-[76px] py-2 font-medium text-xs focus:ring-0 focus:border-primary/40 resize-none px-3",
                     isDerived && "cursor-default opacity-80"
                   )}
                 />
@@ -535,7 +535,7 @@ export function AgnosticForm({
                 )
               ) : field.type === 'markdown' ? (
                 isDerived || field.readOnly ? (
-                  <div className="rounded-md border border-border/30 bg-secondary/5 px-3 py-2 min-h-[80px] prose prose-xs prose-neutral dark:prose-invert max-w-none text-xs">
+                  <div className="rounded-md border border-border/40 bg-secondary/5 px-3 py-2 min-h-[76px] prose prose-xs prose-neutral dark:prose-invert max-w-none text-xs">
                     <ReactMarkdown>{String(formData[field.key] || '')}</ReactMarkdown>
                   </div>
                 ) : (
@@ -545,7 +545,7 @@ export function AgnosticForm({
                     onChange={(e) => handleFieldChange(field.key, e.target.value)}
                     required={field.required}
                     placeholder="Texto en markdown... **negrita**, *itálica*, # Título"
-                    className="rounded-md border-border/30 bg-secondary/5 min-h-[100px] py-2 font-mono text-xs focus:ring-0 focus:border-primary/40 resize-y px-3"
+                    className="border-border/40 bg-secondary/5 min-h-[96px] py-2 font-mono text-xs focus:ring-0 focus:border-primary/40 resize-y px-3"
                   />
                 )
               ) : field.type === 'password' ? (
@@ -556,10 +556,10 @@ export function AgnosticForm({
                   onChange={(e) => handleFieldChange(field.key, e.target.value)}
                   required={field.required}
                   autoComplete="new-password"
-                  className="rounded-md border-border/30 bg-secondary/5 h-9 font-mono text-xs focus:ring-0 focus:border-primary/40 px-3"
+                  className="border-border/40 bg-secondary/5 font-mono text-xs focus:ring-0 focus:border-primary/40 px-3"
                 />
               ) : field.type === 'info' ? (
-                <div className="p-4 rounded-xl border border-primary/10 bg-primary/[0.03] space-y-2">
+                <div className="p-3 rounded-lg border border-primary/10 bg-primary/[0.03] space-y-2">
                   <div className="flex items-center gap-2 text-primary">
                     <Info size={14} />
                     <span className="text-[10px] font-black uppercase tracking-widest">{field.label}</span>
@@ -578,7 +578,7 @@ export function AgnosticForm({
                     required={field.required}
                     autoComplete="off"
                     className={cn(
-                      "rounded-md border-border/30 bg-secondary/5 h-9 font-bold text-xs focus:ring-0 focus:border-primary/40 px-3",
+                      "border-border/40 bg-secondary/5 font-medium text-xs focus:ring-0 focus:border-primary/40 px-3",
                       isDerived && "cursor-default opacity-80 font-black text-primary/80"
                     )}
                   />
@@ -593,7 +593,7 @@ export function AgnosticForm({
   return (
     <>
       <Card className={cn(
-        "@container overflow-hidden border border-border/50 bg-card shadow-md transition-all duration-300",
+        "@container ag-panel overflow-hidden transition-all duration-300",
         "flex flex-col",
         className
       )}>
@@ -601,7 +601,7 @@ export function AgnosticForm({
         {!hideHeader && (
           <CardHeader 
             className={cn(
-              "py-4 px-6 border-b bg-muted/50 select-none",
+              "ag-panel-header !flex-row !space-y-0 !p-[var(--ag-panel-padding)] select-none",
               isCollapsible !== false ? "cursor-pointer" : "cursor-default"
             )}
             onClick={isCollapsible !== false ? () => setIsExpanded(!isExpanded) : undefined}
@@ -614,8 +614,8 @@ export function AgnosticForm({
                   <div className="w-1" />
                 )}
                 <div className="space-y-0.5">
-                  <CardTitle className="text-base font-bold tracking-tight">
-                    {title || `Forjar ${schema.name}`}
+                  <CardTitle className="ag-title">
+                    {title || `Editar ${schema.name}`}
                   </CardTitle>
                   {subtitle && (
                     <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
@@ -642,16 +642,16 @@ export function AgnosticForm({
             {/* 🆔 PRO IDENTITY FIELD: Hidden ID anchor */}
             <input type="hidden" name="id" value={activeRecord?.id || ''} />
 
-            <CardContent className="p-6">
+            <CardContent className="ag-panel-content !p-[var(--ag-panel-padding)]">
             {noFieldsAvailable ? (
                <div className="py-12 flex flex-col items-center justify-center gap-4 text-muted-foreground/30">
                   <Box size={40} strokeWidth={1} />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Cámara de Materia Vacía</p>
+                  <p className="ag-label">Sin campos disponibles</p>
                </div>
             ) : (Object.keys(sections).length === 1 && Object.keys(sections)[0] === 'General') || section ? (
               renderGrid(allFields)
             ) : (
-              <div className="space-y-6">
+              <div className="ag-stack">
                 {Object.entries(sections).map(([name, sectionFields]) => (
                   <div key={name} className="space-y-4">
                     <div className="flex items-center gap-3">
@@ -668,7 +668,7 @@ export function AgnosticForm({
           </CardContent>
 
           {!noFieldsAvailable && !effectiveHideSubmit && (
-            <CardFooter className="py-4 px-6 bg-muted/30 border-t flex justify-end">
+            <CardFooter className="ag-panel-footer !p-[var(--ag-panel-padding)] flex justify-end">
               <Button
                 type="submit"
                 size="sm"
@@ -682,7 +682,7 @@ export function AgnosticForm({
                   </>
                 ) : (
                   <>
-                    Sincronizar {section ? section.split('_')[0] : 'Materia'}
+                    Guardar {section ? section.split('_')[0] : 'registro'}
                     <ArrowRight className="w-4 h-4 opacity-40 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
@@ -691,7 +691,7 @@ export function AgnosticForm({
           )}
 
           {!noFieldsAvailable && effectiveHideSubmit && (
-            <CardFooter className="py-2.5 px-6 bg-muted/10 border-t flex justify-end items-center h-10 select-none">
+            <CardFooter className="ag-panel-footer !p-[var(--ag-panel-padding)] flex justify-end items-center h-10 select-none">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all duration-300">
                 {saveStatus === 'saving' && (
                   <span className="text-muted-foreground/60 flex items-center gap-1.5 animate-pulse">

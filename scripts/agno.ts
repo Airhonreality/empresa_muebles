@@ -28,6 +28,18 @@ import readline from 'readline';
 import crypto   from 'crypto';
 import fs       from 'fs/promises';
 import path     from 'path';
+import { generateStorageDocs, type StorageDocKind } from './agno-docs';
+import {
+  printBootstrapDoctor,
+  printBootstrapStatus,
+  printBootstrapVerify,
+  startBootstrapInstall,
+} from './bootstrap-core';
+import {
+  applyRefactorSchema,
+  printRefactorSchemaPlan,
+  printValidateZaps,
+} from './agno-zap-analysis';
 
 const LOG_FILE = path.join(process.cwd(), '.agno-log.jsonl');
 
@@ -1768,6 +1780,41 @@ async function cmdStatus() {
   if (pending.length) pending.forEach((p, i) => console.log(`  ${i + 1}. ${p.desc}`));
 }
 
+async function cmdDocs(args: string[]) {
+  const kind = (args[0] ?? 'all') as StorageDocKind;
+  const allowed = new Set(['schemas', 'zaps', 'routes', 'modules', 'all']);
+  if (!allowed.has(kind)) {
+    console.log('[ERROR] uso: docs schemas|zaps|routes|modules|all');
+    return;
+  }
+  const files = await generateStorageDocs(kind);
+  console.log(`${belt('ESTRUCTURA')} docs ${kind}: ${files.length} archivo(s) generado(s)`);
+  for (const file of files) console.log(`  - ${path.relative(process.cwd(), file)}`);
+}
+
+async function cmdBootstrap(args: string[]) {
+  const sub = args[0] ?? 'status';
+  switch (sub) {
+    case 'doctor': return printBootstrapDoctor();
+    case 'status': return printBootstrapStatus();
+    case 'install': return startBootstrapInstall();
+    case 'resume': return startBootstrapInstall();
+    case 'verify': return printBootstrapVerify();
+    default:
+      console.log('[ERROR] uso: bootstrap install|resume|status|doctor|verify');
+  }
+}
+
+async function cmdRefactorSchema(args: string[]) {
+  const [sub, oldName, newName] = args;
+  if (!sub || !oldName || !newName || !['plan', 'apply'].includes(sub)) {
+    console.log('[ERROR] uso: refactor-schema plan|apply <old_name> <new_name>');
+    return;
+  }
+  if (sub === 'plan') return printRefactorSchemaPlan(oldName, newName);
+  return applyRefactorSchema(oldName, newName);
+}
+
 // ── AYUDA ─────────────────────────────────────────────────────────────────────
 
 function cmdHelp() {
@@ -1874,7 +1921,11 @@ async function dispatch(line: string) {
       if (args[0] === 'write')  return cmdScriptWrite(args.slice(1));
       if (args[0] === 'export') return cmdScriptExport(args.slice(1));
       return cmdScript(args[0]);
-    case 'validate': return cmdValidate();
+    case 'validate':
+      await cmdValidate();
+      if (args.includes('--zaps')) await printValidateZaps();
+      return;
+    case 'validate:zaps': return printValidateZaps();
 
     // Composición inmediata
     case 'add-block':      return cmdAddBlock(args);
@@ -1914,6 +1965,9 @@ async function dispatch(line: string) {
     case 'drop':    return cmdDrop();
     case 'status':  return cmdStatus();
     case 'log':     return cmdLog(args);
+    case 'docs':    return cmdDocs(args);
+    case 'bootstrap': return cmdBootstrap(args);
+    case 'refactor-schema': return cmdRefactorSchema(args);
     case 'help':    return cmdHelp();
 
     default:

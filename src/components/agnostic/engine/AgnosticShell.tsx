@@ -85,7 +85,7 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
         )}
         style={{
           gap:     `${pageLayout.gap ?? 1.5}rem`,
-          padding: paddingToCss(pageLayout.padding) || '2rem',
+          padding: paddingToCss(pageLayout.padding) || 'var(--ag-page-padding)',
         }}
       >
         {blocks.map((block, idx) => (

@@ -20,6 +20,8 @@
 
 # agno activity log — local only, never committed
 .agno-log.jsonl
+.agno/
+/progreso/
 
 # debug
 npm-debug.log*
