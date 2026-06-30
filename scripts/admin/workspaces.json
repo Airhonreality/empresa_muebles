@@ -4,7 +4,7 @@
                        {
                            "name":  "empresa_muebles",
                            "path":  "../empresa_muebles_clone",
-                           "branch":  "main"
+                           "branch":  "dev"
                        },
                        {
                            "name":  "HUG_WORKS",
