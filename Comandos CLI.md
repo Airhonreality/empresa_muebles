@@ -52,6 +52,8 @@ ui <path>                        arbol visual completo
 records <schema> [limit=5]       registros con preview
 script <name>                    codigo de un script
 validate                         valida invariantes
+validate --zaps                  valida invariantes y referencias de zaps
+validate:zaps                    valida namespaces referenciados por zaps
 ```
 
 ## Bloques Y Rutas
@@ -104,6 +106,7 @@ Los scripts viven como registros en `storage/db/scripts.json`. No existen archiv
 script <name>                       ver codigo
 script write <name> --file ruta.js  importar desde archivo
 script export <name> --file ruta.js exportar para editar en IDE
+validate:zaps                       analiza api.query/saveItem/removeItem
 ```
 
 API disponible dentro de un Zap:
@@ -128,6 +131,92 @@ api.dispatchEvent('clipboard', { text })
 ```
 
 Limites del sandbox: timeout 5 segundos, sin `fetch`, `fs`, `process` ni binarios nativos.
+
+## Refactor Semantico
+
+Los cambios de nombre de namespaces deben hacerse con plan previo. No uses reemplazo global manual.
+
+```text
+refactor-schema plan <old_name> <new_name>
+refactor-schema apply <old_name> <new_name>
+```
+
+`plan` muestra los cambios detectados sin escribir archivos.
+
+`apply` ejecuta solo transformaciones conservadoras:
+
+- `schema_definitions.json`: `data.name`, `data.slug` y `context` cuando coinciden exactamente.
+- `page_routes.json`: strings exactos en contexts/configs.
+- `app_navbars.json`: strings exactos cuando el archivo existe.
+- `scripts.json`: literales exactos usados en `api.query`, `api.saveItem`, `api.removeItem` y `api.dispatchEvent`.
+- `storage/db/{old_name}.json`: renombra el archivo si `{new_name}.json` no existe.
+
+No renombra fields ni relaciones como `cotizacion_id -> proyecto_id`; eso requiere un refactor de field explicito.
+
+## Documentacion Agentiva
+
+Estos comandos generan indices versionables en `storage/progreso/`. No reemplazan la fuente canonica en `storage/db/`; solo crean contexto compacto para agentes IA y revisiones humanas.
+
+```text
+docs schemas             genera storage/progreso/arbol_de_schemas.md
+docs zaps                genera storage/progreso/arbol_de_zaps.md
+docs routes              genera storage/progreso/arbol_de_rutas.md
+docs modules             genera storage/progreso/arbol_de_modulos.md
+docs all                 genera todos los arboles y resumen_agentivo.md
+```
+
+Uso recomendado despues de cambios estructurales:
+
+```bash
+npx tsx scripts/agno.ts docs all
+```
+
+Los documentos generados deben mantenerse pequenos:
+
+- schemas: nombre del schema y field keys.
+- zaps: indice, namespaces detectados y eventos dispatch.
+- routes: path, rol requerido y arbol de bloques.
+- modules: archivos TS/TSX especializados, exports, imports y namespaces detectables.
+
+## Bootstrap Produccion
+
+Primera fase del instalador secuencial. Estos comandos son no destructivos y preparan el flujo para desplegar una app gobernable sin crear usuarios fantasma.
+
+```text
+bootstrap install        inicia .agno/bootstrap-state.json local
+bootstrap resume         continua el instalador
+bootstrap status         muestra el estado local del instalador
+bootstrap doctor         diagnostico no destructivo
+bootstrap verify         doctor local + health remoto si PRODUCTION_URL/Netlify estan cargados
+```
+
+El estado local vive en `.agno/bootstrap-state.json` y no se versiona. No debe guardar secretos.
+
+Orden objetivo del instalador:
+
+```text
+preflight local
+github push
+netlify site/env/deploy
+neon DATABASE_URL pooled/serverless
+cloudflare r2
+SESSION_SECRET + API_SECRET_KEY
+migracion storage/db -> postgres
+primer admin en /login
+verify final
+```
+
+El primer usuario admin solo debe habilitarse cuando produccion ya usa la persistencia final. En produccion, `/api/auth/bootstrap` rechaza la creacion del admin si la estrategia activa no es `postgres` o si falta `SESSION_SECRET`.
+
+Las contrasenas de usuarios se guardan como `password_hash` con algoritmo `scrypt`. El login aun acepta registros legacy con `password` en texto plano y los reescribe como hash despues de un login correcto.
+
+Fases siguientes previstas:
+
+```text
+bootstrap admin          abrir /login y esperar creacion del primer admin
+bootstrap dev-db         crear rama dev de Neon desde produccion
+bootstrap migrate        migrar storage/db a Postgres desde CLI
+```
 
 ## Produccion
 

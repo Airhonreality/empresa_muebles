@@ -57,13 +57,13 @@ module.exports = {
   			}
   		},
   		borderRadius: {
-  			sm: 'calc(var(--sat-radius) + 2px)',
-  			DEFAULT: 'calc(var(--sat-radius) + 4px)',
-  			md: 'calc(var(--sat-radius) + 6px)',
-  			lg: 'calc(var(--sat-radius) + 8px)',
-  			xl: 'calc(var(--sat-radius) + 12px)',
-  			'2xl': 'calc(var(--sat-radius) + 20px)',
-  			'3xl': 'calc(var(--sat-radius) + 32px)'
+  			sm: 'var(--ag-radius-sm)',
+  			DEFAULT: 'var(--ag-radius-md)',
+  			md: 'var(--ag-radius-md)',
+  			lg: 'var(--ag-radius-lg)',
+  			xl: 'var(--ag-radius-xl)',
+  			'2xl': 'calc(var(--ag-radius-xl) + 0.25rem)',
+  			'3xl': 'calc(var(--ag-radius-xl) + 0.5rem)'
   		},
   		fontFamily: {
   			sans: [

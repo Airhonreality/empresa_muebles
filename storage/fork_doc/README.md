@@ -1,15 +1,10 @@
 # Fork Documentation
+    - storage\fork_doc\MANIFEST GOAL.MD - Contiene la semilla del proyecto que se debe seguir cómo goal base. 
 
-This folder is reserved for human-facing documentation of a project fork.
+# Arboles de arqutiectura:
+    Se generan autoamticamente con CLI y muestran el estado actual real de los schemas, zaps y rutas del fork.
+    - Arbol de schemas
+    - Arbol de zaps
+    - Arbol de rutas
+Siempre se usa esta infromacion para diagnosicar y tomar decisiones de diseño.
 
-In the seed, it is intentionally empty.
-
-Recommended fork contents:
-
-- domain overview
-- user roles
-- important workflows
-- external service notes
-- deployment notes
-
-Keep operational plans and audits in `storage/progreso/`, not here.

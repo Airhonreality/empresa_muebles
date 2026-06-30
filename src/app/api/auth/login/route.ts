@@ -5,6 +5,7 @@ import { sessionOptions, type SessionData } from '@/lib/agnostic/session';
 import { getStrategy } from '@/server/getStrategy';
 import { EmailPasswordStrategy } from '@/lib/agnostic/auth/EmailPasswordStrategy';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
+import { normalizeUserPasswordData } from '@/lib/agnostic/auth/password';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,6 +22,14 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
+    }
+
+    if (user.metadata?.needs_password_rehash === true) {
+      const existing = Array.isArray(users) ? users.find((u: any) => u.id === user.id) : null;
+      if (existing?.data) {
+        const normalizedData = await normalizeUserPasswordData({ ...existing.data, password });
+        await strategy.write(SYSTEM_NS.USERS, { id: user.id, data: normalizedData });
+      }
     }
 
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);

@@ -4,41 +4,36 @@ This file belongs to the fork layer. Update it in each project fork.
 
 ## Project Identity
 
-Name: Agnostic Seed
+Name: "Agnostic Seed"
 
 Purpose: base seed for schema-driven project forks.
 
 Business domain: none in the seed. Real domain meaning must be added by each fork.
 
-## Fork Context Rules
+# Fork Documentation
+    - storage\fork_doc\MANIFEST GOAL.MD - Contiene la semilla del proyecto que se debe seguir cómo goal base. 
+    - Modelo de diseño de detalle de modulos de fork: (pendiente por incluir)
 
-- Treat `storage/` as the project-owned context root.
-- Treat `storage/db/` as the data contract root.
-- Keep all namespace names in `snake_case`.
-- Keep `block.context`, `schema.data.name`, and `{namespace}.json` aligned.
-- Do not add runtime tenant selection.
-- Do not store loose JavaScript files under `storage/`; zaps live in `storage/db/scripts.json`.
+# Arboles de arqutiectura:
+    Se generan autoamticamente con CLI y muestran el estado actual real de los schemas, zaps y rutas del fork.
+    - Arbol de schemas
+    - Arbol de zaps
+    - Arbol de rutas
+Siempre se usa esta infromacion para diagnosicar y tomar decisiones de diseño.
 
-## Required Reading For Project Work
+## Versionado y Sincronización del Fork
 
-Agents should read these files after this one when they exist:
-
-1. `storage/progreso/current_state.md`
-2. `storage/progreso/INDEX.md`
-3. Files referenced by `storage/progreso/INDEX.md` as active
-
-Do not read every historical note by default.
-
-## Project-Owned Areas
-
-```text
-storage/db/                 data, schemas, routes, scripts
-storage/progreso/           current plans, audits, progress notes
-storage/fork_doc/           human-facing fork documentation
-src/components/specialized/ custom UI blocks
-agnostic.config.ts          custom block registration
-```
-
-## Seed Baseline
-
-The seed starts with no project schemas. A fork should create its own `schema_definitions.json`, `page_routes.json`, and records through `agno` or MCP semantic tools.
+- **Versionado SemVer**: Se maneja independientemente del motor base en el `package.json` del fork. El incremento de versión se realiza manualmente con `npm version [patch|minor|major]` o mediante tags de Git.
+- **Sincronización del Motor (Engine)**: Para importar actualizaciones del repositorio semilla (Agnostic Seed) sin sobrescribir las dependencias locales, se ejecuta:
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File scripts/admin/sync-workspaces.ps1
+  ```
+  O de forma manual:
+  ```bash
+  git fetch upstream
+  git merge upstream/main --no-ff -m "chore: sync engine"
+  ```
+- **Árboles de Arquitectura**: Se compilan dinámicamente con la fecha y hora de ejecución en `storage/progreso/` ejecutando:
+  ```bash
+  npx tsx scripts/agno.ts docs all
+  ```
