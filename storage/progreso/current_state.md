@@ -21,6 +21,17 @@ fork -> owns storage and specialized UI
 - Zaps are records in `storage/db/scripts.json`.
 - Project progress and audits live under `storage/progreso/`.
 - Fork documentation lives under `storage/fork_doc/`.
+- Agent-facing generated docs live under `storage/progreso/`.
+
+## Current CLI Additions
+
+- `npx tsx scripts/agno.ts docs all` generates compact schema, zap, route, module, and agent summary docs.
+- `npx tsx scripts/agno.ts validate:zaps` checks Zap API namespace references against storage schemas/files.
+- `npx tsx scripts/agno.ts refactor-schema plan <old> <new>` previews safe namespace refactors before apply.
+- `npx tsx scripts/agno.ts bootstrap doctor` reports production bootstrap blockers without mutating cloud resources.
+- `npx tsx scripts/agno.ts bootstrap install` initializes local non-versioned bootstrap state in `.agno/bootstrap-state.json`.
+- In production, first admin creation is blocked unless the active persistence strategy is `postgres` and `SESSION_SECRET` exists.
+- User passwords are normalized server-side to `password_hash` using Node `scrypt`; legacy plaintext `password` records are accepted only for login migration.
 
 ## Next Fork Action
 

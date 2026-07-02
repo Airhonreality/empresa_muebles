@@ -238,7 +238,7 @@ export function AgnosticTable({
     <div className="w-full space-y-4">
       {/* 🔍 GLASSMORPHIC DATATABLE SEARCH & ACTION BAR */}
       {searchable !== false && (
-        <div className="flex items-center gap-4 bg-secondary/5 border border-border/30 rounded-xl p-3 shadow-sm animate-in fade-in duration-300">
+        <div className="ag-toolbar animate-in fade-in duration-300">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -257,15 +257,15 @@ export function AgnosticTable({
       )}
 
       {items.length === 0 ? (
-        <div className="py-12 border border-dashed rounded-xl text-center text-xs text-muted-foreground font-bold uppercase tracking-wider">
+        <div className="ag-empty-state text-xs font-bold uppercase tracking-wider">
           No se encontraron registros en esta proyección
         </div>
       ) : (
-        <div className="overflow-x-auto border border-border/50 rounded-xl bg-card shadow-md animate-in fade-in duration-500">
+        <div className="ag-table-shell animate-in fade-in duration-500">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b bg-muted/30">
-                {((schema.fields || []) as any[]).map((field: any) => {
+                {((schema.fields || []) as any[]).map((field: any, fieldIndex: number) => {
                   if (field.key.startsWith('_') || safeBlackout.includes(field.key)) return null;
                   if (safeSwitches.length > 0 && !safeSwitches.includes(field.key)) return null;
                   const isSorted = sortField === field.key;
@@ -273,7 +273,10 @@ export function AgnosticTable({
                     <th 
                       key={field.key} 
                       onClick={() => handleSort(field.key)}
-                      className="p-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors"
+                      className={cn(
+                        "h-9 px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors whitespace-nowrap",
+                        fieldIndex === 0 && "sticky left-0 z-10 bg-muted"
+                      )}
                     >
                       <div className="flex items-center gap-1.5">
                         {field.label}
@@ -290,7 +293,7 @@ export function AgnosticTable({
             <tbody className="divide-y divide-border/20">
               {items.map((item: any, idx: number) => (
                 <tr key={item.id || idx} className="hover:bg-muted/5 transition-colors group/row">
-                  {((schema.fields || []) as any[]).map((field: any) => {
+                  {((schema.fields || []) as any[]).map((field: any, fieldIndex: number) => {
                     if (field.key.startsWith('_') || safeBlackout.includes(field.key)) return null;
                     if (safeSwitches.length > 0 && !safeSwitches.includes(field.key)) return null;
                     
@@ -305,7 +308,10 @@ export function AgnosticTable({
                     const isEditable = (intent === 'create' || intent === 'edit') && !isDerived;
 
                     return (
-                      <td key={field.key} className="p-1 text-xs font-semibold text-foreground truncate max-w-[200px] min-w-[120px]">
+                      <td key={field.key} className={cn(
+                        "h-[var(--ag-table-row)] p-1 text-xs font-semibold text-foreground truncate max-w-[220px] min-w-[120px]",
+                        fieldIndex === 0 && "sticky left-0 z-[5] bg-card"
+                      )}>
                         {isEditable ? (
                           field.type === 'relation' ? (
                             <RelationCell

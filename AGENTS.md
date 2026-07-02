@@ -61,6 +61,13 @@ Never reintroduce:
 - loose `.js` scripts under storage
 - eager SSR relation catalog loading
 
+## Encoding Contract
+
+- Persist text as UTF-8 without BOM.
+- Read and write text with explicit UTF-8 encoding in scripts.
+- Run `npm run validate:encoding` before syncing forks or committing text registry files.
+- If a file looks corrupted only in PowerShell output, verify bytes before rewriting it.
+
 ## Required Context Loading
 
 After reading this file, agents must check whether these fork files exist:

@@ -32,6 +32,7 @@ import { getStrategy } from '@/server/getStrategy';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { appendLog } from '@/lib/agnostic/activity-log';
 import { triggerSchemaCompile } from '@/lib/agnostic/schema-compiler-trigger';
+import { normalizeUserPasswordData } from '@/lib/agnostic/auth/password';
 
 // ─── ACTION SCHEMAS ─────────────────────────────────────────────────────────
 
@@ -135,10 +136,13 @@ export async function POST(req: NextRequest) {
     if (action === 'WRITE') {
       const raw = body.record;
       if (!raw) return NextResponse.json({ success: false, error: 'record required' }, { status: 400 });
-      const recordPayload = { id: raw.id, data: raw.data, _meta: raw._meta };
-      writeSchema.parse({ action: 'WRITE', namespace, record: { id: raw.id, data: raw.data, _meta: raw._meta } });
+      const normalizedData = namespace === SYSTEM_NS.USERS
+        ? await normalizeUserPasswordData(raw.data ?? {})
+        : raw.data;
+      const recordPayload = { id: raw.id, data: normalizedData, _meta: raw._meta };
+      writeSchema.parse({ action: 'WRITE', namespace, record: { id: raw.id, data: normalizedData, _meta: raw._meta } });
       const savedRecord = await strategy.write(namespace, recordPayload);
-      const titleField = raw.data?.name ?? raw.data?.title ?? raw.data?.path ?? raw.id ?? '';
+      const titleField = normalizedData?.name ?? normalizedData?.title ?? normalizedData?.path ?? raw.id ?? '';
       appendLog({ src: 'vault', action: 'WRITE', ns: namespace, id: raw.id, summary: `${namespace} › ${String(titleField).slice(0, 60)}` });
       // When schemas change, regenerate TypeScript contracts in background.
       // Transparent to the user — happens automatically, never blocks the response.

@@ -34,8 +34,6 @@ const SEMANTIC_RADIUS = [
   { label: 'SM',   value: 'rounded-sm'   },
   { label: 'MD',   value: 'rounded-md'   },
   { label: 'LG',   value: 'rounded-lg'   },
-  { label: 'XL',   value: 'rounded-xl'   },
-  { label: '2XL',  value: 'rounded-2xl'  },
   { label: 'Full', value: 'rounded-full' },
 ];
 
@@ -44,8 +42,6 @@ const SEMANTIC_SHADOW = [
   { label: 'XS',   value: 'shadow-sm'  },
   { label: 'SM',   value: 'shadow'     },
   { label: 'MD',   value: 'shadow-md'  },
-  { label: 'LG',   value: 'shadow-lg'  },
-  { label: 'XL',   value: 'shadow-xl'  },
 ];
 
 const SEMANTIC_BORDER = [

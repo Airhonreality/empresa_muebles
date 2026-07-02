@@ -54,10 +54,10 @@ export function AgnosticInput({
   };
 
   const inputStyles = cn(
-    "rounded-xl border-border bg-secondary/10 font-bold text-sm focus:ring-0 transition-all",
+    "rounded-md border-border bg-secondary/10 font-medium text-sm focus:ring-0 transition-all",
     ghost && "border-none bg-transparent shadow-none px-0 h-auto",
-    !ghost && "h-14 px-5",
-    fieldType === 'text' && "min-h-[140px] p-4",
+    !ghost && "h-9 px-3",
+    fieldType === 'text' && "min-h-[112px] p-3",
     className
   );
 
@@ -93,4 +93,3 @@ export function AgnosticInput({
     </div>
   );
 }
-

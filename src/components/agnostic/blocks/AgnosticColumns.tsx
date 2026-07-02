@@ -16,17 +16,20 @@ export function AgnosticColumns({ blocks = [], visual, record }: Props) {
   const cols = Number(visual?.cols ?? 2);
   const gap  = Number(visual?.gap  ?? 6);
 
-  const colMap: Record<number, string> = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-1 md:grid-cols-2',
-    3: 'grid-cols-1 md:grid-cols-3',
-    4: 'grid-cols-2 md:grid-cols-4',
+  const minByCols: Record<number, string> = {
+    1: '100%',
+    2: 'min(100%, 24rem)',
+    3: 'min(100%, 18rem)',
+    4: 'min(100%, 14rem)',
   };
 
   return (
     <div
-      className={`grid w-full ${colMap[cols] || colMap[2]}`}
-      style={{ gap: `${gap * 0.25}rem` }}
+      className="@container grid w-full"
+      style={{
+        gap: `${gap * 0.25}rem`,
+        gridTemplateColumns: `repeat(auto-fit, minmax(${minByCols[cols] || minByCols[2]}, 1fr))`,
+      }}
     >
       {blocks.map((block, i) => (
         <AgnosticRenderer key={block.id || i} block={block} record={record} />

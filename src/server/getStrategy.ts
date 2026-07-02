@@ -22,17 +22,19 @@ import { getProjectStorageRoot } from './activeProject';
  *   Neon, Supabase (direct Postgres), Railway, Render, etc.
  */
 export function getStrategy(): AgnosticBridge {
-  if (process.env.GITHUB_REPO) {
-    const [owner, repo] = process.env.GITHUB_REPO.split('/');
+  const strategyName = getStrategyName();
+
+  if (strategyName === 'github') {
+    const [owner, repo] = process.env.GITHUB_REPO!.split('/');
     return new GitHubStrategy(owner, repo, undefined, process.env.GITHUB_BRANCH ?? 'main');
   }
 
-  if (process.env.DATABASE_URL) {
-    return new PostgresStrategy(process.env.DATABASE_URL);
+  if (strategyName === 'postgres') {
+    return new PostgresStrategy(process.env.DATABASE_URL!);
   }
 
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return new SupabaseStrategy(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  if (strategyName === 'supabase') {
+    return new SupabaseStrategy(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
   }
 
   if (process.env.VERCEL && process.env.NOW_REGION) {
@@ -40,4 +42,11 @@ export function getStrategy(): AgnosticBridge {
   }
 
   return new LocalStrategy(getProjectStorageRoot());
+}
+
+export function getStrategyName(): 'github' | 'postgres' | 'supabase' | 'local' {
+  if (process.env.GITHUB_REPO) return 'github';
+  if (process.env.DATABASE_URL) return 'postgres';
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) return 'supabase';
+  return 'local';
 }

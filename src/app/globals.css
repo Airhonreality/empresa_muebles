@@ -23,7 +23,7 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 28 45% 45%;
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* 🛰️ Default Satellite Fallback Variables (Delegated to Core Shadcn UI tokens) */
     --sat-bg:             hsl(var(--background));
@@ -46,6 +46,29 @@
     
     --sat-destructive:    hsl(var(--destructive));
     --sat-destructive-fg: hsl(var(--destructive-foreground));
+
+    --ag-radius-xs:       max(0.1875rem, calc(var(--sat-radius) - 0.25rem));
+    --ag-radius-sm:       max(0.25rem, calc(var(--sat-radius) - 0.125rem));
+    --ag-radius-md:       var(--sat-radius);
+    --ag-radius-lg:       calc(var(--sat-radius) + 0.125rem);
+    --ag-radius-xl:       calc(var(--sat-radius) + 0.25rem);
+
+    --ag-font-label:      0.6875rem;
+    --ag-font-caption:    0.75rem;
+    --ag-font-body:       0.8125rem;
+    --ag-font-title:      0.9375rem;
+    --ag-font-heading:    1.125rem;
+
+    --ag-control-height:  2.25rem;
+    --ag-touch-target:    2.75rem;
+    --ag-table-row:       2.375rem;
+    --ag-panel-padding:   clamp(0.875rem, calc(0.761rem + 0.57vw), 1.125rem);
+    --ag-section-gap:     clamp(0.875rem, calc(0.647rem + 1.14vw), 1.375rem);
+    --ag-page-padding:    clamp(1rem, calc(0.545rem + 2.27vw), 2rem);
+    --ag-card-min:        18rem;
+    --ag-content-width:   72rem;
+    --ag-shadow-panel:    0 1px 2px hsl(var(--foreground) / 0.04);
+    --ag-shadow-popover:  0 8px 24px hsl(var(--foreground) / 0.08);
   }
 
   .dark {
@@ -81,6 +104,125 @@
 }
 
 @layer components {
+  .ag-panel {
+    border: 1px solid hsl(var(--border) / 0.72);
+    border-radius: var(--ag-radius-lg);
+    background: var(--sat-card);
+    box-shadow: var(--ag-shadow-panel);
+  }
+
+  .ag-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-bottom: 1px solid hsl(var(--border) / 0.55);
+    padding: 0.75rem var(--ag-panel-padding);
+    background: hsl(var(--muted) / 0.22);
+  }
+
+  .ag-panel-content {
+    padding: var(--ag-panel-padding);
+  }
+
+  .ag-panel-footer {
+    border-top: 1px solid hsl(var(--border) / 0.55);
+    padding: 0.75rem var(--ag-panel-padding);
+    background: hsl(var(--muted) / 0.14);
+  }
+
+  .ag-title {
+    font-size: var(--ag-font-title);
+    font-weight: 650;
+    line-height: 1.35;
+    letter-spacing: 0;
+  }
+
+  .ag-heading {
+    font-size: var(--ag-font-heading);
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .ag-label {
+    font-size: var(--ag-font-label);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .ag-caption {
+    font-size: var(--ag-font-caption);
+    line-height: 1.4;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .ag-control {
+    min-height: var(--ag-control-height);
+    border-radius: var(--ag-radius-md);
+    font-size: var(--ag-font-body);
+  }
+
+  .ag-form-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 1rem;
+    row-gap: 0.875rem;
+  }
+
+  .ag-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ag-card-min)), 1fr));
+    gap: var(--ag-section-gap);
+  }
+
+  .ag-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ag-section-gap);
+  }
+
+  .ag-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid hsl(var(--border) / 0.55);
+    border-radius: var(--ag-radius-lg);
+    background: hsl(var(--secondary) / 0.18);
+    padding: 0.625rem;
+    box-shadow: var(--ag-shadow-panel);
+  }
+
+  .ag-table-shell {
+    overflow-x: auto;
+    border: 1px solid hsl(var(--border) / 0.72);
+    border-radius: var(--ag-radius-lg);
+    background: var(--sat-card);
+    box-shadow: var(--ag-shadow-panel);
+  }
+
+  .ag-empty-state {
+    display: flex;
+    min-height: 8rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    border: 1px dashed hsl(var(--border) / 0.8);
+    border-radius: var(--ag-radius-lg);
+    color: hsl(var(--muted-foreground));
+    text-align: center;
+  }
+
+  @media (pointer: coarse) {
+    .ag-control {
+      min-height: var(--ag-touch-target);
+    }
+  }
+
   /* 📜 CUSTOM SCROLLBAR */
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;

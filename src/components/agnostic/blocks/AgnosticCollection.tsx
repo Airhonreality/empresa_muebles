@@ -133,8 +133,8 @@ function InlineGroupedCard({
   };
 
   return (
-    <Card className="group overflow-hidden border bg-muted/10 transition-all duration-300">
-      <CardHeader className="p-4 border-b flex flex-col gap-4 bg-muted/30">
+    <Card className="ag-panel group overflow-hidden bg-muted/10 transition-all duration-300">
+      <CardHeader className="ag-panel-header !flex-col !items-stretch !space-y-0 !p-[var(--ag-panel-padding)] gap-3 bg-muted/20">
         <div className="flex items-center justify-between w-full">
           <Input
             defaultValue={groupName}
@@ -268,7 +268,7 @@ function InlineGroupedCard({
                   </div>
                 ) : (
                   <Button variant="ghost" size="sm" onClick={() => setIsAddingSegment(true)} className="h-8 text-[10px] uppercase font-bold text-muted-foreground">
-                    <Plus className="w-3 h-3 mr-1" /> Añadir
+                    <Plus className="w-3 h-3 mr-1" /> Agregar
                   </Button>
                 )}
               </div>
@@ -278,7 +278,7 @@ function InlineGroupedCard({
       </CardHeader>
 
       {isExpanded && activeItem && (
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="ag-panel-content !p-[var(--ag-panel-padding)] space-y-4">
           {((blocks && blocks.length > 0) ? blocks : (activeProjection?.blocks || [])).map((subBlock: any, bIdx: number) => {
             let resolvedParentKey = subBlock.parent_key || subBlock.config?.parent_key;
             if (!resolvedParentKey) {
@@ -452,14 +452,14 @@ export function AgnosticCollection({
   };
 
   return (
-    <div className={cn("@container w-full space-y-6 animate-in fade-in duration-700", className)}>
+    <div className={cn("@container w-full ag-stack animate-in fade-in duration-700", className)}>
       {/* HEADER DE LA COLECCIÓN */}
       <div 
         className={cn("flex items-center justify-between group/header border-b pb-4", effectiveIsCollapsible ? "cursor-pointer" : "cursor-default")} 
         onClick={effectiveIsCollapsible ? () => setIsExpanded(!isExpanded) : undefined}
       >
         <div className="flex items-center gap-4">
-           <div className="p-2 bg-muted rounded-lg text-primary">
+           <div className="p-1.5 bg-muted rounded-md text-primary">
               {React.createElement(getModuleIcon('collection'), { size: 20 })}
            </div>
            <div className="space-y-0.5">
@@ -467,7 +467,7 @@ export function AgnosticCollection({
                {effectiveIsCollapsible && (
                  <ChevronRight className={cn("w-4 h-4 transition-transform duration-300 text-muted-foreground", isExpanded && "rotate-90 text-primary")} />
                )}
-               <h2 className="text-2xl font-bold tracking-tight">{title || schema.name || 'Colección'}</h2>
+               <h2 className="ag-heading">{title || schema.name || 'Colección'}</h2>
              </div>
              {description && (
                <p className={cn("text-[10px] font-bold text-muted-foreground uppercase tracking-wider", effectiveIsCollapsible ? "ml-7" : "ml-0")}>
@@ -485,14 +485,14 @@ export function AgnosticCollection({
               className="h-8 px-4 rounded-md font-bold text-[10px] uppercase tracking-wider gap-2"
             >
               <Plus className="w-4 h-4" />
-              Añadir {singular || schema.name?.replace(/_/g, ' ') || context || 'Materia'}
+              Agregar {singular || schema.name?.replace(/_/g, ' ') || context || 'registro'}
             </Button>
           )}
         </div>
       </div>
 
       {isExpanded && (
-        <div className="animate-in slide-in-from-top-2 duration-300 space-y-6">
+        <div className="animate-in slide-in-from-top-2 duration-300 ag-stack">
           
           {/* 🧩 SEGMENT SELECTOR GLOBAL (SOLO SI NO HAY AGRUPACIÓN ACTIVA) */}
           {segmentation_key && segmentation_strategy !== 'none' && !group_by_key && (
@@ -566,7 +566,7 @@ export function AgnosticCollection({
               materiaStore={materiaStore}
             />
           ) : group_by_key ? (
-            <div className="flex flex-col gap-6">
+            <div className="ag-stack">
               {(() => {
                 const groupsMap = new Map<string, any[]>();
                 filteredAndSortedItems
@@ -603,8 +603,8 @@ export function AgnosticCollection({
             // GRID / STACK DEFAULT LAYOUT
             <div className={cn(
               view === 'card_grid' 
-                ? "grid grid-cols-1 @md:grid-cols-2 @xl:grid-cols-3 gap-6" 
-                : "flex flex-col gap-6"
+                ? "ag-card-grid" 
+                : "ag-stack"
             )}>
               {filteredAndSortedItems
                 .filter((item: any) => !item.data.visibility_whitelist || (user && item.data.visibility_whitelist.includes(user.role)))
@@ -613,7 +613,7 @@ export function AgnosticCollection({
                     "group overflow-hidden border transition-all duration-300",
                     view === 'editor_stack' ? "bg-muted/10" : "hover:border-primary/50 shadow-sm"
                   )}>
-                    <CardHeader className="p-4 border-b flex flex-col gap-4 bg-muted/30">
+                    <CardHeader className="ag-panel-header !flex-col !items-stretch !space-y-0 !p-[var(--ag-panel-padding)] gap-3 bg-muted/20">
                       <div className="flex items-center justify-between w-full">
                         {(() => {
                           const titleKey = activeProjection?.title || 
@@ -650,7 +650,7 @@ export function AgnosticCollection({
                       </div>
                     </CardHeader>
 
-                    <CardContent className="p-4 space-y-4">
+                    <CardContent className="ag-panel-content !p-[var(--ag-panel-padding)] space-y-4">
                       {(() => {
                         const blockList = (blocks && blocks.length > 0) ? blocks : (activeProjection?.blocks || []);
                         return blockList.length > 0 ? (
