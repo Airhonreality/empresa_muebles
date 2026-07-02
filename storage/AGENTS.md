@@ -10,6 +10,12 @@ Purpose: base seed for schema-driven project forks.
 
 Business domain: none in the seed. Real domain meaning must be added by each fork.
 
+## Encoding Contract
+
+- Use UTF-8 without BOM for persisted text.
+- Prefer explicit UTF-8 read and write calls in fork scripts.
+- Validate encoding before propagating shared registry files across forks.
+
 # Fork Documentation
     - storage\fork_doc\MANIFEST GOAL.MD - Contiene la semilla del proyecto que se debe seguir cómo goal base. 
     - Modelo de diseño de detalle de modulos de fork: (pendiente por incluir)

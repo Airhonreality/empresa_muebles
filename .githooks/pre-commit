@@ -1,5 +1,6 @@
 #!/bin/sh
-# Agnostic Seed — pre-commit hook
-# Validates storage/ JSON before every commit.
-# Installed automatically by: npm install  (via "prepare" script in package.json)
+# Agnostic Seed - pre-commit hook
+# Validates storage/ JSON and text encoding before every commit.
+# Installed automatically by: npm install (via "prepare" script in package.json)
 node scripts/validate-storage.mjs
+node scripts/validate-text-encoding.mjs
