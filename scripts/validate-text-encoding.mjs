@@ -10,6 +10,7 @@
  *
  * Usage:
  *   node scripts/validate-text-encoding.mjs
+ *   node scripts/validate-text-encoding.mjs --repo path/to/repo
  *   node scripts/validate-text-encoding.mjs --staged
  *   node scripts/validate-text-encoding.mjs storage/db/page_routes.json scripts/admin/workspaces.json
  */
@@ -21,6 +22,11 @@ import path from 'path';
 const args = process.argv.slice(2).filter(Boolean);
 const stagedMode = args.includes('--staged');
 const explicitFiles = args.filter(arg => arg !== '--staged');
+const repoFlagIndex = explicitFiles.indexOf('--repo');
+const repoRoot = repoFlagIndex >= 0 ? explicitFiles[repoFlagIndex + 1] : process.cwd();
+const repoFiles = repoFlagIndex >= 0
+  ? explicitFiles.filter((_, index) => index !== repoFlagIndex && index !== repoFlagIndex + 1)
+  : explicitFiles;
 
 const TEXT_EXTENSIONS = new Set([
   '.md', '.txt', '.json', '.jsonc', '.json5',
@@ -57,7 +63,7 @@ function isTextFile(filePath) {
 }
 
 function getFilesFromGitIndex() {
-  const output = execSync('git diff --cached --name-only', { encoding: 'utf8' });
+  const output = execSync('git diff --cached --name-only', { encoding: 'utf8', cwd: repoRoot });
   return output
     .split(/\r?\n/)
     .map(line => line.trim())
@@ -66,7 +72,7 @@ function getFilesFromGitIndex() {
 }
 
 function getTrackedFiles() {
-  const output = execSync('git ls-files -z', { encoding: 'utf8' });
+  const output = execSync('git ls-files -z', { encoding: 'utf8', cwd: repoRoot });
   return output
     .split('\0')
     .map(line => line.trim())
@@ -100,7 +106,7 @@ function findMojibakeLines(text) {
 }
 
 const files = explicitFiles.length > 0
-  ? explicitFiles
+  ? repoFiles
   : stagedMode
     ? getFilesFromGitIndex()
     : getTrackedFiles();
