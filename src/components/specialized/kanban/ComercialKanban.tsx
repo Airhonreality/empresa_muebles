@@ -95,47 +95,50 @@ export default function ComercialKanban({ records }: BlockProps) {
 
   if (isLoading) {
     return (
-      <div className="flex gap-3">
-        {STAGES.map(s => (
-          <div key={s.value} className="w-[272px] shrink-0">
-            <Skeleton className="h-10 w-full rounded-t-xl" />
-            <div className="flex flex-col gap-2 p-2 mt-0.5">
-              <Skeleton className="h-24 w-full rounded-lg" />
-              <Skeleton className="h-16 w-full rounded-lg" />
-            </div>
-          </div>
-        ))}
+      <div className="flex flex-col gap-4 p-6 bg-stone-50/50">
+        <Skeleton className="h-12 w-full rounded-xl" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-24 w-full rounded-xl" />
       </div>
     )
   }
 
   return (
-    <KanbanCanvas
-      records={localProyectos}
-      stages={STAGES}
-      stageKey="estado"
-      defaultStage="activa"
-      onMoveCard={handleMove}
-      renderCard={(record, stage, onMove, nextStage) => {
-        const cot     = record as unknown as ProyectosRecord
-        const client  = clientMap[(cot.data.cliente_id ?? '') as string]
-        const contrato = contratoMap[cot.id]
-        const abonos  = contrato ? (abonosMap[contrato.id] ?? []) : []
-        const espacios = espaciosByCot[cot.id] ?? []
-        return (
-          <ComercialCard
-            record={record}
-            stage={stage}
-            onMove={onMove}
-            nextStage={nextStage}
-            allStages={STAGES}
-            client={client}
-            contrato={contrato}
-            abonos={abonos}
-            espacios={espacios}
-          />
-        )
-      }}
-    />
+    <div className="flex flex-col w-full h-full bg-stone-50/20 p-6 rounded-xl border border-stone-200/40">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-stone-850 tracking-tight">Centro Comercial CRM</h2>
+        <p className="text-xs text-stone-400 mt-0.5">Seguimiento de leads, propuestas, firma de contratos y abonos del cliente.</p>
+      </div>
+
+      <KanbanCanvas
+        records={localProyectos}
+        stages={STAGES}
+        stageKey="estado"
+        defaultStage="activa"
+        onMoveCard={handleMove}
+        renderCard={(record, stage, onMove, nextStage) => {
+          const cot     = record as unknown as ProyectosRecord
+          const client  = clientMap[(cot.data.cliente_id ?? '') as string]
+          const contrato = contratoMap[cot.id]
+          const abonos  = contrato ? (abonosMap[contrato.id] ?? []) : []
+          const espacios = espaciosByCot[cot.id] ?? []
+          return (
+            <ComercialCard
+              record={record}
+              stage={stage}
+              onMove={onMove}
+              nextStage={nextStage}
+              allStages={STAGES}
+              client={client}
+              contrato={contrato}
+              abonos={abonos}
+              espacios={espacios}
+            />
+          )
+        }}
+      />
+    </div>
   )
 }
+

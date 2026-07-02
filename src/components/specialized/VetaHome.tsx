@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import type { BlockProps } from 'packages/core/src/types'
+import type { BlockProps } from '@agnostic/core'
 import Link from 'next/link'
 import VetaHeader from './VetaHeader'
 import VetaFooter from './VetaFooter'

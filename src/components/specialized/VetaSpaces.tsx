@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useMemo } from 'react'
-import type { BlockProps } from 'packages/core/src/types'
+import type { BlockProps } from '@agnostic/core'
 import type { EspacioVariantesRecord } from '@/generated/agnostic-schemas'
 import Link from 'next/link'
 import VetaHeader from './VetaHeader'
@@ -10,7 +10,7 @@ import { ArrowRight, Compass, Filter, Sparkles, Layout, Ruler, Award, AlertCircl
 export default function VetaSpaces({ block = {}, records = [], api }: Partial<BlockProps>) {
   const [activeFilter, setActiveFilter] = useState<string>('todos')
 
-  const typedRecords = records as EspacioVariantesRecord[]
+  const typedRecords = records as unknown as EspacioVariantesRecord[]
   
   // Extract and format portfolio spaces loaded dynamically from the Database strategy
   const portfolioItems = useMemo(() => {

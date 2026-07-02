@@ -50,8 +50,10 @@ async function zapCall(zap: string, payload: Record<string, unknown>) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ zap, payload }),
   })
-  const { events = [] } = await res.json()
-  await processEvents(events, useMateriaStore.getState().updateItem)
+  if (!res.ok) throw new Error('Error en el servidor')
+  const data = await res.json()
+  if (!data.success) throw new Error(data.error || 'Error en la ejecución del Zap')
+  await processEvents(data.events || [], useMateriaStore.getState().updateItem)
 }
 
 // ─── AbonoForm — panel inline para registrar un abono ────────────────────────
@@ -92,8 +94,7 @@ function AbonoForm({
         verificado: false,
       })
       useMateriaStore.getState().updateItem('abonos_contrato', saved)
-
-      await zapCall('registrar_abono_y_activar', { record: saved })
+      toast.success('Abono registrado. Pendiente de verificación por finanzas.')
       onDone()
     } catch {
       toast.error('Error al registrar el abono.')
@@ -179,8 +180,22 @@ function CotizacionCard({
   onOpenCanvas: (cot: ProyectosRecord) => void
 }) {
   const [showAbono, setShowAbono] = useState(false)
+  const [sendingProduction, setSendingProduction] = useState(false)
   const estado = (cotizacion.data.estado ?? 'activa') as CotEstado
   const puedeAbono = estado === 'en_contrato' || estado === 'pre_produccion'
+  const puedeEnviarProduccion = estado === 'en_contrato' || estado === 'pre_produccion'
+
+  const handleSendToProduction = async () => {
+    setSendingProduction(true)
+    try {
+      await zapCall('zap_activar_produccion', { record: cotizacion })
+      toast.success('Proyecto enviado a producción y contrato firmado.')
+    } catch (err: any) {
+      toast.error(err.message || 'Error al enviar el proyecto a producción.')
+    } finally {
+      setSendingProduction(false)
+    }
+  }
 
   return (
     <div>
@@ -201,7 +216,19 @@ function CotizacionCard({
               </p>
             )}
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+            {puedeEnviarProduccion && contrato && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-green-500 hover:bg-green-50/50 text-green-700 font-semibold text-xs px-2.5 h-8 animate-pulse hover:animate-none"
+                onClick={handleSendToProduction}
+                disabled={sendingProduction}
+              >
+                {sendingProduction ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                A Producción
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

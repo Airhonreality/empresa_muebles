@@ -15,8 +15,8 @@ function safeEncodeURI(url) {
 
 api.notify.success("Generando Layout Premium Simplificado...");
 
-const cotizaciones = await api.query("cotizaciones");
-const activeCotizacion = cotizaciones.find(c => c.id === activeRecord.id);
+const proyectos = await api.query("proyectos");
+const activeCotizacion = proyectos.find(c => c.id === activeRecord.id);
 
 if (!activeCotizacion) {
   api.notify.error("No se encontró el registro de la cotización activa.");
@@ -47,7 +47,7 @@ const RATE_INSTALL = Number(installService.precio_publico);
 
 // 1. Group items by variants and spaces (excluding visible_pdf === false)
 const mySpaces = espacioVariantes
-  .filter(ev => ev.cotizacion_id === activeCotizacion.id && ev.visible_pdf !== false)
+  .filter(ev => ev.proyecto_id === activeCotizacion.id && ev.visible_pdf !== false)
   .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0));
 
 // Resolve all variant names present in this quote (e.g. "Inicial", etc.)

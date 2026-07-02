@@ -5,7 +5,7 @@ if (!cotizacion?.id) {
 }
 
 const existingContratos = await api.query('contratos');
-const existing = existingContratos.find(c => c.cotizacion_id === cotizacion.id);
+const existing = existingContratos.find(c => c.proyecto_id === cotizacion.id);
 
 const clientes = await api.query('clientes');
 const client = clientes.find(c => c.id === cotizacion.cliente_id);
@@ -14,7 +14,7 @@ const espacioVariantes = await api.query('espacio_variantes');
 const itemsVariante = await api.query('items_variante');
 const productosCatalogo = await api.query('productos_catalogo');
 
-const mySpaces = espacioVariantes.filter(ev => ev.cotizacion_id === cotizacion.id && ev.activa);
+const mySpaces = espacioVariantes.filter(ev => ev.proyecto_id === cotizacion.id && ev.activa);
 if (!mySpaces.length) {
   api.notify.error('No hay espacios con variante activa en esta cotización. Activa al menos una variante primero.');
   return;
@@ -90,7 +90,7 @@ const contratoId = existing ? existing.id : 'con_' + Date.now();
 const savedContrato = await api.saveItem('contratos', {
   id: contratoId,
   data: {
-    cotizacion_id: cotizacion.id,
+    proyecto_id: cotizacion.id,
     codigo_contrato: codigo,
     fecha_contrato: cForm.fecha_contrato || (existing?.fecha_contrato || new Date().toISOString().split('T')[0]),
     contratante_domicilio: clientDomicilio,
@@ -109,7 +109,7 @@ const savedContrato = await api.saveItem('contratos', {
   }
 });
 
-await api.saveItem('cotizaciones', {
+await api.saveItem('proyectos', {
   id: cotizacion.id,
   data: {
     ...cotizacion,

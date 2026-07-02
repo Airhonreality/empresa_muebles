@@ -1,6 +1,6 @@
 # Resumen Agentivo
 
-Generated: 2026-06-30T17:55:32.676Z
+Generated: 2026-07-02T02:07:05.876Z
 Source: storage/docs/*.md
 
 > Documento generado por `agno docs`. No es fuente canonica; la fuente canonica sigue en `storage/db/`.

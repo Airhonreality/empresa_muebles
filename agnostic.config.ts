@@ -49,6 +49,11 @@ export default defineConfig({
     veta_agendar:      () => import('./src/components/specialized/VetaAgendar'),
     workspace_switcher:() => import('./src/components/specialized/WorkspaceSwitcher'),
     widget_armado_orden_compra: () => import('./src/components/specialized/WidgetArmadoOrdenCompra'),
+    equipo_directory:  () => import('./src/components/specialized/equipo/EquipoDirectory'),
+    proveedores_directory: () => import('./src/components/specialized/compras/ProveedoresDirectory'),
+    catalogo_manager:  () => import('./src/components/specialized/compras/CatalogoManager'),
+    user_profile:      () => import('./src/components/specialized/perfil/UserProfile'),
+    finanzas_shell:             () => import('./src/components/specialized/finanzas/FinanzasShell'),
   },
 
   features: {

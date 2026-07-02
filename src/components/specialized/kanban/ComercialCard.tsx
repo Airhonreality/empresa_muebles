@@ -1,15 +1,14 @@
 'use client'
-import { useState } from 'react'
-import { Card } from '@/components/ui/card'
+import { useState, useMemo } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronRight, DollarSign, LayoutDashboard, Loader2 } from 'lucide-react'
+import { ChevronDown, DollarSign, LayoutDashboard, Loader2, FileText, Play, CheckCircle2 } from 'lucide-react'
 import type { KanbanStage, KanbanRecord } from './KanbanCanvas'
 import { STAGE_COLORS } from './KanbanCanvas'
 import type {
@@ -18,6 +17,7 @@ import type {
 } from '@/generated/agnostic-schemas'
 import { useMateriaStore } from '@/lib/agnostic/store'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
+
 const fmt = (v: number) =>
   '$' + v.toLocaleString('es-CO', { minimumFractionDigits: 0 }) + ' COP'
 
@@ -43,7 +43,6 @@ async function zapCall(zap: string, payload: Record<string, unknown>) {
 }
 
 // ─── Inline abono form ────────────────────────────────────────────────────────
-
 function AbonoPanel({
   contrato,
   onDone,
@@ -82,6 +81,7 @@ function AbonoPanel({
       })
       useMateriaStore.getState().updateItem('abonos_contrato', saved)
       await zapCall('registrar_abono_y_activar', { record: saved })
+      toast.success('Abono registrado correctamente')
       onDone()
     } catch {
       toast.error('Error al registrar el abono.')
@@ -91,46 +91,49 @@ function AbonoPanel({
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-3 rounded-lg border border-dashed p-4">
-      <p className="text-sm font-medium">Registrar abono — {contrato.data.codigo_contrato}</p>
-      <div className="grid grid-cols-3 gap-1.5">
+    <div className="mt-4 flex flex-col gap-3 rounded-lg border border-dashed p-4 bg-stone-50/50">
+      <p className="text-sm font-medium text-stone-850">Registrar abono — {contrato.data.codigo_contrato}</p>
+      <div className="grid grid-cols-3 gap-2">
         {opts.map(o => (
           <button
             key={o.num}
             type="button"
             onClick={() => pickNum(o.num)}
-            className={`rounded-md border p-2 text-xs transition-colors text-left ${
+            className={`rounded-lg border p-2 text-xs transition-all text-left ${
               num === o.num
-                ? 'border-primary bg-primary/10 font-semibold'
-                : 'border-border hover:bg-muted/50'
+                ? 'border-amber-500 bg-amber-500/10 font-semibold text-amber-900'
+                : 'border-stone-200 hover:bg-stone-100/50 text-stone-600'
             }`}
           >
-            <div className="text-muted-foreground">{o.label}</div>
-            <div className="font-mono mt-0.5">${o.val.toLocaleString('es-CO')}</div>
+            <div className="text-3xs uppercase tracking-wider opacity-80">{o.label}</div>
+            <div className="font-mono mt-1 font-bold">${o.val.toLocaleString('es-CO')}</div>
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-xs">Valor recibido</Label>
-          <Input type="number" value={valor} onChange={e => setValor(e.target.value)} className="h-8 text-sm" />
+          <Label className="text-xs text-stone-600 mb-1 block">Valor recibido</Label>
+          <Input type="number" value={valor} onChange={e => setValor(e.target.value)} className="h-9 text-sm" />
         </div>
         <div>
-          <Label className="text-xs">Fecha</Label>
-          <Input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="h-8 text-sm" />
+          <Label className="text-xs text-stone-600 mb-1 block">Fecha</Label>
+          <Input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="h-9 text-sm" />
         </div>
       </div>
-      <Input
-        value={obs}
-        onChange={e => setObs(e.target.value)}
-        placeholder="Observaciones (ref. transferencia…)"
-        className="h-8 text-sm"
-      />
-      <div className="flex gap-2 justify-end">
+      <div>
+        <Label className="text-xs text-stone-600 mb-1 block">Soporte / Observaciones</Label>
+        <Input
+          value={obs}
+          onChange={e => setObs(e.target.value)}
+          placeholder="Ej: Transferencia Bancolombia #8829"
+          className="h-9 text-sm"
+        />
+      </div>
+      <div className="flex gap-2 justify-end pt-1">
         <Button variant="ghost" size="sm" onClick={onDone}>Cancelar</Button>
-        <Button size="sm" onClick={save} disabled={busy}>
+        <Button size="sm" onClick={save} disabled={busy} className="bg-amber-600 hover:bg-amber-700 text-white font-semibold">
           {busy ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-          Registrar
+          Confirmar Recibo
         </Button>
       </div>
     </div>
@@ -138,7 +141,6 @@ function AbonoPanel({
 }
 
 // ─── Main card ────────────────────────────────────────────────────────────────
-
 interface Props {
   record:    KanbanRecord
   stage:     KanbanStage
@@ -155,99 +157,211 @@ export default function ComercialCard({
   record, stage, onMove, nextStage, allStages,
   client, contrato, abonos, espacios,
 }: Props) {
-  const cot     = record as unknown as ProyectosRecord
-  const [abonoOpen,  setAbonoOpen]  = useState(false)
+  const cot = record as unknown as ProyectosRecord
+  const [abonoOpen, setAbonoOpen] = useState(false)
+  const [busyAction, setBusyAction] = useState<string | null>(null)
+  
   const colors = STAGE_COLORS[stage.color] ?? STAGE_COLORS.slate
 
-  const puedeAbono = contrato && (stage.value === 'en_contrato' || stage.value === 'pre_produccion')
   const valorTotal = Number(contrato?.data.valor_total ?? 0)
+
+  // Calculate sum of verified abonos
+  const totalAbonado = useMemo(() => {
+    return abonos.reduce((sum, a) => sum + (Number(a.data.valor_abono ?? 0)), 0)
+  }, [abonos])
+
+  const handleAction = async (action: 'contrato' | 'produccion' | 'pdf') => {
+    setBusyAction(action)
+    try {
+      if (action === 'contrato') {
+        await zapCall('generar_contrato', { record: cot })
+        toast.success('Contrato comercial redactado y generado.')
+      } else if (action === 'produccion') {
+        await zapCall('zap_activar_produccion', { record: cot })
+        toast.success('¡Producción Activada! OT, contrato y obligaciones generados.')
+      } else if (action === 'pdf') {
+        await zapCall('exportar_propuesta_pdf', { record: cot })
+        toast.success('PDF Exportado con éxito.')
+      }
+    } catch (err) {
+      toast.error('Error al ejecutar la acción.')
+    } finally {
+      setBusyAction(null)
+    }
+  }
+
+  // Determine Fitts' Law CTA action for this stage
+  const actionCTA = useMemo(() => {
+    if (stage.value === 'enviada' && !contrato) {
+      return { label: 'Generar Contrato', action: 'contrato', bg: 'bg-violet-600 hover:bg-violet-700 text-white' }
+    }
+    if ((stage.value === 'en_contrato' || stage.value === 'pre_produccion') && stage.value !== 'produccion') {
+      return { label: 'Activar Producción', action: 'produccion', bg: 'bg-emerald-600 hover:bg-emerald-700 text-white' }
+    }
+    return null
+  }, [stage.value, contrato])
 
   return (
     <>
-      <Card className="p-3 flex flex-col gap-2 hover:shadow-sm transition-shadow">
-        {/* Top: project name + client */}
-        <div className="min-w-0">
-          <p className="text-sm font-semibold leading-tight truncate">
-            {cot.data.nombre_proyecto as string ?? '—'}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4">
+        
+        {/* Col 1: Identification (Left) */}
+        <div className="md:col-span-4 flex flex-col gap-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-stone-900 truncate">
+              {cot.data.nombre_proyecto as string ?? '—'}
+            </span>
+            <Badge variant="outline" className={`text-2xs font-semibold uppercase px-2 py-0.2 ${colors.badge}`}>
+              {stage.label}
+            </Badge>
+          </div>
+          <p className="text-xs text-stone-500 mt-0.5">
+            Cliente: <span className="font-medium text-stone-700">{client?.data.nombre ?? '—'}</span>
           </p>
-          <p className="text-xs text-muted-foreground truncate mt-0.5">
-            {client?.data.nombre ?? '—'}
-          </p>
-          {contrato?.data.valor_total ? (
-            <p className="text-xs font-mono text-muted-foreground mt-0.5">
+          {valorTotal > 0 && (
+            <p className="text-xs font-mono font-bold text-stone-600 mt-1">
               {fmt(valorTotal)}
             </p>
-          ) : null}
+          )}
         </div>
 
-        <Separator />
+        {/* Col 2: Details & Spaces (Center) */}
+        <div className="md:col-span-5 flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-2xs font-bold uppercase tracking-wider text-stone-450">
+              Espacios:
+            </span>
+            {espacios.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {espacios.slice(0, 3).map(e => (
+                  <Badge key={e.id} variant="secondary" className="text-3xs bg-stone-100 border-stone-200 text-stone-650 px-1.5">
+                    {e.data.nombre_espacio as string}
+                  </Badge>
+                ))}
+                {espacios.length > 3 && (
+                  <span className="text-3xs font-mono font-medium text-stone-400">+{espacios.length - 3}</span>
+                )}
+              </div>
+            ) : (
+              <span className="text-3xs text-stone-400 font-medium uppercase tracking-wider">Sin espacios configurados</span>
+            )}
+          </div>
 
-        {/* Bottom: stage badge + actions */}
-        <div className="flex items-center gap-1 flex-wrap">
-          {/* Stage badge → dropdown for any-stage move */}
+          {/* Abonos Summary */}
+          {contrato && (
+            <div className="flex items-center gap-2 mt-1.5 text-2xs">
+              <span className="text-stone-400 font-bold uppercase tracking-wider">Abonado:</span>
+              <span className="font-mono font-bold text-stone-700">{fmt(totalAbonado)}</span>
+              {totalAbonado >= valorTotal ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              ) : (
+                <span className="text-stone-400 font-mono">({Math.round((totalAbonado / valorTotal) * 100)}%)</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Col 3: Actions (Right) */}
+        <div className="md:col-span-3 flex items-center justify-end gap-2.5 w-full md:w-auto">
+          {actionCTA ? (
+            <Button
+              type="button"
+              disabled={busyAction !== null}
+              className={`flex-1 md:flex-none h-11 text-xs font-semibold px-4 rounded-lg shadow-sm transition-all duration-200 hover:scale-[1.01] ${actionCTA.bg}`}
+              onClick={() => handleAction(actionCTA.action as 'contrato' | 'produccion')}
+            >
+              {busyAction === actionCTA.action ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : actionCTA.action === 'produccion' ? (
+                <Play className="h-3.5 w-3.5 mr-1 shrink-0" />
+              ) : null}
+              {actionCTA.label}
+            </Button>
+          ) : (
+            <div className="flex-1 md:flex-none py-2 text-right">
+              {stage.value === 'produccion' ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-2xs font-bold uppercase tracking-wider text-emerald-700 border border-emerald-250">
+                  En Taller
+                </span>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 px-4 text-xs font-semibold rounded-lg border-stone-200 hover:bg-stone-50"
+                  onClick={() => window.location.href = `/app/quoting/${cot.id}`}
+                >
+                  Ver Cotización
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* PDF exporter */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={busyAction !== null}
+            className="h-11 w-11 rounded-lg border-stone-200 hover:bg-stone-50 shrink-0"
+            title="Exportar PDF"
+            onClick={() => handleAction('pdf')}
+          >
+            {busyAction === 'pdf' ? (
+              <Loader2 className="h-4 w-4 animate-spin text-stone-400" />
+            ) : (
+              <FileText className="h-4.5 w-4.5 text-stone-600" />
+            )}
+          </Button>
+
+          {/* Abonos panel toggle */}
+          {contrato && (stage.value === 'en_contrato' || stage.value === 'pre_produccion') && (
+            <Button
+              type="button"
+              variant={abonoOpen ? 'default' : 'outline'}
+              size="icon"
+              className={`h-11 w-11 rounded-lg shrink-0 ${abonoOpen ? 'bg-amber-600 text-white hover:bg-amber-700' : 'border-stone-200 hover:bg-stone-50'}`}
+              title="Registrar abono"
+              onClick={() => setAbonoOpen(v => !v)}
+            >
+              <DollarSign className="h-4.5 w-4.5" />
+            </Button>
+          )}
+
+          {/* Standard stage select */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors hover:opacity-80 ${colors.badge}`}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-11 w-11 rounded-lg border-stone-200 hover:bg-stone-50 shrink-0"
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-                {stage.label}
-                <ChevronDown className="h-3 w-3 opacity-60" />
-              </button>
+                <ChevronDown className="h-4 w-4 text-stone-500" />
+              </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent align="end" className="w-48">
               {allStages.filter(s => s.value !== stage.value).map(s => (
-                <DropdownMenuItem key={s.value} onClick={() => onMove(s.value)}>
-                  <span className={`w-2 h-2 rounded-full mr-2 ${STAGE_COLORS[s.color]?.dot}`} />
+                <DropdownMenuItem
+                  key={s.value}
+                  onClick={() => onMove(s.value)}
+                  className="flex items-center gap-2 py-2 cursor-pointer text-xs"
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STAGE_COLORS[s.color]?.dot}`} />
                   {s.label}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="flex items-center gap-1 ml-auto">
-            {/* Quick next-stage */}
-            {nextStage && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                title={`Avanzar a ${nextStage.label}`}
-                onClick={() => onMove(nextStage.value)}
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            )}
-            {/* Project canvas */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              title="Ver Ficha de Producción"
-              onClick={() => window.location.href = `/app/ficha/${cot.id}`}
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" />
-            </Button>
-            {/* Abono */}
-            {puedeAbono && (
-              <Button
-                variant={abonoOpen ? 'default' : 'outline'}
-                size="icon"
-                className="h-6 w-6"
-                title="Registrar abono"
-                onClick={() => setAbonoOpen(v => !v)}
-              >
-                <DollarSign className="h-3.5 w-3.5" />
-              </Button>
-            )}
-          </div>
         </div>
+      </div>
 
-        {/* Inline abono panel */}
-        {abonoOpen && contrato && (
+      {/* Inline abono form */}
+      {abonoOpen && contrato && (
+        <div className="px-4 pb-4">
           <AbonoPanel contrato={contrato} onDone={() => setAbonoOpen(false)} />
-        )}
-      </Card>
+        </div>
+      )}
     </>
   )
 }
+

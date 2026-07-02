@@ -247,11 +247,30 @@
           "type": "image",
           "label": "URL de Imagen del Ítem",
           "required": false
+        },
+        {
+          "key": "notas_compra",
+          "type": "text",
+          "label": "Notas de Compra (Taller)",
+          "width": "full",
+          "required": false
+        },
+        {
+          "key": "anulado",
+          "type": "boolean",
+          "label": "Anulado por Taller",
+          "required": false
+        },
+        {
+          "key": "compra_generada",
+          "type": "boolean",
+          "label": "Compra Generada",
+          "required": false
         }
       ]
     },
     "created_at": "2026-06-22T15:28:39.889Z",
-    "updated_at": "2026-06-24T02:29:44.418Z"
+    "updated_at": "2026-07-01T00:27:02.717Z"
   },
   {
     "id": "db012ec9-130e-4189-bdfe-b383afd21aad",
@@ -508,11 +527,24 @@
           ],
           "section": "General",
           "required": false
+        },
+        {
+          "key": "proveedor_id",
+          "type": "relation",
+          "label": "Proveedor (Relación)",
+          "width": "half",
+          "config": {
+            "relation": {
+              "entity": "proveedores",
+              "parent_key": "id"
+            }
+          },
+          "required": false
         }
       ]
     },
     "created_at": "2026-06-22T15:28:39.906Z",
-    "updated_at": "2026-06-24T02:29:44.505Z"
+    "updated_at": "2026-07-01T00:27:02.736Z"
   },
   {
     "id": "9328a3a3-c62a-45d7-b8c8-018d6ab19a3a",
@@ -1649,14 +1681,20 @@
         {
           "id": "e239fa24-9ce6-4b26-85fd-14cdea0cee30",
           "key": "origen_proyecto",
-          "type": "text",
-          "label": "Origen Proyecto",
-          "required": false
+          "type": "relation",
+          "label": "Proyecto de Origen",
+          "required": false,
+          "config": {
+            "relation": {
+              "entity": "proyectos",
+              "parent_key": "id"
+            }
+          }
         }
       ]
     },
     "created_at": "2026-06-22T15:28:40.146Z",
-    "updated_at": "2026-06-25T12:27:38.008Z"
+    "updated_at": "2026-07-01T00:27:02.736Z"
   },
   {
     "id": "a5833b35-436e-489a-90de-8eb738fe5cac",
@@ -1982,11 +2020,25 @@
           "type": "number",
           "label": "Horas Estimadas Mes",
           "required": false
+        },
+        {
+          "key": "telefono",
+          "type": "text",
+          "label": "Teléfono / Celular",
+          "width": "half",
+          "required": false
+        },
+        {
+          "key": "firma_url",
+          "type": "image",
+          "label": "Firma Digital (URL Imagen)",
+          "width": "full",
+          "required": false
         }
       ]
     },
     "created_at": "2026-06-24T02:29:43.629Z",
-    "updated_at": "2026-06-25T03:55:04.996Z"
+    "updated_at": "2026-07-01T00:27:02.736Z"
   },
   {
     "id": "00fd6499-b182-4f2c-841e-7dc42df0e185",
@@ -2408,10 +2460,36 @@
           "type": "markdown",
           "label": "Soporte Semántico",
           "width": "full"
+        },
+        {
+          "key": "proyecto_id",
+          "type": "relation",
+          "label": "Proyecto",
+          "width": "third",
+          "config": {
+            "relation": {
+              "entity": "proyectos",
+              "parent_key": "id"
+            }
+          },
+          "required": false
+        },
+        {
+          "key": "contrato_id",
+          "type": "relation",
+          "label": "Contrato",
+          "width": "third",
+          "config": {
+            "relation": {
+              "entity": "contratos",
+              "parent_key": "id"
+            }
+          },
+          "required": false
         }
       ]
     },
-    "updated_at": "2026-06-29T00:26:22.763Z"
+    "updated_at": "2026-07-01T00:27:02.736Z"
   },
   {
     "id": "17109842-6f4a-4ce9-887b-29e79c5b2ea6",

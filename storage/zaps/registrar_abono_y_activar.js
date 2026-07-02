@@ -14,12 +14,12 @@ const contratos = await api.query('contratos');
 const contrato = contratos.find(c => c.id === thisAbono.contrato_id);
 if (!contrato) { api.notify.error('Contrato no encontrado.'); return; }
 
-const cotizaciones = await api.query('cotizaciones');
-const cotizacion = cotizaciones.find(c => c.id === contrato.cotizacion_id);
-if (!cotizacion) { api.notify.error('Cotización no encontrada.'); return; }
+const proyectos = await api.query('proyectos');
+const cotizacion = proyectos.find(c => c.id === contrato.proyecto_id);
+if (!cotizacion) { api.notify.error('Proyecto no encontrado.'); return; }
 
 const existingOrders = await api.query('ordenes_trabajo');
-const existing = existingOrders.find(o => o.cotizacion_id === cotizacion.id);
+const existing = existingOrders.find(o => o.proyecto_id === cotizacion.id);
 
 if (!existing) {
   const year = new Date().getFullYear();
@@ -34,7 +34,7 @@ if (!existing) {
   }
   await api.saveItem('ordenes_trabajo', {
     data: {
-      cotizacion_id: cotizacion.id,
+      proyecto_id: cotizacion.id,
       codigo_orden: codigo,
       estado: 'pendiente',
       fecha_entrega: fechaEntrega,
@@ -43,7 +43,7 @@ if (!existing) {
   });
 }
 
-await api.saveItem('cotizaciones', {
+await api.saveItem('proyectos', {
   id: cotizacion.id,
   data: { ...cotizacion, estado: 'produccion' }
 });

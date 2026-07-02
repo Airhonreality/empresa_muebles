@@ -1,34 +1,25 @@
 # Agnostic System Seed
 
-Schema-driven UI engine built on Next.js 15. Define data models → the engine renders standard views automatically. Build custom interfaces with AI using typed schema contracts.
+Schema-driven UI engine built on Next.js 15. Define data models, routes, and automations in storage; build custom interfaces in project forks using typed schema contracts.
 
 **This is the seed.** Every client project is a separate repo that forks from here. The engine lives here. Business logic never does.
 
----
+## Two Roles
 
-## Two roles, two workflows
+| You are... | Your repo is... | Main workflow |
+|-----------|----------------|---------------|
+| Building a new project | A fork of this seed | Customize `storage/`, `src/components/specialized/`, and `agnostic.config.ts` |
+| Improving the engine | This seed repo | Change engine-owned files and merge updates into forks deliberately |
 
-| You are... | Your repo is... | You read... |
-|-----------|----------------|-------------|
-| Building a **new project** | A fork of this seed | [→ Starting a new project](#starting-a-new-project) |
-| Improving the **engine** | This seed repo | [→ Contributing engine improvements](#contributing-engine-improvements) |
-
----
-
-## Starting a new project
+## Starting A New Project
 
 ### 1. Clone the seed into your project repo
 
 ```bash
-# On GitHub: create a new empty repo (e.g. github.com/your-org/proyecto-cliente)
-# Then locally:
 git clone https://github.com/Airhonreality/Agnostic_System_Seed.git proyecto-cliente
 cd proyecto-cliente
 
-# Point origin to your new project repo
 git remote set-url origin https://github.com/your-org/proyecto-cliente.git
-
-# Keep the seed as upstream to receive engine updates
 git remote add upstream https://github.com/Airhonreality/Agnostic_System_Seed.git
 
 git push -u origin main
@@ -38,37 +29,35 @@ git push -u origin main
 
 ```bash
 npm install
-npm run agnostic:compile   # generate TypeScript types from your schemas
-npm run dev
-# → http://localhost:3000
-# → Config Manager at http://localhost:3000/_agnostic
-```
-
-### 3. Create your storage tenant
-
-```bash
-mkdir -p storage/mi-proyecto/db
-# Create storage/mi-proyecto/manifest.json
-```
-
-```json
-{
-  "project": "mi-proyecto",
-  "strategy": "local",
-  "dataDir": "./storage/mi-proyecto/db"
-}
-```
-
-Then update `src/server/activeProject.ts` to return `"mi-proyecto"`.
-
-### 4. Build custom UI blocks (AI-assisted)
-
-```bash
 npm run agnostic:compile
-# Gives AI the typed contracts:
-# → src/generated/agnostic-schemas.ts
-# → src/components/specialized/_TEMPLATE.tsx
-# → agnostic.config.ts
+npm run dev
+```
+
+### 3. Create project storage
+
+Each fork owns exactly one local storage root:
+
+```text
+storage/
+  db/
+    schema_definitions.json
+    page_routes.json
+    scripts.json
+    {entity}.json
+  styles/tokens.css
+  assets/
+```
+
+The default local adapter reads `storage/db/*.json`. Do not create runtime tenants or edit `src/server/activeProject.ts` for project selection.
+
+### 4. Build custom UI blocks
+
+Give AI these files as context:
+
+```text
+src/generated/agnostic-schemas.ts
+src/components/specialized/_TEMPLATE.tsx
+agnostic.config.ts
 ```
 
 The AI generates `src/components/specialized/YourBlock.tsx`. Register it:
@@ -82,144 +71,139 @@ export default defineConfig({
 })
 ```
 
-Set `"type": "your_block"` in `storage/mi-proyecto/db/page_routes.json`. Done.
+Set `"type": "your_block"` in `storage/db/page_routes.json`.
 
----
+## What Lives Where
 
-## What lives where
-
-```
-packages/                    ← ENGINE — never touch in a project
+```text
+packages/                    <- ENGINE: never touch for project changes
 src/
   components/
-    agnostic/                ← ENGINE — never touch in a project
-    specialized/             ← YOUR PROJECT — AI-generated custom blocks
-  generated/                 ← AUTO-GENERATED — run agnostic:compile after schema changes
-agnostic.config.ts           ← YOUR PROJECT — registers your custom blocks
-storage/                     ← YOUR DATA — gitignored in seed, tracked in project repos
-  {project}/
-    db/
-      schemas.json           → entity definitions + field types
-      page_routes.json       → URL → block composition map
-      scripts.json           → zap automations (server-side Node.js VM)
-      {entity}.json          → one file per data collection
-    manifest.json            → strategy (local / supabase / hybrid)
-    styles/tokens.css        → project visual identity (CSS variables)
+    agnostic/                <- ENGINE UI
+    specialized/             <- PROJECT custom blocks
+  generated/                 <- AUTO-GENERATED schema types
+agnostic.config.ts           <- PROJECT bridge for custom block registration
+storage/                     <- PROJECT data, styles, assets
+  AGENTS.md                  <- fork-specific agent harness
+  db/
+    schema_definitions.json  <- entity definitions + field types
+    page_routes.json         <- URL -> block composition map
+    scripts.json             <- zap automations
+    {entity}.json            <- one file per data collection
+  progreso/                  <- active progress, audits, plans
+  fork_doc/                  <- human-facing fork documentation
 ```
 
-**The one invariant that must never break:**
+The invariant that must never break:
+
+```text
+block.context === schema.data.name === data_file_name_without_json
 ```
-block.context === schema.data.name === data_file_name (without .json)
+
+## Architecture
+
+```text
+Request
+  -> layout.tsx
+  -> getVaultData()
+  -> resolveAgnosticRoute()
+  -> AgnosticShell
+  -> AgnosticRenderer
+  -> /api/vault -> Adapter -> storage/db or cloud strategy
 ```
 
----
+## Storage Strategies
 
-## Receiving engine updates in your project
+Strategies are selected by deployment environment variables, not by runtime tenant selection.
 
-When the seed improves (new block types, bug fixes, performance), pull them into your project:
+| Env vars | Strategy | Use case |
+|----------|----------|----------|
+| none | `local` | Development JSON files in `storage/db/` |
+| `GITHUB_REPO` | `github` | Git-backed JSON files in `storage/db/` |
+| `DATABASE_URL` | `postgres` | Neon, Supabase Postgres, Railway, Render |
+| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | `supabase` | Legacy Supabase REST strategy |
+
+## Receiving Engine Updates
+
+Project forks receive engine updates deliberately:
 
 ```bash
 git fetch upstream
 git merge upstream/main
-# Resolve conflicts if any — they will NEVER be in storage/ or specialized/
-# because those paths are gitignored in the seed
 git push origin main
 ```
 
-This is safe because the seed's `.gitignore` excludes `storage/` and `src/components/specialized/`. The merge only touches engine files that the seed owns.
+The merge should not touch project-owned paths such as `storage/` or `src/components/specialized/`.
 
----
+## Contributing Engine Improvements
 
-## Contributing engine improvements
+A PR to the seed must contain engine changes only. It should not include project-specific storage, custom blocks, or business-domain code.
 
-If you discover a bug fix or engine improvement while working on a project:
+Engine-owned paths include:
 
-```bash
-# In your project repo — isolate the engine change
-git checkout -b seed/fix-resolver-edge-case
-
-# Make only engine-layer changes:
-# - packages/
-# - src/components/agnostic/
-# - src/lib/agnostic/
-# - src/app/api/
-# - CLAUDE.md, README.md
-
-# Push to your project and open a PR to the seed
-git push origin seed/fix-resolver-edge-case
-
-# On GitHub: open PR from your-org/proyecto-cliente:seed/fix-resolver-edge-case
-#                        → Airhonreality/Agnostic_System_Seed:main
+```text
+packages/
+src/components/agnostic/
+src/lib/agnostic/
+src/app/api/
+scripts/
 ```
 
-**Rule:** a PR to the seed must contain zero files from `storage/` or `src/components/specialized/`. If it does, it's a project change, not an engine change.
+Project-owned paths include:
 
----
+```text
+storage/
+src/components/specialized/
+agnostic.config.ts
+```
+
+## Agent Harness
+
+The seed keeps agent context intentionally small:
+
+```text
+AGENTS.md              <- engine rules and context loading protocol
+CLAUDE.md              <- compatibility copy of AGENTS.md
+Comandos CLI.md        <- read only for storage CLI work
+Interfaces Custom.md   <- read only for specialized UI work
+agnostic.context.json  <- machine-readable engine contract
+```
+
+Each fork owns its living context in:
+
+```text
+storage/AGENTS.md
+storage/progreso/current_state.md
+storage/progreso/INDEX.md
+storage/fork_doc/
+```
+
+Agents should read the root `AGENTS.md` first, then the fork harness in `storage/` when it exists. Old plans, audits, and research notes should not live in the seed.
 
 ## Five Atoms
 
-The entire system is built from exactly five concepts:
-
 | Atom | Shape | Role |
 |------|-------|------|
-| **Schema** | `{ name, fields[] }` | Data shape contract |
-| **Record** | `{ id, context, data }` | Instance of a schema |
-| **Adapter** | `read / write / remove` | Persistence interface |
-| **Block** | `{ type, context }` | Projection directive |
-| **Page** | ordered blocks at a URL path | Route composition |
+| Schema | `{ name, fields[] }` | Data shape contract |
+| Record | `{ id, context, data }` | Instance of a schema |
+| Adapter | `read / write / remove` | Persistence interface |
+| Block | `{ type, context }` | Projection directive |
+| Page | ordered blocks at a URL path | Route composition |
 
----
-
-## Architecture
-
-```
-Request → layout.tsx → getVaultData() [SSR, React.cache deduplicates]
-          resolveAgnosticRoute()       [pure memory, no I/O]
-          AgnosticShell                [hydrates Zustand once per navigation]
-          AgnosticRenderer             [routes block.type to registered component]
-          /api/vault                   [only write gateway → Adapter → storage/]
-```
-
----
-
-## Key files
+## Key Files
 
 | File | Responsibility |
 |------|----------------|
-| `packages/core/src/indra.ts` | Canonical types — single source of truth |
-| `agnostic.config.ts` | Custom block registration + engine config |
-| `src/generated/agnostic-schemas.ts` | Auto-generated typed contracts |
-| `src/components/specialized/_TEMPLATE.tsx` | Base pattern for AI-generated components |
-| `src/lib/agnostic/resolver.ts` | Route resolver — pure memory, no I/O |
+| `packages/core/src/indra.ts` | Canonical engine types |
+| `agnostic.config.ts` | Custom block registration |
+| `src/generated/agnostic-schemas.ts` | Auto-generated project schema types |
+| `src/components/specialized/_TEMPLATE.tsx` | Base pattern for custom blocks |
+| `src/lib/agnostic/resolver.ts` | Pure route resolver |
 | `src/components/agnostic/engine/AgnosticRenderer.tsx` | Block type router |
 | `src/app/api/vault/route.ts` | Only write gateway |
-| `scripts/mcp-bridge.ts` | MCP server — semantic tools for schema/route/script CRUD |
-| `CLAUDE.md` | Engine rules and anti-patterns — read before touching any code |
+| `scripts/mcp-bridge.ts` | Semantic MCP tools |
+| `AGENTS.md` | Agent operating rules |
 
----
+## Architecture Decisions
 
-## Storage strategies
-
-Configured in `storage/{project}/manifest.json`:
-
-| Strategy | Use case |
-|----------|----------|
-| `local` | Development — JSON files in `storage/{project}/db/` |
-| `supabase` | Production — Supabase cloud DB |
-| `hybrid` | GitHub schemas + Supabase data |
-
----
-
-## Active projects forked from this seed
-
-| Project | Repo | Tenant |
-|---------|------|--------|
-| Empresa Muebles | [Airhonreality/empresa_muebles](https://github.com/Airhonreality/empresa_muebles) | `empresa-2` |
-
----
-
-## Architecture decisions
-
-- [ADR-001](docs/adr/ADR-001-blind-renderer-five-atoms.md) — Blind renderer, five atoms, invariants
-- [ADR-002](docs/adr/ADR-002-seed-distribution-model.md) — Seed repo model, not multi-tenant SaaS
-- [ADR-003](docs/adr/ADR-003-schema-compiler-contract.md) — Schema compiler as the stable AI contract
+The current architectural contract is captured in `AGENTS.md`, `agnostic.context.json`, and this README. Historical plans and old ADRs were removed to keep the seed context minimal.

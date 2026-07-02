@@ -2,9 +2,9 @@
 
 ## Summary
 
-This repository is the Agnostic Seed baseline after documentation purification.
+This repository is the Agnostic Seed baseline for forked projects.
 
-The canonical model is:
+The working model is:
 
 ```text
 seed repo -> project forks
@@ -23,22 +23,33 @@ fork -> owns storage and specialized UI
 - Fork documentation lives under `storage/fork_doc/`.
 - Agent-facing generated docs live under `storage/progreso/`.
 
-## Current CLI Additions
+## Completed Milestones
 
-- `npx tsx scripts/agno.ts docs all` generates compact schema, zap, route, module, and agent summary docs.
-- `npx tsx scripts/agno.ts validate:zaps` checks Zap API namespace references against storage schemas/files.
-- `npx tsx scripts/agno.ts refactor-schema plan <old> <new>` previews safe namespace refactors before apply.
-- `npx tsx scripts/agno.ts bootstrap doctor` reports production bootstrap blockers without mutating cloud resources.
-- `npx tsx scripts/agno.ts bootstrap install` initializes local non-versioned bootstrap state in `.agno/bootstrap-state.json`.
-- In production, first admin creation is blocked unless the active persistence strategy is `postgres` and `SESSION_SECRET` exists.
-- User passwords are normalized server-side to `password_hash` using Node `scrypt`; legacy plaintext `password` records are accepted only for login migration.
+- `ComercialKanban.tsx` renders the interactive sales canvas.
+- `ProjectDetails.tsx` provides the production dialog with sheets-style tables and manual stock entry.
+- `WidgetArmadoOrdenCompra.tsx` consolidates supply orders by supplier or by project.
+- Specialized fork modules now exist for:
+  - `equipo_directory`
+  - `proveedores_directory`
+  - `user_profile`
+  - `catalogo_manager`
+- `FinanzasShell.tsx` now includes `ConciliacionBancaria` for movement vs obligation reconciliation.
+- `/app/catalog` now uses the custom `catalogo_manager` block.
+- Backend phase 1 is validated: `zap_activar_produccion` passes `validate:zaps`, and `reimprimir_snapshot` now reads from `proyectos` instead of a missing snapshot namespace.
 
-## Next Fork Action
+## Pending Next Session
 
-When this seed is forked, update:
+- Add a literal "Pasar a produccion" button in `ComercialKanban` and `CotizadorPro`.
+- Add an intermediate modal before moving a project to production.
+- Gate the button on contract availability, but keep the production step as an explicit user action; contract signature alone does not activate production.
+- Improve the commercial kanban visual language so it matches the production kanban family more closely.
+- Test a commercial kanban layout split into tabs by status instead of a vertical tree.
+- Reuse the engine-provided calendar scheduler instead of creating a fork-only calendar subsystem unless a real gap appears.
+- Keep the fork context clean and avoid reloading the old financial refactor discussion unless it is directly needed.
 
-1. `storage/AGENTS.md`
-2. `storage/progreso/current_state.md`
-3. `storage/fork_doc/README.md`
+## Notes
 
-Keep only current, useful context in these files.
+- The old financial refactor discussion has been removed from this state file so it does not contaminate the next session.
+- The current fork now has a cleaner module baseline and the next work should focus on the production transition flow.
+- The engine update already provides a default calendar scheduler, so the fork should prefer wiring that in before proposing custom calendar UI.
+- Remaining `validate:zaps` warnings are inherited aliases in older scripts (`cotizacion_id`, `producto_id`, `cuenta_id`) and nonstandard `body`-stored zaps; they do not block the phase 1 backend path.

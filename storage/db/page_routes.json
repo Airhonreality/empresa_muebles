@@ -48,41 +48,14 @@
       "layout_mode": "container",
       "blocks": [
         {
-          "id": "block_catalogo_header",
-          "type": "header",
-          "config": {
-            "title": "CatÃ¡logo de Productos y Servicios",
-            "subtitle": "AdministraciÃ³n centralizada de materia prima, herrajes, maderas y mano de obra para proyectos.",
-            "label": "CatÃ¡logo Maestro de Insumos"
-          }
-        },
-        {
-          "id": "block_catalogo_table",
-          "type": "table",
-          "context": "productos_catalogo",
-          "schema_id": "db012ec9-130e-4189-bdfe-b383afd21aad",
-          "config": {
-            "intent": "edit",
-            "title": "Inventario de Insumos",
-            "subtitle": "Filtra, busca y visualiza los materiales cargados en el sistema",
-            "label": "Listado de Productos y Servicios"
-          }
-        },
-        {
-          "id": "block_catalogo_form",
-          "type": "form",
-          "context": "productos_catalogo",
-          "schema_id": "db012ec9-130e-4189-bdfe-b383afd21aad",
-          "config": {
-            "intent": "create",
-            "title": "Registrar Insumo",
-            "subtitle": "Ingresa las especificaciones y precios de un nuevo elemento en el catÃ¡logo",
-            "label": "Agregar Nuevo Producto / Insumo"
-          }
+          "id": "78eb7b2b-dcb7-428a-b763-2c9408b1cb91",
+          "type": "catalogo_manager",
+          "blocks": [],
+          "context": "productos_catalogo"
         }
       ]
     },
-    "updated_at": "2026-06-29T00:48:39.922Z"
+    "updated_at": "2026-07-02T02:06:14.037Z"
   },
   {
     "id": "966c3d81-e7a7-431d-8172-05b55a964d2e",
@@ -320,5 +293,53 @@
       "order": 0
     },
     "updated_at": "2026-06-29T00:00:00.000Z"
+  },
+  {
+    "id": "c8bc19ad-24ad-4caa-8aba-0ebc3aabef43",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/equipo",
+      "title": "Gestión de Equipo",
+      "blocks": [
+        {
+          "type": "equipo_directory",
+          "context": "usuarios_equipo",
+          "id": "2281c4e0"
+        }
+      ]
+    },
+    "updated_at": "2026-07-01T00:27:26.004Z"
+  },
+  {
+    "id": "b201c10d-e6a1-4064-a9ff-2323da839e6c",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/proveedores",
+      "title": "Directorio de Proveedores",
+      "blocks": [
+        {
+          "type": "proveedores_directory",
+          "context": "proveedores",
+          "id": "76c1b365"
+        }
+      ]
+    },
+    "updated_at": "2026-07-01T00:27:26.006Z"
+  },
+  {
+    "id": "63b030f8-5ef4-4064-a7c8-793e7f728d33",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/perfil",
+      "title": "Mi Perfil",
+      "blocks": [
+        {
+          "type": "user_profile",
+          "context": "usuarios_equipo",
+          "id": "65e18569"
+        }
+      ]
+    },
+    "updated_at": "2026-07-01T00:27:26.006Z"
   }
 ]

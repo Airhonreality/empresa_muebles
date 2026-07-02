@@ -2,7 +2,6 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: .\storage\db\schema_definitions.json
 // Run:    npm run agnostic:compile
-// Generated: 2026-06-29T00:58:17.196Z
 // ============================================================
 
 // DataItem is the universal record wrapper used by the engine.
@@ -45,6 +44,9 @@ export interface ItemsVariante {
   total_linea?: number  // Total Material ($)
   origen_prefabricado_id?: string  // Origen Prefabricado
   imagen_url?: string  // URL de Imagen del Ítem
+  notas_compra?: string  // Notas de Compra (Taller)
+  anulado?: boolean  // Anulado por Taller
+  compra_generada?: boolean  // Compra Generada
 }
 
 export type ItemsVarianteRecord = AgnosticDataItem<ItemsVariante>
@@ -66,6 +68,7 @@ export interface ProductosCatalogo {
   url_referencia?: string  // URL de Referencia / Ficha
   proveedor?: string  // Proveedor
   categoria_comercial?: string  // Categoría Comercial Web
+  proveedor_id?: string  // Proveedor (Relación)
 }
 
 export type ProductosCatalogoRecord = AgnosticDataItem<ProductosCatalogo>
@@ -245,7 +248,7 @@ export interface ComprasMateriales {
   fecha_compra?: string  // Fecha Compra
   notas?: string  // Notas
   estado?: string  // Estado
-  origen_proyecto?: string  // Origen Proyecto
+  origen_proyecto?: string  // Proyecto de Origen
 }
 
 export type ComprasMaterialesRecord = AgnosticDataItem<ComprasMateriales>
@@ -302,6 +305,8 @@ export interface UsuariosEquipo {
   descripcion_semantica?: string  // Descripcion Semantica
   costo_hora?: number  // Costo Hora
   horas_estimadas_mes?: number  // Horas Estimadas Mes
+  telefono?: string  // Teléfono / Celular
+  firma_url?: string  // Firma Digital (URL Imagen)
 }
 
 export type UsuariosEquipoRecord = AgnosticDataItem<UsuariosEquipo>
@@ -373,6 +378,8 @@ export interface ObligacionesPendientes {
   cliente_id?: string  // Cliente
   usuario_id?: string  // Miembro Equipo
   descripcion_semantica?: string  // Soporte Semántico
+  proyecto_id?: string  // Proyecto
+  contrato_id?: string  // Contrato
 }
 
 export type ObligacionesPendientesRecord = AgnosticDataItem<ObligacionesPendientes>

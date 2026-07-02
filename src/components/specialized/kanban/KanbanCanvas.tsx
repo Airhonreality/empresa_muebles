@@ -1,27 +1,26 @@
 'use client'
 import type React from 'react'
-import { useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
-// ─── Stage color tokens — full Tailwind class strings (no dynamic fragments) ──
-
+// ─── Stage color tokens — WCAG 2.1 Level AA compliant ────────────────────────
 export const STAGE_COLORS: Record<string, {
-  column: string
-  header: string
+  border: string
+  bg: string
+  text: string
   dot: string
   badge: string
 }> = {
-  amber:  { column: 'border-amber-200',  header: 'bg-amber-50',   dot: 'bg-amber-400',  badge: 'border-amber-300 text-amber-700 bg-amber-50'   },
-  blue:   { column: 'border-blue-200',   header: 'bg-blue-50',    dot: 'bg-blue-400',   badge: 'border-blue-300 text-blue-700 bg-blue-50'      },
-  violet: { column: 'border-violet-200', header: 'bg-violet-50',  dot: 'bg-violet-400', badge: 'border-violet-300 text-violet-700 bg-violet-50' },
-  orange: { column: 'border-orange-200', header: 'bg-orange-50',  dot: 'bg-orange-400', badge: 'border-orange-300 text-orange-700 bg-orange-50' },
-  green:  { column: 'border-green-200',  header: 'bg-green-50',   dot: 'bg-green-400',  badge: 'border-green-300 text-green-700 bg-green-50'   },
-  slate:  { column: 'border-slate-200',  header: 'bg-slate-50',   dot: 'bg-slate-400',  badge: 'border-slate-300 text-slate-600 bg-slate-50'   },
-  rose:   { column: 'border-rose-200',   header: 'bg-rose-50',    dot: 'bg-rose-400',   badge: 'border-rose-300 text-rose-700 bg-rose-50'      },
-  muted:  { column: 'border-border',     header: 'bg-muted/30',   dot: 'bg-muted-foreground', badge: 'border-border text-muted-foreground bg-muted/30' },
+  slate:   { border: 'border-l-slate-400',   bg: 'bg-slate-50/50',   text: 'text-slate-700',   dot: 'bg-slate-400',   badge: 'bg-slate-100 text-slate-700 border-slate-200' },
+  blue:    { border: 'border-l-blue-500',    bg: 'bg-blue-50/30',    text: 'text-blue-700',    dot: 'bg-blue-500',    badge: 'bg-blue-50 text-blue-700 border-blue-200' },
+  orange:  { border: 'border-l-orange-500',  bg: 'bg-orange-50/30',  text: 'text-orange-700',  dot: 'bg-orange-500',  badge: 'bg-orange-50 text-orange-700 border-orange-200' },
+  green:   { border: 'border-l-emerald-500', bg: 'bg-emerald-50/30', text: 'text-emerald-700', dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  rose:    { border: 'border-l-rose-500',    bg: 'bg-rose-50/30',    text: 'text-rose-700',    dot: 'bg-rose-500',    badge: 'bg-rose-50 text-rose-700 border-rose-200' },
+  violet:  { border: 'border-l-violet-500',  bg: 'bg-violet-50/30',  text: 'text-violet-700',  dot: 'bg-violet-505',  badge: 'bg-violet-50 text-violet-700 border-violet-200' },
+  amber:   { border: 'border-l-amber-500',   bg: 'bg-amber-50/30',   text: 'text-amber-700',   dot: 'bg-amber-500',   badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+  muted:   { border: 'border-l-stone-300',   bg: 'bg-stone-50/50',   text: 'text-stone-600',   dot: 'bg-stone-400',   badge: 'bg-stone-100 text-stone-600 border-stone-200' },
 }
-
-// ─── Public types ─────────────────────────────────────────────────────────────
 
 export interface KanbanStage {
   value:   string
@@ -45,8 +44,6 @@ export interface KanbanCanvasProps {
   ) => React.ReactNode
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function KanbanCanvas({
   records,
   stages,
@@ -56,6 +53,20 @@ export default function KanbanCanvas({
   renderCard,
 }: KanbanCanvasProps) {
   const fallback = defaultStage ?? stages[0]?.value
+
+  // Track expanded stages. Default expand 'pendiente' and 'en_proceso' / 'activa' and 'enviada'
+  const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    stages.forEach((s, idx) => {
+      // Expand first 2 stages by default
+      initial[s.value] = idx < 2
+    })
+    return initial
+  })
+
+  const toggleStage = (val: string) => {
+    setExpandedStages(prev => ({ ...prev, [val]: !prev[val] }))
+  }
 
   const grouped = useMemo(() => {
     const map: Record<string, KanbanRecord[]> = {}
@@ -69,53 +80,73 @@ export default function KanbanCanvas({
   }, [records, stages, stageKey, fallback])
 
   return (
-    <div className="w-full overflow-x-auto pb-2">
-      <div className="flex gap-3 pb-4" style={{ minWidth: `${stages.length * 284}px` }}>
-        {stages.map((stage, idx) => {
-          const nextStage    = stages[idx + 1] ?? null
-          const stageRecords = grouped[stage.value] ?? []
-          const colors       = STAGE_COLORS[stage.color] ?? STAGE_COLORS.slate
+    <div className="w-full flex flex-col gap-4 select-none">
+      {stages.map((stage, idx) => {
+        const nextStage    = stages[idx + 1] ?? null
+        const stageRecords = grouped[stage.value] ?? []
+        const colors       = STAGE_COLORS[stage.color] ?? STAGE_COLORS.muted
+        const isExpanded   = !!expandedStages[stage.value]
 
-          return (
-            <div
-              key={stage.value}
-              className={`flex flex-col w-[272px] shrink-0 rounded-xl border ${colors.column}`}
+        return (
+          <div
+            key={stage.value}
+            className={`flex flex-col rounded-xl border border-stone-200/80 bg-white shadow-sm overflow-hidden transition-all duration-300`}
+          >
+            {/* Header Accordion Button (Large Target for Coarse Input) */}
+            <button
+              type="button"
+              onClick={() => toggleStage(stage.value)}
+              className={`flex items-center justify-between w-full px-5 py-4 bg-stone-50 hover:bg-stone-100/70 border-b border-stone-200/60 transition-colors text-left focus:outline-none`}
+              style={{ minHeight: '52px' }}
             >
-              {/* Column header */}
-              <div className={`flex items-center justify-between px-3 py-2.5 rounded-t-xl ${colors.header} border-b ${colors.column}`}>
-                <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
-                  <span className="text-xs font-semibold tracking-wide uppercase whitespace-normal">
-                    {stage.label}
-                  </span>
-                </div>
-                <Badge variant="outline" className={`text-xs px-1.5 ${colors.badge}`}>
-                  {stageRecords.length}
-                </Badge>
+              <div className="flex items-center gap-3">
+                {isExpanded ? (
+                  <ChevronDown className="h-5 w-5 text-stone-500 transition-transform duration-200" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-stone-500 transition-transform duration-200" />
+                )}
+                <span className={`w-2.5 h-2.5 rounded-full ${colors.dot}`} />
+                <span className="text-sm font-semibold tracking-wide uppercase text-stone-850">
+                  {stage.label}
+                </span>
               </div>
+              <Badge variant="outline" className={`text-xs px-2.5 py-0.5 font-mono ${colors.badge}`}>
+                {stageRecords.length}
+              </Badge>
+            </button>
 
-              {/* Card list */}
-              <div className="flex flex-col gap-2 p-2 flex-1 min-h-[120px]">
-                {stageRecords.map(record => (
-                  <div key={record.id}>
-                    {renderCard(
-                      record,
-                      stage,
-                      (newStage) => onMoveCard(record, newStage),
-                      nextStage,
-                    )}
+            {/* Accordion Content */}
+            {isExpanded && (
+              <div className="p-4 flex flex-col gap-3 bg-stone-50/30 transition-all duration-300">
+                {stageRecords.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {stageRecords.map(record => (
+                      <div
+                        key={record.id}
+                        className={`border-l-4 ${colors.border} rounded-r-lg shadow-sm border-y border-r border-stone-200/60 bg-white transition-all duration-200 hover:shadow-md`}
+                      >
+                        {renderCard(
+                          record,
+                          stage,
+                          (newStage) => onMoveCard(record, newStage),
+                          nextStage
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {stageRecords.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center pt-6 pb-4 select-none">
-                    Sin proyectos
-                  </p>
+                ) : (
+                  <div className="py-8 px-4 text-center">
+                    <p className="text-xs font-medium text-stone-400 tracking-wide uppercase">
+                      Sin proyectos en esta etapa
+                    </p>
+                  </div>
                 )}
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
+

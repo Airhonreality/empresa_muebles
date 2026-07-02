@@ -15,8 +15,8 @@ function safeEncodeURI(url) {
 
 api.notify.success("Generando Layout Premium para Veta de Oro...");
 
-const cotizaciones = await api.query("cotizaciones");
-const activeCotizacion = cotizaciones.find(c => c.id === activeRecord.id);
+const proyectos = await api.query("proyectos");
+const activeCotizacion = proyectos.find(c => c.id === activeRecord.id);
 
 if (!activeCotizacion) {
   api.notify.error("No se encontró el registro de la cotización activa.");
@@ -47,7 +47,7 @@ const RATE_INSTALL = Number(installService.precio_publico);
 
 // 1. Group items by spaces and pick the ACTIVE variant for each space
 const mySpaces = espacioVariantes
-  .filter(ev => ev.cotizacion_id === activeCotizacion.id && ev.visible_pdf !== false)
+  .filter(ev => ev.proyecto_id === activeCotizacion.id && ev.visible_pdf !== false)
   .sort((a, b) => (Number(a.orden_espacio) || 0) - (Number(b.orden_espacio) || 0));
 
 const spacesMap = new Map();

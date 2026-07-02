@@ -678,6 +678,28 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
         setProyectos(prev => prev.map(c => c.id === activeCotId ? { ...c, data: headerLocal as any } : c))
       }
 
+      // Bug 2 fix (Axiom 1): Enforce exact 1:1 synchronization of active variants in DB before Zap execution
+      const spaceNames = new Set<string>()
+      for (const v of activeVariantes) {
+        const vd = v.data as any as EspacioVariantes
+        if (vd.nombre_espacio) spaceNames.add(vd.nombre_espacio)
+      }
+      const syncTasks: Promise<any>[] = []
+      for (const sName of spaceNames) {
+        const activeVarId = activeVarMap[sName]
+        const varsInSpace = activeVariantes.filter(v => (v.data as any as EspacioVariantes).nombre_espacio === sName)
+        for (const v of varsInSpace) {
+          const isSelected = activeVarId ? (v.id === activeVarId) : (v === varsInSpace[0])
+          const vd = v.data as any as EspacioVariantes
+          if (!!vd.activa !== isSelected) {
+            syncTasks.push(vWrite('espacio_variantes', v.id, { ...vd, activa: isSelected }))
+          }
+        }
+      }
+      if (syncTasks.length > 0) {
+        await Promise.all(syncTasks)
+      }
+
       const response = await fetch('/api/engine', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
