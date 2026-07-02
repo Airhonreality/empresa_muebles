@@ -13,12 +13,37 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $seedDir   = Resolve-Path (Join-Path $scriptDir "../..") | Select-Object -ExpandProperty Path
-$registry  = Get-Content (Join-Path $scriptDir "workspaces.json") | ConvertFrom-Json
+$registryPath = Join-Path $scriptDir "workspaces.json"
+$encodingGuard = Join-Path $seedDir "scripts/validate-text-encoding.mjs"
 
 function Write-Step($msg)  { Write-Host "  $msg" -ForegroundColor DarkGray }
 function Write-Ok($msg)    { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Skip($msg)  { Write-Host "  [--] $msg" -ForegroundColor Yellow }
 function Write-Fail($msg)  { Write-Host "  [!!] $msg" -ForegroundColor Red }
+function Read-Utf8Text([string]$Path) { Get-Content -LiteralPath $Path -Encoding utf8 -Raw }
+
+function Test-Encoding([string]$Path) {
+    Push-Location $Path
+    node $encodingGuard
+    $code = $LASTEXITCODE
+    Pop-Location
+    return $code
+}
+
+Write-Step "Validando encoding del registry..."
+node $encodingGuard $registryPath
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "workspaces.json no cumple el contrato UTF-8."
+    exit 1
+}
+
+$seedEncoding = Test-Encoding $seedDir
+if ($seedEncoding -ne 0) {
+    Write-Fail "El seed no pasa la validacion UTF-8."
+    exit 1
+}
+
+$registry  = Read-Utf8Text $registryPath | ConvertFrom-Json
 
 # ── 1. Empujar engine a GitHub ────────────────────────────────────────────────
 
@@ -32,10 +57,8 @@ Write-Host "ENGINE  >>  $seedBranch  >>  $seedRemoteUrl" -ForegroundColor Cyan
 Write-Step "Verificando estado del repositorio..."
 $status = git status --porcelain
 if ($status) {
-    Write-Fail "Hay cambios sin commitear. Haz commit antes de sincronizar."
+    Write-Skip "Hay cambios sin commitear en el worktree. El sync usa HEAD, asi que el push puede continuar."
     git status --short
-    Pop-Location
-    exit 1
 }
 
 Write-Step "Empujando a GitHub..."
@@ -85,6 +108,14 @@ foreach ($ws in $registry.workspaces) {
         continue
     }
 
+    $workspaceEncoding = Test-Encoding $wsPath
+    if ($workspaceEncoding -ne 0) {
+        Write-Fail "El workspace no pasa la validacion UTF-8 antes de sincronizar."
+        $conflicts++
+        Pop-Location
+        continue
+    }
+
     # Descargar cambios del engine
     Write-Step "Descargando cambios del engine..."
     $prevPref = $ErrorActionPreference
@@ -119,6 +150,14 @@ foreach ($ws in $registry.workspaces) {
             } else {
                 Write-Skip "npm install fallo - corre manualmente en $wsPath"
             }
+        }
+
+        $workspaceEncoding = Test-Encoding $wsPath
+        if ($workspaceEncoding -ne 0) {
+            Write-Fail "El workspace fallo la validacion UTF-8 despues de sincronizar."
+            $conflicts++
+            Pop-Location
+            continue
         }
 
         $synced++

@@ -21,6 +21,7 @@ $ErrorActionPreference = "Stop"
 $scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $seedDir     = Resolve-Path (Join-Path $scriptDir "../..") | Select-Object -ExpandProperty Path
 $registryPath = Join-Path $scriptDir "workspaces.json"
+$encodingGuard = Join-Path $seedDir "scripts/validate-text-encoding.mjs"
 $seedUrl     = (& git -C $seedDir remote get-url origin)
 
 # Usar la rama activa del seed como fuente de verdad
@@ -36,11 +37,22 @@ $wsRelPath   = "../$Name"
 function Write-Step($msg) { Write-Host "  $msg" -ForegroundColor DarkGray }
 function Write-Ok($msg)   { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Fail($msg) { Write-Host "  [!!] $msg" -ForegroundColor Red; exit 1 }
+function Read-Utf8Text([string]$Path) { Get-Content -LiteralPath $Path -Encoding utf8 -Raw }
+function Write-Utf8NoBom([string]$Path, [string]$Content) {
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
+}
 
 Write-Host ""
 Write-Host "NUEVO WORKSPACE  |  $Name" -ForegroundColor Cyan
 Write-Host "  Destino: $wsPath" -ForegroundColor DarkGray
 Write-Host ""
+
+Write-Step "Validando encoding del registry..."
+node $encodingGuard $registryPath
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "workspaces.json no cumple el contrato UTF-8."
+}
 
 # Guardia: no pisar un workspace existente
 
@@ -48,7 +60,7 @@ if (Test-Path $wsPath) {
     Write-Fail "La carpeta '$wsPath' ya existe. Elige otro nombre."
 }
 
-$registry = Get-Content $registryPath | ConvertFrom-Json
+$registry = Read-Utf8Text $registryPath | ConvertFrom-Json
 $exists = $registry.workspaces | Where-Object { $_.name -eq $Name }
 if ($exists) {
     Write-Fail "'$Name' ya esta registrado en workspaces.json."
@@ -99,8 +111,15 @@ $newEntry = [PSCustomObject]@{
 }
 
 $registry.workspaces += $newEntry
-$registry | ConvertTo-Json -Depth 5 | Set-Content $registryPath -Encoding utf8
+$registryJson = $registry | ConvertTo-Json -Depth 5
+Write-Utf8NoBom $registryPath $registryJson
 Write-Ok "Registrado en workspaces.json."
+
+Write-Step "Revalidando registry..."
+node $encodingGuard $registryPath
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "El registry quedo fuera de contrato despues de escribirlo."
+}
 
 # Resumen
 
