@@ -70,7 +70,10 @@ Pop-Location
 # ── 2. Actualizar workspaces ──────────────────────────────────────────────────
 
 $total = $registry.workspaces.Count
-$synced = 0; $skipped = 0; $conflicts = 0
+$synced = 0
+$current = 0
+$skipped = 0
+$blocked = 0
 
 foreach ($ws in $registry.workspaces) {
     $wsPath = Resolve-Path (Join-Path $seedDir $ws.path) -ErrorAction SilentlyContinue
@@ -104,10 +107,18 @@ foreach ($ws in $registry.workspaces) {
         continue
     }
 
+    $dirtyStatus = git status --porcelain
+    if ($dirtyStatus) {
+        Write-Fail "Workspace con cambios locales sin commitear. No se intenta merge para no mezclar trabajo del fork con el engine."
+        $blocked++
+        Pop-Location
+        continue
+    }
+
     $workspaceEncoding = Test-Encoding $wsPath
     if ($workspaceEncoding -ne 0) {
         Write-Fail "El workspace no pasa la validacion UTF-8 antes de sincronizar."
-        $conflicts++
+        $blocked++
         Pop-Location
         continue
     }
@@ -123,62 +134,52 @@ foreach ($ws in $registry.workspaces) {
     $behind = (git rev-list HEAD.."upstream/$seedBranch" --count).Trim()
     if ($behind -eq "0") {
         Write-Ok "Ya esta al dia."
-        $synced++
+        $current++
         Pop-Location
         continue
     }
 
     Write-Step "$behind commit(s) nuevos. Fusionando..."
-    git merge "upstream/$seedBranch" --no-ff -m "chore: sync engine ($seedBranch)"
+    $mergeOutput = git merge "upstream/$seedBranch" --no-ff -m "chore: sync engine ($seedBranch)" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "Merge bloqueado. Detalle:"
+        $mergeOutput | ForEach-Object { Write-Host "      $_" -ForegroundColor Red }
+        Write-Step "Resuelve primero los cambios locales del fork y vuelve a correr la sincronizacion."
+        $blocked++
+        Pop-Location
+        continue
+    }
 
-    if ($LASTEXITCODE -eq 0) {
-        Write-Ok "Actualizado ($behind commits)."
+    Write-Ok "Actualizado ($behind commits)."
 
-        # Re-install dependencies in case package.json changed
-        if (Test-Path (Join-Path $wsPath "package.json")) {
-            Write-Step "Actualizando dependencias (npm install)..."
-            $prevPref = $ErrorActionPreference
-            $ErrorActionPreference = "Continue"
-            npm install --prefix $wsPath 2>&1 | Out-Null
-            $ErrorActionPreference = $prevPref
-            if ($LASTEXITCODE -eq 0) {
-                Write-Ok "Dependencias actualizadas."
-            } else {
-                Write-Skip "npm install fallo - corre manualmente en $wsPath"
-            }
+    # Re-install dependencies in case package.json changed
+    if (Test-Path (Join-Path $wsPath "package.json")) {
+        Write-Step "Actualizando dependencias (npm install)..."
+        $prevPref = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        npm install --prefix $wsPath 2>&1 | Out-Null
+        $ErrorActionPreference = $prevPref
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "Dependencias actualizadas."
+        } else {
+            Write-Skip "npm install fallo - corre manualmente en $wsPath"
         }
+    }
 
-        $workspaceEncoding = Test-Encoding $wsPath
-        if ($workspaceEncoding -ne 0) {
-            Write-Fail "El workspace fallo la validacion UTF-8 despues de sincronizar."
-            $conflicts++
-            Pop-Location
-            continue
-        }
+    $workspaceEncoding = Test-Encoding $wsPath
+    if ($workspaceEncoding -ne 0) {
+        Write-Fail "El workspace fallo la validacion UTF-8 despues de sincronizar."
+        $blocked++
+        Pop-Location
+        continue
+    }
 
+    $postBehind = (git rev-list HEAD.."upstream/$seedBranch" --count).Trim()
+    if ($postBehind -eq "0") {
         $synced++
     } else {
-        # Auto-resolve package.json conflicts to preserve fork dependencies
-        $conflictedFiles = git diff --name-only --diff-filter=U
-        
-        if ($conflictedFiles -contains "package.json") {
-            Write-Step "Resolviendo conflicto en package.json (preservando dependencias del fork)..."
-            node (Join-Path $seedDir "scripts/admin/resolve-package.js") $wsPath
-        }
-
-        # Re-check remaining conflicts
-        $remainingConflicts = git diff --name-only --diff-filter=U
-        
-        if (-not $remainingConflicts) {
-            git commit --no-edit | Out-Null
-            Write-Ok "Conflictos de dependencias resueltos automaticamente."
-            $synced++
-        } else {
-            Write-Fail "Conflictos detectados que requieren resolucion manual:"
-            $remainingConflicts | ForEach-Object { Write-Host "      $_" -ForegroundColor Red }
-            Write-Step "Ve al proyecto, ejecuta 'git merge --abort' para cancelar, o resuelve y haz commit."
-            $conflicts++
-        }
+        Write-Fail "El workspace sigue atrasado despues del merge."
+        $blocked++
     }
 
     Pop-Location
@@ -188,5 +189,9 @@ foreach ($ws in $registry.workspaces) {
 
 Write-Host ""
 Write-Host "-----------------------------------------" -ForegroundColor DarkGray
-Write-Host ("  Sync completo: " + $synced + " ok / " + $skipped + " omitidos / " + $conflicts + " conflictos  (de " + $total + ")") -ForegroundColor Cyan
+Write-Host ("  Sync completo: " + $synced + " sincronizados / " + $current + " ya al dia / " + $skipped + " omitidos / " + $blocked + " bloqueados  (de " + $total + ")") -ForegroundColor Cyan
 Write-Host ""
+
+if ($blocked -gt 0) {
+    exit 1
+}
