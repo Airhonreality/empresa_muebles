@@ -16,8 +16,7 @@ import "./globals.css";
 import { AppProvider }    from "@/context/AppContext";
 import { AuthProvider }   from "@/context/AuthContext";
 import { Toaster }        from "sonner";
-import { AdminGear }               from "@/components/agnostic/admin/AdminGear";
-import { AgnoChat }               from "@/components/agnostic/admin/AgnoChat";
+import { AdminTools }               from "@/components/agnostic/admin/AdminTools";
 import { getVaultData }   from "@/core/server/vault";
 import { getProjectStorageRoot } from "@/server/activeProject";
 import fs   from "fs/promises";
@@ -84,8 +83,7 @@ export default async function RootLayout({
         <AppProvider initialData={vaultData}>
           <AuthProvider>
             {children}
-            <AdminGear />
-            <AgnoChat />
+            <AdminTools />
             <Toaster position="bottom-left" expand={false} richColors />
           </AuthProvider>
         </AppProvider>
