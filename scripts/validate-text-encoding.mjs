@@ -111,9 +111,7 @@ const files = explicitFiles.length > 0
     ? getFilesFromGitIndex()
     : getTrackedFiles();
 
-const targets = stagedMode
-  ? files.filter(isTextFile)
-  : files;
+const targets = files.filter(isTextFile);
 
 const errors = [];
 
