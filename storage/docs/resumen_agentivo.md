@@ -1,16 +1,16 @@
 # Resumen Agentivo
 
-Generated: 2026-06-30T17:55:32.676Z
+Generated: 2026-07-02T13:04:34.131Z
 Source: storage/docs/*.md
 
 > Documento generado por `agno docs`. No es fuente canonica; la fuente canonica sigue en `storage/db/`.
 
 ## Documentos
 
-- storage/progreso/arbol_de_schemas.md
-- storage/progreso/arbol_de_zaps.md
-- storage/progreso/arbol_de_rutas.md
-- storage/progreso/arbol_de_modulos.md
+- storage/docs/arbol_de_schemas.md
+- storage/docs/arbol_de_zaps.md
+- storage/docs/arbol_de_rutas.md
+- storage/docs/arbol_de_modulos.md
 
 ## Uso Recomendado
 

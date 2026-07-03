@@ -236,16 +236,6 @@
   }
 
   /* 🏛️ CUSTOM AGNOSTIC COMPONENT THEMES */
-  .theme-veta_de_oro {
-    background-color: #8b6f3c !important;
-    color: white !important;
-    border: 1px solid rgba(166, 140, 89, 0.35) !important;
-    box-shadow: 0 10px 15px -3px rgba(139, 111, 60, 0.2), 0 4px 6px -4px rgba(139, 111, 60, 0.2) !important;
-  }
-  .theme-veta_de_oro:hover {
-    background-color: #a68c59 !important;
-  }
-
   /* 📝 AGNOSTIC MARKDOWN — typography without @tailwindcss/typography dependency */
   .agnostic-md { line-height: 1.75; color: hsl(var(--foreground)); }
   .agnostic-md h1 { font-size: 2.25rem; font-weight: 900; letter-spacing: -0.02em; margin: 2rem 0 1rem; }
