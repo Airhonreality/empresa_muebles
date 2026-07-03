@@ -40,6 +40,13 @@ import {
   printRefactorSchemaPlan,
   printValidateZaps,
 } from './agno-zap-analysis';
+import {
+  applyInstallAdapter,
+  applyRemoveAdapter,
+  printInstallPlan,
+  printListAdapters,
+} from './agno-adapters';
+import { createCliResult, printCliResult } from './cli-reporter';
 
 const LOG_FILE = path.join(process.cwd(), '.agno-log.jsonl');
 
@@ -1781,38 +1788,89 @@ async function cmdStatus() {
 }
 
 async function cmdDocs(args: string[]) {
-  const kind = (args[0] ?? 'all') as StorageDocKind;
+  const kind = (args.find(arg => !arg.startsWith('--')) ?? 'all') as StorageDocKind;
   const allowed = new Set(['schemas', 'zaps', 'routes', 'modules', 'all']);
   if (!allowed.has(kind)) {
-    console.log('[ERROR] uso: docs schemas|zaps|routes|modules|all');
+    printCliResult(createCliResult({
+      command: 'docs',
+      summary: { errors: 1 },
+      findings: [{
+        level: 'error',
+        code: 'AGNO_DOCS_INVALID_KIND',
+        message: `Uso invalido: ${kind}`,
+        suggestion: 'Usa docs schemas|zaps|routes|modules|all',
+      }],
+    }), { json: args.includes('--json') });
     return;
   }
   const files = await generateStorageDocs(kind);
-  console.log(`${belt('ESTRUCTURA')} docs ${kind}: ${files.length} archivo(s) generado(s)`);
-  for (const file of files) console.log(`  - ${path.relative(process.cwd(), file)}`);
+  printCliResult(createCliResult({
+    command: `docs ${kind}`,
+    summary: { files: files.length },
+    findings: [],
+    metadata: { files: files.map(file => path.relative(process.cwd(), file).replace(/\\/g, '/')) },
+  }), { json: args.includes('--json') });
 }
 
 async function cmdBootstrap(args: string[]) {
   const sub = args[0] ?? 'status';
   switch (sub) {
-    case 'doctor': return printBootstrapDoctor();
+    case 'doctor': return printBootstrapDoctor({ json: args.includes('--json') });
     case 'status': return printBootstrapStatus();
     case 'install': return startBootstrapInstall();
     case 'resume': return startBootstrapInstall();
-    case 'verify': return printBootstrapVerify();
+    case 'verify': return printBootstrapVerify({ json: args.includes('--json') });
     default:
       console.log('[ERROR] uso: bootstrap install|resume|status|doctor|verify');
   }
 }
 
 async function cmdRefactorSchema(args: string[]) {
-  const [sub, oldName, newName] = args;
+  const positional = args.filter(arg => !arg.startsWith('--'));
+  const [sub, oldName, newName] = positional;
   if (!sub || !oldName || !newName || !['plan', 'apply'].includes(sub)) {
-    console.log('[ERROR] uso: refactor-schema plan|apply <old_name> <new_name>');
+    console.log('[ERROR] uso: refactor-schema plan|apply <old_name> <new_name> [--dry] [--yes]');
     return;
   }
-  if (sub === 'plan') return printRefactorSchemaPlan(oldName, newName);
-  return applyRefactorSchema(oldName, newName);
+  if (sub === 'plan') return printRefactorSchemaPlan(oldName, newName, { json: args.includes('--json') });
+  return applyRefactorSchema(oldName, newName, {
+    dryRun: args.includes('--dry'),
+    yes: args.includes('--yes'),
+    json: args.includes('--json'),
+  });
+}
+
+async function cmdListAdapters(args: string[]) {
+  return printListAdapters({ json: args.includes('--json') });
+}
+
+async function cmdInstall(args: string[]) {
+  const positional = args.filter(arg => !arg.startsWith('--'));
+  const [id, sub] = positional;
+  if (!id) {
+    console.log('[ERROR] uso: install <id> [plan] [--dry] [--yes] [--json]');
+    return;
+  }
+  if (sub === 'plan') return printInstallPlan(id, { json: args.includes('--json') });
+  return applyInstallAdapter(id, {
+    dryRun: args.includes('--dry'),
+    yes: args.includes('--yes'),
+    json: args.includes('--json'),
+  });
+}
+
+async function cmdRemoveAdapter(args: string[]) {
+  const positional = args.filter(arg => !arg.startsWith('--'));
+  const [id] = positional;
+  if (!id) {
+    console.log('[ERROR] uso: remove-adapter <id> [--dry] [--yes] [--json]');
+    return;
+  }
+  return applyRemoveAdapter(id, {
+    dryRun: args.includes('--dry'),
+    yes: args.includes('--yes'),
+    json: args.includes('--json'),
+  });
 }
 
 // ── AYUDA ─────────────────────────────────────────────────────────────────────
@@ -1836,6 +1894,8 @@ agno — Agnostic CLI / MCP de Interfaz  (ver AGNO_MCP_PLAN.md)
   records <schema> [limit=N] [key=val]    registros
   script <name>                           ver código de un script
   validate                                verificar invariantes
+  validate --zaps [--json]                verificar invariantes + zaps
+  validate:zaps [--json]                  analizar referencias de zaps
 
 ══ CAPA 2 — COMPOSICIÓN INMEDIATA ════════════════════════════════════
   add-block <route> <type> [context:<s>] [intent:<i>] [zap:<z>]
@@ -1881,6 +1941,21 @@ agno — Agnostic CLI / MCP de Interfaz  (ver AGNO_MCP_PLAN.md)
   script <name>
   script write <name> --file <ruta.js>
   script export <name> --file <ruta.js>
+  validate:zaps [--json]
+
+REFACTOR SEMANTICO
+  refactor-schema plan <old> <new>
+  refactor-schema apply <old> <new> [--dry] [--yes]
+
+ADAPTERS
+  list-adapters [--json]
+  install <id> plan [--json]
+  install <id> [--dry] [--yes] [--json]
+  remove-adapter <id> [--dry] [--yes] [--json]
+
+DOCS / BOOTSTRAP
+  docs schemas|zaps|routes|modules|all
+  bootstrap install|resume|status|doctor|verify
 
 ══ COLA DE CAMBIOS (solo capas 4 y 5) ════════════════════════════════
   status              ver cola actual
@@ -1923,9 +1998,9 @@ async function dispatch(line: string) {
       return cmdScript(args[0]);
     case 'validate':
       await cmdValidate();
-      if (args.includes('--zaps')) await printValidateZaps();
+      if (args.includes('--zaps')) await printValidateZaps({ json: args.includes('--json') });
       return;
-    case 'validate:zaps': return printValidateZaps();
+    case 'validate:zaps': return printValidateZaps({ json: args.includes('--json') });
 
     // Composición inmediata
     case 'add-block':      return cmdAddBlock(args);
@@ -1968,6 +2043,9 @@ async function dispatch(line: string) {
     case 'docs':    return cmdDocs(args);
     case 'bootstrap': return cmdBootstrap(args);
     case 'refactor-schema': return cmdRefactorSchema(args);
+    case 'list-adapters':   return cmdListAdapters(args);
+    case 'install':         return cmdInstall(args);
+    case 'remove-adapter':  return cmdRemoveAdapter(args);
     case 'help':    return cmdHelp();
 
     default:

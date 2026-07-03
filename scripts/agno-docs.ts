@@ -12,7 +12,7 @@ type JsonRecord = {
 export type StorageDocKind = 'schemas' | 'zaps' | 'routes' | 'modules' | 'all';
 
 const ROOT_DIR = process.env.INIT_CWD || process.cwd();
-const DOC_DIR = path.join(ROOT_DIR, 'storage', 'progreso');
+const DOC_DIR = path.join(ROOT_DIR, 'storage', 'docs');
 const DB_DIR = path.join(ROOT_DIR, 'storage', 'db');
 const SPECIALIZED_DIR = path.join(ROOT_DIR, 'src', 'components', 'specialized');
 

@@ -21,11 +21,11 @@ Business domain: none in the seed. Real domain meaning must be added by each for
     - Modelo de diseño de detalle de modulos de fork: (pendiente por incluir)
 
 # Arboles de arqutiectura:
-    Se generan autoamticamente con CLI y muestran el estado actual real de los schemas, zaps y rutas del fork.
+    Se generan autoamticamente con CLI en storage/docs/ y muestran el estado actual real de los schemas, zaps y rutas del fork.
     - Arbol de schemas
     - Arbol de zaps
     - Arbol de rutas
-Siempre se usa esta infromacion para diagnosicar y tomar decisiones de diseño.
+Son snapshots regenerables (no se editan a mano). Siempre se usa esta infromacion para diagnosicar y tomar decisiones de diseño.
 
 ## Versionado y Sincronización del Fork
 

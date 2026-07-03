@@ -38,6 +38,7 @@ export default defineConfig({
     // Register your project's custom blocks here.
     // Example:
     // my_block: () => import('./src/components/specialized/MyBlock'),
+    calendar_scheduler: () => import('./src/components/specialized/calendar-scheduler/CalendarScheduler'),
   },
 
   features: {
@@ -46,6 +47,8 @@ export default defineConfig({
   },
 
   integrations: {
+    // agno:adapters:start — maintained by `agno install <id>` / `agno remove-adapter <id>` (scripts/agno-adapters.ts)
     notion: () => import('./src/integrations/notion'),
+    // agno:adapters:end
   },
 })

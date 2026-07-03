@@ -51,12 +51,16 @@ storage/*
 !storage/progreso/**
 !storage/fork_doc/
 !storage/fork_doc/**
+!storage/docs/
+!storage/docs/**
 
 # Project-specific custom blocks built with AI
 # Exception: _TEMPLATE.tsx is part of the seed (shows the pattern to follow)
 src/components/specialized/*
 !src/components/specialized/_TEMPLATE.tsx
 !src/components/specialized/DataBrowser.tsx
+!src/components/specialized/calendar-scheduler/
+!src/components/specialized/calendar-scheduler/**
 
 
 

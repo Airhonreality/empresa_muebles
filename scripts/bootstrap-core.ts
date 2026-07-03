@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { getStrategyName } from '../src/server/getStrategy';
+import { createCliResult, printCliResult, type CliFinding, type CliResult } from './cli-reporter';
 
 type BootstrapState = {
   current_step?: string;
@@ -161,18 +162,31 @@ export async function bootstrapDoctor(): Promise<BootstrapCheck[]> {
   return checks;
 }
 
-export async function printBootstrapDoctor(): Promise<void> {
+export async function printBootstrapDoctor(options: { json?: boolean } = {}): Promise<void> {
+  printCliResult(await bootstrapDoctorResult(), options);
+}
+
+export async function bootstrapDoctorResult(): Promise<CliResult> {
   const checks = await bootstrapDoctor();
   const counts = checks.reduce((acc, check) => {
     acc[check.status] += 1;
     return acc;
   }, { ok: 0, warn: 0, fail: 0 } as Record<CheckStatus, number>);
+  const findings: CliFinding[] = checks
+    .filter(check => check.status !== 'ok')
+    .map(check => ({
+      level: check.status === 'fail' ? 'error' : 'warn',
+      code: `AGNO_BOOTSTRAP_${check.id.toUpperCase()}`,
+      message: check.message,
+      suggestion: bootstrapSuggestion(check.id),
+    }));
 
-  console.log('Bootstrap doctor');
-  console.log(`ok:${counts.ok} warn:${counts.warn} fail:${counts.fail}`);
-  for (const check of checks) {
-    console.log(`- [${check.status}] ${check.id}: ${check.message}`);
-  }
+  return createCliResult({
+    command: 'bootstrap doctor',
+    summary: { ok: counts.ok, warnings: counts.warn, errors: counts.fail },
+    findings,
+    metadata: { checks },
+  });
 }
 
 export async function printBootstrapStatus(): Promise<void> {
@@ -210,24 +224,40 @@ export async function startBootstrapInstall(): Promise<void> {
   console.log('- esta fase todavia no crea recursos externos ni pide secretos interactivos.');
 }
 
-export async function printBootstrapVerify(): Promise<void> {
-  await printBootstrapDoctor();
-  console.log('');
+export async function printBootstrapVerify(options: { json?: boolean } = {}): Promise<void> {
+  const doctor = await bootstrapDoctorResult();
   const remoteChecks = await bootstrapRemoteVerify();
+  const remoteFindings: CliFinding[] = remoteChecks
+    .filter(check => check.status !== 'ok')
+    .map(check => ({
+      level: check.status === 'fail' ? 'error' : 'warn',
+      code: `AGNO_REMOTE_${check.id.toUpperCase()}`,
+      message: check.message,
+      suggestion: check.id.includes('production')
+        ? 'Configura PRODUCTION_URL y verifica que el deploy este accesible.'
+        : 'Valida token/site id de Netlify.',
+      metadata: check.metadata,
+    }));
+
   if (!remoteChecks.length) {
-    console.log('Verify remoto omitido: configura PRODUCTION_URL y/o NETLIFY_AUTH_TOKEN + NETLIFY_SITE_ID.');
-    return;
+    remoteFindings.push({
+      level: 'warn',
+      code: 'AGNO_REMOTE_VERIFY_SKIPPED',
+      message: 'Verify remoto omitido: configura PRODUCTION_URL y/o NETLIFY_AUTH_TOKEN + NETLIFY_SITE_ID.',
+      suggestion: 'Carga .env.local con PRODUCTION_URL y credenciales de Netlify para validar el deploy real.',
+    });
   }
 
-  console.log('Remote verify');
-  for (const check of remoteChecks) {
-    console.log(`- [${check.status}] ${check.id}: ${check.message}`);
-    if (check.metadata) {
-      for (const [key, value] of Object.entries(check.metadata)) {
-        console.log(`  ${key}: ${String(value)}`);
-      }
-    }
-  }
+  printCliResult(createCliResult({
+    command: 'bootstrap verify',
+    summary: {
+      doctor_warnings: doctor.findings.filter(f => f.level === 'warn').length,
+      doctor_errors: doctor.findings.filter(f => f.level === 'error').length,
+      remote_checks: remoteChecks.length,
+    },
+    findings: [...doctor.findings, ...remoteFindings],
+    metadata: { doctor: doctor.metadata, remoteChecks },
+  }), options);
 }
 
 export async function bootstrapRemoteVerify(): Promise<RemoteCheck[]> {
@@ -302,4 +332,16 @@ export async function bootstrapRemoteVerify(): Promise<RemoteCheck[]> {
   }
 
   return checks;
+}
+
+function bootstrapSuggestion(id: string): string {
+  switch (id) {
+    case 'hosting_bootstrap': return 'Configura NETLIFY_AUTH_TOKEN y NETLIFY_SITE_ID.';
+    case 'database_url': return 'Configura DATABASE_URL pooled/serverless de Neon/Postgres.';
+    case 'active_strategy': return 'Asegura que DATABASE_URL tenga prioridad y no quede GITHUB_REPO obsoleto.';
+    case 'r2': return 'Configura CF_ACCOUNT_ID, CF_R2_BUCKET, CF_R2_ACCESS_KEY_ID y CF_R2_SECRET_ACCESS_KEY.';
+    case 'auth_secrets': return 'Genera SESSION_SECRET y API_SECRET_KEY antes de crear el primer admin.';
+    case 'production_url': return 'Configura PRODUCTION_URL para validar health remoto.';
+    default: return 'Revisa el bootstrap doctor y completa la configuracion faltante.';
+  }
 }
