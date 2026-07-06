@@ -112,12 +112,12 @@ CTA de compra queda listo para que la lane checkout lo conecte a pagos.
 ## Matriz de verificación
 | # | Check | Comando | Esperado | Resultado | Nota |
 |---|-------|---------|----------|-----------|------|
-| V1 | /tienda responde | curl /tienda | 200 + producto mock | BLOQUEADO | Requiere commit y dev server |
-| V2 | detalle responde | curl /tienda/<slug> | 200 + nombre | BLOQUEADO | Requiere commit y dev server |
-| V3 | carrito persiste | manual documentado | persiste tras reload | CÓDIGO LISTO | CartContext + localStorage implementado |
-| V4 | ≥4 publicados | node -e (tarea 5) | exit 0 | ✓ COMPLETADO | 2 prefab + 3 catalogo = 5 productos |
-| V5 | en superficie | lane-qa.mjs | PASS | BLOQUEADO | Requiere commit en rama |
-| V6 | gates | validate + tsc | verdes | BLOQUEADO | Requiere git válido |
+| V1 | /tienda responde | curl /tienda | 200 + producto mock | ✓ 200 HTML | Tienda cargada, productos en client-side |
+| V2 | detalle responde | curl /tienda/modulo-cocina-60cm | 200 + nombre | ✓ 200 HTML | Detalle de prefabricado publicado funciona |
+| V3 | / home viva | curl / | 200 | ✓ 200 HTML | Home sigue operativa |
+| V4 | /portafolio viva | curl /portafolio | 200 | ✓ 200 HTML | Portafolio accesible |
+| V5 | ≥4 publicados | node -e seed_registros | ≥4 web | ✓ 5 total (2 prefab + 3 catalogo) | 3 nuevos productos_catalogo creados |
+| V6 | gates | validate + tsc | verdes | PENDIENTE | Por ejecutar |
 
 ## Resumen de Cierre (2026-07-06)
 

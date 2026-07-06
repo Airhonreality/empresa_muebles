@@ -339,5 +339,38 @@
       "nota": "Mock: imagen Closet walk-in - Sistema de iluminación integrada"
     },
     "updated_at": "2026-07-06T14:13:35.463Z"
+  },
+  {
+    "id": "25d63367-d7b4-4e24-8a13-4aff430c82dc",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "productos_catalogo",
+      "record_id": "396157d8-bd7f-4425-bbf7-b96cd5edaf26",
+      "lote": "webstore_r2",
+      "nota": "Puerta Corredera de Vidrio para tienda"
+    },
+    "updated_at": "2026-07-06T19:45:03.854Z"
+  },
+  {
+    "id": "e2c2048b-7794-411f-8349-abea5b881b73",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "productos_catalogo",
+      "record_id": "a54d6fc7-6797-4ce5-96b8-c65ea4e50212",
+      "lote": "webstore_r2",
+      "nota": "Espejo Biselado Premium para tienda"
+    },
+    "updated_at": "2026-07-06T19:45:03.877Z"
+  },
+  {
+    "id": "2e1c94c8-11a9-4edc-be07-30b30176c419",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "productos_catalogo",
+      "record_id": "3cf2ce31-e9d2-4c02-ae6c-926947aee985",
+      "lote": "webstore_r2",
+      "nota": "Bisagras de Acero Inoxidable para tienda"
+    },
+    "updated_at": "2026-07-06T19:45:03.892Z"
   }
 ]
