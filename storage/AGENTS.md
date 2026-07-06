@@ -80,6 +80,19 @@ contrato es **no negociable**:
 - **Antes de cualquier commit:** `npm run validate:encoding` debe pasar
   (UTF-8 sin BOM). Un commit no introduce mojibake.
 
+### Reglas post-incidente 2026-07-06 (pérdida de `.git/objects` — ver
+`storage/progreso/INCIDENTE_GIT_2026-07-06.md`)
+
+- **Toda lane cierra con commit Y PUSH de su rama a origin.** Un commit local sin push
+  vive en el mismo disco que puede corromperse: no es respaldo.
+- **El Orquestador pushea `dev` tras cada merge de lane.**
+- **Operaciones estructurales de git se SERIALIZAN** (worktree add/remove, checkout de
+  ramas, reset): el `.git` es superficie compartida aunque los archivos no lo sean. Dos
+  rondas paralelas de agentes = dos CLONES del repo, nunca un `.git` compartido.
+- **`git config core.longpaths true` obligatorio en Windows.** Nunca `git worktree remove`
+  con `node_modules` dentro del worktree (borrar node_modules primero).
+- **Clientes git GUI (GitKraken/GitLens) cerrados** mientras agentes operan el repo.
+
 ### Mapa de ramas vigente
 
 | Rama | Rol |

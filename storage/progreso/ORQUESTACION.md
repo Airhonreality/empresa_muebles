@@ -67,9 +67,13 @@ Toda lane cumple, para cerrar:
    pasan. **Prohibido cerrar con `--no-verify`** (si el gate falla, es un hallazgo, no
    un obstáculo a saltar).
 4. **Trae su contrato de lane** (sección 5) enganchado al arnés.
+5. **Cierra con PUSH de su rama a origin** (regla post-incidente 2026-07-06: un commit
+   local sin push no es respaldo — se perdió la historia 07-02→07-06 por no pushear).
 
-Integración: `goal/*` → `dev` con `--no-ff` tras validar. `dev` → `main` tras build +
-árboles de arquitectura verdes. `main` sigue a `origin/main`.
+Integración: `goal/*` → `dev` con `--no-ff` tras validar; **el Orquestador pushea `dev`
+tras cada merge**. `dev` → `main` tras build + árboles verdes. `main` sigue a `origin/main`.
+Operaciones estructurales de git (worktree/checkout/reset) SERIALIZADAS por el Orquestador;
+rondas paralelas = clones separados (ver `INCIDENTE_GIT_2026-07-06.md`).
 
 ---
 
