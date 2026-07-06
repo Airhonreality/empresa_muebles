@@ -4,7 +4,7 @@
   "fields": [
     {
       "key": "ui_tokens",
-      "label": "Tokens Estéticos",
+      "label": "Tokens Esteticos",
       "icon": "Palette",
       "type": "section",
       "fields": [
@@ -24,10 +24,10 @@
         },
         {
           "key": "font_sans",
-          "label": "Tipografía Sans-Serif",
+          "label": "Tipografia Sans-Serif",
           "type": "string",
-          "default": "Inter, sans-serif",
-          "description": "Familia tipográfica principal (ej. Inter, sans-serif)."
+          "default": "'Futura BT', 'Futura', 'Century Gothic', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif",
+          "description": "Familia tipografica principal con Futura BT como referencia de marca."
         }
       ]
     }

@@ -3,8 +3,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import type { BlockProps, DataItem } from '@agnostic/core'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Trash2, Edit3, X, Copy } from 'lucide-react'
+import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Trash2, Edit3, X, Copy, Play } from 'lucide-react'
 
 import { EspacioCard } from './EspacioCard'
 import { MoneyInput } from './MoneyInput'
@@ -12,9 +13,11 @@ import { HybridClientSelector } from './HybridClientSelector'
 import { ApoyoTecnicoPanel } from './ApoyoTecnicoPanel'
 import { ContratoModal } from './ContratoModal'
 import { ContratoEmailModal } from './ContratoEmailModal'
+import ProductionTransitionDialog from '../kanban/ProductionTransitionDialog'
 import { COP, vWrite, vRemove } from './utils'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
+import { useMateriaStore } from '@/lib/agnostic/store'
 import type {
   Proyectos as ProyectoData,
   EspacioVariantes,
@@ -30,6 +33,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   // ── Data state ───────────────────────────────────────────────────
   const [proyectosList, setProyectos] = useState<DataItem[]>([])
   const [clientes,     setClientes]     = useState<DataItem[]>([])
+  const [contratos,    setContratos]    = useState<DataItem[]>([])
   const [catalogo,     setCatalogo]     = useState<DataItem[]>([])
   const [variantes,    setVariantes]    = useState<DataItem[]>([])
   const [items,        setItems]        = useState<DataItem[]>([])
@@ -47,6 +51,8 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const [isExporting, setIsExporting]   = useState(false)
   const [isContratoOpen, setIsContratoOpen] = useState(false)
   const [isEmailOpen, setIsEmailOpen] = useState(false)
+  const [isProductionOpen, setIsProductionOpen] = useState(false)
+  const [isProducing, setIsProducing] = useState(false)
   const [generatedContratoId, setGeneratedContratoId] = useState<string | null>(null)
   const [emailModalData, setEmailModalData] = useState<{ email: string; subject: string; body: string } | null>(null)
   const [catalogModal, setCatalogModal] = useState<{
@@ -61,6 +67,10 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   })
 
   const activeCot = proyectosList.find(c => c.id === activeCotId)
+  const activeContrato = useMemo(() => {
+    if (!activeCotId) return null
+    return contratos.find(c => (c.data as any)?.proyecto_id === activeCotId) ?? null
+  }, [contratos, activeCotId])
 
   const clienteData = useMemo(() => {
     if (!headerLocal?.cliente_id) return null
@@ -77,21 +87,34 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [rc, rci, rcat, rv, ri] = await Promise.all([
+      const [rc, rci, rco, rcat, rv, ri] = await Promise.all([
         fetch('/api/vault?namespace=proyectos'),
         fetch('/api/vault?namespace=clientes'),
+        fetch('/api/vault?namespace=contratos'),
         fetch('/api/vault?namespace=productos_catalogo'),
         fetch('/api/vault?namespace=espacio_variantes'),
         fetch('/api/vault?namespace=items_variante'),
       ])
-      const [jc, jci, jcat, jv, ji] = await Promise.all([rc.json(), rci.json(), rcat.json(), rv.json(), ri.json()])
+      const [jc, jci, jco, jcat, jv, ji] = await Promise.all([rc.json(), rci.json(), rco.json(), rcat.json(), rv.json(), ri.json()])
       setProyectos(jc.records  ?? [])
       setClientes(    jci.records ?? [])
+      setContratos(   jco.records ?? [])
       setCatalogo(    jcat.records?? [])
       setVariantes(   jv.records  ?? [])
       setItems(       ji.records  ?? [])
     } finally { setLoading(false) }
   }, [])
+
+  async function zapCall(zap: string, payload: Record<string, unknown>) {
+    const res = await fetch('/api/engine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zap, payload }),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    const { events = [] } = await res.json()
+    await processEvents(events, useMateriaStore.getState().updateItem)
+  }
 
   useEffect(() => { loadAll() }, [loadAll])
 
@@ -286,6 +309,27 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     const ajuste = Number(h.ajuste_arbitrario)       || 0
     return { mat, mo, sub, costos, impr, desc, ajuste, total: sub + costos + impr - desc + ajuste }
   }, [espacios, items, headerLocal, tarifas, activeVarMap])
+
+  const productionReady = !!activeCotId && (
+    !!activeContrato ||
+    headerLocal.estado === 'en_contrato' ||
+    headerLocal.estado === 'pre_produccion'
+  )
+
+  const handleActivateProduction = async () => {
+    if (!activeCot) return
+    setIsProducing(true)
+    try {
+      await zapCall('zap_activar_produccion', { record: activeCot })
+      await loadAll()
+      setIsProductionOpen(false)
+    } catch (err) {
+      toast.error('No se pudo activar la produccion.')
+      throw err
+    } finally {
+      setIsProducing(false)
+    }
+  }
 
   // ── Handlers: espacios ───────────────────────────────────────────
   const addEspacio = async () => {
@@ -1223,12 +1267,34 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
                 <FileText size={13} className="text-amber-500" />
                 Generar contrato
               </button>
+              <Button
+                type="button"
+                onClick={() => setIsProductionOpen(true)}
+                disabled={isExporting || isProducing || !activeCotId || !productionReady}
+                className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!productionReady ? 'Genera o confirma un contrato antes de pasar a produccion' : 'Pasar a produccion'}
+              >
+                <Play className="h-3.5 w-3.5" />
+                Pasar a produccion
+              </Button>
             </div>
           </div>
         </div>
       </footer>
 
       {/* ── Catalog Item Form Modal (Create or Edit) ────────────────── */}
+      <ProductionTransitionDialog
+        open={isProductionOpen}
+        onOpenChange={setIsProductionOpen}
+        projectName={(activeCot?.data as any)?.nombre_proyecto || 'Proyecto sin nombre'}
+        currentStage={headerLocal.estado}
+        hasContract={!!activeContrato}
+        contractLabel={activeContrato?.data?.codigo_contrato ? `Contrato ${activeContrato.data.codigo_contrato}` : 'Se generara al confirmar'}
+        busy={isProducing}
+        sourceLabel="Cotizador"
+        onConfirm={handleActivateProduction}
+      />
+
       {catalogModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-xl rounded-2xl border border-stone-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">

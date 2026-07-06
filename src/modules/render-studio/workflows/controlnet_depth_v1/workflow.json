@@ -1,0 +1,58 @@
+{
+  "id": "controlnet_depth_v1",
+  "name": "ControlNet depth render",
+  "description": "Geometry-anchored workflow with plan, depth map and style reference inputs.",
+  "required_image_roles": ["plan", "reference_photo", "depth_map"],
+  "workflow": {
+    "1": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": { "$from": "image", "role": "plan" }
+      }
+    },
+    "2": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": { "$from": "image", "role": "reference_photo" }
+      }
+    },
+    "3": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": { "$from": "image", "role": "depth_map" }
+      }
+    },
+    "4": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "text": { "$from": "prompt" },
+        "negative_text": { "$from": "negativePrompt" }
+      }
+    },
+    "5": {
+      "class_type": "ApplyControlNet",
+      "inputs": {
+        "control_type": { "$from": "controlNet", "index": 0, "field": "type" },
+        "image": { "$from": "controlNet", "index": 0, "field": "imageUrl" },
+        "strength": { "$from": "controlNet", "index": 0, "field": "strength" }
+      }
+    },
+    "6": {
+      "class_type": "IPAdapterApply",
+      "inputs": {
+        "reference_image": { "$from": "styleTransfer", "field": "referenceImageUrl" },
+        "weight": { "$from": "styleTransfer", "field": "weight" },
+        "mask": { "$from": "styleTransfer", "field": "maskUrl" },
+        "mode": { "$from": "styleTransfer", "field": "mode" }
+      }
+    },
+    "7": {
+      "class_type": "KSampler",
+      "inputs": {
+        "seed": { "$from": "param", "key": "seed" },
+        "steps": { "$from": "param", "key": "steps" },
+        "cfg": { "$from": "param", "key": "cfg" }
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "1ceee2a0-470e-4d57-9d63-31e6d28a82d2",
+    "context": "testimonios",
+    "data": {
+      "nombre_cliente": "Testimonio Demo Uno",
+      "barrio": "Usaquén",
+      "texto_resena": "Mock de resena para pruebas de trazabilidad del sitio web (lote webstore_r2).",
+      "calificacion": 5,
+      "proyecto_relacionado": "Proyecto Demo Cocina Uno",
+      "destacado": true,
+      "fecha_resena": "2026-06-01"
+    },
+    "updated_at": "2026-07-06T04:12:04.164Z"
+  },
+  {
+    "id": "e6362ef1-d55a-4650-9f47-756c3d0d8ac3",
+    "context": "testimonios",
+    "data": {
+      "nombre_cliente": "Testimonio Demo Dos",
+      "barrio": "Chicó",
+      "texto_resena": "Mock de resena para pruebas de trazabilidad del sitio web (lote webstore_r2).",
+      "calificacion": 5,
+      "proyecto_relacionado": "Proyecto Demo Closet Dos",
+      "destacado": false,
+      "fecha_resena": "2026-06-05"
+    },
+    "updated_at": "2026-07-06T04:12:04.194Z"
+  },
+  {
+    "id": "c8132189-2ab7-4800-83c3-059f62413b94",
+    "context": "testimonios",
+    "data": {
+      "nombre_cliente": "Testimonio Demo Tres",
+      "barrio": "Rosales",
+      "texto_resena": "Mock de resena para pruebas de trazabilidad del sitio web (lote webstore_r2).",
+      "calificacion": 4,
+      "proyecto_relacionado": "Proyecto Demo Cocina Uno",
+      "destacado": false,
+      "fecha_resena": "2026-06-10"
+    },
+    "updated_at": "2026-07-06T04:10:41.627Z"
+  }
+]

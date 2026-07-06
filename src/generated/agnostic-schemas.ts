@@ -55,20 +55,21 @@ export type ItemsVarianteRecord = AgnosticDataItem<ItemsVariante>
 export interface ProductosCatalogo {
   sku?: string  // SKU
   tipo?: string  // Tipo
-  descripcion: string  // DescripciÃ³n
+  descripcion: string  // Descripción
   unidad_medida?: string  // Unidad de Medida (Um)
   ancho?: string  // Ancho
   alto?: string  // Alto
   profundo?: string  // Profundo
   stock_actual?: number  // Stock Actual
   precio_directo?: number  // Precio Directo
-  precio_publico?: number  // Precio PÃºblico
+  precio_publico?: number  // Precio Público
   imagen_url?: string  // Imagen (URL)
   modelo_3d?: string  // Modelo 3D (.glb / .obj)
   url_referencia?: string  // URL de Referencia / Ficha
   proveedor?: string  // Proveedor
   categoria_comercial?: string  // Categoría Comercial Web
   proveedor_id?: string  // Proveedor (Relación)
+  publicado_web?: boolean  // Publicado en Web
 }
 
 export type ProductosCatalogoRecord = AgnosticDataItem<ProductosCatalogo>
@@ -76,8 +77,8 @@ export type ProductosCatalogoRecord = AgnosticDataItem<ProductosCatalogo>
 // ─── Schema: "imagenes_espacio" 
 export interface ImagenesEspacio {
   espacio_variante_id: string  // Espacio Perteneciente
-  imagen_url: string  // Imagen de DiseÃ±o / Referente (URL)
-  descripcion?: string  // DescripciÃ³n
+  imagen_url: string  // Imagen de Diseño / Referente (URL)
+  descripcion?: string  // Descripción
   orden?: number  // Orden
 }
 
@@ -87,7 +88,7 @@ export type ImagenesEspacioRecord = AgnosticDataItem<ImagenesEspacio>
 export interface Clientes {
   nombre: string  // Nombre
   documento?: string  // Documento
-  telefono?: string  // TelÃ©fono
+  telefono?: string  // Teléfono
   email?: string  // Email
   domicilio?: string  // Domicilio / Dirección
   descripcion_semantica?: string  // Descripcion Semantica
@@ -99,15 +100,16 @@ export type ClientesRecord = AgnosticDataItem<Clientes>
 export interface Proyectos {
   cliente_id?: string  // Cliente
   nombre_proyecto: string  // Nombre del Proyecto
-  direccion_obra?: string  // DirecciÃ³n de la Obra
-  dias_entrega_estimados?: number  // DÃ­as de Entrega Estimados
-  garantia_anios?: number  // GarantÃ­a (aÃ±os)
+  direccion_obra?: string  // Dirección de la Obra
+  dias_entrega_estimados?: number  // Días de Entrega Estimados
+  garantia_anios?: number  // Garantía (años)
   costos_operativos?: number  // Costos Operativos
-  imprevistos_instalacion?: number  // Imprevistos de InstalaciÃ³n
+  imprevistos_instalacion?: number  // Imprevistos de Instalación
   descuento_comercial?: number  // Descuento Comercial
   ajuste_arbitrario?: number  // Ajuste Técnico
   estado: string  // Estado del Proyecto
   descripcion_semantica?: string  // Descripcion Semantica
+  barrio?: string  // Barrio
 }
 
 export type ProyectosRecord = AgnosticDataItem<Proyectos>
@@ -118,6 +120,13 @@ export interface Prefabricados {
   descripcion?: string  // Descripción
   catalogo_id: string  // Producto Maestro del Catálogo
   imagen_url?: string  // URL de Imagen
+  descripcion_comercial?: string  // Descripción Comercial
+  categoria_comercial?: string  // Categoría Comercial
+  precio_publico?: number  // Precio Público
+  precio_costo_calculado?: number  // Precio Costo Calculado
+  publicado_web?: boolean  // Publicado en Web
+  reutilizable_catalogo?: boolean  // Reutilizable en Catálogo
+  slug?: string  // Slug
 }
 
 export type PrefabricadosRecord = AgnosticDataItem<Prefabricados>
@@ -128,6 +137,7 @@ export interface PrefabricadosItems {
   catalogo_id: string  // Producto del Catálogo
   cantidad: number  // Cantidad
   unidad_medida?: string  // Unidad de Medida
+  precio_unitario_snapshot?: number  // Precio Unitario Snapshot
 }
 
 export type PrefabricadosItemsRecord = AgnosticDataItem<PrefabricadosItems>
@@ -261,6 +271,12 @@ export interface Leads {
   barrio_zona?: string  // Barrio Zona
   tipo_espacio?: string  // Tipo de Espacio
   mensaje?: string  // Mensaje
+  gclid?: string  // "Google
+  estado_proyecto?: string  // "Estado
+  score_conversion?: number  // "Score
+  utm_source?: string  // "UTM
+  utm_medium?: string  // "UTM
+  utm_campaign?: string  // "UTM
 }
 
 export type LeadsRecord = AgnosticDataItem<Leads>
@@ -414,6 +430,77 @@ export interface RegistroHoras {
 
 export type RegistroHorasRecord = AgnosticDataItem<RegistroHoras>
 
+// ─── Schema: "system_groups" 
+export interface SystemGroups {
+  name: string  // Nombre Interno
+  label?: string  // Etiqueta Visible
+  kind?: string  // Tipo
+  description?: string  // Descripción
+}
+
+export type SystemGroupsRecord = AgnosticDataItem<SystemGroups>
+
+// ─── Schema: "testimonios" 
+export interface Testimonios {
+  nombre_cliente?: string  // "Nombre
+  barrio?: string  // "Barrio
+  texto_resena?: string  // "Texto
+  calificacion?: number  // "Calificación
+  proyecto_relacionado?: string  // "Proyecto
+  destacado?: boolean  // "Destacado
+  fecha_resena?: string  // "Fecha
+}
+
+export type TestimoniosRecord = AgnosticDataItem<Testimonios>
+
+// ─── Schema: "seed_registros" 
+export interface SeedRegistros {
+  namespace?: string  // Namespace
+  record_id?: string  // Record Id
+  lote?: string  // Lote
+  nota?: string  // Nota
+}
+
+export type SeedRegistrosRecord = AgnosticDataItem<SeedRegistros>
+
+// ─── Schema: "imagenes_prefabricado" 
+export interface ImagenesPrefabricado {
+  prefabricado_id?: string  // Prefabricado
+  imagen_url?: string  // URL de Imagen
+  descripcion?: string  // Descripción
+  orden?: number  // Orden
+}
+
+export type ImagenesPrefabricadoRecord = AgnosticDataItem<ImagenesPrefabricado>
+
+// ─── Schema: "portfolio_publico" 
+export interface PortfolioPublico {
+  proyecto_id?: string  // Proyecto
+  titulo: string  // Título
+  slug: string  // Slug
+  descripcion_comercial?: string  // Descripción_Comercial
+  cliente_iniciales?: string  // Iniciales_Cliente
+  barrio?: string  // Barrio
+  categoria_espacio?: string  // Categoría_Espacio
+  materiales_destacados?: string  // Materiales_Destacados
+  publicado?: boolean  // Publicado
+  destacado?: boolean  // Destacado
+  orden?: number  // Orden
+  fecha_publicacion?: string  // Fecha_Publicación
+}
+
+export type PortfolioPublicoRecord = AgnosticDataItem<PortfolioPublico>
+
+// ─── Schema: "imagenes_portfolio" 
+export interface ImagenesPortfolio {
+  portfolio_id?: string  // Portfolio
+  imagen_url: string  // Imagen
+  descripcion?: string  // Descripción
+  orden?: number  // Orden
+}
+
+export type ImagenesPortfolioRecord = AgnosticDataItem<ImagenesPortfolio>
+
 // ============================================================
 // AgnosticSchemas — complete project schema map
 //
@@ -453,8 +540,14 @@ export interface AgnosticSchemas {
   obligaciones_pendientes: ObligacionesPendientes
   movimientos_financieros: MovimientosFinancieros
   registro_horas: RegistroHoras
+  system_groups: SystemGroups
+  testimonios: Testimonios
+  seed_registros: SeedRegistros
+  imagenes_prefabricado: ImagenesPrefabricado
+  portfolio_publico: PortfolioPublico
+  imagenes_portfolio: ImagenesPortfolio
 }
 
 // Valid values for block.context and fetch(`/api/vault?namespace=${ctx}`)
 export type SchemaName = keyof AgnosticSchemas
-// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'proyectos' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial' | 'registros_tecnicos' | 'project_tasks' | 'usuarios_equipo' | 'tareas_operativas' | 'plantillas_tareas' | 'cuentas_financieras' | 'categorias_financieras' | 'comprobantes_financieros' | 'obligaciones_pendientes' | 'movimientos_financieros' | 'registro_horas'
+// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'proyectos' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial' | 'registros_tecnicos' | 'project_tasks' | 'usuarios_equipo' | 'tareas_operativas' | 'plantillas_tareas' | 'cuentas_financieras' | 'categorias_financieras' | 'comprobantes_financieros' | 'obligaciones_pendientes' | 'movimientos_financieros' | 'registro_horas' | 'system_groups' | 'testimonios' | 'seed_registros' | 'imagenes_prefabricado' | 'portfolio_publico' | 'imagenes_portfolio'

@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Route as RouteIcon, FileJson, Zap, Shield, RotateCcw, Box, Plus, Trash2,
   Sparkles, Layout, Database, Settings2, ChevronsUpDown, Check,
-  Users, Info, ExternalLink, Table2, Upload, Plug2, Palette
+  Users, Info, ExternalLink, Table2, Upload, Plug2, Palette, ChevronDown, FolderTree
 } from 'lucide-react';
 import { DataBrowser } from '@/components/specialized/DataBrowser';
 import type { DataItem } from '@agnostic/core';
@@ -37,7 +37,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 
-type NodeType = 'route' | 'block' | 'schema' | 'script';
+type NodeType = 'group' | 'route' | 'block' | 'schema' | 'script';
 
 interface SelectedNode {
   nodeType: NodeType;
@@ -105,6 +105,79 @@ function blockIconFor(type: string) {
   }
 }
 
+function inferSystemGroupKey(kind: 'route' | 'schema' | 'script', item: any): string {
+  const explicit = String(item?.data?.system_group ?? '').trim().toLowerCase();
+  if (explicit) return explicit;
+
+  const name = String(item?.data?.name ?? item?.data?.path ?? item?.data?.title ?? '').toLowerCase();
+  const path = String(item?.data?.path ?? '').toLowerCase();
+
+  if (kind === 'route') {
+    if (path.includes('/calendar') || name.includes('calendar')) return 'calendar';
+    return 'general';
+  }
+
+  if (kind === 'schema') {
+    if (['events', 'event_tags', 'event_calendars', 'calendar_members'].includes(name)) return 'calendar';
+    if (name.includes('calendar') || name.includes('event')) return 'calendar';
+    return 'general';
+  }
+
+  if (name.includes('calendar')) return 'calendar';
+  return 'general';
+}
+
+function groupBySystemKey<T>(items: T[], kind: 'route' | 'schema' | 'script'): Record<string, T[]> {
+  const grouped: Record<string, T[]> = {};
+  for (const item of items) {
+    const key = inferSystemGroupKey(kind, item);
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
+  }
+  return grouped;
+}
+
+function getSystemGroupLabel(key: string, groups: any[]) {
+  const match = groups.find((group: any) => String(group.data?.name ?? '').toLowerCase() === key.toLowerCase());
+  if (match?.data?.label) return match.data.label;
+  if (key === 'general') return 'General';
+  if (key === 'other') return 'Other';
+  return key
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function getOrderedGroupKeys(grouped: Record<string, unknown[]>, groups: any[]) {
+  const knownKeys = groups
+    .map((group: any) => String(group.data?.name ?? '').trim())
+    .filter(Boolean);
+
+  const keys = new Set<string>([
+    ...knownKeys,
+    ...Object.keys(grouped),
+  ]);
+
+  return Array.from(keys).sort((a, b) => {
+    const aKnown = knownKeys.indexOf(a);
+    const bKnown = knownKeys.indexOf(b);
+    if (aKnown !== -1 || bKnown !== -1) {
+      if (aKnown === -1) return 1;
+      if (bKnown === -1) return -1;
+      return aKnown - bKnown;
+    }
+
+    const rank = (key: string) => {
+      if (key === 'calendar') return 0;
+      if (key === 'general') return 1;
+      if (key === 'other') return 2;
+      return 10;
+    };
+
+    const diff = rank(a) - rank(b);
+    return diff !== 0 ? diff : a.localeCompare(b);
+  });
+}
+
 
 // ─── COMPONENTE MAESTRO ──────────────────────────────────────────────────────
 
@@ -145,11 +218,24 @@ export function ConfigManager({
   // When activeDataSchema is set, the canvas shows the DataBrowser inline
   // instead of the schema config editor. No page navigation needed.
   const [activeDataSchema, setActiveDataSchema] = useState<string | null>(null);
+  const [openSubsystems, setOpenSubsystems] = useState<Record<string, boolean>>({
+    calendar: true,
+    general: true,
+    other: false,
+  });
 
+  const systemGroups = useMemo(() => materia['system_groups'] ?? [], [materia]);
   const routes     = useMemo(() => materia[SYSTEM_NS.ROUTES]      ?? [], [materia]);
   const schemas    = useMemo(() => materia[SYSTEM_NS.SCHEMAS]     ?? [], [materia]);
   const scripts    = useMemo(() => materia['scripts']              ?? [], [materia]);
   const userLists  = useMemo(() => materia[SYSTEM_NS.USER_LISTS]  ?? [], [materia]);
+  const groupedSystemGroups = useMemo(() => {
+    const sorted = [...systemGroups].sort((a: any, b: any) => String(a.data?.label ?? a.data?.name ?? '').localeCompare(String(b.data?.label ?? b.data?.name ?? '')));
+    return sorted;
+  }, [systemGroups]);
+  const groupedRoutes = useMemo(() => groupBySystemKey([...routes].sort((a: any, b: any) => Number(a.data?.order ?? 0) - Number(b.data?.order ?? 0)), 'route'), [routes]);
+  const groupedSchemas = useMemo(() => groupBySystemKey([...schemas].sort((a: any, b: any) => Number(a.data?.order ?? 0) - Number(b.data?.order ?? 0)), 'schema'), [schemas]);
+  const groupedScripts = useMemo(() => groupBySystemKey([...scripts].sort((a: any, b: any) => Number(a.data?.order ?? 0) - Number(b.data?.order ?? 0)), 'script'), [scripts]);
   const passportItem = (materia[SYSTEM_NS.CONFIG] ?? []).find((item: any) => item.id === 'master_passport');
   const config     = (passportItem?.data as any) ?? {};
 
@@ -196,6 +282,22 @@ const handleAddScript = async () => {
       data: { name: `script_evento_${Date.now().toString().slice(-4)}`, description: 'Trigger disparado al salvar o procesar el formulario.', trigger: 'onSave', code: `// function run(record, api) {\n//   api.notify.success("Script ejecutado");\n// }`, order: scripts.length }
     });
     setSelectedNode({ nodeType: 'script', id });
+  };
+
+  const handleAddGroup = async () => {
+    const id = crypto.randomUUID();
+    const name = `group_${Date.now().toString().slice(-4)}`;
+    await saveItem('system_groups', {
+      id,
+      context: 'system_groups',
+      data: {
+        name,
+        label: 'New Group',
+        kind: 'subsystem',
+        description: '',
+      },
+    });
+    setSelectedNode({ nodeType: 'group', id });
   };
 
   // ─── REORDEN ───────────────────────────────────────────────────────────────
@@ -250,6 +352,21 @@ const handleAddScript = async () => {
 
     if (nodeType === 'route') {
       await deleteItem(SYSTEM_NS.ROUTES, id);
+    } else if (nodeType === 'group') {
+      const groupRecord = systemGroups.find((group: any) => group.id === id);
+      const groupName = String(groupRecord?.data?.name ?? '').trim();
+      if (groupName) {
+        const clearGroup = async (namespace: string, items: any[]) => {
+          await Promise.all(items
+            .filter((item: any) => String(item.data?.system_group ?? '').trim().toLowerCase() === groupName.toLowerCase())
+            .map((item: any) => saveItem(namespace, { ...item, data: { ...(item.data || {}), system_group: '' } }, { silent: true })));
+        };
+
+        await clearGroup(SYSTEM_NS.ROUTES, routes);
+        await clearGroup(SYSTEM_NS.SCHEMAS, schemas);
+        await clearGroup('scripts', scripts);
+      }
+      await deleteItem('system_groups', id);
     } else if (nodeType === 'block' && routeId) {
       const route = routes.find((r: any) => r.id === routeId);
       if (route) {
@@ -326,82 +443,166 @@ const handleAddScript = async () => {
             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Jerarquía del Sistema</span>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                        <NavSection label="System Groups" icon={FolderTree} count={systemGroups.length} onAdd={handleAddGroup}>
+              {groupedSystemGroups.length === 0 ? (
+                <div className="px-2 py-2 text-[10px] text-muted-foreground/60">
+                  Sin grupos definidos. Crea uno para organizar rutas, schemas y scripts.
+                </div>
+              ) : groupedSystemGroups.map((group: any) => (
+                <NavItem
+                  key={group.id}
+                  label={group.data?.label || group.data?.name || 'sin_grupo'}
+                  badge={group.data?.kind}
+                  icon={FolderTree}
+                  isSelected={selectedNode?.id === group.id && selectedNode?.nodeType === 'group'}
+                  onClick={() => setSelectedNode({ nodeType: 'group', id: group.id })}
+                  onDelete={() => setPendingDelete({ nodeType: 'group', id: group.id })}
+                />
+              ))}
+            </NavSection>
             <NavSection label="Rutas" icon={RouteIcon} count={routes.length} onAdd={handleAddRoute}>
-              {[...routes]
-                .sort((a: any, b: any) => Number(a.data?.order ?? 0) - Number(b.data?.order ?? 0))
-                .map((r: any) => {
-                  const blockCount = (r.data?.blocks ?? []).length;
-                  const path = r.data?.path;
-                  return (
-                    <NavItem key={r.id}
-                      label={path || '/sin-ruta'}
-                      badge={blockCount > 0 ? `${blockCount} blks` : undefined}
-                      icon={RouteIcon}
-                      isSelected={selectedNode?.id === r.id && selectedNode?.nodeType === 'route'}
-                      onClick={() => { setActiveDataSchema(null); setSelectedNode({ nodeType: 'route', id: r.id }); }}
-                      onDelete={() => setPendingDelete({ nodeType: 'route', id: r.id })}
-                      extra={path ? (
-                        <button
-                          onClick={e => { e.stopPropagation(); window.open(path, '_blank'); }}
-                          title="Abrir ruta en nueva pestaña"
-                          className="w-4 h-4 rounded flex items-center justify-center opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-primary transition-all"
-                        >
-                          <ExternalLink size={9} />
-                        </button>
-                      ) : undefined}
-                    />
-                  );
-                })}
+              {getOrderedGroupKeys(groupedRoutes, systemGroups).map(groupKey => {
+                const groupRoutes = groupedRoutes[groupKey] ?? []
+                if (groupRoutes.length === 0) return null
+                const open = openSubsystems[groupKey] ?? true
+                return (
+                  <div key={groupKey} className="space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setOpenSubsystems(prev => ({ ...prev, [groupKey]: !open }))}
+                      className="flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-[9px] font-black uppercase tracking-widest text-muted-foreground/70 hover:bg-muted/40"
+                    >
+                      <span>{getSystemGroupLabel(groupKey, systemGroups)}</span>
+                      <span className="flex items-center gap-1">
+                        <span>{groupRoutes.length}</span>
+                        <ChevronDown size={10} className={cn('transition-transform', open ? '' : '-rotate-90')} />
+                      </span>
+                    </button>
+                    {open && (
+                      <div className="space-y-0.5 pl-1">
+                        {groupRoutes.map((r: any) => {
+                          const blockCount = (r.data?.blocks ?? []).length
+                          const path = r.data?.path
+                          return (
+                            <NavItem key={r.id}
+                              label={path || '/sin-ruta'}
+                              badge={blockCount > 0 ? `${blockCount} blks` : undefined}
+                              icon={RouteIcon}
+                              isSelected={selectedNode?.id === r.id && selectedNode?.nodeType === 'route'}
+                              onClick={() => { setActiveDataSchema(null); setSelectedNode({ nodeType: 'route', id: r.id }) }}
+                              onDelete={() => setPendingDelete({ nodeType: 'route', id: r.id })}
+                              extra={path ? (
+                                <button
+                                  onClick={e => { e.stopPropagation(); window.open(path, '_blank') }}
+                                  title="Abrir ruta en nueva pestaña"
+                                  className="w-4 h-4 rounded flex items-center justify-center opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-primary transition-all"
+                                >
+                                  <ExternalLink size={9} />
+                                </button>
+                              ) : undefined}
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </NavSection>
             <NavSection label="Schemas" icon={FileJson} count={schemas.length} onAdd={handleAddSchema}>
-              {[...schemas]
-                .sort((a: any, b: any) => Number(a.data?.order ?? 0) - Number(b.data?.order ?? 0))
-                .map((s: any) => {
-                  const schemaName = s.data?.name;
-                  const isDataActive = activeDataSchema === schemaName;
-                  return (
-                    <NavItem key={s.id}
-                      label={schemaName || 'sin_nombre'}
-                      badge={isDataActive ? 'datos' : `${(s.data?.fields ?? []).length} flds`}
-                      icon={isDataActive ? Table2 : FileJson}
-                      isSelected={(selectedNode?.id === s.id && selectedNode?.nodeType === 'schema') || isDataActive}
-                      onClick={() => { setActiveDataSchema(null); setSelectedNode({ nodeType: 'schema', id: s.id }); }}
-                      onDelete={() => setPendingDelete({ nodeType: 'schema', id: s.id })}
-                      extra={schemaName ? (
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            setActiveDataSchema(isDataActive ? null : schemaName);
-                            if (!isDataActive) setSelectedNode(null);
-                          }}
-                          title={isDataActive ? 'Volver al editor' : 'Ver datos del schema'}
-                          className={cn(
-                            'w-4 h-4 rounded flex items-center justify-center transition-all',
-                            isDataActive
-                              ? 'opacity-100 text-primary'
-                              : 'opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-primary'
-                          )}
-                        >
-                          <Table2 size={9} />
-                        </button>
-                      ) : undefined}
-                    />
-                  );
-                })}
+              {getOrderedGroupKeys(groupedSchemas, systemGroups).map(groupKey => {
+                const groupSchemas = groupedSchemas[groupKey] ?? []
+                if (groupSchemas.length === 0) return null
+                const open = openSubsystems[groupKey] ?? true
+                return (
+                  <div key={groupKey} className="space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setOpenSubsystems(prev => ({ ...prev, [groupKey]: !open }))}
+                      className="flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-[9px] font-black uppercase tracking-widest text-muted-foreground/70 hover:bg-muted/40"
+                    >
+                      <span>{getSystemGroupLabel(groupKey, systemGroups)}</span>
+                      <span className="flex items-center gap-1">
+                        <span>{groupSchemas.length}</span>
+                        <ChevronDown size={10} className={cn('transition-transform', open ? '' : '-rotate-90')} />
+                      </span>
+                    </button>
+                    {open && (
+                      <div className="space-y-0.5 pl-1">
+                        {groupSchemas.map((s: any) => {
+                          const schemaName = s.data?.name
+                          const isDataActive = activeDataSchema === schemaName
+                          return (
+                            <NavItem key={s.id}
+                              label={schemaName || 'sin_nombre'}
+                              badge={isDataActive ? 'datos' : `${(s.data?.fields ?? []).length} flds`}
+                              icon={isDataActive ? Table2 : FileJson}
+                              isSelected={(selectedNode?.id === s.id && selectedNode?.nodeType === 'schema') || isDataActive}
+                              onClick={() => { setActiveDataSchema(null); setSelectedNode({ nodeType: 'schema', id: s.id }) }}
+                              onDelete={() => setPendingDelete({ nodeType: 'schema', id: s.id })}
+                              extra={schemaName ? (
+                                <button
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    setActiveDataSchema(isDataActive ? null : schemaName)
+                                    if (!isDataActive) setSelectedNode(null)
+                                  }}
+                                  title={isDataActive ? 'Volver al editor' : 'Ver datos del schema'}
+                                  className={cn(
+                                    'w-4 h-4 rounded flex items-center justify-center transition-all',
+                                    isDataActive
+                                      ? 'opacity-100 text-primary'
+                                      : 'opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-primary'
+                                  )}
+                                >
+                                  <Table2 size={9} />
+                                </button>
+                              ) : undefined}
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </NavSection>
+
             <NavSection label="Scripts" icon={Zap} count={scripts.length} onAdd={handleAddScript}>
-              {[...scripts]
-                .sort((a: any, b: any) => Number(a.data?.order ?? 0) - Number(b.data?.order ?? 0))
-                .map((s: any) => (
-                  <NavItem key={s.id}
-                    label={s.data?.name || 'sin_script'}
-                    badge={s.data?.trigger}
-                    icon={Zap}
-                    isSelected={selectedNode?.id === s.id && selectedNode?.nodeType === 'script'}
-                    onClick={() => setSelectedNode({ nodeType: 'script', id: s.id })}
-                    onDelete={() => setPendingDelete({ nodeType: 'script', id: s.id })}
-                  />
-                ))}
+              {getOrderedGroupKeys(groupedScripts, systemGroups).map(groupKey => {
+                const groupScripts = groupedScripts[groupKey] ?? []
+                if (groupScripts.length === 0) return null
+                const open = openSubsystems[groupKey] ?? true
+                return (
+                  <div key={groupKey} className="space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setOpenSubsystems(prev => ({ ...prev, [groupKey]: !open }))}
+                      className="flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-[9px] font-black uppercase tracking-widest text-muted-foreground/70 hover:bg-muted/40"
+                    >
+                      <span>{getSystemGroupLabel(groupKey, systemGroups)}</span>
+                      <span className="flex items-center gap-1">
+                        <span>{groupScripts.length}</span>
+                        <ChevronDown size={10} className={cn('transition-transform', open ? '' : '-rotate-90')} />
+                      </span>
+                    </button>
+                    {open && (
+                      <div className="space-y-0.5 pl-1">
+                        {groupScripts.map((s: any) => (
+                          <NavItem key={s.id}
+                            label={s.data?.name || 'sin_script'}
+                            badge={s.data?.trigger}
+                            icon={Zap}
+                            isSelected={selectedNode?.id === s.id && selectedNode?.nodeType === 'script'}
+                            onClick={() => setSelectedNode({ nodeType: 'script', id: s.id })}
+                            onDelete={() => setPendingDelete({ nodeType: 'script', id: s.id })}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </NavSection>
           </div>
         </aside>
@@ -430,6 +631,7 @@ const handleAddScript = async () => {
                 routes={routes}
                 schemas={schemas}
                 scripts={scripts}
+                systemGroups={systemGroups}
                 userLists={userLists}
                 saveItem={saveItem}
                 deleteItem={deleteItem}
@@ -495,10 +697,10 @@ export const AgnosticDesigner = ConfigManager;
 // ─── RIGHT PANEL DISPATCHER ───────────────────────────────────────────────────
 
 function RightPanel({
-  node, routes, schemas, scripts, userLists, saveItem, deleteItem, setPendingDelete, onSelectNode,
+  node, routes, schemas, scripts, systemGroups, userLists, saveItem, deleteItem, setPendingDelete, onSelectNode,
 }: {
   node: SelectedNode | null;
-  routes: any[]; schemas: any[]; scripts: any[]; userLists: any[];
+  routes: any[]; schemas: any[]; scripts: any[]; systemGroups: any[]; userLists: any[];
   saveItem: any; deleteItem: any;
   setPendingDelete: (n: SelectedNode) => void;
   onSelectNode: (n: SelectedNode) => void;
@@ -507,17 +709,19 @@ function RightPanel({
   const common = { saveItem, deleteItem, setPendingDelete };
 
   switch (node.nodeType) {
+    case 'group':
+      return <SystemGroupConfig key={node.id} groupId={node.id} groups={systemGroups} {...common} />;
     case 'route':
-      return <RouteConfig key={node.id} routeId={node.id} routes={routes} userLists={userLists}
+      return <RouteConfig key={node.id} routeId={node.id} routes={routes} userLists={userLists} systemGroups={systemGroups}
         schemas={schemas} scripts={scripts}
         saveItem={saveItem} deleteItem={deleteItem} setPendingDelete={setPendingDelete} onSelectNode={onSelectNode} />;
     case 'block':
       return <BlockConfig key={`${node.routeId}-${node.id}`} blockId={node.id} routeId={node.routeId!}
         routes={routes} schemas={schemas} tokens={[]} saveItem={saveItem} setPendingDelete={setPendingDelete} />;
     case 'schema':
-      return <SchemaConfig key={node.id} schemaId={node.id} schemas={schemas} {...common} />;
+      return <SchemaConfig key={node.id} schemaId={node.id} schemas={schemas} systemGroups={systemGroups} {...common} />;
     case 'script':
-      return <ScriptConfig key={node.id} scriptId={node.id} scripts={scripts} {...common} />;
+      return <ScriptConfig key={node.id} scriptId={node.id} scripts={scripts} systemGroups={systemGroups} {...common} />;
     default:
       return <EmptyEditorState />;
   }
@@ -552,9 +756,9 @@ function collectRouteAnatomy(blocks: any[]): { contexts: string[]; zaps: string[
 
 // ─── 1. ROUTE CONFIG ─────────────────────────────────────────────────────────
 function RouteConfig({
-  routeId, routes, userLists, schemas, scripts, saveItem, deleteItem, setPendingDelete, onSelectNode,
+  routeId, routes, userLists, schemas, scripts, systemGroups, saveItem, deleteItem, setPendingDelete, onSelectNode,
 }: {
-  routeId: string; routes: any[]; userLists: any[]; schemas: any[]; scripts: any[];
+  routeId: string; routes: any[]; userLists: any[]; schemas: any[]; scripts: any[]; systemGroups: any[];
   saveItem: any; deleteItem: any;
   setPendingDelete: (n: SelectedNode) => void;
   onSelectNode: (n: SelectedNode) => void;
@@ -645,6 +849,10 @@ function RouteConfig({
           <div className="space-y-1">
             <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Título de la Página</label>
             <Input value={local.title || ''} onChange={e => update({ title: e.target.value })} className="font-bold text-xs h-9" placeholder="Mi Página" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">System Group</label>
+            <SystemGroupSelect value={String(local.system_group ?? '')} groups={systemGroups} onChange={system_group => update({ system_group })} />
           </div>
           <div className="space-y-1">
             <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Gobernanza de Acceso</label>
@@ -879,31 +1087,35 @@ function BlockConfig({
 // ─── 3. SCHEMA CONFIG ─────────────────────────────────────────────────────────
 
 function SchemaConfig({
-  schemaId, schemas, saveItem, setPendingDelete,
+  schemaId, schemas, systemGroups, saveItem, setPendingDelete,
 }: {
-  schemaId: string; schemas: any[];
+  schemaId: string; schemas: any[]; systemGroups: any[];
   saveItem: any; deleteItem?: any;
   setPendingDelete: (n: SelectedNode) => void;
 }) {
   const schema = useMemo(() => schemas.find((s: any) => s.id === schemaId), [schemas, schemaId]);
 
   const [localName, setLocalName]     = useState('');
+  const [localGroup, setLocalGroup]   = useState('');
   const [localFields, setLocalFields] = useState<SchemaField[]>([]);
   const [saveStatus, setSaveStatus]   = useState<'idle' | 'saving' | 'saved'>('idle');
   const [openFieldSettingsIdx, setOpenFieldSettingsIdx] = useState<number | null>(null);
 
   const schemaIdRef     = useRef(schemaId);
   const localNameRef    = useRef(localName);
+  const localGroupRef   = useRef(localGroup);
   const localFieldsRef  = useRef(localFields);
   const isDirtyRef      = useRef(false);
 
   const isDirty = !!schema && schema.id === schemaId && (
     localName !== (schema.data?.name || '') ||
+    localGroup !== (schema.data?.system_group || '') ||
     JSON.stringify(localFields) !== JSON.stringify(schema.data?.fields || [])
   );
 
   useEffect(() => { schemaIdRef.current    = schemaId;    }, [schemaId]);
   useEffect(() => { localNameRef.current   = localName;   }, [localName]);
+  useEffect(() => { localGroupRef.current   = localGroup;  }, [localGroup]);
   useEffect(() => { localFieldsRef.current = localFields; }, [localFields]);
   useEffect(() => { isDirtyRef.current     = isDirty;     }, [isDirty]);
 
@@ -912,13 +1124,13 @@ function SchemaConfig({
     [localFields]
   );
 
-  const saveImmediately = async (targetId: string, name: string, fields: any[]) => {
+  const saveImmediately = async (targetId: string, name: string, group: string, fields: any[]) => {
     if (!name.trim()) return;
     setSaveStatus('saving');
     const s = schemas.find((s: any) => s.id === targetId);
     if (!s) return;
     try {
-      await saveItem(SYSTEM_NS.SCHEMAS, { ...s, data: { name, fields } }, { silent: true });
+      await saveItem(SYSTEM_NS.SCHEMAS, { ...s, data: { name, system_group: group, fields } }, { silent: true });
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch { setSaveStatus('idle'); }
@@ -926,15 +1138,15 @@ function SchemaConfig({
 
   useEffect(() => {
     if (isDirtyRef.current && schemaIdRef.current && schemaIdRef.current !== schemaId) {
-      saveImmediately(schemaIdRef.current, localNameRef.current, localFieldsRef.current);
+      saveImmediately(schemaIdRef.current, localNameRef.current, localGroupRef.current, localFieldsRef.current);
     }
-    if (schema) { setLocalName(schema.data?.name || ''); setLocalFields(schema.data?.fields || []); }
+    if (schema) { setLocalName(schema.data?.name || ''); setLocalGroup(String(schema.data?.system_group ?? '')); setLocalFields(schema.data?.fields || []); }
   }, [schemaId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => {
       if (isDirtyRef.current && schemaIdRef.current) {
-        saveImmediately(schemaIdRef.current, localNameRef.current, localFieldsRef.current);
+        saveImmediately(schemaIdRef.current, localNameRef.current, localGroupRef.current, localFieldsRef.current);
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -944,8 +1156,8 @@ function SchemaConfig({
 
   useEffect(() => {
     if (!isDirty) return;
-    saveImmediately(schemaId, debouncedName, debouncedFields);
-  }, [debouncedName, debouncedFields]); // eslint-disable-line react-hooks/exhaustive-deps
+    saveImmediately(schemaId, debouncedName, localGroup, debouncedFields);
+  }, [debouncedName, localGroup, debouncedFields]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!schema) return <div className="text-sm font-semibold opacity-40">Buscando blueprint del DNA...</div>;
 
@@ -1012,6 +1224,13 @@ function SchemaConfig({
         <div className="flex-1 space-y-1">
           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre del Blueprint (Namespace)</label>
           <Input value={localName} onChange={e => setLocalName(e.target.value)} className="font-bold text-xs h-9" />
+        </div>
+      </div>
+
+      <div className="bg-background border rounded-2xl p-6 shadow-sm">
+        <div className="space-y-1 max-w-sm">
+          <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">System Group</label>
+          <SystemGroupSelect value={localGroup} groups={systemGroups} onChange={setLocalGroup} />
         </div>
       </div>
 
@@ -1157,15 +1376,16 @@ function SchemaConfig({
 // ─── 4. SCRIPT CONFIG ─────────────────────────────────────────────────────────
 
 function ScriptConfig({
-  scriptId, scripts, saveItem, setPendingDelete,
+  scriptId, scripts, systemGroups, saveItem, setPendingDelete,
 }: {
-  scriptId: string; scripts: any[];
+  scriptId: string; scripts: any[]; systemGroups: any[];
   saveItem: any; deleteItem?: any;
   setPendingDelete: (n: SelectedNode) => void;
 }) {
   const script = useMemo(() => scripts.find((s: any) => s.id === scriptId), [scripts, scriptId]);
 
   const [localName,        setLocalName]        = useState('');
+  const [localGroup,       setLocalGroup]       = useState('');
   const [localTrigger,     setLocalTrigger]     = useState('onSave');
   const [localDescription, setLocalDescription] = useState('');
   const [localCode,        setLocalCode]        = useState('');
@@ -1174,21 +1394,24 @@ function ScriptConfig({
   const refs = {
     id:          useRef(scriptId),
     name:        useRef(localName),
+    group:       useRef(localGroup),
     trigger:     useRef(localTrigger),
     description: useRef(localDescription),
     code:        useRef(localCode),
     isDirty:     useRef(false),
   };
 
-  useEffect(() => { if (script) { setLocalName(script.data?.name || ''); setLocalTrigger(script.data?.trigger || 'onSave'); setLocalDescription(script.data?.description || ''); setLocalCode(script.data?.code || ''); } }, [scriptId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (script) { setLocalName(script.data?.name || ''); setLocalGroup(String(script.data?.system_group ?? '')); setLocalTrigger(script.data?.trigger || 'onSave'); setLocalDescription(script.data?.description || ''); setLocalCode(script.data?.code || ''); } }, [scriptId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { refs.id.current          = scriptId;        }, [scriptId]);
   useEffect(() => { refs.name.current        = localName;       }, [localName]);
+  useEffect(() => { refs.group.current       = localGroup;      }, [localGroup]);
   useEffect(() => { refs.trigger.current     = localTrigger;    }, [localTrigger]);
   useEffect(() => { refs.description.current = localDescription;}, [localDescription]);
   useEffect(() => { refs.code.current        = localCode;       }, [localCode]);
 
   const isDirty = script && (
     localName        !== (script.data?.name        || '') ||
+    localGroup       !== (script.data?.system_group || '') ||
     localTrigger     !== (script.data?.trigger     || 'onSave') ||
     localDescription !== (script.data?.description || '') ||
     localCode        !== (script.data?.code        || '')
@@ -1200,25 +1423,25 @@ function ScriptConfig({
   const debouncedDescription = useDebounce(localDescription, 800);
   const debouncedCode        = useDebounce(localCode,        1000);
 
-  const doSave = async (id: string, name: string, trigger: string, description: string, code: string) => {
+  const doSave = async (id: string, name: string, group: string, trigger: string, description: string, code: string) => {
     const s = scripts.find((s: any) => s.id === id);
     if (!s || !name.trim()) return;
     setSaveStatus('saving');
     try {
-      await saveItem('scripts', { ...s, data: { name, trigger, description, code } }, { silent: true });
+      await saveItem('scripts', { ...s, data: { name, system_group: group, trigger, description, code } }, { silent: true });
       setSaveStatus('saved'); setTimeout(() => setSaveStatus('idle'), 2000);
     } catch { setSaveStatus('idle'); }
   };
 
   useEffect(() => {
     if (!isDirty) return;
-    doSave(scriptId, debouncedName, debouncedTrigger, debouncedDescription, debouncedCode);
-  }, [debouncedName, debouncedTrigger, debouncedDescription, debouncedCode]); // eslint-disable-line react-hooks/exhaustive-deps
+    doSave(scriptId, debouncedName, localGroup, debouncedTrigger, debouncedDescription, debouncedCode);
+  }, [debouncedName, localGroup, debouncedTrigger, debouncedDescription, debouncedCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => {
       if (refs.isDirty.current && refs.id.current) {
-        doSave(refs.id.current, refs.name.current, refs.trigger.current, refs.description.current, refs.code.current);
+        doSave(refs.id.current, refs.name.current, refs.group.current, refs.trigger.current, refs.description.current, refs.code.current);
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1269,6 +1492,10 @@ function ScriptConfig({
           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Descripción Operacional</label>
           <Input value={localDescription} onChange={e => setLocalDescription(e.target.value)} className="text-xs" />
         </div>
+        <div className="space-y-1.5 max-w-sm">
+          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">System Group</label>
+          <SystemGroupSelect value={localGroup} groups={systemGroups} onChange={setLocalGroup} />
+        </div>
       </div>
 
       <div className="bg-background border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[500px]">
@@ -1285,6 +1512,143 @@ function ScriptConfig({
           spellCheck={false} placeholder="// function run(record, api) { ... }" />
         <div className="bg-muted/10 px-6 py-2 border-t text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">
           Entorno Isomórfico Protegido
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 5. SYSTEM GROUP CONFIG ───────────────────────────────────────────────────
+function SystemGroupConfig({
+  groupId, groups, saveItem, setPendingDelete,
+}: {
+  groupId: string;
+  groups: any[];
+  saveItem: any;
+  deleteItem?: any;
+  setPendingDelete: (n: SelectedNode) => void;
+}) {
+  const group = useMemo(() => groups.find((item: any) => item.id === groupId), [groups, groupId]);
+
+  const [localName, setLocalName] = useState('');
+  const [localLabel, setLocalLabel] = useState('');
+  const [localKind, setLocalKind] = useState('subsystem');
+  const [localDescription, setLocalDescription] = useState('');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  const refs = {
+    id: useRef(groupId),
+    name: useRef(localName),
+    label: useRef(localLabel),
+    kind: useRef(localKind),
+    description: useRef(localDescription),
+    isDirty: useRef(false),
+  };
+
+  useEffect(() => {
+    if (group) {
+      setLocalName(group.data?.name || '');
+      setLocalLabel(group.data?.label || '');
+      setLocalKind(group.data?.kind || 'subsystem');
+      setLocalDescription(group.data?.description || '');
+    }
+  }, [groupId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { refs.id.current = groupId; }, [groupId]);
+  useEffect(() => { refs.name.current = localName; }, [localName]);
+  useEffect(() => { refs.label.current = localLabel; }, [localLabel]);
+  useEffect(() => { refs.kind.current = localKind; }, [localKind]);
+  useEffect(() => { refs.description.current = localDescription; }, [localDescription]);
+
+  const isDirty = group && (
+    localName !== (group.data?.name || '') ||
+    localLabel !== (group.data?.label || '') ||
+    localKind !== (group.data?.kind || 'subsystem') ||
+    localDescription !== (group.data?.description || '')
+  );
+  useEffect(() => { refs.isDirty.current = !!isDirty; }, [isDirty]);
+
+  const debouncedName = useDebounce(localName, 600);
+  const debouncedLabel = useDebounce(localLabel, 600);
+  const debouncedKind = useDebounce(localKind, 300);
+  const debouncedDescription = useDebounce(localDescription, 800);
+
+  const doSave = async (id: string, name: string, label: string, kind: string, description: string) => {
+    const s = groups.find((item: any) => item.id === id);
+    if (!s || !name.trim()) return;
+    setSaveStatus('saving');
+    try {
+      await saveItem('system_groups', {
+        ...s,
+        data: { name, label, kind, description },
+      }, { silent: true });
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch {
+      setSaveStatus('idle');
+    }
+  };
+
+  useEffect(() => {
+    if (!isDirty) return;
+    doSave(groupId, debouncedName, debouncedLabel, debouncedKind, debouncedDescription);
+  }, [debouncedName, debouncedLabel, debouncedKind, debouncedDescription]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    return () => {
+      if (refs.isDirty.current && refs.id.current) {
+        doSave(refs.id.current, refs.name.current, refs.label.current, refs.kind.current, refs.description.current);
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!group) return <div className="text-sm font-semibold opacity-40">Buscando grupo del sistema...</div>;
+
+  return (
+    <div className="space-y-8 max-w-3xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex items-center justify-between border-b pb-4">
+        <div className="space-y-1">
+          <h2 className="text-base font-black uppercase tracking-widest text-primary flex items-center gap-2">
+            <FolderTree size={16} /> Grupo del Sistema
+          </h2>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black opacity-60">
+            Metadata opcional para organizar rutas, schemas y scripts
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <SaveIndicator status={saveStatus} />
+          <Button variant="ghost" size="sm" onClick={() => setPendingDelete({ nodeType: 'group', id: groupId })}
+            className="text-destructive/50 hover:text-destructive hover:bg-destructive/5 font-bold uppercase text-[10px] tracking-widest">
+            <Trash2 size={14} className="mr-2" /> Eliminar Grupo
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-background border rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre Técnico</label>
+            <Input value={localName} onChange={e => setLocalName(e.target.value)} className="font-bold text-xs" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Etiqueta Visible</label>
+            <Input value={localLabel} onChange={e => setLocalLabel(e.target.value)} className="font-bold text-xs" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Kind</label>
+            <Select value={localKind} onValueChange={setLocalKind}>
+              <SelectTrigger className="text-xs font-semibold h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="subsystem">subsystem</SelectItem>
+                <SelectItem value="domain">domain</SelectItem>
+                <SelectItem value="module">module</SelectItem>
+                <SelectItem value="collection">collection</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Descripción</label>
+          <Textarea value={localDescription} onChange={e => setLocalDescription(e.target.value)} className="text-xs min-h-24" />
         </div>
       </div>
     </div>
@@ -1349,6 +1713,33 @@ function SectionCombobox({ value, options, onChange }: { value: string; options:
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function SystemGroupSelect({
+  value,
+  groups,
+  onChange,
+}: {
+  value: string;
+  groups: any[];
+  onChange: (val: string) => void;
+}) {
+  const emptyValue = '__none__';
+  return (
+    <Select value={value || emptyValue} onValueChange={selected => onChange(selected === emptyValue ? '' : selected)}>
+      <SelectTrigger className="h-9 text-xs font-semibold bg-muted/5 border-muted/80">
+        <SelectValue placeholder="Sin grupo" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={emptyValue}>Sin grupo</SelectItem>
+        {groups.map((group: any) => (
+          <SelectItem key={group.id} value={String(group.data?.name ?? '')}>
+            {group.data?.label || group.data?.name || 'sin_grupo'}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -1632,4 +2023,3 @@ function NavItem({
     </div>
   );
 }
-

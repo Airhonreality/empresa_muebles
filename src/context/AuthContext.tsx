@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useSystemStore } from '@/lib/agnostic/store';
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useSystemStore } from "@/lib/agnostic/store";
 
 interface User {
   id: string;
@@ -21,9 +21,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser]     = useState<User | null>(null);
-  const [isLoading, setLoading] = useState(true);
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  initialUser?: User | null;
+}) {
+  const hasInitialUser = initialUser !== undefined;
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
+  const [isLoading, setLoading] = useState(!hasInitialUser);
 
   const { setUser: syncUserToStore } = useSystemStore();
 
@@ -31,19 +38,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncUserToStore(user);
   }, [user, syncUserToStore]);
 
-  // Restore session from server-side cookie via iron-session
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.user) setUser(d.user); })
+    if (hasInitialUser) return;
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user) setUser(d.user);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [hasInitialUser]);
 
   const login = useCallback(async (email: string, pass: string): Promise<boolean> => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password: pass }),
     });
     if (!res.ok) return false;
@@ -53,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
   }, []);
 
@@ -66,6 +75,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

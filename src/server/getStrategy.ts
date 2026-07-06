@@ -16,7 +16,10 @@ import { getProjectStorageRoot } from './activeProject';
 
 /**
  * Resolves the persistence strategy from environment variables.
- * Priority: GITHUB_REPO → DATABASE_URL → SUPABASE_URL → LocalStrategy (default).
+ * Priority:
+ * 1. Explicit AGNOSTIC_STORAGE_STRATEGY override.
+ * 2. LocalStrategy in development by default.
+ * 3. GITHUB_REPO → DATABASE_URL → SUPABASE_URL → LocalStrategy in production.
  *
  * DATABASE_URL accepts any standard PostgreSQL connection string:
  *   Neon, Supabase (direct Postgres), Railway, Render, etc.
@@ -45,8 +48,23 @@ export function getStrategy(): AgnosticBridge {
 }
 
 export function getStrategyName(): 'github' | 'postgres' | 'supabase' | 'local' {
+  const explicit = normalizeStrategyName(process.env.AGNOSTIC_STORAGE_STRATEGY);
+  if (explicit) return explicit;
+
+  if (process.env.NODE_ENV !== 'production') {
+    return 'local';
+  }
+
   if (process.env.GITHUB_REPO) return 'github';
   if (process.env.DATABASE_URL) return 'postgres';
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) return 'supabase';
   return 'local';
+}
+
+function normalizeStrategyName(value?: string): 'github' | 'postgres' | 'supabase' | 'local' | null {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === 'github' || normalized === 'postgres' || normalized === 'supabase' || normalized === 'local') {
+    return normalized;
+  }
+  return null;
 }

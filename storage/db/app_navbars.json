@@ -6,27 +6,57 @@
       "name": "nav_erp_main",
       "links": [
         {
-          "label": "Cotizaciones",
-          "path": "/app/quoting",
+          "label": "Comercial",
+          "path": "/app/erp/comercial",
+          "icon": "ShoppingCart"
+        },
+        {
+          "label": "Cotizador",
+          "path": "/app/erp/cotizador",
           "icon": "FileText"
         },
         {
-          "label": "Catálogo",
-          "path": "/app/catalog",
+          "label": "Taller",
+          "path": "/app/erp/taller",
+          "icon": "Hammer"
+        },
+        {
+          "label": "Finanzas",
+          "path": "/app/erp/finanzas",
+          "icon": "Wallet"
+        },
+        {
+          "label": "Calendario",
+          "path": "/app/erp/calendar",
+          "icon": "CalendarDays"
+        },
+        {
+          "label": "Equipo",
+          "path": "/app/erp/equipo",
+          "icon": "Users"
+        },
+        {
+          "label": "Proveedores",
+          "path": "/app/erp/proveedores",
+          "icon": "Truck"
+        },
+        {
+          "label": "Catalogo",
+          "path": "/app/erp/catalogo",
           "icon": "HardDrive"
         },
         {
-          "label": "Producción",
-          "path": "/app/production",
-          "icon": "Factory"
+          "label": "Perfil",
+          "path": "/app/erp/perfil",
+          "icon": "UserCircle"
         }
       ],
       "brand": {
         "label": "ERP_Muebles",
-        "path": "/app/quoting"
+        "path": "/app/erp/comercial"
       }
     },
-    "updated_at": "2026-06-21T15:13:40.394Z"
+    "updated_at": "2026-07-02T17:57:20.461Z"
   },
   {
     "id": "41fb1b32-d570-4e70-bf1d-1a751f7b8f79",
@@ -64,27 +94,57 @@
       "name": "nav_admin",
       "links": [
         {
-          "label": "Cotizaciones",
-          "path": "/app/quoting",
+          "label": "Comercial",
+          "path": "/app/erp/comercial",
+          "icon": "ShoppingCart"
+        },
+        {
+          "label": "Cotizador",
+          "path": "/app/erp/cotizador",
           "icon": "FileText"
         },
         {
-          "label": "Catálogo",
-          "path": "/app/catalog",
+          "label": "Taller",
+          "path": "/app/erp/taller",
+          "icon": "Hammer"
+        },
+        {
+          "label": "Finanzas",
+          "path": "/app/erp/finanzas",
+          "icon": "Wallet"
+        },
+        {
+          "label": "Calendario",
+          "path": "/app/erp/calendar",
+          "icon": "CalendarDays"
+        },
+        {
+          "label": "Equipo",
+          "path": "/app/erp/equipo",
+          "icon": "Users"
+        },
+        {
+          "label": "Proveedores",
+          "path": "/app/erp/proveedores",
+          "icon": "Truck"
+        },
+        {
+          "label": "Catalogo",
+          "path": "/app/erp/catalogo",
           "icon": "HardDrive"
         },
         {
-          "label": "Producción",
-          "path": "/app/production",
-          "icon": "Factory"
+          "label": "Perfil",
+          "path": "/app/erp/perfil",
+          "icon": "UserCircle"
         }
       ],
       "brand": {
         "label": "ERP_Admin",
-        "path": "/app/quoting"
+        "path": "/app/erp/comercial"
       }
     },
-    "updated_at": "2026-06-21T15:13:47.429Z"
+    "updated_at": "2026-07-02T17:57:20.506Z"
   },
   {
     "id": "b3c4d5e6-f7a8-9012-cdef-123456789013",
@@ -93,17 +153,27 @@
       "name": "nav_produccion",
       "links": [
         {
-          "label": "Producción",
-          "path": "/app/production",
-          "icon": "Factory"
+          "label": "Taller",
+          "path": "/app/erp/taller",
+          "icon": "Hammer"
+        },
+        {
+          "label": "Calendario",
+          "path": "/app/erp/calendar",
+          "icon": "CalendarDays"
+        },
+        {
+          "label": "Finanzas",
+          "path": "/app/erp/finanzas",
+          "icon": "Wallet"
         }
       ],
       "brand": {
         "label": "Taller",
-        "path": "/app/production"
+        "path": "/app/erp/taller"
       }
     },
-    "updated_at": "2026-05-31T00:00:00.000Z"
+    "updated_at": "2026-07-02T17:56:21.841Z"
   },
   {
     "id": "c4d5e6f7-a8b9-0123-defa-234567890124",
@@ -112,22 +182,27 @@
       "name": "nav_comercial",
       "links": [
         {
-          "label": "Cotizaciones",
-          "path": "/app/quoting",
+          "label": "Comercial",
+          "path": "/app/erp/comercial",
+          "icon": "ShoppingCart"
+        },
+        {
+          "label": "Cotizador",
+          "path": "/app/erp/cotizador",
           "icon": "FileText"
         },
         {
-          "label": "Catálogo",
-          "path": "/app/catalog",
+          "label": "Catalogo",
+          "path": "/app/erp/catalogo",
           "icon": "HardDrive"
         }
       ],
       "brand": {
         "label": "Comercial",
-        "path": "/app/quoting"
+        "path": "/app/erp/comercial"
       }
     },
-    "updated_at": "2026-06-21T15:13:54.097Z"
+    "updated_at": "2026-07-02T17:57:20.570Z"
   },
   {
     "id": "d5e6f7a8-b9c0-1234-efab-345678901235",

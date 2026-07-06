@@ -119,5 +119,27 @@
       "nombre": "Carlos Alberto Mesa"
     },
     "updated_at": "2026-06-22T01:08:32.434Z"
+  },
+  {
+    "id": "f7ac30f3-4a68-4016-b44c-39f878f39c21",
+    "context": "clientes",
+    "data": {
+      "nombre": "Cliente Demo Uno",
+      "documento": "",
+      "telefono": 3000000001,
+      "email": "demo.uno@example.test"
+    },
+    "updated_at": "2026-07-06T04:07:53.762Z"
+  },
+  {
+    "id": "837a885f-e8d9-4a60-91b2-1f8fa962125d",
+    "context": "clientes",
+    "data": {
+      "nombre": "Cliente Demo Dos",
+      "documento": "",
+      "telefono": 3000000002,
+      "email": "demo.dos@example.test"
+    },
+    "updated_at": "2026-07-06T04:07:53.773Z"
   }
 ]

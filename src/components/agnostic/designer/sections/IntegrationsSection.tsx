@@ -32,10 +32,11 @@ export function IntegrationsSection({ envPresence }: IntegrationsSectionProps) {
     }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSave = async (vars: Record<string, string>) => {
+        const variables = Object.entries(vars).map(([key, value]) => ({ key, value, sensitive: true }));
         const res = await fetch('/api/admin/config/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ vars, redeploy: true }),
+            body: JSON.stringify({ variables, redeploy: true }),
         });
         if (!res.ok) {
             toast.error('Error guardando variables');

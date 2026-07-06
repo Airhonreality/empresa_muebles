@@ -21,7 +21,7 @@ export type StrategyType = 'LocalStrategy' | 'GitHubStrategy' | 'SupabaseStrateg
 export interface UITokens {
   primary?: string;       // HSL: "222 47% 11%"
   radius?: string;        // "0.5rem"
-  font_sans?: string;     // "Inter, sans-serif"
+  font_sans?: string;     // "Futura BT, Century Gothic, Avenir Next, Helvetica Neue, Arial, sans-serif"
 }
 
 export interface LayoutDefaults {

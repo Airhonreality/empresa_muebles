@@ -34,7 +34,59 @@ Con `.env.local`:
 npx tsx --env-file=.env.local scripts/agno.ts context
 ```
 
-Si `DATABASE_URL` no esta cargada, el sistema usa `LocalStrategy` y lee `storage/db/*.json`.
+Override de estrategia:
+
+```bash
+AGNOSTIC_STORAGE_STRATEGY=local
+AGNOSTIC_STORAGE_STRATEGY=postgres
+AGNOSTIC_STORAGE_STRATEGY=github
+AGNOSTIC_STORAGE_STRATEGY=supabase
+```
+
+Regla actual:
+
+- En desarrollo, el sistema usa `LocalStrategy` por defecto y lee `storage/db/*.json`.
+- En produccion, la prioridad sigue siendo `GITHUB_REPO` -> `DATABASE_URL` -> `SUPABASE_URL` -> `LocalStrategy`.
+- Si necesitas forzar una estrategia concreta, usa `AGNOSTIC_STORAGE_STRATEGY`.
+
+## Salida Testeable
+
+Los comandos nuevos soportan salida humana y salida JSON estable para CI/agentes.
+
+```bash
+npx tsx scripts/agno.ts validate:zaps --json
+npx tsx scripts/agno.ts bootstrap doctor --json
+npx tsx scripts/agno.ts refactor-schema plan old_name new_name --json
+npx tsx scripts/agno.ts docs all --json
+```
+
+### Convenciones internas del CLI
+
+Todo comando nuevo de `agno.ts` reusa dos primitivas compartidas en lugar de reinventar acceso a filesystem o formato de salida:
+
+- `scripts/cli-reporter.ts` — construye el `CliResult` (`ok`, `command`, `summary`, `findings`) que respeta el contrato JSON de esta guía. Cada finding tiene un `level` (`error | warn | info`).
+- `scripts/storage-repository.ts` — `StorageRepository` resuelve rutas dentro de `storage/` y expone helpers de lectura/existencia sobre `storage/db/`.
+
+Contrato JSON:
+
+```json
+{
+  "ok": true,
+  "command": "validate:zaps",
+  "summary": {},
+  "findings": []
+}
+```
+
+Codigos comunes:
+
+```text
+AGNO_ZAP_UNKNOWN_NAMESPACE
+AGNO_ZAP_UNKNOWN_FIELD
+AGNO_BOOTSTRAP_DATABASE_URL
+AGNO_REFACTOR_CONFIRMATION_REQUIRED
+AGNO_DOCS_INVALID_KIND
+```
 
 ## Lectura
 
@@ -53,7 +105,7 @@ records <schema> [limit=5]       registros con preview
 script <name>                    codigo de un script
 validate                         valida invariantes
 validate --zaps                  valida invariantes y referencias de zaps
-validate:zaps                    valida namespaces referenciados por zaps
+validate:zaps [--json]           valida namespaces referenciados por zaps
 ```
 
 ## Bloques Y Rutas
@@ -98,6 +150,24 @@ delete-record <schema> <id>
 delete-route <path>
 ```
 
+### System Groups
+
+`system_groups` es un namespace normal de datos para organizar la jerarquía visual del sistema.
+
+Ejemplo:
+
+```text
+npx tsx scripts/agno.ts create-record system_groups name=calendar label=Calendar kind=subsystem description="Scheduler domain"
+```
+
+Luego, en rutas, schemas y scripts, usa la metadata opcional:
+
+```text
+system_group=calendar
+```
+
+La UI del diseñador agrupa por ese valor si existe; si no, cae en el grupo inferido `General`.
+
 ## Scripts Zap
 
 Los scripts viven como registros en `storage/db/scripts.json`. No existen archivos `.js` sueltos bajo `storage/`.
@@ -138,12 +208,14 @@ Los cambios de nombre de namespaces deben hacerse con plan previo. No uses reemp
 
 ```text
 refactor-schema plan <old_name> <new_name>
-refactor-schema apply <old_name> <new_name>
+refactor-schema apply <old_name> <new_name> [--dry] [--yes] [--json]
 ```
 
 `plan` muestra los cambios detectados sin escribir archivos.
 
-`apply` ejecuta solo transformaciones conservadoras:
+`apply` sin `--yes` no escribe; imprime el plan y pide confirmacion explicita. `--dry` muestra el plan y nunca escribe. `--yes` aplica y crea backup automatico en `storage/progreso/backups/`.
+
+`apply --yes` ejecuta solo transformaciones conservadoras:
 
 - `schema_definitions.json`: `data.name`, `data.slug` y `context` cuando coinciden exactamente.
 - `page_routes.json`: strings exactos en contexts/configs.
@@ -153,15 +225,70 @@ refactor-schema apply <old_name> <new_name>
 
 No renombra fields ni relaciones como `cotizacion_id -> proyecto_id`; eso requiere un refactor de field explicito.
 
-## Documentacion Agentiva
+## Adapters
 
-Estos comandos generan indices versionables en `storage/progreso/`. No reemplazan la fuente canonica en `storage/db/`; solo crean contexto compacto para agentes IA y revisiones humanas.
+Un adapter es una integracion instalable con dos caras: cliente (`src/integrations/<id>/index.ts` + `ConfigPanel.tsx`, registrado en `agnostic.config.ts` bajo `integrations`) y servidor (`src/integrations/<id>/adapter.ts`, resuelto por `src/lib/integrations/adapters.server.ts`). `src/integrations/notion/` es el ejemplo de referencia; copia su forma para construir uno nuevo.
 
 ```text
-docs schemas             genera storage/progreso/arbol_de_schemas.md
-docs zaps                genera storage/progreso/arbol_de_zaps.md
-docs routes              genera storage/progreso/arbol_de_rutas.md
-docs modules             genera storage/progreso/arbol_de_modulos.md
+list-adapters [--json]                              disponibles + instalados
+install <id> plan [--json]                           preview: colisiones y permisos, sin escribir
+install <id> [--dry] [--yes] [--json]                registra el adapter (ciclo gobernado)
+remove-adapter <id> [--dry] [--yes] [--json]          des-registra el adapter (ciclo gobernado)
+```
+
+"Disponible" = existe `src/integrations/<id>/manifest.ts` en disco. "Instalado" = el id aparece en `agnostic.config.ts`. `install`/`remove-adapter` **no** crean ni borran la carpeta del adapter, solo la registran/des-registran en `agnostic.config.ts` y `src/lib/integrations/adapters.server.ts`.
+
+Mismo ciclo que `refactor-schema`: `plan` (preview) -> `--dry` (preview, nunca escribe) -> sin `--yes` (plan + confirmacion requerida, no interactivo) -> `--yes` (backup automatico de ambos archivos en `storage/progreso/backups/`, luego escribe).
+
+### Manifest (`AdapterManifest`, `packages/core/src/adapter.ts`)
+
+```ts
+{
+  id: string;                 // = carpeta en src/integrations/<id> = key en agnostic.config.ts
+  name: string;
+  description: string;
+  kind: 'data-source' | 'messaging' | 'payment' | 'llm' | 'other';
+  coreMinVersion: string;      // informativo, sin enforcement todavia
+  envVars: { key, label, required, sensitive }[];
+  requiresSchemas?: string[];  // nombres de schema en storage/db/schema_definitions.json
+  permissions: {
+    network: 'none' | 'outbound-api';
+    outboundHosts?: string[];
+    runsOutsideSandbox: boolean;   // obligatorio true si network !== 'none'
+  };
+}
+```
+
+Convencion de nombres que todo adapter nuevo debe seguir para que `install`/`remove-adapter` puedan generar las lineas de registro automaticamente:
+
+- Clase servidor: `${PascalCase(id)}Adapter`, exportada desde `adapter.ts` (ej. `notion` -> `NotionAdapter`).
+- Export del manifest: `manifest`, desde `manifest.ts`.
+
+### Resolver de colisiones
+
+`install` corre estas verificaciones antes de escribir; los `error` bloquean el plan, los `warn`/`info` no:
+
+- `AGNO_ADAPTER_ALREADY_INSTALLED` (error): el id ya esta registrado.
+- `AGNO_ADAPTER_SANDBOX_PERMISSION_MISMATCH` (error): el manifest declara `permissions.network !== 'none'` pero `runsOutsideSandbox` no es `true` — contradiccion del contrato de permisos.
+- `AGNO_ADAPTER_ENV_KEY_COLLISION` (warn): una `envVars[].key` del candidato ya la usa otro adapter instalado con distinto id.
+- `AGNO_ADAPTER_SCHEMA_MISSING` (warn): un nombre en `requiresSchemas` no existe todavia en `schema_definitions.json`.
+- `AGNO_ADAPTER_ENV_UNSET` (info): una env var requerida no esta definida en el proceso actual.
+
+### Contrato de permisos (no negociable)
+
+El sandbox de zaps (`src/app/api/engine/route.ts`) no tiene `fetch`, `fs`, `process` ni binarios nativos (timeout 5s). Cualquier adapter con `permissions.network !== 'none'` debe implementar su logica de red en una ruta real bajo `src/app/api/` (como hace `src/app/api/admin/integrations/*` con Notion), nunca dentro de un zap. Un manifest que viole esto (`network !== 'none'` con `runsOutsideSandbox: false`) es rechazado por el resolver.
+
+## Documentacion Agentiva
+
+Estos comandos generan indices versionables en `storage/docs/`. No reemplazan la fuente canonica en `storage/db/`; solo crean contexto compacto para agentes IA y revisiones humanas.
+
+Son snapshots 100% regenerables: no se editan a mano y no son contexto curado (eso vive en `storage/progreso/`, ver `storage/progreso/INDEX.md`).
+
+```text
+docs schemas             genera storage/docs/arbol_de_schemas.md
+docs zaps                genera storage/docs/arbol_de_zaps.md
+docs routes              genera storage/docs/arbol_de_rutas.md
+docs modules             genera storage/docs/arbol_de_modulos.md
 docs all                 genera todos los arboles y resumen_agentivo.md
 ```
 

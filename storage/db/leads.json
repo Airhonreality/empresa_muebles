@@ -19,5 +19,31 @@
       "mensaje": "2026-06-22T04:24:17.642Z"
     },
     "updated_at": "2026-06-22T04:24:21.367Z"
+  },
+  {
+    "id": "36d98036-5950-4f92-a02a-5dc05660bd91",
+    "context": "leads",
+    "data": {
+      "nombre_completo": "Lead Demo Uno",
+      "telefono_whatsapp": 3000000003,
+      "email": "lead.uno@example.test",
+      "barrio_zona": "Usaquén",
+      "tipo_espacio": "Cocina",
+      "mensaje": "Mock de lead para pruebas de trazabilidad del sitio web (lote webstore_r2)."
+    },
+    "updated_at": "2026-07-06T04:12:04.199Z"
+  },
+  {
+    "id": "4eef1899-2c3e-4d04-aec4-f707f57e42cf",
+    "context": "leads",
+    "data": {
+      "nombre_completo": "Lead Demo Dos",
+      "telefono_whatsapp": 3000000004,
+      "email": "lead.dos@example.test",
+      "barrio_zona": "Chicó",
+      "tipo_espacio": "Dormitorio",
+      "mensaje": "Mock de lead para pruebas de trazabilidad del sitio web (lote webstore_r2)."
+    },
+    "updated_at": "2026-07-06T04:12:04.205Z"
   }
 ]

@@ -114,7 +114,7 @@ const SERVICE_AREAS = [
 ];
 
 const ROUTE_SERVICES: Record<string, { name: string; serviceType: string; description: string }> = {
-  "/espacios-a-medida": {
+  "/": {
     name: "Fabricacion de espacios a medida en Bogota",
     serviceType: "Mobiliario arquitectonico a medida",
     description:

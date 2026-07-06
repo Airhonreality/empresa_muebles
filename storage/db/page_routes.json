@@ -1,94 +1,5 @@
 [
   {
-    "id": "db6124ac-0139-4b04-b1aa-b25ae0a53fd0",
-    "context": "page_routes",
-    "data": {
-      "path": "/app/quoting",
-      "title": "Cotizador",
-      "isPrivate": false,
-      "layout_mode": "full",
-      "layout": {
-        "max_width": "full",
-        "padding": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "gap": 0
-      },
-      "blocks": [
-        {
-          "id": "block_cotizador_pro",
-          "type": "cotizador_pro",
-          "context": "proyectos",
-          "config": {
-            "tarifa_jornada": 185000
-          }
-        }
-      ]
-    },
-    "updated_at": "2026-06-29T00:24:16.751Z",
-    "_meta": {
-      "path": "2026-06-11T20:16:36.836Z",
-      "title": "2026-06-11T20:16:36.836Z",
-      "isPrivate": "2026-06-11T20:16:36.836Z",
-      "layout_mode": "2026-06-11T20:16:36.836Z",
-      "layout": "2026-06-11T20:16:36.836Z",
-      "blocks": "2026-06-11T20:16:36.836Z"
-    }
-  },
-  {
-    "id": "8e2f478b-77da-4d74-b9e5-8cd1ed30e901",
-    "context": "page_routes",
-    "data": {
-      "path": "/app/catalog",
-      "title": "CatÃ¡logo de Productos y Servicios",
-      "isPrivate": false,
-      "layout_mode": "container",
-      "blocks": [
-        {
-          "id": "78eb7b2b-dcb7-428a-b763-2c9408b1cb91",
-          "type": "catalogo_manager",
-          "blocks": [],
-          "context": "productos_catalogo"
-        }
-      ]
-    },
-    "updated_at": "2026-07-02T02:06:14.037Z"
-  },
-  {
-    "id": "966c3d81-e7a7-431d-8172-05b55a964d2e",
-    "context": "page_routes",
-    "data": {
-      "path": "/app/quoting/:id",
-      "title": "Cotizador — Editor de Propuesta",
-      "isPrivate": false,
-      "layout_mode": "full",
-      "layout": {
-        "max_width": "full",
-        "padding": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "gap": 0
-      },
-      "blocks": [
-        {
-          "id": "block_cotizador_pro_id",
-          "type": "cotizador_pro",
-          "context": "proyectos",
-          "config": {
-            "tarifa_jornada": 185000
-          }
-        }
-      ]
-    },
-    "updated_at": "2026-06-29T00:24:17.138Z"
-  },
-  {
     "id": "12fcb5a0-9d95-45aa-a3a2-ec13de7a8485",
     "context": "page_routes",
     "data": {
@@ -152,25 +63,6 @@
     "updated_at": "2026-06-06T17:14:15.105Z"
   },
   {
-    "id": "70bdfb89-ab55-4e35-8909-f427acaa3ce5",
-    "context": "page_routes",
-    "data": {
-      "path": "/app/production",
-      "title": "Producción",
-      "isPrivate": false,
-      "layout_mode": "container",
-      "blocks": [
-        {
-          "id": "028ec528-329e-4b86-b2e0-c13c5458138e",
-          "type": "production_kanban",
-          "context": "ordenes_trabajo"
-        }
-      ],
-      "order": 0
-    },
-    "updated_at": "2026-06-01T00:00:00.000Z"
-  },
-  {
     "id": "c80dd7ec-e6ac-4647-9e2c-751edb29f6b0",
     "context": "page_routes",
     "data": {
@@ -196,6 +88,17 @@
       "path": "/",
       "title": "Veta Dorada",
       "isPrivate": false,
+      "layout_mode": "full",
+      "layout": {
+        "max_width": "full",
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "gap": 0
+      },
       "blocks": [
         {
           "id": "062b2cab-3b36-44ce-9568-5c8702c77d6b",
@@ -205,27 +108,8 @@
       ],
       "order": 0
     },
-    "updated_at": "2026-06-22T22:57:05.936Z",
+    "updated_at": "2026-07-04T15:43:33.591Z",
     "_meta": {}
-  },
-  {
-    "id": "fcbb5943-b7ce-43d1-a302-872b782ff791",
-    "context": "page_routes",
-    "data": {
-      "path": "/espacios-a-medida",
-      "title": "Espacios a Medida",
-      "isPrivate": false,
-      "blocks": [
-        {
-          "id": "a6719596-e4a7-417b-9104-62809a14bf0e",
-          "type": "veta_spaces",
-          "blocks": [],
-          "context": "espacio_variantes"
-        }
-      ],
-      "order": 0
-    },
-    "updated_at": "2026-06-18T04:58:30.947Z"
   },
   {
     "id": "ac7a21f7-a9b5-45ae-a506-339ef9f41073",
@@ -295,51 +179,241 @@
     "updated_at": "2026-06-29T00:00:00.000Z"
   },
   {
-    "id": "c8bc19ad-24ad-4caa-8aba-0ebc3aabef43",
+    "id": "d187d382-d5e1-476b-ba70-498181bf7075",
     "context": "page_routes",
     "data": {
-      "path": "/app/equipo",
-      "title": "Gestión de Equipo",
+      "path": "/app/erp/catalogo",
+      "title": "ERP Catalogo",
+      "isPrivate": false,
       "blocks": [
         {
-          "type": "equipo_directory",
-          "context": "usuarios_equipo",
-          "id": "2281c4e0"
+          "id": "ffe6e8d2-fd4a-4d0a-bb97-fa273715864b",
+          "type": "catalogo_manager",
+          "blocks": [],
+          "context": "productos_catalogo"
         }
-      ]
+      ],
+      "order": 0
     },
-    "updated_at": "2026-07-01T00:27:26.004Z"
+    "updated_at": "2026-07-02T17:54:07.698Z"
   },
   {
-    "id": "b201c10d-e6a1-4064-a9ff-2323da839e6c",
+    "id": "c96103eb-81db-426f-8d24-c3ba0af1c36e",
     "context": "page_routes",
     "data": {
-      "path": "/app/proveedores",
-      "title": "Directorio de Proveedores",
+      "path": "/app/erp/comercial",
+      "title": "ERP Comercial",
+      "isPrivate": false,
       "blocks": [
         {
+          "id": "3a2c7f42-366c-4a83-b67c-203f104b326b",
+          "type": "comercial_kanban",
+          "blocks": [],
+          "context": "proyectos"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-02T17:54:07.177Z"
+  },
+  {
+    "id": "e60f84db-f909-4a20-a50c-f82f92960b66",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/calendar",
+      "title": "ERP Calendario",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "63171d14-f09e-4989-a214-41eb191a81d1",
+          "type": "calendar_scheduler",
+          "blocks": [],
+          "context": "tareas_operativas"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-02T17:54:08.334Z"
+  },
+  {
+    "id": "193b54ca-b9d0-4bed-a954-52790004e62b",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/proveedores",
+      "title": "ERP Proveedores",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "d3da0a50-3a58-481b-8688-9e1efe41bbce",
           "type": "proveedores_directory",
-          "context": "proveedores",
-          "id": "76c1b365"
+          "blocks": [],
+          "context": "proveedores"
         }
-      ]
+      ],
+      "order": 0
     },
-    "updated_at": "2026-07-01T00:27:26.006Z"
+    "updated_at": "2026-07-02T17:54:06.404Z"
   },
   {
-    "id": "63b030f8-5ef4-4064-a7c8-793e7f728d33",
+    "id": "53d4f66e-8261-4f6b-8d6f-32f48b104dd8",
     "context": "page_routes",
     "data": {
-      "path": "/app/perfil",
-      "title": "Mi Perfil",
+      "path": "/app/erp/perfil",
+      "title": "ERP Perfil",
+      "isPrivate": false,
       "blocks": [
         {
+          "id": "7d362d9a-74be-434f-bab2-42c6aa04b37a",
           "type": "user_profile",
-          "context": "usuarios_equipo",
-          "id": "65e18569"
+          "blocks": [],
+          "context": "usuarios_equipo"
         }
-      ]
+      ],
+      "order": 0
     },
-    "updated_at": "2026-07-01T00:27:26.006Z"
+    "updated_at": "2026-07-02T17:54:08.881Z"
+  },
+  {
+    "id": "2ffda873-7e3c-4727-aec9-e4fc9b62c831",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/taller",
+      "title": "ERP Taller",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "2140370b-9a4d-4ae8-951d-b73033d9c310",
+          "type": "production_kanban",
+          "blocks": [],
+          "context": "ordenes_trabajo"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-02T17:55:26.174Z"
+  },
+  {
+    "id": "96dd9ab8-0694-4a90-a58a-2c356994871f",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/equipo",
+      "title": "ERP Equipo",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "5e1312e7-2a65-4cf9-8a7e-1b1753196398",
+          "type": "equipo_directory",
+          "blocks": [],
+          "context": "usuarios_equipo"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-02T17:55:26.234Z"
+  },
+  {
+    "id": "a4000a03-9007-4edf-9b07-9ab36b5201ce",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/cotizador",
+      "title": "ERP Cotizador",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "fa8b140f-56b6-4290-88cf-fac36b78d9c7",
+          "type": "cotizador_pro",
+          "blocks": [],
+          "context": "proyectos"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-02T17:56:53.584Z"
+  },
+  {
+    "id": "12ec54a5-b710-4df3-9568-f5e77ace5808",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/portfolio",
+      "title": "ERP Portafolio",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "b99e06cd-ac00-4028-a9ef-33ec4f72e6b2",
+          "type": "portfolio_manager",
+          "blocks": [],
+          "context": "portfolio_publico"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-06T07:31:29.354Z"
+  },
+  {
+    "id": "6639c48d-8479-4857-af08-a3615b89bc2f",
+    "context": "page_routes",
+    "data": {
+      "path": "/portafolio",
+      "title": "Portafolio",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "50c643ca-0281-4cf7-ba92-0a70d28b9666",
+          "type": "veta_portfolio",
+          "blocks": [],
+          "context": "portfolio_publico"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-06T07:33:26.861Z"
+  },
+  {
+    "id": "d6eb2abf-450e-48d0-b1b1-f3d5caa70b43",
+    "context": "page_routes",
+    "data": {
+      "path": "C:/Program Files/Git/tienda",
+      "title": "Tienda",
+      "isPrivate": false,
+      "blocks": [],
+      "order": 0
+    },
+    "updated_at": "2026-07-06T14:59:48.590Z"
+  },
+  {
+    "id": "e31628b6-c6d7-47f0-a294-f0d97a4e1611",
+    "context": "page_routes",
+    "data": {
+      "path": "/tienda",
+      "title": "Tienda",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "aa35c763-376d-4280-a62e-3f92a7551f88",
+          "type": "veta_tienda",
+          "blocks": []
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-06T15:00:10.415Z"
+  },
+  {
+    "id": "577dc340-da13-45c1-b0d2-0465108c8279",
+    "context": "page_routes",
+    "data": {
+      "path": "/tienda/:slug",
+      "title": "Producto Detalle",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "80805031-0ba9-4906-8dd9-e3bbdc5a2623",
+          "type": "veta_producto_detalle",
+          "blocks": []
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-06T15:00:27.119Z"
   }
 ]

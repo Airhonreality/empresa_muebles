@@ -31,5 +31,65 @@
       "unidad_medida": "servicio"
     },
     "updated_at": "2026-05-22T15:30:36.674Z"
+  },
+  {
+    "id": "749a71a5-0d3b-4350-879d-6c307577c8b1",
+    "context": "prefabricados_items",
+    "data": {
+      "prefabricado_id": "05335bab-1458-4466-a4b9-8bf1044c354d",
+      "catalogo_id": "2371faa1-f390-40a6-99cd-6f622e4072dc",
+      "cantidad": 1,
+      "unidad_medida": "tablero",
+      "precio_unitario_snapshot": 3200000
+    },
+    "updated_at": "2026-07-06T07:07:58.107Z"
+  },
+  {
+    "id": "0a889411-2ef1-4534-9e0e-62afd7957804",
+    "context": "prefabricados_items",
+    "data": {
+      "prefabricado_id": "05335bab-1458-4466-a4b9-8bf1044c354d",
+      "catalogo_id": "f1cf16b1-c4b4-4362-8865-2577a33593d7",
+      "cantidad": 1,
+      "unidad_medida": "unidad",
+      "precio_unitario_snapshot": 280000
+    },
+    "updated_at": "2026-07-06T07:07:58.116Z"
+  },
+  {
+    "id": "5d34406c-fee3-4f52-b372-75d905d9efdc",
+    "context": "prefabricados_items",
+    "data": {
+      "prefabricado_id": "05335bab-1458-4466-a4b9-8bf1044c354d",
+      "catalogo_id": "c478502f-0deb-4a94-89b5-7282e8d762a3",
+      "cantidad": 2,
+      "unidad_medida": "juego",
+      "precio_unitario_snapshot": 12000
+    },
+    "updated_at": "2026-07-06T07:07:58.122Z"
+  },
+  {
+    "id": "bbf29196-cbb7-4f28-978a-fdf440c6d6ed",
+    "context": "prefabricados_items",
+    "data": {
+      "prefabricado_id": "72c65ff3-be18-47d8-a528-862b98fe62a8",
+      "catalogo_id": "12f121b5-c6ef-44e8-b273-93af8451cd5d",
+      "cantidad": 2,
+      "unidad_medida": "metro cuadrado",
+      "precio_unitario_snapshot": 420000
+    },
+    "updated_at": "2026-07-06T07:07:58.127Z"
+  },
+  {
+    "id": "ffe680b4-87e7-42d3-913e-db78be99a80b",
+    "context": "prefabricados_items",
+    "data": {
+      "prefabricado_id": "72c65ff3-be18-47d8-a528-862b98fe62a8",
+      "catalogo_id": "c478502f-0deb-4a94-89b5-7282e8d762a3",
+      "cantidad": 4,
+      "unidad_medida": "juego",
+      "precio_unitario_snapshot": 12000
+    },
+    "updated_at": "2026-07-06T07:07:58.133Z"
   }
 ]

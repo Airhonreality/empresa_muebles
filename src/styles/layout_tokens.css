@@ -13,11 +13,11 @@
   --space-unit: 1rem;
   --layout-padding-base: 1.5rem;
   --layout-gap-base: 1rem;
-  
-  /* Colores de Señalética Figma */
-  --layout-accent: #007aff;
-  --layout-bg-panel: #1e1e1e;
-  --layout-border: #333333;
+
+  /* Tokens derivados del sistema visual del seed */
+  --layout-accent: hsl(var(--primary));
+  --layout-bg-panel: hsl(var(--card));
+  --layout-border: hsl(var(--border));
 }
 
 

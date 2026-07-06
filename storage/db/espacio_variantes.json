@@ -3,16 +3,79 @@
     "id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
     "context": "espacio_variantes",
     "data": {
-      "nombre_espacio": "Mueble inferior",
-      "nombre_variante": "Cocina completa",
+      "nombre_espacio": "Cocina_Social",
+      "nombre_variante": "Linea_Principal",
       "jornadas_desarrollo_tecnico": 0.5,
       "jornadas_ensamblaje_taller": 2,
       "jornadas_instalacion_obra": 2.6,
       "activa": true,
-      "descripcion": "",
+      "descripcion": "Carpinteria_social_de_alta_precision",
       "orden": 1,
-      "proyecto_id": "da6b8131-1800-43c0-9dd3-7b1a0c896669"
+      "proyecto_id": "60ffc0a3-9d95-45aa-a3a2-ec13de7a8485",
+      "descripcion_alternativa": "Ambiente_luminoso_y_continuo",
+      "colores": "Nogal,Blanco,Laton",
+      "imagenes": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200"
     },
-    "updated_at": "2026-06-29T00:44:35.035Z"
+    "updated_at": "2026-07-04T13:37:22.997Z"
+  },
+  {
+    "id": "c30b16d0-5b75-4b95-97df-cec097fd7c3b",
+    "context": "espacio_variantes",
+    "data": {
+      "nombre_espacio": "Cava_Bar_Social",
+      "nombre_variante": "Linea_Bar",
+      "descripcion": "Cava_integrada_para_conversacion",
+      "descripcion_alternativa": "Modulo_oscuro_con_luz_calida",
+      "colores": "Roble,Negro,Humo",
+      "imagenes": "https://images.unsplash.com/photo-1493666438817-866a91353ca9?auto=format&fit=crop&q=80&w=1200",
+      "proyecto_id": "60ffc0a3-9d95-45aa-a3a2-ec13de7a8485",
+      "orden": 2,
+      "activa": false
+    },
+    "updated_at": "2026-07-04T13:37:23.008Z"
+  },
+  {
+    "id": "ea5b95fa-1749-405a-98c9-311d09a3b39e",
+    "context": "espacio_variantes",
+    "data": {
+      "nombre_espacio": "Closet_Modular",
+      "nombre_variante": "Vestier_Modular",
+      "descripcion": "Vestier_ordenado_con_ritmo_vertical",
+      "descripcion_alternativa": "Modulo_lineal_con_espejo_columna",
+      "colores": "Nogal,Crudo,Laton",
+      "imagenes": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&q=80&w=1200",
+      "proyecto_id": "60ffc0a3-9d95-45aa-a3a2-ec13de7a8485",
+      "orden": 3,
+      "activa": false
+    },
+    "updated_at": "2026-07-04T13:37:23.019Z"
+  },
+  {
+    "id": "92813261-c3ed-4e46-bbd8-646a7d2bbd1e",
+    "context": "espacio_variantes",
+    "data": {
+      "proyecto_id": "390ff7e9-ac3c-4697-8f84-b1e1e09ca0b6",
+      "nombre_espacio": "Cocina Demo Mock",
+      "nombre_variante": "Version Demo Uno",
+      "descripcion": "Cocina integral mock para trazabilidad de datos del sitio web",
+      "descripcion_alternativa": "Diseño demo con isla central y acabados claros",
+      "colores": "Blanco,Roble,Negro Mate",
+      "activa": true
+    },
+    "updated_at": "2026-07-06T04:12:34.821Z"
+  },
+  {
+    "id": "829949b9-9b53-4b9c-b042-d14c0ddb312b",
+    "context": "espacio_variantes",
+    "data": {
+      "proyecto_id": "a7672862-95c0-4f0e-8212-94a713123964",
+      "nombre_espacio": "Closet Demo Mock",
+      "nombre_variante": "Version Demo Dos",
+      "descripcion": "Closet modular mock para trazabilidad de datos del sitio web",
+      "descripcion_alternativa": "Diseño demo con puertas corredizas y organizadores internos",
+      "colores": "Nogal,Blanco",
+      "activa": true
+    },
+    "updated_at": "2026-07-06T04:12:34.828Z"
   }
 ]

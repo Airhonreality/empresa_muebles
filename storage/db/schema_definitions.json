@@ -332,7 +332,7 @@
           "id": "f3-desc",
           "key": "descripcion",
           "type": "text",
-          "label": "DescripciÃ³n",
+          "label": "Descripción",
           "width": "full",
           "config": {
             "isPrimary": true
@@ -439,7 +439,7 @@
           "id": "f10-preciop",
           "key": "precio_publico",
           "type": "number",
-          "label": "Precio PÃºblico",
+          "label": "Precio Público",
           "width": "full",
           "config": {
             "format": "currency",
@@ -540,11 +540,17 @@
             }
           },
           "required": false
+        },
+        {
+          "id": "36d50667-0cfe-4859-824b-300a20d13c7e",
+          "key": "publicado_web",
+          "type": "boolean",
+          "label": "Publicado en Web",
+          "required": false
         }
       ]
     },
-    "created_at": "2026-06-22T15:28:39.906Z",
-    "updated_at": "2026-07-01T00:27:02.736Z"
+    "updated_at": "2026-07-06T06:53:27.691Z"
   },
   {
     "id": "9328a3a3-c62a-45d7-b8c8-018d6ab19a3a",
@@ -571,7 +577,7 @@
           "id": "img2_url",
           "key": "imagen_url",
           "type": "image",
-          "label": "Imagen de DiseÃ±o / Referente (URL)",
+          "label": "Imagen de Diseño / Referente (URL)",
           "width": "full",
           "config": {},
           "section": "General",
@@ -581,7 +587,7 @@
           "id": "img3_desc",
           "key": "descripcion",
           "type": "text",
-          "label": "DescripciÃ³n",
+          "label": "Descripción",
           "width": "full",
           "config": {},
           "section": "General",
@@ -642,7 +648,7 @@
           "id": "c4c1a3db-e6e6-460a-b1f7-1bd2f4da1861",
           "key": "telefono",
           "type": "text",
-          "label": "TelÃ©fono",
+          "label": "Teléfono",
           "width": "full",
           "config": {
             "relation": {
@@ -725,7 +731,7 @@
           "id": "b3870e98-061f-4485-854a-4769a08fc381",
           "key": "direccion_obra",
           "type": "text",
-          "label": "DirecciÃ³n de la Obra",
+          "label": "Dirección de la Obra",
           "width": "full",
           "config": {
             "relation": {
@@ -740,7 +746,7 @@
           "id": "552314a8-b89d-4942-a17f-4f0a35b04049",
           "key": "dias_entrega_estimados",
           "type": "number",
-          "label": "DÃ­as de Entrega Estimados",
+          "label": "Días de Entrega Estimados",
           "width": "full",
           "config": {
             "relation": {
@@ -755,7 +761,7 @@
           "id": "4e4d7477-965b-4519-bf79-a35c8dece059",
           "key": "garantia_anios",
           "type": "number",
-          "label": "GarantÃ­a (aÃ±os)",
+          "label": "Garantía (años)",
           "width": "full",
           "config": {
             "relation": {
@@ -778,14 +784,14 @@
               "parent_key": "id"
             }
           },
-          "section": "Cierre TÃ©cnico",
+          "section": "Cierre Técnico",
           "required": false
         },
         {
           "id": "79c91bce-edfe-4093-8ada-bb6ab381f369",
           "key": "imprevistos_instalacion",
           "type": "number",
-          "label": "Imprevistos de InstalaciÃ³n",
+          "label": "Imprevistos de Instalación",
           "width": "full",
           "config": {
             "relation": {
@@ -793,7 +799,7 @@
               "parent_key": "id"
             }
           },
-          "section": "Cierre TÃ©cnico",
+          "section": "Cierre Técnico",
           "required": false
         },
         {
@@ -808,7 +814,7 @@
               "parent_key": "id"
             }
           },
-          "section": "Cierre TÃ©cnico",
+          "section": "Cierre Técnico",
           "required": false
         },
         {
@@ -829,15 +835,43 @@
           "width": "full",
           "config": {
             "options": [
-              "Prospecto",
-              "Cotizando",
-              "Aprobado",
-              "Producción",
-              "Entregado"
+              {
+                "label": "activa",
+                "value": "activa"
+              },
+              {
+                "label": "enviada",
+                "value": "enviada"
+              },
+              {
+                "label": "en_contrato",
+                "value": "en_contrato"
+              },
+              {
+                "label": "pre_produccion",
+                "value": "pre_produccion"
+              },
+              {
+                "label": "produccion",
+                "value": "produccion"
+              },
+              {
+                "label": "entregado",
+                "value": "entregado"
+              },
+              {
+                "label": "perdida",
+                "value": "perdida"
+              },
+              {
+                "label": "cancelada",
+                "value": "cancelada"
+              }
             ]
           },
           "section": "Estado",
-          "required": true
+          "required": true,
+          "default": "activa"
         },
         {
           "id": "f8aea57d-0781-4cd4-8764-2d738345880a",
@@ -845,11 +879,17 @@
           "type": "markdown",
           "label": "Descripcion Semantica",
           "required": false
+        },
+        {
+          "id": "0d3c7258-b6de-43f3-8ce2-2b8cb16dd5d6",
+          "key": "barrio",
+          "type": "text",
+          "label": "Barrio",
+          "required": false
         }
       ]
     },
-    "created_at": "2026-06-22T15:28:39.958Z",
-    "updated_at": "2026-06-25T03:52:54.121Z"
+    "updated_at": "2026-07-06T07:23:18.010Z"
   },
   {
     "id": "189a09f5-ee5c-4514-ab13-a62d4bcaecae",
@@ -886,11 +926,60 @@
           "type": "image",
           "label": "URL de Imagen",
           "required": false
+        },
+        {
+          "id": "6650d99e-37cf-40e4-ad4d-f3c696162bb5",
+          "key": "descripcion_comercial",
+          "type": "text",
+          "label": "Descripción Comercial",
+          "required": false
+        },
+        {
+          "id": "dbbe14b7-34b5-4fa8-b389-121418695d56",
+          "key": "categoria_comercial",
+          "type": "text",
+          "label": "Categoría Comercial",
+          "required": false
+        },
+        {
+          "id": "bcf7d7ae-f151-4482-ad70-0d9496d8fc37",
+          "key": "precio_publico",
+          "type": "number",
+          "label": "Precio Público",
+          "required": false
+        },
+        {
+          "id": "d8ce1dcf-8a6a-4df6-b4b0-9da3bee720cd",
+          "key": "precio_costo_calculado",
+          "type": "number",
+          "label": "Precio Costo Calculado",
+          "required": false,
+          "readOnly": true
+        },
+        {
+          "id": "e94c6a13-9203-462b-a02f-29960c5f356a",
+          "key": "publicado_web",
+          "type": "boolean",
+          "label": "Publicado en Web",
+          "required": false
+        },
+        {
+          "id": "c3413f08-be68-430f-bf67-1b7dfa79c41a",
+          "key": "reutilizable_catalogo",
+          "type": "boolean",
+          "label": "Reutilizable en Catálogo",
+          "required": false
+        },
+        {
+          "id": "4fcd62b8-b5d2-4aea-b310-3fd4def56237",
+          "key": "slug",
+          "type": "text",
+          "label": "Slug",
+          "required": false
         }
       ]
     },
-    "created_at": "2026-06-22T15:28:39.975Z",
-    "updated_at": "2026-06-24T02:29:44.836Z"
+    "updated_at": "2026-07-06T06:53:27.674Z"
   },
   {
     "id": "4200ef36-0e94-4356-89e9-870d0e80048d",
@@ -933,11 +1022,17 @@
           "type": "text",
           "label": "Unidad de Medida",
           "required": false
+        },
+        {
+          "id": "fc4dc40b-3817-4abe-b42f-8a33785e4dda",
+          "key": "precio_unitario_snapshot",
+          "type": "number",
+          "label": "Precio Unitario Snapshot",
+          "required": false
         }
       ]
     },
-    "created_at": "2026-06-22T15:28:39.993Z",
-    "updated_at": "2026-06-24T02:29:44.917Z"
+    "updated_at": "2026-07-06T06:53:27.683Z"
   },
   {
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -1769,11 +1864,58 @@
           "type": "textarea",
           "label": "Mensaje",
           "required": false
+        },
+        {
+          "id": "92951c41-41bf-4111-853a-5d8be59efe71",
+          "key": "gclid",
+          "type": "text",
+          "label": "\"Google",
+          "required": false
+        },
+        {
+          "id": "adcbcd79-fe26-4182-bc50-59ce44cd967e",
+          "key": "estado_proyecto",
+          "type": "select",
+          "label": "\"Estado",
+          "required": false,
+          "options": [
+            {
+              "label": "\"Tengo",
+              "value": "\"Tengo"
+            }
+          ]
+        },
+        {
+          "id": "958e9cb4-9a6c-4d23-b418-ab168709701a",
+          "key": "score_conversion",
+          "type": "number",
+          "label": "\"Score",
+          "required": false
+        },
+        {
+          "id": "4a9bb638-79f8-4b33-b668-7f8530f727fd",
+          "key": "utm_source",
+          "type": "text",
+          "label": "\"UTM",
+          "required": false
+        },
+        {
+          "id": "6ef229f4-7251-41c8-8d45-8b50cb39c244",
+          "key": "utm_medium",
+          "type": "text",
+          "label": "\"UTM",
+          "required": false
+        },
+        {
+          "id": "f4ab2a87-1f97-4995-9b5b-21150931dc2e",
+          "key": "utm_campaign",
+          "type": "text",
+          "label": "\"UTM",
+          "required": false
         }
       ]
     },
-    "created_at": "2026-06-22T15:28:40.164Z",
-    "updated_at": "2026-06-24T02:29:45.660Z"
+    "updated_at": "2026-07-02T17:58:13.085Z"
   },
   {
     "id": "d7b4e9f3-8b7c-4a3d-9e2f-51829471ab63",
@@ -2684,5 +2826,346 @@
       ]
     },
     "updated_at": "2026-06-29T00:26:22.821Z"
+  },
+  {
+    "id": "c8c1b8f8-3b25-4b81-8cf2-5d4f2ad79e52",
+    "context": "schema_definitions",
+    "data": {
+      "name": "system_groups",
+      "fields": [
+        {
+          "id": "system_groups_name",
+          "key": "name",
+          "type": "text",
+          "label": "Nombre Interno",
+          "required": true
+        },
+        {
+          "id": "system_groups_label",
+          "key": "label",
+          "type": "text",
+          "label": "Etiqueta Visible",
+          "required": false
+        },
+        {
+          "id": "system_groups_kind",
+          "key": "kind",
+          "type": "text",
+          "label": "Tipo",
+          "required": false
+        },
+        {
+          "id": "system_groups_description",
+          "key": "description",
+          "type": "markdown",
+          "label": "Descripción",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-07-02T00:00:00.000Z"
+  },
+  {
+    "id": "f0eed876-7b8a-4d55-94a4-748ecf12983c",
+    "context": "schema_definitions",
+    "data": {
+      "name": "testimonios",
+      "fields": [
+        {
+          "id": "fa3f2e46-32fc-4939-86d2-0009ee16c302",
+          "key": "nombre_cliente",
+          "type": "text",
+          "label": "\"Nombre",
+          "required": false
+        },
+        {
+          "id": "fb9004b6-4dc2-40f0-97fe-bc912fc4a653",
+          "key": "barrio",
+          "type": "text",
+          "label": "\"Barrio",
+          "required": false
+        },
+        {
+          "id": "f3106e76-e608-4941-b0a3-c737f955fd7a",
+          "key": "texto_resena",
+          "type": "textarea",
+          "label": "\"Texto",
+          "required": false
+        },
+        {
+          "id": "3d84e114-3730-45a7-af28-78d01b743c5b",
+          "key": "calificacion",
+          "type": "number",
+          "label": "\"Calificación",
+          "required": false
+        },
+        {
+          "id": "a9d53cb0-bba9-4c46-8b27-e9cc810d6e07",
+          "key": "proyecto_relacionado",
+          "type": "text",
+          "label": "\"Proyecto",
+          "required": false
+        },
+        {
+          "id": "0e982dc9-fcaa-45cb-a0d7-752178cbe02f",
+          "key": "destacado",
+          "type": "boolean",
+          "label": "\"Destacado",
+          "required": false
+        },
+        {
+          "id": "b36fa3f7-48aa-44d8-a49a-9c7a072e394d",
+          "key": "fecha_resena",
+          "type": "date",
+          "label": "\"Fecha",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-07-02T17:58:12.990Z"
+  },
+  {
+    "id": "6e779248-db70-47ba-b200-a9cfb1f821ce",
+    "context": "schema_definitions",
+    "data": {
+      "name": "seed_registros",
+      "fields": [
+        {
+          "id": "0ce59fff-495c-4a3b-94c9-09eb2cf8d71c",
+          "key": "namespace",
+          "type": "text",
+          "label": "Namespace",
+          "required": false
+        },
+        {
+          "id": "d0bd1aac-0bb9-4fbe-a899-8c33aba47bc5",
+          "key": "record_id",
+          "type": "text",
+          "label": "Record Id",
+          "required": false
+        },
+        {
+          "id": "0319b8ea-8ffd-447a-8bc3-d95ebb52a3e5",
+          "key": "lote",
+          "type": "text",
+          "label": "Lote",
+          "required": false
+        },
+        {
+          "id": "9633adbf-af21-4232-8145-b5d68893078e",
+          "key": "nota",
+          "type": "text",
+          "label": "Nota",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-07-06T04:03:33.605Z"
+  },
+  {
+    "id": "28499b96-c3ab-4a5b-830b-a5ae1b2e338e",
+    "context": "schema_definitions",
+    "data": {
+      "name": "imagenes_prefabricado",
+      "fields": [
+        {
+          "id": "e1610582-ac38-48f2-bc57-601fe5cc832b",
+          "key": "prefabricado_id",
+          "type": "relation",
+          "label": "Prefabricado",
+          "required": false
+        },
+        {
+          "id": "b15f2180-6436-400e-966e-1a11bf1ef840",
+          "key": "imagen_url",
+          "type": "image",
+          "label": "URL de Imagen",
+          "required": false
+        },
+        {
+          "id": "95911d6e-44d3-40dd-961e-48ebc2e1af54",
+          "key": "descripcion",
+          "type": "text",
+          "label": "Descripción",
+          "required": false
+        },
+        {
+          "id": "cf6952ca-a9de-4bef-892b-f287bd01ec7a",
+          "key": "orden",
+          "type": "number",
+          "label": "Orden",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-07-06T06:53:27.697Z"
+  },
+  {
+    "id": "84ffc2f0-1d4b-4650-a8ef-ef7af1cb437f",
+    "context": "schema_definitions",
+    "data": {
+      "name": "portfolio_publico",
+      "fields": [
+        {
+          "id": "050d77a1-83db-4cbd-b591-3c57f589a8be",
+          "key": "proyecto_id",
+          "type": "relation",
+          "label": "Proyecto",
+          "required": false,
+          "config": {
+            "relation": {
+              "entity": "proyectos",
+              "parent_key": "id",
+              "display_field": "titulo"
+            }
+          }
+        },
+        {
+          "id": "daa903a5-a56d-4784-9b28-80eb9e18927c",
+          "key": "titulo",
+          "type": "text",
+          "label": "Título",
+          "required": true
+        },
+        {
+          "id": "dc397c74-c507-438c-8f3d-b254a8897e06",
+          "key": "slug",
+          "type": "text",
+          "label": "Slug",
+          "required": true
+        },
+        {
+          "id": "b10aed7c-1aef-4cd5-a799-a8449d9f457c",
+          "key": "descripcion_comercial",
+          "type": "markdown",
+          "label": "Descripción_Comercial",
+          "required": false
+        },
+        {
+          "id": "048dd1d1-170a-4d0c-ad4f-1370a317afe8",
+          "key": "cliente_iniciales",
+          "type": "text",
+          "label": "Iniciales_Cliente",
+          "required": false
+        },
+        {
+          "id": "b6db4e32-b421-4a3a-85c8-4ee4b4b70804",
+          "key": "barrio",
+          "type": "text",
+          "label": "Barrio",
+          "required": false
+        },
+        {
+          "id": "aab58227-b8b0-4ab6-aec0-788dd3494e80",
+          "key": "categoria_espacio",
+          "type": "select",
+          "label": "Categoría_Espacio",
+          "required": false,
+          "options": [
+            {
+              "label": "cocinas",
+              "value": "cocinas"
+            },
+            {
+              "label": "cavas_bares",
+              "value": "cavas_bares"
+            },
+            {
+              "label": "dormitorios_closets",
+              "value": "dormitorios_closets"
+            },
+            {
+              "label": "consolas_recibidores",
+              "value": "consolas_recibidores"
+            },
+            {
+              "label": "otros",
+              "value": "otros"
+            }
+          ]
+        },
+        {
+          "id": "fa814a8d-5ba7-43b7-ab38-621053988403",
+          "key": "materiales_destacados",
+          "type": "textarea",
+          "label": "Materiales_Destacados",
+          "required": false
+        },
+        {
+          "id": "46002a6f-5e2c-45e3-9ca7-ff7431f4d1e4",
+          "key": "publicado",
+          "type": "boolean",
+          "label": "Publicado",
+          "required": false
+        },
+        {
+          "id": "b2b4a7ef-c8af-43a1-8d13-b81164967dfd",
+          "key": "destacado",
+          "type": "boolean",
+          "label": "Destacado",
+          "required": false
+        },
+        {
+          "id": "79faa749-cabe-44c7-89db-f5f2cb158b67",
+          "key": "orden",
+          "type": "number",
+          "label": "Orden",
+          "required": false
+        },
+        {
+          "id": "b809dd0a-c161-48a5-9b8d-0a23f96f6e01",
+          "key": "fecha_publicacion",
+          "type": "date",
+          "label": "Fecha_Publicación",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-07-06T07:23:18.110Z"
+  },
+  {
+    "id": "12c0bbf4-f057-47b9-b397-7c475c8a9ef8",
+    "context": "schema_definitions",
+    "data": {
+      "name": "imagenes_portfolio",
+      "fields": [
+        {
+          "id": "19eb0cb1-de89-4822-8757-ded04b2a0c73",
+          "key": "portfolio_id",
+          "type": "relation",
+          "label": "Portfolio",
+          "required": false,
+          "config": {
+            "relation": {
+              "entity": "portfolio_publico",
+              "parent_key": "id",
+              "display_field": "titulo"
+            }
+          }
+        },
+        {
+          "id": "c496b19b-2758-4fa2-9fa2-9ddc08c74633",
+          "key": "imagen_url",
+          "type": "image",
+          "label": "Imagen",
+          "required": true
+        },
+        {
+          "id": "d2a873c6-d1fc-4c55-bd90-8c6d025c6fe1",
+          "key": "descripcion",
+          "type": "text",
+          "label": "Descripción",
+          "required": false
+        },
+        {
+          "id": "90a968c2-09f3-4448-b3f1-4ac38968478c",
+          "key": "orden",
+          "type": "number",
+          "label": "Orden",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-07-06T07:23:18.146Z"
   }
 ]

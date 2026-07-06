@@ -1,0 +1,343 @@
+[
+  {
+    "id": "49b00bf3-4cce-4fa1-82cd-a45ba01ae646",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "clientes",
+      "record_id": "f7ac30f3-4a68-4016-b44c-39f878f39c21",
+      "lote": "webstore_r2",
+      "nota": "Cliente Demo Uno"
+    },
+    "updated_at": "2026-07-06T04:13:26.749Z"
+  },
+  {
+    "id": "b85952b9-1eb0-4926-ab7c-f90b020c430b",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "clientes",
+      "record_id": "837a885f-e8d9-4a60-91b2-1f8fa962125d",
+      "lote": "webstore_r2",
+      "nota": "Cliente Demo Dos"
+    },
+    "updated_at": "2026-07-06T04:13:26.757Z"
+  },
+  {
+    "id": "aabf44d2-6427-4302-9dcb-d65314992bc7",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "proyectos",
+      "record_id": "390ff7e9-ac3c-4697-8f84-b1e1e09ca0b6",
+      "lote": "webstore_r2",
+      "nota": "Proyecto Demo Cocina Uno"
+    },
+    "updated_at": "2026-07-06T04:13:26.764Z"
+  },
+  {
+    "id": "46607aa0-264b-454f-a9f0-57bb54bdf9a7",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "proyectos",
+      "record_id": "a7672862-95c0-4f0e-8212-94a713123964",
+      "lote": "webstore_r2",
+      "nota": "Proyecto Demo Closet Dos"
+    },
+    "updated_at": "2026-07-06T04:13:26.772Z"
+  },
+  {
+    "id": "e428b94d-4874-405f-8943-13671e8a8142",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "espacio_variantes",
+      "record_id": "92813261-c3ed-4e46-bbd8-646a7d2bbd1e",
+      "lote": "webstore_r2",
+      "nota": "Cocina Demo Mock"
+    },
+    "updated_at": "2026-07-06T04:13:26.778Z"
+  },
+  {
+    "id": "88d579a1-d666-474d-8517-798be304658a",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "espacio_variantes",
+      "record_id": "829949b9-9b53-4b9c-b042-d14c0ddb312b",
+      "lote": "webstore_r2",
+      "nota": "Closet Demo Mock"
+    },
+    "updated_at": "2026-07-06T04:13:26.785Z"
+  },
+  {
+    "id": "21d9009d-bf99-43b7-9840-996be43baea0",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_espacio",
+      "record_id": "a8f207fe-cc3a-4b00-8f59-2d3e73878ac7",
+      "lote": "webstore_r2",
+      "nota": "Imagen Cocina Demo Mock 1"
+    },
+    "updated_at": "2026-07-06T04:13:26.791Z"
+  },
+  {
+    "id": "197221c8-4f50-490f-9415-c76b371f0d88",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_espacio",
+      "record_id": "1c9d1fc0-1215-4f3e-9516-658821bbb2e7",
+      "lote": "webstore_r2",
+      "nota": "Imagen Cocina Demo Mock 2"
+    },
+    "updated_at": "2026-07-06T04:13:26.798Z"
+  },
+  {
+    "id": "b1d66da9-a264-4d95-addf-63c61989def0",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_espacio",
+      "record_id": "a74777a6-e244-4112-9046-a4330ab17a32",
+      "lote": "webstore_r2",
+      "nota": "Imagen Cocina Demo Mock 3"
+    },
+    "updated_at": "2026-07-06T04:13:26.805Z"
+  },
+  {
+    "id": "42c4fb62-f152-4e0c-869d-ac71159f8e23",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_espacio",
+      "record_id": "a6bcee0c-7550-41c6-97de-2b7f13fe060c",
+      "lote": "webstore_r2",
+      "nota": "Imagen Closet Demo Mock 1"
+    },
+    "updated_at": "2026-07-06T04:13:26.812Z"
+  },
+  {
+    "id": "148c4c6b-596f-4834-9d26-19d826a85200",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_espacio",
+      "record_id": "1e1d94a6-9f42-4849-957d-4b14aaff44cd",
+      "lote": "webstore_r2",
+      "nota": "Imagen Closet Demo Mock 2"
+    },
+    "updated_at": "2026-07-06T04:13:26.819Z"
+  },
+  {
+    "id": "043a8841-36a0-42b9-a690-e962ba21601f",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_espacio",
+      "record_id": "82f35a2a-5d8f-4b90-b9ed-040fba959cd2",
+      "lote": "webstore_r2",
+      "nota": "Imagen Closet Demo Mock 3"
+    },
+    "updated_at": "2026-07-06T04:13:26.825Z"
+  },
+  {
+    "id": "29499067-14ef-4fa0-a6f3-595d225df223",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "testimonios",
+      "record_id": "1ceee2a0-470e-4d57-9d63-31e6d28a82d2",
+      "lote": "webstore_r2",
+      "nota": "Testimonio Demo Uno"
+    },
+    "updated_at": "2026-07-06T04:13:26.833Z"
+  },
+  {
+    "id": "5d27a506-9cb8-4d23-9fe2-e83d6036dc80",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "testimonios",
+      "record_id": "e6362ef1-d55a-4650-9f47-756c3d0d8ac3",
+      "lote": "webstore_r2",
+      "nota": "Testimonio Demo Dos"
+    },
+    "updated_at": "2026-07-06T04:13:26.839Z"
+  },
+  {
+    "id": "ce19123e-4fb4-49c5-afed-2a63997f2eb4",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "testimonios",
+      "record_id": "c8132189-2ab7-4800-83c3-059f62413b94",
+      "lote": "webstore_r2",
+      "nota": "Testimonio Demo Tres"
+    },
+    "updated_at": "2026-07-06T04:13:26.847Z"
+  },
+  {
+    "id": "8dd4992f-af45-40e7-971d-c81bd6609c77",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "leads",
+      "record_id": "36d98036-5950-4f92-a02a-5dc05660bd91",
+      "lote": "webstore_r2",
+      "nota": "Lead Demo Uno"
+    },
+    "updated_at": "2026-07-06T04:13:26.855Z"
+  },
+  {
+    "id": "423769f3-ac69-47b5-ae61-a090057b1638",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "leads",
+      "record_id": "4eef1899-2c3e-4d04-aec4-f707f57e42cf",
+      "lote": "webstore_r2",
+      "nota": "Lead Demo Dos"
+    },
+    "updated_at": "2026-07-06T04:13:26.861Z"
+  },
+  {
+    "id": "9c1652ed-aa8b-44a3-9b73-f7f0b9bdd06c",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "prefabricados",
+      "record_id": "05335bab-1458-4466-a4b9-8bf1044c354d",
+      "lote": "webstore_r2",
+      "nota": "Mock prefabricado Módulo Cocina 60cm"
+    },
+    "updated_at": "2026-07-06T07:14:20.545Z"
+  },
+  {
+    "id": "6ced58ff-fc46-4c85-b218-b32b643487ac",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "prefabricados",
+      "record_id": "72c65ff3-be18-47d8-a528-862b98fe62a8",
+      "lote": "webstore_r2",
+      "nota": "Mock prefabricado Closet Lineal 2.4m"
+    },
+    "updated_at": "2026-07-06T07:14:20.551Z"
+  },
+  {
+    "id": "dbc9b82a-5dad-4dea-a3f0-dc385d383884",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "prefabricados_items",
+      "record_id": "749a71a5-0d3b-4350-879d-6c307577c8b1",
+      "lote": "webstore_r2",
+      "nota": "Item mock Módulo Cocina 60cm - tablero acrílico"
+    },
+    "updated_at": "2026-07-06T07:14:20.556Z"
+  },
+  {
+    "id": "8d1706e7-d9c4-439f-b737-0839b177531f",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "prefabricados_items",
+      "record_id": "0a889411-2ef1-4534-9e0e-62afd7957804",
+      "lote": "webstore_r2",
+      "nota": "Item mock Módulo Cocina 60cm - grifería monocontrol"
+    },
+    "updated_at": "2026-07-06T07:14:20.560Z"
+  },
+  {
+    "id": "2c4c4686-d1be-452c-89a6-444fc8794e84",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "prefabricados_items",
+      "record_id": "5d34406c-fee3-4f52-b372-75d905d9efdc",
+      "lote": "webstore_r2",
+      "nota": "Item mock Módulo Cocina 60cm - bisagras cierre lento"
+    },
+    "updated_at": "2026-07-06T07:14:20.565Z"
+  },
+  {
+    "id": "68b3b0e5-23a8-4a06-84b2-7f45ea0294ca",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "prefabricados_items",
+      "record_id": "bbf29196-cbb7-4f28-978a-fdf440c6d6ed",
+      "lote": "webstore_r2",
+      "nota": "Item mock Closet Lineal 2.4m - closet modular"
+    },
+    "updated_at": "2026-07-06T07:14:20.570Z"
+  },
+  {
+    "id": "ef14fc5f-9463-45b0-a75c-0af20cd4b678",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "prefabricados_items",
+      "record_id": "ffe680b4-87e7-42d3-913e-db78be99a80b",
+      "lote": "webstore_r2",
+      "nota": "Item mock Closet Lineal 2.4m - bisagras cierre lento"
+    },
+    "updated_at": "2026-07-06T07:14:20.574Z"
+  },
+  {
+    "id": "3f6f9e92-4e48-4290-a51b-f2f34ffb018d",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "portfolio_publico",
+      "record_id": "ca238bc4-7169-4f09-8f5a-cdab64dbb64f",
+      "lote": "webstore_r2",
+      "nota": "Mock: Cocina Moderna Minimalista - Publicado"
+    },
+    "updated_at": "2026-07-06T07:42:45.480Z"
+  },
+  {
+    "id": "d97242c3-40f0-4358-b277-f1e351051f40",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "portfolio_publico",
+      "record_id": "ae52f4b2-4139-4909-b9b3-757e9f137ebd",
+      "lote": "webstore_r2",
+      "nota": "Mock: Closet Walk-in Contemporáneo - Publicado"
+    },
+    "updated_at": "2026-07-06T07:42:45.489Z"
+  },
+  {
+    "id": "2dd152e9-d0b3-4680-aeda-94f8dd7d0605",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "portfolio_publico",
+      "record_id": "f13239e1-9065-449a-b734-3d1f92036df0",
+      "lote": "webstore_r2",
+      "nota": "Mock: Proyectos en Progreso - Borrador"
+    },
+    "updated_at": "2026-07-06T14:13:35.436Z"
+  },
+  {
+    "id": "7c0d65f0-ea5e-4fdb-883e-08bed13d2d9b",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_portfolio",
+      "record_id": "8f8a936d-dacc-44aa-b83b-ce5099a08d6c",
+      "lote": "webstore_r2",
+      "nota": "Mock: imagen Cocina minimalista - Vista general"
+    },
+    "updated_at": "2026-07-06T14:13:35.443Z"
+  },
+  {
+    "id": "ddc8f967-88ec-4006-86c9-890e2c138f6a",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_portfolio",
+      "record_id": "82e9d76c-cd69-46dd-bea0-65a184c0ac5e",
+      "lote": "webstore_r2",
+      "nota": "Mock: imagen Cocina minimalista - Detalles de los acabados"
+    },
+    "updated_at": "2026-07-06T14:13:35.450Z"
+  },
+  {
+    "id": "f7d62838-779f-40ab-a488-ef14ee10bc21",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_portfolio",
+      "record_id": "b6e65860-758f-40f9-a10f-45feaf314af1",
+      "lote": "webstore_r2",
+      "nota": "Mock: imagen Closet walk-in - Espacio completo"
+    },
+    "updated_at": "2026-07-06T14:13:35.457Z"
+  },
+  {
+    "id": "3b0be306-4f1f-4179-bbb8-2add29c41fde",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "imagenes_portfolio",
+      "record_id": "5288472e-70b7-4633-b931-abd0f4a6e595",
+      "lote": "webstore_r2",
+      "nota": "Mock: imagen Closet walk-in - Sistema de iluminación integrada"
+    },
+    "updated_at": "2026-07-06T14:13:35.463Z"
+  }
+]

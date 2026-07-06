@@ -35,5 +35,13 @@
   },
   "chat.tools.terminal.autoApprove": {
     "npm install": true
-  }
+  },
+  "spellright.language": [
+    "es"
+  ],
+  "spellright.documentTypes": [
+    "markdown",
+    "latex",
+    "plaintext"
+  ]
 }

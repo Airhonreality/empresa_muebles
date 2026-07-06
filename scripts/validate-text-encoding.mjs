@@ -50,6 +50,11 @@ const IGNORED_PREFIXES = [
   '.history/'
 ];
 
+function isIgnoredPath(filePath) {
+  const normalized = filePath.replace(/\\/g, '/');
+  return IGNORED_PREFIXES.some(prefix => normalized.startsWith(prefix) || normalized.includes(`/${prefix}`));
+}
+
 const MOJIBAKE_MARKERS = [
   /[\u00c3\u00c2\u00e2]/,
   /\u00ef\u00bb\u00bf/,
@@ -68,7 +73,7 @@ function getFilesFromGitIndex() {
     .split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean)
-    .filter(filePath => !IGNORED_PREFIXES.some(prefix => filePath.startsWith(prefix)));
+    .filter(filePath => !isIgnoredPath(filePath));
 }
 
 function getTrackedFiles() {
@@ -77,7 +82,7 @@ function getTrackedFiles() {
     .split('\0')
     .map(line => line.trim())
     .filter(Boolean)
-    .filter(filePath => !IGNORED_PREFIXES.some(prefix => filePath.startsWith(prefix)));
+    .filter(filePath => !isIgnoredPath(filePath));
 }
 
 function decodeUtf8Strict(bytes, filePath) {
@@ -111,9 +116,7 @@ const files = explicitFiles.length > 0
     ? getFilesFromGitIndex()
     : getTrackedFiles();
 
-const targets = stagedMode
-  ? files.filter(isTextFile)
-  : files;
+const targets = files.filter(isTextFile);
 
 const errors = [];
 

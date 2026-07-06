@@ -30,28 +30,38 @@ import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { cache } from 'react';
 
 /**
+ * Per-namespace cache — deduplicates strategy.read(context) across every
+ * getVaultData() call within the same request, regardless of which
+ * combination of contexts each caller asked for. React's cache() keys on
+ * the exact argument, so 'page_routes' dedupes whether it arrived via the
+ * root layout's context array or a route page's partial/full resolution.
+ */
+const readNamespaceCached = cache(async (context: string) => {
+  const strategy = getStrategy();
+  return strategy.read(context);
+});
+
+/**
  * Unified Server-Side Data Hydration Loader.
  * Resolves the active strategy synchronously and reads only the necessary contexts.
  */
-export const getVaultData = cache(async function getVaultData(requestedContexts?: string | string[]): Promise<Record<string, any>> {
+export async function getVaultData(requestedContexts?: string | string[]): Promise<Record<string, any>> {
   try {
-    const strategy = getStrategy();
-    
     // Core namespaces always required by the system
     const coreContexts = [SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG];
-    
+
     const contextsToFetch = [...new Set([
-      ...coreContexts, 
-      ...(requestedContexts 
-        ? (Array.isArray(requestedContexts) ? requestedContexts : [requestedContexts]) 
+      ...coreContexts,
+      ...(requestedContexts
+        ? (Array.isArray(requestedContexts) ? requestedContexts : [requestedContexts])
         : [])
     ])];
 
     const db: Record<string, any> = {};
 
-    // Retrieve each namespace using standard read operations
+    // Retrieve each namespace using standard read operations, deduped per-namespace
     for (const context of contextsToFetch) {
-      db[context] = await strategy.read(context);
+      db[context] = await readNamespaceCached(context);
     }
 
     // Run structural and schema checks on the loaded data
@@ -68,8 +78,8 @@ export const getVaultData = cache(async function getVaultData(requestedContexts?
     return {
       _integrity: { 
         isValid: false, 
-        issues: [{ level: 'ERROR', context: 'SYSTEM', message: 'Critical server hydration failed.' }] 
+        issues: [{ level: 'ERROR', context: 'SYSTEM', message: 'Critical server hydration failed.' }]
       }
     };
   }
-});
+}

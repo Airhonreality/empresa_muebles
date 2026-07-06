@@ -1,0 +1,46 @@
+[
+  {
+    "id": "8f8a936d-dacc-44aa-b83b-ce5099a08d6c",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "ca238bc4-7169-4f09-8f5a-cdab64dbb64f",
+      "imagen_url": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800",
+      "descripcion": "Cocina minimalista - Vista general",
+      "orden": 0
+    },
+    "updated_at": "2026-07-06T07:42:33.224Z"
+  },
+  {
+    "id": "82e9d76c-cd69-46dd-bea0-65a184c0ac5e",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "ca238bc4-7169-4f09-8f5a-cdab64dbb64f",
+      "imagen_url": "https://images.unsplash.com/photo-1507652313519-d4dc1be33edb?auto=format&fit=crop&w=800",
+      "descripcion": "Detalles de los acabados",
+      "orden": 1
+    },
+    "updated_at": "2026-07-06T07:42:33.234Z"
+  },
+  {
+    "id": "b6e65860-758f-40f9-a10f-45feaf314af1",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "ae52f4b2-4139-4909-b9b3-757e9f137ebd",
+      "imagen_url": "https://images.unsplash.com/photo-1551632786-de41ec2cc64f?auto=format&fit=crop&w=800",
+      "descripcion": "Closet walk-in - Espacio completo",
+      "orden": 0
+    },
+    "updated_at": "2026-07-06T07:42:33.242Z"
+  },
+  {
+    "id": "5288472e-70b7-4633-b931-abd0f4a6e595",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "ae52f4b2-4139-4909-b9b3-757e9f137ebd",
+      "imagen_url": "https://images.unsplash.com/photo-1578500494198-246f612d03b3?auto=format&fit=crop&w=800",
+      "descripcion": "Sistema de iluminación integrada",
+      "orden": 1
+    },
+    "updated_at": "2026-07-06T07:42:33.248Z"
+  }
+]

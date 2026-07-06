@@ -47,16 +47,21 @@ next-env.d.ts
 storage/*
 !storage/.gitkeep
 !storage/AGENTS.md
+!storage/db/
+!storage/db/**
 !storage/progreso/
 !storage/progreso/**
 !storage/fork_doc/
 !storage/fork_doc/**
+!storage/docs/
+!storage/docs/**
 
 # Project-specific custom blocks built with AI
-# Exception: _TEMPLATE.tsx is part of the seed (shows the pattern to follow)
-src/components/specialized/*
-!src/components/specialized/_TEMPLATE.tsx
-!src/components/specialized/DataBrowser.tsx
+# Politica del FORK (2026-07-06): los bloques specialized SON capa fork y se trackean
+# TODOS. La regla de ignore del seed creaba archivos invisibles para git y para los
+# worktrees de lanes (misma trampa que storage/db, cerrada por goal/storage-dedup).
+!src/components/specialized/
+!src/components/specialized/**
 
 
 
@@ -68,3 +73,5 @@ src/components/specialized/*
 /.history/
 .codex/
 
+# backups del CLI agno: locales, no se versionan
+storage/progreso/backups/

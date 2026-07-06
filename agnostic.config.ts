@@ -44,9 +44,11 @@ export default defineConfig({
     'yango-dispatcher':() => import('./src/components/specialized/YangoDispatcher'),
     'chart':           () => import('./src/components/specialized/Chart'),
     veta_home:         () => import('./src/components/specialized/VetaHome'),
-    veta_spaces:       () => import('./src/components/specialized/VetaSpaces'),
     veta_catalog:      () => import('./src/components/specialized/VetaCatalog'),
     veta_agendar:      () => import('./src/components/specialized/VetaAgendar'),
+    veta_portfolio:    () => import('./src/components/specialized/portfolio/VetaPortfolio'),
+    veta_tienda:       () => import('./src/components/specialized/tienda/VetaTienda'),
+    veta_producto_detalle: () => import('./src/components/specialized/tienda/VetaProductoDetalle'),
     workspace_switcher:() => import('./src/components/specialized/WorkspaceSwitcher'),
     widget_armado_orden_compra: () => import('./src/components/specialized/WidgetArmadoOrdenCompra'),
     equipo_directory:  () => import('./src/components/specialized/equipo/EquipoDirectory'),
@@ -54,6 +56,8 @@ export default defineConfig({
     catalogo_manager:  () => import('./src/components/specialized/compras/CatalogoManager'),
     user_profile:      () => import('./src/components/specialized/perfil/UserProfile'),
     finanzas_shell:             () => import('./src/components/specialized/finanzas/FinanzasShell'),
+    calendar_scheduler: () => import('./src/components/specialized/calendar/CalendarScheduler'),
+    portfolio_manager:  () => import('./src/components/specialized/portfolio/PortfolioManager'),
   },
 
   features: {
@@ -62,6 +66,13 @@ export default defineConfig({
   },
 
   integrations: {
+    // agno:adapters:start — maintained by `agno install <id>` / `agno remove-adapter <id>` (scripts/agno-adapters.ts)
     notion: () => import('./src/integrations/notion'),
+    whatsapp: () => import('./src/integrations/whatsapp'),
+    meta: () => import('./src/integrations/meta'),
+    tiktok: () => import('./src/integrations/tiktok'),
+    gmail: () => import('./src/integrations/gmail'),
+    wompi: () => import('./src/integrations/wompi'),
+    // agno:adapters:end
   },
 })

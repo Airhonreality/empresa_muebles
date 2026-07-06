@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { ChevronDown, DollarSign, LayoutDashboard, Loader2, FileText, Play, CheckCircle2 } from 'lucide-react'
 import type { KanbanStage, KanbanRecord } from './KanbanCanvas'
 import { STAGE_COLORS } from './KanbanCanvas'
+import ProductionTransitionDialog from './ProductionTransitionDialog'
 import type {
   ProyectosRecord, ClientesRecord, ContratosRecord,
   AbonosContratoRecord, EspacioVariantesRecord,
@@ -145,6 +146,7 @@ interface Props {
   record:    KanbanRecord
   stage:     KanbanStage
   onMove:    (newStage: string) => void
+  onActivateProduction: (record: KanbanRecord) => Promise<void>
   nextStage: KanbanStage | null
   allStages: KanbanStage[]
   client?:   ClientesRecord
@@ -154,11 +156,12 @@ interface Props {
 }
 
 export default function ComercialCard({
-  record, stage, onMove, nextStage, allStages,
+  record, stage, onMove, onActivateProduction, nextStage, allStages,
   client, contrato, abonos, espacios,
 }: Props) {
   const cot = record as unknown as ProyectosRecord
   const [abonoOpen, setAbonoOpen] = useState(false)
+  const [productionOpen, setProductionOpen] = useState(false)
   const [busyAction, setBusyAction] = useState<string | null>(null)
   
   const colors = STAGE_COLORS[stage.color] ?? STAGE_COLORS.slate
@@ -195,11 +198,36 @@ export default function ComercialCard({
     if (stage.value === 'enviada' && !contrato) {
       return { label: 'Generar Contrato', action: 'contrato', bg: 'bg-violet-600 hover:bg-violet-700 text-white' }
     }
-    if ((stage.value === 'en_contrato' || stage.value === 'pre_produccion') && stage.value !== 'produccion') {
+    if (stage.value === 'en_contrato' || stage.value === 'pre_produccion') {
       return { label: 'Activar Producción', action: 'produccion', bg: 'bg-emerald-600 hover:bg-emerald-700 text-white' }
     }
     return null
   }, [stage.value, contrato])
+
+  const terminalBadge = useMemo(() => {
+    if (stage.value === 'entregado') {
+      return { label: 'Entregado', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+    }
+    if (stage.value === 'perdida') {
+      return { label: 'Perdida', className: 'bg-rose-50 text-rose-700 border-rose-200' }
+    }
+    if (stage.value === 'cancelada') {
+      return { label: 'Cancelada', className: 'bg-stone-100 text-stone-600 border-stone-200' }
+    }
+    return null
+  }, [stage.value])
+
+  const confirmProduction = async () => {
+    setBusyAction('produccion')
+    try {
+      await onActivateProduction(record)
+      setProductionOpen(false)
+    } catch {
+      toast.error('Error al activar la produccion.')
+    } finally {
+      setBusyAction(null)
+    }
+  }
 
   return (
     <>
@@ -268,18 +296,28 @@ export default function ComercialCard({
               type="button"
               disabled={busyAction !== null}
               className={`flex-1 md:flex-none h-11 text-xs font-semibold px-4 rounded-lg shadow-sm transition-all duration-200 hover:scale-[1.01] ${actionCTA.bg}`}
-              onClick={() => handleAction(actionCTA.action as 'contrato' | 'produccion')}
+              onClick={() => {
+                if (actionCTA.action === 'produccion') {
+                  setProductionOpen(true)
+                  return
+                }
+                handleAction(actionCTA.action as 'contrato')
+              }}
             >
               {busyAction === actionCTA.action ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
               ) : actionCTA.action === 'produccion' ? (
                 <Play className="h-3.5 w-3.5 mr-1 shrink-0" />
               ) : null}
-              {actionCTA.label}
+              {actionCTA.action === 'produccion' ? 'Pasar a produccion' : actionCTA.label}
             </Button>
           ) : (
             <div className="flex-1 md:flex-none py-2 text-right">
-              {stage.value === 'produccion' ? (
+              {terminalBadge ? (
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-2xs font-bold uppercase tracking-wider border ${terminalBadge.className}`}>
+                  {terminalBadge.label}
+                </span>
+              ) : stage.value === 'produccion' ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-2xs font-bold uppercase tracking-wider text-emerald-700 border border-emerald-250">
                   En Taller
                 </span>
@@ -342,7 +380,13 @@ export default function ComercialCard({
               {allStages.filter(s => s.value !== stage.value).map(s => (
                 <DropdownMenuItem
                   key={s.value}
-                  onClick={() => onMove(s.value)}
+                  onClick={() => {
+                    if (s.value === 'produccion') {
+                      setProductionOpen(true)
+                      return
+                    }
+                    onMove(s.value)
+                  }}
                   className="flex items-center gap-2 py-2 cursor-pointer text-xs"
                 >
                   <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STAGE_COLORS[s.color]?.dot}`} />
@@ -361,7 +405,18 @@ export default function ComercialCard({
           <AbonoPanel contrato={contrato} onDone={() => setAbonoOpen(false)} />
         </div>
       )}
+
+      <ProductionTransitionDialog
+        open={productionOpen}
+        onOpenChange={setProductionOpen}
+        projectName={(cot.data.nombre_proyecto as string) || 'Proyecto sin nombre'}
+        currentStage={stage.label}
+        hasContract={!!contrato}
+        contractLabel={contrato?.data.codigo_contrato ? `Contrato ${contrato.data.codigo_contrato}` : 'Se generara al confirmar'}
+        busy={busyAction === 'produccion'}
+        sourceLabel="Comercial"
+        onConfirm={confirmProduction}
+      />
     </>
   )
 }
-

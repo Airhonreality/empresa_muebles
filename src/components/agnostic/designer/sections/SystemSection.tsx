@@ -57,7 +57,8 @@ function hexToHsl(hex: string): string {
   return `${(h * 360).toFixed(1)} ${(s * 100).toFixed(1)}% ${(l * 100).toFixed(1)}%`;
 }
 
-const GOOGLE_FONTS = [
+const FONT_OPTIONS = [
+  { label: 'Futura BT (Brand Sans)', value: "'Futura BT', 'Futura', 'Century Gothic', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif" },
   { label: 'Inter (Sans-serif)', value: 'Inter, sans-serif' },
   { label: 'Roboto (Sans-serif)', value: 'Roboto, sans-serif' },
   { label: 'Outfit (Sleek modern)', value: 'Outfit, sans-serif' },
@@ -90,7 +91,7 @@ export function SystemSection() {
 
   const [primaryColor, setPrimaryColor] = useState('#0f172a');
   const [radius, setRadius] = useState('0.5rem');
-  const [fontFamily, setFontFamily] = useState('Inter, sans-serif');
+  const [fontFamily, setFontFamily] = useState(FONT_OPTIONS[0].value);
 
   // Hydrate local state when store tokens load/change
   useEffect(() => {
@@ -101,14 +102,14 @@ export function SystemSection() {
       setRadius(asString(radiusToken.data.value, '0.5rem'));
     }
     if (fontToken?.data?.value) {
-      setFontFamily(asString(fontToken.data.value, 'Inter, sans-serif'));
+      setFontFamily(asString(fontToken.data.value, FONT_OPTIONS[0].value));
     }
   }, [primaryToken, radiusToken, fontToken]);
 
   const isDirty =
     hslToHex(asString(primaryToken?.data?.value, '')) !== primaryColor ||
     asString(radiusToken?.data?.value, '0.5rem') !== radius ||
-    asString(fontToken?.data?.value, 'Inter, sans-serif') !== fontFamily;
+    asString(fontToken?.data?.value, FONT_OPTIONS[0].value) !== fontFamily;
 
   const handleSaveTheme = async () => {
     setIsSaving(true);
@@ -254,7 +255,7 @@ export function SystemSection() {
                 <SelectValue placeholder="Selecciona la tipografía..." />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                {GOOGLE_FONTS.map((opt) => (
+                {FONT_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value} className="text-xs">
                     {opt.label}
                   </SelectItem>

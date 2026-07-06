@@ -1,0 +1,59 @@
+[
+  {
+    "id": "ca238bc4-7169-4f09-8f5a-cdab64dbb64f",
+    "context": "portfolio_publico",
+    "data": {
+      "proyecto_id": "390ff7e9-ac3c-4697-8f84-b1e1e09ca0b6",
+      "titulo": "Cocina Moderna Minimalista",
+      "slug": "cocina-minimalista",
+      "cliente_iniciales": "CDU",
+      "barrio": "Chicó",
+      "categoria_espacio": "cocinas",
+      "descripcion_comercial": "Proyecto de cocina moderna con diseño minimalista. Utilizamos materiales de alta calidad y un diseño limpio que maximiza el espacio disponible.",
+      "materiales_destacados": "Granito Negro AbsolutonAcero Inoxidable QuirúrgiconMadera de Roble EuropeonCristal Templado 12mm",
+      "publicado": true,
+      "destacado": true,
+      "orden": 1,
+      "fecha_publicacion": "2026-07-01"
+    },
+    "updated_at": "2026-07-06T07:42:03.163Z"
+  },
+  {
+    "id": "ae52f4b2-4139-4909-b9b3-757e9f137ebd",
+    "context": "portfolio_publico",
+    "data": {
+      "proyecto_id": "a7672862-95c0-4f0e-8212-94a713123964",
+      "titulo": "Closet Walk-in Contemporáneo",
+      "slug": "closet-walkin",
+      "cliente_iniciales": "CDO",
+      "barrio": "Usaquén",
+      "categoria_espacio": "dormitorios_closets",
+      "descripcion_comercial": "Espacioso closet walk-in con sistema de almacenamiento inteligente. Diseño contemporáneo con acabados en madera clara y herrajes de lujo.",
+      "materiales_destacados": "Madera de Cedro RojonHerrajes Alemanes BlumnEspejos de Cristal PlateadonIluminación LED Integrada",
+      "publicado": true,
+      "destacado": true,
+      "orden": 2,
+      "fecha_publicacion": "2026-07-02"
+    },
+    "updated_at": "2026-07-06T07:42:03.171Z"
+  },
+  {
+    "id": "f13239e1-9065-449a-b734-3d1f92036df0",
+    "context": "portfolio_publico",
+    "data": {
+      "proyecto_id": "60ffc0a3-8a77-40f2-9ae8-898483f7a8d8",
+      "titulo": "Proyectos en Progreso",
+      "slug": "proyectos-progress",
+      "cliente_iniciales": "PH",
+      "barrio": "Múltiple",
+      "categoria_espacio": "otros",
+      "descripcion_comercial": "Compilación de proyectos actualmente en ejecución.",
+      "materiales_destacados": "Pendiente",
+      "publicado": false,
+      "destacado": false,
+      "orden": 0,
+      "fecha_publicacion": "2026-07-05"
+    },
+    "updated_at": "2026-07-06T07:42:03.176Z"
+  }
+]

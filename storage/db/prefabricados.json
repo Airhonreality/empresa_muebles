@@ -9,5 +9,35 @@
       "imagen_url": "https://ejemplo.com/cocina-estandar.jpg"
     },
     "updated_at": "2026-05-22T15:30:36.657Z"
+  },
+  {
+    "id": "05335bab-1458-4466-a4b9-8bf1044c354d",
+    "context": "prefabricados",
+    "data": {
+      "nombre": "Módulo Cocina 60cm",
+      "descripcion": "Módulo para cocina de 60cm",
+      "descripcion_comercial": "Módulo de cocina compacto de 60cm, ideal para espacios pequeños.",
+      "categoria_comercial": "Cocina",
+      "precio_publico": 5000000,
+      "publicado_web": true,
+      "reutilizable_catalogo": true,
+      "slug": "modulo-cocina-60cm"
+    },
+    "updated_at": "2026-07-06T07:07:25.593Z"
+  },
+  {
+    "id": "72c65ff3-be18-47d8-a528-862b98fe62a8",
+    "context": "prefabricados",
+    "data": {
+      "nombre": "Closet Lineal 2.4m",
+      "descripcion": "Closet lineal de 2.4 metros",
+      "descripcion_comercial": "Closet lineal de 2.4m con acabados premium.",
+      "categoria_comercial": "Closet",
+      "precio_publico": 8000000,
+      "publicado_web": true,
+      "reutilizable_catalogo": true,
+      "slug": "closet-lineal-2-4m"
+    },
+    "updated_at": "2026-07-06T07:07:25.603Z"
   }
 ]

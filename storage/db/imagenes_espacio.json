@@ -18,5 +18,137 @@
       "espacio_variante_id": "9256b1d6-4503-4097-972d-943bfe7856c2"
     },
     "updated_at": "2026-06-29T00:44:35.120Z"
+  },
+  {
+    "id": "794a065a-05cf-442b-b6f0-baf2bf120a51",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
+      "imagen_url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Hero_Principal",
+      "orden": 1
+    },
+    "updated_at": "2026-07-04T13:43:21.406Z"
+  },
+  {
+    "id": "8e776e5b-7873-4500-82fd-54b0c9bd5573",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
+      "imagen_url": "https://images.unsplash.com/photo-1493666438817-866a91353ca9?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Detalle_Ambiental",
+      "orden": 2
+    },
+    "updated_at": "2026-07-04T13:43:21.419Z"
+  },
+  {
+    "id": "48c37803-b595-42c1-9638-60f883b7890f",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "c30b16d0-5b75-4b95-97df-cec097fd7c3b",
+      "imagen_url": "https://images.unsplash.com/photo-1493666438817-866a91353ca9?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Vista_General",
+      "orden": 1
+    },
+    "updated_at": "2026-07-04T13:43:21.435Z"
+  },
+  {
+    "id": "81675172-352b-4bf5-8bb1-ae113df22777",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "c30b16d0-5b75-4b95-97df-cec097fd7c3b",
+      "imagen_url": "https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Detalle_Luz",
+      "orden": 2
+    },
+    "updated_at": "2026-07-04T13:43:21.458Z"
+  },
+  {
+    "id": "ece2c8fd-55cf-41b3-b546-93a6114e6eca",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "ea5b95fa-1749-405a-98c9-311d09a3b39e",
+      "imagen_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Vista_Frontal",
+      "orden": 1
+    },
+    "updated_at": "2026-07-04T13:43:21.476Z"
+  },
+  {
+    "id": "6743b31c-9f94-4ee7-97e8-6fd4cdd538ef",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "ea5b95fa-1749-405a-98c9-311d09a3b39e",
+      "imagen_url": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Detalle_Interior",
+      "orden": 2
+    },
+    "updated_at": "2026-07-04T13:43:21.495Z"
+  },
+  {
+    "id": "a8f207fe-cc3a-4b00-8f59-2d3e73878ac7",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "92813261-c3ed-4e46-bbd8-646a7d2bbd1e",
+      "imagen_url": "https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Vista_General_Demo",
+      "orden": 1
+    },
+    "updated_at": "2026-07-06T04:10:25.045Z"
+  },
+  {
+    "id": "1c9d1fc0-1215-4f3e-9516-658821bbb2e7",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "92813261-c3ed-4e46-bbd8-646a7d2bbd1e",
+      "imagen_url": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Detalle_Isla_Demo",
+      "orden": 2
+    },
+    "updated_at": "2026-07-06T04:10:25.059Z"
+  },
+  {
+    "id": "a74777a6-e244-4112-9046-a4330ab17a32",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "92813261-c3ed-4e46-bbd8-646a7d2bbd1e",
+      "imagen_url": "https://images.unsplash.com/photo-1600489000022-c2086d79f9d4?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Detalle_Acabados_Demo",
+      "orden": 3
+    },
+    "updated_at": "2026-07-06T04:10:25.070Z"
+  },
+  {
+    "id": "a6bcee0c-7550-41c6-97de-2b7f13fe060c",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "829949b9-9b53-4b9c-b042-d14c0ddb312b",
+      "imagen_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Vista_Frontal_Demo",
+      "orden": 1
+    },
+    "updated_at": "2026-07-06T04:10:25.078Z"
+  },
+  {
+    "id": "1e1d94a6-9f42-4849-957d-4b14aaff44cd",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "829949b9-9b53-4b9c-b042-d14c0ddb312b",
+      "imagen_url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Detalle_Organizadores_Demo",
+      "orden": 2
+    },
+    "updated_at": "2026-07-06T04:10:25.087Z"
+  },
+  {
+    "id": "82f35a2a-5d8f-4b90-b9ed-040fba959cd2",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "829949b9-9b53-4b9c-b042-d14c0ddb312b",
+      "imagen_url": "https://images.unsplash.com/photo-1493666438817-866a91353ca9?auto=format&fit=crop&q=80&w=1200",
+      "descripcion": "Detalle_Puertas_Demo",
+      "orden": 3
+    },
+    "updated_at": "2026-07-06T04:10:25.097Z"
   }
 ]

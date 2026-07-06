@@ -22,11 +22,11 @@ El objetivo es evitar magia oculta, duplicacion de logica y entropia innecesaria
 
 Objetivo: activar produccion solo con una accion explicita de UI.
 
-- [ ] Agregar un boton literal de "Pasar a produccion" en `src/components/specialized/kanban/ComercialKanban.tsx`.
-- [ ] Agregar el mismo boton en `src/components/specialized/CotizadorPro.tsx` cuando el contexto lo permita.
-- [ ] Abrir un modal intermedio de confirmacion antes de ejecutar la transicion.
-- [ ] Invocar `zap_activar_produccion` solo despues de la confirmacion manual del usuario.
-- [ ] No activar produccion solo por firma del contrato.
+- [x] Agregar un boton literal de "Pasar a produccion" en `src/components/specialized/kanban/ComercialKanban.tsx`.
+- [x] Agregar el mismo boton en `src/components/specialized/CotizadorPro.tsx` cuando el contexto lo permita.
+- [x] Abrir un modal intermedio de confirmacion antes de ejecutar la transicion.
+- [x] Invocar `zap_activar_produccion` solo despues de la confirmacion manual del usuario.
+- [x] No activar produccion solo por firma del contrato.
 
 Notas de diseno:
 
@@ -40,16 +40,24 @@ Notas de diseno:
 
 El engine ya trae un scheduler por defecto, asi que la primera opcion es reutilizarlo.
 
-- [ ] Verificar que el scheduler nativo cubra agenda, semanal y diario.
-- [ ] Si falta cobertura, crear solo un wrapper especializado del fork.
-- [ ] Agregar filtros por departamento sobre la base del scheduler del engine.
-- [ ] Registrar bloque propio solo si el engine no expone la pieza necesaria.
-- [ ] Registrar la ruta `/app/calendar` y la navegacion correspondiente cuando la integracion lo requiera.
+- [x] Verificar que el scheduler nativo cubra agenda, semanal y diario.
+- [x] Si falta cobertura, crear solo un wrapper especializado del fork.
+- [x] Agregar filtros por departamento sobre la base del scheduler del engine.
+- [x] Registrar bloque propio solo si el engine no expone la pieza necesaria.
+- [x] Registrar la ruta `/app/erp/calendar` y la navegacion correspondiente cuando la integracion lo requiera.
 
 Regla:
 
 - No crear `VetaCalendar` por defecto si el engine ya resuelve la planificacion.
 - Solo se crea UI custom donde exista una brecha funcional real.
+
+Implementacion aplicada:
+
+- Se creo `calendar_scheduler` como wrapper operativo del fork.
+- Se registro en `agnostic.config.ts`.
+- Se agrego la ruta `/app/erp/calendar`.
+- Se agrego el acceso en `nav_erp_main` y `nav_admin` con canon `/app/erp/*`.
+- La vista trabaja sobre `tareas_operativas` con tabs `agenda`, `semanal` y `diario`.
 
 ---
 
@@ -75,6 +83,6 @@ Regla:
 ## Pendientes No Bloqueantes
 
 - Mejorar la estetica del kanban comercial para acercarla a la familia visual del kanban de produccion.
-- Probar una version del kanban comercial organizada por pestañas de estado.
-- Revisar si hace falta un adaptador ligero para el scheduler del engine.
-
+- Revisar ajustes finos de jerarquia, espaciado y contraste del kanban comercial si hace falta un segundo pulido visual.
+- `system_groups` ya vive como metadata del fork y el diseñador puede usarlo para agrupar rutas, schemas y scripts.
+- La navegacion del ERP ya esta canonizada bajo `/app/erp/*`; los accesos viejos quedaron fuera del camino principal.

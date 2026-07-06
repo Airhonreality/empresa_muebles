@@ -86,5 +86,82 @@
       "etiqueta": "Logotipo Vectorial Positivo (Fondo Claro)"
     },
     "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "71b42896-60dd-4d01-9468-fc638763ce85",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "direccion_taller",
+      "valor": "Carrera 72A # 71A-57, Bogotá D.C., Colombia",
+      "grupo": "Contacto",
+      "etiqueta": "Dirección del Taller"
+    },
+    "updated_at": "2026-07-03T13:39:38.290Z"
+  },
+  {
+    "id": "b4c66668-8a3b-4426-8007-8c4c74ce08c0",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "ciudad_operacion",
+      "valor": "Bogotá D.C.",
+      "grupo": "Contacto",
+      "etiqueta": "Ciudad de Operación"
+    },
+    "updated_at": "2026-07-03T13:39:38.411Z"
+  },
+  {
+    "id": "47231562-896b-4622-97e4-db2bb54e83bb",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "codigo_postal",
+      "valor": "111611",
+      "grupo": "Contacto",
+      "etiqueta": "Código Postal (referencial, verificar antes de publicar)"
+    },
+    "updated_at": "2026-07-03T13:39:38.509Z"
+  },
+  {
+    "id": "d47316fd-58d9-4a4e-9e77-9104864cc99e",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "geo_latitud",
+      "valor": "4.65500",
+      "grupo": "Contacto",
+      "etiqueta": "Latitud (referencial, verificar antes de publicar)"
+    },
+    "updated_at": "2026-07-03T13:39:38.611Z"
+  },
+  {
+    "id": "51a372cc-31c4-4d82-9204-940136978b56",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "geo_longitud",
+      "valor": "-74.09000",
+      "grupo": "Contacto",
+      "etiqueta": "Longitud (referencial, verificar antes de publicar)"
+    },
+    "updated_at": "2026-07-03T13:39:38.720Z"
+  },
+  {
+    "id": "67fa40e9-752a-4ef1-a637-8531338ad143",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "horario_semana",
+      "valor": "Mo-Fr 08:00-18:00",
+      "grupo": "Contacto",
+      "etiqueta": "Horario Lunes a Viernes"
+    },
+    "updated_at": "2026-07-03T13:39:38.813Z"
+  },
+  {
+    "id": "e3160a73-0bbd-408c-bdea-2c4f0108de4d",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "horario_sabado",
+      "valor": "Sa 09:00-13:00",
+      "grupo": "Contacto",
+      "etiqueta": "Horario Sábado"
+    },
+    "updated_at": "2026-07-03T13:39:38.904Z"
   }
 ]

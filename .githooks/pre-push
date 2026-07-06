@@ -1,0 +1,5 @@
+#!/bin/sh
+# Agnostic Seed - pre-push hook
+# Validates storage and encoding before every push.
+npm run validate:storage
+npm run validate:encoding

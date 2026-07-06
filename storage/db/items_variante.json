@@ -1826,5 +1826,96 @@
       "unidad_medida": "juego"
     },
     "updated_at": "2026-06-22T14:45:49.130Z"
+  },
+  {
+    "id": "ae707682-2653-4807-a1c0-ca3905926e47",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
+      "catalogo_id": "2371faa1-f390-40a6-99cd-6f622e4072dc",
+      "cantidad": 4,
+      "precio_unitario": 448500,
+      "total_linea": 1794000,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-07-04T13:41:17.378Z"
+  },
+  {
+    "id": "06a767c7-3d90-4c37-9ce6-05d36d0fb537",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
+      "catalogo_id": "f1cf16b1-c4b4-4362-8865-2577a33593d7",
+      "cantidad": 1,
+      "precio_unitario": 115000,
+      "total_linea": 115000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-07-04T13:41:17.400Z"
+  },
+  {
+    "id": "122598e1-5f35-49e8-afa8-b8d76faae099",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
+      "catalogo_id": "02749579-7c46-4efc-bfff-f67b2955f8f0",
+      "cantidad": 2,
+      "precio_unitario": 85000,
+      "total_linea": 170000,
+      "unidad_medida": "servicio"
+    },
+    "updated_at": "2026-07-04T13:41:17.419Z"
+  },
+  {
+    "id": "47035e87-d61f-464d-b3bb-1ab10d932da3",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "c30b16d0-5b75-4b95-97df-cec097fd7c3b",
+      "catalogo_id": "1f694a14-6703-4ef3-b9c2-2e218436868f",
+      "cantidad": 1,
+      "precio_unitario": 69000,
+      "total_linea": 69000,
+      "unidad_medida": "servicio"
+    },
+    "updated_at": "2026-07-04T13:41:17.436Z"
+  },
+  {
+    "id": "a0cf9f96-9fc2-497c-b2f2-f06a1d90d2b4",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "c30b16d0-5b75-4b95-97df-cec097fd7c3b",
+      "catalogo_id": "f1cf16b1-c4b4-4362-8865-2577a33593d7",
+      "cantidad": 1,
+      "precio_unitario": 322000,
+      "total_linea": 322000,
+      "unidad_medida": "unidad"
+    },
+    "updated_at": "2026-07-04T13:41:17.451Z"
+  },
+  {
+    "id": "b0c85642-792c-44af-955b-2d4693c29b21",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "ea5b95fa-1749-405a-98c9-311d09a3b39e",
+      "catalogo_id": "12f121b5-c6ef-44e8-b273-93af8451cd5d",
+      "cantidad": 3,
+      "precio_unitario": 483000,
+      "total_linea": 1449000,
+      "unidad_medida": "metro_cuadrado"
+    },
+    "updated_at": "2026-07-04T13:41:17.468Z"
+  },
+  {
+    "id": "04a3c278-6cad-490a-95f3-23360571da78",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "ea5b95fa-1749-405a-98c9-311d09a3b39e",
+      "catalogo_id": "2371faa1-f390-40a6-99cd-6f622e4072dc",
+      "cantidad": 0.5,
+      "precio_unitario": 3200000,
+      "total_linea": 1600000,
+      "unidad_medida": "tablero"
+    },
+    "updated_at": "2026-07-04T13:41:17.485Z"
   }
 ]

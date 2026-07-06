@@ -41,8 +41,9 @@
     --sat-muted-fg: hsl(var(--muted-foreground));
     --sat-radius: var(--radius);
 
-    --sat-font-sans: 'Inter', sans-serif;
-    --sat-font-serif: 'Playfair Display', serif;
+    --sat-font-sans: 'Futura BT', 'Futura', 'Century Gothic', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+    --sat-font-serif: 'Futura BT', 'Futura', 'Century Gothic', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+    --sat-font-heading: 'Futura BT', 'Futura', 'Century Gothic', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
     --sat-font-mono: 'JetBrains Mono', monospace;
 
     --sat-destructive: hsl(var(--destructive));
@@ -102,6 +103,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--sat-font-sans);
+  }
+
+  .font-outfit,
+  .font-heading,
+  .font-serif {
+    font-family: var(--sat-font-sans) !important;
   }
 }
 

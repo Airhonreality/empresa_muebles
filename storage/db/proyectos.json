@@ -1,0 +1,32 @@
+[
+  {
+    "id": "60ffc0a3-8a77-40f2-9ae8-898483f7a8d8",
+    "context": "proyectos",
+    "data": {
+      "nombre_proyecto": "Portafolio_Home"
+    },
+    "updated_at": "2026-07-04T13:36:42.041Z"
+  },
+  {
+    "id": "390ff7e9-ac3c-4697-8f84-b1e1e09ca0b6",
+    "context": "proyectos",
+    "data": {
+      "cliente_id": "f7ac30f3-4a68-4016-b44c-39f878f39c21",
+      "nombre_proyecto": "Proyecto Demo Cocina Uno",
+      "direccion_obra": "Calle Demo 123, Bogotá",
+      "estado": "entregado"
+    },
+    "updated_at": "2026-07-06T04:12:34.808Z"
+  },
+  {
+    "id": "a7672862-95c0-4f0e-8212-94a713123964",
+    "context": "proyectos",
+    "data": {
+      "cliente_id": "837a885f-e8d9-4a60-91b2-1f8fa962125d",
+      "nombre_proyecto": "Proyecto Demo Closet Dos",
+      "direccion_obra": "Carrera Demo 456, Bogotá",
+      "estado": "entregado"
+    },
+    "updated_at": "2026-07-06T04:12:34.815Z"
+  }
+]

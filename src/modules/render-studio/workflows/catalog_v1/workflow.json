@@ -1,0 +1,15 @@
+{
+  "id": "catalog_v1",
+  "name": "Catalog render",
+  "description": "Prompt-only workflow for a neutral product scene.",
+  "required_image_roles": [],
+  "workflow": {
+    "1": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "text": { "$from": "prompt" },
+        "negative_text": { "$from": "negativePrompt" }
+      }
+    }
+  }
+}

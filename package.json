@@ -9,6 +9,7 @@
     "prepare": "git config core.hooksPath .githooks || true",
     "agnostic:compile": "tsx scripts/compile-schemas.ts",
     "validate:encoding": "node scripts/validate-text-encoding.mjs",
+    "validate:storage": "node scripts/validate-storage.mjs",
     "dev": "npm run agnostic:compile && next dev",
     "build": "npm run agnostic:compile && next build",
     "start": "next start",
