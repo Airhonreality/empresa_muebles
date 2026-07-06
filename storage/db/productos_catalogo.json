@@ -5179,5 +5179,47 @@
       "tipo": "Servicio"
     },
     "updated_at": "2026-06-22T01:23:36.218Z"
+  },
+  {
+    "id": "396157d8-bd7f-4425-bbf7-b96cd5edaf26",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "puerta-vidrio-001",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Puerta Corredera de Vidrio",
+      "precio_publico": 3500000,
+      "publicado_web": true,
+      "categoria_comercial": "Comercial",
+      "imagen_url": "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=500&q=80"
+    },
+    "updated_at": "2026-07-06T19:42:38.344Z"
+  },
+  {
+    "id": "a54d6fc7-6797-4ce5-96b8-c65ea4e50212",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "espejo-biselado-001",
+      "tipo": "Mueble Terminado",
+      "descripcion": "Espejo Biselado Premium",
+      "precio_publico": 2800000,
+      "publicado_web": true,
+      "categoria_comercial": "Comercial",
+      "imagen_url": "https://images.unsplash.com/photo-1578500494198-246f612d03b3?w=500&q=80"
+    },
+    "updated_at": "2026-07-06T19:42:38.367Z"
+  },
+  {
+    "id": "3cf2ce31-e9d2-4c02-ae6c-926947aee985",
+    "context": "productos_catalogo",
+    "data": {
+      "sku": "bisagras-acero-001",
+      "tipo": "Herrajes / Accesorios",
+      "descripcion": "Bisagras de Acero Inoxidable",
+      "precio_publico": 1200000,
+      "publicado_web": true,
+      "categoria_comercial": "Comercial",
+      "imagen_url": "https://images.unsplash.com/photo-1535221228889-a54e45f76bab?w=500&q=80"
+    },
+    "updated_at": "2026-07-06T19:42:38.388Z"
   }
 ]
