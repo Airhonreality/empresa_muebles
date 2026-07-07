@@ -8,8 +8,44 @@ import VetaFooter from './VetaFooter'
 import { useAppState } from '@/context/AppContext'
 import { getCommercialValue, normalizeWhatsappDestination } from '@/lib/veta/config'
 import { Ruler, ShoppingBag, MessageSquare, Tag, Info, AlertCircle } from 'lucide-react'
+import { CartProvider, useCart } from './cart/CartContext'
+import { CartDrawer } from './cart/CartDrawer'
 
 const cardSurfaces = ['veta-surface-glass', 'veta-surface-stone', 'veta-surface-matte'] as const
+
+interface FurnitureItem {
+  id: string; sku: string; title: string; price: number;
+  image: string; ancho: string; alto: string; profundo: string;
+  stock: number; description: string; category: string;
+}
+
+function BuyButton({ item }: { item: FurnitureItem }) {
+  const { addItem } = useCart()
+  const [cartOpen, setCartOpen] = useState(false)
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          addItem({
+            tipo: 'catalogo',
+            ref_id: item.id,
+            nombre: item.title,
+            precio_unitario: item.price,
+            cantidad: 1,
+            imagen_url: item.image,
+          })
+          setCartOpen(true)
+        }}
+        className="col-span-3 bg-[hsl(var(--veta-gold-muted))] hover:bg-[hsl(var(--veta-gold-hover))] text-[#0A0A0A] flex items-center justify-center space-x-2 py-3 rounded-full text-[10px] font-semibold uppercase tracking-wider transition-all duration-300"
+      >
+        <ShoppingBag className="w-3.5 h-3.5" />
+        <span>Comprar</span>
+      </button>
+      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
+    </>
+  )
+}
 
 export default function VetaCatalog({ block = {}, records = [], api }: Partial<BlockProps>) {
   const [selectedCategory, setSelectedCategory] = useState<string>('todos')
@@ -65,6 +101,7 @@ export default function VetaCatalog({ block = {}, records = [], api }: Partial<B
   ]
 
   return (
+    <CartProvider>
     <div className="min-h-screen bg-[hsl(var(--veta-bg-warm-paper))] text-[hsl(var(--veta-text-carbon))] flex flex-col">
       <VetaHeader />
 
@@ -191,13 +228,7 @@ export default function VetaCatalog({ block = {}, records = [], api }: Partial<B
                         <MessageSquare className="w-4 h-4" />
                       </button>
 
-                      <Link
-                        href="/agendar"
-                        className="col-span-3 bg-[hsl(var(--veta-gold-muted))] hover:bg-[hsl(var(--veta-gold-hover))] text-[#0A0A0A] flex items-center justify-center space-x-2 py-3 rounded-full text-[10px] font-semibold uppercase tracking-wider transition-all duration-300"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Comprar</span>
-                      </Link>
+                      <BuyButton item={item} />
                     </div>
                   </div>
                 </div>
@@ -294,5 +325,6 @@ export default function VetaCatalog({ block = {}, records = [], api }: Partial<B
 
       <VetaFooter />
     </div>
+    </CartProvider>
   )
 }

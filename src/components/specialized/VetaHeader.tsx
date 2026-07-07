@@ -20,9 +20,8 @@ export default function VetaHeader() {
 
   const links = [
     { label: 'Espacios a Medida', path: '/#espacios-hud', icon: Compass },
-    { label: 'Tienda', path: '/tienda', icon: Layers },
-    { label: 'Portafolio', path: '/portafolio', icon: Layers },
     { label: 'Colecciones', path: '/colecciones', icon: Layers },
+    { label: 'Portafolio', path: '/portafolio', icon: Layers },
     { label: 'Agendar', path: '/agendar', icon: Calendar },
   ];
 

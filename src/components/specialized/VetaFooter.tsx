@@ -86,11 +86,7 @@ export default function VetaFooter() {
                   Espacios a Medida
                 </Link>
               </li>
-              <li>
-                <Link href="/tienda" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
-                  Tienda
-                </Link>
-              </li>
+
               <li>
                 <Link href="/portafolio" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
                   Portafolio

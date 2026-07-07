@@ -31,7 +31,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Cargar carrito del localStorage al montar
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -45,7 +44,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsLoaded(true);
   }, []);
 
-  // Guardar carrito en localStorage cuando cambia
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
