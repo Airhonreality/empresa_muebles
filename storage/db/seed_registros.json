@@ -372,5 +372,16 @@
       "nota": "Bisagras de Acero Inoxidable para tienda"
     },
     "updated_at": "2026-07-06T19:45:03.892Z"
+  },
+  {
+    "id": "0a0b523b-3668-42c1-a13e-f8d85bee91f9",
+    "context": "seed_registros",
+    "data": {
+      "namespace": "users",
+      "record_id": "f2456629-dca9-4d69-b92f-65c2c17dd36c",
+      "lote": "webstore_r2",
+      "nota": "Mock user cliente webstore"
+    },
+    "updated_at": "2026-07-07T01:40:45.507Z"
   }
 ]

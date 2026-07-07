@@ -121,8 +121,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const cliente_id = userData.cliente_id as string | undefined;
+
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    session.user = { id: authUser.id, email: authUser.email, name: authUser.name, role: authUser.role };
+    session.user = { id: authUser.id, email: authUser.email, name: authUser.name, role: authUser.role, cliente_id };
     await session.save();
 
     return NextResponse.json(

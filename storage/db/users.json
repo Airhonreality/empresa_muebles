@@ -10,5 +10,31 @@
       ]
     },
     "updated_at": "2026-06-21T18:01:16.547Z"
+  },
+  {
+    "id": "f2456629-dca9-4d69-b92f-65c2c17dd36c",
+    "context": "users",
+    "data": {
+      "email": "demo.cliente@veta.test",
+      "name": "Cliente Demo Uno",
+      "type": [
+        "cliente"
+      ],
+      "cliente_id": "f7ac30f3-4a68-4016-b44c-39f878f39c21",
+      "password_hash": "scrypt$16384$8$1$WrHVIHKtc7GqDDWTE6hyxQ$E-pdM9iwJhM9xurwDlYzZciKRijza6OXvH0QGeWM7vQ8c9myvmd2RgPDUoMok0WhCLK8jdhb0FyGejxC_YpZag",
+      "password_algo": "scrypt",
+      "password_updated_at": "2026-07-07T02:25:01.412Z"
+    },
+    "updated_at": "2026-07-07T02:25:01.422Z"
+  },
+  {
+    "id": "9f1c65f4-cc52-4d5a-b389-a63f3244a72e",
+    "context": "users",
+    "updated_at": "2026-07-07T02:24:24.545Z"
+  },
+  {
+    "id": "86cbfb19-f9ec-413e-9964-423258a14e76",
+    "context": "users",
+    "updated_at": "2026-07-07T02:29:07.153Z"
   }
 ]

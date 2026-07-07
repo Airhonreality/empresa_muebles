@@ -57,7 +57,7 @@ export default function VetaCuenta() {
 
   // Load proyectos when user is logged in
   useEffect(() => {
-    if (user?.role === 'cliente' && user.metadata?.cliente_id) {
+    if (user?.role === 'cliente' && (user as any).cliente_id) {
       loadProyectos();
     }
   }, [user]);
@@ -68,7 +68,7 @@ export default function VetaCuenta() {
       setProyectosError('');
 
       const result = await executeZap('consultar_portal_cliente', {
-        cliente_id: user?.metadata?.cliente_id,
+        cliente_id: (user as any).cliente_id,
       });
 
       if (result?.proyectos) {

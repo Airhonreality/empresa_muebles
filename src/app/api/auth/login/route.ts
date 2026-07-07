@@ -18,22 +18,26 @@ export async function POST(req: NextRequest) {
     const users = await strategy.read(SYSTEM_NS.USERS);
 
     const authStrategy = new EmailPasswordStrategy(() => users);
-    const user = await authStrategy.authenticate({ email, password });
+    const authUser = await authStrategy.authenticate({ email, password });
 
-    if (!user) {
+    if (!authUser) {
       return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
     }
 
-    if (user.metadata?.needs_password_rehash === true) {
-      const existing = Array.isArray(users) ? users.find((u: any) => u.id === user.id) : null;
+    if (authUser.metadata?.needs_password_rehash === true) {
+      const existing = Array.isArray(users) ? users.find((u: any) => u.id === authUser.id) : null;
       if (existing?.data) {
         const normalizedData = await normalizeUserPasswordData({ ...existing.data, password });
-        await strategy.write(SYSTEM_NS.USERS, { id: user.id, data: normalizedData });
+        await strategy.write(SYSTEM_NS.USERS, { id: authUser.id, data: normalizedData });
       }
     }
 
+    // Extract cliente_id from full user record
+    const userRecord = Array.isArray(users) ? users.find((u: any) => u.id === authUser.id) : null;
+    const cliente_id = userRecord?.data?.cliente_id as string | undefined;
+
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    session.user = { id: user.id, email: user.email, name: user.name, role: user.role };
+    session.user = { id: authUser.id, email: authUser.email, name: authUser.name, role: authUser.role, cliente_id };
     await session.save();
 
     return NextResponse.json({ success: true, user: session.user });

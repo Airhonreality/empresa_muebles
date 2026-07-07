@@ -272,8 +272,8 @@
     "context": "scripts",
     "data": {
       "name": "consultar_portal_cliente",
-      "code": "const { cliente_id } = payload;\nif (!cliente_id) {\n  return api.error(\"cliente_id requerido en payload\");\n}\n\n// Query proyectos filtered by cliente_id\nconst proyectos = await api.query(\"proyectos\");\nconst clienteProyectos = proyectos.filter((p) => p.data?.cliente_id === cliente_id);\n\n// Build safe response - only expose safe fields\nconst proyectosSeguro = clienteProyectos.map((p) => ({\n  id: p.id,\n  nombre_proyecto: p.data?.nombre_proyecto,\n  estado: p.data?.estado,\n  dias_entrega_estimados: p.data?.dias_entrega_estimados,\n  barrio: p.data?.barrio,\n  // NEVER include: costos_operativos, descuento_comercial, direccion_exacta\n}));\n\nreturn {\n  success: true,\n  proyectos: proyectosSeguro,\n  total: proyectosSeguro.length,\n};\n"
+      "code": "const { cliente_id } = payload;\nif (!cliente_id) {\n  api.notify.error(\"cliente_id requerido en payload\");\n  return;\n}\n\nconst proyectosRaw = await api.query(\"proyectos\");\nconst clienteProyectos = proyectosRaw.filter((p) => p.cliente_id === cliente_id);\n\nconst proyectosSeguro = clienteProyectos.map((p) => ({\n  id: p.id,\n  nombre_proyecto: p.nombre_proyecto,\n  estado: p.estado,\n  dias_entrega_estimados: p.dias_entrega_estimados,\n  barrio: p.barrio,\n}));\n\napi.dispatchEvent(\"portal_data\", {\n  proyectos: proyectosSeguro,\n  total: proyectosSeguro.length,\n});\n"
     },
-    "updated_at": "2026-07-06T23:59:51.545Z"
+    "updated_at": "2026-07-07T02:28:32.848Z"
   }
 ]
