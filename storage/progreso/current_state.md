@@ -14,6 +14,45 @@ fork -> owns storage and specialized UI
 
 ## Daily Closeout
 
+Date: 2026-07-06
+
+**Ronda 2 WEB-STORE — 4 de 7 lanes cerradas + incidente git recuperado.**
+
+Incidente (mediodía): dos rondas de agentes en paralelo sobre el mismo `.git` + `worktree
+remove` abortado por rutas largas + watcher GitKraken → se perdió `.git/objects` (historia
+local 07-02→07-06). CONTENIDO recuperado íntegro: trasplante de `.git` desde
+`Airhonreality/empresa_muebles`, commit de recuperación `f96092b` pusheado. Detalle y reglas
+nuevas: `INCIDENTE_GIT_2026-07-06.md` (push obligatorio al cierre de lane, git ops
+serializadas, longpaths, sin GUI git durante agentes). Respaldo completo en
+`../RESCATE_empresa_muebles_2026-07-06/`.
+
+Lanes cerradas e integradas en `dev` (todas auditadas, dev pusheado):
+- `webstore-data-mocks`: `ESTRATEGIA_DATOS_LOCAL_VS_PROD.md` (local=JSON+mocks trazables,
+  prod=Neon por env vars Netlify), schema `seed_registros` (lote `webstore_r2`).
+- `webstore-producto-compositor`: prefabricados extendidos (publicado_web, precio_publico,
+  slug...), zap `recalcular_precio_prefabricado`, tab "Módulos y Productos" en CatalogoManager.
+- `webstore-portfolio-publico`: schemas `portfolio_publico`/`imagenes_portfolio`, campo
+  `barrio` en proyectos, form ERP `/app/erp/portfolio`, página pública `/portafolio` con
+  overlay "ver más" sin precios.
+- `webstore-tienda-ui` (+ `webstore-tienda-completar`): `/tienda` y `/tienda/:slug`,
+  carrito localStorage con CTA WhatsApp y ancla `data-checkout-slot`, nav actualizada,
+  5 productos publicados. **Smoke 4/4: /, /tienda, /tienda/:slug, /portafolio → 200.**
+
+En progreso: `webstore-clientes` — WIP commiteado y pusheado en su rama (zap
+`consultar_portal_cliente` + `register/route.ts` + `VetaCuenta` + `ClienteAccesoWeb`
+escritos, DoD SIN verificar; falta ruta `/cuenta`, registro de bloques, user mock, seeds,
+matriz). Continúa un worker EXTERNO (modo sin subagentes por presupuesto de tokens; el
+Orquestador Fable 5 solo audita/mergea/pushea y entrega prompts).
+
+Pendientes de la ronda: `webstore-checkout-pagos`, `webstore-seo-lanzamiento` (robots.txt
+sigue bloqueando crawlers hasta esa lane). Hallazgos abiertos: deuda tsc 21 errores (7 de
+componentes tienda → lane `ts-debt`), `cobro.json` sin destino, re-run `ai_config`,
+limpieza de worktrees/ramas huérfanos del incidente.
+
+---
+
+## Daily Closeout
+
 Date: 2026-07-05
 
 **Ronda 1 de orquestación multiagente (Fable-5) — COMPLETA.** Modelo de trabajo en

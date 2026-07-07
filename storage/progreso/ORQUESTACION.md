@@ -116,11 +116,17 @@ que el Orquestador verifique superficie disjunta). Contratos en `storage/progres
 |---|-------------|--------|------------|---------------------|
 | 1 | `goal/webstore-data-mocks` | ✅ **CERRADA** (merge `a9a7627`) | storage-dedup ✅ | doc ESTRATEGIA_DATOS + schema `seed_registros` + mocks lote `webstore_r2` |
 | 2 | `goal/webstore-producto-compositor` | ✅ **CERRADA** (merge `afe1b4e`) | 1 | `prefabricados`+campos web, zap recálculo, tab en CatalogoManager |
-| 3 | `goal/webstore-portfolio-publico` | 🔵 **EN_PROGRESO** (worker Haiku) | 1 | schemas portfolio, campo `barrio` en proyectos, `/app/erp/portfolio`, `/portafolio` |
-| 4 | `goal/webstore-tienda-ui` | ⚪ BLOQUEADA | 2 ✅, 3 | `/tienda` + detalle + carrito + nav pública |
-| 5 | `goal/webstore-clientes` | ⚪ BLOQUEADA | 1 ✅ | users rol `cliente`, `/cuenta`, `/api/auth/register` (toque engine acotado) |
-| 6 | `goal/webstore-checkout-pagos` | ⚪ BLOQUEADA | 4, 5 | `pedidos_web`, checkout Wompi sandbox, webhook, ERP pedidos |
-| 7 | `goal/webstore-seo-lanzamiento` | ⚪ BLOQUEADA | 4, 3 | robots/sitemap/JSON-LD/llms.txt/metadata |
+| 3 | `goal/webstore-portfolio-publico` | ✅ **CERRADA** (pre-incidente; contenido sellado en `f96092b`) | 1 | schemas portfolio, campo `barrio` en proyectos, `/app/erp/portfolio`, `/portafolio` |
+| 4 | `goal/webstore-tienda-ui` | ✅ **CERRADA** (merge `e6ba89b`, smoke 4/4: /, /tienda, /tienda/:slug, /portafolio → 200) | 2 ✅, 3 ✅ | `/tienda` + detalle + carrito + nav pública |
+| 5 | `goal/webstore-clientes` | 🔵 **EN_PROGRESO — WIP EXTERNO** (rama pusheada; código tareas 1-4 en disco SIN DoD verificado) | 1 ✅ | users rol `cliente`, `/cuenta`, `/api/auth/register` (toque engine acotado) |
+| 6 | `goal/webstore-checkout-pagos` | ⚪ BLOQUEADA | 4 ✅, 5 | `pedidos_web`, checkout Wompi sandbox, webhook, ERP pedidos |
+| 7 | `goal/webstore-seo-lanzamiento` | ⚪ BLOQUEADA | 4 ✅, 3 ✅ | robots/sitemap/JSON-LD/llms.txt/metadata |
+
+**Modo de operación desde 2026-07-06 (tarde):** por presupuesto de tokens, CERO subagentes.
+Los workers corren en entornos externos (modelo liviano) con prompts generados por el
+Orquestador Fable 5, que solo supervisa: audita cierres, mergea `--no-ff`, pushea `dev` y
+entrega el siguiente prompt. Incidente git del mediodía documentado en
+`INCIDENTE_GIT_2026-07-06.md` (recuperado en `f96092b`, reglas nuevas en §3 y AGENTS.md).
 
 Hotfix de homeostasis fuera de lane (hecho por el Orquestador en el tree principal porque
 los archivos eran invisibles para cualquier worktree): `.gitignore` ignoraba
