@@ -8,7 +8,23 @@
 - **Rama:** `goal/cotizador-iva-opcional`
 - **Worktree:** `git worktree add ../wt-cotizador-iva -b goal/cotizador-iva-opcional`
 - **Rol/modelo:** Fase 1 = worker de PLAN (schema + diseño de cálculo). Fase 2 = worker de código (liviano).
-- **Estado:** plan_borrador — bloqueada
+- **Estado:** Fase 1 cerrada y auditada (2026-07-07). Decisión de diseño (cálculo en cliente) aprobada. **Fase 2 HABILITADA** con 1 corrección obligatoria (ver "Corrección de auditoría" abajo).
+
+## Corrección de auditoría (obligatoria para Fase 2)
+La propuesta de Fase 1 incluye una clave `"default"` en los 2 field objects. **Esa clave NO
+existe en el tipo `SchemaField`** (`packages/core/src/indra.ts:172-185`) — el motor no la lee,
+no auto-inicializa nada. Verificado: en todo `schema_definitions.json` (~40+ fields) `"default"`
+aparece una sola vez, como resto sin uso. Consecuencia: registros `proyectos` sin
+`aplica_iva`/`porcentaje_iva` seteados tendrán esos campos `undefined`. Fase 2 DEBE aplicar el
+fallback en el propio cálculo, no confiar en el schema:
+- `const aplicaIva = data.aplica_iva ?? false;`
+- `const pctIva = data.porcentaje_iva ?? 19;`
+- `const iva = aplicaIva ? gt * (pctIva / 100) : 0;`
+
+Sin este fallback, cualquier proyecto existente (los 27 ya en Neon) con `porcentaje_iva`
+indefinido produciría `NaN` en el total si `aplica_iva` llegara a ser `true` sin el campo
+seteado. Los field objects en sí pueden conservar `"default": false` / `"default": 19` en el
+JSON (es inofensivo, documenta intención) pero NO reemplaza el fallback en código.
 
 ## Goal (teleología)
 Agregar IVA como campo opcional en el cotizador: marcable por cotización, con un porcentaje
@@ -132,6 +148,7 @@ No se necesita zap nuevo.
 ### DoD de cierre
 - [ ] Schema con los 2 campos, tipos regenerados.
 - [ ] UI del cotizador muestra el desglose de IVA cuando `aplica_iva=true`.
+- [ ] Cálculo usa fallback explícito `?? false` / `?? 19` (ver "Corrección de auditoría"), NO depende de la clave `default` del schema.
 - [ ] `validate:encoding` + `validate:storage` verdes; commit(s) sin `--no-verify`.
 - [ ] Matriz de verificación abajo, completa.
 
@@ -143,6 +160,7 @@ No se necesita zap nuevo.
 | V3 | Cálculo correcto | cotización de prueba con `aplica_iva=true`, `porcentaje_iva=19` | `total_con_iva = total * 1.19` | | |
 | V4 | Placeholder editable | UI permite cambiar `porcentaje_iva` a valor distinto de 19 | se refleja en el total | | |
 | V5 | Gates | `validate:encoding` + `validate:storage` | verdes | | |
+| V6 | Fallback sin NaN | cotización de prueba con `aplica_iva=true` y `porcentaje_iva` NO seteado (undefined) | `total_con_iva = total * 1.19` (usa el fallback 19, no `NaN`) | | |
 
 ## Handoff
 Fase 1 → Orquestador/humano revisa la decisión de diseño y aprueba. Fase 2 → worker de código
