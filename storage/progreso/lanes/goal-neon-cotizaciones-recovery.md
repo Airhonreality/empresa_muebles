@@ -9,7 +9,7 @@
 - **Rama:** `goal/neon-cotizaciones-recovery`
 - **Worktree:** `git worktree add ../wt-neon-recovery -b goal/neon-cotizaciones-recovery`
 - **Rol/modelo:** worker de ejecución (liviano) para Fases 0-2. Fase 3 requiere criterio (worker de plan). Fase 4 espera aprobación humana explícita antes de tocar nada.
-- **Estado:** plan_borrador
+- **Estado:** Fases 0-3 cerradas y auditadas (2026-07-07, auditoría independiente del Orquestador contra Neon en vivo — sin discrepancias). Fase 4 sigue BLOQUEADA, pendiente de aprobación humana aparte.
 - **Sitio de producción:** `https://vetadorada.netlify.app` (site_id `918cb007-ea8c-4528-8453-169c464998c9`, deploy actual congelado en commit `41960fe`)
 
 ## Goal (teleología)
