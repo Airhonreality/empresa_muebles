@@ -6,6 +6,7 @@ import { useCart } from './CartContext';
 import { useAppState } from '@/context/AppContext';
 import { getCommercialValue } from '@/lib/veta/config';
 import { COP } from '@/components/specialized/cotizador/utils';
+import { CheckoutForm } from './CheckoutForm';
 
 interface CartDrawerProps {
   open: boolean;
@@ -171,15 +172,10 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     Cotizar por WhatsApp
                   </a>
 
-                  {/* Payment Placeholder */}
-                  <button
-                    type="button"
-                    disabled
-                    className="block w-full rounded-lg border border-[hsl(var(--veta-glass-light-border))] bg-gray-50 px-4 py-2 text-center text-sm font-semibold text-[hsl(var(--veta-text-stone))] cursor-not-allowed opacity-60"
-                    data-checkout-slot="payment-online"
-                  >
-                    Pago en línea (próximamente)
-                  </button>
+                  {/* Checkout Form */}
+                  <div data-checkout-slot="payment-online">
+                    <CheckoutForm />
+                  </div>
                 </div>
               )}
             </div>

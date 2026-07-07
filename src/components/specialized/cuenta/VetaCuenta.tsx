@@ -12,6 +12,18 @@ interface ProyectoCliente {
   barrio?: string;
 }
 
+interface PedidoResumen {
+  id: string;
+  numero: string;
+  estado: string;
+  total: number;
+  subtotal: number;
+  fecha: string;
+  items_resumen: Array<{ nombre: string; cantidad: number; precio_unitario: number }>;
+  direccion_entrega: string;
+  barrio: string;
+}
+
 // Estado mappings: Spanish user-friendly labels
 const ESTADO_LABELS: Record<string, string> = {
   'activa': 'Propuesta Activa',
@@ -35,6 +47,26 @@ const ESTADO_COLORS: Record<string, string> = {
   'cancelada': 'bg-gray-100 text-gray-800',
 };
 
+const PEDIDO_ESTADO_LABELS: Record<string, string> = {
+  'iniciado': 'Iniciado',
+  'pendiente_pago': 'Pendiente de pago',
+  'pagado': 'Pagado',
+  'en_preparacion': 'En preparación',
+  'enviado': 'Enviado',
+  'entregado': 'Entregado',
+  'cancelado': 'Cancelado',
+};
+
+const PEDIDO_ESTADO_COLORS: Record<string, string> = {
+  'iniciado': 'bg-gray-100 text-gray-800',
+  'pendiente_pago': 'bg-yellow-100 text-yellow-800',
+  'pagado': 'bg-green-100 text-green-800',
+  'en_preparacion': 'bg-orange-100 text-orange-800',
+  'enviado': 'bg-blue-100 text-blue-800',
+  'entregado': 'bg-emerald-100 text-emerald-800',
+  'cancelado': 'bg-red-100 text-red-800',
+};
+
 export default function VetaCuenta() {
   const { user, login, logout, isLoading } = useAuth();
   const { executeZap } = useSystemStore();
@@ -55,10 +87,15 @@ export default function VetaCuenta() {
   const [proyectosLoading, setProyectosLoading] = useState(false);
   const [proyectosError, setProyectosError] = useState('');
 
+  const [pedidos, setPedidos] = useState<PedidoResumen[]>([]);
+  const [pedidosLoading, setPedidosLoading] = useState(false);
+  const [pedidosError, setPedidosError] = useState('');
+
   // Load proyectos when user is logged in
   useEffect(() => {
     if (user?.role === 'cliente' && (user as any).cliente_id) {
       loadProyectos();
+      loadPedidos();
     }
   }, [user]);
 
@@ -79,6 +116,27 @@ export default function VetaCuenta() {
       setProyectosError('Error al cargar los proyectos');
     } finally {
       setProyectosLoading(false);
+    }
+  };
+
+  const loadPedidos = async () => {
+    try {
+      setPedidosLoading(true);
+      setPedidosError('');
+
+      const result = await executeZap('consultar_pedidos_cliente', {
+        cliente_id: (user as any).cliente_id,
+        email: user?.email,
+      });
+
+      if (result?.pedidos) {
+        setPedidos(result.pedidos);
+      }
+    } catch (err: any) {
+      console.error('Error loading pedidos:', err);
+      setPedidosError('Error al cargar los pedidos');
+    } finally {
+      setPedidosLoading(false);
     }
   };
 
@@ -357,15 +415,80 @@ export default function VetaCuenta() {
             )}
           </div>
 
-          {/* Mis Pedidos Placeholder */}
+          {/* Mis Pedidos */}
           <div className="bg-white rounded-lg shadow-lg p-8" data-pedidos-slot>
             <h2 className="text-2xl font-bold mb-6 text-amber-900">Mis Pedidos</h2>
-            <div className="bg-amber-50 border-2 border-dashed border-amber-300 rounded-lg p-6 text-center">
-              <p className="text-amber-900 font-semibold">Sección en construcción</p>
-              <p className="text-amber-700 text-sm mt-2">
-                Los pedidos estarán disponibles próximamente
-              </p>
-            </div>
+
+            {pedidosError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                {pedidosError}
+              </div>
+            )}
+
+            {pedidosLoading ? (
+              <p className="text-gray-600">Cargando pedidos...</p>
+            ) : pedidos.length === 0 ? (
+              <div className="bg-amber-50 border-2 border-dashed border-amber-300 rounded-lg p-6 text-center">
+                <p className="text-amber-900 font-semibold">No tienes pedidos aún</p>
+                <p className="text-amber-700 text-sm mt-2">
+                  Los pedidos que realices en la tienda aparecerán aquí
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pedidos.map((pedido) => (
+                  <div
+                    key={pedido.id}
+                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {pedido.numero}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(pedido.fecha).toLocaleDateString('es-CO', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          PEDIDO_ESTADO_COLORS[pedido.estado] || 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {PEDIDO_ESTADO_LABELS[pedido.estado] || pedido.estado}
+                      </span>
+                    </div>
+
+                    <div className="text-sm text-gray-600 mb-3">
+                      {pedido.items_resumen.slice(0, 3).map((item, i) => (
+                        <p key={i} className="truncate">
+                          {item.cantidad}x {item.nombre}
+                        </p>
+                      ))}
+                      {pedido.items_resumen.length > 3 && (
+                        <p className="text-gray-400 text-xs mt-1">
+                          +{pedido.items_resumen.length - 3} items más
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">
+                        {pedido.direccion_entrega}
+                        {pedido.barrio ? `, ${pedido.barrio}` : ''}
+                      </span>
+                      <span className="text-lg font-semibold text-amber-900">
+                        ${(pedido.total / 100).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "00000000-0000-4000-a000-000000000001",
+    "context": "pedidos_web",
+    "data": {
+      "numero": "PED-0001",
+      "user_id": "",
+      "cliente_id": "f7ac30f3-4a68-4016-b44c-39f878f39c21",
+      "nombre": "Cliente Demo Uno",
+      "email": "demo.uno@example.test",
+      "telefono": "3000000001",
+      "direccion_entrega": "Cra 1 # 2-3",
+      "barrio": "Centro",
+      "items_snapshot": "[{\"tipo\":\"prefabricado\",\"ref_id\":\"mock-prefab-1\",\"nombre\":\"Modulo Cocina 60cm\",\"cantidad\":1,\"precio_unitario\":3680000}]",
+      "subtotal": 3680000,
+      "total": 368000000,
+      "estado": "pagado",
+      "wompi_reference": "wompi-mock-ref-1",
+      "wompi_transaction_id": "tx-mock-1",
+      "metodo_pago": "CARD",
+      "notas": "Pedido mock para pruebas"
+    },
+    "created_at": "2026-07-06T12:00:00.000Z",
+    "updated_at": "2026-07-06T12:00:00.000Z"
+  },
+  {
+    "id": "00000000-0000-4000-a000-000000000002",
+    "context": "pedidos_web",
+    "data": {
+      "numero": "PED-0002",
+      "user_id": "",
+      "cliente_id": "f7ac30f3-4a68-4016-b44c-39f878f39c21",
+      "nombre": "Cliente Demo Uno",
+      "email": "demo.uno@example.test",
+      "telefono": "3000000001",
+      "direccion_entrega": "Cra 1 # 2-3",
+      "barrio": "Centro",
+      "items_snapshot": "[{\"tipo\":\"catalogo\",\"ref_id\":\"mock-cat-1\",\"nombre\":\"Puerta Corredera de Vidrio\",\"cantidad\":2,\"precio_unitario\":1200000}]",
+      "subtotal": 2400000,
+      "total": 240000000,
+      "estado": "pendiente_pago",
+      "wompi_reference": "wompi-mock-ref-2",
+      "wompi_transaction_id": "",
+      "metodo_pago": "",
+      "notas": "Pedido mock para pruebas"
+    },
+    "created_at": "2026-07-06T14:00:00.000Z",
+    "updated_at": "2026-07-06T14:00:00.000Z"
+  }
+]

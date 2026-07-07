@@ -275,5 +275,14 @@
       "code": "const { cliente_id } = payload;\nif (!cliente_id) {\n  api.notify.error(\"cliente_id requerido en payload\");\n  return;\n}\n\nconst proyectosRaw = await api.query(\"proyectos\");\nconst clienteProyectos = proyectosRaw.filter((p) => p.cliente_id === cliente_id);\n\nconst proyectosSeguro = clienteProyectos.map((p) => ({\n  id: p.id,\n  nombre_proyecto: p.nombre_proyecto,\n  estado: p.estado,\n  dias_entrega_estimados: p.dias_entrega_estimados,\n  barrio: p.barrio,\n}));\n\napi.dispatchEvent(\"portal_data\", {\n  proyectos: proyectosSeguro,\n  total: proyectosSeguro.length,\n});\n"
     },
     "updated_at": "2026-07-07T02:28:32.848Z"
+  },
+  {
+    "id": "e432e321-6945-4be9-882f-14251f50da64",
+    "context": "scripts",
+    "data": {
+      "name": "consultar_pedidos_cliente",
+      "code": "const { cliente_id, email } = payload;\nif (!cliente_id && !email) {\n  api.notify.error(\"cliente_id o email requerido en payload\");\n  return;\n}\n\nconst pedidos = await api.query(\"pedidos_web\");\n\nconst pedidosCliente = pedidos.filter((p) => {\n  const d = p.data || p;\n  if (cliente_id && d.cliente_id === cliente_id) return true;\n  if (email && d.email === email) return true;\n  return false;\n});\n\nconst pedidosSeguro = pedidosCliente.map((p) => {\n  const d = p.data || p;\n  let items = [];\n  try {\n    items = JSON.parse(d.items_snapshot || \"[]\");\n  } catch (e) {\n    items = [];\n  }\n  return {\n    id: p.id,\n    numero: d.numero,\n    estado: d.estado,\n    total: d.total,\n    subtotal: d.subtotal,\n    fecha: d.updated_at || d.created_at,\n    items_resumen: items.map((i) => ({\n      nombre: i.nombre,\n      cantidad: i.cantidad,\n      precio_unitario: i.precio_unitario,\n    })),\n    direccion_entrega: d.direccion_entrega,\n    barrio: d.barrio,\n  };\n});\n\napi.dispatchEvent(\"pedidos_data\", {\n  pedidos: pedidosSeguro,\n  total: pedidosSeguro.length,\n});\n"
+    },
+    "updated_at": "2026-07-07T04:00:34.793Z"
   }
 ]
