@@ -94,7 +94,7 @@ copia manual registro-por-registro que dejó duplicados obsoletos y, en al menos
 
 ### Cierre de Fase 0
 - [x] 6 archivos de snapshot en `storage/progreso/backups/2026-07-07T22-13-04Z-neon-recovery/`.
-- [ ] Commit hecho y pusheado (regla post-incidente: toda lane cierra con push).
+- [x] Commit hecho y pusheado (regla post-incidente: toda lane cierra con push).
 
 ---
 
