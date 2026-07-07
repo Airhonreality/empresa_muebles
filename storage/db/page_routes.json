@@ -368,54 +368,7 @@
     },
     "updated_at": "2026-07-06T07:33:26.861Z"
   },
-  {
-    "id": "d6eb2abf-450e-48d0-b1b1-f3d5caa70b43",
-    "context": "page_routes",
-    "data": {
-      "path": "C:/Program Files/Git/tienda",
-      "title": "Tienda",
-      "isPrivate": false,
-      "blocks": [],
-      "order": 0
-    },
-    "updated_at": "2026-07-06T14:59:48.590Z"
-  },
-  {
-    "id": "e31628b6-c6d7-47f0-a294-f0d97a4e1611",
-    "context": "page_routes",
-    "data": {
-      "path": "/tienda",
-      "title": "Tienda",
-      "isPrivate": false,
-      "blocks": [
-        {
-          "id": "aa35c763-376d-4280-a62e-3f92a7551f88",
-          "type": "veta_tienda",
-          "blocks": []
-        }
-      ],
-      "order": 0
-    },
-    "updated_at": "2026-07-06T15:00:10.415Z"
-  },
-  {
-    "id": "577dc340-da13-45c1-b0d2-0465108c8279",
-    "context": "page_routes",
-    "data": {
-      "path": "/tienda/:slug",
-      "title": "Producto Detalle",
-      "isPrivate": false,
-      "blocks": [
-        {
-          "id": "80805031-0ba9-4906-8dd9-e3bbdc5a2623",
-          "type": "veta_producto_detalle",
-          "blocks": []
-        }
-      ],
-      "order": 0
-    },
-    "updated_at": "2026-07-06T15:00:27.119Z"
-  },
+
   {
     "id": "5894af1e-c605-4b41-a72b-ea174547d1d2",
     "context": "page_routes",
