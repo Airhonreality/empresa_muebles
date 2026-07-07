@@ -10,6 +10,7 @@ import { getCommercialValue, normalizeWhatsappDestination } from '@/lib/veta/con
 import { Ruler, ShoppingBag, MessageSquare, Tag, Info, AlertCircle } from 'lucide-react'
 import { CartProvider, useCart } from './cart/CartContext'
 import { CartDrawer } from './cart/CartDrawer'
+import { buildProductSchema, buildItemListSchema, buildBreadcrumbSchema, serializeJsonLd } from '@/lib/veta/seo/schemaGenerator'
 
 const cardSurfaces = ['veta-surface-glass', 'veta-surface-stone', 'veta-surface-matte'] as const
 
@@ -100,9 +101,36 @@ export default function VetaCatalog({ block = {}, records = [], api }: Partial<B
     { id: 'camas', label: 'Camas' }
   ]
 
+  const breadcrumbItems = [
+    { name: 'Inicio', url: 'https://vetadeoro.co' },
+    { name: 'Colecciones', url: 'https://vetadeoro.co/colecciones' },
+  ]
+  const breadcrumbJsonLd = buildBreadcrumbSchema(breadcrumbItems)
+  const itemListJsonLd = buildItemListSchema(
+    furnitureItems.map(i => ({ name: i.title })),
+    'Product',
+    'Mobiliario de Colección — Veta Dorada'
+  )
+  const productSchemas = furnitureItems.map(item => buildProductSchema({
+    id: item.id,
+    data: {
+      descripcion: item.title,
+      precio_publico: item.price,
+      stock_actual: item.stock,
+      imagen_url: item.image,
+      sku: item.sku,
+    }
+  }))
+  const allJsonLd = [breadcrumbJsonLd, itemListJsonLd, ...productSchemas]
+
   return (
     <CartProvider>
     <div className="min-h-screen bg-[hsl(var(--veta-bg-warm-paper))] text-[hsl(var(--veta-text-carbon))] flex flex-col">
+      <script
+        id="colecciones-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(allJsonLd) }}
+      />
       <VetaHeader />
 
       {/* Hero section banner */}
@@ -119,6 +147,14 @@ export default function VetaCatalog({ block = {}, records = [], api }: Partial<B
           </div>
           <p className="text-sm max-w-[46ch] font-light leading-relaxed text-[hsl(var(--veta-text-stone))]">
             Nuestras colecciones de catálogo representan la ilusión de poseer una pieza icónica de ultra-lujo a un precio sumamente honesto. Fabricados con juntas tradicionales e insumos importados.
+          </p>
+        </div>
+        <div className="mx-auto max-w-7xl mt-8">
+          <h2 className="text-xl font-semibold text-[hsl(var(--veta-text-carbon))] mb-3">
+            Muebles a medida en Bogotá — Colecciones con precio fijo
+          </h2>
+          <p className="text-sm leading-relaxed text-[hsl(var(--veta-text-stone))] max-w-3xl">
+            En Veta Dorada encuentras muebles terminados de alta calidad con precio fijo transparente, fabricados por carpinteros expertos en Bogotá. Consolas, cavas, comedores y camas con diseño exclusivo y entrega en tu hogar.
           </p>
         </div>
       </section>

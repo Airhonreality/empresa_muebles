@@ -1,6 +1,6 @@
 # Documentación Fáctica y Comercial - Veta Dorada (Base de Conocimiento RAG)
 
-Este documento provee la información técnica, comercial y operativa oficial de Veta Dorada. 
+Este documento provee la información técnica, comercial y operativa oficial de Veta Dorada.
 
 ## 1. Identidad y Posicionamiento de Mercado
 Veta Dorada es una **fábrica directa de mobiliario arquitectónico a medida en Bogotá**. Nuestro modelo de negocio elimina las comisiones de intermediación típicas de los estudios de arquitectura, ofreciendo calidad premium de fabricación a precio directo.
@@ -35,7 +35,24 @@ Nuestro embudo comercial protege al usuario de cobros ocultos:
 *   **Centros de Entretenimiento (TV).**
 *   **Especialidad Arquitectónica:** Restauración, pulido y sellado de pisos de madera natural antigua.
 
-## 6. Enlaces Canónicos Oficiales y Rutas de Adquisición
+## 6. Colecciones de Catálogo
+Explora nuestros productos terminados con precio fijo y disponibilidad inmediata:
+*   **Consolas y Recibidores:** Piezas icónicas de diseño minimalista.
+*   **Cavas y Bares:** Muebles para entretenimiento con acabados premium.
+*   **Comedores y Mesas:** Diseños en madera maciza y cristal templado.
+*   **Camas y Cabeceros:** Estructuras robustas con herrajes europeos.
+*   **Catálogo completo:** [https://vetadeoro.co/colecciones](https://vetadeoro.co/colecciones)
+
+## 7. Portafolio de Proyectos Realizados
+Conoce nuestros proyectos instalados en Bogotá:
+*   **Cocinas Integrales:** Diseño, fabricación e instalación en granito, acero y madera.
+*   **Closets Walk-in:** Sistemas de almacenamiento inteligente.
+*   **Cavas y Bares:** Mobiliario para entretenimiento en el hogar.
+*   **Consolas y Recibidores:** Piezas de diseño para la entrada de tu hogar.
+*   **Ver portafolio completo:** [https://vetadeoro.co/portafolio](https://vetadeoro.co/portafolio)
+
+## 8. Enlaces Canónicos Oficiales y Rutas de Adquisición
 Las siguientes URLs representan las vías de contacto y catálogos oficiales verificados de la marca:
 *   **Agendamiento de Visita Técnica a Domicilio:** [https://vetadeoro.co/agendar](https://vetadeoro.co/agendar)
-*   **Catálogo Digital y Tienda:** [https://vetadeoro.co/colecciones](https://vetadeoro.co/colecciones)
+*   **Catálogo Digital:** [https://vetadeoro.co/colecciones](https://vetadeoro.co/colecciones)
+*   **Portafolio de Proyectos:** [https://vetadeoro.co/portafolio](https://vetadeoro.co/portafolio)

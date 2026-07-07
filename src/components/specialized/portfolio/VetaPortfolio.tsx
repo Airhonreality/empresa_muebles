@@ -5,6 +5,7 @@ import { ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { buildPortfolioItemSchema, buildItemListSchema, buildBreadcrumbSchema, serializeJsonLd } from '@/lib/veta/seo/schemaGenerator';
 
 type RecordItem<T = Record<string, unknown>> = {
   id: string;
@@ -120,8 +121,26 @@ export default function VetaPortfolio() {
     setCurrentImageIdx(prev => (prev === portfolioImages.length - 1 ? 0 : prev + 1));
   };
 
+  const breadcrumbItems = [
+    { name: 'Inicio', url: 'https://vetadeoro.co' },
+    { name: 'Portafolio', url: 'https://vetadeoro.co/portafolio' },
+  ]
+  const breadcrumbJsonLd = buildBreadcrumbSchema(breadcrumbItems)
+  const itemListJsonLd = buildItemListSchema(
+    filteredPortfolios.map(p => ({ name: p.titulo || '' })),
+    'CreativeWork',
+    'Portafolio de Proyectos — Veta Dorada'
+  )
+  const portfolioSchemas = filteredPortfolios.map(p => buildPortfolioItemSchema(p))
+  const allJsonLd = [breadcrumbJsonLd, itemListJsonLd, ...portfolioSchemas]
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <script
+        id="portafolio-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(allJsonLd) }}
+      />
       {/* Header */}
       <section className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -129,6 +148,14 @@ export default function VetaPortfolio() {
             Portafolio
           </h1>
           <p className="text-lg text-slate-600">Proyectos realizados con materiales de calidad</p>
+        </div>
+        <div className="max-w-7xl mx-auto mt-6">
+          <h2 className="text-xl font-semibold text-slate-800 mb-3">
+            Carpintería arquitectónica en Bogotá — Proyectos reales
+          </h2>
+          <p className="text-sm leading-relaxed text-slate-600 max-w-3xl">
+            Conoce nuestros proyectos de cocinas integrales, closets walk-in, cavas y mobiliario a medida instalados en hogares de Bogotá. Cada proyecto refleja nuestro compromiso con la calidad, el diseño funcional y los acabados premium.
+          </p>
         </div>
       </section>
 
