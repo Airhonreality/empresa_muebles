@@ -59,15 +59,63 @@ placeholder de 19% sobre el valor total, editable en casos extraordinarios.
 3. Fórmula propuesta (si cálculo en cliente): `iva_valor = aplica_iva ? total * (porcentaje_iva/100) : 0`,
    `total_con_iva = total + iva_valor`. Ajustar el bloque `gt` de `CotizadorPro.tsx` y el
    renglón de UI que hoy muestra `Subtotal`/`Total` (línea ~1218-1252) para incluir el desglose
-   de IVA cuando `aplica_iva` esté activo.
+    de IVA cuando `aplica_iva` esté activo.
+
+### Propuesta de campos (formato exacto de `schema_definitions.json`)
+
+```json
+{
+  "id": "<uuid>",
+  "key": "aplica_iva",
+  "type": "boolean",
+  "label": "Aplica IVA",
+  "width": "full",
+  "config": {
+    "relation": {
+      "entity": "",
+      "parent_key": "id"
+    }
+  },
+  "section": "Cierre Técnico",
+  "required": false,
+  "default": false
+},
+{
+  "id": "<uuid>",
+  "key": "porcentaje_iva",
+  "type": "number",
+  "label": "Porcentaje de IVA",
+  "width": "full",
+  "config": {
+    "relation": {
+      "entity": "",
+      "parent_key": "id"
+    }
+  },
+  "section": "Cierre Técnico",
+  "required": false,
+  "default": 19
+}
+```
+
+Se insertan al final del array `fields` del schema `proyectos` (tras `ajuste_arbitrario`/`estado`/`descripcion_semantica`/`barrio`). Los UUIDs se asignarán en el momento de aplicar por el flujo gobernado (`agno` o designer).
 
 ### Cierre de Fase 1
-- [ ] Campos de schema definidos y listos para aplicar por el flujo gobernado.
-- [ ] Decisión de diseño (cliente vs zap) registrada.
+- [x] Campos de schema definidos y listos para aplicar por el flujo gobernado.
+- [x] Decisión de diseño (cliente vs zap) registrada.
 - [ ] Aprobación humana antes de Fase 2.
 
 ## Decisión de diseño
-<a completar antes de Fase 2>
+
+**Recomendación: cálculo en cliente (mismo patrón que el total actual en `CotizadorPro.tsx`).**
+
+El IVA es una operación aritmética trivial (`total * tasa`) que no cruza entidades ni ejecuta reglas de negocio externas. Meterla en un zap introduce latencia de red, complejidad de estado (el zap podría fallar y dejar el total desactualizado), y fragmenta la lógica que hoy está toda en el bloque `gt`. El patrón `recalcular_precio_prefabricado` tiene sentido cuando el cálculo involucra agregaciones multi-entity (items + catálogo + precios) — no es el caso aquí. Se recomienda:
+
+1. En el bloque `gt` (línea ~289-310), agregar: `const iva = data.aplica_iva ? gt * (data.porcentaje_iva / 100) : 0`
+2. En el render de totales (línea ~1218-1252), agregar renglón condicional "IVA ($%)" cuando `aplica_iva=true`.
+3. Guardar `aplica_iva` y `porcentaje_iva` en el record al guardar (ya ocurre automáticamente por el data-binding del engine).
+
+No se necesita zap nuevo.
 
 ---
 
