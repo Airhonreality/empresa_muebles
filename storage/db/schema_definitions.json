@@ -893,7 +893,7 @@
           "type": "boolean",
           "label": "Aplica IVA",
           "required": false,
-          "section": "Cierre Tecnico"
+          "section": "Cierre Técnico"
         },
         {
           "id": "11cb168e-4f14-450e-8968-5ec405c9a02d",
@@ -901,7 +901,7 @@
           "type": "number",
           "label": "Porcentaje de IVA",
           "required": false,
-          "section": "Cierre Tecnico"
+          "section": "Cierre Técnico"
         }
       ]
     },

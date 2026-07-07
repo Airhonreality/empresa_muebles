@@ -8,7 +8,19 @@
 - **Rama:** `goal/cotizador-iva-opcional`
 - **Worktree:** `git worktree add ../wt-cotizador-iva -b goal/cotizador-iva-opcional`
 - **Rol/modelo:** Fase 1 = worker de PLAN (schema + diseño de cálculo). Fase 2 = worker de código (liviano).
-- **Estado:** Fase 1 cerrada y auditada (2026-07-07). Decisión de diseño (cálculo en cliente) aprobada. **Fase 2 COMPLETADA (2026-07-07)** — schema aplicado, código implementado. Pendiente de auditoría del Orquestador para merge a dev.
+- **Estado:** CERRADA (2026-07-07). Fase 1 y Fase 2 auditadas por el Orquestador y mergeadas a `dev`. Cálculo con fallback verificado en código, sección corregida a "Cierre Técnico" (ver Matriz V1). Ver "Hallazgo de gobernanza" abajo — no bloquea el cierre.
+
+## Hallazgo de gobernanza (para una lane de harness futura, no bloqueante)
+El comando `add-field`/`commit --force` de `scripts/agno.ts` (staged, requiere confirmación
+explícita) **no crea backup automático** antes de escribir `schema_definitions.json`, a
+diferencia de `refactor-schema apply` (que sí llama `storage.createBackup(...)`). Esto es
+una brecha real frente a la Harness Mutation Rule de `CLAUDE.md` ("automatic backup under
+storage/progreso/backups/"), preexistente al trabajo de esta lane — no fue introducida por
+el worker, que usó el comando tal como existe. El riesgo real es bajo porque
+`schema_definitions.json` está versionado en git (recuperable vía `git show`), pero vale la
+pena cerrar la brecha en una lane de harness dedicada (`add-field`/`remove-field`/
+`create-schema`/`delete-schema` deberían respaldar antes de `commit --force`, igual que
+`refactor-schema`).
 
 ## Corrección de auditoría (obligatoria para Fase 2)
 La propuesta de Fase 1 incluye una clave `"default"` en los 2 field objects. **Esa clave NO
@@ -155,7 +167,7 @@ No se necesita zap nuevo.
 ## Matriz de verificación
 | # | Check | Comando | Esperado | Resultado | Evidencia |
 |---|-------|---------|----------|-----------|-----------|
-| V1 | Campos en schema | `node -e "const d=require('./storage/db/schema_definitions.json');const p=d.find(s=>s.data.name==='proyectos');console.log(p.data.fields.some(f=>f.key==='aplica_iva'), p.data.fields.some(f=>f.key==='porcentaje_iva'))"` | `true true` | `true true` | IDs: `55251126-ccd5-40e0-a4e1-59e5c0effd8b` (aplica_iva boolean), `11cb168e-4f14-450e-8968-5ec405c9a02d` (porcentaje_iva number). Ambos en sección "Cierre Tecnico". |
+| V1 | Campos en schema | `node -e "const d=require('./storage/db/schema_definitions.json');const p=d.find(s=>s.data.name==='proyectos');console.log(p.data.fields.some(f=>f.key==='aplica_iva'), p.data.fields.some(f=>f.key==='porcentaje_iva'))"` | `true true` | `true true` | IDs: `55251126-ccd5-40e0-a4e1-59e5c0effd8b` (aplica_iva boolean), `11cb168e-4f14-450e-8968-5ec405c9a02d` (porcentaje_iva number). Sección corregida por auditoría del Orquestador a "Cierre Técnico" (con tilde) — el worker la había escrito "Cierre Tecnico" sin tilde, lo que habría creado una sección huérfana en `AgnosticForm.tsx:297` (match exacto de string) en vez de agrupar con `costos_operativos`/`imprevistos_instalacion`/`descuento_comercial`/`ajuste_arbitrario`. |
 | V2 | Tipos regenerados | `npm run agnostic:compile` | sin diff pendiente | `proyectos 14 fields` (era 12, +2 IVA) | Compilación OK: 36 schemas procesados, proyectos muestra 14 fields. |
 | V3 | Cálculo correcto | Código: `const aplicaIva = h.aplica_iva ?? false; const pctIva = h.porcentaje_iva ?? 19; const iva = aplicaIva ? total * (pctIva / 100) : 0; const totalConIva = total + iva` | `total_con_iva = total * 1.19` | Implementado en `CotizadorPro.tsx:310-314` | `gt` return incluye `{ aplicaIva, pctIva, iva, total, totalConIva }`. |
 | V4 | Placeholder editable | UI: checkbox `aplica_iva` + input `porcentaje_iva` (default 19) | se refleja en el total | Implementado en `CotizadorPro.tsx:1230-1249` | Checkbox toggle + input numérico con "%" label, se actualiza vía `setHeaderLocal`. |
