@@ -415,5 +415,23 @@
       "order": 0
     },
     "updated_at": "2026-07-06T15:00:27.119Z"
+  },
+  {
+    "id": "5894af1e-c605-4b41-a72b-ea174547d1d2",
+    "context": "page_routes",
+    "data": {
+      "path": "/cuenta",
+      "title": "Mi Cuenta",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "fc4886db-d6a9-4a7c-a991-0ebcad641b0e",
+          "type": "veta_cuenta",
+          "blocks": []
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-07T01:27:51.187Z"
   }
 ]

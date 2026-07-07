@@ -58,6 +58,7 @@ export default defineConfig({
     finanzas_shell:             () => import('./src/components/specialized/finanzas/FinanzasShell'),
     calendar_scheduler: () => import('./src/components/specialized/calendar/CalendarScheduler'),
     portfolio_manager:  () => import('./src/components/specialized/portfolio/PortfolioManager'),
+    veta_cuenta:       () => import('./src/components/specialized/cuenta/VetaCuenta'),
   },
 
   features: {
