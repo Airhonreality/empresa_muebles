@@ -265,6 +265,52 @@ Convencion de nombres que todo adapter nuevo debe seguir para que `install`/`rem
 
 El sandbox de zaps (`src/app/api/engine/route.ts`) no tiene `fetch`, `fs`, `process` ni binarios nativos (timeout 5s). Cualquier adapter con `permissions.network !== 'none'` debe implementar su logica de red en una ruta real bajo `src/app/api/` (como hace `src/app/api/admin/integrations/*` con Notion), nunca dentro de un zap. Un manifest que viole esto (`network !== 'none'` con `runsOutsideSandbox: false`) es rechazado por el resolver.
 
+## Modulos
+
+Un modulo es un paquete de componentes instalable ubicado en `packages/modules/<id>/`. Se compone de uno o varios `block_types` que se registran en `agnostic.config.ts` y se copian a `src/components/specialized/<id>/` al instalarse.
+
+```text
+list-modules [--json]                            disponibles + instalados
+install-module <id> plan [--json]                preview: colisiones, sin escribir
+install-module <id> [--dry] [--yes] [--json]     instala el modulo (ciclo gobernado)
+remove-module <id> [--dry] [--yes] [--json]      desinstala el modulo (ciclo gobernado)
+```
+
+"Disponible" = existe `packages/modules/<id>/manifest.ts` en disco. "Instalado" = el id aparece entre los marcadores `// agno:modules:start` / `// agno:modules:end` dentro de `blocks` en `agnostic.config.ts`.
+
+`install-module` copia todo el contenido de `packages/modules/<id>/` a `src/components/specialized/<id>/` (excepto `manifest.ts`) y registra las entries de `block_types` en `agnostic.config.ts`. No crea schemas ni instala npm dependencies; solo advierte si faltan.
+
+`remove-module` elimina la carpeta `src/components/specialized/<id>/` y las entradas de config. El source original en `packages/modules/` no se toca.
+
+Mismo ciclo que `refactor-schema` y `install`/`remove-adapter`: `plan` (preview) -> `--dry` (preview, nunca escribe) -> sin `--yes` (plan + confirmacion requerida, no interactivo) -> `--yes` (backup automatico en `storage/progreso/backups/`, luego escribe).
+
+### Manifest (`ModuleManifest`, `packages/core/src/module.ts`)
+
+```ts
+{
+  id: string;                               // = carpeta en packages/modules/<id>
+  name: string;
+  description: string;
+  version: string;
+  block_types: Record<string, {             // tipo de bloque → entry point
+    entry: string;                          // ruta relativa al modulo, ej. "MyBlock.tsx"
+    settings_schema?: string;               // ruta a JSON schema para el designer
+  }>;
+  required_schemas?: string[];              // namespaces que deben existir en schema_definitions.json
+  npm_dependencies?: Record<string, string>;// ej. { "recharts": "^2.0.0" }
+}
+```
+
+### Resolver de colisiones
+
+`install-module` corre estas verificaciones antes de escribir; los `error` bloquean el plan, los `warn`/`info` no:
+
+- `AGNO_MODULE_ALREADY_INSTALLED` (error): el id ya esta registrado entre los marcadores.
+- `AGNO_MODULE_DIR_COLLISION` (error): la carpeta `src/components/specialized/<id>/` ya existe en disco.
+- `AGNO_MODULE_BLOCK_TYPE_COLLISION` (error): un tipo de bloque del modulo ya esta registrado en `agnostic.config.ts`.
+- `AGNO_MODULE_SCHEMA_MISSING` (warn): un nombre en `required_schemas` no existe en `schema_definitions.json`.
+- `AGNO_MODULE_NPM_MISSING` (warn): una dependencia npm del modulo no esta instalada en `package.json`.
+
 ## Documentacion Agentiva
 
 Estos comandos generan indices versionables en `storage/docs/`. No reemplazan la fuente canonica en `storage/db/`; solo crean contexto compacto para agentes IA y revisiones humanas.

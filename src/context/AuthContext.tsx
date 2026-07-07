@@ -21,9 +21,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser]     = useState<User | null>(null);
-  const [isLoading, setLoading] = useState(true);
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  initialUser?: User | null;
+}) {
+  const hasInitialUser = initialUser !== undefined;
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
+  const [isLoading, setLoading] = useState(!hasInitialUser);
 
   const { setUser: syncUserToStore } = useSystemStore();
 
@@ -31,14 +38,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncUserToStore(user);
   }, [user, syncUserToStore]);
 
-  // Restore session from server-side cookie via iron-session
+  // If the server already hydrated the session, do not refetch it on mount.
   useEffect(() => {
+    if (hasInitialUser) return;
     fetch('/api/auth/me')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.user) setUser(d.user); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [hasInitialUser]);
 
   const login = useCallback(async (email: string, pass: string): Promise<boolean> => {
     const res = await fetch('/api/auth/login', {

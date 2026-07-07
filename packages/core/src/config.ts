@@ -26,7 +26,16 @@ export interface BlockProps {
 }
 
 // Lazy loader signature — same as React.lazy's factory argument
-type BlockLoader = () => Promise<{ default: React.ComponentType<BlockProps> }>
+export type BlockLoader = () => Promise<{ default: React.ComponentType<BlockProps> }>
+
+/**
+ * A block entry can be a plain lazy loader (short form) or an object
+ * with an optional settings_schema for the designer panel.
+ */
+export type BlockConfig = BlockLoader | {
+  loader: BlockLoader
+  settings_schema?: Record<string, unknown>
+}
 
 export interface AgnosticConfig {
   /** Path to the storage directory. Default: './storage' */
@@ -38,14 +47,15 @@ export interface AgnosticConfig {
   /**
    * Custom block type registrations.
    * Key: block type string used in page_routes.json
-   * Value: lazy loader for the React component
+   * Value: lazy loader for the React component, or an object with loader + settings_schema
    *
    * Example:
    *   blocks: {
    *     cotizador_dashboard: () => import('./src/components/specialized/CotizadorDashboard'),
+   *     my_block: { loader: () => import('./src/components/specialized/MyBlock'), settings_schema: { ... } },
    *   }
    */
-  blocks?: Record<string, BlockLoader>
+  blocks?: Record<string, BlockConfig>
 
   /**
    * Optional engine feature flags.

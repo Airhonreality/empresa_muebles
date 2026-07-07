@@ -74,6 +74,8 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
   const routeData   = (route?.data || {}) as any;
   const pageLayout  = (routeData.layout || {}) as any;
   const isHorizontal = pageLayout.direction === 'horizontal';
+  const isRootPath = path === '/';
+  const pagePadding = isRootPath ? '0px' : paddingToCss(pageLayout.padding) || 'var(--ag-page-padding)';
 
   return (
     <main className="min-h-screen bg-background">
@@ -85,7 +87,7 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
         )}
         style={{
           gap:     `${pageLayout.gap ?? 1.5}rem`,
-          padding: paddingToCss(pageLayout.padding) || 'var(--ag-page-padding)',
+          padding: pagePadding,
         }}
       >
         {blocks.map((block, idx) => (

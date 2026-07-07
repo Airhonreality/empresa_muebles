@@ -47,6 +47,14 @@ import {
   printListAdapters,
 } from './agno-adapters';
 import { createCliResult, printCliResult } from './cli-reporter';
+import { printValidateRoutes } from './agno-validate-routes';
+import {
+  printListModules,
+  printInstallModulePlan,
+  applyInstallModule,
+  printRemoveModulePlan,
+  applyRemoveModule,
+} from './agno-modules';
 
 const LOG_FILE = path.join(process.cwd(), '.agno-log.jsonl');
 
@@ -1896,6 +1904,7 @@ agno — Agnostic CLI / MCP de Interfaz  (ver AGNO_MCP_PLAN.md)
   validate                                verificar invariantes
   validate --zaps [--json]                verificar invariantes + zaps
   validate:zaps [--json]                  analizar referencias de zaps
+  validate:routes [--file <path>]         validar tipos de bloque y contextos por ruta
 
 ══ CAPA 2 — COMPOSICIÓN INMEDIATA ════════════════════════════════════
   add-block <route> <type> [context:<s>] [intent:<i>] [zap:<z>]
@@ -1953,6 +1962,12 @@ ADAPTERS
   install <id> [--dry] [--yes] [--json]
   remove-adapter <id> [--dry] [--yes] [--json]
 
+MODULES
+  list-modules [--json]                    disponibles + instalados
+  install-module <id> plan [--json]        preview: colisiones, sin escribir
+  install-module <id> [--dry] [--yes]      instalar modulo compuesto
+  remove-module <id> [--dry] [--yes]       desinstalar modulo compuesto
+
 DOCS / BOOTSTRAP
   docs schemas|zaps|routes|modules|all
   bootstrap install|resume|status|doctor|verify
@@ -2001,6 +2016,11 @@ async function dispatch(line: string) {
       if (args.includes('--zaps')) await printValidateZaps({ json: args.includes('--json') });
       return;
     case 'validate:zaps': return printValidateZaps({ json: args.includes('--json') });
+    case 'validate:routes': {
+      const fileIdx = args.indexOf('--file');
+      const filePath = fileIdx !== -1 ? args[fileIdx + 1] : undefined;
+      return printValidateRoutes({ file: filePath, json: args.includes('--json') });
+    }
 
     // Composición inmediata
     case 'add-block':      return cmdAddBlock(args);
@@ -2046,6 +2066,24 @@ async function dispatch(line: string) {
     case 'list-adapters':   return cmdListAdapters(args);
     case 'install':         return cmdInstall(args);
     case 'remove-adapter':  return cmdRemoveAdapter(args);
+
+    // Modules
+    case 'list-modules':    return printListModules({ json: args.includes('--json') });
+    case 'install-module': {
+      const pos = args.filter(a => !a.startsWith('--'));
+      const iId = pos[0];
+      if (!iId) { console.log('[ERROR] uso: install-module <id> [plan] [--dry] [--yes]'); return; }
+      if (pos.includes('plan')) return printInstallModulePlan(iId, { json: args.includes('--json') });
+      return applyInstallModule(iId, { dryRun: args.includes('--dry'), yes: args.includes('--yes'), json: args.includes('--json') });
+    }
+    case 'remove-module': {
+      const rPos = args.filter(a => !a.startsWith('--'));
+      const rId = rPos[0];
+      if (!rId) { console.log('[ERROR] uso: remove-module <id> [plan] [--dry] [--yes]'); return; }
+      if (rPos.includes('plan')) return printRemoveModulePlan(rId, { json: args.includes('--json') });
+      return applyRemoveModule(rId, { dryRun: args.includes('--dry'), yes: args.includes('--yes'), json: args.includes('--json') });
+    }
+
     case 'help':    return cmdHelp();
 
     default:
