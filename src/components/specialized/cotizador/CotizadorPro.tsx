@@ -307,7 +307,11 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     const impr   = Number(h.imprevistos_instalacion) || 0
     const desc   = Number(h.descuento_comercial)     || 0
     const ajuste = Number(h.ajuste_arbitrario)       || 0
-    return { mat, mo, sub, costos, impr, desc, ajuste, total: sub + costos + impr - desc + ajuste }
+    const total  = sub + costos + impr - desc + ajuste
+    const aplicaIva = h.aplica_iva ?? false
+    const pctIva    = h.porcentaje_iva ?? 19
+    const iva       = aplicaIva ? total * (pctIva / 100) : 0
+    return { mat, mo, sub, costos, impr, desc, ajuste, aplicaIva, pctIva, iva, total, totalConIva: total + iva }
   }, [espacios, items, headerLocal, tarifas, activeVarMap])
 
   const productionReady = !!activeCotId && (
@@ -1216,6 +1220,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
               <span>Mat <strong className="text-stone-600 tabular-nums">{COP(gt.mat)}</strong></span>
               <span>M.O. <strong className="text-stone-600 tabular-nums">{COP(gt.mo)}</strong></span>
               <span>Subtotal <strong className="text-stone-600 tabular-nums">{COP(gt.sub)}</strong></span>
+              {gt.aplicaIva && <span>IVA ({gt.pctIva}%) <strong className="text-stone-600 tabular-nums">{COP(gt.iva)}</strong></span>}
               <span className="text-[10px] text-stone-300">{espacios.length} espacio{espacios.length !== 1 ? 's' : ''}</span>
             </div>
 
@@ -1225,6 +1230,23 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
                 onChange={v => setHeaderLocal(p => ({ ...p, costos_operativos: v }))} />
               <MoneyInput label="Imprevistos" value={Number(headerLocal.imprevistos_instalacion) || undefined}
                 onChange={v => setHeaderLocal(p => ({ ...p, imprevistos_instalacion: v }))} />
+
+              {/* IVA toggle */}
+              <label className="flex items-center gap-1.5 cursor-pointer select-none" title="Aplicar IVA">
+                <input type="checkbox" checked={headerLocal.aplica_iva ?? false}
+                  onChange={e => setHeaderLocal(p => ({ ...p, aplica_iva: e.target.checked }))}
+                  className="accent-amber-600 w-3.5 h-3.5" />
+                <span className="text-[10px] uppercase tracking-wider text-stone-400">IVA</span>
+              </label>
+
+              {headerLocal.aplica_iva && (
+                <div className="flex items-center gap-1">
+                  <input type="number" value={headerLocal.porcentaje_iva ?? 19}
+                    onChange={e => setHeaderLocal(p => ({ ...p, porcentaje_iva: Number(e.target.value) || 0 }))}
+                    className="w-14 h-[28px] border border-stone-200 rounded-lg text-xs text-stone-700 text-center tabular-nums focus:outline-none focus:ring-1 focus:ring-amber-300" />
+                  <span className="text-[10px] text-stone-400">%</span>
+                </div>
+              )}
 
               {/* Secret toggle */}
               <div className="flex flex-col gap-1">
@@ -1247,10 +1269,17 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
             {/* Total + CTA */}
             <div className="flex items-center gap-3 ml-auto shrink-0">
               <div className="text-right mr-1">
-                <div className="text-[9px] uppercase tracking-widest text-stone-400 font-bold">Total cotización</div>
-                <div className="text-xl font-bold text-amber-700 tabular-nums tracking-tight leading-none mt-0.5">
-                  {COP(gt.total)}
+                <div className="text-[9px] uppercase tracking-widest text-stone-400 font-bold">
+                  {gt.aplicaIva ? 'Total con IVA' : 'Total cotización'}
                 </div>
+                <div className="text-xl font-bold text-amber-700 tabular-nums tracking-tight leading-none mt-0.5">
+                  {gt.aplicaIva ? COP(gt.totalConIva) : COP(gt.total)}
+                </div>
+                {gt.aplicaIva && (
+                  <div className="text-[9px] text-stone-400 leading-tight">
+                    Base {COP(gt.total)} + IVA {COP(gt.iva)}
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleExportPdf}

@@ -886,10 +886,26 @@
           "type": "text",
           "label": "Barrio",
           "required": false
+        },
+        {
+          "id": "55251126-ccd5-40e0-a4e1-59e5c0effd8b",
+          "key": "aplica_iva",
+          "type": "boolean",
+          "label": "Aplica IVA",
+          "required": false,
+          "section": "Cierre Tecnico"
+        },
+        {
+          "id": "11cb168e-4f14-450e-8968-5ec405c9a02d",
+          "key": "porcentaje_iva",
+          "type": "number",
+          "label": "Porcentaje de IVA",
+          "required": false,
+          "section": "Cierre Tecnico"
         }
       ]
     },
-    "updated_at": "2026-07-06T07:23:18.010Z"
+    "updated_at": "2026-07-07T23:12:20.893Z"
   },
   {
     "id": "189a09f5-ee5c-4514-ab13-a62d4bcaecae",

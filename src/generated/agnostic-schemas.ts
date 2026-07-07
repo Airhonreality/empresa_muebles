@@ -110,6 +110,8 @@ export interface Proyectos {
   estado: string  // Estado del Proyecto
   descripcion_semantica?: string  // Descripcion Semantica
   barrio?: string  // Barrio
+  aplica_iva?: boolean  // Aplica IVA
+  porcentaje_iva?: number  // Porcentaje de IVA
 }
 
 export type ProyectosRecord = AgnosticDataItem<Proyectos>
