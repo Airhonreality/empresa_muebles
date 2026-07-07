@@ -8,7 +8,7 @@
 > Objetivo de negocio: rankear "mobiliario, diseño y carpintería Bogotá" y tener
 > una webstore coherente para lanzamiento.
 
-<!-- lane-surface: public/** | src/app/sitemap.ts | src/app/robots.ts | src/app/\[...slug\]/page.tsx | src/lib/veta/** | src/components/specialized/tienda/** | src/components/specialized/portfolio/** | src/components/specialized/cart/** | src/components/specialized/VetaCatalog.tsx | src/components/specialized/VetaHeader.tsx | src/components/specialized/VetaFooter.tsx | src/app/api/integrations/wompi/checkout/route.ts | storage/db/page_routes.json | storage/db/app_navbars.json | storage/progreso/lanes/goal-webstore-seo-lanzamiento.md -->
+<!-- lane-surface: public/** | src/app/sitemap.ts | src/app/robots.ts | src/app/[...slug]/page.tsx | src/lib/veta/** | src/components/specialized/tienda/** | src/components/specialized/portfolio/** | src/components/specialized/cart/** | src/components/specialized/cuenta/** | src/components/specialized/VetaCatalog.tsx | src/components/specialized/VetaHeader.tsx | src/components/specialized/VetaFooter.tsx | src/generated/agnostic-schemas.ts | src/app/api/integrations/wompi/** | storage/db/** | storage/progreso/lanes/goal-webstore-seo-lanzamiento.md -->
 
 ## Identidad
 - **Rama:** `goal/webstore-seo-lanzamiento`
