@@ -93,6 +93,25 @@ contrato es **no negociable**:
   con `node_modules` dentro del worktree (borrar node_modules primero).
 - **Clientes git GUI (GitKraken/GitLens) cerrados** mientras agentes operan el repo.
 
+### Regla post-incidente 2026-07-08 (escrituras parciales en `/api/vault` destruyen registros)
+
+`PostgresStrategy.write` (`src/server/strategies/PostgresStrategy.ts`) **solo hace merge de
+campos si el payload incluye `_meta` con timestamps LWW**. Una escritura `POST /api/vault`
+con `{"action":"WRITE","record":{"id":..., "data":{"un_solo_campo": valor}}}` sin `_meta`
+**reemplaza el registro completo** — no lo parchea. El 2026-07-07/08 esto destruyó 4 registros
+de producción reales (2 `proyectos`, 1 `espacio_variantes`, y de nuevo 1 `proyectos` en un
+segundo incidente) porque agentes livianos asumieron merge automático al "solo cambiar un campo".
+
+- **Antes de CUALQUIER `WRITE` a un registro que ya existe:** primero `GET` ese registro,
+  toma su `data` completo, mézclalo en memoria con los campos nuevos/cambiados, y manda el
+  objeto COMPLETO resultante. Nunca mandes un `data` parcial confiando en que el motor
+  complete el resto.
+- Esto aplica a TODO namespace (`proyectos`, `espacio_variantes`, `scripts`, cualquiera),
+  no solo a los que causaron el incidente.
+- Antes de escribir sobre datos de producción reales, toma snapshot (`GET` de los
+  namespaces afectados) y COMMITÉALO Y PUSHÉALO antes de escribir — ver
+  `storage/progreso/lanes/goal-neon-cotizaciones-recovery.md` para el patrón completo.
+
 ### Mapa de ramas vigente
 
 | Rama | Rol |
