@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { COP } from './utils'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
 import { useMateriaStore } from '@/lib/agnostic/store'
+import { toContractZapRecord } from './contrato-payload'
 
 interface ContratoModalProps {
   isOpen: boolean
@@ -207,6 +208,12 @@ export function ContratoModal({
       return
     }
 
+    const contractRecord = toContractZapRecord(cotizacion)
+    if (!contractRecord?.id) {
+      toast.error('No hay una cotización válida seleccionada.')
+      return
+    }
+
     setIsSaving(true)
     const actionMsg = isBorradorOnly 
       ? 'Guardando borrador de contrato...' 
@@ -221,7 +228,7 @@ export function ContratoModal({
         body: JSON.stringify({
           zap: 'generar_contrato',
           payload: {
-            record: cotizacion?.data || cotizacion,
+            record: contractRecord,
             cliente: {
               nombre: clienteNombre,
               documento: clienteDoc,
@@ -252,6 +259,7 @@ export function ContratoModal({
       let contratoIdGenerated = ''
       let emailSub = ''
       let emailBod = ''
+      let engineError = ''
 
       for (const event of result.events || []) {
         if (event.action === 'materia_sync') {
@@ -264,8 +272,16 @@ export function ContratoModal({
         }
         if (event.action === 'notify') {
           if (event.type === 'success') toast.success(event.message)
-          else toast.error(event.message)
+          else {
+            engineError = event.message
+            toast.error(event.message)
+          }
         }
+      }
+
+      if (engineError) throw new Error(engineError)
+      if (!contratoIdGenerated) {
+        throw new Error('El motor no devolvió el contrato generado.')
       }
 
       if (isBorradorOnly) {
