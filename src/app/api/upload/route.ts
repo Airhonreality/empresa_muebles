@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProjectStorageRoot } from '@/server/activeProject';
+import { buildR2S3Config } from '@/server/r2';
 import fs   from 'fs/promises';
 import path from 'path';
 
@@ -52,11 +53,11 @@ export async function POST(req: NextRequest) {
 
     if (cfAccountId && cfBucket && cfKeyId && cfSecret) {
       const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-      const s3 = new S3Client({
-        region: 'auto',
-        endpoint: `https://${cfAccountId}.r2.cloudflarestorage.com`,
-        credentials: { accessKeyId: cfKeyId, secretAccessKey: cfSecret },
-      });
+      const s3 = new S3Client(buildR2S3Config({
+        accountId: cfAccountId,
+        accessKeyId: cfKeyId,
+        secretAccessKey: cfSecret,
+      }));
 
       const buffer = Buffer.from(await file.arrayBuffer());
       await s3.send(new PutObjectCommand({

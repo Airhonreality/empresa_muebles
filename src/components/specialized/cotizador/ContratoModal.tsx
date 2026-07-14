@@ -145,15 +145,16 @@ export function ContratoModal({
     setValorTotal(calculatedTotal)
     setGarantiaAnios(Number(cotizacion?.data?.garantia_anios || cotizacion?.garantia_anios || 2))
 
-    // Compilar Objeto de Contrato con los espacios activos (por defecto)
+    // Compilar Objeto de Contrato solo con espacios visibles y sin nombre de variante
     const defaultItemsText = espacios
-      .map(({ nombre, vars }, idx) => {
+      .map(({ nombre, vars }) => {
         const activeId = activeVarMap[nombre] || vars[0]?.id
         const av = vars.find((v: any) => v.id === activeId) || vars[0]
-        const spaceName = av?.data?.nombre_espacio || av?.nombre_espacio || nombre
-        const varName = av?.data?.nombre_variante ? ` (${av.data.nombre_variante})` : ''
-        return `${idx + 1}. ${spaceName}${varName}`
+        if (av?.data?.visible_pdf === false) return ''
+        return av?.data?.nombre_espacio || av?.nombre_espacio || nombre
       })
+      .filter(Boolean)
+      .map((spaceName, idx) => `${idx + 1}. ${spaceName}`)
       .join('\n')
 
     const loadOrCreateContrato = async () => {
