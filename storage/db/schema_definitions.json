@@ -323,6 +323,18 @@
             {
               "label": "Mueble Terminado",
               "value": "Mueble Terminado"
+            },
+            {
+              "label": "Mano de Obra Civil",
+              "value": "Mano de Obra Civil"
+            },
+            {
+              "label": "Logística Obra Civil",
+              "value": "Logística Obra Civil"
+            },
+            {
+              "label": "Materiales Obra Civil",
+              "value": "Materiales Obra Civil"
             }
           ],
           "section": "General",
@@ -3183,5 +3195,139 @@
       ]
     },
     "updated_at": "2026-07-06T07:23:18.146Z"
+  },
+  {
+    "id": "c7d5e9f1-3b6a-4c2e-9f7d-8b4a5c3e2d1f",
+    "context": "schema_definitions",
+    "data": {
+      "name": "items_obra_civil",
+      "fields": [
+        {
+          "key": "variante_id",
+          "type": "relation",
+          "label": "Espacio/Variante Perteneciente",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "espacio_variantes",
+              "parent_key": "id"
+            }
+          },
+          "section": "General",
+          "required": true
+        },
+        {
+          "key": "categoria",
+          "type": "select",
+          "label": "Categoría",
+          "width": "full",
+          "config": {},
+          "options": [
+            {
+              "label": "Mano de obra",
+              "value": "mano_obra"
+            },
+            {
+              "label": "Logística",
+              "value": "logistica"
+            },
+            {
+              "label": "Materiales",
+              "value": "materiales"
+            }
+          ],
+          "section": "General",
+          "required": true
+        },
+        {
+          "key": "catalogo_id",
+          "type": "relation",
+          "label": "Seleccionar del Catálogo (opcional)",
+          "width": "full",
+          "config": {
+            "relation": {
+              "entity": "productos_catalogo",
+              "parent_key": "id"
+            }
+          },
+          "section": "Detalle",
+          "required": false
+        },
+        {
+          "key": "descripcion_manual",
+          "type": "text",
+          "label": "Descripción Manual (si no hay ítem de catálogo)",
+          "width": "full",
+          "config": {},
+          "section": "Detalle",
+          "required": false
+        },
+        {
+          "key": "unidad_medida",
+          "type": "text",
+          "label": "Unidad de Medida",
+          "width": "half",
+          "config": {
+            "derivation": {
+              "op": "LOOKUP",
+              "args": ["catalogo_id", "unidad_medida"],
+              "context": "productos_catalogo"
+            }
+          },
+          "section": "Detalle",
+          "required": false
+        },
+        {
+          "key": "cantidad",
+          "type": "number",
+          "label": "Cantidad",
+          "width": "half",
+          "config": {},
+          "section": "Valores",
+          "required": true,
+          "default": 1
+        },
+        {
+          "key": "precio_unitario",
+          "type": "number",
+          "label": "Precio Unitario ($)",
+          "width": "half",
+          "config": {
+            "derivation": {
+              "op": "LOOKUP",
+              "args": ["catalogo_id", "precio_publico"],
+              "context": "productos_catalogo"
+            }
+          },
+          "section": "Valores",
+          "required": true
+        },
+        {
+          "key": "total_linea",
+          "type": "number",
+          "label": "Total Línea ($)",
+          "width": "half",
+          "config": {
+            "derivation": {
+              "op": "MULTIPLY",
+              "args": ["cantidad", "precio_unitario"]
+            }
+          },
+          "section": "Valores",
+          "required": false
+        },
+        {
+          "key": "notas",
+          "type": "text",
+          "label": "Notas",
+          "width": "full",
+          "config": {},
+          "section": "Detalle",
+          "required": false
+        }
+      ]
+    },
+    "created_at": "2026-07-14T09:30:00.000Z",
+    "updated_at": "2026-07-14T09:30:00.000Z"
   }
 ]
