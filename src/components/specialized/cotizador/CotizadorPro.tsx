@@ -22,6 +22,7 @@ import type {
   Proyectos as ProyectoData,
   EspacioVariantes,
   ItemsVariante,
+  ItemsObraCivil,
   ProductosCatalogo,
 } from '@/generated/agnostic-schemas'
 
@@ -37,6 +38,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const [catalogo,     setCatalogo]     = useState<DataItem[]>([])
   const [variantes,    setVariantes]    = useState<DataItem[]>([])
   const [items,        setItems]        = useState<DataItem[]>([])
+  const [itemsObraCivil, setItemsObraCivil] = useState<DataItem[]>([])
   const [loading, setLoading] = useState(true)
 
   // ── Active quote ─────────────────────────────────────────────────
@@ -87,21 +89,23 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [rc, rci, rco, rcat, rv, ri] = await Promise.all([
+      const [rc, rci, rco, rcat, rv, ri, rio] = await Promise.all([
         fetch('/api/vault?namespace=proyectos'),
         fetch('/api/vault?namespace=clientes'),
         fetch('/api/vault?namespace=contratos'),
         fetch('/api/vault?namespace=productos_catalogo'),
         fetch('/api/vault?namespace=espacio_variantes'),
         fetch('/api/vault?namespace=items_variante'),
+        fetch('/api/vault?namespace=items_obra_civil'),
       ])
-      const [jc, jci, jco, jcat, jv, ji] = await Promise.all([rc.json(), rci.json(), rco.json(), rcat.json(), rv.json(), ri.json()])
+      const [jc, jci, jco, jcat, jv, ji, jio] = await Promise.all([rc.json(), rci.json(), rco.json(), rcat.json(), rv.json(), ri.json(), rio.json()])
       setProyectos(jc.records  ?? [])
       setClientes(    jci.records ?? [])
       setContratos(   jco.records ?? [])
       setCatalogo(    jcat.records?? [])
       setVariantes(   jv.records  ?? [])
       setItems(       ji.records  ?? [])
+      setItemsObraCivil(jio.records ?? [])
     } finally { setLoading(false) }
   }, [])
 
@@ -313,6 +317,28 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     const iva       = aplicaIva ? total * (pctIva / 100) : 0
     return { mat, mo, sub, costos, impr, desc, ajuste, aplicaIva, pctIva, iva, total, totalConIva: total + iva }
   }, [espacios, items, headerLocal, tarifas, activeVarMap])
+
+  // Totals for obra civil (referential, not included in grand total)
+  const totalObraCivil = useMemo(() => {
+    let mano_obra = 0, logistica = 0, materiales = 0
+    for (const { nombre, vars } of espacios) {
+      const activeId = activeVarMap[nombre] || vars[0]?.id
+      const av = vars.find(v => v.id === activeId) || vars[0]; if (!av) continue
+      const vd = av.data as any as EspacioVariantes
+      if (vd.visible_pdf === false) continue
+
+      const vItemsOC = itemsObraCivil.filter(it => (it.data as any as ItemsObraCivil).variante_id === av.id)
+      for (const it of vItemsOC) {
+        const itData = it.data as any as ItemsObraCivil
+        const amount = Number(itData.total_linea) || (Number(itData.cantidad) || 0) * (Number(itData.precio_unitario) || 0)
+        if (itData.categoria === 'mano_obra') mano_obra += amount
+        else if (itData.categoria === 'logistica') logistica += amount
+        else if (itData.categoria === 'materiales') materiales += amount
+      }
+    }
+    const total = mano_obra + logistica + materiales
+    return { mano_obra, logistica, materiales, total }
+  }, [espacios, itemsObraCivil, activeVarMap])
 
   const productionReady = !!activeCotId && (
     !!activeContrato ||
@@ -704,6 +730,28 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const deleteItem = async (id: string) => {
     await vRemove('items_variante', id)
     setItems(prev => prev.filter(x => x.id !== id))
+  }
+
+  // ── Handlers: items obra civil ───────────────────────────────────
+  const addItemObraCivil = async (varId: string, categoria: 'mano_obra' | 'logistica' | 'materiales') => {
+    const id = crypto.randomUUID()
+    const data: ItemsObraCivil = { variante_id: varId, categoria, catalogo_id: '', descripcion_manual: '', cantidad: 1, precio_unitario: 0, total_linea: 0, unidad_medida: '' }
+    await vWrite('items_obra_civil', id, data)
+    setItemsObraCivil(prev => [...prev, { id, context: 'items_obra_civil', data: data as any }])
+    return id
+  }
+
+  const updateItemObraCivil = async (id: string, patch: Partial<ItemsObraCivil>) => {
+    const it = itemsObraCivil.find(x => x.id === id)
+    if (!it) return
+    const nd = { ...(it.data as any as ItemsObraCivil), ...patch }
+    setItemsObraCivil(prev => prev.map(x => x.id === id ? { ...x, data: nd as any } : x))
+    await vWrite('items_obra_civil', id, nd)
+  }
+
+  const deleteItemObraCivil = async (id: string) => {
+    await vRemove('items_obra_civil', id)
+    setItemsObraCivil(prev => prev.filter(x => x.id !== id))
   }
 
   // ── Handlers: new quote ──────────────────────────────────────────
@@ -1184,6 +1232,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
             <EspacioCard key={nombre} nombre={nombre} variants={vars}
               activeVarId={activeVarId} onSelectVarId={vid => selectActiveVar(nombre, vid)}
               items={items} catalogo={catalogo} tarifas={tarifas}
+              itemsObraCivil={itemsObraCivil}
               onRename={nn => renameEspacio(nombre, nn)}
               onAddVariante={() => addVariante(nombre)}
               onUpdateVariante={updateVariante}
@@ -1193,6 +1242,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
               onMoveUp={() => reorderEspacio(nombre, 'up')}
               onMoveDown={() => reorderEspacio(nombre, 'down')}
               onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}
+              onAddItemObraCivil={addItemObraCivil} onUpdateItemObraCivil={updateItemObraCivil} onDeleteItemObraCivil={deleteItemObraCivil}
               onDelete={() => deleteEspacio(nombre)}
               onDuplicate={() => duplicateEspacio(nombre)}
               onEditCatalogItem={handleEditCatalogItem}

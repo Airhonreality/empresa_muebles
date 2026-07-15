@@ -8,7 +8,7 @@ import { ItemRow } from './ItemRow'
 import { DayCounter } from './DayCounter'
 import { CollapseStrip } from './CollapseStrip'
 import { toast } from 'sonner'
-import type { EspacioVariantes, ItemsVariante } from '@/generated/agnostic-schemas'
+import type { EspacioVariantes, ItemsVariante, ItemsObraCivil } from '@/generated/agnostic-schemas'
 import { SmartImageInput } from '@/components/ui/SmartImageInput'
 
 export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
@@ -16,6 +16,8 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   onRename, onAddVariante, onUpdateVariante, onDuplicateVariante, onDeleteVariante, onReorderVariante, onAddItem, onUpdateItem, onDeleteItem, onDelete, onDuplicate,
   onMoveUp, onMoveDown,
   onEditCatalogItem, onAddCatalogItem,
+  itemsObraCivil = [],
+  onAddItemObraCivil, onUpdateItemObraCivil, onDeleteItemObraCivil,
   allExistingColors = [],
 }: {
   nombre: string; variants: DataItem[]; items: DataItem[]
@@ -36,10 +38,15 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
   onMoveDown?: () => void
   onEditCatalogItem: (id: string) => void
   onAddCatalogItem: (initialSearch: string) => void
+  itemsObraCivil?: DataItem[]
+  onAddItemObraCivil?: (varId: string, categoria: 'mano_obra' | 'logistica' | 'materiales') => Promise<string | undefined>
+  onUpdateItemObraCivil?: (id: string, p: Partial<ItemsObraCivil>) => void
+  onDeleteItemObraCivil?: (id: string) => void
   allExistingColors?: { nombre: string; imagen_url: string }[]
 }) {
   const [moOpen, setMoOpen] = useState(false)
   const [totOpen, setTotOpen] = useState(false)
+  const [ocOpen, setOcOpen] = useState(false)
   const [editName, setEditName] = useState(false)
   const [nameLocal, setNameLocal] = useState(nombre)
   
@@ -207,6 +214,13 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
     + (Number(vd.jornadas_instalacion_obra) || 0)
 
   const totalEsp = totalMat + totalMO
+
+  // Totals for obra civil by category
+  const activeItemsOC = itemsObraCivil ? itemsObraCivil.filter(it => (it.data as any as ItemsObraCivil).variante_id === activeVarIdResolved) : []
+  const totalOC_MO = activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'mano_obra').reduce((s, it) => s + (Number((it.data as any as ItemsObraCivil).total_linea) || (Number((it.data as any as ItemsObraCivil).cantidad) || 0) * (Number((it.data as any as ItemsObraCivil).precio_unitario) || 0)), 0)
+  const totalOC_Log = activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'logistica').reduce((s, it) => s + (Number((it.data as any as ItemsObraCivil).total_linea) || (Number((it.data as any as ItemsObraCivil).cantidad) || 0) * (Number((it.data as any as ItemsObraCivil).precio_unitario) || 0)), 0)
+  const totalOC_Mat = activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'materiales').reduce((s, it) => s + (Number((it.data as any as ItemsObraCivil).total_linea) || (Number((it.data as any as ItemsObraCivil).cantidad) || 0) * (Number((it.data as any as ItemsObraCivil).precio_unitario) || 0)), 0)
+  const totalOC = totalOC_MO + totalOC_Log + totalOC_Mat
 
   return (
     <div className={cn(
@@ -677,6 +691,119 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
           ))}
         </div>
       </CollapseStrip>
+
+      {/* Estimado de Obra Civil */}
+      {totalOC > 0 && (
+        <CollapseStrip open={ocOpen} onToggle={() => setOcOpen(o => !o)}
+          label="Estimado de Obra Civil" icon={({ size }: { size: number }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M6 4h12v2H6V4zm1 4h10v10H7V8zm8 6v4H9v-4h6z"/>
+            </svg>
+          )}
+          summary={<span className="ml-2 text-blue-600 font-semibold tabular-nums">{COP(totalOC)}</span>}
+        >
+          <div className="px-5 pb-5">
+            {/* Warning badge */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+              Referencial — no incluido en el valor del contrato de carpintería
+            </div>
+
+            {/* Mano de obra */}
+            {activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'mano_obra').length > 0 && (
+              <div className="mb-4">
+                <div className="text-xs font-semibold text-stone-600 mb-2 flex justify-between">
+                  <span>Mano de obra</span>
+                  <span className="text-blue-600 tabular-nums">{COP(totalOC_MO)}</span>
+                </div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    {activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'mano_obra').map(it => (
+                      <tr key={it.id} className="border-b border-stone-100">
+                        <td className="py-1 text-stone-600">{(it.data as any as ItemsObraCivil).descripcion_manual || (it.data as any as ItemsObraCivil).catalogo_id}</td>
+                        <td className="py-1 text-right text-stone-500">{(it.data as any as ItemsObraCivil).cantidad} {(it.data as any as ItemsObraCivil).unidad_medida}</td>
+                        <td className="py-1 text-right text-stone-600 font-semibold tabular-nums">{COP(Number((it.data as any as ItemsObraCivil).total_linea) || 0)}</td>
+                        <td className="py-1 text-right">
+                          <button onClick={() => onDeleteItemObraCivil?.(it.id)} className="text-red-500 hover:text-red-700">
+                            <X size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button onClick={() => onAddItemObraCivil?.(activeVarIdResolved, 'mano_obra')} className="mt-1 ml-0 flex items-center gap-1.5 text-xs text-stone-300 hover:text-blue-600 transition-colors py-1">
+                  <Plus size={11} /><span>Agregar</span>
+                </button>
+              </div>
+            )}
+
+            {/* Logística */}
+            {activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'logistica').length > 0 && (
+              <div className="mb-4">
+                <div className="text-xs font-semibold text-stone-600 mb-2 flex justify-between">
+                  <span>Logística</span>
+                  <span className="text-blue-600 tabular-nums">{COP(totalOC_Log)}</span>
+                </div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    {activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'logistica').map(it => (
+                      <tr key={it.id} className="border-b border-stone-100">
+                        <td className="py-1 text-stone-600">{(it.data as any as ItemsObraCivil).descripcion_manual || (it.data as any as ItemsObraCivil).catalogo_id}</td>
+                        <td className="py-1 text-right text-stone-500">{(it.data as any as ItemsObraCivil).cantidad} {(it.data as any as ItemsObraCivil).unidad_medida}</td>
+                        <td className="py-1 text-right text-stone-600 font-semibold tabular-nums">{COP(Number((it.data as any as ItemsObraCivil).total_linea) || 0)}</td>
+                        <td className="py-1 text-right">
+                          <button onClick={() => onDeleteItemObraCivil?.(it.id)} className="text-red-500 hover:text-red-700">
+                            <X size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button onClick={() => onAddItemObraCivil?.(activeVarIdResolved, 'logistica')} className="mt-1 ml-0 flex items-center gap-1.5 text-xs text-stone-300 hover:text-blue-600 transition-colors py-1">
+                  <Plus size={11} /><span>Agregar</span>
+                </button>
+              </div>
+            )}
+
+            {/* Materiales */}
+            {activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'materiales').length > 0 && (
+              <div className="mb-4">
+                <div className="text-xs font-semibold text-stone-600 mb-2 flex justify-between">
+                  <span>Materiales</span>
+                  <span className="text-blue-600 tabular-nums">{COP(totalOC_Mat)}</span>
+                </div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    {activeItemsOC.filter(it => (it.data as any as ItemsObraCivil).categoria === 'materiales').map(it => (
+                      <tr key={it.id} className="border-b border-stone-100">
+                        <td className="py-1 text-stone-600">{(it.data as any as ItemsObraCivil).descripcion_manual || (it.data as any as ItemsObraCivil).catalogo_id}</td>
+                        <td className="py-1 text-right text-stone-500">{(it.data as any as ItemsObraCivil).cantidad} {(it.data as any as ItemsObraCivil).unidad_medida}</td>
+                        <td className="py-1 text-right text-stone-600 font-semibold tabular-nums">{COP(Number((it.data as any as ItemsObraCivil).total_linea) || 0)}</td>
+                        <td className="py-1 text-right">
+                          <button onClick={() => onDeleteItemObraCivil?.(it.id)} className="text-red-500 hover:text-red-700">
+                            <X size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button onClick={() => onAddItemObraCivil?.(activeVarIdResolved, 'materiales')} className="mt-1 ml-0 flex items-center gap-1.5 text-xs text-stone-300 hover:text-blue-600 transition-colors py-1">
+                  <Plus size={11} /><span>Agregar</span>
+                </button>
+              </div>
+            )}
+
+            {/* Botón para agregar primer ítem si no hay ninguno */}
+            {activeItemsOC.length === 0 && (
+              <button onClick={() => onAddItemObraCivil?.(activeVarIdResolved, 'materiales')} className="w-full flex items-center justify-center gap-2 text-xs text-blue-600 hover:text-blue-700 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+                <Plus size={14} /> Agregar ítem de obra civil
+              </button>
+            )}
+          </div>
+        </CollapseStrip>
+      )}
     </div>
   )
 }
