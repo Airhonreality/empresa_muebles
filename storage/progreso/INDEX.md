@@ -22,6 +22,12 @@ Agents should keep this file short. Link only active or still-useful documents.
 - [DISENO_DETALLE_CANVAS.md](../fork_doc/DISENO_DETALLE_CANVAS.md): diseño de detalle y planos del Tablero Canvas en formato de Filas (Tree Schema).
 - [MAPA_MODULOS_Y_AUXILIARES_ERP.md](../fork_doc/MAPA_MODULOS_Y_AUXILIARES_ERP.md): mapa y planos de integración de módulos auxiliares del ERP.
 - [src/modules/INDEX.md](../../src/modules/INDEX.md): índice de módulos autocontenidos (inbox, payments, render) — todos en fase de diseño de contrato, investigación externa pendiente.
+## Active Lanes
+
+- [goal-neon-cotizaciones-recovery.md](lanes/goal-neon-cotizaciones-recovery.md): KEYSTONE — recuperación de datos huérfanos Neon (cotizaciones->proyectos) + caso Lorena Vaca (cobros + reconexión de espacio) + diagnóstico de `zap_activar_produccion`. Prioridad: no perder información. `Estado: plan_borrador`.
+- [goal-cotizador-iva-opcional.md](lanes/goal-cotizador-iva-opcional.md): IVA opcional en cotizador (placeholder 19%). BLOQUEADA hasta `APROBAR CIERRE` de la lane de recuperación. `Estado: plan_borrador`.
+- [goal-cotizador-obra-civil.md](lanes/goal-cotizador-obra-civil.md): estimado referencial de obra civil (mano de obra/logística/materiales) por espacio, catálogo opcional + valor bruto manual, aislado del total vinculante del contrato. `Estado: plan_borrador`, Fase 1 completa, lista para aprobación.
+
 ## Active Audits
 
 - [AUDITORIA_ADAPTERS_IA_2026-07-06.md](AUDITORIA_ADAPTERS_IA_2026-07-06.md): Auditoría exhaustiva y mapa de referencias para la extracción de los 4 adapters de IA y conversiones.

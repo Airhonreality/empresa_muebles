@@ -14,6 +14,30 @@ fork -> owns storage and specialized UI
 
 ## Daily Closeout
 
+Date: 2026-07-14 (PM) — Cambios en flujo de contrato + estabilización
+
+**Cambios en el flujo de contrato/producción (auditados):**
+Centralización de regla `visible_pdf !== false` (espacios ocultos se excluyen):
+- `ContratoModal.tsx:~155` — filtro en compilación de objeto_items, elimina sufijo de variante.
+- `generar_contrato` (scripts.json:~55) — filtro `mySpaces` excluye ocultos.
+- `zap_activar_produccion` (scripts.json:~218) — filtro `mySpaces` excluye ocultos.
+
+**Estado de lanes en paralelo:**
+- `goal/cotizador-obra-civil-estimada`: Fases 1-4 implementadas por agente Haiku (3 commits). 
+  BLOQUEO DETECTADO: `src/generated/agnostic-schemas.ts` nunca fue commitado (contiene `ItemsObraCivil` 
+  en worktree local pero no en origin). Rama pusheada no compilaría en checkout limpio. Requiere fix + reaudit.
+- `goal/webstore-checkout-pagos`: cambios a contrato en HEAD (commits `471490d`, `8369306`). 
+  Tests + validaciones pasadas.
+
+**Próximos pasos:**
+1. Fix bug en rama de obra civil: commitear `agnostic-schemas.ts` + reaudir UI/PDF contra matriz verificación.
+2. Centralizar regla de espacios visibles en helper compartido (evitar repetición futura).
+3. Mergear rama de obra civil a `dev` tras auditoria verde.
+
+---
+
+## Daily Closeout
+
 Date: 2026-07-06
 
 **Ronda 2 WEB-STORE — 4 de 7 lanes cerradas + incidente git recuperado.**
@@ -44,10 +68,18 @@ escritos, DoD SIN verificar; falta ruta `/cuenta`, registro de bloques, user moc
 matriz). Continúa un worker EXTERNO (modo sin subagentes por presupuesto de tokens; el
 Orquestador Fable 5 solo audita/mergea/pushea y entrega prompts).
 
-Pendientes de la ronda: `webstore-checkout-pagos`, `webstore-seo-lanzamiento` (robots.txt
-sigue bloqueando crawlers hasta esa lane). Hallazgos abiertos: deuda tsc 21 errores (7 de
-componentes tienda → lane `ts-debt`), `cobro.json` sin destino, re-run `ai_config`,
+Pendientes de la ronda: `webstore-checkout-pagos`, `webstore-seo-lanzamiento` (LANE
+RE-PLANIFICADA 2026-07-07 — alcance expandido: eliminar `/tienda`, migrar carrito a
+`/colecciones`, fix VetaPortfolio POST→GET, fix Wompi validación prefabricados, + SEO).
+Hallazgos abiertos: deuda tsc 21 errores (7 de componentes tienda → lane `ts-debt`), `cobro.json` sin destino, re-run `ai_config`,
 limpieza de worktrees/ramas huérfanos del incidente.
+
+### Hallazgos estructurales detectados 2026-07-07 (pre-lane)
+- **Ruta corrupta:** `page_routes.json` contiene `"C:/Program Files/Git/tienda"` como path (línea 372-382) — basura config.
+- **VetaPortfolio.tsx error:** `readRecords()` usa `POST /api/vault` con `action: 'READ'` no soportado (solo GET). Causa error 400 en `/portafolio`.
+- **Wompi checkout bug:** `checkout/route.ts` solo valida items contra `productos_catalogo`, ignora `prefabricados` → 400 error si el carrito contiene prefabs.
+- **Duplicación catálogo:** `/colecciones` y `/tienda` comparten datos de `productos_catalogo`. Decisión del usuario: eliminar `/tienda`, dejar `/colecciones` como ruta canónica.
+- **schemaGenerator.ts** completo pero no integrado con `generateMetadata` de ninguna página.
 
 ---
 
