@@ -9,12 +9,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { CircleUser } from "lucide-react";
+import { redirect } from 'next/navigation';
+import { requireSession } from '@/lib/agnostic/require-session';
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  try {
+    await requireSession();
+  } catch {
+    redirect('/login?from=/app');
+  }
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">

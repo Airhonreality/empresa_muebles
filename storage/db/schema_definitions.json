@@ -468,9 +468,19 @@
         },
         {
           "id": "f11-img",
+          "key": "imagen",
+          "type": "image",
+          "label": "Imagen",
+          "width": "full",
+          "config": {},
+          "section": "General",
+          "required": false
+        },
+        {
+          "id": "f11-img-legacy",
           "key": "imagen_url",
           "type": "image",
-          "label": "Imagen (URL)",
+          "label": "Imagen (legacy URL)",
           "width": "full",
           "config": {},
           "section": "General",
@@ -3270,7 +3280,10 @@
           "config": {
             "derivation": {
               "op": "LOOKUP",
-              "args": ["catalogo_id", "unidad_medida"],
+              "args": [
+                "catalogo_id",
+                "unidad_medida"
+              ],
               "context": "productos_catalogo"
             }
           },
@@ -3295,7 +3308,10 @@
           "config": {
             "derivation": {
               "op": "LOOKUP",
-              "args": ["catalogo_id", "precio_publico"],
+              "args": [
+                "catalogo_id",
+                "precio_publico"
+              ],
               "context": "productos_catalogo"
             }
           },
@@ -3310,7 +3326,10 @@
           "config": {
             "derivation": {
               "op": "MULTIPLY",
-              "args": ["cantidad", "precio_unitario"]
+              "args": [
+                "cantidad",
+                "precio_unitario"
+              ]
             }
           },
           "section": "Valores",
@@ -3329,5 +3348,57 @@
     },
     "created_at": "2026-07-14T09:30:00.000Z",
     "updated_at": "2026-07-14T09:30:00.000Z"
+  },
+  {
+    "id": "62481433-f8bd-493d-80d8-9b342b9858db",
+    "context": "schema_definitions",
+    "data": {
+      "name": "propuestas_publicas",
+      "fields": [
+        {
+          "id": "3f281eab-6b61-41ed-8750-69611884f26d",
+          "key": "proyecto_id",
+          "type": "relation",
+          "label": "Proyecto",
+          "required": false
+        },
+        {
+          "id": "7f67b25f-24cd-4cd6-a209-8b4ecfefc101",
+          "key": "public_slug",
+          "type": "text",
+          "label": "Slug_publico",
+          "required": false
+        },
+        {
+          "id": "c44803f4-0730-4365-8b9a-0f088a9d21ba",
+          "key": "snapshot_json",
+          "type": "markdown",
+          "label": "Snapshot_aprobado",
+          "required": false
+        },
+        {
+          "id": "5c530cc9-5d5d-4762-95a3-f322ed57d5bc",
+          "key": "estado",
+          "type": "select",
+          "label": "Estado",
+          "required": false
+        },
+        {
+          "id": "068ae286-01f2-47a9-9bc9-41512f497cc3",
+          "key": "emitida_en",
+          "type": "date",
+          "label": "Emitida_en",
+          "required": false
+        },
+        {
+          "id": "fae66e8d-2175-4e31-891c-411bfba36854",
+          "key": "revocado_en",
+          "type": "date",
+          "label": "Revocado_en",
+          "required": false
+        }
+      ]
+    },
+    "updated_at": "2026-07-15T21:26:21.546Z"
   }
 ]

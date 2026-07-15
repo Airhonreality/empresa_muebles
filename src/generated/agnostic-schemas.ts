@@ -63,7 +63,8 @@ export interface ProductosCatalogo {
   stock_actual?: number  // Stock Actual
   precio_directo?: number  // Precio Directo
   precio_publico?: number  // Precio Público
-  imagen_url?: string  // Imagen (URL)
+  imagen?: string  // Imagen
+  imagen_url?: string  // Imagen (legacy URL)
   modelo_3d?: string  // Modelo 3D (.glb / .obj)
   url_referencia?: string  // URL de Referencia / Ficha
   proveedor?: string  // Proveedor
@@ -518,6 +519,18 @@ export interface ItemsObraCivil {
 
 export type ItemsObraCivilRecord = AgnosticDataItem<ItemsObraCivil>
 
+// ─── Schema: "propuestas_publicas"
+export interface PropuestasPublicas {
+  proyecto_id?: string  // Proyecto
+  public_slug?: string  // Slug_publico
+  snapshot_json?: string  // Snapshot_aprobado
+  estado?: string  // Estado
+  emitida_en?: string  // Emitida_en
+  revocado_en?: string  // Revocado_en
+}
+
+export type PropuestasPublicasRecord = AgnosticDataItem<PropuestasPublicas>
+
 // ============================================================
 // AgnosticSchemas — complete project schema map
 //
@@ -564,8 +577,9 @@ export interface AgnosticSchemas {
   portfolio_publico: PortfolioPublico
   imagenes_portfolio: ImagenesPortfolio
   items_obra_civil: ItemsObraCivil
+  propuestas_publicas: PropuestasPublicas
 }
 
 // Valid values for block.context and fetch(`/api/vault?namespace=${ctx}`)
 export type SchemaName = keyof AgnosticSchemas
-// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'proyectos' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial' | 'registros_tecnicos' | 'project_tasks' | 'usuarios_equipo' | 'tareas_operativas' | 'plantillas_tareas' | 'cuentas_financieras' | 'categorias_financieras' | 'comprobantes_financieros' | 'obligaciones_pendientes' | 'movimientos_financieros' | 'registro_horas' | 'system_groups' | 'testimonios' | 'seed_registros' | 'imagenes_prefabricado' | 'portfolio_publico' | 'imagenes_portfolio' | 'items_obra_civil'
+// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'proyectos' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial' | 'registros_tecnicos' | 'project_tasks' | 'usuarios_equipo' | 'tareas_operativas' | 'plantillas_tareas' | 'cuentas_financieras' | 'categorias_financieras' | 'comprobantes_financieros' | 'obligaciones_pendientes' | 'movimientos_financieros' | 'registro_horas' | 'system_groups' | 'testimonios' | 'seed_registros' | 'imagenes_prefabricado' | 'portfolio_publico' | 'imagenes_portfolio' | 'items_obra_civil' | 'propuestas_publicas'

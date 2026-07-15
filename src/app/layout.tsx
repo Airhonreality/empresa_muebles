@@ -3,7 +3,7 @@
  */
 import type { Metadata } from "next";
 import { Candal, Capriola, Comfortaa, Outfit, Inter } from "next/font/google";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getIronSession } from "iron-session";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
@@ -17,6 +17,7 @@ import path from "path";
 import { SYSTEM_NS } from "@/lib/agnostic/constants";
 import { buildOrganizationSchema, readCommercialConfig, serializeJsonLd } from "@/lib/veta/seo/schemaGenerator";
 import { sessionOptions, type SessionData } from "@/lib/agnostic/session";
+import { getPublicHomeContent } from '@/server/public-site-data';
 
 export const metadata: Metadata = {
   title: "Agnostic System",
@@ -32,15 +33,18 @@ const candal = Candal({ subsets: ["latin"], weight: "400", variable: "--font-can
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const isPublicSite = (await headers()).get('x-agnostic-public-site') === '1';
   const storageRoot = getProjectStorageRoot();
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const vaultData = await getVaultData([
-    SYSTEM_NS.ROUTES,
-    SYSTEM_NS.SCHEMAS,
-    SYSTEM_NS.CONFIG,
-    SYSTEM_NS.TOKENS,
-    "configuracion_comercial",
-  ]);
+  const session = isPublicSite ? null : await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const vaultData = isPublicSite
+    ? { configuracion_comercial: (await getPublicHomeContent()).commercial_config }
+    : await getVaultData([
+      SYSTEM_NS.ROUTES,
+      SYSTEM_NS.SCHEMAS,
+      SYSTEM_NS.CONFIG,
+      SYSTEM_NS.TOKENS,
+      "configuracion_comercial",
+    ]);
 
   let tokenStyles = "";
   try {
@@ -85,11 +89,13 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <AppProvider initialData={vaultData}>
-          <AuthProvider initialUser={session.user ?? null}>
-            {children}
-            <AdminTools />
-            <Toaster position="bottom-left" expand={false} richColors />
-          </AuthProvider>
+          {isPublicSite ? children : (
+            <AuthProvider initialUser={session?.user ?? null}>
+              {children}
+              <AdminTools />
+              <Toaster position="bottom-left" expand={false} richColors />
+            </AuthProvider>
+          )}
         </AppProvider>
       </body>
     </html>

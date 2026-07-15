@@ -1,0 +1,90 @@
+[
+  {
+    "id": "c6feb511-c373-4091-a3a5-3598fbcb6b4f",
+    "context": "propuestas_publicas",
+    "data": {
+      "proyecto_id": "b3c11619-9c6a-4550-8a1e-24ab768aed62",
+      "public_slug": "cocina-integral-7e3f9ad1c4b8e0f2",
+      "estado": "publicada",
+      "emitida_en": "2026-07-15",
+      "snapshot_json": {
+        "title": "Propuesta Virtual Demo",
+        "issued_at": "15 de julio de 2026",
+        "spaces": [
+          {
+            "id": "cocina-integral",
+            "name": "Cocina Integral",
+            "description": "Cocina integral lineal con torre de almacenamiento y zona de preparaci?n.",
+            "image_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=85",
+            "variants": [
+              {
+                "name": "Puertas abatibles",
+                "items": [
+                  {
+                    "name": "Estructura modular de mueble inferior",
+                    "quantity": 4.2,
+                    "unit": "ml"
+                  }
+                ]
+              },
+              {
+                "name": "Puertas corredizas espejo",
+                "selected": true,
+                "items": [
+                  {
+                    "name": "Estructura modular de mueble inferior",
+                    "quantity": 4.2,
+                    "unit": "ml",
+                    "image_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=640&q=80"
+                  },
+                  {
+                    "name": "Manija en aluminio",
+                    "quantity": 6,
+                    "unit": "und"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "closet-vestier",
+            "name": "Cl?set Vestier",
+            "description": "Cl?set de piso a techo con m?dulos interiores para dos usuarios.",
+            "image_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1400&q=85",
+            "variants": [
+              {
+                "name": "Puertas abatibles",
+                "items": [
+                  {
+                    "name": "Closet modular",
+                    "quantity": 8.5,
+                    "unit": "m?",
+                    "image_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=640&q=80"
+                  }
+                ]
+              },
+              {
+                "name": "Puertas corredizas espejo",
+                "selected": true,
+                "items": [
+                  {
+                    "name": "Closet modular",
+                    "quantity": 8.5,
+                    "unit": "m?"
+                  },
+                  {
+                    "name": "Bisagras cierre lento",
+                    "quantity": 8,
+                    "unit": "juegos",
+                    "image_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=640&q=80"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "updated_at": "2026-07-15T21:42:40.079Z"
+  }
+]

@@ -2,15 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useAppState } from '@/context/AppContext';
 import { getCommercialValue } from '@/lib/veta/config';
 import { Instagram, MapPin, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
 import { VetaEmbudoModal } from './VetaEmbudoModal';
+import type { PublicCommercialRecord } from '@/lib/veta/public-content';
 
-export default function VetaFooter() {
-  const { data } = useAppState();
+export default function VetaFooter({ configRecords = [] }: { configRecords?: PublicCommercialRecord[] }) {
   const [embudoOpen, setEmbudoOpen] = useState(false);
-  const configRecords = data['configuracion_comercial'] || [];
 
   const logoPositive = getCommercialValue(configRecords, 'logo_positivo_url', '');
   const brandLabel = getCommercialValue(configRecords, 'brand_label_alternative', 'VETA DORADA');
@@ -157,7 +155,7 @@ export default function VetaFooter() {
         </div>
       </footer>
 
-      <VetaEmbudoModal open={embudoOpen} onOpenChange={setEmbudoOpen} />
+      <VetaEmbudoModal configRecords={configRecords} open={embudoOpen} onOpenChange={setEmbudoOpen} />
     </>
   );
 }

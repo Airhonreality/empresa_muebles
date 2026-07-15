@@ -240,7 +240,7 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
         ) : (
           <div className="flex-1 flex items-center gap-2">
             <h3 onClick={() => setEditName(true)}
-              className="text-base font-semibold text-stone-800 cursor-text hover:text-amber-700 transition-colors select-none">
+              className="veta-heading text-base font-semibold text-stone-800 cursor-text hover:text-amber-700 transition-colors select-none">
               {nombre}
             </h3>
             {vd.visible_pdf === false && (
@@ -293,7 +293,8 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
       </div>
 
       {/* Tabs */}
-      <div className="px-5 pt-1">
+      <div className="px-5 pt-3">
+        <p className="veta-quote-section-label mb-1.5">Variantes cotizadas de este espacio</p>
         <EspacioTabs
           variants={variants}
           activeId={activeVarIdResolved}
@@ -330,6 +331,7 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
               <th className="pb-2 text-center text-[9px] font-bold uppercase tracking-widest text-stone-300 w-14">Cant</th>
               <th className="pb-2 text-right text-[9px] font-bold uppercase tracking-widest text-stone-300 w-28">P. Unit</th>
               <th className="pb-2 pr-3 text-right text-[9px] font-bold uppercase tracking-widest text-stone-300 w-28">Total</th>
+              <th className="pb-2 text-center text-[9px] font-bold uppercase tracking-widest text-stone-300 w-14">Vista</th>
               <th className="w-7" />
             </tr>
           </thead>

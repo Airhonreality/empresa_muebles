@@ -9,7 +9,7 @@ import VetaFooter from './VetaFooter';
 import VetaTestimonials from './VetaTestimonials';
 import { VetaEmbudoModal } from './VetaEmbudoModal';
 import { useGclidCapture } from '@/lib/veta/useGclidCapture';
-import { useAppState } from '@/context/AppContext';
+import type { PublicHomeContent } from '@/lib/veta/public-content';
 import {
   buildSpaceCatalog,
   homeHeroNarrative,
@@ -30,13 +30,23 @@ const validacionTecnica = [
   },
 ] as const;
 
-export default function VetaHome({ block = {}, records, api }: Partial<BlockProps>) {
+export default function VetaHome({ publicContent }: { publicContent: PublicHomeContent }) {
   useGclidCapture();
   const [embudoOpen, setEmbudoOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SpaceCategoryId>('todos');
-  const { data } = useAppState();
   const heroNarrative = homeHeroNarrative();
-  const spaceCatalog = useMemo(() => buildSpaceCatalog(data['espacio_variantes']), [data]);
+  const spaceCatalog = useMemo(
+    () => buildSpaceCatalog(publicContent.spaces.map((space) => ({
+      data: {
+        nombre_espacio: space.nombre_espacio,
+        categoria_espacio: space.categoria_espacio,
+        descripcion: space.descripcion,
+        colores: space.materiales.join(','),
+        imagenes: space.imagen_url,
+      },
+    }))),
+    [publicContent.spaces]
+  );
 
   const filteredSpaces = useMemo(() => {
     if (activeCategory === 'todos') return spaceCatalog;
@@ -68,7 +78,7 @@ export default function VetaHome({ block = {}, records, api }: Partial<BlockProp
 
   return (
     <div className="veta-font-body min-h-screen bg-[hsl(var(--veta-bg-warm-paper))] text-[hsl(var(--veta-text-carbon))] selection:bg-[hsl(var(--veta-gold-muted))]/30 selection:text-[hsl(var(--veta-text-carbon))]">
-      <VetaHeader />
+      <VetaHeader configRecords={publicContent.commercial_config} />
 
       {/* Hero + HUD — primer fold full-bleed */}
       <section className="relative isolate overflow-hidden bg-black">
@@ -301,7 +311,7 @@ export default function VetaHome({ block = {}, records, api }: Partial<BlockProp
         </div>
       </section>
 
-      <VetaTestimonials />
+      <VetaTestimonials testimonios={publicContent.testimonials} />
 
       {/* CTA final — fondo ambiental para no dejar la zona en blanco plano */}
       <section className="veta-section relative overflow-hidden px-4 sm:px-6">
@@ -335,8 +345,8 @@ export default function VetaHome({ block = {}, records, api }: Partial<BlockProp
         </div>
       </section>
 
-      <VetaFooter />
-      <VetaEmbudoModal open={embudoOpen} onOpenChange={setEmbudoOpen} />
+      <VetaFooter configRecords={publicContent.commercial_config} />
+      <VetaEmbudoModal configRecords={publicContent.commercial_config} open={embudoOpen} onOpenChange={setEmbudoOpen} />
     </div>
   );
 }

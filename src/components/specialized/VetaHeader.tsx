@@ -4,17 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Calendar, Compass, Layers, Menu, X } from 'lucide-react';
-import { useAppState } from '@/context/AppContext';
 import { getCommercialValue } from '@/lib/veta/config';
 import { VetaEmbudoModal } from './VetaEmbudoModal';
+import type { PublicCommercialRecord } from '@/lib/veta/public-content';
 
-export default function VetaHeader() {
+export default function VetaHeader({ configRecords = [] }: { configRecords?: PublicCommercialRecord[] }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [embudoOpen, setEmbudoOpen] = useState(false);
-  const { data } = useAppState();
-
-  const configRecords = data['configuracion_comercial'] || [];
   const logoPositive = getCommercialValue(configRecords, 'logo_positivo_url', '');
   const brandLabel = getCommercialValue(configRecords, 'brand_label_alternative', 'VETA DORADA');
 
@@ -130,7 +127,7 @@ export default function VetaHeader() {
         )}
       </header>
 
-      <VetaEmbudoModal open={embudoOpen} onOpenChange={setEmbudoOpen} />
+      <VetaEmbudoModal configRecords={configRecords} open={embudoOpen} onOpenChange={setEmbudoOpen} />
     </>
   );
 }

@@ -150,5 +150,115 @@
       "orden": 3
     },
     "updated_at": "2026-07-06T04:10:25.097Z"
+  },
+  {
+    "id": "dd706ba0-4138-40c2-8396-1a8f0f614020",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "a4e6b00a-ab55-4f3a-96f4-10e968636670",
+      "imagen_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=85",
+      "descripcion": "Vista general de cocina integral",
+      "orden": 1
+    },
+    "updated_at": "2026-07-15T21:06:50.806Z"
+  },
+  {
+    "id": "094acdb7-e8fa-46cd-9f16-ca35e871329d",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "a4e6b00a-ab55-4f3a-96f4-10e968636670",
+      "imagen_url": "https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format&fit=crop&w=1400&q=85",
+      "descripcion": "Detalle de almacenamiento",
+      "orden": 2
+    },
+    "updated_at": "2026-07-15T21:06:50.820Z"
+  },
+  {
+    "id": "ed48482f-c2e1-4f94-a68a-542a3b15e124",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "08f989d0-6bba-496f-b412-0e0e8f48c1c4",
+      "imagen_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1400&q=85",
+      "descripcion": "Vista general de closet vestier",
+      "orden": 1
+    },
+    "updated_at": "2026-07-15T21:06:50.832Z"
+  },
+  {
+    "id": "f9f01cb5-8d8f-4053-867c-8f04ee257d90",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "08f989d0-6bba-496f-b412-0e0e8f48c1c4",
+      "imagen_url": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1400&q=85",
+      "descripcion": "Detalle interior de closet",
+      "orden": 2
+    },
+    "updated_at": "2026-07-15T21:06:50.843Z"
+  },
+  {
+    "id": "3e1e63c1-541d-48ad-bb8f-a615856ee599",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "4b9c8c48-f669-4be9-aa1c-0f18f7a791b3",
+      "imagen_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format%26fit=crop%26w=1400%26q=85",
+      "descripcion": "Vista general cocina abatible",
+      "orden": 1
+    },
+    "updated_at": "2026-07-15T22:49:52.823Z"
+  },
+  {
+    "id": "e98d7801-253e-4d97-b622-a3e016caeb6b",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "4b9c8c48-f669-4be9-aa1c-0f18f7a791b3",
+      "imagen_url": "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?auto=format%26fit=crop%26w=1400%26q=85",
+      "descripcion": "Detalle frentes abatibles",
+      "orden": 2
+    },
+    "updated_at": "2026-07-15T22:49:52.841Z"
+  },
+  {
+    "id": "1f22d718-51d1-4695-8a6b-1a92c18bbc2d",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "a4e6b00a-ab55-4f3a-96f4-10e968636670",
+      "imagen_url": "https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format%26fit=crop%26w=1400%26q=85",
+      "descripcion": "Detalle almacenamiento corredizo",
+      "orden": 3
+    },
+    "updated_at": "2026-07-15T22:49:52.858Z"
+  },
+  {
+    "id": "d20fb651-0103-4773-9740-53dc237c49db",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "11311a1b-b663-4cab-a23c-34b5289e926f",
+      "imagen_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format%26fit=crop%26w=1400%26q=85",
+      "descripcion": "Vista vestier abatible",
+      "orden": 1
+    },
+    "updated_at": "2026-07-15T22:49:52.874Z"
+  },
+  {
+    "id": "32a3b43e-1e42-4277-abc6-761d0cab9a76",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "11311a1b-b663-4cab-a23c-34b5289e926f",
+      "imagen_url": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format%26fit=crop%26w=1400%26q=85",
+      "descripcion": "Detalle organizadores interiores",
+      "orden": 2
+    },
+    "updated_at": "2026-07-15T22:49:52.891Z"
+  },
+  {
+    "id": "7c27d999-785d-4e3c-9ccd-fdaa355952a3",
+    "context": "imagenes_espacio",
+    "data": {
+      "espacio_variante_id": "08f989d0-6bba-496f-b412-0e0e8f48c1c4",
+      "imagen_url": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format%26fit=crop%26w=1400%26q=85",
+      "descripcion": "Detalle interior vestier corredizo",
+      "orden": 3
+    },
+    "updated_at": "2026-07-15T22:49:52.916Z"
   }
 ]

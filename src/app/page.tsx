@@ -1,15 +1,15 @@
-import { AgnosticRoutePage } from './agnostic-route-page';
-import { getVaultData } from '@/core/server/vault';
+import VetaHome from '@/components/specialized/VetaHome';
 import { buildLocalBusinessSchema, buildWebsiteSchema, readCommercialConfig, serializeJsonLd } from '@/lib/veta/seo/schemaGenerator';
+import { getPublicHomeContent } from '@/server/public-site-data';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const homeData = await getVaultData(['configuracion_comercial', 'testimonios']);
-  const commercialConfig = readCommercialConfig(homeData['configuracion_comercial'] as any);
+  const publicContent = await getPublicHomeContent();
+  const commercialConfig = readCommercialConfig(publicContent.commercial_config);
   const homeSchemas = [
     buildWebsiteSchema(),
-    buildLocalBusinessSchema(commercialConfig, (homeData['testimonios'] as any[]) || []),
+    buildLocalBusinessSchema(commercialConfig, publicContent.testimonials),
   ];
 
   return (
@@ -19,7 +19,7 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(homeSchemas) }}
       />
-      <AgnosticRoutePage slug={[]} />
+      <VetaHome publicContent={publicContent} />
     </>
   );
 }

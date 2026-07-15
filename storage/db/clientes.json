@@ -141,5 +141,17 @@
       "email": "demo.dos@example.test"
     },
     "updated_at": "2026-07-06T04:07:53.773Z"
+  },
+  {
+    "id": "74232dbd-9d89-4257-a596-2bec4743036c",
+    "context": "clientes",
+    "data": {
+      "nombre": "Cliente Demo Propuesta",
+      "documento": "DEMO-20260715",
+      "telefono": 3000000000,
+      "email": "demo.propuesta@local.test",
+      "domicilio": "Bogota D.C."
+    },
+    "updated_at": "2026-07-15T21:05:06.656Z"
   }
 ]

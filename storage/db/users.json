@@ -4,12 +4,14 @@
     "context": "users",
     "data": {
       "email": "hgarciagonzalezsas@gmail.com",
-      "password": "Colombia2023*",
       "type": [
         "admin"
-      ]
+      ],
+      "password_hash": "scrypt$16384$8$1$BouNuxPM2jN_lxJ4vvxiJw$day_VsAEvYA0D7L6wCwyd7u8vs5s4ifaYw6__uXCNmPPnhJIK4UHL69XMqc09_ZXLBOWR0hFwuwGBVdsgLGOhg",
+      "password_algo": "scrypt",
+      "password_updated_at": "2026-07-15T21:54:10.549Z"
     },
-    "updated_at": "2026-06-21T18:01:16.547Z"
+    "updated_at": "2026-07-15T21:54:10.551Z"
   },
   {
     "id": "f2456629-dca9-4d69-b92f-65c2c17dd36c",

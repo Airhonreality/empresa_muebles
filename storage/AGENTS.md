@@ -16,6 +16,26 @@ Business domain: none in the seed. Real domain meaning must be added by each for
 - Prefer explicit UTF-8 read and write calls in fork scripts.
 - Validate encoding before propagating shared registry files across forks.
 
+## Contrato público de Empresa Muebles
+
+Las rutas públicas no pueden descargar ni depender de `GET /api/vault`. Un
+visitante recibe únicamente una lectura pública proyectada por el servidor.
+
+- Tienda, detalle, colecciones y portafolio se construyen sobre `publicReadModels`:
+  campos permitidos, filtros fijos y límites. Nunca se ocultan costos, proveedores
+  o inventario después de enviar el registro completo al navegador.
+- El inventario público se expresa como estado simple (`disponible`, `bajo_pedido`,
+  `agotado`), nunca como cantidad exacta.
+- Cada producto público tiene `slug_publico`, distinto de IDs internos.
+- Portafolio publica galería y zona amplia; no iniciales, proyecto_id, dirección ni
+  relaciones de cotización.
+- Una propuesta individual usa `public_links` y un snapshot/proyección de campos
+  aprobados. La URL para clientes es `/propuesta/<nombre>-<código>`, creada con
+  `proposal_slug_base`; no mostrar ni almacenar en UI el token interno.
+
+Antes de abrir una ruta o propuesta, revisar campo por campo que no incluya costos,
+descuentos, dirección, datos de cliente, IDs internos, proveedores o pipeline.
+
 # Fork Documentation
     - storage\fork_doc\MANIFEST GOAL.MD - Contiene la semilla del proyecto que se debe seguir cómo goal base. 
     - Modelo de diseño de detalle de modulos de fork: (pendiente por incluir)
