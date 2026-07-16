@@ -695,7 +695,7 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
       </CollapseStrip>
 
       {/* Estimado de Obra Civil */}
-      {totalOC > 0 && (
+      {(
         <CollapseStrip open={ocOpen} onToggle={() => setOcOpen(o => !o)}
           label="Estimado de Obra Civil" icon={({ size }: { size: number }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -705,6 +705,26 @@ export function EspacioCard({ nombre, variants, items, catalogo, tarifas,
           summary={<span className="ml-2 text-blue-600 font-semibold tabular-nums">{COP(totalOC)}</span>}
         >
           <div className="px-5 pb-5">
+            <div className="mb-4 flex flex-wrap gap-2">
+              {([['mano_obra', 'Mano de obra'], ['logistica', 'Logística'], ['materiales', 'Materiales']] as const).map(([category, label]) => (
+                <button key={category} type="button" onClick={() => onAddItemObraCivil?.(activeVarIdResolved, category)} className="min-h-9 rounded-full border border-blue-200 bg-white px-3 text-xs text-blue-700 hover:bg-blue-50">
+                  <Plus size={12} className="mr-1 inline" /> {label}
+                </button>
+              ))}
+            </div>
+            {activeItemsOC.length > 0 && <div className="mb-5 space-y-2 rounded-xl border border-blue-100 bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-700">Editar estimados</p>
+              {activeItemsOC.map(item => {
+                const data = item.data as any as ItemsObraCivil
+                const lineTotal = Number(data.total_linea) || (Number(data.cantidad) || 0) * (Number(data.precio_unitario) || 0)
+                return <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_4rem_5rem_6rem] gap-2 border-t border-stone-100 pt-2 first:border-0 first:pt-0">
+                  <input value={data.descripcion_manual || ''} onChange={event => onUpdateItemObraCivil?.(item.id, { descripcion_manual: event.target.value })} placeholder="Descripción" className="min-w-0 rounded border border-stone-200 px-2 py-1.5 text-xs" />
+                  <input type="number" min="0" value={data.cantidad ?? 0} onChange={event => { const quantity = Number(event.target.value) || 0; onUpdateItemObraCivil?.(item.id, { cantidad: quantity, total_linea: quantity * (Number(data.precio_unitario) || 0) }) }} className="rounded border border-stone-200 px-2 py-1.5 text-xs" aria-label="Cantidad" />
+                  <input type="number" min="0" value={data.precio_unitario ?? 0} onChange={event => { const unitPrice = Number(event.target.value) || 0; onUpdateItemObraCivil?.(item.id, { precio_unitario: unitPrice, total_linea: (Number(data.cantidad) || 0) * unitPrice }) }} className="rounded border border-stone-200 px-2 py-1.5 text-xs" aria-label="Precio unitario" />
+                  <output className="self-center text-right text-xs font-semibold tabular-nums text-blue-700">{COP(lineTotal)}</output>
+                </div>
+              })}
+            </div>}
             {/* Warning badge */}
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
               Referencial — no incluido en el valor del contrato de carpintería

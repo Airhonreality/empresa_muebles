@@ -793,6 +793,25 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
       name: clienteData.nombre,
       location: [headerLocal.barrio, headerLocal.direccion_obra].filter(Boolean).join(' · ') || undefined,
     } : undefined,
+    financial: {
+      carpentry: {
+        materials: gt.mat,
+        labor: gt.mo,
+        operating_costs: gt.costos,
+        contingencies: gt.impr,
+        discount: gt.desc,
+        adjustment: gt.ajuste,
+        vat: gt.iva,
+        total: gt.aplicaIva ? gt.totalConIva : gt.total,
+      },
+      civil_estimate: {
+        labor: totalObraCivil.mano_obra,
+        logistics: totalObraCivil.logistica,
+        materials: totalObraCivil.materiales,
+        total: totalObraCivil.total,
+      },
+      remodel_total: (gt.aplicaIva ? gt.totalConIva : gt.total) + totalObraCivil.total,
+    },
     spaces: espacios.map(({ nombre, vars }) => ({
       id: nombre,
       name: nombre,
@@ -808,30 +827,51 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
             return variantData.colores.split(',').map(name => ({ name: name.trim() })).filter(color => color.name)
           }
         })()
-        const images = spaceImages
+        const linkedImages = spaceImages
           .filter(entry => (entry.data as unknown as ImagenesEspacio).espacio_variante_id === variant.id)
           .sort((a, b) => Number((a.data as unknown as ImagenesEspacio).orden || 0) - Number((b.data as unknown as ImagenesEspacio).orden || 0))
           .map(entry => {
             const image = entry.data as unknown as ImagenesEspacio
             return { url: image.imagen_url, description: image.descripcion }
           })
+        const images = linkedImages.length > 0 ? linkedImages : (() => {
+          const legacyImages = variantData.imagenes || ''
+          try {
+            const parsed = JSON.parse(legacyImages)
+            return Array.isArray(parsed) ? parsed.filter((url): url is string => typeof url === 'string' && Boolean(url.trim())).map(url => ({ url, description: '' })) : []
+          } catch {
+            return legacyImages.split(',').map(url => url.trim()).filter(Boolean).map(url => ({ url, description: '' }))
+          }
+        })()
+        const variantItems = items.filter(item => (item.data as unknown as ItemsVariante).variante_id === variant.id && !(item.data as unknown as ItemsVariante).anulado)
+        const itemProjection = variantItems.map(item => {
+          const itemData = item.data as unknown as ItemsVariante
+          const product = catalogo.find(entry => entry.id === itemData.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
+          const unitPrice = Number(itemData.precio_unitario) || 0
+          const lineTotal = Number(itemData.total_linea) || (Number(itemData.cantidad) || 0) * unitPrice
+          return { name: product?.descripcion || 'Ítem incluido', quantity: Number(itemData.cantidad) || 0, unit: itemData.unidad_medida || product?.unidad_medida, unit_price: unitPrice, line_total: lineTotal, image_url: itemData.imagen_url || product?.imagen_url || product?.imagen }
+        })
+        const materialsTotal = itemProjection.reduce((sum, item) => sum + item.line_total, 0)
+        const laborTotal = (Number(variantData.jornadas_desarrollo_tecnico) || 0) * tarifas.dev + (Number(variantData.jornadas_ensamblaje_taller) || 0) * tarifas.assembly + (Number(variantData.jornadas_instalacion_obra) || 0) * tarifas.install
+        const civilEstimate = itemsObraCivil
+          .filter(item => (item.data as unknown as ItemsObraCivil).variante_id === variant.id)
+          .map(item => {
+            const data = item.data as unknown as ItemsObraCivil
+            const product = catalogo.find(entry => entry.id === data.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
+            const unitPrice = Number(data.precio_unitario) || 0
+            return { category: data.categoria, name: data.descripcion_manual || product?.descripcion || 'Ítem de obra civil', quantity: Number(data.cantidad) || 0, unit: data.unidad_medida || product?.unidad_medida, unit_price: unitPrice, line_total: Number(data.total_linea) || (Number(data.cantidad) || 0) * unitPrice, notes: data.notas }
+          })
         return {
           name: variantData.nombre_variante || 'Alternativa',
           selected: variant.id === (activeVarMap[nombre] || vars[0]?.id),
           colors,
           images,
-          items: items
-            .filter(item => (item.data as unknown as ItemsVariante).variante_id === variant.id && !(item.data as unknown as ItemsVariante).anulado)
-            .map(item => {
-              const itemData = item.data as unknown as ItemsVariante
-              const product = catalogo.find(entry => entry.id === itemData.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
-              return {
-                name: product?.descripcion || 'Ítem incluido',
-                quantity: Number(itemData.cantidad) || 0,
-                unit: itemData.unidad_medida || product?.unidad_medida,
-                image_url: itemData.imagen_url || product?.imagen_url || product?.imagen,
-              }
-            }),
+          notes: (variantData.notas_markdown || '').split('\n').map(note => note.trim()).filter(Boolean),
+          items: itemProjection,
+          civil_estimate: civilEstimate,
+          materials_total: materialsTotal,
+          labor_total: laborTotal,
+          total: materialsTotal + laborTotal,
         }
       }),
     })),
@@ -1293,6 +1333,9 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
                   <a href={`/propuesta/${(activePublicProposal?.data as PublicProposalData).public_slug}`} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 text-xs text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-xl hover:bg-amber-50 transition-colors">
                     <ExternalLink size={12} /> Vista pública
                   </a>
+                  <button type="button" onClick={publishPublicProposal} className="hidden sm:inline-flex items-center gap-1 text-xs text-stone-500 hover:text-amber-700 px-2 py-1.5 rounded-xl hover:bg-amber-50 transition-colors" title="Actualizar snapshot público">
+                    <RotateCcw size={12} /> Actualizar
+                  </button>
                   <button type="button" onClick={revokePublicProposal} className="hidden sm:inline-flex items-center gap-1 text-xs text-stone-400 hover:text-red-600 px-2 py-1.5 rounded-xl hover:bg-red-50 transition-colors" title="Revocar vista pública">
                     <EyeOff size={12} />
                   </button>
