@@ -7,84 +7,8 @@
       "public_slug": "cocina-integral-7e3f9ad1c4b8e0f2",
       "estado": "publicada",
       "emitida_en": "2026-07-15",
-      "snapshot_json": {
-        "title": "Propuesta Virtual Demo",
-        "issued_at": "15 de julio de 2026",
-        "spaces": [
-          {
-            "id": "cocina-integral",
-            "name": "Cocina Integral",
-            "description": "Cocina integral lineal con torre de almacenamiento y zona de preparaci?n.",
-            "image_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=85",
-            "variants": [
-              {
-                "name": "Puertas abatibles",
-                "items": [
-                  {
-                    "name": "Estructura modular de mueble inferior",
-                    "quantity": 4.2,
-                    "unit": "ml"
-                  }
-                ]
-              },
-              {
-                "name": "Puertas corredizas espejo",
-                "selected": true,
-                "items": [
-                  {
-                    "name": "Estructura modular de mueble inferior",
-                    "quantity": 4.2,
-                    "unit": "ml",
-                    "image_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=640&q=80"
-                  },
-                  {
-                    "name": "Manija en aluminio",
-                    "quantity": 6,
-                    "unit": "und"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "id": "closet-vestier",
-            "name": "Cl?set Vestier",
-            "description": "Cl?set de piso a techo con m?dulos interiores para dos usuarios.",
-            "image_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1400&q=85",
-            "variants": [
-              {
-                "name": "Puertas abatibles",
-                "items": [
-                  {
-                    "name": "Closet modular",
-                    "quantity": 8.5,
-                    "unit": "m?",
-                    "image_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=640&q=80"
-                  }
-                ]
-              },
-              {
-                "name": "Puertas corredizas espejo",
-                "selected": true,
-                "items": [
-                  {
-                    "name": "Closet modular",
-                    "quantity": 8.5,
-                    "unit": "m?"
-                  },
-                  {
-                    "name": "Bisagras cierre lento",
-                    "quantity": 8,
-                    "unit": "juegos",
-                    "image_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=640&q=80"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
+      "snapshot_json": "{\"title\":\"Propuesta Virtual Demo\",\"issued_at\":\"15 de julio de 2026\",\"client\":{\"name\":\"Cliente Demo Propuesta\",\"location\":\"Chapinero ? Bogota D.C.\"},\"spaces\":[{\"id\":\"cocina-integral\",\"name\":\"Cocina Integral\",\"description\":\"Cocina integral lineal con torre de almacenamiento y zona de preparacion.\",\"variants\":[{\"name\":\"Puertas abatibles\",\"colors\":[{\"name\":\"Melamina Blanco Nube\"},{\"name\":\"Perfil aluminio negro mate\"}],\"images\":[{\"url\":\"https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format%26fit=crop%26w=1400%26q=85\",\"description\":\"Vista general cocina abatible\"},{\"url\":\"https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?auto=format%26fit=crop%26w=1400%26q=85\",\"description\":\"Detalle frentes abatibles\"}],\"items\":[{\"name\":\"Estructura modular de mueble inferior\",\"quantity\":4.2,\"unit\":\"ml\"}]},{\"name\":\"Puertas corredizas espejo\",\"selected\":true,\"colors\":[{\"name\":\"Melamina Blanco Nube\"},{\"name\":\"Espejo biselado\"},{\"name\":\"Perfil aluminio negro mate\"}],\"images\":[{\"url\":\"https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format%26fit=crop%26w=1400%26q=85\",\"description\":\"Vista general cocina integral\"},{\"url\":\"https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format%26fit=crop%26w=1400%26q=85\",\"description\":\"Detalle almacenamiento corredizo\"}],\"items\":[{\"name\":\"Estructura modular de mueble inferior\",\"quantity\":4.2,\"unit\":\"ml\"},{\"name\":\"Manija en aluminio\",\"quantity\":6,\"unit\":\"und\"}]}]},{\"id\":\"closet-vestier\",\"name\":\"Closet Vestier\",\"description\":\"Closet de piso a techo con modulos interiores para dos usuarios.\",\"variants\":[{\"name\":\"Puertas abatibles\",\"colors\":[{\"name\":\"Melamina Roble Natural\"},{\"name\":\"Perfil champagne\"}],\"images\":[{\"url\":\"https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format%26fit=crop%26w=1400%26q=85\",\"description\":\"Vista vestier abatible\"},{\"url\":\"https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format%26fit=crop%26w=1400%26q=85\",\"description\":\"Detalle organizadores interiores\"}],\"items\":[{\"name\":\"Closet modular\",\"quantity\":8.5,\"unit\":\"m2\"}]},{\"name\":\"Puertas corredizas espejo\",\"selected\":true,\"colors\":[{\"name\":\"Melamina Roble Natural\"},{\"name\":\"Espejo biselado\"},{\"name\":\"Perfil aluminio negro mate\"}],\"images\":[{\"url\":\"https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format%26fit=crop%26w=1400%26q=85\",\"description\":\"Vista general closet vestier\"},{\"url\":\"https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format%26fit=crop%26w=1400%26q=85\",\"description\":\"Detalle interior vestier\"}],\"items\":[{\"name\":\"Closet modular\",\"quantity\":8.5,\"unit\":\"m2\"},{\"name\":\"Bisagras cierre lento\",\"quantity\":8,\"unit\":\"juegos\"}]}]}]}"
     },
-    "updated_at": "2026-07-15T21:42:40.079Z"
+    "updated_at": "2026-07-15T22:51:11.832Z"
   }
 ]

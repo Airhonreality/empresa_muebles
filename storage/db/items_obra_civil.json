@@ -88,5 +88,95 @@
       "notas": "Acabado limpio contra muro"
     },
     "updated_at": "2026-07-15T22:49:53.009Z"
+  },
+  {
+    "id": "485100c9-25ea-4526-a1d6-ea5ca6ffab5f",
+    "context": "items_obra_civil",
+    "data": {
+      "variante_id": "4b9c8c48-f669-4be9-aa1c-0f18f7a791b3",
+      "categoria": "mano_obra",
+      "catalogo_id": "23f849d8-6948-442e-af7f-48456d00deff",
+      "unidad_medida": "jornada",
+      "cantidad": 2,
+      "precio_unitario": 431250,
+      "total_linea": 862500,
+      "notas": "Fabricacion y ajuste de cocina abatible"
+    },
+    "updated_at": "2026-07-15T22:52:32.583Z"
+  },
+  {
+    "id": "ef2c7f49-7526-4ffa-ad4a-79d418fd9a1d",
+    "context": "items_obra_civil",
+    "data": {
+      "variante_id": "4b9c8c48-f669-4be9-aa1c-0f18f7a791b3",
+      "categoria": "logistica",
+      "descripcion_manual": "Transporte protegido y descargue en obra",
+      "unidad_medida": "servicio",
+      "cantidad": 1,
+      "precio_unitario": 280000,
+      "total_linea": 280000,
+      "notas": "Ruta y descargue coordinados"
+    },
+    "updated_at": "2026-07-15T22:52:32.601Z"
+  },
+  {
+    "id": "e61ea990-2e18-4060-b9a3-3150a147ec23",
+    "context": "items_obra_civil",
+    "data": {
+      "variante_id": "4b9c8c48-f669-4be9-aa1c-0f18f7a791b3",
+      "categoria": "materiales",
+      "descripcion_manual": "Anclajes y sellantes para montaje",
+      "unidad_medida": "kit",
+      "cantidad": 1,
+      "precio_unitario": 185000,
+      "total_linea": 185000,
+      "notas": "Consumibles de instalacion"
+    },
+    "updated_at": "2026-07-15T22:52:32.615Z"
+  },
+  {
+    "id": "c28233fe-bf7f-4c1c-9a1d-ef2142c0878b",
+    "context": "items_obra_civil",
+    "data": {
+      "variante_id": "11311a1b-b663-4cab-a23c-34b5289e926f",
+      "categoria": "mano_obra",
+      "catalogo_id": "23f849d8-6948-442e-af7f-48456d00deff",
+      "unidad_medida": "jornada",
+      "cantidad": 1,
+      "precio_unitario": 431250,
+      "total_linea": 431250,
+      "notas": "Montaje de vestier con puertas abatibles"
+    },
+    "updated_at": "2026-07-15T22:52:32.630Z"
+  },
+  {
+    "id": "a0416ce5-42a9-42fd-8cef-d0821fe7ca1f",
+    "context": "items_obra_civil",
+    "data": {
+      "variante_id": "11311a1b-b663-4cab-a23c-34b5289e926f",
+      "categoria": "logistica",
+      "descripcion_manual": "Proteccion de circulaciones y traslado interno",
+      "unidad_medida": "servicio",
+      "cantidad": 1,
+      "precio_unitario": 165000,
+      "total_linea": 165000,
+      "notas": "Ingreso validado con administracion"
+    },
+    "updated_at": "2026-07-15T22:52:32.642Z"
+  },
+  {
+    "id": "9e9283be-331a-4ef6-af9c-465c759ee750",
+    "context": "items_obra_civil",
+    "data": {
+      "variante_id": "11311a1b-b663-4cab-a23c-34b5289e926f",
+      "categoria": "materiales",
+      "descripcion_manual": "Remates de montaje y nivelacion",
+      "unidad_medida": "kit",
+      "cantidad": 1,
+      "precio_unitario": 95000,
+      "total_linea": 95000,
+      "notas": "Acabado contra muro"
+    },
+    "updated_at": "2026-07-15T22:52:32.657Z"
   }
 ]

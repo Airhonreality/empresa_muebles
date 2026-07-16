@@ -2,7 +2,7 @@
  * Root layout for the Agnostic Shell.
  */
 import type { Metadata } from "next";
-import { Candal, Capriola, Comfortaa, Outfit, Inter } from "next/font/google";
+import { Capriola, Comfortaa, Outfit, Inter, Manrope } from "next/font/google";
 import { cookies, headers } from "next/headers";
 import { getIronSession } from "iron-session";
 import "./globals.css";
@@ -28,7 +28,7 @@ const outfit = Outfit({ subsets: ["latin"], weight: ["500", "600", "700"], varia
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-inter", display: "swap" });
 const comfortaa = Comfortaa({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-comfortaa", display: "swap" });
 const capriola = Capriola({ subsets: ["latin"], weight: "400", variable: "--font-capriola", display: "swap" });
-const candal = Candal({ subsets: ["latin"], weight: "400", variable: "--font-candal", display: "swap" });
+const manrope = Manrope({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-manrope", display: "swap" });
 
 export default async function RootLayout({
   children,
@@ -73,7 +73,7 @@ export default async function RootLayout({
     <html
       lang="es"
       suppressHydrationWarning
-      className={[outfit.variable, inter.variable, comfortaa.variable, capriola.variable, candal.variable].join(" ")}
+      className={[outfit.variable, inter.variable, comfortaa.variable, capriola.variable, manrope.variable].join(" ")}
     >
       <head>
         {tokenStyles && (
