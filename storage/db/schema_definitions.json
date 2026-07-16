@@ -3207,7 +3207,6 @@
     "updated_at": "2026-07-06T07:23:18.146Z"
   },
   {
-  {
     "id": "c7d5e9f1-3b6a-4c2e-9f7d-8b4a5c3e2d1f",
     "context": "schema_definitions",
     "data": {
@@ -3517,5 +3516,4 @@
     "updated_at": "2026-07-07T03:53:56.345Z"
   }
 ]
-  }
-]
+
