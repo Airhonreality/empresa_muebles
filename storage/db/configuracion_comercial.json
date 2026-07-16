@@ -4,7 +4,7 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "whatsapp_number",
-      "valor": "+57 300 123 4567",
+      "valor": "+57 302 592 2101",
       "grupo": "Contacto",
       "etiqueta": "Número de WhatsApp Comercial"
     },
@@ -15,7 +15,7 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "whatsapp_link",
-      "valor": "https://wa.me/573001234567",
+      "valor": "https://wa.me/573025922101",
       "grupo": "Contacto",
       "etiqueta": "Enlace Directo de WhatsApp"
     },
@@ -48,7 +48,7 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "nit_legal",
-      "valor": "901421357",
+      "valor": "901421357-9",
       "grupo": "Legal",
       "etiqueta": "NIT de Facturación Legal"
     },
@@ -59,11 +59,33 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "nombre_empresa",
-      "valor": "Hermanos García González SAS",
+      "valor": "HG González S.A.S.",
       "grupo": "Legal",
       "etiqueta": "Razón Social de la Empresa"
     },
     "updated_at": "2026-06-18T05:00:00.000Z"
+  },
+  {
+    "id": "b0b2a8b4-9b9a-4df1-8f70-2b5c5b8f0f21",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "correo_electronico",
+      "valor": "hgaciasas@gmail.com",
+      "grupo": "Legal",
+      "etiqueta": "Correo Electrónico de Contacto"
+    },
+    "updated_at": "2026-07-15T00:00:00.000Z"
+  },
+  {
+    "id": "2a4a7f51-1fb0-4c7f-9160-4f47fd47c8f0",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "registro_mercantil",
+      "valor": "03297916",
+      "grupo": "Legal",
+      "etiqueta": "Registro Mercantil"
+    },
+    "updated_at": "2026-07-15T00:00:00.000Z"
   },
   {
     "id": "veta-config-logo-negativo",
@@ -92,7 +114,7 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "direccion_taller",
-      "valor": "Carrera 72A # 71A-57, Bogotá D.C., Colombia",
+      "valor": "Cra 72a 71a 57 - Bogotá",
       "grupo": "Contacto",
       "etiqueta": "Dirección del Taller"
     },
