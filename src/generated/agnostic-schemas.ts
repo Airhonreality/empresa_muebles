@@ -519,7 +519,7 @@ export interface ItemsObraCivil {
 
 export type ItemsObraCivilRecord = AgnosticDataItem<ItemsObraCivil>
 
-// ─── Schema: "propuestas_publicas"
+// ─── Schema: "propuestas_publicas" 
 export interface PropuestasPublicas {
   proyecto_id?: string  // Proyecto
   public_slug?: string  // Slug_publico
