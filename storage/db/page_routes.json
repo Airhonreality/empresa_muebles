@@ -434,5 +434,23 @@
       "order": 0
     },
     "updated_at": "2026-07-07T01:27:51.187Z"
+  },
+  {
+    "id": "b7d8e947-f9d4-44a7-a31b-1bc8c55557d4",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/pedidos",
+      "title": "Pedidos",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "78f1011e-cd50-4784-a72c-64c539943025",
+          "type": "collection",
+          "blocks": []
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-07T04:02:48.546Z"
   }
 ]

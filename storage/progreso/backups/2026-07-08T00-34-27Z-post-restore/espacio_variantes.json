@@ -1,0 +1,783 @@
+{
+  "success": true,
+  "namespace": "espacio_variantes",
+  "records": [
+    {
+      "id": "fcf702c0-3ea1-430b-8f44-cb9ee4cf686b",
+      "context": "espacio_variantes",
+      "data": {
+        "orden": 1,
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782256089753-completa.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782256093863-Gemini_Generated_Image_lbyc1ilbyc1ilbyc.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782256095687-MUEBLE INFERIOR.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782426693185-torre escobera.png\"]",
+        "descripcion": "Mueble inferior: fabricaci??n y montage del mueble inferior. Consta de 12 cajones,  y una puerta. Se cotiza una barra escualizable en madecor y la puerta del lavadero. Los cajones llevan correderas ocultas cierre lento. Incluye montaje del mes??n. Se especifica que elementos incluyen. En todo caso se revisar?? y constatar?? la cotizaci??n para revisar estos elementos. Fabricaci??n y montaje de una puerta corrediza,",
+        "proyecto_id": "da6b8131-1800-43c0-9dd3-7b1a0c896669",
+        "cotizacion_id": "da6b8131-1800-43c0-9dd3-7b1a0c896669",
+        "nombre_espacio": "Mueble inferior- Mueble superior- torre de hornos- Puerta corrediza- Torre escobera",
+        "nombre_variante": "Cocina completa",
+        "jornadas_instalacion_obra": 5.6,
+        "jornadas_ensamblaje_taller": 4,
+        "jornadas_desarrollo_tecnico": 4
+      },
+      "created_at": "2026-06-22T15:28:40.426Z",
+      "updated_at": "2026-07-01T02:39:46.207Z"
+    },
+    {
+      "id": "4e56a245-3ab6-4606-bc70-6ff1c9a4beb5",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782166019230-im.png\"]",
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES. TRES CAJONES, UNO CON DIVISIONES INTERNAS, TRES ZAPATEROS\n\n\n",
+        "proyecto_id": "ead24f73-2633-43ea-9bc8-12375103c4da",
+        "cotizacion_id": "ead24f73-2633-43ea-9bc8-12375103c4da",
+        "nombre_espacio": "Nuevo Espacio",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 3,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T17:59:42.383Z",
+      "updated_at": "2026-07-06T23:18:51.842Z"
+    },
+    {
+      "id": "39f96d3c-5672-410f-9723-46ea99f6d3de",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782160680335-Render en L.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782160682322-sin tapas.png\"]",
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES. TRES CAJONES, UNO CON DIVISIONES INTERNAS, TRES ZAPATEROS\n\n\n",
+        "proyecto_id": "62bfe5fe-a947-45a6-be5d-27255c1a3ba4",
+        "cotizacion_id": "62bfe5fe-a947-45a6-be5d-27255c1a3ba4",
+        "nombre_espacio": "Nuevo Espacio",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 3,
+        "jornadas_ensamblaje_taller": 4.5,
+        "jornadas_desarrollo_tecnico": 0.5
+      },
+      "created_at": "2026-06-22T19:52:25.470Z",
+      "updated_at": "2026-07-06T23:18:52.275Z"
+    },
+    {
+      "id": "afd742a3-3ddf-498a-b443-fdf21310fecd",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "descripcion": "",
+        "proyecto_id": "fc15c434-50be-4fe2-8339-b218e82fcb2a",
+        "cotizacion_id": "fc15c434-50be-4fe2-8339-b218e82fcb2a",
+        "nombre_espacio": "Closet Ni??o",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 1.15,
+        "jornadas_ensamblaje_taller": 3,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T21:21:42.825Z",
+      "updated_at": "2026-07-01T02:39:45.347Z"
+    },
+    {
+      "id": "a7e63370-7bad-4dc9-bda4-4db45a1ef997",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "descripcion": "",
+        "proyecto_id": "fc15c434-50be-4fe2-8339-b218e82fcb2a",
+        "cotizacion_id": "fc15c434-50be-4fe2-8339-b218e82fcb2a",
+        "nombre_espacio": "Walking Closet",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 3.9,
+        "jornadas_ensamblaje_taller": 3,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T21:30:09.231Z",
+      "updated_at": "2026-07-01T02:39:45.424Z"
+    },
+    {
+      "id": "595c4df1-5700-4c5e-a542-7a93d7fe0391",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "descripcion": "",
+        "proyecto_id": "fc15c434-50be-4fe2-8339-b218e82fcb2a",
+        "cotizacion_id": "fc15c434-50be-4fe2-8339-b218e82fcb2a",
+        "nombre_espacio": "Closet Ni??a",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 1.15,
+        "jornadas_ensamblaje_taller": 3,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T21:33:03.633Z",
+      "updated_at": "2026-07-01T02:39:45.502Z"
+    },
+    {
+      "id": "e723b563-71e2-4e41-b1dd-172d7cff7ceb",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "proyecto_id": "fc15c434-50be-4fe2-8339-b218e82fcb2a",
+        "cotizacion_id": "fc15c434-50be-4fe2-8339-b218e82fcb2a",
+        "nombre_espacio": "Cocina",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 1.5,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T21:35:26.847Z",
+      "updated_at": "2026-07-01T02:39:45.581Z"
+    },
+    {
+      "id": "26c2c78b-041f-4765-875c-6b184ef8c33f",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782170233751-r1.jpg\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782170235605-r2.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782170254263-Captura de pantalla 2026-06-22 173550.png\"]",
+        "descripcion": "Mueble zapatero, repisas, percheros, iluminaci??n LED c??lida",
+        "proyecto_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+        "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+        "nombre_espacio": "Recibidor",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 1,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T23:01:18.143Z",
+      "updated_at": "2026-07-01T02:39:45.973Z"
+    },
+    {
+      "id": "69ef21e2-2dc6-48ac-94c8-0892bb2dc1c3",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782170266051-Captura de pantalla 2026-06-22 180604.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782170987317-image.png\"]",
+        "descripcion": "Con tubo de estructura met??lica con pintura en electrost??tica. ",
+        "proyecto_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+        "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+        "nombre_espacio": "Camarote",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 4,
+        "jornadas_ensamblaje_taller": 1,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T23:03:22.977Z",
+      "updated_at": "2026-07-01T02:39:45.813Z"
+    },
+    {
+      "id": "378d54d3-81f7-4fb1-a829-408305574e49",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "descripcion": "Con tubo de estructura met??lica con pintura en electrost??tica. ",
+        "proyecto_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+        "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+        "nombre_espacio": "Camarote",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 2.5,
+        "jornadas_ensamblaje_taller": 1,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T23:11:25.240Z",
+      "updated_at": "2026-07-01T02:39:45.736Z"
+    },
+    {
+      "id": "a64af4be-e420-446f-be08-5d255a0e1be0",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782170313741-image.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782170777403-image.png\"]",
+        "descripcion": "Con tubo de estructura met??lica con pintura en electrost??tica. ",
+        "proyecto_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+        "cotizacion_id": "a4ed8312-8961-4587-93fb-503f74df28a8",
+        "nombre_espacio": "Escritorio",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 1,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T23:12:40.201Z",
+      "updated_at": "2026-07-01T02:39:45.891Z"
+    },
+    {
+      "id": "73f418ff-c854-4a33-97c2-4f03f6da8d23",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782171690519-RECIBIDOR 1.png\"]",
+        "proyecto_id": "2761b7ec-62f8-4758-8ad7-02ea53d36465",
+        "cotizacion_id": "2761b7ec-62f8-4758-8ad7-02ea53d36465",
+        "nombre_espacio": "Hall Entrada",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 1.5,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-22T23:20:52.231Z",
+      "updated_at": "2026-07-01T02:39:46.052Z"
+    },
+    {
+      "id": "31658efb-4715-42eb-93a5-807685e8db8c",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782180291365-cocina.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782253621045-closet 2.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782253624887-Gemini_Generated_Image_vpbectvpbectvpbe (1).png\"]",
+        "created_at": "2026-06-23T01:46:31.970Z",
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES. TRES CAJONES, UNO CON DIVISIONES INTERNAS, TRES ZAPATEROS\n\n\n",
+        "proyecto_id": "7558d6d4-9245-4025-ba9b-b0eee692e86e",
+        "cotizacion_id": "7558d6d4-9245-4025-ba9b-b0eee692e86e",
+        "orden_espacio": 0,
+        "nombre_espacio": "Nuevo Espacio",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 4.5,
+        "jornadas_ensamblaje_taller": 7.5,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-23T01:46:33.435Z",
+      "updated_at": "2026-07-06T23:18:52.273Z"
+    },
+    {
+      "id": "29209ca8-d9f3-422a-bca0-97d26c86c5e5",
+      "context": "espacio_variantes",
+      "data": {
+        "orden": 0,
+        "activa": true,
+        "colores": "[{\"nombre\":\"Kallio\",\"imagen_url\":\"/api/assets/1780598678675-Kalio-1.jpg\"}]",
+        "imagenes": "[]",
+        "proyecto_id": "286b5b77-02da-49e4-a32e-d54020e713a7",
+        "nombre_espacio": "Cocina integral",
+        "nombre_variante": "Con puerta corrediza",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 2.5,
+        "jornadas_ensamblaje_taller": 3,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-24T02:29:45.002Z",
+      "updated_at": "2026-07-07T23:41:19.430Z"
+    },
+    {
+      "id": "f514dc42-e095-4a3b-b5f8-edb2eb2a88f4",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "proyecto_id": "959f0044-05cf-44e6-aefd-6d1087eb668c",
+        "nombre_espacio": "Closet 220 cm",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "Closet est?????ndar con 8 cajones y tubo colgador, melamina calibre 18mm con cantos r?????gidos y puertas corredizas.",
+        "jornadas_instalacion_obra": 1.5,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-24T02:29:45.084Z",
+      "updated_at": "2026-06-24T02:29:47.457Z"
+    },
+    {
+      "id": "8cc83927-809a-46d4-bada-d613d5d66272",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "proyecto_id": "959f0044-05cf-44e6-aefd-6d1087eb668c",
+        "nombre_espacio": "Closet 107 cm (Copia)",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "Closet est?????ndar con 4 cajones y tubo colgador, melamina calibre 18mm con cantos r?????gidos y puertas corredizas.",
+        "jornadas_instalacion_obra": 1,
+        "jornadas_ensamblaje_taller": 1,
+        "jornadas_desarrollo_tecnico": 0.5
+      },
+      "created_at": "2026-06-24T02:29:45.165Z",
+      "updated_at": "2026-06-24T02:29:47.538Z"
+    },
+    {
+      "id": "a1cc8b6b-64d4-47c3-ad84-c1378bc83ef3",
+      "context": "espacio_variantes",
+      "data": {
+        "proyecto_id": "%3Aid",
+        "nombre_espacio": "Nuevo Espacio / Elemento",
+        "nombre_variante": "Con puerta corrediza"
+      },
+      "created_at": "2026-06-24T02:29:45.246Z",
+      "updated_at": "2026-06-24T02:29:47.619Z"
+    },
+    {
+      "id": "8f694e93-cb42-4cd4-9f45-a079efadab8e",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"/api/assets/1781039467803-image.png\"]",
+        "descripcion": "Modulo torre, mueble inferior, panel alistonado, y panel liso para tv. Colores mate. Materiales madecor 18mm de espesor e Iluminaci??????n LED de alta gama. ",
+        "proyecto_id": "e45d6bcc-cf37-49dd-b3d7-4a204b6d7e36",
+        "nombre_espacio": "Centro de entretenimiento",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-24T02:29:45.326Z",
+      "updated_at": "2026-06-24T02:29:47.700Z"
+    },
+    {
+      "id": "21520f28-8c23-41e8-938a-519636bf3047",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"/api/assets/1781040226390-image.png\",\"/api/assets/1781040213389-image.png\"]",
+        "descripcion": "",
+        "proyecto_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+        "nombre_espacio": "Closet 190cm",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 1.5,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-24T02:29:45.413Z",
+      "updated_at": "2026-06-24T02:29:47.780Z"
+    },
+    {
+      "id": "e2254123-ef00-476a-87c5-c83dbd8594a1",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "descripcion": "",
+        "proyecto_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+        "nombre_espacio": "Closet 160cm 2",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 1.2,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-24T02:29:45.499Z",
+      "updated_at": "2026-06-24T02:29:47.867Z"
+    },
+    {
+      "id": "cc1d6171-ff40-4eee-a8c0-d236c48d9b13",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "descripcion": "",
+        "proyecto_id": "c5d65bf2-9e34-46e6-b0c3-a3c09b2847f2",
+        "nombre_espacio": "Closet 160cm 1",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 1.2,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-24T02:29:45.580Z",
+      "updated_at": "2026-06-24T02:29:47.953Z"
+    },
+    {
+      "id": "afab2777-c7ce-4fd8-8591-bd5d5ac30d0c",
+      "context": "espacio_variantes",
+      "data": {
+        "imagenes": "[\"/api/assets/1781204508562-image.png\"]",
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES. TRES CAJONES, UNO CON DIVISIONES INTERNAS, TRES ZAPATEROS\n\n\n",
+        "proyecto_id": "8399a364-75ee-4479-b42c-7eb39816a094",
+        "nombre_espacio": "Nuevo Espacio",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 1,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-24T02:29:45.662Z",
+      "updated_at": "2026-07-06T23:18:52.148Z"
+    },
+    {
+      "id": "cd97f435-b294-452e-90fb-2534c4993cab",
+      "context": "espacio_variantes",
+      "data": {
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES. TRES CAJONES, UNO CON DIVISIONES INTERNAS, TRES ZAPATEROS\n\n\n",
+        "proyecto_id": "43aad4be-bbb1-44db-b78d-7da56315cb31",
+        "nombre_espacio": "Nuevo Espacio",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 0,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 0
+      },
+      "created_at": "2026-06-24T02:29:45.743Z",
+      "updated_at": "2026-07-06T23:18:51.988Z"
+    },
+    {
+      "id": "485c0a99-b700-4c46-8d3c-4eb27f5320f0",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"/api/assets/1781040226390-image.png\",\"/api/assets/1781040213389-image.png\"]",
+        "descripcion": "Se cotiza con cajones gama alta (riel oculto x4),  estructura en madecor de 18mm de calibre, y puertas corredizas",
+        "proyecto_id": "49fe5eb3-34da-4608-87bd-494673322ce3",
+        "nombre_espacio": "Closet 200cm",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 1.5,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-24T02:29:45.825Z",
+      "updated_at": "2026-06-24T02:29:48.197Z"
+    },
+    {
+      "id": "d2b77f23-869c-4ef0-b812-62f2e976d8d0",
+      "context": "espacio_variantes",
+      "data": {
+        "imagenes": "[\"/api/assets/1781581061547-image.png\"]",
+        "proyecto_id": "1ea5ae52-2fa0-402e-a92c-169df8c39461",
+        "nombre_espacio": "Mesa de trabajo en OSB",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 0,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 0
+      },
+      "created_at": "2026-06-24T02:29:45.904Z",
+      "updated_at": "2026-06-24T02:29:48.278Z"
+    },
+    {
+      "id": "ba71c8af-7777-43c4-a1b6-5e02d75a4742",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782832711386-imagen dos.jpg\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782832711894-imagen uno.jpg\"]",
+        "created_at": "2026-06-30T14:55:34.077Z",
+        "descripcion": "Mueble en madecor RH de 18 mm de 1,20 metros de largo, 60 cm de profundidad, y 1,10 metros de altura. El color es blanco mate con cubierta tono madera clara. Vidrio frontal templado de 6 mm. Iluminaci??n tira led calida. Cuatro (4) ruedas giratorias industriales ocultas en zocalo de 8 cm. Capacidad de 100 1 140 perfumes.",
+        "proyecto_id": "695c150d-642b-4f33-bd66-837e767879fe",
+        "orden_espacio": 0,
+        "nombre_espacio": "MUEBLE EXHIBIDOR DE PERFUMES",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 0,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-30T14:55:33.822Z",
+      "updated_at": "2026-06-30T15:19:12.472Z"
+    },
+    {
+      "id": "982390d9-adb2-4529-928b-6acdfb2eb4ef",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782938065647-image.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782938090720-image.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782938122805-image.png\",\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1782938224907-image.png\"]",
+        "created_at": "2026-06-30T15:30:48.759Z",
+        "proyecto_id": "5e2f4963-782b-49d2-b5ad-018aad571374",
+        "orden_espacio": 0,
+        "nombre_espacio": "Closets",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-06-30T15:30:52.442Z",
+      "updated_at": "2026-07-01T20:37:05.399Z"
+    },
+    {
+      "id": "92495090-56ad-4a40-a5a3-bd8dae680260",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-01T15:13:12.649Z",
+        "descripcion": "Incluye 3 zapateras, y 3 cajones de corredera de tipo oculto.",
+        "proyecto_id": "3b75997c-673b-4d7a-99fb-13402087b417",
+        "orden_espacio": 0,
+        "nombre_espacio": "Closet 1",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "Incluir disposici??n de materiales.",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-01T15:13:13.192Z",
+      "updated_at": "2026-07-06T20:29:31.010Z"
+    },
+    {
+      "id": "2c7bc097-78c2-4c91-bedf-fc9033bc1f03",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-01T19:30:46.160Z",
+        "proyecto_id": "3b75997c-673b-4d7a-99fb-13402087b417",
+        "orden_espacio": 1,
+        "nombre_espacio": "Closet 2",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-01T19:30:46.016Z",
+      "updated_at": "2026-07-01T19:30:55.524Z"
+    },
+    {
+      "id": "5e8cbd62-e5f1-4e82-8dc4-7a6478c4d5e1",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-01T19:33:47.222Z",
+        "proyecto_id": "3b75997c-673b-4d7a-99fb-13402087b417",
+        "orden_espacio": 2,
+        "nombre_espacio": "Closet 3",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-01T19:33:47.184Z",
+      "updated_at": "2026-07-01T19:33:53.775Z"
+    },
+    {
+      "id": "5de9ebaf-822b-48ba-ab02-2116c99ecbbb",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-01T19:34:30.543Z",
+        "descripcion": "Se fabrica en chapilla con bordes alabeados con mes??n en madera natural.",
+        "proyecto_id": "3b75997c-673b-4d7a-99fb-13402087b417",
+        "orden_espacio": 3,
+        "nombre_espacio": "C??moda mueble auxiliar habitaci??n 2",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 0.5,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-01T19:34:30.521Z",
+      "updated_at": "2026-07-02T22:19:42.105Z"
+    },
+    {
+      "id": "23ee0c69-0878-4065-aa2c-2ab7864e07e1",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-02T21:22:14.366Z",
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES. TRES CAJONES, UNO CON DIVISIONES INTERNAS, TRES ZAPATEROS\n\n\n",
+        "proyecto_id": "9fd6375d-0f71-4f77-8ade-81f478b52406",
+        "orden_espacio": 0,
+        "nombre_espacio": "Nuevo Espacio",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 0,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 0
+      },
+      "created_at": "2026-07-02T21:22:15.254Z",
+      "updated_at": "2026-07-06T23:18:52.242Z"
+    },
+    {
+      "id": "6e821c6c-096e-4b7f-967c-40c69c3e528f",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-02T22:10:56.198Z",
+        "descripcion": "",
+        "proyecto_id": "3b75997c-673b-4d7a-99fb-13402087b417",
+        "orden_espacio": 4,
+        "nombre_espacio": "Puertas de paso",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 0,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 0
+      },
+      "created_at": "2026-07-02T22:10:56.146Z",
+      "updated_at": "2026-07-02T22:11:03.998Z"
+    },
+    {
+      "id": "4be084b2-56ae-4501-8342-54621dc3fc85",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-02T22:11:40.467Z",
+        "descripcion": "Panel a listonado curvo y repisas flotantes",
+        "proyecto_id": "3b75997c-673b-4d7a-99fb-13402087b417",
+        "orden_espacio": 5,
+        "nombre_espacio": "Centro de TV",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 1,
+        "jornadas_ensamblaje_taller": 2.3,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-02T22:11:40.428Z",
+      "updated_at": "2026-07-02T22:14:06.900Z"
+    },
+    {
+      "id": "934959d8-9efa-4016-926d-d07ff921adae",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-02T22:14:08.782Z",
+        "proyecto_id": "3b75997c-673b-4d7a-99fb-13402087b417",
+        "orden_espacio": 6,
+        "nombre_espacio": "Tocador espejo y decoraci??n",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 1.5,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-02T22:14:08.728Z",
+      "updated_at": "2026-07-02T22:15:50.235Z"
+    },
+    {
+      "id": "5b5b1420-9e6a-456f-a34c-b17e0411aa34",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "imagenes": "[\"https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/1783187166817-image.png\"]",
+        "created_at": "2026-07-04T16:36:33.760Z",
+        "descripcion": "",
+        "proyecto_id": "71fcf977-e023-4004-988d-5d843fe6163b",
+        "orden_espacio": 0,
+        "nombre_espacio": "Mueble de ba??o",
+        "nombre_variante": "MELAMINA RH 18 mm",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 0.5,
+        "jornadas_ensamblaje_taller": 0.5,
+        "jornadas_desarrollo_tecnico": 0.4
+      },
+      "created_at": "2026-07-04T16:36:34.036Z",
+      "updated_at": "2026-07-04T17:46:09.247Z"
+    },
+    {
+      "id": "6e05909f-9339-4733-a7c2-377517cc947f",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-06T20:30:55.160Z",
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES. TRES CAJONES, UNO CON DIVISIONES INTERNAS, TRES ZAPATEROS\n\n\n",
+        "proyecto_id": "55618575-bb10-4155-8959-4b05b3b16d77",
+        "orden_espacio": 0,
+        "nombre_espacio": "Nuevo Espacio",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 6,
+        "jornadas_ensamblaje_taller": 5,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-06T20:30:54.651Z",
+      "updated_at": "2026-07-06T23:18:55.825Z"
+    },
+    {
+      "id": "baf0f6e6-7834-440a-b902-c7222ec1023a",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-06T21:21:02.536Z",
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES. TRES CAJONES, UNO CON DIVISIONES INTERNAS, TRES ZAPATEROS\n\n\n",
+        "proyecto_id": "af8c5eb4-b30d-49b7-ade8-c07aec1cc897",
+        "orden_espacio": 0,
+        "nombre_espacio": "Nuevo Espacio",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 1,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 3
+      },
+      "created_at": "2026-07-06T21:21:02.199Z",
+      "updated_at": "2026-07-06T23:23:57.823Z"
+    },
+    {
+      "id": "e3620bec-8391-4810-8614-0800625c09da",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": false,
+        "created_at": "2026-07-06T22:07:55.253Z",
+        "descripcion": "CLOSET DE 1,27X 2,18 CON PUERTAS ABATIBLES CON TRES CAJONES, UNO CON DIVISIONES INTERNAS Y TRES ZAPATEROS",
+        "proyecto_id": "af8c5eb4-b30d-49b7-ade8-c07aec1cc897",
+        "orden_espacio": 1,
+        "nombre_espacio": "Nuevo Espacio 2",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 0,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 0
+      },
+      "created_at": "2026-07-06T22:07:55.045Z",
+      "updated_at": "2026-07-06T23:21:49.031Z"
+    },
+    {
+      "id": "e89ad153-41f5-4de4-9c5f-e4adebfe6192",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-06T23:16:36.674Z",
+        "descripcion": "CLOSET DE 1,50 X 2,18 METROS CON PUERTAS ABATIBLES\n\n",
+        "proyecto_id": "af8c5eb4-b30d-49b7-ade8-c07aec1cc897",
+        "orden_espacio": 2,
+        "nombre_espacio": "Nuevo Espacio (Copia)",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 1,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 2.5
+      },
+      "created_at": "2026-07-06T23:16:36.746Z",
+      "updated_at": "2026-07-06T23:22:56.600Z"
+    },
+    {
+      "id": "c0f5f189-17c9-468d-9c6d-d757f81fca72",
+      "context": "espacio_variantes",
+      "data": {
+        "orden": 1,
+        "activa": true,
+        "created_at": "2026-07-06T22:07:55.253Z",
+        "descripcion": "CLOSET DE 1,27X 2,18 CON PUERTAS ABATIBLES CON TRES CAJONES, UNO CON DIVISIONES INTERNAS Y TRES ZAPATEROS",
+        "proyecto_id": "af8c5eb4-b30d-49b7-ade8-c07aec1cc897",
+        "orden_espacio": 1,
+        "nombre_espacio": "Nuevo Espacio 2",
+        "nombre_variante": "Inicial (Copia)",
+        "jornadas_instalacion_obra": 1,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 2.5
+      },
+      "created_at": "2026-07-06T23:21:49.215Z",
+      "updated_at": "2026-07-06T23:23:38.699Z"
+    },
+    {
+      "id": "4d702da7-df3a-4712-9cf4-bfb2858f53cc",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-06T23:25:13.423Z",
+        "descripcion": "CINCO (05) PUERTAS EN MADECOR DE LINEA CON SU RESPECTIVA CHAPA ESTANDAR",
+        "proyecto_id": "af8c5eb4-b30d-49b7-ade8-c07aec1cc897",
+        "orden_espacio": 3,
+        "nombre_espacio": "Nuevo Espacio 3",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 0,
+        "jornadas_ensamblaje_taller": 0,
+        "jornadas_desarrollo_tecnico": 0
+      },
+      "created_at": "2026-07-06T23:25:13.595Z",
+      "updated_at": "2026-07-06T23:27:16.552Z"
+    },
+    {
+      "id": "7b101c1f-68f0-416b-af7d-381a8ee594d9",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-07T18:38:57.797Z",
+        "proyecto_id": "fda83d26-1775-469b-b3dd-1af0fc9f2ce4",
+        "orden_espacio": 0,
+        "nombre_espacio": "Oficina 5",
+        "nombre_variante": "Inicial",
+        "jornadas_instalacion_obra": 2,
+        "jornadas_ensamblaje_taller": 2,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-07T18:38:57.420Z",
+      "updated_at": "2026-07-07T19:03:14.626Z"
+    },
+    {
+      "id": "00d86ca0-b951-4a36-ae89-b0578ca28359",
+      "context": "espacio_variantes",
+      "data": {
+        "activa": true,
+        "created_at": "2026-07-07T19:03:55.478Z",
+        "proyecto_id": "fda83d26-1775-469b-b3dd-1af0fc9f2ce4",
+        "orden_espacio": 1,
+        "nombre_espacio": "Oficina 2",
+        "nombre_variante": "Inicial",
+        "descripcion_alternativa": "",
+        "jornadas_instalacion_obra": 1,
+        "jornadas_ensamblaje_taller": 1,
+        "jornadas_desarrollo_tecnico": 1
+      },
+      "created_at": "2026-07-07T19:03:55.144Z",
+      "updated_at": "2026-07-07T22:14:26.264Z"
+    }
+  ]
+}

@@ -3207,6 +3207,7 @@
     "updated_at": "2026-07-06T07:23:18.146Z"
   },
   {
+  {
     "id": "c7d5e9f1-3b6a-4c2e-9f7d-8b4a5c3e2d1f",
     "context": "schema_definitions",
     "data": {
@@ -3233,18 +3234,9 @@
           "width": "full",
           "config": {},
           "options": [
-            {
-              "label": "Mano de obra",
-              "value": "mano_obra"
-            },
-            {
-              "label": "Logística",
-              "value": "logistica"
-            },
-            {
-              "label": "Materiales",
-              "value": "materiales"
-            }
+            { "label": "Mano de obra", "value": "mano_obra" },
+            { "label": "Logística", "value": "logistica" },
+            { "label": "Materiales", "value": "materiales" }
           ],
           "section": "General",
           "required": true
@@ -3280,10 +3272,7 @@
           "config": {
             "derivation": {
               "op": "LOOKUP",
-              "args": [
-                "catalogo_id",
-                "unidad_medida"
-              ],
+              "args": ["catalogo_id", "unidad_medida"],
               "context": "productos_catalogo"
             }
           },
@@ -3308,10 +3297,7 @@
           "config": {
             "derivation": {
               "op": "LOOKUP",
-              "args": [
-                "catalogo_id",
-                "precio_publico"
-              ],
+              "args": ["catalogo_id", "precio_publico"],
               "context": "productos_catalogo"
             }
           },
@@ -3326,10 +3312,7 @@
           "config": {
             "derivation": {
               "op": "MULTIPLY",
-              "args": [
-                "cantidad",
-                "precio_unitario"
-              ]
+              "args": ["cantidad", "precio_unitario"]
             }
           },
           "section": "Valores",
@@ -3400,5 +3383,139 @@
       ]
     },
     "updated_at": "2026-07-15T21:26:21.546Z"
+  },
+  {
+    "id": "87625f8e-7257-4914-99a0-0c42b7a15305",
+    "context": "schema_definitions",
+    "data": {
+      "name": "pedidos_web",
+      "fields": [
+        {
+          "id": "76ce6d41-1cd6-4751-85b2-8bb511a56655",
+          "key": "numero",
+          "type": "text",
+          "label": "Numero",
+          "required": true,
+          "isPrimary": true
+        },
+        {
+          "id": "ee88a39d-b1af-435e-b980-165457e0be00",
+          "key": "user_id",
+          "type": "text",
+          "label": "User Id",
+          "required": false
+        },
+        {
+          "id": "799fa2a2-fe3a-4d40-a5df-235554e11b0e",
+          "key": "cliente_id",
+          "type": "text",
+          "label": "Cliente Id",
+          "required": false
+        },
+        {
+          "id": "16096ef8-9222-414e-9ac6-3037adbe9dbe",
+          "key": "nombre",
+          "type": "text",
+          "label": "Nombre",
+          "required": true
+        },
+        {
+          "id": "d22c558d-cc38-4f7a-8679-14b6d69782eb",
+          "key": "email",
+          "type": "text",
+          "label": "Email",
+          "required": true
+        },
+        {
+          "id": "e74fe31d-afd3-4879-b75c-e28b3500e983",
+          "key": "telefono",
+          "type": "text",
+          "label": "Telefono",
+          "required": false
+        },
+        {
+          "id": "cbcbc804-1018-468c-8c15-e4de5b693e2b",
+          "key": "direccion_entrega",
+          "type": "text",
+          "label": "Direccion Entrega",
+          "required": true
+        },
+        {
+          "id": "0f4b7ee4-31dd-4e95-8c13-088a84e0f966",
+          "key": "barrio",
+          "type": "text",
+          "label": "Barrio",
+          "required": false
+        },
+        {
+          "id": "df192acc-2389-480d-aa06-f87d36301ec1",
+          "key": "items_snapshot",
+          "type": "textarea",
+          "label": "Items Snapshot",
+          "required": true
+        },
+        {
+          "id": "25e2b1b2-9232-4601-937c-7fb221710636",
+          "key": "subtotal",
+          "type": "number",
+          "label": "Subtotal",
+          "required": true
+        },
+        {
+          "id": "c20d7764-1408-4ffa-923c-893e11adecfe",
+          "key": "total",
+          "type": "number",
+          "label": "Total",
+          "required": true
+        },
+        {
+          "id": "0e32d511-aa7e-461d-852f-2bb57ae48c46",
+          "key": "wompi_reference",
+          "type": "text",
+          "label": "Wompi Reference",
+          "required": false
+        },
+        {
+          "id": "95cf7d81-ebc9-4f36-9cc2-cb998b078708",
+          "key": "wompi_transaction_id",
+          "type": "text",
+          "label": "Wompi Transaction Id",
+          "required": false
+        },
+        {
+          "id": "330e5579-c0d6-4188-8420-49afbd7b0718",
+          "key": "metodo_pago",
+          "type": "text",
+          "label": "Metodo Pago",
+          "required": false
+        },
+        {
+          "id": "fb0ef31d-f8a0-4bec-ae4a-0f55b5f54080",
+          "key": "notas",
+          "type": "textarea",
+          "label": "Notas",
+          "required": false
+        },
+        {
+          "id": "6738c6da-8af5-40d8-ba53-98035c902e70",
+          "key": "estado",
+          "type": "select",
+          "label": "Estado",
+          "required": true,
+          "options": [
+            { "label": "iniciado", "value": "iniciado" },
+            { "label": "pendiente_pago", "value": "pendiente_pago" },
+            { "label": "pagado", "value": "pagado" },
+            { "label": "en_preparacion", "value": "en_preparacion" },
+            { "label": "enviado", "value": "enviado" },
+            { "label": "entregado", "value": "entregado" },
+            { "label": "cancelado", "value": "cancelado" }
+          ]
+        }
+      ]
+    },
+    "updated_at": "2026-07-07T03:53:56.345Z"
+  }
+]
   }
 ]

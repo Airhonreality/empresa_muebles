@@ -14,6 +14,7 @@ fork -> owns storage and specialized UI
 
 ## Daily Closeout
 
+
 Date: 2026-07-14 (PM) — Lane obra civil CERRADA + auditoría contrato
 
 **CIERRE: `goal/cotizador-obra-civil-estimada` mergeada a `dev` (commit `bd22330`)**
@@ -25,7 +26,7 @@ Date: 2026-07-14 (PM) — Lane obra civil CERRADA + auditoría contrato
 
 **Auditoría en paralelo — cambios flujo contrato (rama `goal/webstore-checkout-pagos`):**
 Centralización `visible_pdf !== false` en ContratoModal, generar_contrato, zap_activar_produccion.
-Commits `471490d`, `8369306` con tests propios. Verificados funcionales pero **fuera de proceso** 
+Commits `471490d`, `8369306` con tests propios. Verificados funcionalmente pero **fuera de proceso** 
 (modificaron superficie "prohibida" de la lane de obra civil). Documentado como desviación, no revertido.
 
 ---
@@ -62,10 +63,18 @@ escritos, DoD SIN verificar; falta ruta `/cuenta`, registro de bloques, user moc
 matriz). Continúa un worker EXTERNO (modo sin subagentes por presupuesto de tokens; el
 Orquestador Fable 5 solo audita/mergea/pushea y entrega prompts).
 
-Pendientes de la ronda: `webstore-checkout-pagos`, `webstore-seo-lanzamiento` (robots.txt
-sigue bloqueando crawlers hasta esa lane). Hallazgos abiertos: deuda tsc 21 errores (7 de
-componentes tienda → lane `ts-debt`), `cobro.json` sin destino, re-run `ai_config`,
+Pendientes de la ronda: `webstore-checkout-pagos`, `webstore-seo-lanzamiento` (LANE
+RE-PLANIFICADA 2026-07-07 — alcance expandido: eliminar `/tienda`, migrar carrito a
+`/colecciones`, fix VetaPortfolio POST→GET, fix Wompi validación prefabricados, + SEO).
+Hallazgos abiertos: deuda tsc 21 errores (7 de componentes tienda → lane `ts-debt`), `cobro.json` sin destino, re-run `ai_config`,
 limpieza de worktrees/ramas huérfanos del incidente.
+
+### Hallazgos estructurales detectados 2026-07-07 (pre-lane)
+- **Ruta corrupta:** `page_routes.json` contiene `"C:/Program Files/Git/tienda"` como path (línea 372-382) — basura config.
+- **VetaPortfolio.tsx error:** `readRecords()` usa `POST /api/vault` con `action: 'READ'` no soportado (solo GET). Causa error 400 en `/portafolio`.
+- **Wompi checkout bug:** `checkout/route.ts` solo valida items contra `productos_catalogo`, ignora `prefabricados` → 400 error si el carrito contiene prefabs.
+- **Duplicación catálogo:** `/colecciones` y `/tienda` comparten datos de `productos_catalogo`. Decisión del usuario: eliminar `/tienda`, dejar `/colecciones` como ruta canónica.
+- **schemaGenerator.ts** completo pero no integrado con `generateMetadata` de ninguna página.
 
 ---
 

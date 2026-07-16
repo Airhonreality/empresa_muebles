@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
-import path from 'path';
-
 import { getProjectStorageRoot } from '@/server/activeProject';
+import { buildR2S3Config } from '@/server/r2';
+import path from 'path';
 
 const ALLOWED_MIME = new Set([
   'image/jpeg',
@@ -127,6 +127,28 @@ export async function POST(req: NextRequest) {
       if (!isHttpUrl(sourceUrl)) {
         return NextResponse.json({ error: 'Source URL must use http or https.' }, { status: 400 });
       }
+
+      const response = await fetch(sourceUrl);
+      if (!response.ok) {
+        return NextResponse.json({ error: `Could not fetch source URL (${response.status}).` }, { status: 400 });
+      }
+
+      mimeType = response.headers.get('content-type') || 'application/octet-stream';
+      if (!mimeType.startsWith('image/')) {
+        return NextResponse.json({ error: `Source content type '${mimeType}' is not allowed.` }, { status: 415 });
+      }
+
+      buffer = Buffer.from(await response.arrayBuffer());
+      if (buffer.byteLength > MAX_SIZE_BYTES) {
+        return NextResponse.json({ error: 'File exceeds the 5 MB limit.' }, { status: 413 });
+      }
+
+      const sourceName = cleanFilename(path.basename(new URL(sourceUrl).pathname) || 'imagen');
+      filename = `${Date.now()}-${sourceName}`;
+    } else {
+      return NextResponse.json({ error: 'No file or source URL provided' }, { status: 400 });
+    }
+
 
       const response = await fetch(sourceUrl);
       if (!response.ok) {

@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { buildR2S3Config } from '@/server/r2';
 
 export interface CheckResult {
   componentId: string;
@@ -160,11 +161,11 @@ export async function checkR2(
   }
 
   try {
-    const client = new S3Client({
-      region: 'auto',
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey },
-    });
+    const client = new S3Client(buildR2S3Config({
+      accountId,
+      accessKeyId,
+      secretAccessKey,
+    }));
 
     // PutObject + DeleteObject verifies actual write permissions, not just list.
     // ListObjects only checks s3:ListBucket which is insufficient for upload operations.
