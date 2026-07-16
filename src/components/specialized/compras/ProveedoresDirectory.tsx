@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, RefreshCw, Search, Store, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Pencil, RefreshCw, Store, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import CatalogCollectionChrome from './CatalogCollectionChrome';
 
 type RecordItem<T = Record<string, unknown>> = {
   id: string;
@@ -64,6 +66,7 @@ async function removeRecord(namespace: string, id: string) {
 export default function ProveedoresDirectory() {
   const [proveedores, setProveedores] = useState<RecordItem<ProveedorRecord>[]>([]);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState('');
@@ -96,13 +99,14 @@ export default function ProveedoresDirectory() {
     const term = search.trim().toLowerCase();
     return [...proveedores]
       .filter((provider) => {
+        if (categoryFilter !== 'all' && String(provider.categoria || '') !== categoryFilter) return false;
         if (!term) return true;
         return [provider.nombre, provider.nit, provider.telefono, provider.direccion, provider.categoria]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(term));
       })
       .sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || '')));
-  }, [proveedores, search]);
+  }, [categoryFilter, proveedores, search]);
 
   const resetForm = () => {
     setEditingId('');
@@ -169,40 +173,56 @@ export default function ProveedoresDirectory() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-lg border border-stone-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-stone-500">Adquisiciones</p>
-          <h2 className="mt-1 text-2xl font-black text-stone-950">Directorio de proveedores</h2>
-          <p className="mt-2 text-sm text-stone-600">Gestion de terceros para compras, abastecimiento y trazabilidad de insumos.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={loadData} disabled={isLoading} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Sincronizar
-          </Button>
-          <Button onClick={() => openDialog()} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo proveedor
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-4 py-3">
-        <Search className="h-4 w-4 text-stone-500" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar por nombre, NIT, telefono o categoria"
-          className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+      <div className="sticky top-4 z-20 overflow-hidden rounded-[2rem] border border-stone-200/70 bg-white/95 shadow-[0_18px_60px_rgba(15,23,42,0.07)] backdrop-blur">
+        <CatalogCollectionChrome
+          badges={(
+            <>
+              <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-900">
+                <Store className="mr-1 h-3 w-3" />
+                Proveedores
+              </Badge>
+              <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 text-stone-700">
+                {filteredProviders.length} activos
+              </Badge>
+              <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-800">
+                {proveedores.length} total
+              </Badge>
+            </>
+          )}
+          actions={[
+            {
+              label: 'Sincronizar',
+              icon: <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />,
+              onClick: loadData,
+              variant: 'outline',
+              disabled: isLoading,
+            },
+            {
+              label: 'Nuevo proveedor',
+              icon: <Plus className="h-4 w-4" />,
+              onClick: () => openDialog(),
+              variant: 'default',
+            },
+          ]}
+          searchValue={search}
+          searchPlaceholder="Buscar por nombre, NIT, telefono o categoria"
+          onSearchChange={setSearch}
+          filterValue={categoryFilter}
+          filterPlaceholder="Categoria"
+          onFilterChange={setCategoryFilter}
+          filterOptions={[
+            { value: 'all', label: 'Todas' },
+            ...categories.map((category) => ({ value: category, label: category })),
+          ]}
         />
       </div>
 
       {isLoading ? (
-        <div className="rounded-lg border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-500">
+        <div className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-500">
           Cargando proveedores...
         </div>
       ) : filteredProviders.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-500">
+        <div className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-500">
           No hay proveedores registrados.
         </div>
       ) : (

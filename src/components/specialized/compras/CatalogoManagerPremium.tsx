@@ -2,10 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertCircle,
   ArrowRight,
-  BadgeCheck,
-  CircleDollarSign,
   Copy,
   Eye,
   EyeOff,
@@ -17,8 +14,6 @@ import {
   Package,
   Pencil,
   Plus,
-  RefreshCw,
-  Search,
   SlidersHorizontal,
   Sparkles,
   Trash2,
@@ -55,6 +50,7 @@ import {
 } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
 import ProveedoresDirectory from './ProveedoresDirectory';
+import CatalogCollectionChrome from './CatalogCollectionChrome';
 import type {
   Prefabricados,
   PrefabricadosRecord,
@@ -304,6 +300,8 @@ function marginPercentage(record: RecordItem<CatalogRecord>) {
 function createCardPreview(record?: RecordItem<CatalogRecord> | null) {
   if (!record) return null;
   const imageUrl = resolveCatalogImage(record);
+  const publishable = canPublishRecord(record);
+  const published = isRecordPublished(record);
   return (
     <div className="overflow-hidden rounded-3xl border border-stone-200/70 bg-white shadow-[0_20px_40px_rgba(15,23,42,0.08)]">
       <div className="relative aspect-[4/3] bg-gradient-to-br from-stone-100 via-stone-50 to-amber-50">
@@ -322,9 +320,15 @@ function createCardPreview(record?: RecordItem<CatalogRecord> | null) {
             <Badge variant="secondary" className="border-white/20 bg-white/15 text-white">
               {record.tipo || 'Sin tipo'}
             </Badge>
-            <Badge variant={record.publicado_web ? 'default' : 'outline'} className={cn('border-white/20', !record.publicado_web && 'bg-white/10 text-white')}>
-              {record.publicado_web ? 'Publicado' : 'Privado'}
-            </Badge>
+            {publishable ? (
+              <Badge variant={published ? 'default' : 'outline'} className={cn('border-white/20', !published && 'bg-white/10 text-white')}>
+                {published ? 'Publicado' : 'Privado'}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-white/20 bg-white/10 text-white">
+                Inventario
+              </Badge>
+            )}
           </div>
           <p className="mt-3 line-clamp-2 text-sm font-semibold leading-tight">
             {record.descripcion || record.sku || 'Sin descripción'}
@@ -409,11 +413,6 @@ export default function CatalogoManagerPremium() {
     return Array.from(new Set([...TYPE_OPTIONS, ...fromData]));
   }, [catalogo]);
 
-  const availableCategories = useMemo(() => {
-    const fromData = catalogo.map((item) => String(item.categoria_comercial || '')).filter(Boolean);
-    return Array.from(new Set([...CATEGORY_OPTIONS.map((opt) => opt.value), ...fromData]));
-  }, [catalogo]);
-
   const inventoryCatalog = useMemo(
     () => catalogo.filter((item) => !isPublishableType(String(item.tipo || ''))),
     [catalogo],
@@ -430,19 +429,12 @@ export default function CatalogoManagerPremium() {
     return [...inventoryCatalog]
       .filter((item) => {
         if (filters.tipo !== 'all' && String(item.tipo || '') !== filters.tipo) return false;
-        if (filters.proveedor_id !== 'all' && String(item.proveedor_id || '') !== filters.proveedor_id) return false;
-        if (filters.categoria_comercial !== 'all' && String(item.categoria_comercial || '') !== filters.categoria_comercial) return false;
-        if (filters.publicado_web === 'published' && !item.publicado_web) return false;
-        if (filters.publicado_web === 'hidden' && item.publicado_web) return false;
-        if (filters.stock === 'low' && !isLowStock(item)) return false;
-        if (filters.stock === 'empty' && !isEmptyStock(item)) return false;
         if (!query) return true;
 
         return [
           item.sku,
           item.descripcion,
           item.tipo,
-          item.categoria_comercial,
           item.proveedor,
           providersById[String(item.proveedor_id || '')],
           item.url_referencia,
@@ -470,15 +462,6 @@ export default function CatalogoManagerPremium() {
     const prefabricatedCount = prefabricados.length;
     return { total, published, publishableCount, lowStock, emptyStock, supplierCount, prefabricatedCount };
   }, [catalogo, inventoryCatalog, prefabricados, publishableCatalog]);
-
-  const typeCounts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const item of inventoryCatalog) {
-      const key = String(item.tipo || 'Sin tipo');
-      map[key] = (map[key] || 0) + 1;
-    }
-    return map;
-  }, [inventoryCatalog]);
 
   const activeRecord = useMemo(
     () => inventoryCatalog.find((item) => item.id === editingRecordId) || null,
@@ -673,10 +656,10 @@ export default function CatalogoManagerPremium() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.14),_transparent_28%),linear-gradient(180deg,_#faf7f2_0%,_#fffdf9_48%,_#f7f2ea_100%)] text-stone-950">
       <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200/70 bg-white/90 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur">
-          <div className="grid gap-6 p-5 md:p-7 xl:grid-cols-[1.3fr_0.7fr]">
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-2">
+        <section className="sticky top-4 z-20 overflow-hidden rounded-[2rem] border border-stone-200/70 bg-white/95 shadow-[0_18px_60px_rgba(15,23,42,0.07)] backdrop-blur">
+          <CatalogCollectionChrome
+            badges={(
+              <>
                 <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-900">
                   <Sparkles className="mr-1 h-3 w-3" />
                   Premium inventory shell
@@ -687,228 +670,87 @@ export default function CatalogoManagerPremium() {
                 <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-800">
                   {metrics.published} publicados
                 </Badge>
+                <Badge variant="outline" className="rounded-full border-stone-200 bg-white text-stone-700">
+                  {metrics.publishableCount} prefabricados
+                </Badge>
+              </>
+            )}
+            actions={activeTab === 'inventario' ? [{
+              label: 'Nuevo producto',
+              icon: <Plus className="h-4 w-4" />,
+              onClick: openNewEditor,
+              variant: 'default',
+            }] : []}
+            searchValue={activeTab === 'inventario' ? filters.query : ''}
+            searchPlaceholder="SKU, descripción, proveedor..."
+            onSearchChange={activeTab === 'inventario' ? (value) => setFilters((current) => ({ ...current, query: value })) : undefined}
+            filterValue={activeTab === 'inventario' ? filters.tipo : undefined}
+            filterPlaceholder="Tipo"
+            onFilterChange={activeTab === 'inventario' ? (value) => setFilters((current) => ({ ...current, tipo: value })) : undefined}
+            filterOptions={activeTab === 'inventario' ? [
+              { value: 'all', label: 'Todos los tipos' },
+              ...availableTipos.map((type) => ({ value: type, label: type })),
+            ] : undefined}
+            footer={(
+              <div className="border-t border-stone-100 bg-stone-50/70 px-4 py-3">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('inventario')}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all',
+                      activeTab === 'inventario'
+                        ? 'border-stone-950 bg-stone-950 text-white shadow-md shadow-stone-950/10'
+                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900',
+                    )}
+                  >
+                    <Grid2x2 className="h-4 w-4" />
+                    <span>Inventario</span>
+                    <span className={cn('rounded-full px-2 py-0.5 text-[10px]', activeTab === 'inventario' ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-500')}>
+                      {metrics.total}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('prefabricados')}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all',
+                      activeTab === 'prefabricados'
+                        ? 'border-amber-400 bg-amber-50 text-amber-900 shadow-md shadow-amber-950/5'
+                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900',
+                    )}
+                  >
+                    <Package className="h-4 w-4" />
+                    <span>Productos prefabricados</span>
+                    <span className={cn('rounded-full px-2 py-0.5 text-[10px]', activeTab === 'prefabricados' ? 'bg-amber-100 text-amber-900' : 'bg-stone-100 text-stone-500')}>
+                      {metrics.prefabricatedCount}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('proveedores')}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all',
+                      activeTab === 'proveedores'
+                        ? 'border-stone-950 bg-stone-950 text-white shadow-md shadow-stone-950/10'
+                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900',
+                    )}
+                  >
+                    <Warehouse className="h-4 w-4" />
+                    <span>Proveedores</span>
+                    <span className={cn('rounded-full px-2 py-0.5 text-[10px]', activeTab === 'proveedores' ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-500')}>
+                      {proveedores.length}
+                    </span>
+                  </button>
+                </div>
               </div>
+            )}
+          />
 
-              <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.38em] text-stone-400">
-                  ERP / Catálogo
-                </p>
-                <h1 className="max-w-3xl text-3xl font-black tracking-tight text-stone-950 sm:text-4xl">
-                  Consola premium de inventario para cotizar todos los días
-                </h1>
-                <p className="max-w-2xl text-sm leading-6 text-stone-600">
-                  Diseñada para escanear, editar y publicar productos sin perder claridad visual.
-                  `tipo` funciona como la clasificación visible principal, mientras `proveedor_id` mantiene la
-                  relación operativa con proveedores.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={openNewEditor} className="rounded-full bg-stone-950 px-4 text-white hover:bg-stone-800">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nuevo producto
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={loadData}
-                  disabled={isLoading}
-                  className="rounded-full border-stone-200 bg-white/80 px-4"
-                >
-                  <RefreshCw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
-                  Sincronizar
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setActiveTab('modulos')}
-                  className="rounded-full border-amber-200 bg-amber-50 px-4 text-amber-900 hover:bg-amber-100"
-                >
-                  <BadgeCheck className="mr-2 h-4 w-4" />
-                  Módulos y Productos
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <MetricCard
-                label="Stock bajo"
-                value={String(metrics.lowStock)}
-                hint={`${metrics.emptyStock} agotados`}
-                icon={<AlertCircle className="h-4 w-4" />}
-              />
-              <MetricCard
-                label="Proveedores"
-                value={String(metrics.supplierCount)}
-                hint={`${metrics.prefabricatedCount} prefabricados`}
-                icon={<Warehouse className="h-4 w-4" />}
-              />
-            </div>
-          </div>
         </section>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('catalogo')}
-            className={cn(
-              'rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] transition-colors',
-              activeTab === 'catalogo'
-                ? 'border-stone-950 bg-stone-950 text-white'
-                : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-700',
-            )}
-          >
-            Catálogo maestro
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('modulos')}
-            className={cn(
-              'rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] transition-colors',
-              activeTab === 'modulos'
-                ? 'border-amber-400 bg-amber-50 text-amber-900'
-                : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-700',
-            )}
-          >
-            Módulos y Productos
-          </button>
-        </div>
-
-        {activeTab === 'catalogo' && (
-          <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
-            <aside className="rounded-[1.75rem] border border-stone-200/70 bg-white/90 p-4 shadow-[0_15px_40px_rgba(15,23,42,0.05)] backdrop-blur">
-              <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-950 text-white">
-                  <Filter className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Filtros rápidos</p>
-                  <p className="text-sm font-semibold text-stone-950">{filteredCatalogo.length} resultados</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-4">
-                <Field label="Búsqueda global">
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                    <Input
-                      value={filters.query}
-                      onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))}
-                      placeholder="SKU, descripción, proveedor..."
-                      className="h-11 rounded-2xl border-stone-200 pl-10"
-                    />
-                  </div>
-                </Field>
-
-                <Field label="Tipo">
-                  <Select value={filters.tipo} onValueChange={(value) => setFilters((current) => ({ ...current, tipo: value }))}>
-                    <SelectTrigger className="h-11 rounded-2xl border-stone-200">
-                      <SelectValue placeholder="Todos los tipos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los tipos</SelectItem>
-                      {availableTipos.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field label="Proveedor">
-                  <Select
-                    value={filters.proveedor_id}
-                    onValueChange={(value) => setFilters((current) => ({ ...current, proveedor_id: value }))}
-                  >
-                    <SelectTrigger className="h-11 rounded-2xl border-stone-200">
-                      <SelectValue placeholder="Todos los proveedores" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los proveedores</SelectItem>
-                      {providerOptions.map((provider) => (
-                        <SelectItem key={provider.id} value={provider.id}>
-                          {provider.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field label="Segmento comercial">
-                  <Select
-                    value={filters.categoria_comercial}
-                    onValueChange={(value) => setFilters((current) => ({ ...current, categoria_comercial: value }))}
-                  >
-                    <SelectTrigger className="h-11 rounded-2xl border-stone-200">
-                      <SelectValue placeholder="Todas las categorías" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas las categorías</SelectItem>
-                      {CATEGORY_OPTIONS.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                      {availableCategories
-                        .filter((value) => !CATEGORY_OPTIONS.some((opt) => opt.value === value))
-                        .map((value) => (
-                          <SelectItem key={value} value={value}>
-                            {value}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Web">
-                    <Select
-                      value={filters.publicado_web}
-                      onValueChange={(value: CatalogFilters['publicado_web']) =>
-                        setFilters((current) => ({ ...current, publicado_web: value }))
-                      }
-                    >
-                      <SelectTrigger className="h-11 rounded-2xl border-stone-200">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="published">Publicados</SelectItem>
-                        <SelectItem value="hidden">Ocultos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-
-                  <Field label="Stock">
-                    <Select
-                      value={filters.stock}
-                      onValueChange={(value: CatalogFilters['stock']) =>
-                        setFilters((current) => ({ ...current, stock: value }))
-                      }
-                    >
-                      <SelectTrigger className="h-11 rounded-2xl border-stone-200">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="low">Bajo</SelectItem>
-                        <SelectItem value="empty">Agotado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={resetFilters}
-                  className="h-11 w-full rounded-2xl border-stone-200 bg-stone-50"
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Limpiar filtros
-                </Button>
-              </div>
-            </aside>
-
+        {activeTab === 'inventario' && (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
             <main className="space-y-4">
               <section className="rounded-[1.75rem] border border-stone-200/70 bg-white/90 p-4 shadow-[0_15px_40px_rgba(15,23,42,0.05)] backdrop-blur">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -951,23 +793,6 @@ export default function CatalogoManagerPremium() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-                  <TypeChip
-                    label="Todos"
-                    count={catalogo.length}
-                    active={filters.tipo === 'all'}
-                    onClick={() => setFilters((current) => ({ ...current, tipo: 'all' }))}
-                  />
-                  {availableTipos.map((type) => (
-                    <TypeChip
-                      key={type}
-                      label={type}
-                      count={typeCounts[type] || 0}
-                      active={filters.tipo === type}
-                      onClick={() => setFilters((current) => ({ ...current, tipo: type }))}
-                    />
-                  ))}
-                </div>
               </section>
 
               {isLoading ? (
@@ -982,6 +807,7 @@ export default function CatalogoManagerPremium() {
                       record={record}
                       providerLabel={getProviderLabel(record, providersById)}
                       active={editingRecordId === record.id}
+                      canTogglePublished={isPublishableType(String(record.tipo || ''))}
                       onOpen={() => openPreview(record)}
                       onEdit={() => openEditor(record)}
                       onDuplicate={() => duplicateRecord(record)}
@@ -998,6 +824,7 @@ export default function CatalogoManagerPremium() {
                       record={record}
                       providerLabel={getProviderLabel(record, providersById)}
                       active={editingRecordId === record.id}
+                      canTogglePublished={isPublishableType(String(record.tipo || ''))}
                       onOpen={() => openPreview(record)}
                       onEdit={() => openEditor(record)}
                       onDuplicate={() => duplicateRecord(record)}
@@ -1010,7 +837,7 @@ export default function CatalogoManagerPremium() {
             </main>
 
             <aside className="hidden xl:block">
-              <div className="sticky top-5 space-y-4">
+              <div className="sticky top-28 space-y-4">
                 <section className="rounded-[1.75rem] border border-stone-200/70 bg-white/90 p-4 shadow-[0_15px_40px_rgba(15,23,42,0.05)] backdrop-blur">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1029,6 +856,7 @@ export default function CatalogoManagerPremium() {
                       <CatalogDetail
                         record={detailRecord}
                         providerLabel={getProviderLabel(detailRecord, providersById)}
+                        canTogglePublished={isPublishableType(String(detailRecord.tipo || ''))}
                         onEdit={() => openEditor(detailRecord)}
                         onDuplicate={() => duplicateRecord(detailRecord)}
                         onTogglePublished={() => togglePublished(detailRecord)}
@@ -1044,24 +872,19 @@ export default function CatalogoManagerPremium() {
           </div>
         )}
 
-        {activeTab === 'modulos' && (
-          <section className="rounded-[1.75rem] border border-stone-200/70 bg-white/90 p-4 shadow-[0_15px_40px_rgba(15,23,42,0.05)] backdrop-blur">
-            <div className="mb-4 flex flex-col gap-2 border-b border-stone-100 pb-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">
-                Segunda capa del catálogo
-              </p>
-              <h2 className="text-2xl font-black tracking-tight text-stone-950">Módulos y Productos</h2>
-              <p className="max-w-2xl text-sm leading-6 text-stone-600">
-                Esta sección conserva el compositor custom de prefabricados y lo presenta con el mismo
-                nivel de entidad que el catálogo principal.
-              </p>
-            </div>
-            <PrefabricadosComposer />
-          </section>
+        {activeTab === 'prefabricados' && (
+          <PrefabricadosComposer />
+        )}
+
+        {activeTab === 'proveedores' && (
+          <ProveedoresDirectory />
         )}
       </div>
 
-      <Sheet open={mobileDetailOpen && !!detailRecord && !isDesktop} onOpenChange={(open) => setMobileDetailOpen(open)}>
+      <Sheet
+        open={activeTab === 'inventario' && mobileDetailOpen && !!detailRecord && !isDesktop}
+        onOpenChange={(open) => setMobileDetailOpen(open)}
+      >
         <SheetContent side="right" className="w-full max-w-[540px] overflow-y-auto border-stone-200 bg-stone-50">
           <SheetHeader className="mb-4 border-b border-stone-200 pb-4 text-left">
             <SheetTitle className="text-xl font-black tracking-tight text-stone-950">Detalle del producto</SheetTitle>
@@ -1073,6 +896,7 @@ export default function CatalogoManagerPremium() {
             <CatalogDetail
               record={detailRecord}
               providerLabel={getProviderLabel(detailRecord, providersById)}
+              canTogglePublished={isPublishableType(String(detailRecord.tipo || ''))}
               onEdit={() => {
                 setMobileDetailOpen(false);
                 openEditor(detailRecord);
@@ -1125,7 +949,13 @@ export default function CatalogoManagerPremium() {
                 <Field label="Tipo">
                   <Select
                     value={editorForm.tipo}
-                    onValueChange={(value) => setEditorForm((current) => ({ ...current, tipo: value }))}
+                    onValueChange={(value) =>
+                      setEditorForm((current) => ({
+                        ...current,
+                        tipo: value,
+                        publicado_web: isPublishableType(value) ? current.publicado_web : false,
+                      }))
+                    }
                   >
                     <SelectTrigger className="h-11 rounded-2xl border-stone-200">
                       <SelectValue placeholder="Seleccionar tipo" />
@@ -1276,12 +1106,15 @@ export default function CatalogoManagerPremium() {
                     type="checkbox"
                     checked={editorForm.publicado_web}
                     onChange={(event) => setEditorForm((current) => ({ ...current, publicado_web: event.target.checked }))}
+                    disabled={!isPublishableType(editorForm.tipo)}
                     className="mt-1 h-4 w-4"
                   />
                   <div>
                     <p className="text-sm font-semibold text-stone-950">Publicar en la web</p>
                     <p className="text-xs text-stone-500">
-                      Requiere imagen, descripción comercial, segmento y precio público.
+                      {isPublishableType(editorForm.tipo)
+                        ? 'Requiere imagen, descripción comercial, segmento y precio público.'
+                        : 'Solo los módulos prefabricados pueden publicarse en web.'}
                     </p>
                   </div>
                 </label>
@@ -1486,61 +1319,6 @@ function ImageField({
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  hint,
-  icon,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-[1.5rem] border border-stone-200 bg-white px-4 py-4 shadow-sm">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-950 text-white">
-        {icon}
-      </div>
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">{label}</p>
-        <p className="text-2xl font-black tracking-tight text-stone-950">{value}</p>
-        <p className="text-xs text-stone-500">{hint}</p>
-      </div>
-    </div>
-  );
-}
-
-function TypeChip({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string;
-  count: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all',
-        active
-          ? 'border-stone-950 bg-stone-950 text-white shadow-md shadow-stone-950/10'
-          : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900',
-      )}
-    >
-      <span>{label}</span>
-      <span className={cn('rounded-full px-2 py-0.5 text-[10px]', active ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-500')}>
-        {count}
-      </span>
-    </button>
-  );
-}
-
 function Field({
   label,
   children,
@@ -1639,6 +1417,7 @@ function ProductCard({
   record,
   providerLabel,
   active,
+  canTogglePublished,
   onOpen,
   onEdit,
   onDuplicate,
@@ -1648,6 +1427,7 @@ function ProductCard({
   record: RecordItem<CatalogRecord>;
   providerLabel: string;
   active: boolean;
+  canTogglePublished: boolean;
   onOpen: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -1656,6 +1436,7 @@ function ProductCard({
 }) {
   const margin = marginPercentage(record);
   const imageUrl = resolveCatalogImage(record);
+  const published = isRecordPublished(record);
 
   return (
     <Card
@@ -1684,9 +1465,15 @@ function ProductCard({
               <Badge variant="outline" className="border-white/15 bg-white/10 text-white">
                 {record.tipo || 'Sin tipo'}
               </Badge>
-              <Badge variant={record.publicado_web ? 'default' : 'outline'} className={cn('border-white/15', !record.publicado_web && 'bg-white/10 text-white')}>
-                {record.publicado_web ? 'Publicado' : 'Oculto'}
-              </Badge>
+              {canTogglePublished ? (
+                <Badge variant={published ? 'default' : 'outline'} className={cn('border-white/15', !published && 'bg-white/10 text-white')}>
+                  {published ? 'Publicado' : 'Oculto'}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-white/15 bg-white/10 text-white">
+                  Inventario
+                </Badge>
+              )}
             </div>
             <p className="mt-3 line-clamp-2 text-lg font-black leading-tight">{record.descripcion || 'Sin descripción'}</p>
           </div>
@@ -1724,14 +1511,20 @@ function ProductCard({
         </div>
 
         <div className="flex flex-wrap gap-2 pt-1">
-          <QuickActionButton label="Editar" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} />
-          <QuickActionButton label="Duplicar" icon={<Copy className="h-4 w-4" />} onClick={onDuplicate} />
-          <QuickActionButton
-            label={record.publicado_web ? 'Ocultar' : 'Publicar'}
-            icon={record.publicado_web ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            onClick={onTogglePublished}
-          />
-          <QuickActionButton label="Eliminar" icon={<Trash2 className="h-4 w-4" />} onClick={onDelete} destructive />
+          <IconActionButton label="Editar" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} />
+          <IconActionButton label="Duplicar" icon={<Copy className="h-4 w-4" />} onClick={onDuplicate} />
+          {canTogglePublished ? (
+            <IconActionButton
+              label={published ? 'Ocultar' : 'Publicar'}
+              icon={published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              onClick={onTogglePublished}
+            />
+          ) : (
+            <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+              Privado
+            </Badge>
+          )}
+          <IconActionButton label="Eliminar" icon={<Trash2 className="h-4 w-4" />} onClick={onDelete} destructive />
         </div>
       </CardContent>
     </Card>
@@ -1742,6 +1535,7 @@ function ListRow({
   record,
   providerLabel,
   active,
+  canTogglePublished,
   onOpen,
   onEdit,
   onDuplicate,
@@ -1751,6 +1545,7 @@ function ListRow({
   record: RecordItem<CatalogRecord>;
   providerLabel: string;
   active: boolean;
+  canTogglePublished: boolean;
   onOpen: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -1758,6 +1553,7 @@ function ListRow({
   onDelete: () => void;
 }) {
   const imageUrl = resolveCatalogImage(record);
+  const published = isRecordPublished(record);
 
   return (
     <div
@@ -1782,9 +1578,15 @@ function ListRow({
               <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 text-stone-600">
                 {record.tipo || 'Sin tipo'}
               </Badge>
-              <Badge variant={record.publicado_web ? 'default' : 'outline'} className={cn('rounded-full', !record.publicado_web && 'bg-stone-50 text-stone-600')}>
-                {record.publicado_web ? 'Publicado' : 'Oculto'}
-              </Badge>
+              {canTogglePublished ? (
+                <Badge variant={published ? 'default' : 'outline'} className={cn('rounded-full', !published && 'bg-stone-50 text-stone-600')}>
+                  {published ? 'Publicado' : 'Oculto'}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 text-stone-600">
+                  Inventario
+                </Badge>
+              )}
             </div>
             <p className="truncate text-base font-bold text-stone-950">{record.descripcion || 'Sin descripción'}</p>
             <p className="truncate text-sm text-stone-500">{record.sku || 'Sin SKU'} · {providerLabel}</p>
@@ -1800,21 +1602,27 @@ function ListRow({
         </div>
 
         <div className="flex flex-wrap gap-2 md:justify-end">
-          <QuickActionButton label="Editar" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} />
-          <QuickActionButton label="Duplicar" icon={<Copy className="h-4 w-4" />} onClick={onDuplicate} />
-          <QuickActionButton
-            label={record.publicado_web ? 'Ocultar' : 'Publicar'}
-            icon={record.publicado_web ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            onClick={onTogglePublished}
-          />
-          <QuickActionButton label="Eliminar" icon={<Trash2 className="h-4 w-4" />} onClick={onDelete} destructive />
+          <IconActionButton label="Editar" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} />
+          <IconActionButton label="Duplicar" icon={<Copy className="h-4 w-4" />} onClick={onDuplicate} />
+          {canTogglePublished ? (
+            <IconActionButton
+              label={published ? 'Ocultar' : 'Publicar'}
+              icon={published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              onClick={onTogglePublished}
+            />
+          ) : (
+            <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+              Privado
+            </Badge>
+          )}
+          <IconActionButton label="Eliminar" icon={<Trash2 className="h-4 w-4" />} onClick={onDelete} destructive />
         </div>
       </div>
     </div>
   );
 }
 
-function QuickActionButton({
+function IconActionButton({
   label,
   icon,
   onClick,
@@ -1832,12 +1640,13 @@ function QuickActionButton({
       size="sm"
       onClick={onClick}
       className={cn(
-        'h-9 rounded-full border-stone-200 bg-white px-3 text-xs font-semibold',
+        'h-9 w-9 rounded-full border-stone-200 bg-white p-0 text-xs font-semibold',
         destructive && 'border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800',
       )}
+      title={label}
     >
       {icon}
-      <span className="ml-2">{label}</span>
+      <span className="sr-only">{label}</span>
     </Button>
   );
 }
@@ -1845,6 +1654,7 @@ function QuickActionButton({
 function CatalogDetail({
   record,
   providerLabel,
+  canTogglePublished,
   onEdit,
   onDuplicate,
   onTogglePublished,
@@ -1852,6 +1662,7 @@ function CatalogDetail({
 }: {
   record: RecordItem<CatalogRecord>;
   providerLabel: string;
+  canTogglePublished: boolean;
   onEdit: () => void;
   onDuplicate: () => void;
   onTogglePublished: () => void;
@@ -1859,6 +1670,7 @@ function CatalogDetail({
 }) {
   const margin = marginPercentage(record);
   const imageUrl = resolveCatalogImage(record);
+  const published = isRecordPublished(record);
 
   return (
     <div className="space-y-4">
@@ -1880,9 +1692,15 @@ function CatalogDetail({
             <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 text-stone-600">
               {record.tipo || 'Sin tipo'}
             </Badge>
-            <Badge variant={record.publicado_web ? 'default' : 'outline'} className={cn('rounded-full', !record.publicado_web && 'bg-stone-50 text-stone-600')}>
-              {record.publicado_web ? 'Publicado en web' : 'Oculto en web'}
-            </Badge>
+            {canTogglePublished ? (
+              <Badge variant={published ? 'default' : 'outline'} className={cn('rounded-full', !published && 'bg-stone-50 text-stone-600')}>
+                {published ? 'Publicado en web' : 'Oculto en web'}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 text-stone-600">
+                Inventario
+              </Badge>
+            )}
           </div>
           <h3 className="text-2xl font-black tracking-tight text-stone-950">
             {record.descripcion || 'Sin descripción'}
@@ -1905,14 +1723,16 @@ function CatalogDetail({
       <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4">
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Acciones</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <QuickActionButton label="Editar" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} />
-          <QuickActionButton label="Duplicar" icon={<Copy className="h-4 w-4" />} onClick={onDuplicate} />
-          <QuickActionButton
-            label={record.publicado_web ? 'Ocultar' : 'Publicar'}
-            icon={record.publicado_web ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            onClick={onTogglePublished}
-          />
-          <QuickActionButton label="Eliminar" icon={<Trash2 className="h-4 w-4" />} onClick={onDelete} destructive />
+          <IconActionButton label="Editar" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} />
+          <IconActionButton label="Duplicar" icon={<Copy className="h-4 w-4" />} onClick={onDuplicate} />
+          {canTogglePublished ? (
+            <IconActionButton
+              label={published ? 'Ocultar' : 'Publicar'}
+              icon={published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              onClick={onTogglePublished}
+            />
+          ) : null}
+          <IconActionButton label="Eliminar" icon={<Trash2 className="h-4 w-4" />} onClick={onDelete} destructive />
         </div>
       </div>
 
