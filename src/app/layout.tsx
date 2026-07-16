@@ -16,6 +16,7 @@ import fs from "fs/promises";
 import path from "path";
 import { SYSTEM_NS } from "@/lib/agnostic/constants";
 import { buildOrganizationSchema, readCommercialConfig, serializeJsonLd } from "@/lib/veta/seo/schemaGenerator";
+import { getGoogleAnalyticsMeasurementId } from "@/lib/veta/seo/publicSite";
 import { sessionOptions, type SessionData } from "@/lib/agnostic/session";
 import { getPublicHomeContent } from '@/server/public-site-data';
 
@@ -67,6 +68,7 @@ export default async function RootLayout({
   const appName = (sysConfig["app_name"] as string | undefined) ?? "Agnostic System";
   const commercialConfig = readCommercialConfig(vaultData["configuracion_comercial"] as any);
   const organizationSchema = buildOrganizationSchema(commercialConfig);
+  const gaMeasurementId = isPublicSite ? getGoogleAnalyticsMeasurementId() : '';
   void dna;
 
   return (
@@ -85,6 +87,25 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationSchema) }}
         />
+        {gaMeasurementId && (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+            />
+            <script
+              id="google-analytics"
+              dangerouslySetInnerHTML={{
+                __html: [
+                  "window.dataLayer = window.dataLayer || [];",
+                  "function gtag(){window.dataLayer.push(arguments);}",
+                  "gtag('js', new Date());",
+                  `gtag('config', ${JSON.stringify(gaMeasurementId)}, { anonymize_ip: true });`,
+                ].join('\n'),
+              }}
+            />
+          </>
+        )}
         <title>{appName}</title>
       </head>
       <body className="antialiased">
@@ -101,4 +122,3 @@ export default async function RootLayout({
     </html>
   );
 }
-

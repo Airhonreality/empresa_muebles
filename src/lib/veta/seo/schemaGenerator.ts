@@ -1,3 +1,5 @@
+import { PUBLIC_SITE_URL } from './publicSite';
+
 type ConfigMap = Record<string, string>;
 
 type TestimonialRecord = {
@@ -5,7 +7,7 @@ type TestimonialRecord = {
   data?: Record<string, unknown>;
 };
 
-const SITE_URL = 'https://vetadeoro.co';
+const SITE_URL = PUBLIC_SITE_URL;
 const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const LOCAL_BUSINESS_ID = `${SITE_URL}/#local-business`;

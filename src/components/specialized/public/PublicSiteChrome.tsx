@@ -3,7 +3,6 @@ import { Calendar, Layers, MessageCircle } from 'lucide-react';
 
 const navigation = [
   { href: '/', label: 'Espacios a medida' },
-  { href: '/tienda', label: 'Tienda' },
   { href: '/portafolio', label: 'Portafolio' },
   { href: '/colecciones', label: 'Colecciones' },
   { href: '/agendar', label: 'Agendar' },
