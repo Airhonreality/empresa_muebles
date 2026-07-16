@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { AgnosticRoutePage } from '../agnostic-route-page';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Cargando Proyeccion...',
@@ -10,6 +10,7 @@ interface PageProps {
 }
 
 export default async function MasterRoute({ params }: PageProps) {
-  const { slug } = await params;
-  return <AgnosticRoutePage slug={slug} />;
+  await params;
+  // Public routes are explicit modules. Generic data-driven rendering is private under /app.
+  notFound();
 }

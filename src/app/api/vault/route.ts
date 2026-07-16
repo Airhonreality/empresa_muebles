@@ -33,6 +33,7 @@ import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { appendLog } from '@/lib/agnostic/activity-log';
 import { triggerSchemaCompile } from '@/lib/agnostic/schema-compiler-trigger';
 import { normalizeUserPasswordData } from '@/lib/agnostic/auth/password';
+import { requireManagementAccess } from '@/lib/agnostic/require-session';
 
 // ─── ACTION SCHEMAS ─────────────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ const dispatchSchema = z.discriminatedUnion('action', [
  */
 export async function GET(req: NextRequest) {
   try {
+    await requireManagementAccess(req);
     const url = new URL(req.url);
     const namespace = url.searchParams.get('namespace') || url.searchParams.get('context') || '';
 
@@ -109,6 +111,9 @@ export async function GET(req: NextRequest) {
       records
     });
   } catch (err) {
+    if (err instanceof Error && err.message === 'AUTHENTICATION_REQUIRED') {
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+    }
     return NextResponse.json({ 
       success: false, 
       error: err instanceof Error ? err.message : 'Read failed' 
@@ -122,6 +127,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    await requireManagementAccess(req);
     const body = await req.json();
     const strategy = getStrategy();
 
@@ -171,6 +177,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: `Unsupported action: ${action}` }, { status: 400 });
   } catch (err: any) {
+    if (err instanceof Error && err.message === 'AUTHENTICATION_REQUIRED') {
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+    }
     console.error('[VaultAPI] POST Dispatch failed:', err);
     return NextResponse.json({
       success: false,

@@ -16,6 +16,26 @@ Business domain: none in the seed. Real domain meaning must be added by each for
 - Prefer explicit UTF-8 read and write calls in fork scripts.
 - Validate encoding before propagating shared registry files across forks.
 
+## Contrato público de Empresa Muebles
+
+Las rutas públicas no pueden descargar ni depender de `GET /api/vault`. Un
+visitante recibe únicamente una lectura pública proyectada por el servidor.
+
+- Tienda, detalle, colecciones y portafolio se construyen sobre `publicReadModels`:
+  campos permitidos, filtros fijos y límites. Nunca se ocultan costos, proveedores
+  o inventario después de enviar el registro completo al navegador.
+- El inventario público se expresa como estado simple (`disponible`, `bajo_pedido`,
+  `agotado`), nunca como cantidad exacta.
+- Cada producto público tiene `slug_publico`, distinto de IDs internos.
+- Portafolio publica galería y zona amplia; no iniciales, proyecto_id, dirección ni
+  relaciones de cotización.
+- Una propuesta individual usa `public_links` y un snapshot/proyección de campos
+  aprobados. La URL para clientes es `/propuesta/<nombre>-<código>`, creada con
+  `proposal_slug_base`; no mostrar ni almacenar en UI el token interno.
+
+Antes de abrir una ruta o propuesta, revisar campo por campo que no incluya costos,
+descuentos, dirección, datos de cliente, IDs internos, proveedores o pipeline.
+
 # Fork Documentation
     - storage\fork_doc\MANIFEST GOAL.MD - Contiene la semilla del proyecto que se debe seguir cómo goal base. 
     - Modelo de diseño de detalle de modulos de fork: (pendiente por incluir)
@@ -92,6 +112,25 @@ contrato es **no negociable**:
 - **`git config core.longpaths true` obligatorio en Windows.** Nunca `git worktree remove`
   con `node_modules` dentro del worktree (borrar node_modules primero).
 - **Clientes git GUI (GitKraken/GitLens) cerrados** mientras agentes operan el repo.
+
+### Regla post-incidente 2026-07-08 (escrituras parciales en `/api/vault` destruyen registros)
+
+`PostgresStrategy.write` (`src/server/strategies/PostgresStrategy.ts`) **solo hace merge de
+campos si el payload incluye `_meta` con timestamps LWW**. Una escritura `POST /api/vault`
+con `{"action":"WRITE","record":{"id":..., "data":{"un_solo_campo": valor}}}` sin `_meta`
+**reemplaza el registro completo** — no lo parchea. El 2026-07-07/08 esto destruyó 4 registros
+de producción reales (2 `proyectos`, 1 `espacio_variantes`, y de nuevo 1 `proyectos` en un
+segundo incidente) porque agentes livianos asumieron merge automático al "solo cambiar un campo".
+
+- **Antes de CUALQUIER `WRITE` a un registro que ya existe:** primero `GET` ese registro,
+  toma su `data` completo, mézclalo en memoria con los campos nuevos/cambiados, y manda el
+  objeto COMPLETO resultante. Nunca mandes un `data` parcial confiando en que el motor
+  complete el resto.
+- Esto aplica a TODO namespace (`proyectos`, `espacio_variantes`, `scripts`, cualquiera),
+  no solo a los que causaron el incidente.
+- Antes de escribir sobre datos de producción reales, toma snapshot (`GET` de los
+  namespaces afectados) y COMMITÉALO Y PUSHÉALO antes de escribir — ver
+  `storage/progreso/lanes/goal-neon-cotizaciones-recovery.md` para el patrón completo.
 
 ### Mapa de ramas vigente
 

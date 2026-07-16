@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { BlockProps } from '@agnostic/core';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import VetaHeader from '../VetaHeader';
 import VetaFooter from '../VetaFooter';
-import { useAppState } from '@/context/AppContext';
 import { COP } from '@/components/specialized/cotizador/utils';
 import { CartProvider } from './CartContext';
 import { CartDrawer } from './CartDrawer';
@@ -24,50 +23,26 @@ interface Product {
 }
 
 function VetaTiendaContent() {
-  const { data } = useAppState();
   const [cartOpen, setCartOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('todos');
+  const [products, setProducts] = useState<Product[]>([]);
   const { itemCount } = useCart();
 
-  const products = useMemo(() => {
-    const result: Product[] = [];
-
-    // Agregar prefabricados publicados
-    const prefabricados = (data['prefabricados'] || []).filter(
-      (p: any) => p.data.publicado_web === true && p.data.precio_publico > 0
-    );
-    result.push(
-      ...prefabricados.map((p: any) => ({
-        id: p.id,
-        nombre: p.data.nombre,
-        descripcion_comercial: p.data.descripcion_comercial || p.data.descripcion,
-        categoria_comercial: p.data.categoria_comercial || 'General',
-        precio_publico: p.data.precio_publico,
-        slug: p.data.slug || p.data.nombre.toLowerCase().replace(/\s+/g, '-'),
-        imagen_url: p.data.imagen_url,
-        tipo: 'prefabricado' as const,
-      }))
-    );
-
-    // Agregar productos_catalogo publicados
-    const catalogo = (data['productos_catalogo'] || []).filter(
-      (p: any) => p.data.publicado_web === true && p.data.precio_publico > 0
-    );
-    result.push(
-      ...catalogo.map((p: any) => ({
-        id: p.id,
-        nombre: p.data.descripcion || 'Producto',
-        descripcion_comercial: p.data.descripcion,
-        categoria_comercial: p.data.categoria_comercial || p.data.tipo || 'General',
-        precio_publico: p.data.precio_publico,
-        slug: p.data.sku || p.id,
-        imagen_url: p.data.imagen_url,
-        tipo: 'catalogo' as const,
-      }))
-    );
-
-    return result;
-  }, [data]);
+  useEffect(() => {
+    fetch('/api/public-data/store-products')
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Public catalog unavailable')))
+      .then(payload => setProducts((payload.records ?? []).map((record: any) => ({
+        id: record.slug_publico,
+        slug: record.slug_publico,
+        nombre: record.nombre,
+        descripcion_comercial: record.descripcion_comercial,
+        categoria_comercial: record.categoria_comercial,
+        precio_publico: record.precio_publico,
+        imagen_url: record.imagen_url,
+        tipo: record.tipo,
+      }))))
+      .catch(() => setProducts([]));
+  }, []);
 
   const categories = useMemo(() => {
     const cats = new Set<string>();

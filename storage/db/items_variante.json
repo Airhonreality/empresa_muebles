@@ -1917,5 +1917,113 @@
       "unidad_medida": "tablero"
     },
     "updated_at": "2026-07-04T13:41:17.485Z"
+  },
+  {
+    "id": "656b854d-f152-4a33-b9c6-e47735906a21",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "4b9c8c48-f669-4be9-aa1c-0f18f7a791b3",
+      "catalogo_id": "c0e2481c-f543-4b93-850f-28776a974622",
+      "unidad_medida": "metro lineal",
+      "cantidad": 4.2,
+      "precio_unitario": 448500,
+      "total_linea": 1883700
+    },
+    "updated_at": "2026-07-15T21:06:27.174Z"
+  },
+  {
+    "id": "b4417d48-6dae-42a9-bb83-e071163840b2",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "4b9c8c48-f669-4be9-aa1c-0f18f7a791b3",
+      "catalogo_id": "4f519285-492b-45a2-b25d-26f1edd8b97c",
+      "unidad_medida": "unidad",
+      "cantidad": 8,
+      "precio_unitario": 11500,
+      "total_linea": 92000,
+      "imagen_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=640&q=80"
+    },
+    "updated_at": "2026-07-15T21:06:27.188Z"
+  },
+  {
+    "id": "c68c8d78-ea5d-4664-9602-0b6d66e02b20",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "a4e6b00a-ab55-4f3a-96f4-10e968636670",
+      "catalogo_id": "c0e2481c-f543-4b93-850f-28776a974622",
+      "unidad_medida": "metro lineal",
+      "cantidad": 4.2,
+      "precio_unitario": 448500,
+      "total_linea": 1883700,
+      "imagen_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=640&q=80"
+    },
+    "updated_at": "2026-07-15T21:06:27.200Z"
+  },
+  {
+    "id": "61ab9cc0-b94e-4ec8-80fa-5dbbbc5bbc16",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "a4e6b00a-ab55-4f3a-96f4-10e968636670",
+      "catalogo_id": "4f519285-492b-45a2-b25d-26f1edd8b97c",
+      "unidad_medida": "unidad",
+      "cantidad": 6,
+      "precio_unitario": 11500,
+      "total_linea": 69000
+    },
+    "updated_at": "2026-07-15T21:06:27.214Z"
+  },
+  {
+    "id": "0ac80c06-4785-4e96-b9ef-a9a60bc99fab",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "11311a1b-b663-4cab-a23c-34b5289e926f",
+      "catalogo_id": "12f121b5-c6ef-44e8-b273-93af8451cd5d",
+      "unidad_medida": "metro cuadrado",
+      "cantidad": 8.5,
+      "precio_unitario": 483000,
+      "total_linea": 4105500,
+      "imagen_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=640&q=80"
+    },
+    "updated_at": "2026-07-15T21:06:27.227Z"
+  },
+  {
+    "id": "8525cb7e-4d6c-43b1-81c0-9cb349b15a99",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "11311a1b-b663-4cab-a23c-34b5289e926f",
+      "catalogo_id": "c478502f-0deb-4a94-89b5-7282e8d762a3",
+      "unidad_medida": "juego",
+      "cantidad": 12,
+      "precio_unitario": 13800,
+      "total_linea": 165600
+    },
+    "updated_at": "2026-07-15T21:06:27.240Z"
+  },
+  {
+    "id": "9fe89033-97ee-4480-8df9-4f0b3ec93762",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "08f989d0-6bba-496f-b412-0e0e8f48c1c4",
+      "catalogo_id": "12f121b5-c6ef-44e8-b273-93af8451cd5d",
+      "unidad_medida": "metro cuadrado",
+      "cantidad": 8.5,
+      "precio_unitario": 483000,
+      "total_linea": 4105500
+    },
+    "updated_at": "2026-07-15T21:06:27.256Z"
+  },
+  {
+    "id": "1f77d348-4660-4ecb-8a4d-67bd79812ecd",
+    "context": "items_variante",
+    "data": {
+      "variante_id": "08f989d0-6bba-496f-b412-0e0e8f48c1c4",
+      "catalogo_id": "c478502f-0deb-4a94-89b5-7282e8d762a3",
+      "unidad_medida": "juego",
+      "cantidad": 8,
+      "precio_unitario": 13800,
+      "total_linea": 110400,
+      "imagen_url": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=640&q=80"
+    },
+    "updated_at": "2026-07-15T21:06:27.274Z"
   }
 ]

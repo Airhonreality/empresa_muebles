@@ -5,7 +5,7 @@ import type { BlockProps, DataItem } from '@agnostic/core'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Trash2, Edit3, X, Copy, Play } from 'lucide-react'
+import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Trash2, Edit3, X, Copy, Play, ExternalLink, Link2, RotateCcw } from 'lucide-react'
 
 import { EspacioCard } from './EspacioCard'
 import { MoneyInput } from './MoneyInput'
@@ -22,11 +22,34 @@ import type {
   Proyectos as ProyectoData,
   EspacioVariantes,
   ItemsVariante,
+  ItemsObraCivil,
   ProductosCatalogo,
+  ImagenesEspacio,
 } from '@/generated/agnostic-schemas'
 
 interface CotizadorProProps extends Partial<BlockProps> {
   forcedProyectoId?: string
+}
+
+type PublicProposalData = {
+  proyecto_id: string
+  public_slug: string
+  snapshot_json: unknown
+  estado: 'borrador' | 'publicada' | 'revocada'
+  emitida_en?: string
+  revocado_en?: string
+}
+
+function createPublicSlug(title?: string) {
+  const editorialPart = (title || 'propuesta')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'propuesta'
+
+  return `${editorialPart}-${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`
 }
 
 export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecord }: CotizadorProProps) {
@@ -37,6 +60,9 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const [catalogo,     setCatalogo]     = useState<DataItem[]>([])
   const [variantes,    setVariantes]    = useState<DataItem[]>([])
   const [items,        setItems]        = useState<DataItem[]>([])
+  const [itemsObraCivil, setItemsObraCivil] = useState<DataItem[]>([])
+  const [spaceImages, setSpaceImages] = useState<DataItem[]>([])
+  const [publicProposals, setPublicProposals] = useState<DataItem[]>([])
   const [loading, setLoading] = useState(true)
 
   // ── Active quote ─────────────────────────────────────────────────
@@ -71,6 +97,10 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     if (!activeCotId) return null
     return contratos.find(c => (c.data as any)?.proyecto_id === activeCotId) ?? null
   }, [contratos, activeCotId])
+  const activePublicProposal = useMemo(
+    () => publicProposals.find(record => (record.data as PublicProposalData).proyecto_id === activeCotId) ?? null,
+    [publicProposals, activeCotId],
+  )
 
   const clienteData = useMemo(() => {
     if (!headerLocal?.cliente_id) return null
@@ -87,21 +117,27 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [rc, rci, rco, rcat, rv, ri] = await Promise.all([
+      const [rc, rci, rco, rcat, rv, ri, rio, rsi, rpp] = await Promise.all([
         fetch('/api/vault?namespace=proyectos'),
         fetch('/api/vault?namespace=clientes'),
         fetch('/api/vault?namespace=contratos'),
         fetch('/api/vault?namespace=productos_catalogo'),
         fetch('/api/vault?namespace=espacio_variantes'),
         fetch('/api/vault?namespace=items_variante'),
+        fetch('/api/vault?namespace=items_obra_civil'),
+        fetch('/api/vault?namespace=imagenes_espacio'),
+        fetch('/api/vault?namespace=propuestas_publicas'),
       ])
-      const [jc, jci, jco, jcat, jv, ji] = await Promise.all([rc.json(), rci.json(), rco.json(), rcat.json(), rv.json(), ri.json()])
+      const [jc, jci, jco, jcat, jv, ji, jio, jsi, jpp] = await Promise.all([rc.json(), rci.json(), rco.json(), rcat.json(), rv.json(), ri.json(), rio.json(), rsi.json(), rpp.json()])
       setProyectos(jc.records  ?? [])
       setClientes(    jci.records ?? [])
       setContratos(   jco.records ?? [])
       setCatalogo(    jcat.records?? [])
       setVariantes(   jv.records  ?? [])
       setItems(       ji.records  ?? [])
+      setItemsObraCivil(jio.records ?? [])
+      setSpaceImages(jsi.records ?? [])
+      setPublicProposals(jpp.records ?? [])
     } finally { setLoading(false) }
   }, [])
 
@@ -313,6 +349,28 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     const iva       = aplicaIva ? total * (pctIva / 100) : 0
     return { mat, mo, sub, costos, impr, desc, ajuste, aplicaIva, pctIva, iva, total, totalConIva: total + iva }
   }, [espacios, items, headerLocal, tarifas, activeVarMap])
+
+  // Totals for obra civil (referential, not included in grand total)
+  const totalObraCivil = useMemo(() => {
+    let mano_obra = 0, logistica = 0, materiales = 0
+    for (const { nombre, vars } of espacios) {
+      const activeId = activeVarMap[nombre] || vars[0]?.id
+      const av = vars.find(v => v.id === activeId) || vars[0]; if (!av) continue
+      const vd = av.data as any as EspacioVariantes
+      if (vd.visible_pdf === false) continue
+
+      const vItemsOC = itemsObraCivil.filter(it => (it.data as any as ItemsObraCivil).variante_id === av.id)
+      for (const it of vItemsOC) {
+        const itData = it.data as any as ItemsObraCivil
+        const amount = Number(itData.total_linea) || (Number(itData.cantidad) || 0) * (Number(itData.precio_unitario) || 0)
+        if (itData.categoria === 'mano_obra') mano_obra += amount
+        else if (itData.categoria === 'logistica') logistica += amount
+        else if (itData.categoria === 'materiales') materiales += amount
+      }
+    }
+    const total = mano_obra + logistica + materiales
+    return { mano_obra, logistica, materiales, total }
+  }, [espacios, itemsObraCivil, activeVarMap])
 
   const productionReady = !!activeCotId && (
     !!activeContrato ||
@@ -706,12 +764,169 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     setItems(prev => prev.filter(x => x.id !== id))
   }
 
+  // ── Handlers: items obra civil ───────────────────────────────────
+  const addItemObraCivil = async (varId: string, categoria: 'mano_obra' | 'logistica' | 'materiales') => {
+    const id = crypto.randomUUID()
+    const data: ItemsObraCivil = { variante_id: varId, categoria, catalogo_id: '', descripcion_manual: '', cantidad: 1, precio_unitario: 0, total_linea: 0, unidad_medida: '' }
+    await vWrite('items_obra_civil', id, data)
+    setItemsObraCivil(prev => [...prev, { id, context: 'items_obra_civil', data: data as any }])
+    return id
+  }
+
+  const updateItemObraCivil = async (id: string, patch: Partial<ItemsObraCivil>) => {
+    const it = itemsObraCivil.find(x => x.id === id)
+    if (!it) return
+    const nd = { ...(it.data as any as ItemsObraCivil), ...patch }
+    setItemsObraCivil(prev => prev.map(x => x.id === id ? { ...x, data: nd as any } : x))
+    await vWrite('items_obra_civil', id, nd)
+  }
+
+  const deleteItemObraCivil = async (id: string) => {
+    await vRemove('items_obra_civil', id)
+    setItemsObraCivil(prev => prev.filter(x => x.id !== id))
+  }
+
+  const buildPublicSnapshot = () => ({
+    title: headerLocal.nombre_proyecto || 'Propuesta de diseño',
+    issued_at: new Date().toISOString().slice(0, 10),
+    client: clienteData ? {
+      name: clienteData.nombre,
+      location: [headerLocal.barrio, headerLocal.direccion_obra].filter(Boolean).join(' · ') || undefined,
+    } : undefined,
+    financial: {
+      carpentry: {
+        materials: gt.mat,
+        labor: gt.mo,
+        operating_costs: gt.costos,
+        contingencies: gt.impr,
+        discount: gt.desc,
+        adjustment: gt.ajuste,
+        vat: gt.iva,
+        total: gt.aplicaIva ? gt.totalConIva : gt.total,
+      },
+      civil_estimate: {
+        labor: totalObraCivil.mano_obra,
+        logistics: totalObraCivil.logistica,
+        materials: totalObraCivil.materiales,
+        total: totalObraCivil.total,
+      },
+      remodel_total: (gt.aplicaIva ? gt.totalConIva : gt.total) + totalObraCivil.total,
+    },
+    spaces: espacios.map(({ nombre, vars }) => ({
+      id: nombre,
+      name: nombre,
+      description: (vars[0]?.data as unknown as EspacioVariantes | undefined)?.descripcion || undefined,
+      variants: vars.map(variant => {
+        const variantData = variant.data as unknown as EspacioVariantes
+        const colors = (() => {
+          if (!variantData.colores) return []
+          try {
+            const parsed = JSON.parse(variantData.colores)
+            return Array.isArray(parsed) ? parsed.filter((color): color is { nombre: string; imagen_url?: string } => Boolean(color?.nombre)).map(color => ({ name: color.nombre, image_url: color.imagen_url })) : []
+          } catch {
+            return variantData.colores.split(',').map(name => ({ name: name.trim() })).filter(color => color.name)
+          }
+        })()
+        const linkedImages = spaceImages
+          .filter(entry => (entry.data as unknown as ImagenesEspacio).espacio_variante_id === variant.id)
+          .sort((a, b) => Number((a.data as unknown as ImagenesEspacio).orden || 0) - Number((b.data as unknown as ImagenesEspacio).orden || 0))
+          .map(entry => {
+            const image = entry.data as unknown as ImagenesEspacio
+            return { url: image.imagen_url, description: image.descripcion }
+          })
+        const images = linkedImages.length > 0 ? linkedImages : (() => {
+          const legacyImages = variantData.imagenes || ''
+          try {
+            const parsed = JSON.parse(legacyImages)
+            return Array.isArray(parsed) ? parsed.filter((url): url is string => typeof url === 'string' && Boolean(url.trim())).map(url => ({ url, description: '' })) : []
+          } catch {
+            return legacyImages.split(',').map(url => url.trim()).filter(Boolean).map(url => ({ url, description: '' }))
+          }
+        })()
+        const variantItems = items.filter(item => (item.data as unknown as ItemsVariante).variante_id === variant.id && !(item.data as unknown as ItemsVariante).anulado)
+        const itemProjection = variantItems.map(item => {
+          const itemData = item.data as unknown as ItemsVariante
+          const product = catalogo.find(entry => entry.id === itemData.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
+          const unitPrice = Number(itemData.precio_unitario) || 0
+          const lineTotal = Number(itemData.total_linea) || (Number(itemData.cantidad) || 0) * unitPrice
+          return { name: product?.descripcion || 'Ítem incluido', quantity: Number(itemData.cantidad) || 0, unit: itemData.unidad_medida || product?.unidad_medida, unit_price: unitPrice, line_total: lineTotal, image_url: itemData.imagen_url || product?.imagen_url || product?.imagen }
+        })
+        const materialsTotal = itemProjection.reduce((sum, item) => sum + item.line_total, 0)
+        const laborTotal = (Number(variantData.jornadas_desarrollo_tecnico) || 0) * tarifas.dev + (Number(variantData.jornadas_ensamblaje_taller) || 0) * tarifas.assembly + (Number(variantData.jornadas_instalacion_obra) || 0) * tarifas.install
+        const civilEstimate = itemsObraCivil
+          .filter(item => (item.data as unknown as ItemsObraCivil).variante_id === variant.id)
+          .map(item => {
+            const data = item.data as unknown as ItemsObraCivil
+            const product = catalogo.find(entry => entry.id === data.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
+            const unitPrice = Number(data.precio_unitario) || 0
+            return { category: data.categoria, name: data.descripcion_manual || product?.descripcion || 'Ítem de obra civil', quantity: Number(data.cantidad) || 0, unit: data.unidad_medida || product?.unidad_medida, unit_price: unitPrice, line_total: Number(data.total_linea) || (Number(data.cantidad) || 0) * unitPrice, notes: data.notas }
+          })
+        return {
+          name: variantData.nombre_variante || 'Alternativa',
+          selected: variant.id === (activeVarMap[nombre] || vars[0]?.id),
+          colors,
+          images,
+          notes: (variantData.notas_markdown || '').split('\n').map(note => note.trim()).filter(Boolean),
+          items: itemProjection,
+          civil_estimate: civilEstimate,
+          materials_total: materialsTotal,
+          labor_total: laborTotal,
+          total: materialsTotal + laborTotal,
+        }
+      }),
+    })),
+  })
+
+  const publishPublicProposal = async () => {
+    if (!activeCotId) return
+    const proposalId = activePublicProposal?.id || crypto.randomUUID()
+    const current = activePublicProposal?.data as PublicProposalData | undefined
+    const data: PublicProposalData = {
+      proyecto_id: activeCotId,
+      public_slug: current?.public_slug || createPublicSlug(headerLocal.nombre_proyecto),
+      snapshot_json: JSON.stringify(buildPublicSnapshot()),
+      estado: 'publicada',
+      emitida_en: new Date().toISOString().slice(0, 10),
+    }
+    await vWrite('propuestas_publicas', proposalId, data)
+    const record = { id: proposalId, context: 'propuestas_publicas', data: data as any }
+    setPublicProposals(previous => current ? previous.map(item => item.id === proposalId ? record : item) : [...previous, record])
+    toast.success('Vista pública publicada')
+  }
+
+  const revokePublicProposal = async () => {
+    if (!activePublicProposal) return
+    const data = { ...(activePublicProposal.data as PublicProposalData), estado: 'revocada' as const, revocado_en: new Date().toISOString().slice(0, 10) }
+    await vWrite('propuestas_publicas', activePublicProposal.id, data)
+    setPublicProposals(previous => previous.map(item => item.id === activePublicProposal.id ? { ...item, data: data as any } : item))
+    toast.success('Vista pública revocada')
+  }
+
+  const regeneratePublicLink = async () => {
+    if (!activePublicProposal) return
+    const data = { ...(activePublicProposal.data as PublicProposalData), public_slug: createPublicSlug(headerLocal.nombre_proyecto), estado: 'borrador' as const, revocado_en: new Date().toISOString().slice(0, 10) }
+    await vWrite('propuestas_publicas', activePublicProposal.id, data)
+    setPublicProposals(previous => previous.map(item => item.id === activePublicProposal.id ? { ...item, data: data as any } : item))
+    toast.success('Enlace regenerado; publícalo cuando el snapshot esté aprobado')
+  }
+
+  const copyPublicLink = async () => {
+    const slug = (activePublicProposal?.data as PublicProposalData | undefined)?.public_slug
+    if (!slug) return
+    await navigator.clipboard.writeText(`${window.location.origin}/propuesta/${slug}`)
+    toast.success('Enlace copiado')
+  }
+
   // ── Handlers: new quote ──────────────────────────────────────────
   const newCot = async () => {
     const id = crypto.randomUUID()
     const data: ProyectoData = { nombre_proyecto: 'Nuevo Proyecto', estado: 'activa' }
     await vWrite('proyectos', id, data)
+    const publicProposalId = crypto.randomUUID()
+    const publicData: PublicProposalData = { proyecto_id: id, public_slug: createPublicSlug(data.nombre_proyecto), snapshot_json: {}, estado: 'borrador' }
+    await vWrite('propuestas_publicas', publicProposalId, publicData)
     setProyectos(prev => [...prev, { id, context: 'proyectos', data: data as any }])
+    setPublicProposals(prev => [...prev, { id: publicProposalId, context: 'propuestas_publicas', data: publicData as any }])
     setActiveCotId(id); setHeaderLocal(data)
   }
 
@@ -819,9 +1034,14 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
       
       // Delete the quotation record itself
       await vRemove('proyectos', cotId)
+      const publicRecords = publicProposals.filter(record => (record.data as PublicProposalData).proyecto_id === cotId)
+      for (const record of publicRecords) {
+        await vRemove('propuestas_publicas', record.id)
+      }
       
       // Update local state
       setProyectos(prev => prev.filter(c => c.id !== cotId))
+      setPublicProposals(prev => prev.filter(record => (record.data as PublicProposalData).proyecto_id !== cotId))
       setVariantes(prev => prev.filter(v => (v.data as any as EspacioVariantes).proyecto_id !== cotId))
       setItems(prev => prev.filter(it => {
         const varId = (it.data as any as ItemsVariante).variante_id
@@ -863,6 +1083,14 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     try {
       // 1. Write the new cotizacion
       await vWrite('proyectos', newCotId, newCotData)
+      const newPublicProposalId = crypto.randomUUID()
+      const newPublicProposal: PublicProposalData = {
+        proyecto_id: newCotId,
+        public_slug: createPublicSlug(newCotData.nombre_proyecto),
+        snapshot_json: {},
+        estado: 'borrador',
+      }
+      await vWrite('propuestas_publicas', newPublicProposalId, newPublicProposal)
       
       // 2. Clone each space/variant and its items
       for (const v of origVariants) {
@@ -892,6 +1120,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
       setProyectos(prev => [...prev, { id: newCotId, context: 'proyectos', data: newCotData as any }])
       setVariantes(prev => [...prev, ...newVariants])
       setItems(prev => [...prev, ...newItems])
+      setPublicProposals(prev => [...prev, { id: newPublicProposalId, context: 'propuestas_publicas', data: newPublicProposal as any }])
       
       toast.success('Cotización duplicada con éxito')
     } catch (error: any) {
@@ -1062,7 +1291,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const isEmbedded = !!forcedProyectoId
 
   return (
-    <div className={cn("flex flex-col flex-1", isEmbedded ? "pb-24 bg-transparent" : "min-h-screen bg-stone-50 pb-36")}>
+    <div className={cn("veta-font-body flex flex-col flex-1", isEmbedded ? "pb-24 bg-transparent" : "min-h-screen bg-stone-50 pb-36")}>
 
       {/* ── Sticky header ──────────────────────────────────────────── */}
       <header className={cn("sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm", isEmbedded && "rounded-t-xl")}>
@@ -1088,6 +1317,38 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
                   <User size={10} /> {clienteData.nombre}
                   {clienteData.telefono && <span className="opacity-60 ml-1">{clienteData.telefono}</span>}
                 </p>
+              )}
+              {activePublicProposal && (
+                <div className="mt-1.5 flex items-center gap-2 text-[10px] uppercase tracking-wider text-stone-400">
+                  <span>{(activePublicProposal.data as PublicProposalData).estado === 'publicada' ? 'Vista pública activa' : 'Vista pública en borrador'}</span>
+                  <button type="button" onClick={copyPublicLink} className="inline-flex items-center gap-1 hover:text-amber-700 transition-colors">
+                    <Copy size={10} /> Copiar enlace
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {(activePublicProposal?.data as PublicProposalData | undefined)?.estado === 'publicada' ? (
+                <>
+                  <a href={`/propuesta/${(activePublicProposal?.data as PublicProposalData).public_slug}`} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 text-xs text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-xl hover:bg-amber-50 transition-colors">
+                    <ExternalLink size={12} /> Vista pública
+                  </a>
+                  <button type="button" onClick={publishPublicProposal} className="hidden sm:inline-flex items-center gap-1 text-xs text-stone-500 hover:text-amber-700 px-2 py-1.5 rounded-xl hover:bg-amber-50 transition-colors" title="Actualizar snapshot público">
+                    <RotateCcw size={12} /> Actualizar
+                  </button>
+                  <button type="button" onClick={revokePublicProposal} className="hidden sm:inline-flex items-center gap-1 text-xs text-stone-400 hover:text-red-600 px-2 py-1.5 rounded-xl hover:bg-red-50 transition-colors" title="Revocar vista pública">
+                    <EyeOff size={12} />
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={publishPublicProposal} className="hidden sm:inline-flex items-center gap-1.5 text-xs text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-xl hover:bg-amber-50 transition-colors">
+                  <Link2 size={12} /> Publicar vista
+                </button>
+              )}
+              {activePublicProposal && (
+                <button type="button" onClick={regeneratePublicLink} className="hidden sm:inline-flex items-center gap-1 text-xs text-stone-400 hover:text-amber-700 px-2 py-1.5 rounded-xl hover:bg-amber-50 transition-colors" title="Regenerar enlace público">
+                  <RotateCcw size={12} />
+                </button>
               )}
             </div>
             <button onClick={deleteCotizacion}
@@ -1184,6 +1445,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
             <EspacioCard key={nombre} nombre={nombre} variants={vars}
               activeVarId={activeVarId} onSelectVarId={vid => selectActiveVar(nombre, vid)}
               items={items} catalogo={catalogo} tarifas={tarifas}
+              itemsObraCivil={itemsObraCivil}
               onRename={nn => renameEspacio(nombre, nn)}
               onAddVariante={() => addVariante(nombre)}
               onUpdateVariante={updateVariante}
@@ -1193,6 +1455,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
               onMoveUp={() => reorderEspacio(nombre, 'up')}
               onMoveDown={() => reorderEspacio(nombre, 'down')}
               onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}
+              onAddItemObraCivil={addItemObraCivil} onUpdateItemObraCivil={updateItemObraCivil} onDeleteItemObraCivil={deleteItemObraCivil}
               onDelete={() => deleteEspacio(nombre)}
               onDuplicate={() => duplicateEspacio(nombre)}
               onEditCatalogItem={handleEditCatalogItem}

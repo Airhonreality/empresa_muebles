@@ -28,5 +28,26 @@
       "estado": "entregado"
     },
     "updated_at": "2026-07-06T04:12:34.815Z"
+  },
+  {
+    "id": "b3c11619-9c6a-4550-8a1e-24ab768aed62",
+    "context": "proyectos",
+    "data": {
+      "cliente_id": "74232dbd-9d89-4257-a596-2bec4743036c",
+      "nombre_proyecto": "Propuesta Virtual Demo",
+      "direccion_obra": "Chapinero Alto, Bogota D.C.",
+      "dias_entrega_estimados": 35,
+      "garantia_anios": 2,
+      "costos_operativos": 480000,
+      "imprevistos_instalacion": 250000,
+      "descuento_comercial": 0,
+      "ajuste_arbitrario": 0,
+      "estado": "activa",
+      "descripcion_semantica": "Cotizacion local de demostracion para visualizar cocina integral y closet vestier.",
+      "barrio": "Chapinero",
+      "aplica_iva": true,
+      "porcentaje_iva": 19
+    },
+    "updated_at": "2026-07-15T21:05:24.841Z"
   }
 ]

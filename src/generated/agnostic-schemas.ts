@@ -63,7 +63,8 @@ export interface ProductosCatalogo {
   stock_actual?: number  // Stock Actual
   precio_directo?: number  // Precio Directo
   precio_publico?: number  // Precio Público
-  imagen_url?: string  // Imagen (URL)
+  imagen?: string  // Imagen
+  imagen_url?: string  // Imagen (legacy URL)
   modelo_3d?: string  // Modelo 3D (.glb / .obj)
   url_referencia?: string  // URL de Referencia / Ficha
   proveedor?: string  // Proveedor
@@ -503,6 +504,33 @@ export interface ImagenesPortfolio {
 
 export type ImagenesPortfolioRecord = AgnosticDataItem<ImagenesPortfolio>
 
+// ─── Schema: "items_obra_civil" 
+export interface ItemsObraCivil {
+  variante_id: string  // Espacio/Variante Perteneciente
+  categoria: string  // Categoría
+  catalogo_id?: string  // Seleccionar del Catálogo (opcional)
+  descripcion_manual?: string  // Descripción Manual (si no hay ítem de catálogo)
+  unidad_medida?: string  // Unidad de Medida
+  cantidad: number  // Cantidad
+  precio_unitario: number  // Precio Unitario ($)
+  total_linea?: number  // Total Línea ($)
+  notas?: string  // Notas
+}
+
+export type ItemsObraCivilRecord = AgnosticDataItem<ItemsObraCivil>
+
+// ─── Schema: "propuestas_publicas"
+export interface PropuestasPublicas {
+  proyecto_id?: string  // Proyecto
+  public_slug?: string  // Slug_publico
+  snapshot_json?: string  // Snapshot_aprobado
+  estado?: string  // Estado
+  emitida_en?: string  // Emitida_en
+  revocado_en?: string  // Revocado_en
+}
+
+export type PropuestasPublicasRecord = AgnosticDataItem<PropuestasPublicas>
+
 // ============================================================
 // AgnosticSchemas — complete project schema map
 //
@@ -548,8 +576,10 @@ export interface AgnosticSchemas {
   imagenes_prefabricado: ImagenesPrefabricado
   portfolio_publico: PortfolioPublico
   imagenes_portfolio: ImagenesPortfolio
+  items_obra_civil: ItemsObraCivil
+  propuestas_publicas: PropuestasPublicas
 }
 
 // Valid values for block.context and fetch(`/api/vault?namespace=${ctx}`)
 export type SchemaName = keyof AgnosticSchemas
-// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'proyectos' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial' | 'registros_tecnicos' | 'project_tasks' | 'usuarios_equipo' | 'tareas_operativas' | 'plantillas_tareas' | 'cuentas_financieras' | 'categorias_financieras' | 'comprobantes_financieros' | 'obligaciones_pendientes' | 'movimientos_financieros' | 'registro_horas' | 'system_groups' | 'testimonios' | 'seed_registros' | 'imagenes_prefabricado' | 'portfolio_publico' | 'imagenes_portfolio'
+// Resolved: 'espacio_variantes' | 'items_variante' | 'productos_catalogo' | 'imagenes_espacio' | 'clientes' | 'proyectos' | 'prefabricados' | 'prefabricados_items' | 'ordenes_trabajo' | 'tareas_produccion' | 'contratos' | 'abonos_contrato' | 'nav_links' | 'apoyo_tecnico' | 'proveedores' | 'registro_logistica' | 'compras_materiales' | 'leads' | 'configuracion_comercial' | 'registros_tecnicos' | 'project_tasks' | 'usuarios_equipo' | 'tareas_operativas' | 'plantillas_tareas' | 'cuentas_financieras' | 'categorias_financieras' | 'comprobantes_financieros' | 'obligaciones_pendientes' | 'movimientos_financieros' | 'registro_horas' | 'system_groups' | 'testimonios' | 'seed_registros' | 'imagenes_prefabricado' | 'portfolio_publico' | 'imagenes_portfolio' | 'items_obra_civil' | 'propuestas_publicas'

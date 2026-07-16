@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "ed4cc71c-e7a3-4396-a892-aba006fad8c0",
+    "context": "apoyo_tecnico",
+    "data": {
+      "proyecto_id": "b3c11619-9c6a-4550-8a1e-24ab768aed62",
+      "tipo_recurso": "visita",
+      "fecha_visita": "2026-07-18",
+      "notas": "Validar niveles, puntos electricos y medidas finales.",
+      "lista_requisitos": "Acceso autorizado; punto electrico disponible; confirmar electrodomesticos."
+    },
+    "updated_at": "2026-07-15T22:49:53.021Z"
+  }
+]

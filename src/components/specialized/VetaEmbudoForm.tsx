@@ -3,17 +3,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Loader2, ShieldAlert, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAppState } from '@/context/AppContext';
 import { processEvents } from '@/lib/agnostic/eventProcessor';
 import { getCommercialValue, normalizeWhatsappDestination } from '@/lib/veta/config';
+import type { PublicCommercialRecord } from '@/lib/veta/public-content';
 
 type EmbudoMode = 'page' | 'modal';
-
-type LeadsSchemaField = {
-  key: string;
-  label?: string;
-  required?: boolean;
-};
 
 const tipoEspacioOptions = [
   { label: 'Cocina', value: 'Cocina' },
@@ -28,8 +22,15 @@ const estadoProyectoOptions = [
   { label: 'Necesito que me visiten y asesoren', value: 'Necesito que me visiten y asesoren' },
 ];
 
-export function VetaEmbudoForm({ mode = 'page', onSuccess }: { mode?: EmbudoMode; onSuccess?: () => void }) {
-  const { data, system: { schemas } } = useAppState();
+export function VetaEmbudoForm({
+  configRecords = [],
+  mode = 'page',
+  onSuccess,
+}: {
+  configRecords?: PublicCommercialRecord[];
+  mode?: EmbudoMode;
+  onSuccess?: () => void;
+}) {
 
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
@@ -37,19 +38,9 @@ export function VetaEmbudoForm({ mode = 'page', onSuccess }: { mode?: EmbudoMode
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
 
-  const leadsSchema = schemas.find((schema: any) => schema.data?.name === 'leads');
-  const schemaFields = (leadsSchema?.data?.fields ?? []) as LeadsSchemaField[];
-  const configRecords = data['configuracion_comercial'] || [];
   const whatsappDestination = normalizeWhatsappDestination(
     getCommercialValue(configRecords, 'whatsapp_number', '+57 300 123 4567')
   );
-
-  const fieldMap = useMemo(() => {
-    return schemaFields.reduce<Record<string, LeadsSchemaField>>((acc, field) => {
-      acc[field.key] = field;
-      return acc;
-    }, {});
-  }, [schemaFields]);
 
   useEffect(() => {
     const initialValues: Record<string, string> = {
@@ -62,13 +53,11 @@ export function VetaEmbudoForm({ mode = 'page', onSuccess }: { mode?: EmbudoMode
       mensaje: '',
     };
     setForm(initialValues);
-  }, [leadsSchema]);
+  }, []);
 
   const setValue = (key: string, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
-
-  const visibleLabel = (key: string, fallback: string) => fieldMap[key]?.label || fallback;
 
   const submitLead = async () => {
     setLoading(true);
@@ -217,7 +206,7 @@ export function VetaEmbudoForm({ mode = 'page', onSuccess }: { mode?: EmbudoMode
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[hsl(var(--veta-text-stone))]">
-                {visibleLabel('nombre_completo', 'Nombre completo')} *
+                Nombre completo *
               </span>
               <input
                 value={form.nombre_completo || ''}
@@ -229,7 +218,7 @@ export function VetaEmbudoForm({ mode = 'page', onSuccess }: { mode?: EmbudoMode
             </label>
             <label className="space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[hsl(var(--veta-text-stone))]">
-                {visibleLabel('telefono_whatsapp', 'Teléfono / WhatsApp')} *
+                Teléfono / WhatsApp *
               </span>
               <input
                 value={form.telefono_whatsapp || ''}
@@ -244,7 +233,7 @@ export function VetaEmbudoForm({ mode = 'page', onSuccess }: { mode?: EmbudoMode
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[hsl(var(--veta-text-stone))]">
-                {visibleLabel('email', 'Correo electrónico')}
+                Correo electrónico
               </span>
               <input
                 value={form.email || ''}
@@ -255,7 +244,7 @@ export function VetaEmbudoForm({ mode = 'page', onSuccess }: { mode?: EmbudoMode
             </label>
             <label className="space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[hsl(var(--veta-text-stone))]">
-                {visibleLabel('barrio_zona', 'Barrio / Zona')}
+                Barrio / Zona
               </span>
               <input
                 value={form.barrio_zona || ''}
@@ -268,7 +257,7 @@ export function VetaEmbudoForm({ mode = 'page', onSuccess }: { mode?: EmbudoMode
 
           <label className="space-y-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[hsl(var(--veta-text-stone))]">
-              {visibleLabel('mensaje', 'Mensaje')}
+              Mensaje
             </span>
             <textarea
               value={form.mensaje || ''}

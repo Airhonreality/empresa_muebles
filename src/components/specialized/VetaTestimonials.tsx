@@ -1,15 +1,11 @@
 'use client';
 
-import { useAppState } from '@/context/AppContext';
 import { Star } from 'lucide-react';
+import type { PublicTestimonial } from '@/lib/veta/public-content';
 
 const surfaces = ['veta-surface-glass', 'veta-surface-stone', 'veta-surface-matte'] as const;
 
-export default function VetaTestimonials() {
-  const { data } = useAppState();
-  const testimonios = (data['testimonios'] || [])
-    .filter((item: any) => item.data?.destacado)
-    .slice(0, 6);
+export default function VetaTestimonials({ testimonios = [] }: { testimonios?: PublicTestimonial[] }) {
 
   if (testimonios.length === 0) return null;
 
@@ -29,11 +25,11 @@ export default function VetaTestimonials() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {testimonios.map((item: any, cardIndex: number) => {
-            const dataItem = item.data || {};
+          {testimonios.map((item, cardIndex) => {
+            const dataItem = item.data;
             const rating = Number(dataItem.calificacion || 0);
             return (
-              <article key={item.id} className={`${surfaces[cardIndex % surfaces.length]} rounded-2xl p-6`}>
+              <article key={`${dataItem.nombre_cliente}-${cardIndex}`} className={`${surfaces[cardIndex % surfaces.length]} rounded-2xl p-6`}>
                 <div className="mb-4 flex items-center gap-1 text-[hsl(var(--veta-gold-hover))]">
                   {Array.from({ length: Math.max(0, Math.min(5, rating || 0)) }).map((_, index) => (
                     <Star key={index} className="h-4 w-4 fill-current" />

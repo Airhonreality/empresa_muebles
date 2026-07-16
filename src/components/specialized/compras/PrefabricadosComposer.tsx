@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, RefreshCw, Search, Package, Trash2, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { Plus, Pencil, RefreshCw, Package, Trash2, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import CatalogCollectionChrome from './CatalogCollectionChrome';
 
 type RecordItem<T = Record<string, unknown>> = {
   id: string;
@@ -113,6 +115,7 @@ export default function PrefabricadosComposer() {
   const [prefabricadosItems, setPrefabricadosItems] = useState<RecordItem<PrefabricadoItemRecord>[]>([]);
   const [catalogo, setCatalogo] = useState<RecordItem<CatalogRecord>[]>([]);
   const [search, setSearch] = useState('');
+  const [publishedFilter, setPublishedFilter] = useState<'all' | 'published' | 'private'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState('');
@@ -155,13 +158,15 @@ export default function PrefabricadosComposer() {
     const term = search.trim().toLowerCase();
     return [...prefabricados]
       .filter((item) => {
+        if (publishedFilter === 'published' && !item.publicado_web) return false;
+        if (publishedFilter === 'private' && item.publicado_web) return false;
         if (!term) return true;
         return [item.nombre, item.slug, item.descripcion_comercial]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(term));
       })
       .sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || '')));
-  }, [prefabricados, search]);
+  }, [prefabricados, publishedFilter, search]);
 
   const filteredCatalogo = useMemo(() => {
     const term = searchItems.trim().toLowerCase();
@@ -358,40 +363,57 @@ export default function PrefabricadosComposer() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-lg border border-stone-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-stone-500">Modulos y Productos</p>
-          <h2 className="mt-1 text-2xl font-black text-stone-950">Compositores de Prefabricados</h2>
-          <p className="mt-2 text-sm text-stone-600">Combina items del catálogo en módulos reutilizables o productos publicables.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={loadData} disabled={isLoading} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Sincronizar
-          </Button>
-          <Button onClick={() => openDialog()} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo modulo
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-4 py-3">
-        <Search className="h-4 w-4 text-stone-500" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar por nombre, slug o descripción"
-          className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+      <div className="sticky top-4 z-20 overflow-hidden rounded-[2rem] border border-stone-200/70 bg-white/95 shadow-[0_18px_60px_rgba(15,23,42,0.07)] backdrop-blur">
+        <CatalogCollectionChrome
+          badges={(
+            <>
+              <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-900">
+                <Package className="mr-1 h-3 w-3" />
+                Prefabricados
+              </Badge>
+              <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 text-stone-700">
+                {filteredPrefabricados.length} módulos
+              </Badge>
+              <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-800">
+                {prefabricados.filter((item) => item.publicado_web).length} públicos
+              </Badge>
+            </>
+          )}
+          actions={[
+            {
+              label: 'Sincronizar',
+              icon: <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />,
+              onClick: loadData,
+              variant: 'outline',
+              disabled: isLoading,
+            },
+            {
+              label: 'Nuevo módulo',
+              icon: <Plus className="h-4 w-4" />,
+              onClick: () => openDialog(),
+              variant: 'default',
+            },
+          ]}
+          searchValue={search}
+          searchPlaceholder="Buscar por nombre, slug o descripción"
+          onSearchChange={setSearch}
+          filterValue={publishedFilter}
+          filterPlaceholder="Estado"
+          onFilterChange={(value) => setPublishedFilter(value as 'all' | 'published' | 'private')}
+          filterOptions={[
+            { value: 'all', label: 'Todos' },
+            { value: 'published', label: 'Públicos' },
+            { value: 'private', label: 'Privados' },
+          ]}
         />
       </div>
 
       {isLoading ? (
-        <div className="rounded-lg border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-500">
+        <div className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-500">
           Cargando prefabricados...
         </div>
       ) : filteredPrefabricados.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-500">
+        <div className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-500">
           No hay prefabricados definidos.
         </div>
       ) : (

@@ -77,5 +77,89 @@
       "activa": true
     },
     "updated_at": "2026-07-06T04:12:34.828Z"
+  },
+  {
+    "id": "4b9c8c48-f669-4be9-aa1c-0f18f7a791b3",
+    "context": "espacio_variantes",
+    "data": {
+      "proyecto_id": "b3c11619-9c6a-4550-8a1e-24ab768aed62",
+      "nombre_espacio": "Cocina Integral",
+      "nombre_variante": "Puertas abatibles",
+      "activa": false,
+      "jornadas_desarrollo_tecnico": 2,
+      "jornadas_ensamblaje_taller": 4,
+      "jornadas_instalacion_obra": 2,
+      "descripcion": "Cocina integral lineal con torre de almacenamiento y zona de preparacion.",
+      "descripcion_alternativa": "Configuracion con frentes abatibles y manijas en aluminio.",
+      "notas_markdown": "Medidas finales y electrodomesticos se validan durante la visita tecnica.",
+      "visible_pdf": true,
+      "colores": "[{\"nombre\":\"Melamina Blanco Nube\"},{\"nombre\":\"Perfil aluminio negro mate\"}]",
+      "orden_espacio": 1,
+      "orden": 1
+    },
+    "updated_at": "2026-07-15T22:49:52.725Z"
+  },
+  {
+    "id": "a4e6b00a-ab55-4f3a-96f4-10e968636670",
+    "context": "espacio_variantes",
+    "data": {
+      "proyecto_id": "b3c11619-9c6a-4550-8a1e-24ab768aed62",
+      "nombre_espacio": "Cocina Integral",
+      "nombre_variante": "Puertas corredizas espejo",
+      "activa": true,
+      "jornadas_desarrollo_tecnico": 2,
+      "jornadas_ensamblaje_taller": 4,
+      "jornadas_instalacion_obra": 2,
+      "descripcion": "Cocina integral lineal con torre de almacenamiento y zona de preparacion.",
+      "descripcion_alternativa": "Configuracion con paneles corredizos y superficies reflejantes.",
+      "notas_markdown": "Medidas finales y electrodomesticos se validan durante la visita tecnica.",
+      "visible_pdf": true,
+      "colores": "[{\"nombre\":\"Melamina Blanco Nube\"},{\"nombre\":\"Espejo biselado\"},{\"nombre\":\"Perfil aluminio negro mate\"}]",
+      "orden_espacio": 1,
+      "orden": 2
+    },
+    "updated_at": "2026-07-15T22:49:52.758Z"
+  },
+  {
+    "id": "11311a1b-b663-4cab-a23c-34b5289e926f",
+    "context": "espacio_variantes",
+    "data": {
+      "proyecto_id": "b3c11619-9c6a-4550-8a1e-24ab768aed62",
+      "nombre_espacio": "Closet Vestier",
+      "nombre_variante": "Puertas abatibles",
+      "activa": false,
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 3,
+      "jornadas_instalacion_obra": 2,
+      "descripcion": "Closet de piso a techo con modulos interiores para dos usuarios.",
+      "descripcion_alternativa": "Configuracion abierta con puertas abatibles y herrajes de cierre suave.",
+      "notas_markdown": "La distribucion interior y el tono final se validan sobre muestra fisica.",
+      "visible_pdf": true,
+      "colores": "[{\"nombre\":\"Melamina Roble Natural\"},{\"nombre\":\"Perfil champagne\"}]",
+      "orden_espacio": 2,
+      "orden": 1
+    },
+    "updated_at": "2026-07-15T22:49:52.782Z"
+  },
+  {
+    "id": "08f989d0-6bba-496f-b412-0e0e8f48c1c4",
+    "context": "espacio_variantes",
+    "data": {
+      "proyecto_id": "b3c11619-9c6a-4550-8a1e-24ab768aed62",
+      "nombre_espacio": "Closet Vestier",
+      "nombre_variante": "Puertas corredizas espejo",
+      "activa": true,
+      "jornadas_desarrollo_tecnico": 1,
+      "jornadas_ensamblaje_taller": 3,
+      "jornadas_instalacion_obra": 2,
+      "descripcion": "Closet de piso a techo con modulos interiores para dos usuarios.",
+      "descripcion_alternativa": "Configuracion con puertas corredizas en espejo para ampliar visualmente el ambiente.",
+      "notas_markdown": "La distribucion interior y el tono final se validan sobre muestra fisica.",
+      "visible_pdf": true,
+      "colores": "[{\"nombre\":\"Melamina Roble Natural\"},{\"nombre\":\"Espejo biselado\"},{\"nombre\":\"Perfil aluminio negro mate\"}]",
+      "orden_espacio": 2,
+      "orden": 2
+    },
+    "updated_at": "2026-07-15T22:49:52.808Z"
   }
 ]

@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { BlockProps } from '@agnostic/core';
 import Link from 'next/link';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import VetaHeader from '../VetaHeader';
 import VetaFooter from '../VetaFooter';
-import { useAppState } from '@/context/AppContext';
 import { useRouter } from 'next/navigation';
 import { COP } from '@/components/specialized/cotizador/utils';
 import { CartProvider, useCart } from './CartContext';
@@ -31,86 +30,38 @@ interface ProductDetail {
 
 function VetaProductoDetalleContent({ block }: Partial<BlockProps>) {
   const router = useRouter();
-  const { data } = useAppState();
   const { addItem } = useCart();
   const [cantidad, setCantidad] = useState(1);
   const [cartOpen, setCartOpen] = useState(false);
   const [mainImage, setMainImage] = useState<string | undefined>();
+  const [products, setProducts] = useState<ProductDetail[]>([]);
 
   const slug = typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : '';
 
-  const product = useMemo<ProductDetail | null>(() => {
-    if (!slug) return null;
+  useEffect(() => {
+    fetch('/api/public-data/store-products')
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Public catalog unavailable')))
+      .then(payload => setProducts((payload.records ?? []).map((record: any) => ({
+        id: record.slug_publico,
+        slug: record.slug_publico,
+        nombre: record.nombre,
+        descripcion_comercial: record.descripcion_comercial,
+        categoria_comercial: record.categoria_comercial,
+        precio_publico: record.precio_publico,
+        imagen_url: record.imagen_url,
+        imagenes: record.imagen_url ? [record.imagen_url] : [],
+        dimensiones: record.dimensiones,
+        tipo: record.tipo,
+      }))))
+      .catch(() => setProducts([]));
+  }, []);
 
-    // Buscar en prefabricados
-    const prefab = (data['prefabricados'] || []).find(
-      (p: any) => (p.data.slug || p.data.nombre.toLowerCase().replace(/\s+/g, '-')) === slug
-    );
-    if (prefab) {
-      return {
-        id: prefab.id,
-        nombre: prefab.data.nombre,
-        descripcion_comercial: prefab.data.descripcion_comercial || prefab.data.descripcion,
-        categoria_comercial: prefab.data.categoria_comercial || 'General',
-        precio_publico: prefab.data.precio_publico,
-        slug: prefab.data.slug || slug,
-        imagen_url: prefab.data.imagen_url,
-        tipo: 'prefabricado',
-        imagenes: prefab.data.imagenes_prefabricado || (prefab.data.imagen_url ? [prefab.data.imagen_url] : []),
-      };
-    }
-
-    // Buscar en catálogo
-    const cat = (data['productos_catalogo'] || []).find(
-      (p: any) => (p.data.sku || p.id) === slug
-    );
-    if (cat) {
-      return {
-        id: cat.id,
-        nombre: cat.data.descripcion || 'Producto',
-        descripcion_comercial: cat.data.descripcion,
-        categoria_comercial: cat.data.categoria_comercial || cat.data.tipo || 'General',
-        precio_publico: cat.data.precio_publico,
-        slug: cat.data.sku || slug,
-        imagen_url: cat.data.imagen_url,
-        tipo: 'catalogo',
-        imagenes: cat.data.imagen_url ? [cat.data.imagen_url] : [],
-        dimensiones: {
-          ancho: cat.data.ancho,
-          alto: cat.data.alto,
-          profundo: cat.data.profundo,
-        },
-      };
-    }
-
-    return null;
-  }, [slug, data]);
+  const product = useMemo<ProductDetail | null>(() => products.find(item => item.slug === slug) ?? null, [products, slug]);
 
   const relatedProducts = useMemo(() => {
     if (!product) return [];
 
-    const allProducts = [
-      ...(data['prefabricados'] || []).map((p: any) => ({
-        id: p.id,
-        nombre: p.data.nombre,
-        categoria_comercial: p.data.categoria_comercial,
-        slug: p.data.slug || p.data.nombre.toLowerCase().replace(/\s+/g, '-'),
-        imagen_url: p.data.imagen_url,
-        precio_publico: p.data.precio_publico,
-        tipo: 'prefabricado',
-      })),
-      ...(data['productos_catalogo'] || []).map((p: any) => ({
-        id: p.id,
-        nombre: p.data.descripcion || 'Producto',
-        categoria_comercial: p.data.categoria_comercial,
-        slug: p.data.sku || p.id,
-        imagen_url: p.data.imagen_url,
-        precio_publico: p.data.precio_publico,
-        tipo: 'catalogo',
-      })),
-    ];
-
-    return allProducts
+    return products
       .filter(
         (p) =>
           p.categoria_comercial === product.categoria_comercial &&
@@ -118,7 +69,7 @@ function VetaProductoDetalleContent({ block }: Partial<BlockProps>) {
           p.precio_publico > 0
       )
       .slice(0, 3);
-  }, [product, data]);
+  }, [product, products]);
 
   if (!product) {
     return (

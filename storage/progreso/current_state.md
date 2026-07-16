@@ -14,6 +14,24 @@ fork -> owns storage and specialized UI
 
 ## Daily Closeout
 
+Date: 2026-07-14 (PM) — Lane obra civil CERRADA + auditoría contrato
+
+**CIERRE: `goal/cotizador-obra-civil-estimada` mergeada a `dev` (commit `bd22330`)**
+- Fases 1-4 completas: schema `items_obra_civil` (9 campos, opcional catálogo), UI (3 categorías 
+  en EspacioCard, modo catálogo + manual), PDF (sección referencial + descargo legal).
+- Bug detectado/fixeado: `agnostic-schemas.ts` commitado en `725a05c`.
+- Matriz V1-V9 auditada: todas verificaciones verdes.
+- Worktree aislado limpiado.
+
+**Auditoría en paralelo — cambios flujo contrato (rama `goal/webstore-checkout-pagos`):**
+Centralización `visible_pdf !== false` en ContratoModal, generar_contrato, zap_activar_produccion.
+Commits `471490d`, `8369306` con tests propios. Verificados funcionales pero **fuera de proceso** 
+(modificaron superficie "prohibida" de la lane de obra civil). Documentado como desviación, no revertido.
+
+---
+
+## Daily Closeout
+
 Date: 2026-07-06
 
 **Ronda 2 WEB-STORE — 4 de 7 lanes cerradas + incidente git recuperado.**

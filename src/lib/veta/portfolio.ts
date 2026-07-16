@@ -121,7 +121,8 @@ export function buildSpaceCatalog(records: PortfolioSourceItem[] | undefined): S
     .map((r, index) => {
       const d = r.data as Record<string, any>;
       const title = String(d.nombre_espacio ?? 'Espacio Veta Dorada');
-      const lowerTitle = humanizeRecordText(title, title).toLowerCase();
+      const categoryHint = typeof d.categoria_espacio === 'string' ? d.categoria_espacio : '';
+      const lowerTitle = `${humanizeRecordText(title, title)} ${categoryHint}`.toLowerCase();
 
       let category: SpaceCatalogItem['category'] = 'consolas';
       let categoryLabel = 'Mobiliario Especializado';

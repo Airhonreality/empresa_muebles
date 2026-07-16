@@ -13,11 +13,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getStrategy } from '@/server/getStrategy';
+import { requireManagementAccess } from '@/lib/agnostic/require-session';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    await requireManagementAccess(req);
     const url = new URL(req.url);
     const namespace = url.searchParams.get('namespace') || '';
 
@@ -33,6 +35,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ namespace, sha });
   } catch (err) {
+    if (err instanceof Error && err.message === 'AUTHENTICATION_REQUIRED') {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Pulse check failed' },
       { status: 500 }
