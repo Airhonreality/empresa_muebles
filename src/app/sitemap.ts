@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getPublicSiteUrl } from '@/lib/veta/seo/publicSite';
 
-const publicRoutes = ['/', '/portafolio', '/colecciones', '/agendar'] as const;
+const publicRoutes = ['/', '/portafolio', '/agendar'] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
