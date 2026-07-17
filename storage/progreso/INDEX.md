@@ -7,6 +7,7 @@ Agents should keep this file short. Link only active or still-useful documents.
 ## Active Context
 
 - [current_state.md](current_state.md): current state of the fork.
+- [Definition revisions runtime](../fork_doc/DEFINITION_REVISIONS_RUNTIME.md): contrato, controles y activación del catálogo estructural por revisión.
 
 ## Generated Snapshots
 

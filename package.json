@@ -21,7 +21,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sync-zaps": "tsx scripts/sync-zaps.ts",
-    "push-zap": "tsx scripts/push-zap.ts"
+    "push-zap": "tsx scripts/push-zap.ts",
+    "catalog:publish": "tsx scripts/publish-structural-revision.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.78",

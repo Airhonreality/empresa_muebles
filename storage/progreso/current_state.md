@@ -1,5 +1,15 @@
 # Current State
 
+## Catálogo estructural por revisión — 2026-07-17
+
+- Implementados export read-only, bundle con hash, publicador inmutable con CAS, `DefinitionReader`
+  y bloqueo de escritura estructural directa de Vault en modo `revision`.
+- La activación real permanece pendiente de gate humano: migración autorizada en Neon, publicación
+  de primera revisión y variables de Vercel. Hasta entonces `AGNOSTIC_DEFINITION_MODE` se mantiene
+  en `legacy`.
+- Ver [DEFINITION_REVISIONS_RUNTIME.md](../fork_doc/DEFINITION_REVISIONS_RUNTIME.md). La unidad de
+  publicación es siempre `schemas + routes + zaps`; nunca se sincronizan colecciones por separado.
+
 ## Summary
 
 This repository is the Agnostic Seed baseline for forked projects.

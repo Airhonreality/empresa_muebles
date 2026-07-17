@@ -26,6 +26,8 @@
 
 import { IntegrityChecker } from '@/lib/agnostic/IntegrityChecker';
 import { getStrategy } from '@/server/getStrategy';
+import { readRuntimeDefinitions } from '@/server/catalog/definitionRuntime';
+import { DEFINITION_MODE, getDefinitionMode } from '@/server/catalog/definitionRevision';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { cache } from 'react';
 
@@ -37,6 +39,8 @@ import { cache } from 'react';
  * root layout's context array or a route page's partial/full resolution.
  */
 const readNamespaceCached = cache(async (context: string) => {
+  const definitions = await readRuntimeDefinitions(context);
+  if (definitions) return definitions;
   const strategy = getStrategy();
   return strategy.read(context);
 });
@@ -75,6 +79,7 @@ export async function getVaultData(requestedContexts?: string | string[]): Promi
     };
   } catch (error) {
     console.error('[VaultHydration] Selective server-side hydration failure:', error);
+    if (getDefinitionMode() === DEFINITION_MODE.REVISION) throw error;
     return {
       _integrity: { 
         isValid: false, 
