@@ -15,6 +15,7 @@
     "start": "next start",
     "lint": "next lint",
     "mcp:bridge": "tsx scripts/mcp-bridge.ts",
+    "catalog:export": "tsx scripts/export-structural-catalog.ts",
     "push-data": "tsx scripts/push-data.ts",
     "sync-forks": "tsx scripts/sync-forks.ts",
     "test": "vitest run",
