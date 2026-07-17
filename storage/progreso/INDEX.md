@@ -9,10 +9,12 @@ Agents should keep this file short. Link only active or still-useful documents.
 - [current_state.md](current_state.md): current state of the fork.
 - [ADR: catálogo estructural y publicación](../fork_doc/ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md): autoridad de Git, Neon y Vercel; decisión de diseño, no pipeline ya implementado.
 - [Runbook: catálogo estructural](../fork_doc/RUNBOOK_CATALOGO_ESTRUCTURAL.md): discovery, publicación y rollback procedimentales; controles técnicos pendientes se indican explícitamente.
+- [Definition revisions runtime](../fork_doc/DEFINITION_REVISIONS_RUNTIME.md): contrato, controles y activación del catálogo estructural por revisión.
 
 ## Architecture Decisions
 
 - [ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md](../fork_doc/ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md): Git como estado deseado del catálogo estructural; Neon como catálogo aplicado/runtime y datos operativos; Vercel como ejecutor de la revisión aprobada.
+- [DEFINITION_REVISIONS_RUNTIME.md](../fork_doc/DEFINITION_REVISIONS_RUNTIME.md): contrato de revisión CAS, bloqueo de vault y verificación hash en runtime.
 
 ## Generated Snapshots
 
