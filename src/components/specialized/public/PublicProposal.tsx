@@ -161,14 +161,20 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
         <aside className="self-end rounded-2xl border border-[var(--veta-divider-soft)] bg-[hsl(var(--veta-surface))/0.82] p-5 shadow-[0_20px_46px_-38px_rgba(55,42,20,.6)] sm:p-6">
           <p className="veta-quote-section-label">Resumen comercial</p>
           {hasCarpentryTotal ? <>
-            <p className="mt-3 text-xs uppercase tracking-[.14em] text-[hsl(var(--veta-text-muted))]">Propuesta de carpinteria</p>
-            <p className="veta-heading mt-2 text-[clamp(2rem,1.2rem+2vw,3.1rem)] tracking-[-0.035em]">{formatCop(carpentryTotal)}</p>
-          </> : <p className="mt-3 text-lg leading-7 text-[hsl(var(--veta-text-muted))]">La inversion de carpinteria se confirmara con el equipo comercial.</p>}
-          {hasCivilEstimate && <div className="mt-5 border-t border-[var(--veta-divider-soft)] pt-4 text-sm text-[hsl(var(--veta-text-muted))]">
-            <p className="text-xs uppercase tracking-[.14em]">Estimado independiente</p>
-            <div className="mt-2 flex justify-between gap-4"><span>Obra civil referencial</span><strong className="font-medium text-[hsl(var(--veta-text-main))]">{formatCop(civilEstimateTotal)}</strong></div>
+            <p className="mt-3 text-xs uppercase tracking-[.14em] text-[hsl(var(--veta-text-muted))]">Inversion total del proyecto</p>
+            <p className="veta-heading mt-2 text-[clamp(2rem,1.2rem+2vw,3.1rem)] tracking-[-0.035em]">{formatCop(getProposalTotal())}</p>
+            <p className="mt-4 text-xs leading-5 text-[hsl(var(--veta-text-muted))]">Esta cifra incluye los costos de carpintería, materiales de obra civil, y mano de obra estimada. <strong>Son valores promedio</strong> que pueden variar según los materiales seleccionados y especificaciones finales. Revisa{' '}
+              <a href="#resumen" className="font-medium underline hover:text-[hsl(var(--veta-gold-hover))] transition">
+                el desglose por ambiente
+              </a>
+              {' '}para conocer qué contempla cada estimativo.
+            </p>
+          </> : <p className="mt-3 text-lg leading-7 text-[hsl(var(--veta-text-muted))]">La inversión de carpintería se confirmará con el equipo comercial.</p>}
+          {hasCivilEstimate && <div className="mt-4 border-t border-[var(--veta-divider-soft)] pt-4 text-sm text-[hsl(var(--veta-text-muted))]">
+            <p className="text-xs uppercase tracking-[.14em]">Referencial independiente</p>
+            <div className="mt-2 flex justify-between gap-4"><span>Obra civil estimada</span><strong className="font-medium text-[hsl(var(--veta-text-main))]">{formatCop(civilEstimateTotal)}</strong></div>
           </div>}
-          <p className="mt-5 border-t border-[var(--veta-divider-soft)] pt-4 text-xs leading-5 text-[hsl(var(--veta-text-muted))]">Las referencias de obra civil son informativas y no hacen parte del contrato de carpinteria.</p>
+          <p className="mt-4 border-t border-[var(--veta-divider-soft)] pt-4 text-xs leading-5 text-[hsl(var(--veta-text-muted))]">Los valores de obra civil son referenciales y se gestionan independientemente del contrato de carpintería.</p>
         </aside>
       </section>
 
