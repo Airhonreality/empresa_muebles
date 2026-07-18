@@ -253,6 +253,9 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                   const hasMultipleVariants = space.variants.length > 1
                   const variantIdx = selectedVariantIndex[space.id] ?? 0
                   const currentTotal = getCurrentTotalForSpace(space.id)
+                  const activeVariant = space.variants[variantIdx]
+                  const civilEstimate = activeVariant?.civil_estimate ?? []
+                  const civilTotal = civilEstimate.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0)
 
                   return (
                     <div key={space.id}>
@@ -268,6 +271,23 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                               {variant.total > 0 && <span className="ml-1 opacity-70">{formatCop(variant.total)}</span>}
                             </button>
                           ))}
+                        </div>
+                      )}
+                      {civilEstimate.length > 0 && (
+                        <div className="ml-5 mb-2 space-y-1 text-xs text-[hsl(var(--veta-text-muted))]">
+                          <p className="font-medium text-[10px] uppercase tracking-wider opacity-70">Costos adicionales:</p>
+                          {civilEstimate.map((item, idx) => (
+                            <div key={idx} className="flex justify-between gap-4 pl-2">
+                              <span>• {item.name}</span>
+                              {item.unit_price && item.quantity && <span className="tabular-nums opacity-80">{formatCop(item.unit_price * item.quantity)}</span>}
+                            </div>
+                          ))}
+                          {civilTotal > 0 && (
+                            <div className="flex justify-between gap-4 pl-2 pt-1 border-t border-[var(--veta-divider-soft)]/50">
+                              <span className="font-medium">Subtotal adicionales</span>
+                              <strong className="tabular-nums text-[hsl(var(--veta-text-main))]">{formatCop(civilTotal)}</strong>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
