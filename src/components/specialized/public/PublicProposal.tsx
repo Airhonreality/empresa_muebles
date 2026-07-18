@@ -163,7 +163,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
           {hasCarpentryTotal ? <>
             <p className="mt-3 text-xs uppercase tracking-[.14em] text-[hsl(var(--veta-text-muted))]">Inversion total del proyecto</p>
             <p className="veta-heading mt-2 text-[clamp(2rem,1.2rem+2vw,3.1rem)] tracking-[-0.035em]">{formatCop(getProposalTotal())}</p>
-            <p className="mt-4 text-xs leading-5 text-[hsl(var(--veta-text-muted))]">Esta cifra incluye los costos de carpintería, materiales de obra civil, y mano de obra estimada. <strong>Son valores promedio</strong> que pueden variar según los materiales seleccionados y especificaciones finales. Revisa{' '}
+            <p className="mt-4 text-xs leading-5 text-[hsl(var(--veta-text-muted))]">La inversión total del proyecto asciende a <strong className="text-[hsl(var(--veta-text-main))]">{formatCop(getProposalTotal())}</strong>, que incluye los costos de carpintería, materiales de obra civil, y mano de obra estimada. <strong>Son valores promedio</strong> que pueden variar según los materiales seleccionados y especificaciones finales. Revisa{' '}
               <a href="#resumen" className="font-medium underline hover:text-[hsl(var(--veta-gold-hover))] transition">
                 el desglose por ambiente
               </a>
@@ -286,26 +286,20 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
 
       {hasCarpentryTotal && <a href="#resumen" className="fixed inset-x-3 bottom-3 z-30 flex min-h-14 items-center justify-between rounded-2xl border border-[hsl(var(--veta-gold-muted))] bg-[hsl(var(--veta-gold-hover))] px-4 text-white shadow-[0_18px_34px_-18px_rgba(55,42,20,.65)] sm:hidden"><span><span className="block text-[10px] uppercase tracking-[.14em] text-white/70">Carpinteria</span><strong className="text-sm">{formatCop(getProposalTotal())}</strong></span><span className="text-sm font-medium">Ver resumen</span></a>}
 
-      <Dialog open={Boolean(focusedImage)} onOpenChange={open => !open && setFocusedImage(null)}>
-        <DialogContent className="fixed inset-0 h-screen w-screen max-h-screen max-w-screen border-0 bg-black p-0 rounded-none overflow-hidden [&>button]:hidden flex flex-row">
-          <DialogTitle className="sr-only">Galería de imágenes - Modo presentación</DialogTitle>
-          {focusedImage && (() => {
-            const space = proposal.spaces.find(s => s.id === focusedImage.spaceId)
-            const gallery = space?.variants[selectedVariantIndex[focusedImage.spaceId] ?? 0]?.images ?? []
-            const currentIndex = focusedImage.imageIndex ?? 0
+      <div className={`fixed inset-0 z-50 bg-black/80 transition-opacity ${focusedImage ? 'opacity-100' : 'pointer-events-none opacity-0'}`} onClick={() => setFocusedImage(null)} />
+      {focusedImage && (() => {
+        const space = proposal.spaces.find(s => s.id === focusedImage.spaceId)
+        const gallery = space?.variants[selectedVariantIndex[focusedImage.spaceId] ?? 0]?.images ?? []
+        const currentIndex = focusedImage.imageIndex ?? 0
 
-            const goToImage = (index: number) => {
-              const normalized = Math.max(0, Math.min(index, gallery.length - 1))
-              setFocusedImage({ ...gallery[normalized], spaceId: focusedImage.spaceId, imageIndex: normalized })
-            }
+        const goToImage = (index: number) => {
+          const normalized = Math.max(0, Math.min(index, gallery.length - 1))
+          setFocusedImage({ ...gallery[normalized], spaceId: focusedImage.spaceId, imageIndex: normalized })
+        }
 
-            const handleKeyDown = (e: React.KeyboardEvent) => {
-              if (e.key === 'ArrowLeft') goToImage(currentIndex - 1)
-              if (e.key === 'ArrowRight') goToImage(currentIndex + 1)
-            }
-
-            return (
-              <div className="flex w-full h-full flex-row bg-black" onKeyDown={handleKeyDown} tabIndex={0}>
+        return (
+          <div className="fixed inset-0 z-50 flex flex-row bg-black" onKeyDown={(e) => { if (e.key === 'ArrowLeft') goToImage(currentIndex - 1); if (e.key === 'ArrowRight') goToImage(currentIndex + 1); if (e.key === 'Escape') setFocusedImage(null) }} tabIndex={0}>
+            <div className="flex w-full h-full flex-row">
                 {/* Main image - ~85-90% */}
                 <div className="relative flex-1 flex items-center justify-center bg-black overflow-hidden min-w-0">
                   <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseño'} className="h-full w-full object-contain" />
@@ -337,11 +331,10 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                     ))}
                   </div>
                 )}
-              </div>
-            )
-          })()}
-        </DialogContent>
-      </Dialog>
+            </div>
+          </div>
+        )
+      })()}
     </main>
   )
 }
