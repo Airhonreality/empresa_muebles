@@ -319,9 +319,8 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
 
         return (
           <div className="fixed inset-0 z-50 flex flex-row bg-black" onKeyDown={(e) => { if (e.key === 'ArrowLeft') goToImage(currentIndex - 1); if (e.key === 'ArrowRight') goToImage(currentIndex + 1); if (e.key === 'Escape') setFocusedImage(null) }} tabIndex={0}>
-            <div className="flex w-full h-full flex-row">
                 {/* Main image - ~85-90% */}
-                <div className="relative flex-1 flex items-center justify-center bg-black overflow-hidden min-w-0">
+                <div className="relative flex-1 flex items-center justify-center bg-black overflow-hidden">
                   <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseño'} className="h-full w-full object-contain" />
                   <button type="button" onClick={() => setFocusedImage(null)} className="absolute top-4 left-4 p-2 rounded-full bg-white/20 hover:bg-white/40 transition z-10 backdrop-blur-sm">
                     <X size={24} className="text-white" />
@@ -351,7 +350,6 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                     ))}
                   </div>
                 )}
-            </div>
           </div>
         )
       })()}
