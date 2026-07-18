@@ -277,11 +277,15 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                         <div className="ml-5 mb-2 space-y-1 text-xs text-[hsl(var(--veta-text-muted))]">
                           <p className="font-medium text-[10px] uppercase tracking-wider opacity-70">Costos adicionales:</p>
                           {civilEstimate.map((item, idx) => {
-                            const itemCost = item.total || (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0)
+                            const itemCost = item.total || (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0) || (item.price || 0)
                             return (
                               <div key={idx} className="flex justify-between gap-4 pl-2">
-                                <span>• {item.name}</span>
-                                {itemCost > 0 && <span className="tabular-nums opacity-80 font-medium text-[hsl(var(--veta-text-main))]">{formatCop(itemCost)}</span>}
+                                <span>• {item.name}{item.notes ? ` - ${item.notes}` : ''}</span>
+                                {itemCost > 0 ? (
+                                  <span className="tabular-nums font-medium text-[hsl(var(--veta-text-main))]">{formatCop(itemCost)}</span>
+                                ) : (
+                                  <span className="text-[10px] opacity-50">estimado</span>
+                                )}
                               </div>
                             )
                           })}
