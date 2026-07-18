@@ -95,7 +95,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
   return (
     <main
       style={publicProposalLightTheme}
-      className="veta-font-body min-h-screen bg-[radial-gradient(circle_at_top_left,_hsl(var(--veta-bg-alt))_0,_hsl(var(--veta-bg))_38%,_hsl(var(--veta-bg))_100%)] pb-24 text-[hsl(var(--veta-text-main))] sm:pb-0"
+      className="veta-font-body min-h-screen bg-[radial-gradient(circle_at_top_left,_hsl(var(--veta-bg-alt))_0,_hsl(var(--veta-bg))_38%,_hsl(var(--veta-bg))_100%)] px-[5%] py-[5%] pb-24 text-[hsl(var(--veta-text-main))] sm:pb-0"
     >
       <header className="sticky top-0 z-30 border-b border-[var(--veta-divider-soft)] bg-[hsl(var(--veta-bg))/0.9] backdrop-blur-xl print:static print:bg-transparent">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
@@ -318,9 +318,9 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
         }
 
         return (
-          <div className="fixed inset-0 z-50 flex flex-row bg-black" onKeyDown={(e) => { if (e.key === 'ArrowLeft') goToImage(currentIndex - 1); if (e.key === 'ArrowRight') goToImage(currentIndex + 1); if (e.key === 'Escape') setFocusedImage(null) }} tabIndex={0}>
-                {/* Main image - ~85-90% */}
-                <div className="relative flex-1 flex items-center justify-center bg-black overflow-hidden">
+          <div className="fixed inset-0 z-50 flex flex-col lg:flex-row bg-black" onKeyDown={(e) => { if (e.key === 'ArrowLeft') goToImage(currentIndex - 1); if (e.key === 'ArrowRight') goToImage(currentIndex + 1); if (e.key === 'Escape') setFocusedImage(null) }} tabIndex={0}>
+                {/* Main image - lg:85-90% / mobile:full */}
+                <div className="relative flex-1 flex items-center justify-center bg-black overflow-hidden min-h-0 lg:min-h-screen">
                   <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseño'} className="h-full w-full object-contain" />
                   <button type="button" onClick={() => setFocusedImage(null)} className="absolute top-4 left-4 p-2 rounded-full bg-white/20 hover:bg-white/40 transition z-10 backdrop-blur-sm">
                     <X size={24} className="text-white" />
@@ -340,11 +340,11 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                   </div>
                 </div>
 
-                {/* Vertical carousel - ~10-15% */}
+                {/* Carousel - Horizontal on mobile, Vertical on desktop */}
                 {gallery.length > 1 && (
-                  <div className="w-24 bg-black/95 border-l border-white/20 flex flex-col gap-2 p-2 overflow-y-auto">
+                  <div className="w-full lg:w-24 h-20 lg:h-auto bg-black/95 border-t lg:border-t-0 lg:border-l border-white/20 flex lg:flex-col gap-2 p-2 overflow-x-auto lg:overflow-y-auto lg:overflow-x-hidden">
                     {gallery.map((image, index) => (
-                      <button key={`${image.url}-${index}`} type="button" onClick={() => goToImage(index)} className={`shrink-0 h-20 w-20 overflow-hidden rounded-lg border-2 transition cursor-pointer hover:opacity-100 ${currentIndex === index ? 'border-[hsl(var(--veta-gold-muted))] shadow-lg opacity-100' : 'border-white/30 opacity-60 hover:opacity-80'}`}>
+                      <button key={`${image.url}-${index}`} type="button" onClick={() => goToImage(index)} className={`shrink-0 h-16 w-16 lg:h-20 lg:w-20 overflow-hidden rounded-lg border-2 transition cursor-pointer hover:opacity-100 ${currentIndex === index ? 'border-[hsl(var(--veta-gold-muted))] shadow-lg opacity-100' : 'border-white/30 opacity-60 hover:opacity-80'}`}>
                         <img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       </button>
                     ))}
