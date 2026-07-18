@@ -97,6 +97,20 @@ Do not load research archives or old plans by default. Context must stay small, 
 - Register custom blocks in `agnostic.config.ts`.
 - Keep generated types imported from `@/generated/agnostic-schemas`.
 
+## ⚠️ WRITE Rule (No Partial Writes)
+
+El motor `/api/vault` NO mergea campos — una escritura `WRITE` reemplaza TODO el `data` del registro.
+Antes de CUALQUIER `WRITE` a un registro existente (en cualquier namespace: proyectos,
+espacio_variantes, scripts, etc.):
+
+1. Haz GET del registro completo.
+2. Toma su `data` actual en memoria.
+3. Mezcla los campos nuevos/cambiados sobre ese `data` (spread merge).
+4. Envía el objeto `data` COMPLETO en el `WRITE`.
+
+Si necesitas merge con control de concurrencia, incluye `_meta` con timestamps en el payload.
+Esta regla no tiene excepción — escrituras parciales han destruido datos reales 3 veces en esta sesión.
+
 ## Forbidden Patterns
 
 ```typescript

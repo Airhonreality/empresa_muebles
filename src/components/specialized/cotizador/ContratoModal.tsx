@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { COP } from './utils'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
 import { useMateriaStore } from '@/lib/agnostic/store'
+import { toContractZapRecord } from './contrato-payload'
 
 interface ContratoModalProps {
   isOpen: boolean
@@ -144,15 +145,16 @@ export function ContratoModal({
     setValorTotal(calculatedTotal)
     setGarantiaAnios(Number(cotizacion?.data?.garantia_anios || cotizacion?.garantia_anios || 2))
 
-    // Compilar Objeto de Contrato con los espacios activos (por defecto)
+    // Compilar Objeto de Contrato solo con espacios visibles y sin nombre de variante
     const defaultItemsText = espacios
-      .map(({ nombre, vars }, idx) => {
+      .map(({ nombre, vars }) => {
         const activeId = activeVarMap[nombre] || vars[0]?.id
         const av = vars.find((v: any) => v.id === activeId) || vars[0]
-        const spaceName = av?.data?.nombre_espacio || av?.nombre_espacio || nombre
-        const varName = av?.data?.nombre_variante ? ` (${av.data.nombre_variante})` : ''
-        return `${idx + 1}. ${spaceName}${varName}`
+        if (av?.data?.visible_pdf === false) return ''
+        return av?.data?.nombre_espacio || av?.nombre_espacio || nombre
       })
+      .filter(Boolean)
+      .map((spaceName, idx) => `${idx + 1}. ${spaceName}`)
       .join('\n')
 
     const loadOrCreateContrato = async () => {
@@ -207,6 +209,12 @@ export function ContratoModal({
       return
     }
 
+    const contractRecord = toContractZapRecord(cotizacion)
+    if (!contractRecord?.id) {
+      toast.error('No hay una cotización válida seleccionada.')
+      return
+    }
+
     setIsSaving(true)
     const actionMsg = isBorradorOnly 
       ? 'Guardando borrador de contrato...' 
@@ -221,7 +229,7 @@ export function ContratoModal({
         body: JSON.stringify({
           zap: 'generar_contrato',
           payload: {
-            record: cotizacion?.data || cotizacion,
+            record: contractRecord,
             cliente: {
               nombre: clienteNombre,
               documento: clienteDoc,
@@ -252,6 +260,7 @@ export function ContratoModal({
       let contratoIdGenerated = ''
       let emailSub = ''
       let emailBod = ''
+      let engineError = ''
 
       for (const event of result.events || []) {
         if (event.action === 'materia_sync') {
@@ -264,8 +273,16 @@ export function ContratoModal({
         }
         if (event.action === 'notify') {
           if (event.type === 'success') toast.success(event.message)
-          else toast.error(event.message)
+          else {
+            engineError = event.message
+            toast.error(event.message)
+          }
         }
+      }
+
+      if (engineError) throw new Error(engineError)
+      if (!contratoIdGenerated) {
+        throw new Error('El motor no devolvió el contrato generado.')
       }
 
       if (isBorradorOnly) {
