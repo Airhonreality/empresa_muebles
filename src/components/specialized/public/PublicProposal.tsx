@@ -143,18 +143,18 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
       </header>
 
       <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-10 pt-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,.42fr)] lg:gap-16 lg:px-8 lg:pb-16 lg:pt-20">
-        <div className="max-w-3xl">
-          <p className="veta-quote-section-label">Propuesta comercial</p>
-          <h1 className="veta-heading mt-3 text-[clamp(2.35rem,1.5rem+3vw,4.75rem)] leading-[0.95] tracking-[-0.045em]">{proposal.title}</h1>
-          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[hsl(var(--veta-text-muted))]">
-            {proposal.issued_at && <span>Emitida el {proposal.issued_at}</span>}
-            <span>{proposal.spaces.length} {proposal.spaces.length === 1 ? 'ambiente incluido' : 'ambientes incluidos'}</span>
+        <div className="max-w-3xl py-2">
+          <p className="veta-quote-section-label uppercase tracking-widest text-[10px] font-semibold text-[hsl(var(--veta-gold-muted))]">Propuesta comercial</p>
+          <h1 className="veta-heading mt-6 text-[clamp(2.6rem,1.8rem+3.2vw,5rem)] leading-[0.92] tracking-[-0.05em]">{proposal.title}</h1>
+          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-[hsl(var(--veta-text-muted))]">
+            {proposal.issued_at && <span className="flex items-center gap-2"><span className="inline-block h-px w-3 bg-[hsl(var(--veta-gold-muted))] opacity-50"></span>Emitida el {proposal.issued_at}</span>}
+            <span className="flex items-center gap-2"><span className="inline-block h-px w-3 bg-[hsl(var(--veta-gold-muted))] opacity-50"></span>{proposal.spaces.length} {proposal.spaces.length === 1 ? 'ambiente incluido' : 'ambientes incluidos'}</span>
           </div>
-          <p className="mt-8 max-w-2xl text-base leading-7 text-[hsl(var(--veta-text-muted))]">
+          <p className="mt-12 max-w-2xl text-base leading-8 text-[hsl(var(--veta-text-muted))]">
             Revisa el alcance por ambiente, las alternativas seleccionadas y las referencias visuales. Los detalles tecnicos se presentan solo cuando ayudan a tomar una decision.
           </p>
-          {proposal.spaces.length > 0 && <button type="button" onClick={() => goToSpace(proposal.spaces[0].id)} className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-full border border-[hsl(var(--veta-gold-muted))] px-4 text-sm font-medium text-[hsl(var(--veta-gold-hover))] transition hover:bg-[hsl(var(--veta-gold-muted))] hover:text-white">
-            Ver propuesta <ArrowDown size={16} />
+          {proposal.spaces.length > 0 && <button type="button" onClick={() => goToSpace(proposal.spaces[0].id)} className="mt-12 inline-flex min-h-12 items-center gap-2.5 rounded-full border-2 border-[hsl(var(--veta-gold-muted))] px-6 text-sm font-semibold text-[hsl(var(--veta-gold-hover))] transition hover:bg-[hsl(var(--veta-gold-muted))] hover:text-white">
+            Ver propuesta <ArrowDown size={18} />
           </button>}
         </div>
 
