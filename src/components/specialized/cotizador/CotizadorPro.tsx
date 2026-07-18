@@ -789,34 +789,22 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   const buildPublicSnapshot = () => ({
     title: headerLocal.nombre_proyecto || 'Propuesta de diseño',
     issued_at: new Date().toISOString().slice(0, 10),
-    client: clienteData ? {
-      name: clienteData.nombre,
-      location: [headerLocal.barrio, headerLocal.direccion_obra].filter(Boolean).join(' · ') || undefined,
-    } : undefined,
     financial: {
-      carpentry: {
-        materials: gt.mat,
-        labor: gt.mo,
-        operating_costs: gt.costos,
-        contingencies: gt.impr,
-        discount: gt.desc,
-        adjustment: gt.ajuste,
-        vat: gt.iva,
-        total: gt.aplicaIva ? gt.totalConIva : gt.total,
-      },
-      civil_estimate: {
-        labor: totalObraCivil.mano_obra,
-        logistics: totalObraCivil.logistica,
-        materials: totalObraCivil.materiales,
-        total: totalObraCivil.total,
-      },
-      remodel_total: (gt.aplicaIva ? gt.totalConIva : gt.total) + totalObraCivil.total,
+      carpentry_total: gt.aplicaIva ? gt.totalConIva : gt.total,
+      civil_estimate_total: totalObraCivil.total,
     },
-    spaces: espacios.map(({ nombre, vars }) => ({
+    spaces: espacios.flatMap(({ nombre, vars }) => {
+      const selectedVariant = vars.find(variant => variant.id === (activeVarMap[nombre] || vars[0]?.id)) || vars[0]
+      if (!selectedVariant) return []
+
+      const selectedVariantData = selectedVariant.data as unknown as EspacioVariantes
+      if (selectedVariantData.visible_pdf === false) return []
+
+      return [{
       id: nombre,
       name: nombre,
-      description: (vars[0]?.data as unknown as EspacioVariantes | undefined)?.descripcion || undefined,
-      variants: vars.map(variant => {
+      description: selectedVariantData.descripcion || undefined,
+      variants: [selectedVariant].map(variant => {
         const variantData = variant.data as unknown as EspacioVariantes
         const colors = (() => {
           if (!variantData.colores) return []
@@ -847,34 +835,35 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
         const itemProjection = variantItems.map(item => {
           const itemData = item.data as unknown as ItemsVariante
           const product = catalogo.find(entry => entry.id === itemData.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
+          return { name: product?.descripcion || 'Ítem incluido', quantity: Number(itemData.cantidad) || 0, unit: itemData.unidad_medida || product?.unidad_medida, image_url: itemData.imagen_url || product?.imagen_url || product?.imagen }
+        })
+        const materialsTotal = variantItems.reduce((sum, item) => {
+          const itemData = item.data as unknown as ItemsVariante
           const unitPrice = Number(itemData.precio_unitario) || 0
           const lineTotal = Number(itemData.total_linea) || (Number(itemData.cantidad) || 0) * unitPrice
-          return { name: product?.descripcion || 'Ítem incluido', quantity: Number(itemData.cantidad) || 0, unit: itemData.unidad_medida || product?.unidad_medida, unit_price: unitPrice, line_total: lineTotal, image_url: itemData.imagen_url || product?.imagen_url || product?.imagen }
-        })
-        const materialsTotal = itemProjection.reduce((sum, item) => sum + item.line_total, 0)
+          return sum + lineTotal
+        }, 0)
         const laborTotal = (Number(variantData.jornadas_desarrollo_tecnico) || 0) * tarifas.dev + (Number(variantData.jornadas_ensamblaje_taller) || 0) * tarifas.assembly + (Number(variantData.jornadas_instalacion_obra) || 0) * tarifas.install
         const civilEstimate = itemsObraCivil
           .filter(item => (item.data as unknown as ItemsObraCivil).variante_id === variant.id)
           .map(item => {
             const data = item.data as unknown as ItemsObraCivil
             const product = catalogo.find(entry => entry.id === data.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
-            const unitPrice = Number(data.precio_unitario) || 0
-            return { category: data.categoria, name: data.descripcion_manual || product?.descripcion || 'Ítem de obra civil', quantity: Number(data.cantidad) || 0, unit: data.unidad_medida || product?.unidad_medida, unit_price: unitPrice, line_total: Number(data.total_linea) || (Number(data.cantidad) || 0) * unitPrice, notes: data.notas }
+            return { category: data.categoria, name: data.descripcion_manual || product?.descripcion || 'Ítem de obra civil', quantity: Number(data.cantidad) || 0, unit: data.unidad_medida || product?.unidad_medida, notes: data.notas }
           })
         return {
           name: variantData.nombre_variante || 'Alternativa',
-          selected: variant.id === (activeVarMap[nombre] || vars[0]?.id),
+          selected: true,
           colors,
           images,
           notes: (variantData.notas_markdown || '').split('\n').map(note => note.trim()).filter(Boolean),
           items: itemProjection,
           civil_estimate: civilEstimate,
-          materials_total: materialsTotal,
-          labor_total: laborTotal,
           total: materialsTotal + laborTotal,
         }
       }),
-    })),
+    }]
+    }),
   })
 
   const publishPublicProposal = async () => {

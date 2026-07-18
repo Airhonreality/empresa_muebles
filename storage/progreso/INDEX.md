@@ -7,6 +7,14 @@ Agents should keep this file short. Link only active or still-useful documents.
 ## Active Context
 
 - [current_state.md](current_state.md): current state of the fork.
+- [ADR: catálogo estructural y publicación](../fork_doc/ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md): autoridad de Git, Neon y Vercel; decisión de diseño, no pipeline ya implementado.
+- [Runbook: catálogo estructural](../fork_doc/RUNBOOK_CATALOGO_ESTRUCTURAL.md): discovery, publicación y rollback procedimentales; controles técnicos pendientes se indican explícitamente.
+- [Definition revisions runtime](../fork_doc/DEFINITION_REVISIONS_RUNTIME.md): contrato, controles y activación del catálogo estructural por revisión.
+
+## Architecture Decisions
+
+- [ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md](../fork_doc/ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md): Git como estado deseado del catálogo estructural; Neon como catálogo aplicado/runtime y datos operativos; Vercel como ejecutor de la revisión aprobada.
+- [DEFINITION_REVISIONS_RUNTIME.md](../fork_doc/DEFINITION_REVISIONS_RUNTIME.md): contrato de revisión CAS, bloqueo de vault y verificación hash en runtime.
 
 ## Generated Snapshots
 
@@ -25,6 +33,7 @@ Agents should keep this file short. Link only active or still-useful documents.
 
 ## Active Lanes
 
+- [goal-catalog-authority-adr.md](lanes/goal-catalog-authority-adr.md): lane documental cerrada — decisión de autoridad del catálogo; no implementa pipeline ni modifica producción.
 - [goal-neon-cotizaciones-recovery.md](lanes/goal-neon-cotizaciones-recovery.md): KEYSTONE — recuperación de datos huérfanos Neon (cotizaciones->proyectos) + caso Lorena Vaca (cobros + reconexión de espacio) + diagnóstico de `zap_activar_produccion`. Fases 0-3 cerradas y auditadas (2026-07-07); Fase 4 (limpieza de huérfanos) bloqueada, requiere aprobación aparte.
 - [goal-cotizador-iva-opcional.md](lanes/goal-cotizador-iva-opcional.md): IVA opcional en cotizador (placeholder 19%). CERRADA (2026-07-07) — campos `aplica_iva`/`porcentaje_iva` en `proyectos`, cálculo con fallback en `CotizadorPro.tsx`. Hallazgo de gobernanza abierto: `add-field` no crea backup automático (ver el archivo).
 - [goal-cotizador-obra-civil.md](lanes/goal-cotizador-obra-civil.md): estimado referencial de obra civil (mano de obra/logística/materiales) por espacio, catálogo opcional + valor bruto manual, aislado del total vinculante del contrato. `Estado: plan_borrador`, Fase 1 completa, lista para aprobación.

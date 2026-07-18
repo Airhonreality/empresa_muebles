@@ -49,6 +49,23 @@ No hay un agente permanente por dominio. Hay tres roles que las lanes comparten.
 | **Worker de lane** | 1 por goal activo | efímero, en su rama+worktree | pesado (plan) / liviano (código) | Recorre plan→código **solo dentro de su superficie**. Si choca con el contrato, reabre el objetivo; no improvisa diseño. |
 | **QA mecánico** | 1 compartido | por etapa | liviano/barato | Gate estructural (DoD ejecutable, compila, choques de verbos CLI, encoding). No razona diseño. |
 
+### Protocolo de delegación y evidencia
+
+El Orquestador planifica y supervisa; un worker liviano ejecuta solo la operación ya
+descompuesta en un contrato. QA verifica mecánicamente y un auditor independiente revisa el
+resultado. El worker que cambió una superficie nunca la audita ni decide su promoción.
+
+Cada contrato de lane debe declarar además de la superficie: solicitante/orquestador,
+ejecutor, permisos concedidos, entradas versionadas, dependencias, evidencia esperada,
+handoff y condición de expiración/reintento. Si el worker encuentra una ambigüedad, un
+conflicto de superficie, una precondición falsa o una operación sensible no autorizada,
+se detiene y devuelve el hallazgo; no rellena el vacío con diseño propio.
+
+Los workers livianos no reciben autoridad para cambiar producción, secretos, configuración
+remota, datos reales ni el arnés. Esas acciones requieren checkpoint humano y una lane
+específica. Esta es una regla de gobernanza; su enforcement técnico se implementará en lanes
+posteriores.
+
 ---
 
 ## 3. Definición de Done (DoD) universal de una lane
@@ -90,7 +107,9 @@ PENDIENTE ──(se escribe su contrato)──▶ LISTA ──(se despacha worke
    │                                  (dependencia                    (worker cierra
 BLOQUEADA ◀──(trigger no cumplido)     cumplida)                       con commit)
                                                                               ▼
-   CERRADA ◀──(auditoría OK + merge --no-ff a dev)──── EN_REVISION ◀──────────┘
+   CERRADA_CONFORME ◀──(auditoría OK + merge --no-ff a dev)── EN_REVISION ◀───┘
+
+   CERRADA_CON_DEUDA_ACEPTADA ◀──(gate humano + dueño + vencimiento)─────────┘
 ```
 
 | Lane (rama) | Estado | Commit de cierre | Superficie |
@@ -103,6 +122,17 @@ BLOQUEADA ◀──(trigger no cumplido)     cumplida)                       con
 | `goal/adapters-impl` | ✅ **CERRADA** | (orquestador propio) | `src/integrations/*` — 7 adapters, aprobada externamente |
 | `goal/erp-ai-config-schema` | 🟡 **CHECKPOINT** | `e3ad372` (WIP) | schema `ai_config` — falta terminar su worker |
 | `goal/storage-dedup` | ✅ **CERRADA** | `5515374` → merge `e60bd2c` | `.gitignore` whitelist + `db/` raíz eliminado |
+
+### Semántica de cierre y excepciones
+
+- **CERRADA_CONFORME:** contrato, gates y auditoría completos; es integrable.
+- **CERRADA_CON_DEUDA_ACEPTADA:** existe una excepción explícita aprobada por humano, con
+  riesgo, dueño, fecha de vencimiento y lane de remediación. No equivale a verde y no puede
+  promover producción por sí sola.
+- **BLOQUEADA:** falta una dependencia, permiso, evidencia o decisión; no se despacha.
+
+El tablero histórico puede conservar el texto “CERRADA”, pero las lanes nuevas deben usar
+estos estados. Ningún DoD parcialmente cumplido se presenta como conforme.
 
 **Ronda 1 (ERP core) COMPLETA:** las 4 lanes ERP + encoding + tokens cerradas e integradas
 en `dev`. Pendiente heredado: terminar `ai_config`.
@@ -267,6 +297,24 @@ garantiza la recurrencia. El monitoreo continuo es parte del modelo, no un extra
   `validate:encoding` antes de commitear el merge.
 - **Auditoría de `--no-verify`.** Cualquier commit con `--no-verify` se registra y se
   justifica (los respaldos del 2026-07-04 están documentados en sus mensajes de commit).
+
+### Sensores de entropía pendientes de implementar
+
+Además de encoding y Git, el arnés debe detectar deriva de catálogo (Git/revisión aplicada/
+deploy), rutas inválidas o duplicadas, referencias schema–bloque rotas, estrategia de storage
+implícita por entorno, documentación vencida y excepciones sin dueño. Cada sensor futuro debe
+tener responsable, frecuencia, evidencia y reacción definida. Hasta que existan como controles
+mecánicos, se verifican durante discovery y auditoría según el
+[`RUNBOOK_CATALOGO_ESTRUCTURAL.md`](../fork_doc/RUNBOOK_CATALOGO_ESTRUCTURAL.md); no se debe
+afirmar que ya bloquean operaciones.
+
+### Memoria compacta y reinicio de contexto
+
+`current_state.md` conserva solo snapshot operativo, decisiones vigentes, triggers y enlaces.
+Los cierres detallados e incidentes permanecen en documentos enlazados; no se duplica su
+historia en el snapshot. Antes de delegar o reiniciar una sesión, el Orquestador verifica que
+el contrato de lane, el tablero y el snapshot coincidan. Si no coinciden, la lane queda
+BLOQUEADA hasta reconciliar la evidencia.
 
 ---
 

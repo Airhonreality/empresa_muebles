@@ -29,6 +29,7 @@ import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 import { getStrategy } from '@/server/getStrategy';
+import { assertStructuralMutationAllowed, readRuntimeDefinitions } from '@/server/catalog/definitionRuntime';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { appendLog } from '@/lib/agnostic/activity-log';
 import { triggerSchemaCompile } from '@/lib/agnostic/schema-compiler-trigger';
@@ -85,7 +86,7 @@ export async function GET(req: NextRequest) {
 
       const systemNamespaces: Set<string> = new Set(Object.values(SYSTEM_NS));
       try {
-        const schemas = await strategy.read(SYSTEM_NS.SCHEMAS);
+        const schemas = await readRuntimeDefinitions(SYSTEM_NS.SCHEMAS) ?? await strategy.read(SYSTEM_NS.SCHEMAS);
         if (Array.isArray(schemas)) {
           for (const s of schemas) {
             const contextName = s.data?.slug || s.slug || s.data?.name || s.name;
@@ -99,12 +100,12 @@ export async function GET(req: NextRequest) {
       }
 
       for (const core of activeContexts) {
-        fullData[core] = await strategy.read(core);
+        fullData[core] = await readRuntimeDefinitions(core) ?? await strategy.read(core);
       }
       return NextResponse.json({ success: true, data: fullData });
     }
 
-    const records = await strategy.read(namespace);
+    const records = await readRuntimeDefinitions(namespace) ?? await strategy.read(namespace);
     return NextResponse.json({ 
       success: true, 
       namespace, 
@@ -140,6 +141,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'WRITE') {
+      assertStructuralMutationAllowed(namespace);
       const raw = body.record;
       if (!raw) return NextResponse.json({ success: false, error: 'record required' }, { status: 400 });
       const normalizedData = namespace === SYSTEM_NS.USERS
@@ -157,6 +159,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'REMOVE') {
+      assertStructuralMutationAllowed(namespace);
       const id: string = body.id;
       if (!id) return NextResponse.json({ success: false, error: 'id required' }, { status: 400 });
       removeSchema.parse({ action: 'REMOVE', namespace, id });

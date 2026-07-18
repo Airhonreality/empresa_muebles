@@ -1,5 +1,36 @@
 # Current State
 
+## Snapshot operativo vigente — 2026-07-17
+
+### Autoridad del catálogo (contrato arquitectónico)
+
+- **Decisión de catálogo:** Git/`main` es el estado deseado de `page_routes`,
+  `schema_definitions` y `scripts`; Neon es la proyección aplicada que usa producción;
+  Vercel debe ejecutar una revisión aplicada. Ver
+  [`ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md`](../fork_doc/ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md).
+- **Estado de implementación:** decisión y runbook documentados; migración idempotente,
+  registro de revisión/checksum, CI de reconciliación, guardas del diseñador y promoción
+  verificable todavía **no están implementados**.
+- **Regla vigente:** no se autoriza escritura directa del catálogo activo de producción ni
+  deploy manual al alias productivo. Es un contrato operativo; no afirmar que esté bloqueado
+  técnicamente hasta que una lane lo evidencie.
+- **Siguiente trigger:** antes de cualquier sincronización o cambio remoto, ejecutar
+  discovery para identificar el provider/deployment efectivo, estrategia de storage y
+  diferencias Git–Neon–producción. Si falta evidencia o aprobación humana para producción,
+  el trabajo queda BLOQUEADO.
+- **Memoria:** este bloque es el estado de arranque. Los cierres históricos siguientes se
+  conservan como evidencia, no son instrucciones vigentes sin validación contra el snapshot.
+
+### Runtime de revisiones (implementación)
+
+- Implementados export read-only, bundle con hash, publicador inmutable con CAS, `DefinitionReader`
+  y bloqueo de escritura estructural directa de Vault en modo `revision`.
+- La activación real permanece pendiente de gate humano: migración autorizada en Neon, publicación
+  de primera revisión y variables de Vercel. Hasta entonces `AGNOSTIC_DEFINITION_MODE` se mantiene
+  en `legacy`.
+- Ver [DEFINITION_REVISIONS_RUNTIME.md](../fork_doc/DEFINITION_REVISIONS_RUNTIME.md). La unidad de
+  publicación es siempre `schemas + routes + zaps`; nunca se sincronizan colecciones por separado.
+
 ## Summary
 
 This repository is the Agnostic Seed baseline for forked projects.

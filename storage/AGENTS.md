@@ -2,6 +2,51 @@
 
 This file belongs to the fork layer. Update it in each project fork.
 
+## Gobierno del catálogo estructural (decisión vigente; controles técnicos pendientes)
+
+La autoridad del catálogo se define en
+[`ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md`](fork_doc/ADR_CATALOGO_ESTRUCTURAL_Y_RELEASE.md).
+
+| Recurso | Estado deseado / canon | Estado aplicado / runtime | Vía autorizada |
+|---|---|---|---|
+| `page_routes`, `schema_definitions`, `scripts` | Git (`main`) | Neon, como proyección aplicada | lane aprobada → validación → migración idempotente → promoción |
+| Datos operativos | No aplica | Neon | API y permisos de negocio |
+| Secretos | No aplica | gestor de secretos / Vercel | configuración segura autorizada |
+
+- **Objetivo contractual:** ningún agente, diseñador o operador modifica directamente el
+  catálogo activo de producción. Un diseñador solo produce borradores revisables hasta que
+  exista un flujo de publicación aprobado.
+- **Importante:** esta prohibición describe el flujo autorizado; todavía no afirma que la
+  API, el diseñador o Neon estén técnicamente bloqueados. Si el control técnico falta, es
+  deuda explícita y no autorización para saltarse el contrato.
+- Producción solo debe promover un commit de `main` cuya revisión de catálogo haya sido
+  aplicada y verificada. Un deploy local/manual solo puede servir como preview.
+- Antes de una migración estructural: snapshot recuperable de namespaces afectados,
+  revisión (commit + checksum) y evidencia. Nunca usar payload parcial para registros
+  existentes; aplica también la regla LWW de este documento.
+
+### Matriz de autoridad de agentes
+
+| Rol | Puede hacer | No puede hacer sin gate humano explícito |
+|---|---|---|
+| Orquestador | planificar, delimitar lanes, supervisar evidencia, integrar tras auditoría | implementar una lane, aprobar su propio resultado, cambiar producción |
+| Worker liviano | ejecutar tareas mecánicas dentro del contrato y su superficie | rediseñar alcance, alterar el arnés, tocar secretos, deploy o datos reales de producción |
+| QA mecánico | ejecutar gates objetivos y reportar evidencia | declarar una decisión arquitectónica o aceptar excepciones |
+| Auditor independiente | contrastar contrato, diff y evidencia; emitir CONFORME/DESVIACIÓN | auditar su propio trabajo o promover producción |
+| Humano responsable | aprobar diseño, excepciones de riesgo, migraciones y promoción | delegar implícitamente un permiso no documentado |
+
+Un gate humano es obligatorio antes de: escribir Neon de producción, cambiar Vercel o
+secretos, promover un deploy productivo, aceptar una deuda de cierre, o mutar las reglas,
+skills, validadores y flujos del arnés.
+
+### Gobernanza de mutaciones del arnés
+
+Cambiar `AGENTS.md`, el modelo de orquestación, validadores, templates de lane, permisos o
+gates es una mutación del arnés: se trata como cambio de producción. Requiere una lane con
+superficie explícita, motivación, análisis de impacto, validación cruzada por auditor
+independiente y aprobación humana antes de que el cambio autorice una operación sensible.
+El mismo cambio no puede desactivar un gate y usar ese gate debilitado como su propia prueba.
+
 ## Project Identity
 
 Name: "Agnostic Seed"
