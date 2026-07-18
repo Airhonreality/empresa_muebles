@@ -52,7 +52,8 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
   }
 
   const getProposalTotal = () => {
-    return proposal.spaces.reduce((sum, space) => sum + getCurrentTotalForSpace(space.id), 0)
+    const carpentrySum = proposal.spaces.reduce((sum, space) => sum + getCurrentTotalForSpace(space.id), 0)
+    return carpentrySum + civilEstimateTotal
   }
 
   useEffect(() => {
