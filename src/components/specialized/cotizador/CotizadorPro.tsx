@@ -849,7 +849,9 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
           .map(item => {
             const data = item.data as unknown as ItemsObraCivil
             const product = catalogo.find(entry => entry.id === data.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
-            return { category: data.categoria, name: data.descripcion_manual || product?.descripcion || 'Ítem de obra civil', quantity: Number(data.cantidad) || 0, unit: data.unidad_medida || product?.unidad_medida, notes: data.notas }
+            const unitPrice = Number(data.precio_unitario) || 0
+            const lineTotal = Number(data.total_linea) || (Number(data.cantidad) || 0) * unitPrice
+            return { category: data.categoria, name: data.descripcion_manual || product?.descripcion || 'Ítem de obra civil', quantity: Number(data.cantidad) || 0, unit: data.unidad_medida || product?.unidad_medida, unit_price: unitPrice, total: lineTotal, notes: data.notas }
           })
         return {
           name: variantData.nombre_variante || 'Alternativa',
