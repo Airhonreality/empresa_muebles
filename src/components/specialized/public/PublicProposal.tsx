@@ -287,7 +287,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
       {hasCarpentryTotal && <a href="#resumen" className="fixed inset-x-3 bottom-3 z-30 flex min-h-14 items-center justify-between rounded-2xl border border-[hsl(var(--veta-gold-muted))] bg-[hsl(var(--veta-gold-hover))] px-4 text-white shadow-[0_18px_34px_-18px_rgba(55,42,20,.65)] sm:hidden"><span><span className="block text-[10px] uppercase tracking-[.14em] text-white/70">Carpinteria</span><strong className="text-sm">{formatCop(getProposalTotal())}</strong></span><span className="text-sm font-medium">Ver resumen</span></a>}
 
       <Dialog open={Boolean(focusedImage)} onOpenChange={open => !open && setFocusedImage(null)}>
-        <DialogContent className="max-h-screen max-w-7xl border-[var(--veta-divider-soft)] bg-[hsl(var(--veta-bg))] p-0 rounded-2xl overflow-hidden [&>button]:hidden flex flex-col">
+        <DialogContent className="max-h-screen w-screen border-0 bg-black p-0 rounded-none overflow-hidden [&>button]:hidden flex flex-row">
           <DialogTitle className="sr-only">Galería de imágenes - Modo presentación</DialogTitle>
           {focusedImage && (() => {
             const space = proposal.spaces.find(s => s.id === focusedImage.spaceId)
@@ -305,40 +305,36 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
             }
 
             return (
-              <div className="flex h-screen flex-col" onKeyDown={handleKeyDown} tabIndex={0}>
-                {/* Main image - 80% */}
-                <div className="relative flex-1 flex items-center justify-center bg-black/5 overflow-hidden">
-                  <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseño'} className="max-h-full w-full object-contain p-4" />
-                  <button type="button" onClick={() => setFocusedImage(null)} className="absolute top-4 right-4 p-2 rounded-full bg-white/90 hover:bg-white transition z-10">
-                    <X size={20} className="text-[hsl(var(--veta-text-main))]" />
+              <div className="flex w-screen h-screen flex-row bg-black" onKeyDown={handleKeyDown} tabIndex={0}>
+                {/* Main image - ~90% */}
+                <div className="relative flex-1 flex items-center justify-center bg-black overflow-hidden">
+                  <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseño'} className="max-h-full max-w-full object-contain" />
+                  <button type="button" onClick={() => setFocusedImage(null)} className="absolute top-4 left-4 p-2 rounded-full bg-white/20 hover:bg-white/40 transition z-10 backdrop-blur-sm">
+                    <X size={24} className="text-white" />
                   </button>
+
+                  {/* Navigation arrows overlay */}
+                  <button type="button" onClick={() => goToImage(currentIndex - 1)} disabled={currentIndex === 0} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 hover:bg-white/40 disabled:opacity-20 disabled:cursor-not-allowed transition backdrop-blur-sm">
+                    <ChevronLeft size={28} className="text-white" />
+                  </button>
+                  <button type="button" onClick={() => goToImage(currentIndex + 1)} disabled={currentIndex === gallery.length - 1} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 hover:bg-white/40 disabled:opacity-20 disabled:cursor-not-allowed transition backdrop-blur-sm">
+                    <ChevronRight size={28} className="text-white" />
+                  </button>
+
+                  {/* Counter overlay */}
+                  <div className="absolute bottom-4 left-4 text-white text-sm backdrop-blur-sm bg-black/40 px-3 py-1.5 rounded-full">
+                    <span className="font-medium">{currentIndex + 1}</span> / <span className="font-medium">{gallery.length}</span>
+                  </div>
                 </div>
 
-                {/* Carousel strip - 20% */}
-                {gallery.length > 0 && (
-                  <div className="bg-[hsl(var(--veta-bg))] border-t border-[var(--veta-divider-soft)] p-3 flex items-center gap-2 flex-shrink-0 h-32">
-                    <button type="button" onClick={() => goToImage(currentIndex - 1)} disabled={currentIndex === 0} className="p-2 rounded-lg border border-[var(--veta-divider-soft)] hover:bg-[hsl(var(--veta-bg-alt))] disabled:opacity-40 disabled:cursor-not-allowed transition flex-shrink-0">
-                      <ChevronLeft size={20} className="text-[hsl(var(--veta-text-main))]" />
-                    </button>
-
-                    <div className="flex-1 overflow-x-auto scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
-                      <div className="flex gap-2" style={{ minWidth: 'min-content' }}>
-                        {gallery.map((image, index) => (
-                          <button key={`${image.url}-${index}`} type="button" onClick={() => goToImage(index)} className={`shrink-0 h-24 w-32 overflow-hidden rounded-lg border-2 transition ${currentIndex === index ? 'border-[hsl(var(--veta-gold-muted))] shadow-lg' : 'border-transparent opacity-60 hover:opacity-80'}`}>
-                            <img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button type="button" onClick={() => goToImage(currentIndex + 1)} disabled={currentIndex === gallery.length - 1} className="p-2 rounded-lg border border-[var(--veta-divider-soft)] hover:bg-[hsl(var(--veta-bg-alt))] disabled:opacity-40 disabled:cursor-not-allowed transition flex-shrink-0">
-                      <ChevronRight size={20} className="text-[hsl(var(--veta-text-main))]" />
-                    </button>
-
-                    <div className="ml-2 pl-2 border-l border-[var(--veta-divider-soft)] text-xs text-[hsl(var(--veta-text-muted))] whitespace-nowrap flex-shrink-0">
-                      <span className="font-medium">{currentIndex + 1}</span> / <span className="font-medium">{gallery.length}</span>
-                      {space && <div className="text-[10px] opacity-70 mt-1">{space.name}</div>}
-                    </div>
+                {/* Vertical carousel - ~10% */}
+                {gallery.length > 1 && (
+                  <div className="w-20 bg-black/90 border-l border-white/10 flex flex-col gap-1 p-2 overflow-y-auto">
+                    {gallery.map((image, index) => (
+                      <button key={`${image.url}-${index}`} type="button" onClick={() => goToImage(index)} className={`shrink-0 aspect-square overflow-hidden rounded-lg border-2 transition hover:opacity-100 ${currentIndex === index ? 'border-[hsl(var(--veta-gold-muted))] shadow-lg' : 'border-white/20 opacity-50'}`}>
+                        <img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
