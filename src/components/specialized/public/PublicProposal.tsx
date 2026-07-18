@@ -52,8 +52,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
   }
 
   const getProposalTotal = () => {
-    const carpentrySum = proposal.spaces.reduce((sum, space) => sum + getCurrentTotalForSpace(space.id), 0)
-    return carpentrySum + civilEstimateTotal
+    return proposal.spaces.reduce((sum, space) => sum + getCurrentTotalForSpace(space.id), 0)
   }
 
   useEffect(() => {
@@ -245,88 +244,69 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
 
       <section id="resumen" className="mx-auto max-w-7xl scroll-mt-24 px-4 pb-12 sm:px-6 lg:px-8 lg:pb-20">
         <div className="rounded-2xl border border-[var(--veta-divider-soft)] bg-[hsl(var(--veta-surface))/0.84] p-5 shadow-[0_20px_46px_-38px_rgba(55,42,20,.6)] sm:p-8">
-          <p className="veta-quote-section-label">Resumen comercial</p>
-          <div className="mt-6">
-            <p className="veta-quote-section-label text-xs uppercase tracking-widest opacity-70">Inversión total del proyecto</p>
-            <p className="veta-heading mt-3 text-[clamp(2.2rem,1.5rem+2.5vw,3.8rem)] tracking-[-0.045em]">{formatCop(getProposalTotal())}</p>
-            <p className="mt-6 text-sm leading-7 text-[hsl(var(--veta-text-muted))]">
-              La inversión total del proyecto asciende a <strong className="font-semibold text-[hsl(var(--veta-text-main))]">{formatCop(getProposalTotal())}</strong>, que incluye los costos de carpintería, materiales de obra civil, y mano de obra estimada. <span className="font-medium">Son valores promedio</span> que pueden variar según los materiales seleccionados y especificaciones finales. Revisa <a href="#espacios" className="font-medium text-[hsl(var(--veta-gold-hover))] hover:underline">el desglose por ambiente</a> para conocer qué contempla cada estimativo.
-            </p>
-          </div>
+          <div className="grid gap-8 lg:grid-cols-[1fr_minmax(18rem,.7fr)] lg:items-end">
+            <div>
+              <p className="veta-quote-section-label">Resumen de propuesta</p>
+              <h2 className="veta-heading mt-2 text-[clamp(1.9rem,1.3rem+1.6vw,3rem)] tracking-[-0.035em]">Una lectura clara antes de decidir.</h2>
+              <div className="mt-7 space-y-1 border-y border-[var(--veta-divider-soft)]">
+                {proposal.spaces.map((space, index) => {
+                  const hasMultipleVariants = space.variants.length > 1
+                  const variantIdx = selectedVariantIndex[space.id] ?? 0
+                  const currentTotal = getCurrentTotalForSpace(space.id)
+                  const activeVariant = space.variants[variantIdx]
+                  const civilEstimate = activeVariant?.civil_estimate ?? []
+                  const civilTotal = civilEstimate.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0)
 
-          {hasCivilEstimate && (
-            <>
-              <div className="mt-8 border-t border-[var(--veta-divider-soft)] pt-8">
-                <p className="veta-quote-section-label text-xs uppercase tracking-widest opacity-70">Referencial independiente</p>
-                <div className="mt-3 flex items-end justify-between gap-6">
-                  <div>
-                    <p className="text-sm font-medium text-[hsl(var(--veta-text-main))]">Obra civil estimada</p>
-                  </div>
-                  <p className="veta-heading text-[clamp(1.6rem,1.2rem+1.5vw,2.4rem)] tracking-[-0.035em]">{formatCop(civilEstimateTotal)}</p>
-                </div>
-                <p className="mt-4 text-sm leading-6 text-[hsl(var(--veta-text-muted))]">Los valores de obra civil son referenciales y se gestionan independientemente del contrato de carpintería.</p>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      <section id="espacios" className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 lg:pb-20">
-        <div className="rounded-2xl border border-[var(--veta-divider-soft)] bg-[hsl(var(--veta-surface))/0.84] p-5 shadow-[0_20px_46px_-38px_rgba(55,42,20,.6)] sm:p-8">
-          <p className="veta-quote-section-label">Resumen de propuesta</p>
-          <h2 className="veta-heading mt-2 text-[clamp(1.9rem,1.3rem+1.6vw,3rem)] tracking-[-0.035em]">Una lectura clara antes de decidir.</h2>
-          <div className="mt-7 space-y-1 border-y border-[var(--veta-divider-soft)]">
-            {proposal.spaces.map((space, index) => {
-              const hasMultipleVariants = space.variants.length > 1
-              const variantIdx = selectedVariantIndex[space.id] ?? 0
-              const currentTotal = getCurrentTotalForSpace(space.id)
-              const activeVariant = space.variants[variantIdx]
-              const civilEstimate = activeVariant?.civil_estimate ?? []
-              const civilTotal = civilEstimate.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0)
-
-              return (
-                <div key={space.id}>
-                  <div className="flex min-h-12 items-center justify-between gap-4 py-3 text-sm">
-                    <span><span className="mr-3 text-[10px] tabular-nums text-[hsl(var(--veta-gold-hover))]">{String(index + 1).padStart(2, '0')}</span>{space.name}</span>
-                    {currentTotal > 0 && <strong className="font-medium tabular-nums">{formatCop(currentTotal)}</strong>}
-                  </div>
-                  {hasMultipleVariants && (
-                    <div className="ml-5 mb-2 flex flex-wrap gap-1.5">
-                      {space.variants.map((variant, vidx) => (
-                        <button key={vidx} type="button" onClick={() => setSelectedVariantIndex(current => ({ ...current, [space.id]: vidx }))} className={`text-xs px-2.5 py-1 rounded-full border transition ${variantIdx === vidx ? 'bg-[hsl(var(--veta-gold-muted))] text-white border-[hsl(var(--veta-gold-muted))]' : 'border-[var(--veta-divider-soft)] bg-white/30 text-[hsl(var(--veta-text-muted))] hover:bg-white/50'}`}>
-                          {variant.name}
-                          {variant.total > 0 && <span className="ml-1 opacity-70">{formatCop(variant.total)}</span>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {civilEstimate.length > 0 && (
-                    <div className="ml-5 mb-2 space-y-1 text-xs text-[hsl(var(--veta-text-muted))]">
-                      <p className="font-medium text-[10px] uppercase tracking-wider opacity-70">Costos adicionales <span className="inline-block px-1.5 py-0.5 rounded bg-[hsl(var(--veta-bg-alt))] text-[8px] font-semibold text-[hsl(var(--veta-text-muted))]">ESTIMADO</span>:</p>
-                      {civilEstimate.map((item, idx) => {
-                        const itemCost = item.total || (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0) || (item.price || 0)
-                        return (
-                          <div key={idx} className="flex justify-between gap-4 pl-2">
-                            <span>• {item.name}{item.notes ? ` - ${item.notes}` : ''}</span>
-                            {itemCost > 0 ? (
-                              <span className="tabular-nums font-medium text-[hsl(var(--veta-text-main))]">{formatCop(itemCost)}</span>
-                            ) : (
-                              <span className="tabular-nums text-[10px] opacity-50">—</span>
-                            )}
-                          </div>
-                        )
-                      })}
-                      {civilTotal > 0 && (
-                        <div className="flex justify-between gap-4 pl-2 pt-1 border-t border-[var(--veta-divider-soft)]/50">
-                          <span className="font-medium">Subtotal adicionales</span>
-                          <strong className="tabular-nums text-[hsl(var(--veta-text-main))]">{formatCop(civilTotal)}</strong>
+                  return (
+                    <div key={space.id}>
+                      <div className="flex min-h-12 items-center justify-between gap-4 py-3 text-sm">
+                        <span><span className="mr-3 text-[10px] tabular-nums text-[hsl(var(--veta-gold-hover))]">{String(index + 1).padStart(2, '0')}</span>{space.name}</span>
+                        {currentTotal > 0 && <strong className="font-medium tabular-nums">{formatCop(currentTotal)}</strong>}
+                      </div>
+                      {hasMultipleVariants && (
+                        <div className="ml-5 mb-2 flex flex-wrap gap-1.5">
+                          {space.variants.map((variant, vidx) => (
+                            <button key={vidx} type="button" onClick={() => setSelectedVariantIndex(current => ({ ...current, [space.id]: vidx }))} className={`text-xs px-2.5 py-1 rounded-full border transition ${variantIdx === vidx ? 'bg-[hsl(var(--veta-gold-muted))] text-white border-[hsl(var(--veta-gold-muted))]' : 'border-[var(--veta-divider-soft)] bg-white/30 text-[hsl(var(--veta-text-muted))] hover:bg-white/50'}`}>
+                              {variant.name}
+                              {variant.total > 0 && <span className="ml-1 opacity-70">{formatCop(variant.total)}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {civilEstimate.length > 0 && (
+                        <div className="ml-5 mb-2 space-y-1 text-xs text-[hsl(var(--veta-text-muted))]">
+                          <p className="font-medium text-[10px] uppercase tracking-wider opacity-70">Costos adicionales:</p>
+                          {civilEstimate.map((item, idx) => {
+                            const itemCost = item.total || (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0) || (item.price || 0)
+                            return (
+                              <div key={idx} className="flex justify-between gap-4 pl-2">
+                                <span>• {item.name}{item.notes ? ` - ${item.notes}` : ''}</span>
+                                {itemCost > 0 ? (
+                                  <span className="tabular-nums font-medium text-[hsl(var(--veta-text-main))]">{formatCop(itemCost)}</span>
+                                ) : (
+                                  <span className="text-[10px] opacity-50">estimado</span>
+                                )}
+                              </div>
+                            )
+                          })}
+                          {civilTotal > 0 && (
+                            <div className="flex justify-between gap-4 pl-2 pt-1 border-t border-[var(--veta-divider-soft)]/50">
+                              <span className="font-medium">Subtotal adicionales</span>
+                              <strong className="tabular-nums text-[hsl(var(--veta-text-main))]">{formatCop(civilTotal)}</strong>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              )
-            })}
+                  )
+                })}
+              </div>
+            </div>
+            <div className="border-l-2 border-[hsl(var(--veta-gold-muted))] pl-5">
+              <p className="veta-quote-section-label">Total de carpinteria</p>
+              <p className="veta-heading mt-2 text-[clamp(2rem,1.3rem+2.2vw,3.4rem)] tracking-[-0.04em]">{formatCop(getProposalTotal())}</p>
+              <p className="mt-4 text-sm leading-6 text-[hsl(var(--veta-text-muted))]">El contrato de carpintería cuesta <strong className="font-semibold text-[hsl(var(--veta-text-main))]">{formatCop(carpentryTotal)}</strong>.{hasCivilEstimate && <>{' '}Los costos adicionales (mano de obra, materiales, logística y otros) suman <strong className="font-semibold text-[hsl(var(--veta-text-main))]">{formatCop(civilEstimateTotal)}</strong>.</>}{' '}La inversión total del proyecto asciende a <strong className="font-semibold text-[hsl(var(--veta-text-main))]">{formatCop(carpentryTotal + civilEstimateTotal)}</strong>.</p>
+            </div>
           </div>
         </div>
       </section>
