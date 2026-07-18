@@ -305,7 +305,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
             <div className="border-l-2 border-[hsl(var(--veta-gold-muted))] pl-5">
               <p className="veta-quote-section-label">Total de carpinteria</p>
               <p className="veta-heading mt-2 text-[clamp(2rem,1.3rem+2.2vw,3.4rem)] tracking-[-0.04em]">{formatCop(getProposalTotal())}</p>
-              <p className="mt-4 text-sm leading-6 text-[hsl(var(--veta-text-muted))]">La propuesta se revisa por ambiente para que alcance, referencias y presupuesto se entiendan sin depender de una tabla extensa.</p>
+              <p className="mt-4 text-sm leading-6 text-[hsl(var(--veta-text-muted))]">El contrato de carpintería cuesta <strong className="font-semibold text-[hsl(var(--veta-text-main))]">{formatCop(carpentryTotal)}</strong>.{hasCivilEstimate && <>{' '}Los costos adicionales (mano de obra, materiales, logística y otros) suman <strong className="font-semibold text-[hsl(var(--veta-text-main))]">{formatCop(civilEstimateTotal)}</strong>.</>}{' '}La inversión total del proyecto asciende a <strong className="font-semibold text-[hsl(var(--veta-text-main))]">{formatCop(carpentryTotal + civilEstimateTotal)}</strong>.</p>
             </div>
           </div>
         </div>
