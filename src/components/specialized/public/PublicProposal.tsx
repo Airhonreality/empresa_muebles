@@ -287,7 +287,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
       {hasCarpentryTotal && <a href="#resumen" className="fixed inset-x-3 bottom-3 z-30 flex min-h-14 items-center justify-between rounded-2xl border border-[hsl(var(--veta-gold-muted))] bg-[hsl(var(--veta-gold-hover))] px-4 text-white shadow-[0_18px_34px_-18px_rgba(55,42,20,.65)] sm:hidden"><span><span className="block text-[10px] uppercase tracking-[.14em] text-white/70">Carpinteria</span><strong className="text-sm">{formatCop(getProposalTotal())}</strong></span><span className="text-sm font-medium">Ver resumen</span></a>}
 
       <Dialog open={Boolean(focusedImage)} onOpenChange={open => !open && setFocusedImage(null)}>
-        <DialogContent className="max-h-screen w-screen border-0 bg-black p-0 rounded-none overflow-hidden [&>button]:hidden flex flex-row">
+        <DialogContent className="fixed inset-0 h-screen w-screen max-h-screen max-w-screen border-0 bg-black p-0 rounded-none overflow-hidden [&>button]:hidden flex flex-row">
           <DialogTitle className="sr-only">Galería de imágenes - Modo presentación</DialogTitle>
           {focusedImage && (() => {
             const space = proposal.spaces.find(s => s.id === focusedImage.spaceId)
@@ -305,10 +305,10 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
             }
 
             return (
-              <div className="flex w-screen h-screen flex-row bg-black" onKeyDown={handleKeyDown} tabIndex={0}>
-                {/* Main image - ~90% */}
-                <div className="relative flex-1 flex items-center justify-center bg-black overflow-hidden">
-                  <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseño'} className="max-h-full max-w-full object-contain" />
+              <div className="flex w-full h-full flex-row bg-black" onKeyDown={handleKeyDown} tabIndex={0}>
+                {/* Main image - ~85-90% */}
+                <div className="relative flex-1 flex items-center justify-center bg-black overflow-hidden min-w-0">
+                  <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseño'} className="h-full w-full object-contain" />
                   <button type="button" onClick={() => setFocusedImage(null)} className="absolute top-4 left-4 p-2 rounded-full bg-white/20 hover:bg-white/40 transition z-10 backdrop-blur-sm">
                     <X size={24} className="text-white" />
                   </button>
@@ -327,11 +327,11 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                   </div>
                 </div>
 
-                {/* Vertical carousel - ~10% */}
+                {/* Vertical carousel - ~10-15% */}
                 {gallery.length > 1 && (
-                  <div className="w-20 bg-black/90 border-l border-white/10 flex flex-col gap-1 p-2 overflow-y-auto">
+                  <div className="w-24 bg-black/95 border-l border-white/20 flex flex-col gap-2 p-2 overflow-y-auto">
                     {gallery.map((image, index) => (
-                      <button key={`${image.url}-${index}`} type="button" onClick={() => goToImage(index)} className={`shrink-0 aspect-square overflow-hidden rounded-lg border-2 transition hover:opacity-100 ${currentIndex === index ? 'border-[hsl(var(--veta-gold-muted))] shadow-lg' : 'border-white/20 opacity-50'}`}>
+                      <button key={`${image.url}-${index}`} type="button" onClick={() => goToImage(index)} className={`shrink-0 h-20 w-20 overflow-hidden rounded-lg border-2 transition cursor-pointer hover:opacity-100 ${currentIndex === index ? 'border-[hsl(var(--veta-gold-muted))] shadow-lg opacity-100' : 'border-white/30 opacity-60 hover:opacity-80'}`}>
                         <img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       </button>
                     ))}
