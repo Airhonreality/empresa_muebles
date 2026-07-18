@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type CSSProperties } from 'react'
-import { ArrowDown, ChevronDown, Expand, FileText, List } from 'lucide-react'
+import { ArrowDown, ChevronDown, ChevronLeft, ChevronRight, Expand, FileText, List, X } from 'lucide-react'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -9,6 +9,7 @@ import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger 
 import type { PublicProposalSnapshot } from '@/server/public-proposal'
 
 type GalleryImage = { url: string; description?: string }
+type FocusedImageState = { url: string; description?: string; spaceId: string; imageIndex: number }
 
 const formatCop = (value: number) => new Intl.NumberFormat('es-CO', {
   style: 'currency', currency: 'COP', maximumFractionDigits: 0,
@@ -31,12 +32,28 @@ const publicProposalLightTheme = {
 
 export default function PublicProposal({ proposal }: { proposal: PublicProposalSnapshot }) {
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<Record<string, number>>({})
-  const [focusedImage, setFocusedImage] = useState<GalleryImage | null>(null)
+  const [focusedImage, setFocusedImage] = useState<FocusedImageState | null>(null)
   const [activeSpaceId, setActiveSpaceId] = useState(proposal.spaces[0]?.id ?? '')
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState<Record<string, number>>({})
+
   const carpentryTotal = proposal.financial?.carpentry_total ?? 0
   const civilEstimateTotal = proposal.financial?.civil_estimate_total ?? 0
   const hasCarpentryTotal = carpentryTotal > 0
   const hasCivilEstimate = civilEstimateTotal > 0
+
+  const getTotalForVariant = (spaceId: string, variantIndex: number) => {
+    const space = proposal.spaces.find(s => s.id === spaceId)
+    return space?.variants[variantIndex]?.total ?? 0
+  }
+
+  const getCurrentTotalForSpace = (spaceId: string) => {
+    const variantIdx = selectedVariantIndex[spaceId] ?? 0
+    return getTotalForVariant(spaceId, variantIdx)
+  }
+
+  const getProposalTotal = () => {
+    return proposal.spaces.reduce((sum, space) => sum + getCurrentTotalForSpace(space.id), 0)
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
@@ -163,10 +180,12 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
 
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
         {proposal.spaces.map((space, spacePosition) => {
-          const activeVariant = space.variants[0]
+          const variantIdx = selectedVariantIndex[space.id] ?? 0
+          const activeVariant = space.variants[variantIdx]
           const gallery = activeVariant?.images ?? []
           const selectedGalleryImage = gallery[selectedGalleryImages[space.id] ?? 0] ?? gallery[0]
           const civilItems = activeVariant?.civil_estimate ?? []
+          const hasMultipleVariants = space.variants.length > 1
 
           return <article id={space.id} key={space.id} className="scroll-mt-24 border-b border-[var(--veta-divider-soft)] py-12 first:pt-0 last:border-0 last:pb-0 lg:py-20 lg:first:pt-0">
             <div className="grid gap-8 lg:grid-cols-[minmax(0,.95fr)_minmax(20rem,1.05fr)] lg:gap-16">
@@ -178,9 +197,8 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                 </div>
                 {space.description && <p className="mt-5 max-w-prose text-base leading-7 text-[hsl(var(--veta-text-muted))]">{space.description}</p>}
 
-                {activeVariant?.name && <div className="mt-7">
-                  <p className="veta-quote-section-label mb-2">Solucion seleccionada</p>
-                  <p className="text-sm text-[hsl(var(--veta-text-muted))]">{activeVariant.name}</p>
+                {hasMultipleVariants && <div className="mt-7 flex flex-wrap gap-2 border-b border-[var(--veta-divider-soft)] pb-5">
+                  {space.variants.map((variant, idx) => <button key={idx} type="button" onClick={() => setSelectedVariantIndex(current => ({ ...current, [space.id]: idx }))} className={`rounded-full px-3 py-1.5 text-sm transition ${variantIdx === idx ? 'bg-[hsl(var(--veta-gold-muted))] text-white' : 'border border-[var(--veta-divider-soft)] bg-white/55 text-[hsl(var(--veta-text-muted))] hover:border-[hsl(var(--veta-gold-muted))]'}`}>{variant.name}</button>)}
                 </div>}
 
                 {activeVariant?.colors?.length ? <div className="mt-7 border-y border-[var(--veta-divider-soft)] py-5">
@@ -205,13 +223,13 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
 
               <div className="lg:order-1">
                 {selectedGalleryImage ? <div className="space-y-3">
-                  <button type="button" onClick={() => setFocusedImage(selectedGalleryImage)} className="group relative block w-full overflow-hidden rounded-2xl bg-[hsl(var(--veta-bg-alt))] text-left shadow-[0_24px_52px_-42px_rgba(55,42,20,.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--veta-gold-muted))]">
-                    <div className="aspect-[4/3] w-full"><img src={selectedGalleryImage.url} alt={selectedGalleryImage.description || `Referencia visual de ${space.name}`} decoding="async" fetchPriority={spacePosition === 0 ? 'high' : 'auto'} className="h-full w-full object-cover transition duration-500 motion-safe:group-hover:scale-[1.025]" /></div>
+                  <button type="button" onClick={() => setFocusedImage({ ...selectedGalleryImage, spaceId: space.id, imageIndex: selectedGalleryImages[space.id] ?? 0 })} className="group relative block w-full overflow-hidden rounded-2xl bg-[hsl(var(--veta-bg-alt))] text-left shadow-[0_24px_52px_-42px_rgba(55,42,20,.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--veta-gold-muted))]">
+                    <div className="max-h-[min(70vh,600px)] w-full flex items-center justify-center"><img src={selectedGalleryImage.url} alt={selectedGalleryImage.description || `Referencia visual de ${space.name}`} decoding="async" fetchPriority={spacePosition === 0 ? 'high' : 'auto'} className="max-h-full w-full object-contain transition duration-500 motion-safe:group-hover:scale-[1.025]" /></div>
                     <span className="absolute inset-0 grid place-items-center bg-black/0 text-white opacity-0 transition motion-safe:group-hover:bg-black/20 motion-safe:group-hover:opacity-100"><Expand size={24} /></span>
                   </button>
                   {selectedGalleryImage.description && <p className="text-xs leading-5 text-[hsl(var(--veta-text-muted))]">{selectedGalleryImage.description}</p>}
-                  {gallery.length > 1 && <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label={`Galeria de ${space.name}`}>{gallery.slice(0, 5).map((image, imageIndex) => <button key={`${image.url}-${imageIndex}`} type="button" onClick={() => setSelectedGalleryImages(current => ({ ...current, [space.id]: imageIndex }))} aria-label={`Ver imagen ${imageIndex + 1}`} aria-pressed={image.url === selectedGalleryImage.url} className={`aspect-[4/3] overflow-hidden rounded-lg border-2 transition ${image.url === selectedGalleryImage.url ? 'border-[hsl(var(--veta-gold-muted))]' : 'border-transparent opacity-70 hover:opacity-100'}`}><img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /></button>)}</div>}
-                </div> : <div className="grid aspect-[4/3] place-items-center rounded-2xl border border-dashed border-[var(--veta-divider-soft)] bg-white/35 p-8 text-center text-sm text-[hsl(var(--veta-text-muted))]">Referencia visual pendiente</div>}
+                  {gallery.length > 1 && <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label={`Galeria de ${space.name}`}>{gallery.slice(0, 5).map((image, imageIndex) => <button key={`${image.url}-${imageIndex}`} type="button" onClick={() => setSelectedGalleryImages(current => ({ ...current, [space.id]: imageIndex }))} aria-label={`Ver imagen ${imageIndex + 1}`} aria-pressed={image.url === selectedGalleryImage.url} className={`h-16 overflow-hidden rounded-lg border-2 transition ${image.url === selectedGalleryImage.url ? 'border-[hsl(var(--veta-gold-muted))]' : 'border-transparent opacity-70 hover:opacity-100'}`}><img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /></button>)}</div>}
+                </div> : <div className="grid max-h-[min(70vh,600px)] place-items-center rounded-2xl border border-dashed border-[var(--veta-divider-soft)] bg-white/35 p-8 text-center text-sm text-[hsl(var(--veta-text-muted))]">Referencia visual pendiente</div>}
               </div>
             </div>
           </article>
@@ -224,28 +242,103 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
             <div>
               <p className="veta-quote-section-label">Resumen de propuesta</p>
               <h2 className="veta-heading mt-2 text-[clamp(1.9rem,1.3rem+1.6vw,3rem)] tracking-[-0.035em]">Una lectura clara antes de decidir.</h2>
-              <div className="mt-7 divide-y divide-[var(--veta-divider-soft)] border-y border-[var(--veta-divider-soft)]">
+              <div className="mt-7 space-y-1 border-y border-[var(--veta-divider-soft)]">
                 {proposal.spaces.map((space, index) => {
-                  const total = space.variants[0]?.total ?? 0
-                  return <div key={space.id} className="flex min-h-12 items-center justify-between gap-4 py-3 text-sm"><span><span className="mr-3 text-[10px] tabular-nums text-[hsl(var(--veta-gold-hover))]">{String(index + 1).padStart(2, '0')}</span>{space.name}</span>{total > 0 && <strong className="font-medium tabular-nums">{formatCop(total)}</strong>}</div>
+                  const hasMultipleVariants = space.variants.length > 1
+                  const variantIdx = selectedVariantIndex[space.id] ?? 0
+                  const currentTotal = getCurrentTotalForSpace(space.id)
+
+                  return (
+                    <div key={space.id}>
+                      <div className="flex min-h-12 items-center justify-between gap-4 py-3 text-sm">
+                        <span><span className="mr-3 text-[10px] tabular-nums text-[hsl(var(--veta-gold-hover))]">{String(index + 1).padStart(2, '0')}</span>{space.name}</span>
+                        {currentTotal > 0 && <strong className="font-medium tabular-nums">{formatCop(currentTotal)}</strong>}
+                      </div>
+                      {hasMultipleVariants && (
+                        <div className="ml-5 mb-2 flex flex-wrap gap-1.5">
+                          {space.variants.map((variant, vidx) => (
+                            <button key={vidx} type="button" onClick={() => setSelectedVariantIndex(current => ({ ...current, [space.id]: vidx }))} className={`text-xs px-2.5 py-1 rounded-full border transition ${variantIdx === vidx ? 'bg-[hsl(var(--veta-gold-muted))] text-white border-[hsl(var(--veta-gold-muted))]' : 'border-[var(--veta-divider-soft)] bg-white/30 text-[hsl(var(--veta-text-muted))] hover:bg-white/50'}`}>
+                              {variant.name}
+                              {variant.total > 0 && <span className="ml-1 opacity-70">{formatCop(variant.total)}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
                 })}
               </div>
             </div>
             <div className="border-l-2 border-[hsl(var(--veta-gold-muted))] pl-5">
               <p className="veta-quote-section-label">Total de carpinteria</p>
-              {hasCarpentryTotal ? <p className="veta-heading mt-2 text-[clamp(2rem,1.3rem+2.2vw,3.4rem)] tracking-[-0.04em]">{formatCop(carpentryTotal)}</p> : <p className="mt-2 text-lg text-[hsl(var(--veta-text-muted))]">Por confirmar</p>}
+              <p className="veta-heading mt-2 text-[clamp(2rem,1.3rem+2.2vw,3.4rem)] tracking-[-0.04em]">{formatCop(getProposalTotal())}</p>
               <p className="mt-4 text-sm leading-6 text-[hsl(var(--veta-text-muted))]">La propuesta se revisa por ambiente para que alcance, referencias y presupuesto se entiendan sin depender de una tabla extensa.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {hasCarpentryTotal && <a href="#resumen" className="fixed inset-x-3 bottom-3 z-30 flex min-h-14 items-center justify-between rounded-2xl border border-[hsl(var(--veta-gold-muted))] bg-[hsl(var(--veta-gold-hover))] px-4 text-white shadow-[0_18px_34px_-18px_rgba(55,42,20,.65)] sm:hidden"><span><span className="block text-[10px] uppercase tracking-[.14em] text-white/70">Carpinteria</span><strong className="text-sm">{formatCop(carpentryTotal)}</strong></span><span className="text-sm font-medium">Ver resumen</span></a>}
+      {hasCarpentryTotal && <a href="#resumen" className="fixed inset-x-3 bottom-3 z-30 flex min-h-14 items-center justify-between rounded-2xl border border-[hsl(var(--veta-gold-muted))] bg-[hsl(var(--veta-gold-hover))] px-4 text-white shadow-[0_18px_34px_-18px_rgba(55,42,20,.65)] sm:hidden"><span><span className="block text-[10px] uppercase tracking-[.14em] text-white/70">Carpinteria</span><strong className="text-sm">{formatCop(getProposalTotal())}</strong></span><span className="text-sm font-medium">Ver resumen</span></a>}
 
       <Dialog open={Boolean(focusedImage)} onOpenChange={open => !open && setFocusedImage(null)}>
-        <DialogContent className="max-h-[92dvh] max-w-5xl overflow-auto border-[var(--veta-divider-soft)] bg-[hsl(var(--veta-bg))] p-3 sm:rounded-2xl sm:p-5">
-          <DialogTitle className="sr-only">Imagen de diseno ampliada</DialogTitle>
-          {focusedImage && <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseno'} className="max-h-[82dvh] w-full rounded-lg object-contain" />}
+        <DialogContent className="max-h-[98dvh] max-w-7xl border-[var(--veta-divider-soft)] bg-[hsl(var(--veta-bg))] p-0 flex flex-col rounded-2xl">
+          <DialogTitle className="sr-only">Galería de imágenes - Modo presentación</DialogTitle>
+          {focusedImage && (() => {
+            const space = proposal.spaces.find(s => s.id === focusedImage.spaceId)
+            const gallery = space?.variants[selectedVariantIndex[focusedImage.spaceId] ?? 0]?.images ?? []
+            const currentIndex = focusedImage.imageIndex ?? 0
+
+            const goToImage = (index: number) => {
+              const normalized = Math.max(0, Math.min(index, gallery.length - 1))
+              setFocusedImage({ ...gallery[normalized], spaceId: focusedImage.spaceId, imageIndex: normalized })
+            }
+
+            const handleKeyDown = (e: React.KeyboardEvent) => {
+              if (e.key === 'ArrowLeft') goToImage(currentIndex - 1)
+              if (e.key === 'ArrowRight') goToImage(currentIndex + 1)
+              if (e.key === 'Escape') setFocusedImage(null)
+            }
+
+            return (
+              <div className="flex h-[98dvh] flex-col" onKeyDown={handleKeyDown} tabIndex={0}>
+                {/* Main image - 80% */}
+                <div className="relative flex-1 flex items-center justify-center bg-black/5">
+                  <img src={focusedImage.url} alt={focusedImage.description || 'Imagen de diseño'} className="max-h-full w-full object-contain p-4" />
+                  <button type="button" onClick={() => setFocusedImage(null)} className="absolute top-4 right-4 p-2 rounded-full bg-white/90 hover:bg-white transition">
+                    <X size={20} className="text-[hsl(var(--veta-text-main))]" />
+                  </button>
+                </div>
+
+                {/* Carousel strip - 20% */}
+                {gallery.length > 0 && (
+                  <div className="border-t border-[var(--veta-divider-soft)] bg-[hsl(var(--veta-bg))] p-4 flex items-center gap-3">
+                    <button type="button" onClick={() => goToImage(currentIndex - 1)} disabled={currentIndex === 0} className="p-2 rounded-lg border border-[var(--veta-divider-soft)] hover:bg-[hsl(var(--veta-bg-alt))] disabled:opacity-40 disabled:cursor-not-allowed transition">
+                      <ChevronLeft size={20} className="text-[hsl(var(--veta-text-main))]" />
+                    </button>
+
+                    <div className="flex-1 overflow-x-auto scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
+                      <div className="flex gap-2" style={{ minWidth: 'min-content' }}>
+                        {gallery.map((image, index) => (
+                          <button key={`${image.url}-${index}`} type="button" onClick={() => goToImage(index)} className={`shrink-0 h-20 w-24 overflow-hidden rounded-lg border-2 transition ${currentIndex === index ? 'border-[hsl(var(--veta-gold-muted))]' : 'border-transparent opacity-60 hover:opacity-80'}`}>
+                            <img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button type="button" onClick={() => goToImage(currentIndex + 1)} disabled={currentIndex === gallery.length - 1} className="p-2 rounded-lg border border-[var(--veta-divider-soft)] hover:bg-[hsl(var(--veta-bg-alt))] disabled:opacity-40 disabled:cursor-not-allowed transition">
+                      <ChevronRight size={20} className="text-[hsl(var(--veta-text-main))]" />
+                    </button>
+
+                    <div className="ml-2 pl-2 border-l border-[var(--veta-divider-soft)] text-xs text-[hsl(var(--veta-text-muted))] whitespace-nowrap">
+                      <span className="font-medium">{currentIndex + 1}</span> de <span className="font-medium">{gallery.length}</span>
+                      {space && <div className="text-[10px] mt-1">{space.name}</div>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </DialogContent>
       </Dialog>
     </main>
