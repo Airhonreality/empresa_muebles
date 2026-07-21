@@ -7,6 +7,7 @@ import { RouteResolution } from '@/lib/agnostic/resolver';
 import { cn } from '@/lib/utils';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { useSyncPulse } from '@/hooks/useSyncPulse';
+import { useAuth } from '@/context/AuthContext';
 
 interface ShellProps {
   initialData: Record<string, any>;
@@ -28,6 +29,8 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
   const { hydrate: hydrateDNA }             = useDNAStore();
   const { hydrate: hydrateMateria }         = useMateriaStore();
   const { setNavigation, setActiveRecord }  = useSystemStore();
+  const auth = useAuth();
+  const isAuthenticated = auth?.isAuthenticated ?? false;
 
   // Watch the primary data context of this page for remote changes.
   // When another user writes to the same namespace, the SHA changes and
@@ -36,7 +39,9 @@ export function AgnosticShell({ initialData, resolution }: ShellProps) {
     () => (resolution.context ? [resolution.context] : []),
     [resolution.context]
   );
-  useSyncPulse(watchedNamespaces);
+  // Public pages must use a declared public read model, never the private
+  // Vault polling transport. Private application routes retain live refresh.
+  useSyncPulse(isAuthenticated ? watchedNamespaces : []);
 
   // Hydrate Zustand ONCE per navigation — SSR data flows into client stores
   useEffect(() => {

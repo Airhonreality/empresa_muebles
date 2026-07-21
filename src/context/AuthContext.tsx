@@ -72,8 +72,6 @@ export function AuthProvider({
   );
 }
 
-export function useAuth(): AuthContextType {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+export function useAuth(): AuthContextType | null {
+  return useContext(AuthContext);
 }

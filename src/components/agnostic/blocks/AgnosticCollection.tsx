@@ -328,7 +328,8 @@ export function AgnosticCollection({
 }: Props) {
   const { data: materiaStore } = useMateriaStore();
   const { schemas } = useDNAStore();
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user ?? null;
   const { saveItem, deleteItem, openOverlay } = useAppDispatch();
   const params = useParams();
 

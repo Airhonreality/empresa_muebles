@@ -10,7 +10,8 @@ const NAV_BY_ROLE: Record<string, string> = {
 }
 
 export function AppNavbarDynamic() {
-  const { user } = useAuth()
-  const navId = (user?.role && NAV_BY_ROLE[user.role]) ?? 'nav_erp_main'
+  const auth = useAuth()
+  if (!auth) return null
+  const navId = (auth.user?.role && NAV_BY_ROLE[auth.user.role]) ?? 'nav_erp_main'
   return <AgnosticNavbar nav_id={navId} />
 }
