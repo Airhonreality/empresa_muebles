@@ -1,4 +1,4 @@
-import { AppNavbarDynamic } from "@/components/agnostic/blocks/AppNavbarDynamic";
+import dynamic from 'next/dynamic';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,11 @@ import { Button } from "@/components/ui/button";
 import { CircleUser } from "lucide-react";
 import { redirect } from 'next/navigation';
 import { requireSession } from '@/lib/agnostic/require-session';
+
+const AppNavbarDynamic = dynamic(
+  () => import("@/components/agnostic/blocks/AppNavbarDynamic").then(m => ({ default: m.AppNavbarDynamic })),
+  { ssr: false, loading: () => <div className="h-6 bg-muted animate-pulse rounded" /> }
+);
 
 export default async function AppLayout({
   children,
