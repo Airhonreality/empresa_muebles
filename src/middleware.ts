@@ -4,7 +4,7 @@ import { SESSION_COOKIE } from '@/lib/agnostic/session';
 
 const PROTECTED_PATHS = ['/app', '/schema', '/_data', '/setup'];
 const PROTECTED_API_PATHS = ['/api/admin', '/api/engine', '/api/pulse'];
-const PUBLIC_PATHS    = ['/login', '/api/auth'];
+const PUBLIC_PATHS    = ['/login', '/api/auth', '/propuesta'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
