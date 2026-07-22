@@ -98,9 +98,9 @@ async function syncToPostgres(routes: PageRoute[]): Promise<void> {
     `;
 
     // Insertar todas las nuevas rutas
+    // ⚠️ IMPORTANTE: No usar JSON.stringify() para columna JSONB
+    // Pasar el objeto directamente - postgres package lo convierte a JSONB automáticamente
     for (const route of routes) {
-      const dataJson = JSON.stringify(route.data);
-
       // LOG: Verificar qué se escribe (solo primeras 3)
       if (routes.indexOf(route) < 3) {
         console.log(`  [${routes.indexOf(route) + 1}] ${route.data.path} -> ${route.data.title || 'SIN TITLE'}`);
@@ -108,7 +108,7 @@ async function syncToPostgres(routes: PageRoute[]): Promise<void> {
 
       await sql`
         INSERT INTO agnostic_records (id, namespace, context, data, created_at, updated_at)
-        VALUES (${route.id}, 'page_routes', ${route.context}, ${dataJson}, NOW(), NOW())
+        VALUES (${route.id}, 'page_routes', ${route.context}, ${route.data}, NOW(), NOW())
       `;
     }
 
