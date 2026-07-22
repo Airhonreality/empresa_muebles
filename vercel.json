@@ -1,15 +1,4 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "env": {
-    "NEXT_RUNTIME": "nodejs"
-  },
-  "functions": {
-    "src/app/api/**": {
-      "runtime": "nodejs18.x",
-      "memory": 1024
-    }
-  },
-  "redirects": [],
-  "rewrites": []
+  "outputDirectory": ".next"
 }
