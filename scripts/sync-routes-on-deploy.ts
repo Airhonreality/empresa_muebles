@@ -90,14 +90,18 @@ async function syncToPostgres(routes: PageRoute[]): Promise<void> {
   try {
     console.log('✓ Conectado a Neon');
 
-    // Upsert cada ruta
+    // Estrategia: DELETE todas las rutas existentes + INSERT las nuevas
+    // (evita problemas de constraints en ON CONFLICT)
+    await sql`
+      DELETE FROM agnostic_records
+      WHERE namespace = 'page_routes'
+    `;
+
+    // Insertar todas las nuevas rutas
     for (const route of routes) {
       await sql`
         INSERT INTO agnostic_records (id, namespace, context, data, created_at, updated_at)
         VALUES (${route.id}, 'page_routes', ${route.context}, ${JSON.stringify(route.data)}, NOW(), NOW())
-        ON CONFLICT (id) DO UPDATE SET
-          data = EXCLUDED.data,
-          updated_at = NOW()
       `;
     }
 
