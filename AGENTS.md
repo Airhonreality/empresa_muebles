@@ -61,6 +61,37 @@ Never reintroduce:
 - loose `.js` scripts under storage
 - eager SSR relation catalog loading
 
+## Definition Lifecycle Contract
+
+The engine owns exactly three definition namespaces:
+
+```text
+schema_definitions
+page_routes
+scripts
+```
+
+They keep their existing `DataItem` and JSON formats, but their lifecycle is
+different from ordinary records. Use the definition ports exported by
+`@agnostic/core`:
+
+- `DefinitionReader` reads one coherent definition revision.
+- `DefinitionPublisher` validates and activates a candidate revision.
+- `RecordStore` handles ordinary namespace records.
+- `AgnosticBridge` remains the infrastructure-neutral persistence adapter.
+
+`AGNOSTIC_DEFINITION_MODE` is explicit:
+
+- `legacy`: compatible unified behavior for existing forks.
+- `shadow`: legacy remains authoritative while revisions are compared.
+- `revision`: runtime definitions come from one immutable active revision.
+
+Never infer a definition lifecycle from the selected provider. Never read
+schemas, routes, and zaps independently in revision mode. Never fall back to
+legacy after a declared revision read fails.
+
+The complete engine contract is in `src/docs/DEFINITION_LIFECYCLE.md`.
+
 ## Encoding Contract
 
 - Persist text as UTF-8 without BOM.

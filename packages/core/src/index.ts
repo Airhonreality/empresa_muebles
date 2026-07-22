@@ -6,4 +6,4 @@ export * from './config';
 export * from './integration';
 export * from './adapter';
 export * from './module';
-
+export * from './definitions';

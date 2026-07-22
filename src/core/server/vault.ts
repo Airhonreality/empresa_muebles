@@ -25,8 +25,10 @@
  */
 
 import { IntegrityChecker } from '@/lib/agnostic/IntegrityChecker';
-import { getStrategy } from '@/server/getStrategy';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
+import { isDefinitionNamespace } from '@agnostic/core';
+import { createPersistenceTopology } from '@/server/definitions/topology';
+import { handleVaultHydrationError } from './vault-error-policy';
 import { cache } from 'react';
 
 /**
@@ -36,9 +38,18 @@ import { cache } from 'react';
  * the exact argument, so 'page_routes' dedupes whether it arrived via the
  * root layout's context array or a route page's partial/full resolution.
  */
+const getTopologyCached = cache(() => createPersistenceTopology());
+
+const readDefinitionRevisionCached = cache(async () => {
+  return getTopologyCached().definitionReader.readActiveRevision();
+});
+
 const readNamespaceCached = cache(async (context: string) => {
-  const strategy = getStrategy();
-  return strategy.read(context);
+  if (isDefinitionNamespace(context)) {
+    const revision = await readDefinitionRevisionCached();
+    return revision.definitions[context];
+  }
+  return getTopologyCached().recordStore.read(context);
 });
 
 /**
@@ -74,12 +85,6 @@ export async function getVaultData(requestedContexts?: string | string[]): Promi
       _integrity: integrity
     };
   } catch (error) {
-    console.error('[VaultHydration] Selective server-side hydration failure:', error);
-    return {
-      _integrity: { 
-        isValid: false, 
-        issues: [{ level: 'ERROR', context: 'SYSTEM', message: 'Critical server hydration failed.' }]
-      }
-    };
+    return handleVaultHydrationError(error);
   }
 }

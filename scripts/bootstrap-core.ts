@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { getStrategyName } from '../src/server/getStrategy';
+import { resolveBaseUrl } from '../src/lib/agnostic/env-contract';
 import { createCliResult, printCliResult, type CliFinding, type CliResult } from './cli-reporter';
 
 type BootstrapState = {
@@ -103,7 +104,13 @@ export async function bootstrapDoctor(): Promise<BootstrapCheck[]> {
   const schemas = await readJsonArray(path.join(storageDb, 'schema_definitions.json'));
   const routes = await readJsonArray(path.join(storageDb, 'page_routes.json'));
   const scripts = await readJsonArray(path.join(storageDb, 'scripts.json'));
-  const activeStrategy = getStrategyName();
+  let activeStrategy: 'github' | 'postgres' | 'supabase' | 'local' = 'local';
+  let activeStrategyError: string | null = null;
+  try {
+    activeStrategy = getStrategyName();
+  } catch (err) {
+    activeStrategyError = err instanceof Error ? err.message : String(err);
+  }
 
   checks.push({
     id: 'storage_root',
@@ -131,14 +138,28 @@ export async function bootstrapDoctor(): Promise<BootstrapCheck[]> {
 
   checks.push({
     id: 'database_url',
-    status: hasEnv('DATABASE_URL') ? 'ok' : 'warn',
-    message: 'DATABASE_URL debe apuntar a Neon/Postgres pooled para produccion serverless',
+    status: activeStrategy === 'postgres' ? (hasEnv('DATABASE_URL') ? 'ok' : 'warn') : 'ok',
+    message: activeStrategy === 'postgres'
+      ? 'DATABASE_URL debe apuntar a Neon/Postgres pooled para produccion serverless'
+      : `DATABASE_URL no es requerida para la estrategia activa (${activeStrategy})`,
+  });
+
+  checks.push({
+    id: 'storage_strategy',
+    status: activeStrategyError ? 'fail' : (hasEnv('AGNOSTIC_STORAGE_STRATEGY') ? 'ok' : 'warn'),
+    message: activeStrategyError
+      ? activeStrategyError
+      : hasEnv('AGNOSTIC_STORAGE_STRATEGY')
+      ? 'AGNOSTIC_STORAGE_STRATEGY configurada'
+      : 'AGNOSTIC_STORAGE_STRATEGY no está configurada; el motor infiere la estrategia por variables',
   });
 
   checks.push({
     id: 'active_strategy',
-    status: activeStrategy === 'postgres' ? 'ok' : 'warn',
-    message: `estrategia activa: ${activeStrategy}. Para produccion objetivo: postgres`,
+    status: activeStrategyError ? 'fail' : (process.env.NODE_ENV === 'production' && activeStrategy !== 'postgres' ? 'warn' : 'ok'),
+    message: activeStrategyError
+      ? activeStrategyError
+      : `estrategia activa: ${activeStrategy}. ${process.env.NODE_ENV === 'production' ? 'En produccion el objetivo es postgres.' : 'En desarrollo local es valido usar local, github o supabase si el contrato lo define.'}`,
   });
 
   checks.push({
@@ -155,8 +176,8 @@ export async function bootstrapDoctor(): Promise<BootstrapCheck[]> {
 
   checks.push({
     id: 'production_url',
-    status: checkUrlLike(process.env.PRODUCTION_URL) ? 'ok' : 'warn',
-    message: 'PRODUCTION_URL permite verificar la app desplegada desde CLI',
+    status: checkUrlLike(resolveBaseUrl()) ? 'ok' : 'warn',
+    message: 'NEXT_PUBLIC_BASE_URL (o PRODUCTION_URL legado) permite verificar la app desplegada desde CLI',
   });
 
   return checks;
@@ -201,7 +222,7 @@ export async function printBootstrapStatus(): Promise<void> {
   if (state.provider) console.log(`- provider: ${state.provider}`);
   if (state.database) console.log(`- database: ${state.database}`);
   if (state.files) console.log(`- files: ${state.files}`);
-  if (state.production_url) console.log(`- production_url: ${state.production_url}`);
+  if (state.production_url) console.log(`- base_url: ${state.production_url}`);
   console.log(`- updated_at: ${state.updated_at}`);
 }
 
@@ -213,7 +234,7 @@ export async function startBootstrapInstall(): Promise<void> {
     provider: 'netlify',
     database: 'neon',
     files: 'r2',
-    production_url: process.env.PRODUCTION_URL,
+    production_url: resolveBaseUrl(),
     updated_at: new Date().toISOString(),
   });
 
@@ -234,7 +255,7 @@ export async function printBootstrapVerify(options: { json?: boolean } = {}): Pr
       code: `AGNO_REMOTE_${check.id.toUpperCase()}`,
       message: check.message,
       suggestion: check.id.includes('production')
-        ? 'Configura PRODUCTION_URL y verifica que el deploy este accesible.'
+        ? 'Configura NEXT_PUBLIC_BASE_URL y verifica que el deploy este accesible.'
         : 'Valida token/site id de Netlify.',
       metadata: check.metadata,
     }));
@@ -243,8 +264,8 @@ export async function printBootstrapVerify(options: { json?: boolean } = {}): Pr
     remoteFindings.push({
       level: 'warn',
       code: 'AGNO_REMOTE_VERIFY_SKIPPED',
-      message: 'Verify remoto omitido: configura PRODUCTION_URL y/o NETLIFY_AUTH_TOKEN + NETLIFY_SITE_ID.',
-      suggestion: 'Carga .env.local con PRODUCTION_URL y credenciales de Netlify para validar el deploy real.',
+      message: 'Verify remoto omitido: configura NEXT_PUBLIC_BASE_URL y/o NETLIFY_AUTH_TOKEN + NETLIFY_SITE_ID.',
+      suggestion: 'Carga .env.local con NEXT_PUBLIC_BASE_URL y credenciales de Netlify para validar el deploy real.',
     });
   }
 
@@ -262,7 +283,7 @@ export async function printBootstrapVerify(options: { json?: boolean } = {}): Pr
 
 export async function bootstrapRemoteVerify(): Promise<RemoteCheck[]> {
   const checks: RemoteCheck[] = [];
-  const productionUrl = process.env.PRODUCTION_URL?.replace(/\/+$/, '');
+  const productionUrl = resolveBaseUrl()?.replace(/\/+$/, '');
 
   if (productionUrl) {
     try {
@@ -337,11 +358,12 @@ export async function bootstrapRemoteVerify(): Promise<RemoteCheck[]> {
 function bootstrapSuggestion(id: string): string {
   switch (id) {
     case 'hosting_bootstrap': return 'Configura NETLIFY_AUTH_TOKEN y NETLIFY_SITE_ID.';
-    case 'database_url': return 'Configura DATABASE_URL pooled/serverless de Neon/Postgres.';
-    case 'active_strategy': return 'Asegura que DATABASE_URL tenga prioridad y no quede GITHUB_REPO obsoleto.';
+    case 'database_url': return 'Configura DATABASE_URL pooled/serverless de Neon/Postgres cuando uses postgres.';
+    case 'storage_strategy': return 'Define AGNOSTIC_STORAGE_STRATEGY para evitar inferencias accidentales.';
+    case 'active_strategy': return 'Alinea AGNOSTIC_STORAGE_STRATEGY con el motor que realmente quieres usar.';
     case 'r2': return 'Configura CF_ACCOUNT_ID, CF_R2_BUCKET, CF_R2_ACCESS_KEY_ID y CF_R2_SECRET_ACCESS_KEY.';
     case 'auth_secrets': return 'Genera SESSION_SECRET y API_SECRET_KEY antes de crear el primer admin.';
-    case 'production_url': return 'Configura PRODUCTION_URL para validar health remoto.';
+    case 'production_url': return 'Configura NEXT_PUBLIC_BASE_URL para validar health remoto.';
     default: return 'Revisa el bootstrap doctor y completa la configuracion faltante.';
   }
 }

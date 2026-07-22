@@ -20,7 +20,7 @@
  *     Datos y schema son staged para revisión humana antes de escribir.
  */
 
-import { getStrategy } from '../src/server/getStrategy';
+import { getDefinitionAwareBridge } from '../src/server/definitions/topology';
 import { LocalStrategy } from '../src/server/strategies/LocalStrategy';
 import { PostgresStrategy } from '../src/server/strategies/PostgresStrategy';
 import { getProjectStorageRoot } from '../src/server/activeProject';
@@ -55,10 +55,14 @@ import {
   printRemoveModulePlan,
   applyRemoveModule,
 } from './agno-modules';
+import { loadLocalEnvFiles } from './load-local-env';
+import { printEnvCheck } from './env-check';
+
+loadLocalEnvFiles();
 
 const LOG_FILE = path.join(process.cwd(), '.agno-log.jsonl');
 
-const _rawAdapter = getStrategy();
+const _rawAdapter = getDefinitionAwareBridge();
 
 // Proxy that intercepts writes and fires appendAgnoLog after the fact.
 // appendAgnoLog is defined later in this file — hoisting is safe because
@@ -599,8 +603,7 @@ async function cmdContext() {
 async function cmdDiffEnv() {
   if (!process.env.DATABASE_URL) {
     console.log('[DIFF-ENV] DATABASE_URL no está definida en process.env.');
-    console.log('  -> Para auditar divergencias con Neon Postgres, pasa tu archivo de entorno al invocar:');
-    console.log('  -> npx tsx --env-file=.env.local scripts/agno.ts diff-env');
+    console.log('  -> Carga DATABASE_URL en .env.local o .env.vercel.local, o exporta la variable antes de ejecutar diff-env.');
     return;
   }
 
@@ -1971,6 +1974,7 @@ MODULES
 DOCS / BOOTSTRAP
   docs schemas|zaps|routes|modules|all
   bootstrap install|resume|status|doctor|verify
+  env:check [--json]                       audita el contrato de configuración local
 
 ══ COLA DE CAMBIOS (solo capas 4 y 5) ════════════════════════════════
   status              ver cola actual
@@ -2063,6 +2067,7 @@ async function dispatch(line: string) {
     case 'docs':    return cmdDocs(args);
     case 'bootstrap': return cmdBootstrap(args);
     case 'refactor-schema': return cmdRefactorSchema(args);
+    case 'env:check': return printEnvCheck({ json: args.includes('--json') });
     case 'list-adapters':   return cmdListAdapters(args);
     case 'install':         return cmdInstall(args);
     case 'remove-adapter':  return cmdRemoveAdapter(args);

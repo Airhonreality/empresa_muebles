@@ -27,7 +27,7 @@ import { AdminTools } from "@/components/agnostic/admin/AdminTools";
 import { getVaultData } from "@/core/server/vault";
 import { getProjectStorageRoot } from "@/server/activeProject";
 import { getIronSession } from "iron-session";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import fs from "fs/promises";
 import path from "path";
 import { SYSTEM_NS } from "@/lib/agnostic/constants";
@@ -77,14 +77,11 @@ const candal = Candal({
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const isPublicShare = (await headers()).get('x-agnostic-public-share') === '1';
   const storageRoot = getProjectStorageRoot();
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const vaultData = await getVaultData([
-    SYSTEM_NS.ROUTES,
-    SYSTEM_NS.SCHEMAS,
-    SYSTEM_NS.CONFIG,
-    SYSTEM_NS.TOKENS,
-    "configuracion_comercial",
+  const session = isPublicShare ? null : await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const vaultData = isPublicShare ? {} : await getVaultData([
+    SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.TOKENS, "configuracion_comercial",
   ]);
 
   let tokenStyles = "";
@@ -144,13 +141,15 @@ export default async function RootLayout({
         <title>{appName}</title>
       </head>
       <body className="antialiased">
-        <AppProvider initialData={vaultData}>
-          <AuthProvider initialUser={session.user ?? null}>
-            {children}
-            <AdminTools />
-            <Toaster position="bottom-left" expand={false} richColors />
-          </AuthProvider>
-        </AppProvider>
+        {isPublicShare ? children : (
+          <AppProvider initialData={vaultData}>
+            <AuthProvider initialUser={session?.user ?? null}>
+              {children}
+              <AdminTools />
+              <Toaster position="bottom-left" expand={false} richColors />
+            </AuthProvider>
+          </AppProvider>
+        )}
       </body>
     </html>
   );

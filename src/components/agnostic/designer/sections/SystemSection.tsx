@@ -81,6 +81,7 @@ export function SystemSection() {
   const { data } = useAppState();
   const { saveItem } = useAppDispatch();
   const [isSaving, setIsSaving] = useState(false);
+  const [activeDataStrategy, setActiveDataStrategy] = useState<'github' | 'postgres' | 'supabase' | 'local'>('local');
 
   // Read design tokens from Materia store
   const tokens = data?.design_tokens || [];
@@ -104,6 +105,21 @@ export function SystemSection() {
       setFontFamily(asString(fontToken.data.value, 'Inter, sans-serif'));
     }
   }, [primaryToken, radiusToken, fontToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/admin/health')
+      .then(res => res.json())
+      .then((health: any) => {
+        if (!cancelled && health?.activeDataStrategy) {
+          setActiveDataStrategy(health.activeDataStrategy);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setActiveDataStrategy('local');
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const isDirty =
     hslToHex(asString(primaryToken?.data?.value, '')) !== primaryColor ||
@@ -162,7 +178,13 @@ export function SystemSection() {
             <div className="h-10 px-4 border bg-muted/20 rounded-xl flex items-center text-xs font-bold text-foreground justify-between">
               <span className="flex items-center gap-2 text-primary">
                 <Database size={13} />
-                {process.env.GITHUB_REPO ? 'GitHub Repository Strategy' : process.env.DATABASE_URL ? 'PostgreSQL Database Strategy' : process.env.SUPABASE_URL ? 'Supabase cloud Strategy' : 'Desarrollo Local (JSON files)'}
+                {activeDataStrategy === 'github'
+                  ? 'GitHub Repository Strategy'
+                  : activeDataStrategy === 'postgres'
+                    ? 'PostgreSQL Database Strategy'
+                    : activeDataStrategy === 'supabase'
+                      ? 'Supabase cloud Strategy'
+                      : 'Desarrollo Local (JSON files)'}
               </span>
               <span className="text-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
                 Activa

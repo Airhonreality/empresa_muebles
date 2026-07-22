@@ -7,4 +7,3 @@
     - Arbol de zaps
     - Arbol de rutas
 Siempre se usa esta infromacion para diagnosicar y tomar decisiones de diseño.
-

@@ -61,36 +61,46 @@ export class SupabaseStrategy implements AgnosticBridge {
    */
   async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
-      let apiUrl = `${this.url}/rest/v1/${namespace}?select=*`;
-      
-      if (query?.where) {
-        Object.entries(query.where).forEach(([k, v]) => {
-          apiUrl += `&${k}=eq.${v}`;
-        });
-      }
-
-      const res = await fetch(apiUrl, {
-        headers: this.headers,
-        cache: 'no-store'
-      });
-
-      if (!res.ok) {
-        console.error(`[SupabaseStrategy] Read failed for ${namespace}: ${res.statusText}`);
-        return [];
-      }
-      
-      const rows = await res.json() as any[];
-      return rows.map(row => ({
-        id: row.id,
-        context: row.context || namespace,
-        data: row.data || row,
-        created_at: row.created_at,
-        updated_at: row.updated_at
-      }));
+      return await this.readStrict(namespace, query);
     } catch (err) {
       console.error(`[SupabaseStrategy] Read Error:`, err);
       return [];
     }
+  }
+
+  async readStrict(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
+    let apiUrl = `${this.url}/rest/v1/${namespace}?select=*`;
+
+    if (query?.where) {
+      Object.entries(query.where).forEach(([k, v]) => {
+        apiUrl += `&${k}=eq.${v}`;
+      });
+    }
+
+    const res = await fetch(apiUrl, {
+      headers: this.headers,
+      cache: 'no-store'
+    });
+
+    if (!res.ok) {
+      throw new Error(
+        `[SupabaseStrategy] Read failed for ${namespace}: HTTP ${res.status} ${res.statusText}`,
+      );
+    }
+
+    const rows = await res.json();
+    if (!Array.isArray(rows)) {
+      throw new Error(
+        `[SupabaseStrategy] Invalid response for namespace "${namespace}": expected an array.`,
+      );
+    }
+    return rows.map((row: any) => ({
+      id: row.id,
+      context: row.context || namespace,
+      data: row.data || row,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    }));
   }
 
   /**

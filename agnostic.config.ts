@@ -46,6 +46,16 @@ export default defineConfig({
     mail: false,
   },
 
+  // Public data must be declared as explicit projections. Example:
+  // publicReadModels: [{
+  //   name: 'catalogo_productos', source: 'productos_catalogo',
+  //   fields: [{ key: 'slug' }, { key: 'nombre' }, { key: 'precio_publico' }],
+  //   fixed_filters: [{ key: 'publicado_web', operator: 'eq', value: true }],
+  //   filters: [{ key: 'categoria', operator: 'eq' }],
+  //   limit: { default: 24, max: 60 },
+  // }],
+  publicReadModels: [],
+
   integrations: {
     // agno:adapters:start — maintained by `agno install <id>` / `agno remove-adapter <id>` (scripts/agno-adapters.ts)
     notion: () => import('./src/integrations/notion'),

@@ -25,6 +25,47 @@ export interface BlockProps {
   [key: string]: unknown
 }
 
+export type PublicFilterOperator = 'eq' | 'in' | 'contains' | 'gte' | 'lte'
+export type PublicFixedFilterOperator = 'eq' | 'in'
+
+export interface PublicReadModelField {
+  key: string
+  label?: string
+  format?: 'text' | 'currency' | 'number' | 'date' | 'boolean'
+}
+
+export interface PublicReadModelFilter {
+  key: string
+  operator: PublicFilterOperator
+  max_values?: number
+}
+
+/** A server-enforced predicate. Clients cannot override or remove it. */
+export interface PublicReadModelFixedFilter {
+  key: string
+  operator: PublicFixedFilterOperator
+  value: string | number | boolean | Array<string | number | boolean>
+}
+
+export interface PublicReadModelSort {
+  key: string
+  directions?: Array<'asc' | 'desc'>
+}
+
+export interface PublicReadModel {
+  /** Stable public API identifier. Never use the source namespace as the URL. */
+  name: string
+  /** Private storage namespace read only on the server. */
+  source: string
+  /** Explicit projection. Fields outside this list never leave the server. */
+  fields: PublicReadModelField[]
+  fixed_filters: PublicReadModelFixedFilter[]
+  filters?: PublicReadModelFilter[]
+  sort?: PublicReadModelSort[]
+  default_sort?: { key: string, direction: 'asc' | 'desc' }
+  limit?: { default: number, max: number }
+}
+
 // Lazy loader signature — same as React.lazy's factory argument
 export type BlockLoader = () => Promise<{ default: React.ComponentType<BlockProps> }>
 
@@ -65,6 +106,13 @@ export interface AgnosticConfig {
     mail?: boolean
     pdf?:  boolean
   }
+
+  /**
+   * Public, read-only collection projections. These are a separate capability
+   * from Vault and are intentionally declared by the fork, not inferred from
+   * a storage namespace.
+   */
+  publicReadModels?: PublicReadModel[]
 
   /**
    * Custom integration modules registered in the project.

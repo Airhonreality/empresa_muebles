@@ -30,6 +30,13 @@ export function triggerSchemaCompile(): void {
   // Production deployments: TypeScript types are static build artifacts.
   // No filesystem write access to src/ — skip silently.
   if (process.env.NODE_ENV !== 'development') return
+  if (process.env.AGNOSTIC_DEFINITION_MODE?.trim().toLowerCase() === 'revision') {
+    console.warn(
+      '[schema:compile] Revision mode requires an exported definition snapshot; '
+      + 'run `npm run definitions -- export --output <file>` and compile against it.',
+    )
+    return
+  }
 
   // Debounce: if already queued, skip — the pending run will catch the latest state
   if (compileQueued) return

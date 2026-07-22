@@ -1,6 +1,7 @@
 // ============================================================
 // AUTO-GENERATED — do not edit manually.
 // Source: .\storage\db\schema_definitions.json
+// Definition revision: legacy
 // Run:    npm run agnostic:compile
 // ============================================================
 

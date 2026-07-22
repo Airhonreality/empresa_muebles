@@ -347,7 +347,8 @@ bootstrap install        inicia .agno/bootstrap-state.json local
 bootstrap resume         continua el instalador
 bootstrap status         muestra el estado local del instalador
 bootstrap doctor         diagnostico no destructivo
-bootstrap verify         doctor local + health remoto si PRODUCTION_URL/Netlify estan cargados
+bootstrap verify         doctor local + health remoto si NEXT_PUBLIC_BASE_URL/Netlify estan cargados
+env:check                audita el contrato de configuracion local (.env.local / .env.vercel.local)
 ```
 
 El estado local vive en `.agno/bootstrap-state.json` y no se versiona. No debe guardar secretos.
@@ -382,6 +383,42 @@ bootstrap migrate        migrar storage/db a Postgres desde CLI
 
 No conectes `localhost` a una base productiva con permisos de escritura.
 
+### Revisiones de definiciones
+
+Las definiciones del engine son exactamente `schema_definitions`,
+`page_routes` y `scripts`. El backend no determina su ciclo de vida:
+`AGNOSTIC_DEFINITION_MODE` lo declara de forma independiente.
+
+```bash
+# Solo lectura: compara legacy con la revisión activa
+npm run definitions -- plan
+
+# Primera publicación; exige confirmación
+npm run definitions -- apply -- --expected none --yes
+
+# Publicación posterior con compare-and-set
+npm run definitions -- apply -- --expected <revision_actual> --yes
+
+# Inspección y artefacto reproducible para el build
+npm run definitions -- status
+npm run definitions -- export -- --output storage/definition-revision.json
+
+# Rollback o promoción de una revisión inmutable ya existente
+npm run definitions -- activate -- --revision <revision_objetivo> --expected <revision_actual> --yes
+```
+
+Para compilar en modo `revision`:
+
+```text
+AGNOSTIC_DEFINITION_MODE=revision
+AGNOSTIC_DEFINITION_SNAPSHOT=storage/definition-revision.json
+AGNOSTIC_DEFINITION_REVISION=<sha256_del_snapshot>
+```
+
+`plan` no escribe. `apply` valida referencias, requiere la revisión esperada y
+falla ante concurrencia. El rollback consiste en activar una revisión conocida
+mediante la misma operación CAS; nunca se reescriben bundles inmutables.
+
 Patrones seguros:
 
 - Database branching: usa una rama dev de Neon/Postgres.
@@ -394,4 +431,4 @@ npm run push-data scripts mi_zap_nombre
 npm run push-data templates mi_plantilla_nombre
 ```
 
-Requiere `PRODUCTION_URL` y `API_SECRET_KEY`.
+Requiere `NEXT_PUBLIC_BASE_URL` (o `PRODUCTION_URL` legado) y `API_SECRET_KEY`.

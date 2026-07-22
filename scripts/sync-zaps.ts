@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { getStrategy } from '../src/server/getStrategy';
+import { getDefinitionAwareBridge } from '../src/server/definitions/topology';
+import { loadLocalEnvFiles } from './load-local-env';
+
+loadLocalEnvFiles();
 
 /**
  * ⚡ AGNOSTIC ZAP SYNCHRONIZER (sync-zaps.ts)
@@ -18,7 +21,7 @@ import { getStrategy } from '../src/server/getStrategy';
  */
 
 async function syncZaps() {
-  const strategy = getStrategy();
+  const strategy = getDefinitionAwareBridge();
   const zapsDir = path.join(process.cwd(), 'storage', 'zaps');
   
   if (!fs.existsSync(zapsDir)) {

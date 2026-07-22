@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import vm from 'vm';
-import { getStrategy } from '@/server/getStrategy';
+import { isDefinitionNamespace } from '@agnostic/core';
+import { createPersistenceTopology } from '@/server/definitions/topology';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,10 +11,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'zap name is required' }, { status: 400 });
     }
 
-    const strategy = getStrategy();
+    const topology = createPersistenceTopology();
+    const revision = await topology.definitionReader.readActiveRevision();
 
-    // 1. Fetch scripts from strategy
-    const scripts = await strategy.read('scripts');
+    // 1. Fetch scripts from one coherent definition revision.
+    const scripts = revision.definitions.scripts;
     const scriptRecord = scripts.find((s: any) => s.data?.name === zap || s.name === zap);
 
     if (!scriptRecord) {
@@ -36,16 +38,21 @@ export async function POST(req: NextRequest) {
         }
       },
       saveItem: async (ctx: string, recordPayload: any) => {
+        if (isDefinitionNamespace(ctx) && topology.mode === 'revision') {
+          throw new Error(`Zap writes to definition namespace "${ctx}" are not allowed in revision mode.`);
+        }
         const normalized = {
           id: recordPayload.id,
           data: recordPayload.data ?? recordPayload
         };
-        const result = await strategy.write(ctx, normalized);
+        const result = await topology.recordStore.write(ctx, normalized);
         events.push({ action: 'materia_sync', context: ctx, item: result });
         return result;
       },
       query: async (ctx: string) => {
-        const records = await strategy.read(ctx);
+        const records = isDefinitionNamespace(ctx)
+          ? revision.definitions[ctx]
+          : await topology.recordStore.read(ctx);
         return records.map((r: any) => ({ id: r.id, ...(r.data ?? r) }));
       },
       dispatchEvent: (action: string, eventPayload: any) => {

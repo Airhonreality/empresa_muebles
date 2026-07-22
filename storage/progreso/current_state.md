@@ -12,6 +12,19 @@ engine -> domain-blind
 fork -> owns storage and specialized UI
 ```
 
+## Definition Lifecycle Evolution — 2026-07-17
+
+- `schema_definitions`, `page_routes`, and `scripts` keep their existing formats.
+- Added explicit `legacy`, `shadow`, and `revision` modes.
+- Existing forks remain in `legacy` until an explicit migration.
+- Revision mode reads one validated, content-addressed bundle and activates it with compare-and-set.
+- Filesystem, Postgres, GitHub, and Supabase revision stores are implemented.
+- SSR, Vault, zaps, CLI, MCP, pulse, history, and refactoring paths are definition-aware.
+- Production revision mode requires a tracked snapshot and matching `AGNOSTIC_DEFINITION_REVISION`.
+- `storage/db/scripts.json` now exists as the required empty canonical registry in the seed.
+
+Engine reference: `src/docs/DEFINITION_LIFECYCLE.md`.
+
 ## Daily Closeout
 
 Date: 2026-07-02

@@ -17,6 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { renderEnvExample } from '@/lib/agnostic/env-contract';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ interface SaveResult {
   deployment: { id: string; url: string | null; readyState: string } | null;
   warning?: string;
   error?: string;
+  resolvedVariables?: Array<{ key: string; value: string }>;
 }
 
 interface MigrationReport {
@@ -451,23 +453,23 @@ export function DeployStatusBar({ deploy, onDismiss }: { deploy: DeployState; on
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 type FormMap = {
-  github:   { GITHUB_TOKEN: string; GITHUB_REPO: string; GITHUB_BRANCH: string };
-  postgres: { DATABASE_URL: string };
-  r2:       { CF_ACCOUNT_ID: string; CF_R2_BUCKET: string; CF_R2_ACCESS_KEY_ID: string; CF_R2_SECRET_ACCESS_KEY: string; CF_R2_PUBLIC_URL: string };
-  supabase: { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string };
-  auth:     { SESSION_SECRET: string; API_SECRET_KEY: string };
-  vercel:   { VERCEL_ACCESS_TOKEN: string; VERCEL_PROJECT_ID: string; VERCEL_TEAM_ID: string };
-  netlify:  { NETLIFY_AUTH_TOKEN: string; NETLIFY_SITE_ID: string };
+  github:   { GITHUB_TOKEN: string; GITHUB_REPO: string; GITHUB_BRANCH: string; GITHUB_ACCOUNT_EMAIL: string };
+  postgres: { DATABASE_URL: string; DATABASE_ACCOUNT_EMAIL: string };
+  r2:       { CF_ACCOUNT_ID: string; CF_R2_BUCKET: string; CF_R2_ACCESS_KEY_ID: string; CF_R2_SECRET_ACCESS_KEY: string; CF_R2_PUBLIC_URL: string; CF_ACCOUNT_EMAIL: string };
+  supabase: { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string; SUPABASE_ACCOUNT_EMAIL: string };
+  auth:     { SESSION_SECRET: string; API_SECRET_KEY: string; NEXT_PUBLIC_BASE_URL: string };
+  vercel:   { VERCEL_ACCESS_TOKEN: string; VERCEL_PROJECT_ID: string; VERCEL_TEAM_ID: string; VERCEL_ACCOUNT_EMAIL: string };
+  netlify:  { NETLIFY_AUTH_TOKEN: string; NETLIFY_SITE_ID: string; NETLIFY_ACCOUNT_EMAIL: string };
 };
 
 const EMPTY_FORMS: FormMap = {
-  github:   { GITHUB_TOKEN: '', GITHUB_REPO: '', GITHUB_BRANCH: '' },
-  postgres: { DATABASE_URL: '' },
-  r2:       { CF_ACCOUNT_ID: '', CF_R2_BUCKET: '', CF_R2_ACCESS_KEY_ID: '', CF_R2_SECRET_ACCESS_KEY: '', CF_R2_PUBLIC_URL: '' },
-  supabase: { SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '' },
-  auth:     { SESSION_SECRET: '', API_SECRET_KEY: '' },
-  vercel:   { VERCEL_ACCESS_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '' },
-  netlify:  { NETLIFY_AUTH_TOKEN: '', NETLIFY_SITE_ID: '' },
+  github:   { GITHUB_TOKEN: '', GITHUB_REPO: '', GITHUB_BRANCH: '', GITHUB_ACCOUNT_EMAIL: '' },
+  postgres: { DATABASE_URL: '', DATABASE_ACCOUNT_EMAIL: '' },
+  r2:       { CF_ACCOUNT_ID: '', CF_R2_BUCKET: '', CF_R2_ACCESS_KEY_ID: '', CF_R2_SECRET_ACCESS_KEY: '', CF_R2_PUBLIC_URL: '', CF_ACCOUNT_EMAIL: '' },
+  supabase: { SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '', SUPABASE_ACCOUNT_EMAIL: '' },
+  auth:     { SESSION_SECRET: '', API_SECRET_KEY: '', NEXT_PUBLIC_BASE_URL: '' },
+  vercel:   { VERCEL_ACCESS_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '', VERCEL_ACCOUNT_EMAIL: '' },
+  netlify:  { NETLIFY_AUTH_TOKEN: '', NETLIFY_SITE_ID: '', NETLIFY_ACCOUNT_EMAIL: '' },
 };
 
 export function DeploySection() {
@@ -559,6 +561,17 @@ export function DeploySection() {
     setForms(f => ({ ...f, [section]: { ...f[section], [key]: value } }));
   };
 
+  const resolveFormSection = (key: string): keyof FormMap | null => {
+    if (key.startsWith('GITHUB_')) return 'github';
+    if (key.startsWith('DATABASE_')) return 'postgres';
+    if (key.startsWith('CF_')) return 'r2';
+    if (key.startsWith('SUPABASE_')) return 'supabase';
+    if (key === 'SESSION_SECRET' || key === 'API_SECRET_KEY' || key === 'NEXT_PUBLIC_BASE_URL') return 'auth';
+    if (key.startsWith('VERCEL_')) return 'vercel';
+    if (key.startsWith('NETLIFY_')) return 'netlify';
+    return null;
+  };
+
   const presence = health?.env_presence ?? {};
 
   // ── Test connection ──────────────────────────────────────────────────────────
@@ -637,20 +650,30 @@ export function DeploySection() {
       { key: 'API_SECRET_KEY', value: apiSecret, sensitive: true }
     ];
 
+    if (forms.auth.NEXT_PUBLIC_BASE_URL) {
+      vars.push({ key: 'NEXT_PUBLIC_BASE_URL', value: forms.auth.NEXT_PUBLIC_BASE_URL, sensitive: false });
+    }
+
     if (hasVercel) {
       vars.push({ key: 'VERCEL_ACCESS_TOKEN', value: forms.vercel.VERCEL_ACCESS_TOKEN, sensitive: true });
       vars.push({ key: 'VERCEL_PROJECT_ID', value: forms.vercel.VERCEL_PROJECT_ID, sensitive: false });
       if (forms.vercel.VERCEL_TEAM_ID) vars.push({ key: 'VERCEL_TEAM_ID', value: forms.vercel.VERCEL_TEAM_ID, sensitive: false });
+      if (forms.vercel.VERCEL_ACCOUNT_EMAIL) vars.push({ key: 'VERCEL_ACCOUNT_EMAIL', value: forms.vercel.VERCEL_ACCOUNT_EMAIL, sensitive: false });
     } else {
       vars.push({ key: 'NETLIFY_AUTH_TOKEN', value: forms.netlify.NETLIFY_AUTH_TOKEN, sensitive: true });
       vars.push({ key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false });
+      if (forms.netlify.NETLIFY_ACCOUNT_EMAIL) vars.push({ key: 'NETLIFY_ACCOUNT_EMAIL', value: forms.netlify.NETLIFY_ACCOUNT_EMAIL, sensitive: false });
     }
 
     if (forms.postgres.DATABASE_URL) vars.push({ key: 'DATABASE_URL', value: forms.postgres.DATABASE_URL, sensitive: true });
+    if (forms.postgres.DATABASE_ACCOUNT_EMAIL) vars.push({ key: 'DATABASE_ACCOUNT_EMAIL', value: forms.postgres.DATABASE_ACCOUNT_EMAIL, sensitive: false });
+    if (forms.github.GITHUB_ACCOUNT_EMAIL) vars.push({ key: 'GITHUB_ACCOUNT_EMAIL', value: forms.github.GITHUB_ACCOUNT_EMAIL, sensitive: false });
     if (forms.supabase.SUPABASE_URL) {
       vars.push({ key: 'SUPABASE_URL', value: forms.supabase.SUPABASE_URL, sensitive: false });
       vars.push({ key: 'SUPABASE_SERVICE_ROLE_KEY', value: forms.supabase.SUPABASE_SERVICE_ROLE_KEY, sensitive: true });
+      if (forms.supabase.SUPABASE_ACCOUNT_EMAIL) vars.push({ key: 'SUPABASE_ACCOUNT_EMAIL', value: forms.supabase.SUPABASE_ACCOUNT_EMAIL, sensitive: false });
     }
+    if (forms.r2.CF_ACCOUNT_EMAIL) vars.push({ key: 'CF_ACCOUNT_EMAIL', value: forms.r2.CF_ACCOUNT_EMAIL, sensitive: false });
 
     setOrchestrator(prev => ({ ...prev, step: 3, log: [...prev.log, `[3/5] Inyectando batch de ${vars.length} variables en ${provider}...`] }));
 
@@ -697,6 +720,22 @@ export function DeploySection() {
         body: JSON.stringify({ provider: section, variables: nonEmpty, redeploy }),
       });
       const data = await res.json() as SaveResult;
+
+      if (data.resolvedVariables?.length) {
+        setForms(f => {
+          const next = { ...f } as FormMap;
+          for (const resolved of data.resolvedVariables ?? []) {
+            const targetSection = resolveFormSection(resolved.key);
+            if (!targetSection) continue;
+            (next as any)[targetSection] = {
+              ...(next as any)[targetSection],
+              [resolved.key]: resolved.value,
+            };
+          }
+          return next;
+        });
+      }
+
       if (data.deployment) {
         pollCount.current = 0;
         setDeploy({ id: data.deployment.id, readyState: data.deployment.readyState, url: data.deployment.url, errorMessage: null, pollCount: 0 });
@@ -708,7 +747,12 @@ export function DeploySection() {
 
       // Trigger active strategy change detection for automated migration dialog
       const previousStrategy = health?.activeDataStrategy || 'local';
-      if (data.saved > 0 && previousStrategy !== section && (section === 'postgres' || section === 'github' || section === 'supabase')) {
+      const triggersMigration =
+        (section === 'github' && nonEmpty.some(v => v.key === 'GITHUB_TOKEN' || v.key === 'GITHUB_REPO')) ||
+        (section === 'postgres' && nonEmpty.some(v => v.key === 'DATABASE_URL')) ||
+        (section === 'supabase' && nonEmpty.some(v => v.key === 'SUPABASE_URL' || v.key === 'SUPABASE_SERVICE_ROLE_KEY'));
+
+      if (data.saved > 0 && previousStrategy !== section && triggersMigration) {
         // Collect targeted credentials to feed the migrator POST directly
         const targetCreds: Record<string, string> = {};
         vars.forEach(v => { targetCreds[v.key] = v.value; });
@@ -943,6 +987,7 @@ export function DeploySection() {
                 <CredentialField name="VERCEL_ACCESS_TOKEN" value={forms.vercel.VERCEL_ACCESS_TOKEN} onChange={v => setField('vercel', 'VERCEL_ACCESS_TOKEN', v)} exists={!!presence['VERCEL_ACCESS_TOKEN']} sensitive />
                 <CredentialField name="VERCEL_PROJECT_ID" value={forms.vercel.VERCEL_PROJECT_ID} onChange={v => setField('vercel', 'VERCEL_PROJECT_ID', v)} exists={!!presence['VERCEL_PROJECT_ID']} sensitive={false} placeholder="prj_..." />
                 <CredentialField name="VERCEL_TEAM_ID" value={forms.vercel.VERCEL_TEAM_ID} onChange={v => setField('vercel', 'VERCEL_TEAM_ID', v)} exists={!!presence['VERCEL_TEAM_ID']} sensitive={false} placeholder="team_... (opcional)" />
+                <CredentialField name="VERCEL_ACCOUNT_EMAIL" value={forms.vercel.VERCEL_ACCOUNT_EMAIL} onChange={v => setField('vercel', 'VERCEL_ACCOUNT_EMAIL', v)} exists={!!presence['VERCEL_ACCOUNT_EMAIL']} sensitive={false} placeholder="correo del propietario" />
               </div>
               <ActionRow
                 onTest={() => handleTest('vercel', { VERCEL_ACCESS_TOKEN: forms.vercel.VERCEL_ACCESS_TOKEN, VERCEL_PROJECT_ID: forms.vercel.VERCEL_PROJECT_ID, VERCEL_TEAM_ID: forms.vercel.VERCEL_TEAM_ID })}
@@ -951,6 +996,7 @@ export function DeploySection() {
                     { key: 'VERCEL_ACCESS_TOKEN', value: forms.vercel.VERCEL_ACCESS_TOKEN, sensitive: true },
                     { key: 'VERCEL_PROJECT_ID', value: forms.vercel.VERCEL_PROJECT_ID, sensitive: false },
                     { key: 'VERCEL_TEAM_ID', value: forms.vercel.VERCEL_TEAM_ID, sensitive: false },
+                    { key: 'VERCEL_ACCOUNT_EMAIL', value: forms.vercel.VERCEL_ACCOUNT_EMAIL, sensitive: false },
                   ], redeploy);
                   setEditing({ ...editing, hosting: false });
                 }}
@@ -1006,6 +1052,7 @@ export function DeploySection() {
                 sensitive={false}
                 placeholder="site-uuid-..."
               />
+              <CredentialField name="NETLIFY_ACCOUNT_EMAIL" value={forms.netlify.NETLIFY_ACCOUNT_EMAIL} onChange={v => setField('netlify', 'NETLIFY_ACCOUNT_EMAIL', v)} exists={!!presence['NETLIFY_ACCOUNT_EMAIL']} sensitive={false} placeholder="correo del propietario" />
               <ActionRow
                 onTest={() => handleTest('netlify', {
                   NETLIFY_AUTH_TOKEN: forms.netlify.NETLIFY_AUTH_TOKEN,
@@ -1015,6 +1062,7 @@ export function DeploySection() {
                   handleSave('netlify', [
                     { key: 'NETLIFY_AUTH_TOKEN', value: forms.netlify.NETLIFY_AUTH_TOKEN, sensitive: true },
                     { key: 'NETLIFY_SITE_ID', value: forms.netlify.NETLIFY_SITE_ID, sensitive: false },
+                    { key: 'NETLIFY_ACCOUNT_EMAIL', value: forms.netlify.NETLIFY_ACCOUNT_EMAIL, sensitive: false },
                   ], redeploy);
                   setEditing({ ...editing, hosting: false });
                 }}
@@ -1121,6 +1169,7 @@ export function DeploySection() {
               <CredentialField name="GITHUB_TOKEN" value={forms.github.GITHUB_TOKEN} onChange={v => setField('github', 'GITHUB_TOKEN', v)} exists={!!presence['GITHUB_TOKEN']} sensitive />
               <CredentialField name="GITHUB_REPO" value={forms.github.GITHUB_REPO} onChange={v => setField('github', 'GITHUB_REPO', v)} exists={!!presence['GITHUB_REPO']} sensitive={false} placeholder="usuario/repositorio" />
               <CredentialField name="GITHUB_BRANCH" value={forms.github.GITHUB_BRANCH} onChange={v => setField('github', 'GITHUB_BRANCH', v)} exists={!!presence['GITHUB_BRANCH']} sensitive={false} placeholder="main (opcional)" />
+              <CredentialField name="GITHUB_ACCOUNT_EMAIL" value={forms.github.GITHUB_ACCOUNT_EMAIL} onChange={v => setField('github', 'GITHUB_ACCOUNT_EMAIL', v)} exists={!!presence['GITHUB_ACCOUNT_EMAIL']} sensitive={false} placeholder="correo del propietario" />
               
               <ActionRow
                 onTest={() => handleTest('github', { GITHUB_TOKEN: forms.github.GITHUB_TOKEN, GITHUB_REPO: forms.github.GITHUB_REPO, GITHUB_BRANCH: forms.github.GITHUB_BRANCH })}
@@ -1129,6 +1178,7 @@ export function DeploySection() {
                     { key: 'GITHUB_TOKEN', value: forms.github.GITHUB_TOKEN, sensitive: true },
                     { key: 'GITHUB_REPO', value: forms.github.GITHUB_REPO, sensitive: false },
                     { key: 'GITHUB_BRANCH', value: forms.github.GITHUB_BRANCH, sensitive: false },
+                    { key: 'GITHUB_ACCOUNT_EMAIL', value: forms.github.GITHUB_ACCOUNT_EMAIL, sensitive: false },
                   ], redeploy);
                   setEditing({ ...editing, data: false });
                 }}
@@ -1155,12 +1205,14 @@ export function DeploySection() {
                 sensitive
                 placeholder="postgresql://user:pass@host/db"
               />
+              <CredentialField name="DATABASE_ACCOUNT_EMAIL" value={forms.postgres.DATABASE_ACCOUNT_EMAIL} onChange={v => setField('postgres', 'DATABASE_ACCOUNT_EMAIL', v)} exists={!!presence['DATABASE_ACCOUNT_EMAIL']} sensitive={false} placeholder="correo del propietario" />
               
               <ActionRow
                 onTest={() => handleTest('postgres', { DATABASE_URL: forms.postgres.DATABASE_URL })}
                 onSave={(redeploy) => {
                   handleSave('postgres', [
                     { key: 'DATABASE_URL', value: forms.postgres.DATABASE_URL, sensitive: true },
+                    { key: 'DATABASE_ACCOUNT_EMAIL', value: forms.postgres.DATABASE_ACCOUNT_EMAIL, sensitive: false },
                   ], redeploy);
                   setEditing({ ...editing, data: false });
                 }}
@@ -1181,6 +1233,7 @@ export function DeploySection() {
               </div>
               <CredentialField name="SUPABASE_URL" value={forms.supabase.SUPABASE_URL} onChange={v => setField('supabase', 'SUPABASE_URL', v)} exists={!!presence['SUPABASE_URL']} sensitive={false} placeholder="https://xxxx.supabase.co" />
               <CredentialField name="SUPABASE_SERVICE_ROLE_KEY" value={forms.supabase.SUPABASE_SERVICE_ROLE_KEY} onChange={v => setField('supabase', 'SUPABASE_SERVICE_ROLE_KEY', v)} exists={!!presence['SUPABASE_SERVICE_ROLE_KEY']} sensitive />
+              <CredentialField name="SUPABASE_ACCOUNT_EMAIL" value={forms.supabase.SUPABASE_ACCOUNT_EMAIL} onChange={v => setField('supabase', 'SUPABASE_ACCOUNT_EMAIL', v)} exists={!!presence['SUPABASE_ACCOUNT_EMAIL']} sensitive={false} placeholder="correo del propietario" />
               
               <ActionRow
                 onTest={() => handleTest('supabase', { SUPABASE_URL: forms.supabase.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: forms.supabase.SUPABASE_SERVICE_ROLE_KEY })}
@@ -1188,6 +1241,7 @@ export function DeploySection() {
                   handleSave('supabase', [
                     { key: 'SUPABASE_URL', value: forms.supabase.SUPABASE_URL, sensitive: false },
                     { key: 'SUPABASE_SERVICE_ROLE_KEY', value: forms.supabase.SUPABASE_SERVICE_ROLE_KEY, sensitive: true },
+                    { key: 'SUPABASE_ACCOUNT_EMAIL', value: forms.supabase.SUPABASE_ACCOUNT_EMAIL, sensitive: false },
                   ], redeploy);
                   setEditing({ ...editing, data: false });
                 }}
@@ -1275,6 +1329,7 @@ export function DeploySection() {
             <CredentialField name="CF_R2_ACCESS_KEY_ID" value={forms.r2.CF_R2_ACCESS_KEY_ID} onChange={v => setField('r2', 'CF_R2_ACCESS_KEY_ID', v)} exists={!!presence['CF_R2_ACCESS_KEY_ID']} sensitive />
             <CredentialField name="CF_R2_SECRET_ACCESS_KEY" value={forms.r2.CF_R2_SECRET_ACCESS_KEY} onChange={v => setField('r2', 'CF_R2_SECRET_ACCESS_KEY', v)} exists={!!presence['CF_R2_SECRET_ACCESS_KEY']} sensitive />
             <CredentialField name="CF_R2_PUBLIC_URL" value={forms.r2.CF_R2_PUBLIC_URL} onChange={v => setField('r2', 'CF_R2_PUBLIC_URL', v)} exists={!!presence['CF_R2_PUBLIC_URL']} sensitive={false} placeholder="https://pub-xxx.r2.dev (opcional)" />
+            <CredentialField name="CF_ACCOUNT_EMAIL" value={forms.r2.CF_ACCOUNT_EMAIL} onChange={v => setField('r2', 'CF_ACCOUNT_EMAIL', v)} exists={!!presence['CF_ACCOUNT_EMAIL']} sensitive={false} placeholder="correo del propietario" />
           </div>
           <ActionRow
             onTest={() => handleTest('r2', { CF_ACCOUNT_ID: forms.r2.CF_ACCOUNT_ID, CF_R2_BUCKET: forms.r2.CF_R2_BUCKET, CF_R2_ACCESS_KEY_ID: forms.r2.CF_R2_ACCESS_KEY_ID, CF_R2_SECRET_ACCESS_KEY: forms.r2.CF_R2_SECRET_ACCESS_KEY })}
@@ -1285,6 +1340,7 @@ export function DeploySection() {
                 { key: 'CF_R2_ACCESS_KEY_ID', value: forms.r2.CF_R2_ACCESS_KEY_ID, sensitive: true },
                 { key: 'CF_R2_SECRET_ACCESS_KEY', value: forms.r2.CF_R2_SECRET_ACCESS_KEY, sensitive: true },
                 { key: 'CF_R2_PUBLIC_URL', value: forms.r2.CF_R2_PUBLIC_URL, sensitive: false },
+                { key: 'CF_ACCOUNT_EMAIL', value: forms.r2.CF_ACCOUNT_EMAIL, sensitive: false },
               ], redeploy);
               setEditing({ ...editing, r2: false });
             }}
@@ -1352,6 +1408,22 @@ export function DeploySection() {
                 </div>
               )}
             </div>
+
+            {/* Public Base URL */}
+            <div className="space-y-2 pt-2 border-t border-border/30">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/80">Frontend público y URL canónica</p>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">NEXT_PUBLIC_BASE_URL</span>
+              </div>
+              <CredentialField
+                name="NEXT_PUBLIC_BASE_URL"
+                value={forms.auth.NEXT_PUBLIC_BASE_URL}
+                onChange={v => setField('auth', 'NEXT_PUBLIC_BASE_URL', v)}
+                exists={!!presence['NEXT_PUBLIC_BASE_URL']}
+                sensitive={false}
+                placeholder="https://app.tu-dominio.com"
+              />
+            </div>
           </div>
           
           <div className="mt-4 pt-4 border-t border-border/30">
@@ -1361,6 +1433,7 @@ export function DeploySection() {
                 handleSave('auth', [
                   { key: 'SESSION_SECRET', value: forms.auth.SESSION_SECRET, sensitive: true },
                   { key: 'API_SECRET_KEY', value: forms.auth.API_SECRET_KEY, sensitive: true },
+                  { key: 'NEXT_PUBLIC_BASE_URL', value: forms.auth.NEXT_PUBLIC_BASE_URL, sensitive: false },
                 ], redeploy);
                 setEditing({ ...editing, auth: false });
               }}
@@ -1378,33 +1451,7 @@ export function DeploySection() {
       {/* ── .env.local template ─────────────────────────────────────── */}
       <div className="rounded-[2rem] border bg-muted/20 p-5 space-y-3">
         <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Plantilla .env.local de Referencia</p>
-        <CopySnippet text={[
-          '# Auth & Sessions',
-          'SESSION_SECRET=',
-          '',
-          '# Hosting Cloud',
-          'VERCEL_ACCESS_TOKEN=',
-          'VERCEL_PROJECT_ID=',
-          'VERCEL_TEAM_ID=',
-          'NETLIFY_AUTH_TOKEN=',
-          'NETLIFY_SITE_ID=',
-          '',
-          '# Datos — GitHub Strategy',
-          'GITHUB_TOKEN=',
-          'GITHUB_REPO=usuario/repo',
-          'GITHUB_BRANCH=main',
-          '',
-          '# Archivos — Cloudflare R2',
-          'CF_ACCOUNT_ID=',
-          'CF_R2_BUCKET=',
-          'CF_R2_ACCESS_KEY_ID=',
-          'CF_R2_SECRET_ACCESS_KEY=',
-          'CF_R2_PUBLIC_URL=',
-          '',
-          '# Datos — Supabase (alternativa a GitHub/Postgres)',
-          'SUPABASE_URL=',
-          'SUPABASE_SERVICE_ROLE_KEY=',
-        ].join('\n')} />
+        <CopySnippet text={renderEnvExample()} />
       </div>
 
       {/* ── DIÁLOGO MIGRACIÓN AUTOMÁTICA ─────────────────────────────── */}

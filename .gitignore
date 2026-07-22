@@ -47,6 +47,7 @@ next-env.d.ts
 storage/*
 !storage/.gitkeep
 !storage/AGENTS.md
+!storage/definition-revision.json
 !storage/progreso/
 !storage/progreso/**
 !storage/fork_doc/
@@ -71,4 +72,3 @@ src/components/specialized/*
 .env*.local
 /.history/
 .codex/
-
