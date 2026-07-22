@@ -109,18 +109,18 @@ async function syncToPostgres(routes: PageRoute[]): Promise<void> {
 }
 
 /**
- * Main: Valida y sincroniza
+ * Main: Valida y sincroniza (best-effort)
  */
 async function main() {
   try {
-    console.log('\n🔄 Iniciando sincronización de rutas...\n');
+    console.log('\n🔄 Iniciando validación de rutas...\n');
 
     // Paso 1: Leer
     console.log('📖 Leyendo storage/db/page_routes.json...');
     const routes = readRoutesFile();
     console.log(`   ✓ ${routes.length} rutas encontradas\n`);
 
-    // Paso 2: Validar
+    // Paso 2: Validar (CRÍTICO - debe pasar)
     console.log('✅ Validando estructura...');
     const validation = validateRoutes(routes);
     if (!validation.valid) {
@@ -130,20 +130,26 @@ async function main() {
     }
     console.log('   ✓ Validación completada\n');
 
-    // Paso 3: Sincronizar (si está configurado para Postgres)
+    // Paso 3: Sincronizar (best-effort - no bloquea deploy si falla)
     if (STORAGE_STRATEGY === 'postgres') {
       console.log('🔗 Sincronizando a Neon (PostgreSQL)...');
-      await syncToPostgres(routes);
-      console.log('');
+      try {
+        await syncToPostgres(routes);
+        console.log('✓ Sincronización completada exitosamente\n');
+      } catch (syncError) {
+        console.warn('⚠️  Sync falló (best-effort):', syncError instanceof Error ? syncError.message : String(syncError));
+        console.warn('📌 Las rutas fueron validadas correctamente, pero el sync a Neon no se ejecutó.');
+        console.warn('💡 Intenta el sync manualmente o en el próximo deploy.\n');
+      }
     } else {
       console.log(`⏭️  Storage strategy es '${STORAGE_STRATEGY}', skip Postgres sync\n`);
     }
 
-    console.log('✨ Sincronización completada exitosamente.\n');
+    console.log('✨ Validación de rutas completada.\n');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error:', error instanceof Error ? error.message : String(error));
-    console.error('\n⚠️  Deploy rollback será activado.\n');
+    console.error('❌ Error crítico:', error instanceof Error ? error.message : String(error));
+    console.error('⚠️  Deploy será bloqueado por validación fallida.\n');
     process.exit(1);
   }
 }
