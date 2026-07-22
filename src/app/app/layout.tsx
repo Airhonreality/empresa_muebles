@@ -1,4 +1,3 @@
-import dynamic from 'next/dynamic';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,11 +10,6 @@ import { Button } from "@/components/ui/button";
 import { CircleUser } from "lucide-react";
 import { redirect } from 'next/navigation';
 import { requireSession } from '@/lib/agnostic/require-session';
-
-const AppNavbarDynamic = dynamic(
-  () => import("@/components/agnostic/blocks/AppNavbarDynamic").then(m => ({ default: m.AppNavbarDynamic })),
-  { ssr: false, loading: () => <div className="h-6 bg-muted animate-pulse rounded" /> }
-);
 
 export default async function AppLayout({
   children,
@@ -31,7 +25,6 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen w-full flex-col">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-        <AppNavbarDynamic />
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
           <div className="ml-auto flex-1 sm:flex-initial">
             
