@@ -11,7 +11,7 @@
     "validate:encoding": "node scripts/validate-text-encoding.mjs",
     "validate:storage": "node scripts/validate-storage.mjs",
     "dev": "npm run agnostic:compile && next dev",
-    "build": "npm run agnostic:compile && next build",
+    "build": "npm run agnostic:compile && next build && npm run post-deploy",
     "post-deploy": "tsx scripts/sync-routes-on-deploy.ts",
     "start": "next start",
     "lint": "next lint",

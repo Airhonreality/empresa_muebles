@@ -1,5 +1,4 @@
 {
   "buildCommand": "npm run build",
-  "postBuildCommand": "npm run post-deploy",
   "outputDirectory": ".next"
 }
