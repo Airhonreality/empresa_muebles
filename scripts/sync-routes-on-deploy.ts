@@ -9,7 +9,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { createClient } from '@neon/serverless';
 
 const ROUTES_FILE = path.join(process.cwd(), 'storage/db/page_routes.json');
 const DATABASE_URL = process.env.DATABASE_URL || '';
@@ -85,30 +84,27 @@ async function syncToPostgres(routes: PageRoute[]): Promise<void> {
     throw new Error('DATABASE_URL no está configurado. Skipping Postgres sync.');
   }
 
-  const sql = await import('@vercel/postgres');
-  const client = sql.createClient({ connectionString: DATABASE_URL });
+  const postgres = await import('postgres');
+  const sql = postgres.default(DATABASE_URL);
 
   try {
-    await client.connect();
     console.log('✓ Conectado a Neon');
 
     // Upsert cada ruta
     for (const route of routes) {
-      await client.query(
-        `
+      await sql`
         INSERT INTO agnostic_records (id, namespace, context, data, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, NOW(), NOW())
+        VALUES (${route.id}, 'page_routes', ${route.context}, ${JSON.stringify(route.data)}, NOW(), NOW())
         ON CONFLICT (id) DO UPDATE SET
           data = EXCLUDED.data,
           updated_at = NOW()
-        `,
-        [route.id, 'page_routes', route.context, JSON.stringify(route.data)]
-      );
+      `;
     }
 
     console.log(`✓ ${routes.length} rutas sincronizadas a Neon`);
-  } finally {
-    await client.end();
+    await sql.end();
+  } catch (error) {
+    throw error;
   }
 }
 
