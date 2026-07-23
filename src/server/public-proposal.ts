@@ -18,7 +18,7 @@ export type PublicProposalSnapshot = {
       colors?: Array<{ name: string; image_url?: string }>
       images?: Array<{ url: string; description?: string }>
       notes?: string[]
-      items: Array<{ name: string; quantity: number; unit?: string; image_url?: string }>
+      items: Array<{ name: string; quantity: number; unit?: string; image_url?: string; unit_price?: number; total?: number }>
       civil_estimate?: Array<{ category: string; name: string; quantity: number; unit?: string; unit_price?: number; total?: number; notes?: string }>
       total: number
     }>
@@ -79,6 +79,8 @@ function projectPublicProposal(snapshot: SnapshotRecord): PublicProposalSnapshot
                 quantity: asNumber(item.quantity),
                 unit: asText(item.unit) || undefined,
                 image_url: asText(item.image_url) || undefined,
+                unit_price: asNumber(item.unit_price),
+                total: asNumber(item.total),
               }
             }),
             civil_estimate: rawCivilItems.map(rawItem => {

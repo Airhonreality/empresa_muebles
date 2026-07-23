@@ -835,7 +835,9 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
         const itemProjection = variantItems.map(item => {
           const itemData = item.data as unknown as ItemsVariante
           const product = catalogo.find(entry => entry.id === itemData.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
-          return { name: product?.descripcion || 'Ítem incluido', quantity: Number(itemData.cantidad) || 0, unit: itemData.unidad_medida || product?.unidad_medida, image_url: itemData.imagen_url || product?.imagen_url || product?.imagen }
+          const unitPrice = Number(itemData.precio_unitario) || 0
+          const lineTotal = Number(itemData.total_linea) || (Number(itemData.cantidad) || 0) * unitPrice
+          return { name: product?.descripcion || 'Ítem incluido', quantity: Number(itemData.cantidad) || 0, unit: itemData.unidad_medida || product?.unidad_medida, image_url: itemData.imagen_url || product?.imagen_url || product?.imagen, unit_price: unitPrice, total: lineTotal }
         })
         const materialsTotal = variantItems.reduce((sum, item) => {
           const itemData = item.data as unknown as ItemsVariante
