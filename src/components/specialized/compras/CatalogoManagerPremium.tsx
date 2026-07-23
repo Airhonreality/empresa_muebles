@@ -647,6 +647,9 @@ export default function CatalogoManagerPremium() {
         id: provider.id,
         label: provider.nombre || 'Proveedor',
       }))
+      // Radix <SelectItem> rompe el render si el value es cadena vacía;
+      // descartamos proveedores sin id para evitar el crash.
+      .filter((provider) => Boolean(provider.id))
       .sort((a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' })),
     [proveedores],
   );
