@@ -1023,7 +1023,6 @@ export default function CatalogoManagerPremium() {
                       <SelectValue placeholder="Opcional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin proveedor</SelectItem>
                       {providerOptions.map((provider) => (
                         <SelectItem key={provider.id} value={provider.id}>
                           {provider.label}
