@@ -128,14 +128,25 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Source URL must use http or https.' }, { status: 400 });
       }
 
-      const response = await fetch(sourceUrl);
+      // Send browser-like headers: many image hosts / CDNs return an HTML
+      // page (or 403) to header-less server fetches (bot / hotlink protection).
+      const response = await fetch(sourceUrl, {
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+          'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        },
+      });
       if (!response.ok) {
         return NextResponse.json({ error: `Could not fetch source URL (${response.status}).` }, { status: 400 });
       }
 
-      mimeType = response.headers.get('content-type') || 'application/octet-stream';
+      mimeType = (response.headers.get('content-type') || 'application/octet-stream').split(';')[0].trim();
       if (!mimeType.startsWith('image/')) {
-        return NextResponse.json({ error: `Source content type '${mimeType}' is not allowed.` }, { status: 415 });
+        const hint = mimeType.startsWith('text/html')
+          ? 'La URL apunta a una página web, no a una imagen. Copia el enlace directo (clic derecho sobre la imagen → "Copiar dirección de imagen").'
+          : `El contenido de la URL es '${mimeType}', no una imagen.`;
+        return NextResponse.json({ error: hint }, { status: 415 });
       }
 
       buffer = Buffer.from(await response.arrayBuffer());
