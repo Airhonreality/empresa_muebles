@@ -49,6 +49,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
+import { SmartImageInput } from '@/components/ui/SmartImageInput';
 import ProveedoresDirectory from './ProveedoresDirectory';
 import CatalogCollectionChrome from './CatalogCollectionChrome';
 import type {
@@ -207,29 +208,6 @@ async function readNamespace(namespace: string) {
   const res = await fetch(`/api/vault?namespace=${encodeURIComponent(namespace)}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
-}
-
-async function uploadCatalogImage(source: File | string) {
-  if (typeof source === 'string') {
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ source_url: source }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const body = await res.json();
-    return String(body.url || '');
-  }
-
-  const formData = new FormData();
-  formData.append('file', source);
-  const res = await fetch('/api/upload', {
-    method: 'POST',
-    body: formData,
-  });
-  if (!res.ok) throw new Error(await res.text());
-  const body = await res.json();
-  return String(body.url || '');
 }
 
 async function writeRecord(namespace: string, id: string | undefined, data: Record<string, unknown>) {
@@ -1085,7 +1063,7 @@ export default function CatalogoManagerPremium() {
 
                 <div className="md:col-span-2">
                   <Field label="Imagen">
-                    <ImageField
+                    <SmartImageInput
                       value={editorForm.imagen}
                       onChange={(value) => setEditorForm((current) => ({ ...current, imagen: value }))}
                     />
@@ -1179,144 +1157,6 @@ export default function CatalogoManagerPremium() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function ImageField({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const currentValue = value.trim();
-
-  const upload = async (source: File | string) => {
-    setUploading(true);
-    try {
-      const url = await uploadCatalogImage(source);
-      onChange(url);
-      toast.success('Imagen guardada en la bóveda.');
-    } catch (error) {
-      console.error('[CatalogoManagerPremium] upload image', error);
-      toast.error('No se pudo guardar la imagen.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <div
-      tabIndex={0}
-      role="button"
-      onPaste={async (event) => {
-        const file = Array.from(event.clipboardData.files).find((item) => item.type.startsWith('image/'));
-        if (file) {
-          event.preventDefault();
-          await upload(file);
-          return;
-        }
-
-        const text = event.clipboardData.getData('text').trim();
-        if (text && /^https?:\/\//i.test(text)) {
-          event.preventDefault();
-          await upload(text);
-        }
-      }}
-      onDrop={async (event) => {
-        event.preventDefault();
-        const file = Array.from(event.dataTransfer.files).find((item) => item.type.startsWith('image/'));
-        if (file) {
-          await upload(file);
-        }
-      }}
-      onDragOver={(event) => event.preventDefault()}
-      onClick={() => fileInputRef.current?.click()}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          fileInputRef.current?.click();
-        }
-      }}
-      className={cn(
-        'group overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white shadow-sm outline-none transition-all',
-        'focus:border-stone-950 focus:ring-2 focus:ring-stone-950/10',
-      )}
-    >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={async (event) => {
-          const file = event.target.files?.[0];
-          if (file) {
-            await upload(file);
-          }
-          event.currentTarget.value = '';
-        }}
-      />
-
-      <div className="grid gap-0 md:grid-cols-[160px_minmax(0,1fr)]">
-        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-stone-100 via-stone-50 to-amber-50 md:aspect-auto">
-          {currentValue ? (
-            <img src={currentValue} alt="Imagen del producto" className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-stone-400">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-200 bg-white/80">
-                <ImageIcon className="h-5 w-5" />
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em]">Imagen</p>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-3 p-4 md:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-stone-950">
-                {currentValue ? 'Imagen hospedada' : 'Pega, suelta o selecciona una imagen'}
-              </p>
-              <p className="mt-1 text-xs leading-5 text-stone-500">
-                Se guarda en tu bóveda. Si pegas una URL, el sistema la rehostea automáticamente.
-              </p>
-            </div>
-            <Badge variant="outline" className="rounded-full border-stone-200 bg-stone-50 text-stone-600">
-              {uploading ? 'Guardando' : currentValue ? 'Listo' : 'Vacío'}
-            </Badge>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-full border-stone-200 bg-white"
-              onClick={(event) => {
-                event.stopPropagation();
-                fileInputRef.current?.click();
-              }}
-            >
-              Seleccionar archivo
-            </Button>
-            {currentValue ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-full border-stone-200 bg-white"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onChange('');
-                }}
-              >
-                Quitar imagen
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
