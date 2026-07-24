@@ -1168,13 +1168,16 @@ function Field({
   label: string;
   children: React.ReactNode;
 }) {
+  // Nota: NO usar <label> como contenedor. Un Radix SelectTrigger (button)
+  // dentro de <label> hace que el desplegable abra y se cierre al instante
+  // (el label reenvia el click al boton). Usamos <div> para evitarlo.
   return (
-    <label className="block space-y-1.5">
+    <div className="block space-y-1.5">
       <span className="block text-[10px] font-black uppercase tracking-[0.3em] text-stone-500">
         {label}
       </span>
       {children}
-    </label>
+    </div>
   );
 }
 
