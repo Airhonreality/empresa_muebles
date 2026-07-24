@@ -35,7 +35,6 @@ import { buildOrganizationSchema, readCommercialConfig, serializeJsonLd } from "
 import { sessionOptions, type SessionData } from "@/lib/agnostic/session";
 
 export const metadata: Metadata = {
-  title: "Agnostic System",
   description: "A professional, storage-based agnostic framework",
 };
 
@@ -137,8 +136,6 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationSchema) }}
         />
-
-        <title>{appName}</title>
       </head>
       <body className="antialiased">
         {isPublicShare ? children : (
