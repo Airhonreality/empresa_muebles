@@ -35,6 +35,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
   const [focusedImage, setFocusedImage] = useState<FocusedImageState | null>(null)
   const [activeSpaceId, setActiveSpaceId] = useState(proposal.spaces[0]?.id ?? '')
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<Record<string, number>>({})
+  const [zoomImage, setZoomImage] = useState<{ url: string; title?: string } | null>(null)
 
   const carpentryTotal = proposal.financial?.carpentry_total ?? 0
   const civilEstimateTotal = proposal.financial?.civil_estimate_total ?? 0
@@ -74,6 +75,13 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
     setActiveSpaceId(spaceId)
     document.getElementById(spaceId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+
+  useEffect(() => {
+    if (!zoomImage) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomImage(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [zoomImage])
 
   const spaceIndex = (
     <div className="max-h-[min(60dvh,28rem)] overflow-y-auto">
@@ -198,7 +206,29 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                 <section className="mt-8" aria-labelledby={`${space.id}-scope`}>
                   <div className="flex items-baseline justify-between gap-4"><h3 id={`${space.id}-scope`} className="veta-heading text-xl">Que incluye</h3><span className="text-xs text-[hsl(var(--veta-text-muted))]">{activeVariant?.items.length ?? 0} items</span></div>
                   {activeVariant?.items.length ? <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {activeVariant.items.map((item, itemIndex) => <li key={`${item.name}-${itemIndex}`} className="flex min-h-20 items-center gap-3 rounded-xl border border-[var(--veta-divider-soft)] bg-white/45 p-3"><div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-[hsl(var(--veta-bg-alt))]">{item.image_url ? <img src={item.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : <span className="h-2 w-2 rounded-full bg-[hsl(var(--veta-gold-muted))]" />}</div><div className="min-w-0 flex-1"><p className="text-sm font-medium leading-5">{item.name}</p><p className="mt-0.5 text-xs text-[hsl(var(--veta-text-muted))]">{formatQuantity(item.quantity)} {item.unit || 'unidad'}{item.unit_price ? <> · {formatCop(item.unit_price)} c/u</> : null}</p></div>{item.total ? <div className="shrink-0 self-center text-right"><span className="block text-[9px] uppercase tracking-[.12em] text-[hsl(var(--veta-text-muted))]">Total</span><strong className="veta-heading text-sm tabular-nums">{formatCop(item.total)}</strong></div> : null}</li>)}
+                    {activeVariant.items.map((item, itemIndex) => {
+                      const zoomable = Boolean(item.image_url)
+                      const openZoom = () => { if (item.image_url) setZoomImage({ url: item.image_url, title: item.name }) }
+                      return (
+                        <li
+                          key={`${item.name}-${itemIndex}`}
+                          {...(zoomable ? {
+                            role: 'button' as const,
+                            tabIndex: 0,
+                            'aria-label': `Ampliar imagen de ${item.name}`,
+                            onClick: openZoom,
+                            onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openZoom() } },
+                          } : {})}
+                          className={`group flex min-h-20 items-center gap-3 rounded-xl border border-[var(--veta-divider-soft)] bg-white/45 p-3 ${zoomable ? 'cursor-zoom-in transition hover:border-[hsl(var(--veta-gold-muted))] hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--veta-gold-muted))]' : ''}`}
+                        >
+                          <div className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-[hsl(var(--veta-bg-alt))]">
+                            {item.image_url ? <><img src={item.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /><span className="absolute inset-0 grid place-items-center bg-black/0 text-white opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100"><Expand size={14} /></span></> : <span className="h-2 w-2 rounded-full bg-[hsl(var(--veta-gold-muted))]" />}
+                          </div>
+                          <div className="min-w-0 flex-1"><p className="text-sm font-medium leading-5">{item.name}</p><p className="mt-0.5 text-xs text-[hsl(var(--veta-text-muted))]">{formatQuantity(item.quantity)} {item.unit || 'unidad'}{item.unit_price ? <> · {formatCop(item.unit_price)} c/u</> : null}</p></div>
+                          {item.total ? <div className="shrink-0 self-center text-right"><span className="block text-[9px] uppercase tracking-[.12em] text-[hsl(var(--veta-text-muted))]">Total</span><strong className="veta-heading text-sm tabular-nums">{formatCop(item.total)}</strong></div> : null}
+                        </li>
+                      )
+                    })}
                   </ul> : <p className="mt-3 text-sm text-[hsl(var(--veta-text-muted))]">El alcance detallado se confirmara con el equipo comercial.</p>}
                 </section>
 
@@ -258,7 +288,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                         <div className="ml-5 mb-2 space-y-1 text-xs text-[hsl(var(--veta-text-muted))]">
                           <p className="font-medium text-[10px] uppercase tracking-wider opacity-70">Costos adicionales:</p>
                           {civilEstimate.map((item, idx) => {
-                            const itemCost = item.total || (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0) || (item.price || 0)
+                            const itemCost = item.total || (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0)
                             return (
                               <div key={idx} className="flex justify-between gap-4 pl-2">
                                 <span>• {item.name}{item.notes ? ` - ${item.notes}` : ''}</span>
@@ -343,6 +373,27 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
           </div>
         )
       })()}
+
+      {zoomImage && (
+        <div
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/85 p-4 sm:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-label={zoomImage.title || 'Imagen ampliada'}
+          onClick={() => setZoomImage(null)}
+        >
+          <button type="button" onClick={() => setZoomImage(null)} aria-label="Cerrar" className="absolute top-4 right-4 rounded-full bg-white/20 p-2 backdrop-blur-sm transition hover:bg-white/40">
+            <X size={22} className="text-white" />
+          </button>
+          <img
+            src={zoomImage.url}
+            alt={zoomImage.title || ''}
+            className="max-h-[85vh] max-w-full rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {zoomImage.title && <p className="mt-4 max-w-2xl text-center text-sm text-white/85">{zoomImage.title}</p>}
+        </div>
+      )}
     </main>
   )
 }
