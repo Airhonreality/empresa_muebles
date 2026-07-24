@@ -786,7 +786,10 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     setItemsObraCivil(prev => prev.filter(x => x.id !== id))
   }
 
-  const buildPublicSnapshot = () => ({
+  // Acepta un catálogo fresco: al publicar recargamos productos_catalogo para
+  // no congelar imágenes/datos desactualizados en el snapshot (el estado en
+  // memoria puede estar viejo si se editó el catálogo en otra sección).
+  const buildPublicSnapshot = (catalogoData: DataItem[] = catalogo) => ({
     title: headerLocal.nombre_proyecto || 'Propuesta de diseño',
     issued_at: new Date().toISOString().slice(0, 10),
     financial: {
@@ -834,7 +837,7 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
         const variantItems = items.filter(item => (item.data as unknown as ItemsVariante).variante_id === variant.id && !(item.data as unknown as ItemsVariante).anulado)
         const itemProjection = variantItems.map(item => {
           const itemData = item.data as unknown as ItemsVariante
-          const product = catalogo.find(entry => entry.id === itemData.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
+          const product = catalogoData.find(entry => entry.id === itemData.catalogo_id)?.data as unknown as ProductosCatalogo | undefined
           const unitPrice = Number(itemData.precio_unitario) || 0
           const lineTotal = Number(itemData.total_linea) || (Number(itemData.cantidad) || 0) * unitPrice
           return { name: product?.descripcion || 'Ítem incluido', quantity: Number(itemData.cantidad) || 0, unit: itemData.unidad_medida || product?.unidad_medida, image_url: itemData.imagen_url || product?.imagen_url || product?.imagen, unit_price: unitPrice, total: lineTotal }
@@ -872,12 +875,24 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
 
   const publishPublicProposal = async () => {
     if (!activeCotId) return
+    // Recargar el catálogo fresco antes de congelar el snapshot, para incluir
+    // imágenes/precios editados en la sección Catálogo. No basta setCatalogo +
+    // buildPublicSnapshot() por el closure de React: pasamos el fresco directo.
+    let freshCatalogo = catalogo
+    try {
+      const res = await fetch('/api/vault?namespace=productos_catalogo', { cache: 'no-store' })
+      const j = await res.json()
+      freshCatalogo = (j.records ?? catalogo) as DataItem[]
+      setCatalogo(freshCatalogo)
+    } catch {
+      // Si falla la recarga, usa el catálogo en memoria como fallback.
+    }
     const proposalId = activePublicProposal?.id || crypto.randomUUID()
     const current = activePublicProposal?.data as PublicProposalData | undefined
     const data: PublicProposalData = {
       proyecto_id: activeCotId,
       public_slug: current?.public_slug || createPublicSlug(headerLocal.nombre_proyecto),
-      snapshot_json: JSON.stringify(buildPublicSnapshot()),
+      snapshot_json: JSON.stringify(buildPublicSnapshot(freshCatalogo)),
       estado: 'publicada',
       emitida_en: new Date().toISOString().slice(0, 10),
     }
