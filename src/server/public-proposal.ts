@@ -7,6 +7,14 @@ export type PublicProposalSnapshot = {
   financial?: {
     carpentry_total: number
     civil_estimate_total: number
+    subtotal?: number
+    costos_operativos?: number
+    imprevistos?: number
+    descuento?: number
+    ajuste?: number
+    aplica_iva?: boolean
+    pct_iva?: number
+    iva?: number
   }
   spaces: Array<{
     id: string
@@ -44,6 +52,14 @@ function projectPublicProposal(snapshot: SnapshotRecord): PublicProposalSnapshot
     financial: financial ? {
       carpentry_total: asNumber(financial.carpentry_total ?? carpentry?.total),
       civil_estimate_total: asNumber(financial.civil_estimate_total ?? civilEstimate?.total),
+      subtotal: asNumber(financial.subtotal),
+      costos_operativos: asNumber(financial.costos_operativos),
+      imprevistos: asNumber(financial.imprevistos),
+      descuento: asNumber(financial.descuento),
+      ajuste: asNumber(financial.ajuste),
+      aplica_iva: Boolean(financial.aplica_iva),
+      pct_iva: asNumber(financial.pct_iva),
+      iva: asNumber(financial.iva),
     } : undefined,
     spaces: rawSpaces.map((rawSpace, spaceIndex) => {
       const space = (rawSpace ?? {}) as SnapshotRecord

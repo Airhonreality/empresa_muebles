@@ -42,6 +42,22 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
   const hasCarpentryTotal = carpentryTotal > 0
   const hasCivilEstimate = civilEstimateTotal > 0
 
+  // Ajustes globales del proyecto. Se muestran solo si no son cero (empty se oculta).
+  const fin = proposal.financial
+  const adjustmentRows = [
+    { label: 'Subtotal', value: fin?.subtotal ?? 0, sign: 1, muted: true },
+    { label: 'Costos operativos', value: fin?.costos_operativos ?? 0, sign: 1, muted: false },
+    { label: 'Imprevistos de instalación', value: fin?.imprevistos ?? 0, sign: 1, muted: false },
+    { label: 'Descuento comercial', value: fin?.descuento ?? 0, sign: -1, muted: false },
+    { label: 'Ajuste', value: fin?.ajuste ?? 0, sign: 1, muted: false },
+    ...(fin?.aplica_iva && (fin?.iva ?? 0) > 0
+      ? [{ label: `IVA (${fin?.pct_iva ?? 19}%)`, value: fin?.iva ?? 0, sign: 1 as const, muted: false }]
+      : []),
+  ].filter(row => row.value > 0)
+  // Solo tiene sentido mostrar el subtotal si hay algún ajuste adicional debajo.
+  const hasExtraCharges = adjustmentRows.some(row => row.label !== 'Subtotal')
+  const visibleAdjustments = hasExtraCharges ? adjustmentRows : []
+
   const getTotalForVariant = (spaceId: string, variantIndex: number) => {
     const space = proposal.spaces.find(s => s.id === spaceId)
     return space?.variants[variantIndex]?.total ?? 0
@@ -311,6 +327,16 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                     </div>
                   )
                 })}
+                {visibleAdjustments.length > 0 && (
+                  <div className="mt-1 border-t border-[var(--veta-divider-soft)] pt-1">
+                    {visibleAdjustments.map((row) => (
+                      <div key={row.label} className={`flex min-h-11 items-center justify-between gap-4 py-2.5 text-sm ${row.muted ? 'text-[hsl(var(--veta-text-muted))]' : ''}`}>
+                        <span>{row.label}</span>
+                        <span className="tabular-nums">{row.sign < 0 ? `− ${formatCop(row.value)}` : formatCop(row.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="border-l-2 border-[hsl(var(--veta-gold-muted))] pl-5">
