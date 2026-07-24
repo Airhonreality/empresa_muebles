@@ -795,6 +795,14 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     financial: {
       carpentry_total: gt.aplicaIva ? gt.totalConIva : gt.total,
       civil_estimate_total: totalObraCivil.total,
+      subtotal: gt.sub,
+      costos_operativos: gt.costos,
+      imprevistos: gt.impr,
+      descuento: gt.desc,
+      ajuste: gt.ajuste,
+      aplica_iva: gt.aplicaIva,
+      pct_iva: gt.pctIva,
+      iva: gt.iva,
     },
     spaces: espacios.flatMap(({ nombre, vars }) => {
       const selectedVariant = vars.find(variant => variant.id === (activeVarMap[nombre] || vars[0]?.id)) || vars[0]
