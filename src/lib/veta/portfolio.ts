@@ -14,7 +14,9 @@ function humanizeRecordText(value: unknown, fallback = '') {
 
   return normalized
     .toLowerCase()
-    .replace(/\b\p{L}/gu, (char) => char.toUpperCase());
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 export type HomePortfolioCard = {
