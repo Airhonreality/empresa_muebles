@@ -102,7 +102,7 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "logo_negativo_url",
-      "valor": "/api/assets/logo_veta_dorada_negative.svg",
+      "valor": "/logo_veta_dorada_negative.svg",
       "grupo": "Branding",
       "etiqueta": "Logotipo Vectorial Negativo (Fondo Oscuro)"
     },
@@ -113,7 +113,7 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "logo_positivo_url",
-      "valor": "/api/assets/logo_veta_dorada_positive.svg",
+      "valor": "/logo_veta_dorada_positive.svg",
       "grupo": "Branding",
       "etiqueta": "Logotipo Vectorial Positivo (Fondo Claro)"
     },
