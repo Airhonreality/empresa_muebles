@@ -1,5 +1,104 @@
 [
   {
+    "id": "vetadeoro-dormitorios-dormitorio-moderno-con-cama-flotante-img-1",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-dormitorios-dormitorio-moderno-con-cama-flotante",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-dormitorios-dormitorio-moderno-con-cama-flotante-img-1.jpg",
+      "descripcion": "Imagen 1 - Dormitorio moderno con cama flotante",
+      "orden": 1
+    },
+    "updated_at": "2026-07-25T00:53:10.563Z"
+  },
+  {
+    "id": "vetadeoro-dormitorios-dormitorio-moderno-con-cama-flotante-img-2",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-dormitorios-dormitorio-moderno-con-cama-flotante",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-dormitorios-dormitorio-moderno-con-cama-flotante-img-2.jpg",
+      "descripcion": "Imagen 2 - Dormitorio moderno con cama flotante",
+      "orden": 2
+    },
+    "updated_at": "2026-07-25T00:53:10.585Z"
+  },
+  {
+    "id": "vetadeoro-cocinas-cocina-de-superficies-continuas-img-1",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-cocinas-cocina-de-superficies-continuas",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-cocinas-cocina-de-superficies-continuas-img-1.jpg",
+      "descripcion": "Imagen 1 - Cocina de superficies continuas",
+      "orden": 1
+    },
+    "updated_at": "2026-07-25T00:53:10.607Z"
+  },
+  {
+    "id": "vetadeoro-cocinas-cocina-de-superficies-continuas-img-2",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-cocinas-cocina-de-superficies-continuas",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-cocinas-cocina-de-superficies-continuas-img-2.jpg",
+      "descripcion": "Imagen 2 - Cocina de superficies continuas",
+      "orden": 2
+    },
+    "updated_at": "2026-07-25T00:53:10.632Z"
+  },
+  {
+    "id": "vetadeoro-cavas_bares-barra-de-bar-con-sinterizado-y-flor-morado-img-1",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-cavas_bares-barra-de-bar-con-sinterizado-y-flor-morado",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-cavas_bares-barra-de-bar-con-sinterizado-y-flor-morado-img-1.jpg",
+      "descripcion": "Imagen 1 - Barra de bar con sinterizado y flor morado",
+      "orden": 1
+    },
+    "updated_at": "2026-07-25T00:53:10.665Z"
+  },
+  {
+    "id": "vetadeoro-dormitorios_closets-vestidor-modular-con-vidrio-templado-img-1",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-dormitorios_closets-vestidor-modular-con-vidrio-templado",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-dormitorios_closets-vestidor-modular-con-vidrio-templado-img-1.jpg",
+      "descripcion": "Imagen 1 - Vestidor modular con vidrio templado",
+      "orden": 1
+    },
+    "updated_at": "2026-07-25T00:53:10.878Z"
+  },
+  {
+    "id": "vetadeoro-dormitorios_closets-vestidor-modular-con-vidrio-templado-img-2",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-dormitorios_closets-vestidor-modular-con-vidrio-templado",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-dormitorios_closets-vestidor-modular-con-vidrio-templado-img-2.jpg",
+      "descripcion": "Imagen 2 - Vestidor modular con vidrio templado",
+      "orden": 2
+    },
+    "updated_at": "2026-07-25T00:53:10.907Z"
+  },
+  {
+    "id": "vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado-img-1",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado-img-1.jpg",
+      "descripcion": "Imagen 1 - Cocina integral con vidrio blanco templado",
+      "orden": 1
+    },
+    "updated_at": "2026-07-25T00:53:10.934Z"
+  },
+  {
+    "id": "vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado-img-2",
+    "context": "imagenes_portfolio",
+    "data": {
+      "portfolio_id": "vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado",
+      "imagen_url": "/api/assets/vetadeoro/vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado-img-2.jpg",
+      "descripcion": "Imagen 2 - Cocina integral con vidrio blanco templado",
+      "orden": 2
+    },
+    "updated_at": "2026-07-25T00:53:10.957Z"
+  },
+  {
     "id": "8f8a936d-dacc-44aa-b83b-ce5099a08d6c",
     "context": "imagenes_portfolio",
     "data": {

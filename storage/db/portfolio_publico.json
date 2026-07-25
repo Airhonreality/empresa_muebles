@@ -1,5 +1,90 @@
 [
   {
+    "id": "vetadeoro-dormitorios-dormitorio-moderno-con-cama-flotante",
+    "context": "portfolio_publico",
+    "data": {
+      "slug": "dormitorio-moderno-con-cama-flotante",
+      "titulo": "Dormitorio moderno con cama flotante",
+      "categoria_espacio": "dormitorios",
+      "zona": "Bogotá",
+      "descripcion_comercial": "Dormitorio moderno con cama flotante e iluminación ambiental, centro de entretenimiento integrado y camarote. Diseño funcional y estético.",
+      "materiales_destacados": "Madera, vidrio templado, sinterizado",
+      "publicado": true,
+      "destacado": true,
+      "orden": 1,
+      "barrio": "Bogotá"
+    },
+    "updated_at": "2026-07-25T00:53:10.338Z"
+  },
+  {
+    "id": "vetadeoro-cocinas-cocina-de-superficies-continuas",
+    "context": "portfolio_publico",
+    "data": {
+      "slug": "cocina-de-superficies-continuas",
+      "titulo": "Cocina de superficies continuas",
+      "categoria_espacio": "cocinas",
+      "zona": "Bogotá",
+      "descripcion_comercial": "Cocina de superficies continuas en blanco y madera clara. Diseño minimalista con acabados premium y funcionalidad integral.",
+      "materiales_destacados": "Madera, vidrio templado, sinterizado",
+      "publicado": true,
+      "destacado": true,
+      "orden": 2,
+      "barrio": "Bogotá"
+    },
+    "updated_at": "2026-07-25T00:53:10.585Z"
+  },
+  {
+    "id": "vetadeoro-cavas_bares-barra-de-bar-con-sinterizado-y-flor-morado",
+    "context": "portfolio_publico",
+    "data": {
+      "slug": "barra-de-bar-con-sinterizado-y-flor-morado",
+      "titulo": "Barra de bar con sinterizado y flor morado",
+      "categoria_espacio": "cavas_bares",
+      "zona": "Bogotá",
+      "descripcion_comercial": "Barra de bar con encimera en sinterizado y repisas en flor morado. Acabados de alta calidad con iluminación y almacenamiento optimizado.",
+      "materiales_destacados": "Madera, vidrio templado, sinterizado",
+      "publicado": true,
+      "destacado": true,
+      "orden": 3,
+      "barrio": "Bogotá"
+    },
+    "updated_at": "2026-07-25T00:53:10.632Z"
+  },
+  {
+    "id": "vetadeoro-dormitorios_closets-vestidor-modular-con-vidrio-templado",
+    "context": "portfolio_publico",
+    "data": {
+      "slug": "vestidor-modular-con-vidrio-templado",
+      "titulo": "Vestidor modular con vidrio templado",
+      "categoria_espacio": "dormitorios_closets",
+      "zona": "Bogotá",
+      "descripcion_comercial": "Vestidor modular con puertas de vidrio templado y estructura metálica. Sistema de organización completo con almacenamiento eficiente.",
+      "materiales_destacados": "Madera, vidrio templado, sinterizado",
+      "publicado": true,
+      "destacado": true,
+      "orden": 4,
+      "barrio": "Bogotá"
+    },
+    "updated_at": "2026-07-25T00:53:10.854Z"
+  },
+  {
+    "id": "vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado",
+    "context": "portfolio_publico",
+    "data": {
+      "slug": "cocina-integral-con-vidrio-blanco-templado",
+      "titulo": "Cocina integral con vidrio blanco templado",
+      "categoria_espacio": "cocinas",
+      "zona": "Bogotá",
+      "descripcion_comercial": "Cocina integral con puertas de vidrio blanco templado y acabados en piedra sinterizada. Diseño contemporáneo con máxima funcionalidad.",
+      "materiales_destacados": "Madera, vidrio templado, sinterizado",
+      "publicado": true,
+      "destacado": true,
+      "orden": 5,
+      "barrio": "Bogotá"
+    },
+    "updated_at": "2026-07-25T00:53:10.907Z"
+  },
+  {
     "id": "ca238bc4-7169-4f09-8f5a-cdab64dbb64f",
     "context": "portfolio_publico",
     "data": {
