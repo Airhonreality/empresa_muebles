@@ -34,20 +34,7 @@ Con `.env.local`:
 npx tsx --env-file=.env.local scripts/agno.ts context
 ```
 
-Override de estrategia:
-
-```bash
-AGNOSTIC_STORAGE_STRATEGY=local
-AGNOSTIC_STORAGE_STRATEGY=postgres
-AGNOSTIC_STORAGE_STRATEGY=github
-AGNOSTIC_STORAGE_STRATEGY=supabase
-```
-
-Regla actual:
-
-- En desarrollo, el sistema usa `LocalStrategy` por defecto y lee `storage/db/*.json`.
-- En produccion, la prioridad sigue siendo `GITHUB_REPO` -> `DATABASE_URL` -> `SUPABASE_URL` -> `LocalStrategy`.
-- Si necesitas forzar una estrategia concreta, usa `AGNOSTIC_STORAGE_STRATEGY`.
+Si `DATABASE_URL` no esta cargada, el sistema usa `LocalStrategy` y lee `storage/db/*.json`.
 
 ## Salida Testeable
 
@@ -227,7 +214,7 @@ No renombra fields ni relaciones como `cotizacion_id -> proyecto_id`; eso requie
 
 ## Adapters
 
-Un adapter es una integracion instalable con dos caras: cliente (`src/integrations/<id>/index.ts` + `ConfigPanel.tsx`, registrado en `agnostic.config.ts` bajo `integrations`) y servidor (`src/integrations/<id>/adapter.ts`, resuelto por `src/lib/integrations/adapters.server.ts`). `src/integrations/notion/` es el ejemplo de referencia; copia su forma para construir uno nuevo.
+Un adapter es una integracion instalable con dos caras: cliente (`src/integrations/<id>/index.ts` + `ConfigPanel.tsx`) y servidor (`src/integrations/<id>/adapter.ts` + `manifest.ts`). Ambas se activan registrando el id en `agnostic.config.ts` bajo `integrations` (unica fuente de verdad, capa fork). El servidor (`src/lib/integrations/adapters.server.ts`) resuelve el codigo por convencion en runtime: `adapter.ts` exporta `${PascalCase(id)}Adapter` (o default), `manifest.ts` exporta `manifest`. Ningun archivo de engine lleva estado de adapters. `src/integrations/notion/` es el ejemplo de referencia; copia su forma para construir uno nuevo.
 
 ```text
 list-adapters [--json]                              disponibles + instalados
@@ -236,9 +223,9 @@ install <id> [--dry] [--yes] [--json]                registra el adapter (ciclo 
 remove-adapter <id> [--dry] [--yes] [--json]          des-registra el adapter (ciclo gobernado)
 ```
 
-"Disponible" = existe `src/integrations/<id>/manifest.ts` en disco. "Instalado" = el id aparece en `agnostic.config.ts`. `install`/`remove-adapter` **no** crean ni borran la carpeta del adapter, solo la registran/des-registran en `agnostic.config.ts` y `src/lib/integrations/adapters.server.ts`.
+"Disponible" = existe `src/integrations/<id>/manifest.ts` en disco. "Instalado" = el id aparece en `agnostic.config.ts`. `install`/`remove-adapter` **no** crean ni borran la carpeta del adapter, solo la registran/des-registran en `agnostic.config.ts` (unica fuente de verdad). Un fork virgen arranca sin adapters instalados.
 
-Mismo ciclo que `refactor-schema`: `plan` (preview) -> `--dry` (preview, nunca escribe) -> sin `--yes` (plan + confirmacion requerida, no interactivo) -> `--yes` (backup automatico de ambos archivos en `storage/progreso/backups/`, luego escribe).
+Mismo ciclo que `refactor-schema`: `plan` (preview) -> `--dry` (preview, nunca escribe) -> sin `--yes` (plan + confirmacion requerida, no interactivo) -> `--yes` (backup automatico de `agnostic.config.ts` en `storage/progreso/backups/`, luego escribe).
 
 ### Manifest (`AdapterManifest`, `packages/core/src/adapter.ts`)
 
@@ -278,6 +265,52 @@ Convencion de nombres que todo adapter nuevo debe seguir para que `install`/`rem
 
 El sandbox de zaps (`src/app/api/engine/route.ts`) no tiene `fetch`, `fs`, `process` ni binarios nativos (timeout 5s). Cualquier adapter con `permissions.network !== 'none'` debe implementar su logica de red en una ruta real bajo `src/app/api/` (como hace `src/app/api/admin/integrations/*` con Notion), nunca dentro de un zap. Un manifest que viole esto (`network !== 'none'` con `runsOutsideSandbox: false`) es rechazado por el resolver.
 
+## Modulos
+
+Un modulo es un paquete de componentes instalable ubicado en `packages/modules/<id>/`. Se compone de uno o varios `block_types` que se registran en `agnostic.config.ts` y se copian a `src/components/specialized/<id>/` al instalarse.
+
+```text
+list-modules [--json]                            disponibles + instalados
+install-module <id> plan [--json]                preview: colisiones, sin escribir
+install-module <id> [--dry] [--yes] [--json]     instala el modulo (ciclo gobernado)
+remove-module <id> [--dry] [--yes] [--json]      desinstala el modulo (ciclo gobernado)
+```
+
+"Disponible" = existe `packages/modules/<id>/manifest.ts` en disco. "Instalado" = el id aparece entre los marcadores `// agno:modules:start` / `// agno:modules:end` dentro de `blocks` en `agnostic.config.ts`.
+
+`install-module` copia todo el contenido de `packages/modules/<id>/` a `src/components/specialized/<id>/` (excepto `manifest.ts`) y registra las entries de `block_types` en `agnostic.config.ts`. No crea schemas ni instala npm dependencies; solo advierte si faltan.
+
+`remove-module` elimina la carpeta `src/components/specialized/<id>/` y las entradas de config. El source original en `packages/modules/` no se toca.
+
+Mismo ciclo que `refactor-schema` y `install`/`remove-adapter`: `plan` (preview) -> `--dry` (preview, nunca escribe) -> sin `--yes` (plan + confirmacion requerida, no interactivo) -> `--yes` (backup automatico en `storage/progreso/backups/`, luego escribe).
+
+### Manifest (`ModuleManifest`, `packages/core/src/module.ts`)
+
+```ts
+{
+  id: string;                               // = carpeta en packages/modules/<id>
+  name: string;
+  description: string;
+  version: string;
+  block_types: Record<string, {             // tipo de bloque → entry point
+    entry: string;                          // ruta relativa al modulo, ej. "MyBlock.tsx"
+    settings_schema?: string;               // ruta a JSON schema para el designer
+  }>;
+  required_schemas?: string[];              // namespaces que deben existir en schema_definitions.json
+  npm_dependencies?: Record<string, string>;// ej. { "recharts": "^2.0.0" }
+}
+```
+
+### Resolver de colisiones
+
+`install-module` corre estas verificaciones antes de escribir; los `error` bloquean el plan, los `warn`/`info` no:
+
+- `AGNO_MODULE_ALREADY_INSTALLED` (error): el id ya esta registrado entre los marcadores.
+- `AGNO_MODULE_DIR_COLLISION` (error): la carpeta `src/components/specialized/<id>/` ya existe en disco.
+- `AGNO_MODULE_BLOCK_TYPE_COLLISION` (error): un tipo de bloque del modulo ya esta registrado en `agnostic.config.ts`.
+- `AGNO_MODULE_SCHEMA_MISSING` (warn): un nombre en `required_schemas` no existe en `schema_definitions.json`.
+- `AGNO_MODULE_NPM_MISSING` (warn): una dependencia npm del modulo no esta instalada en `package.json`.
+
 ## Documentacion Agentiva
 
 Estos comandos generan indices versionables en `storage/docs/`. No reemplazan la fuente canonica en `storage/db/`; solo crean contexto compacto para agentes IA y revisiones humanas.
@@ -314,7 +347,8 @@ bootstrap install        inicia .agno/bootstrap-state.json local
 bootstrap resume         continua el instalador
 bootstrap status         muestra el estado local del instalador
 bootstrap doctor         diagnostico no destructivo
-bootstrap verify         doctor local + health remoto si PRODUCTION_URL/Netlify estan cargados
+bootstrap verify         doctor local + health remoto si NEXT_PUBLIC_BASE_URL/Netlify estan cargados
+env:check                audita el contrato de configuracion local (.env.local / .env.vercel.local)
 ```
 
 El estado local vive en `.agno/bootstrap-state.json` y no se versiona. No debe guardar secretos.
@@ -349,6 +383,42 @@ bootstrap migrate        migrar storage/db a Postgres desde CLI
 
 No conectes `localhost` a una base productiva con permisos de escritura.
 
+### Revisiones de definiciones
+
+Las definiciones del engine son exactamente `schema_definitions`,
+`page_routes` y `scripts`. El backend no determina su ciclo de vida:
+`AGNOSTIC_DEFINITION_MODE` lo declara de forma independiente.
+
+```bash
+# Solo lectura: compara legacy con la revisión activa
+npm run definitions -- plan
+
+# Primera publicación; exige confirmación
+npm run definitions -- apply -- --expected none --yes
+
+# Publicación posterior con compare-and-set
+npm run definitions -- apply -- --expected <revision_actual> --yes
+
+# Inspección y artefacto reproducible para el build
+npm run definitions -- status
+npm run definitions -- export -- --output storage/definition-revision.json
+
+# Rollback o promoción de una revisión inmutable ya existente
+npm run definitions -- activate -- --revision <revision_objetivo> --expected <revision_actual> --yes
+```
+
+Para compilar en modo `revision`:
+
+```text
+AGNOSTIC_DEFINITION_MODE=revision
+AGNOSTIC_DEFINITION_SNAPSHOT=storage/definition-revision.json
+AGNOSTIC_DEFINITION_REVISION=<sha256_del_snapshot>
+```
+
+`plan` no escribe. `apply` valida referencias, requiere la revisión esperada y
+falla ante concurrencia. El rollback consiste en activar una revisión conocida
+mediante la misma operación CAS; nunca se reescriben bundles inmutables.
+
 Patrones seguros:
 
 - Database branching: usa una rama dev de Neon/Postgres.
@@ -361,4 +431,4 @@ npm run push-data scripts mi_zap_nombre
 npm run push-data templates mi_plantilla_nombre
 ```
 
-Requiere `PRODUCTION_URL` y `API_SECRET_KEY`.
+Requiere `NEXT_PUBLIC_BASE_URL` (o `PRODUCTION_URL` legado) y `API_SECRET_KEY`.

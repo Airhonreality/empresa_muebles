@@ -14,6 +14,9 @@
 
 import fs from 'fs'
 import path from 'path'
+import { revisionIdFor } from '../src/server/definitions/canonical'
+import type { DefinitionSet } from '../packages/core/src/definitions'
+import { resolveDefinitionMode } from '../src/lib/agnostic/definition-mode'
 
 // ─── Types (mirrors indra.ts, duplicated to keep this script self-contained) ──
 
@@ -39,6 +42,11 @@ interface SchemaItem {
   context: string
   data: SchemaData
   updated_at?: string
+}
+
+interface DefinitionSnapshot {
+  id: string
+  definitions: DefinitionSet
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -95,11 +103,64 @@ function compile(): void {
   const outputPath  = process.env.OUTPUT_PATH
     ?? path.join(process.cwd(), 'src', 'generated', 'agnostic-schemas.ts')
 
-  const raw: SchemaItem[] = fs.existsSync(schemasPath)
-    ? JSON.parse(fs.readFileSync(schemasPath, 'utf-8'))
-    : []
-  if (!fs.existsSync(schemasPath)) {
-    console.warn('[agnostic:compile] schema_definitions.json not found - generating empty contract.')
+  const definitionMode = resolveDefinitionMode(process.env)
+  const snapshotPath = process.env.AGNOSTIC_DEFINITION_SNAPSHOT
+  let sourceLabel = schemasPath.replace(process.cwd(), '.')
+  let sourceRevision: string | null = null
+  let raw: SchemaItem[]
+
+  if (definitionMode === 'revision') {
+    if (!snapshotPath) {
+      throw new Error(
+        '[agnostic:compile] AGNOSTIC_DEFINITION_MODE=revision requires '
+        + 'AGNOSTIC_DEFINITION_SNAPSHOT exported by `npm run definitions -- export`.',
+      )
+    }
+    const resolvedSnapshotPath = path.resolve(snapshotPath)
+    if (!fs.existsSync(resolvedSnapshotPath)) {
+      throw new Error(`[agnostic:compile] Definition snapshot not found: ${resolvedSnapshotPath}`)
+    }
+    const snapshot = JSON.parse(
+      fs.readFileSync(resolvedSnapshotPath, 'utf-8'),
+    ) as DefinitionSnapshot
+    if (
+      !snapshot
+      || typeof snapshot.id !== 'string'
+      || !snapshot.definitions
+      || !Array.isArray(snapshot.definitions.schema_definitions)
+      || !Array.isArray(snapshot.definitions.page_routes)
+      || !Array.isArray(snapshot.definitions.scripts)
+    ) {
+      throw new Error('[agnostic:compile] Definition snapshot has an invalid shape.')
+    }
+    const computedRevision = revisionIdFor(snapshot.definitions)
+    if (computedRevision !== snapshot.id) {
+      throw new Error(
+        `[agnostic:compile] Definition snapshot integrity failed: expected ${snapshot.id}, computed ${computedRevision}.`,
+      )
+    }
+    const deployedRevision = process.env.AGNOSTIC_DEFINITION_REVISION?.trim()
+    if (!deployedRevision) {
+      throw new Error(
+        '[agnostic:compile] Revision mode requires AGNOSTIC_DEFINITION_REVISION.',
+      )
+    }
+    if (deployedRevision !== snapshot.id) {
+      throw new Error(
+        `[agnostic:compile] Snapshot revision ${snapshot.id} does not match `
+        + `AGNOSTIC_DEFINITION_REVISION=${deployedRevision}.`,
+      )
+    }
+    raw = snapshot.definitions.schema_definitions as unknown as SchemaItem[]
+    sourceLabel = resolvedSnapshotPath.replace(process.cwd(), '.')
+    sourceRevision = snapshot.id
+  } else {
+    raw = fs.existsSync(schemasPath)
+      ? JSON.parse(fs.readFileSync(schemasPath, 'utf-8'))
+      : []
+    if (!fs.existsSync(schemasPath)) {
+      console.warn('[agnostic:compile] schema_definitions.json not found - generating empty contract.')
+    }
   }
   const schemas = raw
     .filter(item => item.data?.name)
@@ -112,7 +173,8 @@ function compile(): void {
   const lines: string[] = [
     `// ============================================================`,
     `// AUTO-GENERATED — do not edit manually.`,
-    `// Source: ${schemasPath.replace(process.cwd(), '.')}`,
+    `// Source: ${sourceLabel}`,
+    `// Definition revision: ${sourceRevision ?? 'legacy'}`,
     `// Run:    npm run agnostic:compile`,
     `// ============================================================`,
     ``,

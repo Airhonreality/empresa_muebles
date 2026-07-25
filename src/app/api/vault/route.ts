@@ -28,8 +28,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
-import { getStrategy } from '@/server/getStrategy';
-import { assertStructuralMutationAllowed, readRuntimeDefinitions } from '@/server/catalog/definitionRuntime';
+import { isDefinitionNamespace } from '@agnostic/core';
+import { createPersistenceTopology } from '@/server/definitions/topology';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { appendLog } from '@/lib/agnostic/activity-log';
 import { triggerSchemaCompile } from '@/lib/agnostic/schema-compiler-trigger';
@@ -76,17 +76,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'namespace param required' }, { status: 400 });
     }
 
-    const strategy = getStrategy();
+    const topology = createPersistenceTopology();
+    const strategy = topology.compatibilityBridge;
 
     // Supports context store hydration in a single atomic request
     if (namespace === 'all') {
+      const revision = await topology.definitionReader.readActiveRevision();
       const fullData: Record<string, any[]> = {};
       const coreContexts = [SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.USERS, SYSTEM_NS.USER_LISTS];
       const activeContexts: string[] = [...coreContexts];
 
       const systemNamespaces: Set<string> = new Set(Object.values(SYSTEM_NS));
       try {
-        const schemas = await readRuntimeDefinitions(SYSTEM_NS.SCHEMAS) ?? await strategy.read(SYSTEM_NS.SCHEMAS);
+        const schemas = revision.definitions.schema_definitions;
         if (Array.isArray(schemas)) {
           for (const s of schemas) {
             const contextName = s.data?.slug || s.slug || s.data?.name || s.name;
@@ -100,12 +102,16 @@ export async function GET(req: NextRequest) {
       }
 
       for (const core of activeContexts) {
-        fullData[core] = await readRuntimeDefinitions(core) ?? await strategy.read(core);
+        fullData[core] = isDefinitionNamespace(core)
+          ? revision.definitions[core]
+          : await topology.recordStore.read(core);
       }
       return NextResponse.json({ success: true, data: fullData });
     }
 
-    const records = await readRuntimeDefinitions(namespace) ?? await strategy.read(namespace);
+    const records = isDefinitionNamespace(namespace)
+      ? (await topology.definitionReader.readActiveRevision()).definitions[namespace]
+      : await topology.recordStore.read(namespace);
     return NextResponse.json({ 
       success: true, 
       namespace, 
@@ -130,7 +136,8 @@ export async function POST(req: NextRequest) {
   try {
     await requireManagementAccess(req);
     const body = await req.json();
-    const strategy = getStrategy();
+    const topology = createPersistenceTopology();
+    const strategy = topology.compatibilityBridge;
 
     // Normalize: support both new (namespace+record) and legacy (context+payload) shapes
     const action = body.action as string;
@@ -141,7 +148,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'WRITE') {
-      assertStructuralMutationAllowed(namespace);
       const raw = body.record;
       if (!raw) return NextResponse.json({ success: false, error: 'record required' }, { status: 400 });
       const normalizedData = namespace === SYSTEM_NS.USERS
@@ -159,7 +165,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'REMOVE') {
-      assertStructuralMutationAllowed(namespace);
       const id: string = body.id;
       if (!id) return NextResponse.json({ success: false, error: 'id required' }, { status: 400 });
       removeSchema.parse({ action: 'REMOVE', namespace, id });
@@ -180,7 +185,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: `Unsupported action: ${action}` }, { status: 400 });
   } catch (err: any) {
-    if (err instanceof Error && err.message === 'AUTHENTICATION_REQUIRED') {
+    if (err?.message === 'AUTHENTICATION_REQUIRED') {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
     console.error('[VaultAPI] POST Dispatch failed:', err);

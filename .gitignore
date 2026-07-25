@@ -49,6 +49,7 @@ storage/*
 !storage/AGENTS.md
 !storage/db/
 !storage/db/**
+!storage/definition-revision.json
 !storage/progreso/
 !storage/progreso/**
 !storage/fork_doc/

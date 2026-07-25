@@ -13,13 +13,13 @@ import { SupabaseStrategy } from './strategies/SupabaseStrategy';
 import { GitHubStrategy }   from './strategies/GitHubStrategy';
 import { PostgresStrategy } from './strategies/PostgresStrategy';
 import { getProjectStorageRoot } from './activeProject';
+import { resolveStorageStrategyName } from '@/lib/agnostic/env-contract';
 
 /**
- * Resolves the persistence strategy from environment variables.
- * Priority:
- * 1. Explicit AGNOSTIC_STORAGE_STRATEGY override.
- * 2. LocalStrategy in development by default.
- * 3. GITHUB_REPO → DATABASE_URL → SUPABASE_URL → LocalStrategy in production.
+ * Resolves the persistence strategy from the explicit contract first.
+ * If AGNOSTIC_STORAGE_STRATEGY is absent, falls back to inference from
+ * the configured env payload in this order:
+ * github → postgres → supabase → local.
  *
  * DATABASE_URL accepts any standard PostgreSQL connection string:
  *   Neon, Supabase (direct Postgres), Railway, Render, etc.
@@ -28,16 +28,32 @@ export function getStrategy(): AgnosticBridge {
   const strategyName = getStrategyName();
 
   if (strategyName === 'github') {
-    const [owner, repo] = process.env.GITHUB_REPO!.split('/');
+    const repoPath = process.env.GITHUB_REPO;
+    if (!repoPath) {
+      throw new Error('AGNOSTIC_STORAGE_STRATEGY=github requiere GITHUB_REPO.');
+    }
+    const [owner, repo] = repoPath.split('/');
+    if (!owner || !repo) {
+      throw new Error('GITHUB_REPO debe tener formato "owner/repo".');
+    }
     return new GitHubStrategy(owner, repo, undefined, process.env.GITHUB_BRANCH ?? 'main');
   }
 
   if (strategyName === 'postgres') {
-    return new PostgresStrategy(process.env.DATABASE_URL!);
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      throw new Error('AGNOSTIC_STORAGE_STRATEGY=postgres requiere DATABASE_URL.');
+    }
+    return new PostgresStrategy(url);
   }
 
   if (strategyName === 'supabase') {
-    return new SupabaseStrategy(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+      throw new Error('AGNOSTIC_STORAGE_STRATEGY=supabase requiere SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.');
+    }
+    return new SupabaseStrategy(url, key);
   }
 
   if (process.env.VERCEL && process.env.NOW_REGION) {
@@ -48,23 +64,5 @@ export function getStrategy(): AgnosticBridge {
 }
 
 export function getStrategyName(): 'github' | 'postgres' | 'supabase' | 'local' {
-  const explicit = normalizeStrategyName(process.env.AGNOSTIC_STORAGE_STRATEGY);
-  if (explicit) return explicit;
-
-  if (process.env.NODE_ENV !== 'production') {
-    return 'local';
-  }
-
-  if (process.env.GITHUB_REPO) return 'github';
-  if (process.env.DATABASE_URL) return 'postgres';
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) return 'supabase';
-  return 'local';
-}
-
-function normalizeStrategyName(value?: string): 'github' | 'postgres' | 'supabase' | 'local' | null {
-  const normalized = value?.trim().toLowerCase();
-  if (normalized === 'github' || normalized === 'postgres' || normalized === 'supabase' || normalized === 'local') {
-    return normalized;
-  }
-  return null;
+  return resolveStorageStrategyName();
 }

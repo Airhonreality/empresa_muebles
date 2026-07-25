@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
     const sourceId = req.nextUrl.searchParams.get('sourceId');
     if (!id || !sourceId) return NextResponse.json({ error: 'id y sourceId requeridos' }, { status: 400 });
 
-    const adapter = getAdapter(id);
+    const adapter = await getAdapter(id);
     if (!adapter?.getRecords) {
         return NextResponse.json({ error: `Integración ${id} no soporta getRecords` }, { status: 404 });
     }

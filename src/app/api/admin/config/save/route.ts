@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
 import path from 'path';
 import { getDeployer, getActiveProvider } from '@/core/server/deploy/deployer';
+import { inferOwnerEmailAssignments } from '@/core/server/deploy/provider-owner-email';
+import { writeEnvFile } from '@/lib/agnostic/env-file';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,99 @@ interface EnvVarPayload {
   key: string;
   value: string;
   sensitive?: boolean;
+}
+
+type SaveResponse = {
+  saved: number;
+  failed: number;
+  errors: string[];
+  deployment: { id: string; url: string | null; readyState: string } | null;
+  message?: string;
+  warning?: string;
+  error?: string;
+  resolvedVariables?: Array<{ key: string; value: string }>;
+};
+
+type ActiveCloud = NonNullable<ReturnType<typeof getActiveProvider>>;
+type EnvLike = Record<string, string | undefined>;
+
+const OWNER_EMAIL_KEYS = new Set([
+  'VERCEL_ACCOUNT_EMAIL',
+  'NETLIFY_ACCOUNT_EMAIL',
+  'GITHUB_ACCOUNT_EMAIL',
+  'DATABASE_ACCOUNT_EMAIL',
+  'CF_ACCOUNT_EMAIL',
+  'SUPABASE_ACCOUNT_EMAIL',
+]);
+
+function normalizeAssignments(variables: EnvVarPayload[]): EnvVarPayload[] {
+  const merged = new Map<string, EnvVarPayload>();
+
+  for (const variable of variables) {
+    if (!variable.key || !variable.value) continue;
+    merged.set(variable.key, variable);
+  }
+
+  return [...merged.values()];
+}
+
+function splitRuntimeAndMetadata(variables: EnvVarPayload[]): { runtime: EnvVarPayload[]; metadata: EnvVarPayload[] } {
+  const runtime: EnvVarPayload[] = [];
+  const metadata: EnvVarPayload[] = [];
+
+  for (const variable of variables) {
+    if (OWNER_EMAIL_KEYS.has(variable.key)) metadata.push(variable);
+    else runtime.push(variable);
+  }
+
+  return { runtime, metadata };
+}
+
+function applyAssignmentsToProcessEnv(assignments: EnvVarPayload[]): void {
+  for (const { key, value } of assignments) {
+    process.env[key] = value;
+  }
+}
+
+function readValue(keys: string[], env: EnvLike): string | undefined {
+  for (const key of keys) {
+    const value = env[key]?.trim();
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function buildActiveCloudFromHint(hintProvider: string | undefined, env: EnvLike): ActiveCloud | null {
+  if (hintProvider === 'vercel') {
+    const vToken = readValue(['VERCEL_ACCESS_TOKEN'], env);
+    const vProjectId = readValue(['VERCEL_PROJECT_ID'], env);
+    const vTeamId = readValue(['VERCEL_TEAM_ID'], env);
+    if (vToken && vProjectId) {
+      return {
+        provider: 'vercel',
+        credentials: { token: vToken, projectId: vProjectId, teamId: vTeamId },
+      };
+    }
+  }
+
+  if (hintProvider === 'netlify') {
+    const nToken = readValue(['NETLIFY_AUTH_TOKEN'], env);
+    const nSiteId = readValue(['NETLIFY_SITE_ID'], env);
+    if (nToken && nSiteId) {
+      return {
+        provider: 'netlify',
+        credentials: { token: nToken, siteId: nSiteId },
+      };
+    }
+  }
+
+  return null;
+}
+
+function makeLocalMessage(): string {
+  return process.env.NODE_ENV === 'development'
+    ? 'Variables guardadas localmente en .env.local. Por favor reinicia tu servidor de desarrollo para aplicar los cambios.'
+    : 'Variables guardadas en .env.local. Por favor reinicia el contenedor o proceso del servidor manualmente para aplicar los cambios.';
 }
 
 export async function POST(req: NextRequest) {
@@ -19,108 +113,74 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No se recibieron variables para guardar' }, { status: 400 });
   }
 
-  // Determine active cloud provider (either from env or from the incoming payload for bootstrapping)
-  let activeCloud = getActiveProvider();
-  
-  if (!activeCloud && (hintProvider === 'vercel' || hintProvider === 'netlify')) {
-    if (hintProvider === 'vercel') {
-      const vToken = variables.find(v => v.key === 'VERCEL_ACCESS_TOKEN')?.value;
-      const vProjectId = variables.find(v => v.key === 'VERCEL_PROJECT_ID')?.value;
-      const vTeamId = variables.find(v => v.key === 'VERCEL_TEAM_ID')?.value;
-      if (vToken && vProjectId) {
-        activeCloud = {
-          provider: 'vercel',
-          credentials: { token: vToken, projectId: vProjectId, teamId: vTeamId }
-        };
-      }
-    } else if (hintProvider === 'netlify') {
-      const nToken = variables.find(v => v.key === 'NETLIFY_AUTH_TOKEN')?.value;
-      const nSiteId = variables.find(v => v.key === 'NETLIFY_SITE_ID')?.value;
-      if (nToken && nSiteId) {
-        activeCloud = {
-          provider: 'netlify',
-          credentials: { token: nToken, siteId: nSiteId }
-        };
-      }
-    }
+  const envSnapshot: Record<string, string | undefined> = { ...process.env };
+  const normalizedVariables = normalizeAssignments(variables);
+  for (const variable of normalizedVariables) {
+    envSnapshot[variable.key] = variable.value;
   }
 
-  // Determine if we are running in a local/custom environment that should save to .env.local
-  // We only fallback to local save if we are explicitly in development OR if there is no cloud provider available/configured.
-  const isLocal = process.env.NODE_ENV === 'development' || !activeCloud;
+  const activeCloud = getActiveProvider() ?? buildActiveCloudFromHint(hintProvider, envSnapshot);
 
-  if (isLocal) {
-    try {
-      const envPath = path.resolve(process.cwd(), '.env.local');
-      let content = '';
-      if (fs.existsSync(envPath)) {
-        content = fs.readFileSync(envPath, 'utf8');
-      }
+  const inferredOwnerVariables = await inferOwnerEmailAssignments(envSnapshot);
+  const backupVariables = normalizeAssignments([...normalizedVariables, ...inferredOwnerVariables]);
+  const { runtime: runtimeVariables } = splitRuntimeAndMetadata(backupVariables);
+  const envPath = path.resolve(process.cwd(), '.env.local');
 
-      const lines = content.split(/\r?\n/);
-      
-      for (const { key, value } of variables) {
-        let found = false;
-        const escapedValue = value.replace(/"/g, '\\"');
-        const targetLine = `${key}="${escapedValue}"`;
-
-        for (let i = 0; i < lines.length; i++) {
-          const match = lines[i].match(/^\s*([A-Za-z0-9_]+)\s*=/);
-          if (match && match[1] === key) {
-            lines[i] = targetLine;
-            found = true;
-            break;
-          }
-        }
-
-        if (!found) {
-          lines.push(targetLine);
-        }
-      }
-
-      fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
-
-      return NextResponse.json({
-        saved: variables.length,
-        failed: 0,
-        errors: [],
-        deployment: null,
-        message: process.env.NODE_ENV === 'development' 
-          ? 'Variables guardadas localmente en .env.local. Por favor reinicia tu servidor de desarrollo para aplicar los cambios.'
-          : 'Variables guardadas en .env.local. Por favor reinicia el contenedor o proceso del servidor manualmente para aplicar los cambios.'
-      });
-    } catch (err: any) {
-      return NextResponse.json({
-        error: `Error al guardar localmente en .env.local: ${err.message}`
-      }, { status: 500 });
-    }
-  }
-
-  // (If activeCloud is still null here, isLocal would have been true and we would have returned early above,
-  // except if process.env.NODE_ENV === 'development' and they provided activeCloud. Wait, if development and they provide cloud creds,
-  // we still save locally above. If they are in production and no activeCloud, they get the local custom deploy logic.)
-  
-  if (!activeCloud) {
+  try {
+    await writeEnvFile(envPath, backupVariables);
+    applyAssignmentsToProcessEnv(backupVariables);
+  } catch (err: any) {
     return NextResponse.json({
-      error: 'Debe configurar las credenciales del proveedor cloud (Vercel o Netlify) en las variables de entorno de producción una única vez.',
-    }, { status: 503 });
+      error: `Error al guardar localmente en .env.local: ${err.message}`,
+    }, { status: 500 });
+  }
+
+  if (process.env.NODE_ENV === 'development' || !activeCloud) {
+    return NextResponse.json({
+      saved: backupVariables.length,
+      failed: 0,
+      errors: [],
+      deployment: null,
+      resolvedVariables: inferredOwnerVariables,
+      message: makeLocalMessage(),
+    } satisfies SaveResponse);
   }
 
   const { provider, credentials } = activeCloud;
   const deployer = getDeployer(provider);
-  const result = await deployer.injectEnv(credentials, variables);
+  let result: { saved: number; failed: number; errors: string[] } = {
+    saved: 0,
+    failed: runtimeVariables.length,
+    errors: [],
+  };
 
-  if (result.errors.length > 0 && result.saved === 0) {
-    return NextResponse.json({ error: result.errors.join(', ') }, { status: 502 });
+  if (runtimeVariables.length > 0) {
+    try {
+      result = await deployer.injectEnv(credentials, runtimeVariables);
+    } catch (err: any) {
+      result = {
+        saved: 0,
+        failed: runtimeVariables.length,
+        errors: [err?.message ?? String(err)],
+      };
+    }
   }
 
-  if (!redeploy) {
+  const warning = result.errors.length > 0
+    ? `Respaldo local guardado en .env.local; la sincronización remota tuvo incidencias: ${result.errors.join(', ')}`
+    : runtimeVariables.length === 0
+      ? 'Solo se guardaron metadatos locales; no se ejecutó sincronización remota.'
+      : undefined;
+
+  if (!redeploy || runtimeVariables.length === 0 || result.saved === 0) {
     return NextResponse.json({
-      saved: result.saved,
+      saved: backupVariables.length,
       failed: result.failed,
       errors: result.errors,
       deployment: null,
-    });
+      warning,
+      resolvedVariables: inferredOwnerVariables,
+    } satisfies SaveResponse);
   }
 
   let deployment = null;
@@ -128,18 +188,23 @@ export async function POST(req: NextRequest) {
     deployment = await deployer.redeploy(credentials);
   } catch (err: any) {
     return NextResponse.json({
-      saved: result.saved,
+      saved: backupVariables.length,
       failed: result.failed,
       errors: result.errors,
       deployment: null,
-      warning: `Variables guardadas, pero el redespliegue falló: ${err.message}`,
-    });
+      warning: warning
+        ? `${warning}. Adicionalmente, el redespliegue falló: ${err.message}`
+        : `Variables guardadas, pero el redespliegue falló: ${err.message}`,
+      resolvedVariables: inferredOwnerVariables,
+    } satisfies SaveResponse);
   }
 
   return NextResponse.json({
-    saved: result.saved,
+    saved: backupVariables.length,
     failed: result.failed,
     errors: result.errors,
     deployment,
-  });
+    warning,
+    resolvedVariables: inferredOwnerVariables,
+  } satisfies SaveResponse);
 }

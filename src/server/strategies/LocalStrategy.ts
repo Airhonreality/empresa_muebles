@@ -51,39 +51,41 @@ export class LocalStrategy implements AgnosticBridge {
     return path.join(this.dbDir, `${namespace}.json`);
   }
 
-  private sanitizeData(namespace: string, data: any): DataItem[] {
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-      if (data[namespace] && Array.isArray(data[namespace])) {
-        return data[namespace];
-      }
+  private parseDataStrict(namespace: string, data: unknown): DataItem[] {
+    if (Array.isArray(data)) return data as DataItem[];
+    if (data && typeof data === 'object') {
+      const wrapped = (data as Record<string, unknown>)[namespace];
+      if (Array.isArray(wrapped)) return wrapped as DataItem[];
     }
-    return Array.isArray(data) ? data : [];
+    throw new Error(
+      `[LocalStrategy] Invalid JSON shape for namespace "${namespace}": expected an array.`,
+    );
   }
 
   // ─── CRUD OPERATIONS ───────────────────────────────────────────────────────
 
   async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
-      const filePath = this.getFilePath(namespace);
-      try {
-        const raw = (await fs.readFile(filePath, 'utf-8')).replace(/^﻿/, '');
-        const items = this.sanitizeData(namespace, JSON.parse(raw));
-
-        if (query?.where) {
-          return items.filter(item => {
-            return Object.entries(query.where!).every(([k, v]) => {
-              return (k === 'id' && item.id === v) || item.data?.[k] === v || item[k] === v;
-            });
-          });
-        }
-
-        return items;
-      } catch {
-        return [];
-      }
+      return await this.readStrict(namespace, query);
     } catch {
       return [];
     }
+  }
+
+  async readStrict(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
+    const filePath = this.getFilePath(namespace);
+    const raw = (await fs.readFile(filePath, 'utf-8')).replace(/^﻿/, '');
+    const items = this.parseDataStrict(namespace, JSON.parse(raw));
+
+    if (query?.where) {
+      return items.filter(item => {
+        return Object.entries(query.where!).every(([k, v]) => {
+          return (k === 'id' && item.id === v) || item.data?.[k] === v || item[k] === v;
+        });
+      });
+    }
+
+    return items;
   }
 
   async write(namespace: string, record: Partial<DataItem> & { data: Record<string, unknown> }): Promise<DataItem> {

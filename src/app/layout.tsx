@@ -67,8 +67,6 @@ export default async function RootLayout({
     // Keep the local strategy fallback.
   }
 
-  const sysConfig = (vaultData?.["system_config"]?.[0]?.data ?? {}) as Record<string, unknown>;
-  const appName = (sysConfig["app_name"] as string | undefined) ?? "Agnostic System";
   const commercialConfig = readCommercialConfig(vaultData["configuracion_comercial"] as any);
   const organizationSchema = buildOrganizationSchema(commercialConfig);
   const gaMeasurementId = isPublicSite ? getGoogleAnalyticsMeasurementId() : '';
@@ -109,7 +107,6 @@ export default async function RootLayout({
             />
           </>
         )}
-        <title>{appName}</title>
       </head>
       <body className="antialiased">
         <AppProvider initialData={vaultData}>

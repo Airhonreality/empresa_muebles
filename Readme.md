@@ -114,14 +114,48 @@ Request
 
 ## Storage Strategies
 
-Strategies are selected by deployment environment variables, not by runtime tenant selection.
+Strategies are selected by deployment environment variables, not by runtime tenant selection. `AGNOSTIC_STORAGE_STRATEGY` can force the active strategy explicitly.
 
 | Env vars | Strategy | Use case |
 |----------|----------|----------|
-| none | `local` | Development JSON files in `storage/db/` |
-| `GITHUB_REPO` | `github` | Git-backed JSON files in `storage/db/` |
-| `DATABASE_URL` | `postgres` | Neon, Supabase Postgres, Railway, Render |
-| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | `supabase` | Legacy Supabase REST strategy |
+| `AGNOSTIC_STORAGE_STRATEGY=local` | `local` | Development JSON files in `storage/db/`, even if `DATABASE_URL` exists |
+| `AGNOSTIC_STORAGE_STRATEGY=github` | `github` | Git-backed JSON files in `storage/db/` |
+| `AGNOSTIC_STORAGE_STRATEGY=postgres` | `postgres` | Neon, Supabase Postgres, Railway, Render |
+| `AGNOSTIC_STORAGE_STRATEGY=supabase` | `supabase` | Legacy Supabase REST strategy |
+| none | `local` | Fallback when no data strategy vars are configured |
+
+## Definition Lifecycle
+
+Schemas, routes, and zaps remain the agnostic grammar of the engine. Their
+formats do not change, but production may consume them as one coherent
+revision instead of three independently mutable namespaces.
+
+```text
+schema_definitions + page_routes + scripts
+  -> validate
+  -> content-addressed revision
+  -> compare-and-set activation
+  -> runtime reads one active revision
+```
+
+`AGNOSTIC_DEFINITION_MODE=legacy|shadow|revision` controls this lifecycle
+independently from `AGNOSTIC_STORAGE_STRATEGY`. Existing forks default to
+`legacy`; migration is explicit and reversible. The adapters remain neutral:
+filesystem, Git, Postgres, and Supabase can all store definition revisions.
+
+Operational commands:
+
+```bash
+npm run definitions -- plan
+npm run definitions -- apply -- --expected none --yes
+npm run definitions -- status
+npm run definitions -- export -- --output storage/definition-revision.json
+```
+
+In `revision` mode, builds require a tracked `AGNOSTIC_DEFINITION_SNAPSHOT`
+and both build and runtime require the same `AGNOSTIC_DEFINITION_REVISION`.
+This prevents a deployment compiled against revision A from serving revision B.
+The seed explicitly tracks `storage/definition-revision.json` for this purpose.
 
 ## Receiving Engine Updates
 
