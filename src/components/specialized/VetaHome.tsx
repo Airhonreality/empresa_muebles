@@ -34,7 +34,7 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
   useGclidCapture();
   const [embudoOpen, setEmbudoOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SpaceCategoryId>('todos');
-  const heroNarrative = homeHeroNarrative();
+  const heroNarrative = homeHeroNarrative(publicContent.commercial_config);
   const spaceCatalog = useMemo(
     () => buildSpaceCatalog(publicContent.spaces.map((space) => ({
       data: {

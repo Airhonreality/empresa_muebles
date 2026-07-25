@@ -27,6 +27,34 @@ interface ProjectData {
 
 const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 
+// Home hero images
+const VETADEORO_HOME_IMAGES = [
+  {
+    titulo: 'Hero Cocina Moderna',
+    url: 'https://static.wixstatic.com/media/30a82e_a38dec01c7af4265b024b55182045678~mv2.jpg/v1/fit/w_1600,h_900,q_90,enc_avif,quality_auto/30a82e_a38dec01c7af4265b024b55182045678~mv2.jpg',
+    tipo: 'hero',
+    nombre_archivo: 'vetadeoro-home-hero-cocina.jpg'
+  },
+  {
+    titulo: 'Hero Principal Christian Mackie',
+    url: 'https://static.wixstatic.com/media/nsplsh_1fe2db2680af4ef2855417b016bad5e3~mv2.jpg/v1/fit/w_1600,h_900,q_90,enc_avif,quality_auto/nsplsh_1fe2db2680af4ef2855417b016bad5e3~mv2.jpg',
+    tipo: 'hero',
+    nombre_archivo: 'vetadeoro-home-hero-principal.jpg'
+  },
+  {
+    titulo: 'Diseño de Espacios',
+    url: 'https://static.wixstatic.com/media/30a82e_8e259051e504451891d7f50382e830f6~mv2.jpg/v1/fit/w_1200,h_800,q_90,enc_avif,quality_auto/30a82e_8e259051e504451891d7f50382e830f6~mv2.jpg',
+    tipo: 'seccion',
+    nombre_archivo: 'vetadeoro-home-diseno-espacios.jpg'
+  },
+  {
+    titulo: 'Cocina Moderna - Detalles',
+    url: 'https://static.wixstatic.com/media/30a82e_17aa88df9efc43819ef73fb487d6b4be~mv2.jpg/v1/fit/w_1200,h_800,q_90,enc_avif,quality_auto/30a82e_17aa88df9efc43819ef73fb487d6b4be~mv2.jpg',
+    tipo: 'seccion',
+    nombre_archivo: 'vetadeoro-home-cocina-detalles.jpg'
+  }
+];
+
 // Proyectos de vetadeoro.co/portafolio (extraído de scraping real)
 const VETADEORO_PROJECTS: ProjectData[] = [
   {
@@ -160,17 +188,17 @@ async function generateProjectId(titulo: string, categoria: string): Promise<str
   return `vetadeoro-${categoria}-${slug}`;
 }
 
-async function clonePortfolio(): Promise<void> {
-  console.log('\n🎯 Clonando Veta de Oro Portfolio...\n');
+async function cloneVetadeoro(): Promise<void> {
+  console.log('\n🎯 Clonando Veta de Oro (Home + Cocinas + Portfolio)...\n');
 
   await fs.mkdir(LOG_DIR, { recursive: true });
   await fs.mkdir(DB_DIR, { recursive: true });
 
   const auditLog: string[] = [
-    `# Clone Veta de Oro Portfolio`,
+    `# Clone Veta de Oro - Home + Cocinas + Portfolio`,
     `**Fecha:** ${new Date().toISOString()}`,
-    `**Fuente:** https://vetadeoro.co/portafolio`,
-    `**Destino:** R2 + storage/db/`,
+    `**Fuentes:** https://vetadeoro.co (home, cocinas, portafolio)`,
+    `**Destino:** storage/assets/ + storage/db/`,
     '',
     '## Resumen de Operación',
     ''
@@ -178,8 +206,52 @@ async function clonePortfolio(): Promise<void> {
 
   const portfolioRecords: any[] = [];
   const imageRecords: any[] = [];
+  const configRecords: any[] = [];
   let successCount = 0;
   let failCount = 0;
+
+  // FASE 1: Clonar Home images
+  console.log('📸 FASE 1: Clonando imágenes del Home...\n');
+  auditLog.push('## Fase 1: Home Images');
+  auditLog.push('');
+
+  let heroImageUrl = '';
+  for (const homeImg of VETADEORO_HOME_IMAGES) {
+    try {
+      const { buffer, mimeType } = await downloadImage(homeImg.url, homeImg.nombre_archivo);
+      const assetUrl = await saveAsset(buffer, homeImg.nombre_archivo);
+      successCount++;
+
+      if (homeImg.tipo === 'hero') {
+        // Guardar en configuracion_comercial para reutilizar
+        if (!heroImageUrl) heroImageUrl = assetUrl; // Primera imagen hero
+
+        configRecords.push({
+          id: `config-home-${homeImg.nombre_archivo.replace(/\./g, '-')}`,
+          context: 'configuracion_comercial',
+          data: {
+            llave: `home_${homeImg.tipo}_url`,
+            valor: assetUrl,
+            fuente: 'vetadeoro.co'
+          },
+          updated_at: new Date().toISOString()
+        });
+      }
+
+      console.log(`  ✅ ${homeImg.titulo} → ${assetUrl}`);
+      auditLog.push(`- ${homeImg.titulo}: ${assetUrl}`);
+    } catch (error) {
+      failCount++;
+      console.error(`  ❌ ${homeImg.titulo} falló: ${error instanceof Error ? error.message : String(error)}`);
+      auditLog.push(`- ${homeImg.titulo}: ERROR`);
+    }
+  }
+  auditLog.push('');
+
+  // FASE 2: Clonar Portfolio
+  console.log('📸 FASE 2: Clonando imágenes del Portfolio...\n');
+  auditLog.push('## Fase 2: Portfolio Images');
+  auditLog.push('');
 
   for (let idx = 0; idx < VETADEORO_PROJECTS.length; idx++) {
     const project = VETADEORO_PROJECTS[idx];
@@ -250,9 +322,11 @@ async function clonePortfolio(): Promise<void> {
 
   const portfolioPath = path.join(DB_DIR, 'portfolio_publico.json');
   const imagePath = path.join(DB_DIR, 'imagenes_portfolio.json');
+  const configPath = path.join(DB_DIR, 'configuracion_comercial.json');
 
   let existingPortfolio: any[] = [];
   let existingImages: any[] = [];
+  let existingConfig: any[] = [];
 
   try {
     const portfolioContent = await fs.readFile(portfolioPath, 'utf-8');
@@ -268,6 +342,13 @@ async function clonePortfolio(): Promise<void> {
     console.log('  ℹ️  imagenes_portfolio.json no existe, creando nuevo');
   }
 
+  try {
+    const configContent = await fs.readFile(configPath, 'utf-8');
+    existingConfig = JSON.parse(configContent);
+  } catch {
+    console.log('  ℹ️  configuracion_comercial.json no existe, creando nuevo');
+  }
+
   // Merge (no duplicar)
   const mergedPortfolio = [
     ...portfolioRecords,
@@ -279,11 +360,25 @@ async function clonePortfolio(): Promise<void> {
     ...existingImages.filter(rec => !imageRecords.some(i => i.id === rec.id))
   ];
 
+  const mergedConfig = [
+    ...configRecords,
+    ...existingConfig.filter(rec => !configRecords.some(c => c.id === rec.id))
+  ];
+
   await fs.writeFile(portfolioPath, JSON.stringify(mergedPortfolio, null, 2));
   await fs.writeFile(imagePath, JSON.stringify(mergedImages, null, 2));
+  await fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 2));
 
   console.log(`  ✅ portfolio_publico.json (${mergedPortfolio.length} registros)`);
   console.log(`  ✅ imagenes_portfolio.json (${mergedImages.length} registros)`);
+  console.log(`  ✅ configuracion_comercial.json (${mergedConfig.length} registros)`);
+
+  // Info para actualizar Home
+  auditLog.push('');
+  auditLog.push('## Configuración para el nuevo Home');
+  auditLog.push(`- **Hero principal:** ${heroImageUrl}`);
+  auditLog.push(`- **Guardado en:** configuracion_comercial (llave: home_hero_url)`);
+  auditLog.push('- **Próximo paso:** Actualizar VetaHome.tsx para usar esta URL');
 
   // Audit log
   auditLog.push('## Estadísticas');
@@ -300,6 +395,7 @@ async function clonePortfolio(): Promise<void> {
   auditLog.push('## Archivos Modificados');
   auditLog.push(`- \`storage/db/portfolio_publico.json\` (+${portfolioRecords.length} registros)`);
   auditLog.push(`- \`storage/db/imagenes_portfolio.json\` (+${imageRecords.length} registros)`);
+  auditLog.push(`- \`storage/db/configuracion_comercial.json\` (+${configRecords.length} registros)`);
   auditLog.push(`- \`storage/assets/vetadeoro/\` (+${successCount} imágenes)`);
   auditLog.push('');
   auditLog.push('---');
@@ -320,7 +416,7 @@ async function clonePortfolio(): Promise<void> {
   console.log(`   5. git commit -m "feat: clone Veta de Oro portfolio to R2"`);
 }
 
-clonePortfolio().catch(error => {
+cloneVetadeoro().catch(error => {
   console.error('❌ Error:', error);
   process.exit(1);
 });

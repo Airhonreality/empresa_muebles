@@ -87,8 +87,18 @@ export function buildHomePortfolioCards(
   });
 }
 
-export function homeHeroNarrative() {
-  return MOCK_CARDS[0];
+export function homeHeroNarrative(commercialConfig?: Array<{ data?: { llave?: string; valor?: string } }>) {
+  const heroCard = { ...MOCK_CARDS[0] };
+
+  // Buscar URL de hero en configuracion_comercial
+  if (commercialConfig?.length) {
+    const heroUrl = commercialConfig.find((rec) => rec.data?.llave === 'home_hero_url')?.data?.valor;
+    if (heroUrl && typeof heroUrl === 'string') {
+      heroCard.imageUrl = heroUrl;
+    }
+  }
+
+  return heroCard;
 }
 
 export type SpaceCategoryId = 'todos' | 'cocinas' | 'cavas' | 'habitaciones' | 'consolas';

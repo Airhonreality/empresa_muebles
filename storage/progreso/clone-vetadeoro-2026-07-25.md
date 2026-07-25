@@ -1,9 +1,18 @@
-# Clone Veta de Oro Portfolio
-**Fecha:** 2026-07-25T00:53:10.337Z
-**Fuente:** https://vetadeoro.co/portafolio
-**Destino:** R2 + storage/db/
+# Clone Veta de Oro - Home + Cocinas + Portfolio
+**Fecha:** 2026-07-25T02:01:41.622Z
+**Fuentes:** https://vetadeoro.co (home, cocinas, portafolio)
+**Destino:** storage/assets/ + storage/db/
 
 ## Resumen de Operación
+
+## Fase 1: Home Images
+
+- Hero Cocina Moderna: /api/assets/vetadeoro/vetadeoro-home-hero-cocina.jpg
+- Hero Principal Christian Mackie: /api/assets/vetadeoro/vetadeoro-home-hero-principal.jpg
+- Diseño de Espacios: /api/assets/vetadeoro/vetadeoro-home-diseno-espacios.jpg
+- Cocina Moderna - Detalles: /api/assets/vetadeoro/vetadeoro-home-cocina-detalles.jpg
+
+## Fase 2: Portfolio Images
 
 ### Proyecto 1: Dormitorio moderno con cama flotante
 - **ID:** vetadeoro-dormitorios-dormitorio-moderno-con-cama-flotante
@@ -45,11 +54,16 @@
   - Imagen 1: /api/assets/vetadeoro/vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado-img-1.jpg
   - Imagen 2: /api/assets/vetadeoro/vetadeoro-cocinas-cocina-integral-con-vidrio-blanco-templado-img-2.jpg
 
+
+## Configuración para el nuevo Home
+- **Hero principal:** /api/assets/vetadeoro/vetadeoro-home-hero-cocina.jpg
+- **Guardado en:** configuracion_comercial (llave: home_hero_url)
+- **Próximo paso:** Actualizar VetaHome.tsx para usar esta URL
 ## Estadísticas
 - **Proyectos procesados:** 5
-- **Imágenes exitosas:** 9
+- **Imágenes exitosas:** 13
 - **Imágenes fallidas:** 1
-- **Total imágenes:** 10
+- **Total imágenes:** 14
 
 ## Almacenamiento
 - **Local (Desarrollo):** `storage/assets/vetadeoro/`
@@ -59,7 +73,8 @@
 ## Archivos Modificados
 - `storage/db/portfolio_publico.json` (+5 registros)
 - `storage/db/imagenes_portfolio.json` (+9 registros)
-- `storage/assets/vetadeoro/` (+9 imágenes)
+- `storage/db/configuracion_comercial.json` (+2 registros)
+- `storage/assets/vetadeoro/` (+13 imágenes)
 
 ---
 *Generado automáticamente por scripts/clone-vetadeoro.ts*
