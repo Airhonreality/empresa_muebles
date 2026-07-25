@@ -1,2 +1,27 @@
 * text=auto eol=lf
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Fork-owned layers — protegidas del sync de engine (merge driver "ours")
+# ──────────────────────────────────────────────────────────────────────────────
+# Cuando un fork ejecuta `git merge upstream/<branch>` (scripts/admin/
+# sync-workspaces.ps1), estas rutas conservan SIEMPRE la versión del fork.
+# El engine nunca las pisa. Esto elimina los conflictos de estado (adapters
+# instalados, bloques del fork, schemas generados, storage del proyecto).
+#
+# El driver "ours" se registra en el .git/config de cada workspace con:
+#     git config merge.ours.driver true
+# (lo hace automáticamente sync-workspaces.ps1 antes de fusionar).
+#
+# Ownership: ver CLAUDE.md → "Ownership Boundaries".
+
+# Contexto del proyecto (datos, progreso, docs auto-generados)
+storage/**                     merge=ours
+
+# Tipos generados desde los schemas del fork
+src/generated/**               merge=ours
+
+# Componentes custom del fork
+src/components/specialized/**   merge=ours
+
+# Bridge de configuración del fork (bloques + zona de adapters instalados)
+agnostic.config.ts             merge=ours
