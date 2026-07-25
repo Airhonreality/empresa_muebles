@@ -26,18 +26,14 @@ export default function VetaHeader({ configRecords = [] }: { configRecords?: Pub
       <header className="veta-glass-navbar-light sticky top-0 z-50 w-full rounded-none border-x-0 border-t-0 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
         <div className="mx-auto flex h-14 max-w-none items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3 select-none">
-            {logoPositive ? (
-              <img src={logoPositive} alt={brandLabel} className="h-7 w-auto object-contain sm:h-8" />
-            ) : (
-              <div className="flex flex-col">
-                <span className="veta-heading text-[0.95rem] font-semibold tracking-[0.08em] uppercase text-[hsl(var(--veta-text-carbon))] sm:text-[1rem]">
-                  {brandLabel}
-                </span>
-                <span className="text-[8px] uppercase tracking-[0.32em] text-[hsl(var(--veta-text-stone))] sm:text-[9px] sm:tracking-[0.42em]">
-                  estudio de carpintería
-                </span>
-              </div>
-            )}
+            <div className="flex flex-col">
+              <span className="veta-heading text-[0.95rem] font-semibold tracking-[0.08em] uppercase text-[hsl(var(--veta-text-carbon))] sm:text-[1rem]">
+                {brandLabel}
+              </span>
+              <span className="text-[8px] uppercase tracking-[0.32em] text-[hsl(var(--veta-text-stone))] sm:text-[9px] sm:tracking-[0.42em]">
+                estudio de carpintería
+              </span>
+            </div>
           </Link>
 
           <nav className="hidden items-center gap-6 lg:flex">

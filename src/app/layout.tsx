@@ -21,8 +21,11 @@ import { sessionOptions, type SessionData } from "@/lib/agnostic/session";
 import { getPublicHomeContent } from '@/server/public-site-data';
 
 export const metadata: Metadata = {
-  title: "Agnostic System",
-  description: "A professional, storage-based agnostic framework",
+  title: "Veta Dorada | Carpintería Arquitectónica",
+  description: "Diseñamos, fabricamos e instalamos espacios integrales con tecnología 3D y materiales premium.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-outfit", display: "swap" });
