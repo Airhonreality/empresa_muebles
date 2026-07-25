@@ -139,6 +139,11 @@ foreach ($ws in $registry.workspaces) {
         continue
     }
 
+    # Registra el merge driver 'ours' para las capas fork-owned (ver .gitattributes).
+    # Sin esto, .gitattributes referencia un driver inexistente y el merge conflictua
+    # igual en storage/, src/generated/, specialized/ y agnostic.config.ts.
+    git config merge.ours.driver true
+
     Write-Step "$behind commit(s) nuevos. Fusionando..."
     $mergeOutput = git merge "upstream/$seedBranch" --no-ff -m "chore: sync engine ($seedBranch)" 2>&1
     if ($LASTEXITCODE -ne 0) {
