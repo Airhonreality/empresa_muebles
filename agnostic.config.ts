@@ -58,7 +58,8 @@ export default defineConfig({
 
   integrations: {
     // agno:adapters:start — maintained by `agno install <id>` / `agno remove-adapter <id>` (scripts/agno-adapters.ts)
-    notion: () => import('./src/integrations/notion'),
+    // Un fork virgen no instala adapters. `src/integrations/notion/` queda como
+    // plantilla de referencia (disponible); instálala con: agno install notion
     // agno:adapters:end
   },
 })

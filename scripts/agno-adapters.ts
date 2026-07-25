@@ -6,31 +6,16 @@ import type { AdapterManifest } from '@agnostic/core';
 
 const INTEGRATIONS_DIR = 'src/integrations';
 const CONFIG_FILE = 'agnostic.config.ts';
-const SERVER_REGISTRY_FILE = 'src/lib/integrations/adapters.server.ts';
 
 const CONFIG_MARKER_START = '// agno:adapters:start';
 const CONFIG_MARKER_END = '// agno:adapters:end';
-const IMPORTS_MARKER_END = '// agno:adapter-imports:end';
-const REGISTRY_MARKER_END = '// agno:adapter-registry:end';
 
 export type AvailableAdapter = { id: string; manifest: AdapterManifest };
 
-// ── convenciones de nombre ───────────────────────────────────────────────
-// clase servidor: `${PascalCase(id)}Adapter`, exportada desde src/integrations/<id>/adapter.ts
-// variable manifest: `${camelCase(id)}Manifest`, exportada como `manifest` desde manifest.ts
-
-function pascalCase(id: string): string {
-  return id.split(/[_-]/).filter(Boolean).map(part => part[0].toUpperCase() + part.slice(1)).join('');
-}
-
-function className(id: string): string {
-  return `${pascalCase(id)}Adapter`;
-}
-
-function manifestVarName(id: string): string {
-  const pascal = pascalCase(id);
-  return `${pascal[0].toLowerCase()}${pascal.slice(1)}Manifest`;
-}
+// El registro instalado vive solo en agnostic.config.ts (capa fork). El servidor
+// resuelve el código por convención en tiempo de ejecución (src/lib/integrations/
+// adapters.server.ts): <id>/adapter.ts → `${PascalCase(id)}Adapter`, manifest.ts →
+// `manifest`. Por eso el CLI ya no inyecta imports/registro en ningún archivo de engine.
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -183,24 +168,6 @@ async function mutateConfigFile(id: string, action: 'install' | 'remove'): Promi
   await fs.writeFile(filePath, text, 'utf8');
 }
 
-async function mutateServerRegistryFile(id: string, action: 'install' | 'remove'): Promise<void> {
-  const filePath = storage.resolve(SERVER_REGISTRY_FILE);
-  let text = await fs.readFile(filePath, 'utf8');
-  const cls = className(id);
-  const mVar = manifestVarName(id);
-
-  if (action === 'install') {
-    text = insertBeforeMarker(text, IMPORTS_MARKER_END, `import { ${cls} } from '@/integrations/${id}/adapter';`);
-    text = insertBeforeMarker(text, IMPORTS_MARKER_END, `import { manifest as ${mVar} } from '@/integrations/${id}/manifest';`);
-    text = insertBeforeMarker(text, REGISTRY_MARKER_END, `${id}: { manifest: ${mVar}, create: creds => new ${cls}(creds) },`);
-  } else {
-    text = removeLinesMatching(text, line =>
-      line.includes(`@/integrations/${id}/adapter'`) || line.includes(`@/integrations/${id}/manifest'`));
-    text = removeLinesMatching(text, line => new RegExp(`^\\s*${escapeRegExp(id)}:\\s*\\{\\s*manifest:`).test(line));
-  }
-  await fs.writeFile(filePath, text, 'utf8');
-}
-
 // ── list-adapters ─────────────────────────────────────────────────────────
 
 export async function buildListAdaptersResult(): Promise<CliResult> {
@@ -312,9 +279,8 @@ export async function applyInstallAdapter(id: string, options: { dryRun?: boolea
     return;
   }
 
-  const backup = await storage.createBackup([CONFIG_FILE, SERVER_REGISTRY_FILE], `install-adapter-${id}`);
+  const backup = await storage.createBackup([CONFIG_FILE], `install-adapter-${id}`);
   await mutateConfigFile(id, 'install');
-  await mutateServerRegistryFile(id, 'install');
 
   printCliResult(createCliResult({
     command: 'install',
@@ -324,7 +290,7 @@ export async function applyInstallAdapter(id: string, options: { dryRun?: boolea
       {
         level: 'info',
         code: 'AGNO_ADAPTER_INSTALLED',
-        message: `Adapter '${id}' registrado en ${CONFIG_FILE} y ${SERVER_REGISTRY_FILE}.`,
+        message: `Adapter '${id}' registrado en ${CONFIG_FILE}. El servidor lo resuelve por convención desde ${INTEGRATIONS_DIR}/${id}/.`,
         suggestion: 'Verifica sus env vars requeridas y ejecuta list-adapters para confirmar.',
       },
     ],
@@ -379,9 +345,8 @@ export async function applyRemoveAdapter(id: string, options: { dryRun?: boolean
     return;
   }
 
-  const backup = await storage.createBackup([CONFIG_FILE, SERVER_REGISTRY_FILE], `remove-adapter-${id}`);
+  const backup = await storage.createBackup([CONFIG_FILE], `remove-adapter-${id}`);
   await mutateConfigFile(id, 'remove');
-  await mutateServerRegistryFile(id, 'remove');
 
   printCliResult(createCliResult({
     command: 'remove-adapter',
@@ -389,7 +354,7 @@ export async function applyRemoveAdapter(id: string, options: { dryRun?: boolean
     findings: [{
       level: 'info',
       code: 'AGNO_ADAPTER_REMOVED',
-      message: `Adapter '${id}' des-registrado de ${CONFIG_FILE} y ${SERVER_REGISTRY_FILE}. El codigo fuente en ${INTEGRATIONS_DIR}/${id}/ no se borro.`,
+      message: `Adapter '${id}' des-registrado de ${CONFIG_FILE}. El codigo fuente en ${INTEGRATIONS_DIR}/${id}/ no se borro.`,
     }],
   }), options);
 }

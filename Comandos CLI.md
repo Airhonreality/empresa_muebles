@@ -214,7 +214,7 @@ No renombra fields ni relaciones como `cotizacion_id -> proyecto_id`; eso requie
 
 ## Adapters
 
-Un adapter es una integracion instalable con dos caras: cliente (`src/integrations/<id>/index.ts` + `ConfigPanel.tsx`, registrado en `agnostic.config.ts` bajo `integrations`) y servidor (`src/integrations/<id>/adapter.ts`, resuelto por `src/lib/integrations/adapters.server.ts`). `src/integrations/notion/` es el ejemplo de referencia; copia su forma para construir uno nuevo.
+Un adapter es una integracion instalable con dos caras: cliente (`src/integrations/<id>/index.ts` + `ConfigPanel.tsx`) y servidor (`src/integrations/<id>/adapter.ts` + `manifest.ts`). Ambas se activan registrando el id en `agnostic.config.ts` bajo `integrations` (unica fuente de verdad, capa fork). El servidor (`src/lib/integrations/adapters.server.ts`) resuelve el codigo por convencion en runtime: `adapter.ts` exporta `${PascalCase(id)}Adapter` (o default), `manifest.ts` exporta `manifest`. Ningun archivo de engine lleva estado de adapters. `src/integrations/notion/` es el ejemplo de referencia; copia su forma para construir uno nuevo.
 
 ```text
 list-adapters [--json]                              disponibles + instalados
@@ -223,9 +223,9 @@ install <id> [--dry] [--yes] [--json]                registra el adapter (ciclo 
 remove-adapter <id> [--dry] [--yes] [--json]          des-registra el adapter (ciclo gobernado)
 ```
 
-"Disponible" = existe `src/integrations/<id>/manifest.ts` en disco. "Instalado" = el id aparece en `agnostic.config.ts`. `install`/`remove-adapter` **no** crean ni borran la carpeta del adapter, solo la registran/des-registran en `agnostic.config.ts` y `src/lib/integrations/adapters.server.ts`.
+"Disponible" = existe `src/integrations/<id>/manifest.ts` en disco. "Instalado" = el id aparece en `agnostic.config.ts`. `install`/`remove-adapter` **no** crean ni borran la carpeta del adapter, solo la registran/des-registran en `agnostic.config.ts` (unica fuente de verdad). Un fork virgen arranca sin adapters instalados.
 
-Mismo ciclo que `refactor-schema`: `plan` (preview) -> `--dry` (preview, nunca escribe) -> sin `--yes` (plan + confirmacion requerida, no interactivo) -> `--yes` (backup automatico de ambos archivos en `storage/progreso/backups/`, luego escribe).
+Mismo ciclo que `refactor-schema`: `plan` (preview) -> `--dry` (preview, nunca escribe) -> sin `--yes` (plan + confirmacion requerida, no interactivo) -> `--yes` (backup automatico de `agnostic.config.ts` en `storage/progreso/backups/`, luego escribe).
 
 ### Manifest (`AdapterManifest`, `packages/core/src/adapter.ts`)
 
