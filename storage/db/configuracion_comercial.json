@@ -1,15 +1,5 @@
 [
   {
-    "id": "config-home-vetadeoro-home-hero-cocina-jpg",
-    "context": "configuracion_comercial",
-    "data": {
-      "llave": "home_hero_url",
-      "valor": "/api/assets/vetadeoro/vetadeoro-home-hero-cocina.jpg",
-      "fuente": "vetadeoro.co"
-    },
-    "updated_at": "2026-07-25T02:01:42.302Z"
-  },
-  {
     "id": "config-home-vetadeoro-home-hero-principal-jpg",
     "context": "configuracion_comercial",
     "data": {

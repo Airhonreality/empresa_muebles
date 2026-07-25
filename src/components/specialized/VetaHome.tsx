@@ -94,11 +94,6 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
         <div className="relative flex min-h-[calc(100svh-3.5rem)] w-full flex-col">
           <div className="flex flex-1 items-center">
             <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-4 py-6 text-center sm:px-6 lg:px-12 lg:py-10">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/12 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/90 backdrop-blur-md">
-                <SunMedium className="h-3.5 w-3.5 text-[hsl(var(--veta-gold-muted))]" />
-                <span>Luz &amp; biofilia</span>
-              </div>
-
               <h1 className="veta-heading mt-4 max-w-[30ch] text-[clamp(1.9rem,calc(1rem+2.1vw),3.85rem)] font-semibold leading-[0.9] tracking-[-0.04em] text-white">
                 <span className="block">Carpintería arquitectónica</span>
                 <span className="block">de alta precisión.</span>
