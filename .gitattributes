@@ -23,5 +23,9 @@ src/generated/**               merge=ours
 # Componentes custom del fork
 src/components/specialized/**   merge=ours
 
+# Código de producto del fork (SEO, sitio público "veta") — vive en src/lib pero
+# es 100% del fork. Stopgap hasta migrar el SEO a capa de datos (site_config).
+src/lib/veta/**                 merge=ours
+
 # Bridge de configuración del fork (bloques + zona de adapters instalados)
 agnostic.config.ts             merge=ours
