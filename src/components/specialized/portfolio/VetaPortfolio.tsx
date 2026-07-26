@@ -158,44 +158,45 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
   }, [galleryEntry, entries]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[hsl(var(--veta-bg-warm-paper))]">
-      <VetaHeader />
+    <div className="h-dvh grid grid-rows-[auto_1fr_auto] bg-[hsl(var(--veta-bg-warm-paper))]">
+      {/* Top: header + hero in a column */}
+      <div className="flex flex-col shrink-0">
+        <VetaHeader />
+        <section className="px-4 sm:px-8 lg:px-12 py-4 border-b border-[hsl(var(--veta-glass-light-border))]">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="veta-heading text-3xl font-semibold tracking-tight mb-2">Portafolio</h1>
+            <p className="text-sm text-[hsl(var(--veta-text-stone))] mb-4">
+              Proyectos realizados con materiales de calidad
+            </p>
+            <nav className="flex gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {categorias.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                    activeCategory === cat
+                      ? 'bg-[hsl(var(--veta-text-carbon))] text-white'
+                      : 'text-[hsl(var(--veta-text-stone))] border border-[hsl(var(--veta-glass-light-border))] hover:bg-white/70'
+                  }`}
+                >
+                  {categoriasLabels[cat]}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </section>
+      </div>
 
-      {/* Hero + category filter — static, outside scroll */}
-      <section className="pt-24 pb-5 px-4 sm:px-8 lg:px-12 border-b border-[hsl(var(--veta-glass-light-border))] shrink-0">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="veta-heading text-3xl font-semibold tracking-tight mb-2">Portafolio</h1>
-          <p className="text-sm text-[hsl(var(--veta-text-stone))] mb-5">
-            Proyectos realizados con materiales de calidad
-          </p>
-          <nav className="flex gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {categorias.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setActiveCategory(cat)}
-                className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
-                  activeCategory === cat
-                    ? 'bg-[hsl(var(--veta-text-carbon))] text-white'
-                    : 'text-[hsl(var(--veta-text-stone))] border border-[hsl(var(--veta-glass-light-border))] hover:bg-white/70'
-                }`}
-              >
-                {categoriasLabels[cat]}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </section>
-
-      {/* Scrollable area — flex-1 fills remaining space between header+hero and footer */}
+      {/* Scrollable snap area — 1fr = remaining dvh */}
       {filtered.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-sm text-[hsl(var(--veta-text-stone))]">
+        <div className="flex items-center justify-center text-sm text-[hsl(var(--veta-text-stone))]">
           No hay proyectos en esta categoría
         </div>
       ) : (
         <div
           ref={containerRef}
-          className="flex-1 min-h-0 overflow-y-auto snap-y snap-mandatory scroll-smooth"
+          className="overflow-y-auto snap-y snap-mandatory min-h-0"
         >
           {filtered.map((entry, index) => {
             const materials = entry.materiales_destacados
@@ -205,10 +206,10 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
             return (
               <section
                 key={entry.slug}
-                className="snap-start lg:h-full min-h-0 flex flex-col lg:flex-row"
+                className="snap-start h-full flex flex-col lg:flex-row min-h-0"
               >
                 {/* Gallery side — 65% */}
-                <div className="lg:w-[65%] lg:h-full min-h-0 p-3 lg:p-4 flex flex-col">
+                <div className="lg:w-[65%] lg:h-full p-3 lg:p-4 flex flex-col min-h-0">
                   <div className="flex-1 min-h-0">
                     <SmartImageGrid
                       images={entry.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion }))}
@@ -224,7 +225,7 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
                 </div>
 
                 {/* Info side — 35% */}
-                <div className="lg:w-[35%] px-6 py-6 lg:px-8 lg:py-10 lg:h-full lg:overflow-y-auto flex flex-col justify-center">
+                <div className="lg:w-[35%] lg:h-full px-6 py-6 lg:px-8 lg:py-10 lg:overflow-y-auto flex flex-col justify-center">
                   <span className="inline-block rounded-full bg-[hsl(var(--veta-gold-muted))]/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[hsl(var(--veta-gold-hover))] mb-3 self-start">
                     {categoriasLabels[entry.categoria_espacio] || entry.categoria_espacio}
                   </span>
@@ -271,6 +272,9 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
               </section>
             );
           })}
+
+          {/* Footer inside scroll, after all projects — no snap */}
+          <VetaFooter />
         </div>
       )}
 
@@ -287,8 +291,6 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
         }
         startIndex={galleryEntry?.startIdx ?? 0}
       />
-
-      <VetaFooter />
     </div>
   );
 }
