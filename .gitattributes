@@ -40,6 +40,9 @@ src/app/[[]...slug[]]/page.tsx      merge=ours
 # El fork mantiene su propia documentación de entorno (superset del engine).
 .env.example                        merge=ours
 
+# Config de rutas del fork (áreas protegidas/públicas). La llena el fork.
+agnostic.routing.ts                 merge=ours
+
 # El fork mantiene su propio .gitignore (superset con sus reglas de producto).
 .gitignore                          merge=ours
 

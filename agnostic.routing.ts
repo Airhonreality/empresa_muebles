@@ -27,8 +27,10 @@ export interface RoutingConfig {
 }
 
 export const routing: RoutingConfig = {
-  protectedPaths: [],
+  // Áreas privadas del fork (requieren sesión).
+  protectedPaths: ['/app', '/setup'],
   protectedApiPaths: [],
   publicPaths: [],
-  publicSharePaths: [],
+  // Propuestas públicas (sin login, modo SSR public-share).
+  publicSharePaths: ['/propuesta'],
 };
