@@ -2,14 +2,39 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { SESSION_COOKIE } from '@/lib/agnostic/session';
 
-const PROTECTED_PATHS = ['/schema', '/_data'];
-const PROTECTED_API_PATHS = ['/api/admin', '/api/engine', '/api/public-links', '/api/pulse'];
-const PUBLIC_PATHS    = ['/login', '/api/auth'];
+/**
+ * Route protection — engine defaults + fork additions via env vars.
+ * ─────────────────────────────────────────────────────────────────
+ * A fork adds its own protected/public/public-share prefixes through env vars
+ * (comma-separated) so it NEVER edits this engine file. Middleware runs on the
+ * edge runtime, so config comes from process.env (not storage/fs):
+ *
+ *   AGNOSTIC_PROTECTED_PATHS       e.g. "/app,/setup"
+ *   AGNOSTIC_PROTECTED_API_PATHS   e.g. "/api/billing"
+ *   AGNOSTIC_PUBLIC_PATHS          e.g. "/pricing"
+ *   AGNOSTIC_PUBLIC_SHARE_PATHS    e.g. "/propuesta"   (SSR public-share mode)
+ */
+const ENGINE_PROTECTED_PATHS = ['/schema', '/_data'];
+const ENGINE_PROTECTED_API_PATHS = ['/api/admin', '/api/engine', '/api/public-links', '/api/pulse'];
+const ENGINE_PUBLIC_PATHS = ['/login', '/api/auth'];
+const ENGINE_PUBLIC_SHARE_PATHS = ['/share'];
+
+function envPaths(key: string): string[] {
+  return (process.env[key] ?? '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
+}
+
+const PROTECTED_PATHS = [...ENGINE_PROTECTED_PATHS, ...envPaths('AGNOSTIC_PROTECTED_PATHS')];
+const PROTECTED_API_PATHS = [...ENGINE_PROTECTED_API_PATHS, ...envPaths('AGNOSTIC_PROTECTED_API_PATHS')];
+const PUBLIC_PATHS = [...ENGINE_PUBLIC_PATHS, ...envPaths('AGNOSTIC_PUBLIC_PATHS')];
+const PUBLIC_SHARE_PATHS = [...ENGINE_PUBLIC_SHARE_PATHS, ...envPaths('AGNOSTIC_PUBLIC_SHARE_PATHS')];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublicShare = pathname.startsWith('/share/') || pathname.startsWith('/propuesta/');
+  const isPublicShare = PUBLIC_SHARE_PATHS.some(p => pathname === p || pathname.startsWith(`${p}/`));
 
   if (isPublicShare) {
     const requestHeaders = new Headers(request.headers);
