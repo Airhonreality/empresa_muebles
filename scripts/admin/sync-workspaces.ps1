@@ -144,6 +144,16 @@ foreach ($ws in $registry.workspaces) {
     # igual en storage/, src/generated/, specialized/ y agnostic.config.ts.
     git config merge.ours.driver true
 
+    # Pre-flight: reporta drift de engine (archivos tocados por ambos lados,
+    # no protegidos por merge=ours) ANTES de fusionar. Solo informa, no bloquea.
+    $preflight = Join-Path $seedDir "scripts/sync-preflight.mjs"
+    if (Test-Path $preflight) {
+        $prevPref = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        node $preflight "upstream/$seedBranch"
+        $ErrorActionPreference = $prevPref
+    }
+
     # --no-renames: evita que la deteccion de renames de git empareje un
     # directorio de engine borrado con uno de producto del fork (falsos
     # conflictos "file location", p.ej. src/lib/veta/*).
