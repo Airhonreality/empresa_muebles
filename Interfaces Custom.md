@@ -81,6 +81,37 @@ sigue cubriendo el resto. No hace falta hacer `notFound()` en el catch-all.
   (solo delegan en `AgnosticRoutePage`): un fork puede reemplazarlos por su home /
   ruteo propio sin tocar engine profundo.
 
+## Identidad y SEO (por datos)
+
+La identidad de navegador/SEO del sitio sale de `configuracion_comercial`
+(namespace de storage). El layout la inyecta; **nunca edites `layout.tsx`**.
+
+Campos (matcheados por nombre; todos opcionales): `site_title`, `site_description`,
+`favicon_url`, `ga_measurement_id`, `brand_name`, `website_url`, `logo_url`,
+`same_as`, `telephone`, `contact_email`, `locality`/`region`/`country`.
+
+Producen: `<title>` por defecto (las paginas lo overridean con su `generateMetadata`),
+`<meta description>`, favicon, el tag de Google Analytics y el JSON-LD `Organization`.
+Sin config -> defaults neutros (fork virgen limpio). Logica: `src/lib/seo/siteConfig.ts`.
+
+## Theming, fuentes y CSS custom (por datos)
+
+Nunca edites `globals.css` (engine). El fork tiene DOS capas propias:
+
+1. **Variables CSS -> `design_tokens`** (namespace de storage). Cada registro
+   `{ name, value }` genera `--<name>: <value>` en `storage/styles/tokens.css`
+   (via `POST /api/tokens/sync`). Incluye tipografia: un token
+   `sat-font-sans = 'Mi Fuente', sans-serif` cambia la fuente base. `tokens.css`
+   se inyecta DESPUES de `globals.css`, asi que gana por cascada.
+
+2. **CSS libre -> `storage/styles/custom.css`** (fork-owned, deployable). Para lo
+   que no es una variable: `@font-face` de fuentes propias (no-Google), clases de
+   tema (`.theme-*`), overrides puntuales. El layout lo inyecta DESPUES de
+   `tokens.css` (maxima prioridad). Opcional; ausente en fork virgen.
+
+Regla: variables -> `design_tokens`; `@font-face`/clases/temas -> `custom.css`.
+Asi `globals.css` queda identico al seed y nunca genera conflicto en el upstream.
+
 ## Tipos De Datos
 
 Importa tipos del contrato generado:

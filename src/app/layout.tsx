@@ -107,6 +107,18 @@ export default async function RootLayout({
     // The satellite still has no tokens and falls back to the Seed defaults.
   }
 
+  // Fork-owned free-form CSS: @font-face for custom (non-Google) fonts, component
+  // themes (.theme-*), and any override. Injected AFTER tokens.css so it wins by
+  // cascade. Lets a commercial fork own all its CSS in storage/ without ever
+  // editing globals.css (an engine file). Optional — absent on a virgin fork.
+  let customStyles = "";
+  try {
+    const customPath = path.join(storageRoot, "styles", "custom.css");
+    customStyles = await fs.readFile(customPath, "utf-8");
+  } catch {
+    // No custom fork CSS yet.
+  }
+
   let dna: Record<string, unknown> = {};
   try {
     const manifestPath = path.join(storageRoot, "manifest.json");
@@ -146,6 +158,13 @@ export default async function RootLayout({
           href="/api/satellite-styles"
           precedence="satellite"
         />
+
+        {customStyles && (
+          <style
+            id="agnostic-custom"
+            dangerouslySetInnerHTML={{ __html: customStyles }}
+          />
+        )}
 
         <script
           id="organization-jsonld"
