@@ -19,15 +19,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       return { title: '404: Uncharted Entity' };
     }
 
-    const title = route.title || 'Page';
     const description = route.description || '';
     return {
-      title,
-      description,
-      openGraph: description ? { description } : undefined,
+      // No route title → inherit the site identity default from the layout.
+      ...(route.title ? { title: route.title } : {}),
+      ...(description ? { description, openGraph: { description } } : {}),
     };
   } catch {
-    return { title: 'Error Loading Page' };
+    return {};
   }
 }
 

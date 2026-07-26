@@ -31,12 +31,28 @@ import { cookies, headers } from "next/headers";
 import fs from "fs/promises";
 import path from "path";
 import { SYSTEM_NS } from "@/lib/agnostic/constants";
-import { buildOrganizationSchema, readCommercialConfig, serializeJsonLd } from "@/lib/veta/seo/schemaGenerator";
+import { buildOrganizationSchema, readCommercialConfig, readSiteIdentity, serializeJsonLd } from "@/lib/seo/siteConfig";
 import { sessionOptions, type SessionData } from "@/lib/agnostic/session";
 
-export const metadata: Metadata = {
-  description: "A professional, storage-based agnostic framework",
-};
+/**
+ * Default site identity (browser tab, description, favicon) resolved from the
+ * fork's `configuracion_comercial` data. Per-page titles override this via each
+ * page's own generateMetadata. A commercial fork sets its identity in storage
+ * and never edits this file.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const data = await getVaultData(["configuracion_comercial"]);
+    const identity = readSiteIdentity(readCommercialConfig(data["configuracion_comercial"] as unknown));
+    return {
+      title: { default: identity.title, template: `%s · ${identity.name}` },
+      description: identity.description ?? "A professional, storage-based agnostic framework",
+      icons: identity.faviconUrl ? { icon: identity.faviconUrl } : undefined,
+    };
+  } catch {
+    return { title: "Agnostic System", description: "A professional, storage-based agnostic framework" };
+  }
+}
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -100,10 +116,10 @@ export default async function RootLayout({
     // No manifest yet, keep the default local strategy.
   }
 
-  const sysConfig = (vaultData?.["system_config"]?.[0]?.data ?? {}) as Record<string, unknown>;
-  const appName = (sysConfig["app_name"] as string | undefined) ?? "Agnostic System";
-  const commercialConfig = readCommercialConfig(vaultData["configuracion_comercial"] as any);
+  void dna;
+  const commercialConfig = readCommercialConfig(vaultData["configuracion_comercial"] as unknown);
   const organizationSchema = buildOrganizationSchema(commercialConfig);
+  const gaMeasurementId = readSiteIdentity(commercialConfig).gaMeasurementId;
 
   return (
     <html
@@ -136,6 +152,23 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationSchema) }}
         />
+
+        {gaMeasurementId && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} />
+            <script
+              id="google-analytics"
+              dangerouslySetInnerHTML={{
+                __html: [
+                  "window.dataLayer = window.dataLayer || [];",
+                  "function gtag(){window.dataLayer.push(arguments);}",
+                  "gtag('js', new Date());",
+                  `gtag('config', ${JSON.stringify(gaMeasurementId)}, { anonymize_ip: true });`,
+                ].join("\n"),
+              }}
+            />
+          </>
+        )}
       </head>
       <body className="antialiased">
         {isPublicShare ? children : (

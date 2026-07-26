@@ -1,3 +1,14 @@
+/**
+ * Site identity & SEO — generic, data-driven.
+ * ────────────────────────────────────────────
+ * The engine reads a fork's site identity (title, description, favicon,
+ * analytics, organization schema) from storage. A commercial fork fills the
+ * `configuracion_comercial` namespace and NEVER edits layout.tsx for branding.
+ *
+ * Field names are matched by candidate lists so different forks can use their
+ * own conventions. Everything is optional; sensible defaults keep a virgin
+ * fork neutral.
+ */
 import type { DataItem } from '@agnostic/core';
 
 type MaybeRecord = Record<string, unknown>;
@@ -21,6 +32,11 @@ export type CommercialConfig = {
   region?: string;
   country?: string;
   postal_code?: string;
+  // ── Site identity (browser tab, meta, analytics) ──
+  site_title?: string;
+  site_description?: string;
+  favicon_url?: string;
+  ga_measurement_id?: string;
 };
 
 export type OrganizationSchema = {
@@ -40,6 +56,17 @@ export type OrganizationSchema = {
     addressCountry?: string;
   };
 };
+
+/** Resolved identity the engine layout injects. All optional except title. */
+export type SiteIdentity = {
+  name: string;
+  title: string;
+  description?: string;
+  faviconUrl?: string;
+  gaMeasurementId?: string;
+};
+
+const DEFAULT_NAME = 'Agnostic System';
 
 function firstString(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
@@ -71,12 +98,8 @@ function normalizeRecord(input: unknown): MaybeRecord {
 export function readCommercialConfig(source: unknown): CommercialConfig {
   if (Array.isArray(source)) {
     const first = source.find(item => item && typeof item === 'object') as DataItem | undefined;
-    if (first) {
-      return normalizeCommercialConfig(first.data);
-    }
-    return {};
+    return first ? normalizeCommercialConfig(first.data) : {};
   }
-
   return normalizeCommercialConfig(source);
 }
 
@@ -95,11 +118,27 @@ export function normalizeCommercialConfig(source: unknown): CommercialConfig {
     region: readCandidate(record, ['region', 'state', 'address_region']),
     country: readCandidate(record, ['country', 'address_country']),
     postal_code: readCandidate(record, ['postal_code', 'zip', 'address_postal_code']),
+    site_title: readCandidate(record, ['site_title', 'title', 'meta_title', 'page_title']),
+    site_description: readCandidate(record, ['site_description', 'description', 'meta_description', 'tagline']),
+    favicon_url: readCandidate(record, ['favicon_url', 'favicon', 'icon_url', 'icon']),
+    ga_measurement_id: readCandidate(record, ['ga_measurement_id', 'ga_id', 'google_analytics_id', 'gtag_id']),
+  };
+}
+
+/** Resolve the site identity the layout injects (title/description/favicon/GA). */
+export function readSiteIdentity(config: CommercialConfig): SiteIdentity {
+  const name = config.brand_name ?? config.legal_name ?? DEFAULT_NAME;
+  return {
+    name,
+    title: config.site_title ?? name,
+    description: config.site_description,
+    faviconUrl: config.favicon_url,
+    gaMeasurementId: config.ga_measurement_id,
   };
 }
 
 export function buildOrganizationSchema(config: CommercialConfig): OrganizationSchema {
-  const name = config.brand_name ?? config.legal_name ?? 'Agnostic System';
+  const name = config.brand_name ?? config.legal_name ?? DEFAULT_NAME;
   const schema: OrganizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -108,9 +147,7 @@ export function buildOrganizationSchema(config: CommercialConfig): OrganizationS
 
   const url = config.website_url ?? config.site_url ?? config.url;
   if (url) schema.url = url;
-
-  const logo = config.logo_url;
-  if (logo) schema.logo = logo;
+  if (config.logo_url) schema.logo = config.logo_url;
 
   const email = config.contact_email ?? config.email;
   if (email) schema.email = email;

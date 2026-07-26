@@ -16,10 +16,12 @@ export async function generateMetadata(): Promise<Metadata> {
       return { title: route.title };
     }
   } catch {
-    // Fall through to default
+    // Fall through
   }
 
-  return { title: 'Home' };
+  // No explicit home title → inherit the site identity default from the layout
+  // (title.default = the fork's site name). Returning {} keeps that default.
+  return {};
 }
 
 export default async function HomePage() {
