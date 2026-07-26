@@ -18,12 +18,18 @@ export type PublicTestimonial = {
   };
 };
 
+export type PublicHomeSpaceImage = {
+  imagen_url: string;
+  descripcion?: string;
+};
+
 export type PublicHomeSpace = {
   nombre_espacio: string;
   categoria_espacio?: string;
   descripcion: string;
   materiales: string[];
   imagen_url?: string;
+  imagenes: PublicHomeSpaceImage[];
   destacado: boolean;
 };
 

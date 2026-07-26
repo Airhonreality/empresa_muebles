@@ -5,6 +5,7 @@ import type {
   PublicCommercialRecord,
   PublicHomeContent,
   PublicHomeSpace,
+  PublicHomeSpaceImage,
   PublicTestimonial,
 } from '@/lib/veta/public-content';
 
@@ -79,11 +80,14 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
     }];
   }).slice(0, 6);
 
-  const imageByPortfolioId = new Map<string, string>();
+  const imagesByPortfolioId = new Map<string, PublicHomeSpaceImage[]>();
   for (const image of imagenes) {
     const portfolioId = asText(image.data?.portfolio_id);
     const url = asText(image.data?.imagen_url);
-    if (portfolioId && url && !imageByPortfolioId.has(portfolioId)) imageByPortfolioId.set(portfolioId, url);
+    if (!portfolioId || !url) continue;
+    const list = imagesByPortfolioId.get(portfolioId) ?? [];
+    list.push({ imagen_url: url, descripcion: asText(image.data?.descripcion) });
+    imagesByPortfolioId.set(portfolioId, list);
   }
 
   const spaces: PublicHomeSpace[] = portfolio
@@ -95,12 +99,14 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
       const description = asText(data.descripcion_comercial);
       if (!title || !description) return [];
       const rawMaterials = asText(data.materiales_destacados) ?? '';
+      const allImages = imagesByPortfolioId.get(record.id) ?? [];
       return [{
         nombre_espacio: title,
         categoria_espacio: asText(data.categoria_espacio),
         descripcion: description,
         materiales: rawMaterials.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean).slice(0, 4),
-        imagen_url: imageByPortfolioId.get(record.id),
+        imagen_url: allImages[0]?.imagen_url,
+        imagenes: allImages,
         destacado: data.destacado === true,
       }];
     })

@@ -3,13 +3,14 @@
 import React, { useMemo, useState } from 'react';
 import type { BlockProps } from '@agnostic/core';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Ruler, ShieldCheck, Sparkles, ChevronRight, X } from 'lucide-react';
+import { ArrowRight, MapPin, Ruler, ShieldCheck, Sparkles, ChevronRight } from 'lucide-react';
 import VetaHeader from './VetaHeader';
 import VetaFooter from './VetaFooter';
 import VetaTestimonials from './VetaTestimonials';
 import { VetaEmbudoModal } from './VetaEmbudoModal';
 import { useGclidCapture } from '@/lib/veta/useGclidCapture';
 import type { PublicHomeContent } from '@/lib/veta/public-content';
+import VetaProjectGallery from './shared/VetaProjectGallery';
 import { uniqueCategories, categoryLabel, type SpaceCategoryId } from '@/lib/veta/portfolio';
 
 export default function VetaHome({ publicContent }: { publicContent: PublicHomeContent }) {
@@ -301,48 +302,18 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
         </div>
       </section>
 
-      {/* Galería ligera */}
-      {galleryIndex !== null && publicContent.spaces[galleryIndex] && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-          onClick={() => setGalleryIndex(null)}
-        >
-          <div
-            className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl bg-white"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setGalleryIndex(null)}
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            {publicContent.spaces[galleryIndex].imagen_url ? (
-              <img
-                src={publicContent.spaces[galleryIndex].imagen_url}
-                alt={publicContent.spaces[galleryIndex].nombre_espacio}
-                className="max-h-[70vh] w-full object-contain"
-              />
-            ) : (
-              <div className="flex h-64 w-full items-center justify-center text-[hsl(var(--veta-text-stone))]">
-                Sin imagen disponible
-              </div>
-            )}
-            <div className="space-y-3 p-6">
-              <h3 className="veta-heading text-xl font-semibold">{publicContent.spaces[galleryIndex].nombre_espacio}</h3>
-              <p className="text-sm text-[hsl(var(--veta-text-stone))]">{publicContent.spaces[galleryIndex].descripcion}</p>
-              <button
-                type="button"
-                onClick={() => { setGalleryIndex(null); setEmbudoOpen(true); }}
-                className="w-full rounded-full bg-[hsl(var(--veta-gold-muted))] py-3 text-xs font-semibold uppercase tracking-wider text-[#0A0A0A] transition-colors hover:bg-[hsl(var(--veta-gold-hover))]"
-              >
-                Cotizar espacio similar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <VetaProjectGallery
+        open={galleryIndex !== null}
+        onOpenChange={(open) => { if (!open) setGalleryIndex(null); }}
+        title={galleryIndex !== null ? publicContent.spaces[galleryIndex].nombre_espacio : ''}
+        description={galleryIndex !== null ? publicContent.spaces[galleryIndex].descripcion : undefined}
+        images={galleryIndex !== null ? publicContent.spaces[galleryIndex].imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion })) : []}
+        materials={galleryIndex !== null && publicContent.spaces[galleryIndex].materiales.length > 0 ? publicContent.spaces[galleryIndex].materiales : undefined}
+        cta={{
+          label: 'Cotizar espacio similar',
+          onClick: () => { setGalleryIndex(null); setEmbudoOpen(true); },
+        }}
+      />
 
       <VetaFooter configRecords={publicContent.commercial_config} />
       <VetaEmbudoModal configRecords={publicContent.commercial_config} open={embudoOpen} onOpenChange={setEmbudoOpen} />
