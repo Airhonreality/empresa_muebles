@@ -113,14 +113,30 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const isPublicShare = (await headers()).get('x-agnostic-public-share') === '1';
   const storageRoot = getProjectStorageRoot();
-  const session = isPublicShare ? null : await getIronSession<SessionData>(await cookies(), sessionOptions);
+
+  let session: Awaited<ReturnType<typeof getIronSession<SessionData>>> | null = null;
+  if (!isPublicShare) {
+    try {
+      session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    } catch {
+      // Missing/short SESSION_SECRET etc. → render unauthenticated instead of 500.
+    }
+  }
+
   // Public-share pages still need the site's public identity (SEO org schema,
   // analytics) — load only configuracion_comercial, never private namespaces.
-  const vaultData = isPublicShare
-    ? await getVaultData(["configuracion_comercial"])
-    : await getVaultData([
-        SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.TOKENS, "configuracion_comercial",
-      ]);
+  // Wrapped: a storage misconfig (e.g. bad AGNOSTIC_STORAGE_STRATEGY) must degrade
+  // to empty data, never crash the whole app shell.
+  let vaultData: Record<string, unknown> = {};
+  try {
+    vaultData = isPublicShare
+      ? await getVaultData(["configuracion_comercial"])
+      : await getVaultData([
+          SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.TOKENS, "configuracion_comercial",
+        ]);
+  } catch {
+    // Storage unavailable/misconfigured → keep the shell alive with defaults.
+  }
 
   let tokenStyles = "";
   try {
