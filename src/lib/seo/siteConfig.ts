@@ -32,11 +32,13 @@ export type CommercialConfig = {
   region?: string;
   country?: string;
   postal_code?: string;
-  // ── Site identity (browser tab, meta, analytics) ──
+  // ── Site identity (browser tab, meta, analytics, social cards) ──
   site_title?: string;
   site_description?: string;
   favicon_url?: string;
   ga_measurement_id?: string;
+  og_image?: string;
+  twitter_handle?: string;
 };
 
 export type OrganizationSchema = {
@@ -57,13 +59,16 @@ export type OrganizationSchema = {
   };
 };
 
-/** Resolved identity the engine layout injects. All optional except title. */
+/** Resolved identity the engine layout injects. All optional except name/title. */
 export type SiteIdentity = {
   name: string;
   title: string;
   description?: string;
   faviconUrl?: string;
   gaMeasurementId?: string;
+  siteUrl?: string;
+  ogImage?: string;
+  twitterHandle?: string;
 };
 
 const DEFAULT_NAME = 'Agnostic System';
@@ -148,6 +153,8 @@ export function normalizeCommercialConfig(source: unknown): CommercialConfig {
     site_description: readCandidate(record, ['site_description', 'description', 'meta_description', 'tagline']),
     favicon_url: readCandidate(record, ['favicon_url', 'favicon', 'icon_url', 'icon']),
     ga_measurement_id: readCandidate(record, ['ga_measurement_id', 'ga_id', 'google_analytics_id', 'gtag_id']),
+    og_image: readCandidate(record, ['og_image', 'share_image', 'social_image', 'meta_image']),
+    twitter_handle: readCandidate(record, ['twitter_handle', 'twitter_site', 'twitter', 'x_handle']),
   };
 }
 
@@ -162,6 +169,9 @@ export function readSiteIdentity(config: CommercialConfig): SiteIdentity {
     // Fall back to the conventional NEXT_PUBLIC_GA_MEASUREMENT_ID env var so forks
     // that keep their analytics id in env (not storage) still work unchanged.
     gaMeasurementId: config.ga_measurement_id ?? firstString(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
+    siteUrl: config.website_url ?? config.site_url ?? config.url ?? firstString(process.env.NEXT_PUBLIC_BASE_URL),
+    ogImage: config.og_image ?? config.logo_url,
+    twitterHandle: config.twitter_handle,
   };
 }
 
