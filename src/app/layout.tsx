@@ -45,10 +45,28 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const data = await getVaultData(["configuracion_comercial"]);
     const identity = readSiteIdentity(readCommercialConfig(data["configuracion_comercial"] as unknown));
+    const description = identity.description ?? "A professional, storage-based agnostic framework";
+    const images = identity.ogImage ? [identity.ogImage] : undefined;
     return {
+      metadataBase: identity.siteUrl ? new URL(identity.siteUrl) : undefined,
       title: { default: identity.title, template: `%s · ${identity.name}` },
-      description: identity.description ?? "A professional, storage-based agnostic framework",
+      description,
       icons: identity.faviconUrl ? { icon: identity.faviconUrl } : undefined,
+      openGraph: {
+        type: "website",
+        siteName: identity.name,
+        title: identity.title,
+        description,
+        url: identity.siteUrl,
+        images,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: identity.title,
+        description,
+        site: identity.twitterHandle,
+        images,
+      },
     };
   } catch {
     return { title: "Agnostic System", description: "A professional, storage-based agnostic framework" };
