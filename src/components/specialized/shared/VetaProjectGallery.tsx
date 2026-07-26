@@ -15,6 +15,7 @@ type VetaProjectGalleryProps = {
   description?: string;
   images: GalleryImage[];
   materials?: string[];
+  startIndex?: number;
   cta?: {
     label: string;
     onClick: () => void;
@@ -28,9 +29,10 @@ export default function VetaProjectGallery({
   description,
   images,
   materials,
+  startIndex = 0,
   cta,
 }: VetaProjectGalleryProps) {
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const [currentIdx, setCurrentIdx] = useState(startIndex);
 
   if (!open) return null;
 
