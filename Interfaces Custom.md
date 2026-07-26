@@ -56,6 +56,31 @@ Luego se usan en `storage/db/page_routes.json`:
 }
 ```
 
+## Rutas Publicas (paginas comerciales)
+
+Hay dos formas de servir una pagina publica. Se pueden combinar; **no** hay que
+desactivar una para usar la otra.
+
+1. **Data-driven (por defecto)**: `src/app/[...slug]/page.tsx` resuelve cualquier
+   ruta desde `storage/db/page_routes.json`. Ideal para paginas que encajan en el
+   modelo schema-driven (dashboards, catalogos data-driven).
+
+2. **Modulo explicito**: crea un archivo de ruta Next real, p.ej.
+   `src/app/tienda/page.tsx`, que renderiza tu componente de `specialized/`. Ideal
+   para superficies bespoke (landing, tienda, checkout) que necesitan SEO por ruta,
+   `generateMetadata`, datos server especificos o JSON-LD.
+
+En Next.js **una ruta explicita gana sobre `[...slug]`** (segmento mas especifico).
+Por eso `login/`, `schema/`, `setup/` conviven con el catch-all sin tocarlo. Un fork
+comercial simplemente **agrega** sus archivos de ruta explicitos; el `[...slug]`
+sigue cubriendo el resto. No hace falta hacer `notFound()` en el catch-all.
+
+- El titulo/SEO de cada ruta explicita sale de su propio `generateMetadata`; si no
+  define titulo, hereda la identidad del sitio (ver `configuracion_comercial`).
+- `src/app/page.tsx` y `src/app/[...slug]/page.tsx` son **puntos de entrada finos**
+  (solo delegan en `AgnosticRoutePage`): un fork puede reemplazarlos por su home /
+  ruteo propio sin tocar engine profundo.
+
 ## Tipos De Datos
 
 Importa tipos del contrato generado:
