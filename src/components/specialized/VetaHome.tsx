@@ -26,7 +26,7 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
   const allCategories = useMemo(() => uniqueCategories(publicContent.spaces), [publicContent.spaces]);
 
   const destacados = useMemo(() => {
-    return publicContent.spaces.filter((s) => s.destacado).slice(0, 6);
+    return publicContent.spaces.filter((s) => s.destacado).slice(0, 3);
   }, [publicContent.spaces]);
 
   const displayedSpaces = useMemo(() => {

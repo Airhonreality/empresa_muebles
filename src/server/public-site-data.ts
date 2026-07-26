@@ -127,6 +127,7 @@ export type PublicPortfolioEntry = {
   zona: string;
   categoria_espacio: string;
   materiales_destacados?: string;
+  precio_referencial?: number;
   destacado: boolean;
   imagenes: PublicPortfolioImage[];
 };
@@ -232,6 +233,7 @@ export async function getPublicPortfolio(): Promise<PublicPortfolioEntry[]> {
         zona: 'Bogot\u00e1',
         categoria_espacio: asText(data.categoria_espacio) ?? 'otros',
         materiales_destacados: asText(data.materiales_destacados),
+        precio_referencial: asNumber(data.precio_referencial),
         destacado: data.destacado === true,
         imagenes: imagesByPortfolioId.get(record.id) ?? [],
         orden: asNumber(data.orden) ?? 0,

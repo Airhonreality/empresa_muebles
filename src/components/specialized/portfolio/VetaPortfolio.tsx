@@ -1,9 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
 import VetaProjectGallery from '../shared/VetaProjectGallery';
 
 type PublicPortfolioImage = {
@@ -18,12 +16,14 @@ export type PublicPortfolioEntry = {
   zona: string;
   categoria_espacio: string;
   materiales_destacados?: string;
+  precio_referencial?: number;
   destacado: boolean;
   imagenes: PublicPortfolioImage[];
 };
 
-const categorias = ['cocinas', 'cavas_bares', 'dormitorios_closets', 'consolas_recibidores', 'otros'];
+const categorias = ['todos', 'cocinas', 'cavas_bares', 'dormitorios_closets', 'consolas_recibidores', 'otros'];
 const categoriasLabels: Record<string, string> = {
+  todos: 'Todos',
   cocinas: 'Cocinas',
   cavas_bares: 'Cavas & Bares',
   dormitorios_closets: 'Dormitorios & Closets',
@@ -31,70 +31,204 @@ const categoriasLabels: Record<string, string> = {
   otros: 'Otros',
 };
 
-export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEntry[] }) {
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedPortfolio, setSelectedPortfolio] = useState<PublicPortfolioEntry | null>(null);
+const currency = (value: number) =>
+  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-  const filteredPortfolios = useMemo(() => {
-    if (!selectedCategory) return entries;
-    return entries.filter((entry) => entry.categoria_espacio === selectedCategory);
-  }, [entries, selectedCategory]);
+export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEntry[] }) {
+  const [activeCategory, setActiveCategory] = useState('todos');
+  const [gallerySlug, setGallerySlug] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = useMemo(() => {
+    if (activeCategory === 'todos') return entries;
+    return entries.filter((e) => e.categoria_espacio === activeCategory);
+  }, [entries, activeCategory]);
+
+  const galleryEntry = useMemo(() => {
+    if (!gallerySlug) return null;
+    return entries.find((e) => e.slug === gallerySlug) ?? null;
+  }, [gallerySlug, entries]);
+
+  useEffect(() => {
+    containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeCategory]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-light text-slate-900 mb-2" style={{ fontFamily: 'Futura BT, sans-serif' }}>Portafolio</h1>
-          <p className="text-lg text-slate-600">Proyectos realizados con materiales de calidad</p>
+    <div className="min-h-screen bg-[hsl(var(--veta-bg-warm-paper))]">
+      {/* Sticky category nav */}
+      <header className="sticky top-0 z-40 border-b border-[hsl(var(--veta-glass-light-border))] bg-[hsl(var(--veta-bg-warm-paper))]/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <h1 className="veta-heading text-lg font-semibold tracking-tight hidden sm:block">Portafolio</h1>
+          <nav className="flex gap-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {categorias.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                  activeCategory === cat
+                    ? 'bg-[hsl(var(--veta-text-carbon))] text-white'
+                    : 'text-[hsl(var(--veta-text-stone))] hover:bg-white/70 hover:text-[hsl(var(--veta-text-carbon))]'
+                }`}
+              >
+                {categoriasLabels[cat]}
+              </button>
+            ))}
+          </nav>
         </div>
-      </section>
+      </header>
 
-      <section className="py-8 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto flex gap-3 overflow-x-auto pb-2">
-          <Button variant={selectedCategory === '' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedCategory('')}>Todos</Button>
-          {categorias.map((category) => (
-            <Button key={category} variant={selectedCategory === category ? 'default' : 'outline'} size="sm" onClick={() => setSelectedCategory(category)}>
-              {categoriasLabels[category]}
-            </Button>
-          ))}
+      {/* Snap-scroll magazine */}
+      {filtered.length === 0 ? (
+        <div className="flex h-[60vh] items-center justify-center text-sm text-[hsl(var(--veta-text-stone))]">
+          No hay proyectos en esta categoría
         </div>
-      </section>
+      ) : (
+        <div
+          ref={containerRef}
+          className="h-[calc(100vh-57px)] overflow-y-auto snap-y snap-mandatory scroll-smooth"
+        >
+          {filtered.map((entry, index) => {
+            const materials = entry.materiales_destacados
+              ? entry.materiales_destacados.split(/[\n,]+/).map((m) => m.trim()).filter(Boolean)
+              : [];
+            const heroImage = entry.imagenes[0];
+            const restImages = entry.imagenes.slice(1, 4);
 
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          {filteredPortfolios.length === 0 ? (
-            <div className="text-center py-16 text-slate-500">Sin proyectos en esta categoría</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPortfolios.map((portfolio) => {
-                const mainImage = portfolio.imagenes[0];
-                return (
-                  <button key={portfolio.slug} type="button" onClick={() => setSelectedPortfolio(portfolio)} className="group cursor-pointer text-left">
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <div className="aspect-square overflow-hidden bg-slate-100">
-                        {mainImage ? <img src={mainImage.imagen_url} alt={portfolio.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center text-slate-400">Sin imagen</div>}
+            return (
+              <section
+                key={entry.slug}
+                className="snap-start min-h-screen flex flex-col lg:flex-row relative"
+              >
+                {/* Hero image side */}
+                <div className="relative h-[50vh] lg:h-screen lg:w-[58%] lg:sticky lg:top-0 overflow-hidden bg-[hsl(var(--veta-bg-linen))]">
+                  {heroImage ? (
+                    <img
+                      src={heroImage.imagen_url}
+                      alt={entry.titulo}
+                      className="h-full w-full object-cover"
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-[hsl(var(--veta-text-stone))]">
+                      Sin imagen
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent lg:bg-gradient-to-r lg:from-black/80 lg:via-black/30 lg:to-transparent" />
+
+                  {/* Title overlay on mobile, moves to content side on desktop */}
+                  <div className="absolute bottom-6 left-4 right-4 z-10 lg:hidden">
+                    <span className="inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-sm mb-2">
+                      {categoriasLabels[entry.categoria_espacio] || entry.categoria_espacio}
+                    </span>
+                    <h2 className="veta-heading text-2xl font-semibold text-white leading-tight">
+                      {entry.titulo}
+                    </h2>
+                  </div>
+
+                  {/* Scroll indicator */}
+                  {index === 0 && filtered.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 hidden lg:flex flex-col items-center gap-1 text-white/60">
+                      <span className="text-[9px] uppercase tracking-widest">Desliza</span>
+                      <ChevronDown className="h-4 w-4 animate-bounce" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Content side */}
+                <div className="flex-1 px-6 py-8 lg:px-10 lg:py-12 lg:overflow-y-auto flex flex-col justify-center">
+                  {/* Desktop category & title */}
+                  <div className="hidden lg:block mb-6">
+                    <span className="inline-block rounded-full bg-[hsl(var(--veta-gold-muted))]/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--veta-gold-hover))] mb-3">
+                      {categoriasLabels[entry.categoria_espacio] || entry.categoria_espacio}
+                    </span>
+                    <h2 className="veta-heading text-3xl font-semibold leading-tight tracking-tight">
+                      {entry.titulo}
+                    </h2>
+                  </div>
+
+                  {/* Description */}
+                  {entry.descripcion_comercial && (
+                    <p className="text-sm leading-relaxed text-[hsl(var(--veta-text-stone))] mb-6 max-w-prose">
+                      {entry.descripcion_comercial}
+                    </p>
+                  )}
+
+                  {/* Image mosaic */}
+                  {restImages.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 mb-6">
+                      {restImages.slice(0, 3).map((img, i) => (
+                        <div
+                          key={i}
+                          className={`overflow-hidden rounded-lg bg-[hsl(var(--veta-bg-linen))] ${
+                            i === 0 && restImages.length === 3 ? 'row-span-2' : ''
+                          }`}
+                        >
+                          <img
+                            src={img.imagen_url}
+                            alt={img.descripcion || ''}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Materials */}
+                  {materials.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(var(--veta-text-stone))] mb-2">
+                        Materiales
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {materials.map((m) => (
+                          <span
+                            key={m}
+                            className="rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--veta-text-stone))]"
+                          >
+                            {m}
+                          </span>
+                        ))}
                       </div>
-                      <div className="p-4">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-2">{portfolio.titulo}</h3>
-                        <p className="text-sm text-slate-600 mb-3">{portfolio.zona}</p>
-                        <span className="inline-flex items-center text-sm text-blue-600"><span>Ver más</span><ChevronRight className="w-4 h-4 ml-1" /></span>
-                      </div>
-                    </Card>
+                    </div>
+                  )}
+
+                  {/* Price */}
+                  {entry.precio_referencial && entry.precio_referencial > 0 && (
+                    <p className="text-sm text-[hsl(var(--veta-text-carbon))] mb-4">
+                      Desde <span className="font-semibold">{currency(entry.precio_referencial)}</span>
+                    </p>
+                  )}
+
+                  {/* CTA */}
+                  <button
+                    type="button"
+                    onClick={() => setGallerySlug(entry.slug)}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[hsl(var(--veta-gold-muted))] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#0A0A0A] transition-colors hover:bg-[hsl(var(--veta-gold-hover))] self-start"
+                  >
+                    Ver galería completa
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </button>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              </section>
+            );
+          })}
         </div>
-      </section>
+      )}
 
+      {/* Gallery modal */}
       <VetaProjectGallery
-        open={selectedPortfolio !== null}
-        onOpenChange={(open) => { if (!open) setSelectedPortfolio(null); }}
-        title={selectedPortfolio?.titulo ?? ''}
-        description={selectedPortfolio?.descripcion_comercial}
-        images={selectedPortfolio?.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion })) ?? []}
-        materials={selectedPortfolio?.materiales_destacados?.split(/[\n,]+/).map((m) => m.trim()).filter(Boolean)}
+        open={galleryEntry !== null}
+        onOpenChange={(open) => { if (!open) setGallerySlug(null); }}
+        title={galleryEntry?.titulo ?? ''}
+        description={galleryEntry?.descripcion_comercial}
+        images={galleryEntry?.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion })) ?? []}
+        materials={
+          galleryEntry?.materiales_destacados
+            ? galleryEntry.materiales_destacados.split(/[\n,]+/).map((m) => m.trim()).filter(Boolean)
+            : undefined
+        }
       />
     </div>
   );
