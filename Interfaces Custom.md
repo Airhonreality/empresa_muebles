@@ -112,6 +112,31 @@ Nunca edites `globals.css` (engine). El fork tiene DOS capas propias:
 Regla: variables -> `design_tokens`; `@font-face`/clases/temas -> `custom.css`.
 Asi `globals.css` queda identico al seed y nunca genera conflicto en el upstream.
 
+## Marketing / tags de `<head>` y `<body>` (por datos)
+
+Para pixels, GTM, meta de verificacion, JSON-LD extra, preconnects o widgets de
+chat: NO edites `layout.tsx`. Crea `storage/site-injections.json`. El engine lo
+renderiza como elementos REALES (los `<script>` ejecutan; meta se sirve en SSR
+para los crawlers).
+
+```json
+{
+  "head": {
+    "meta":   [{ "name": "google-site-verification", "content": "..." }],
+    "link":   [{ "rel": "preconnect", "href": "https://connect.facebook.net" }],
+    "script": [{ "src": "https://www.googletagmanager.com/gtm.js?id=GTM-XXX", "async": true },
+               { "id": "meta-pixel", "innerHTML": "!function(f,b,e){...}" }],
+    "jsonLd": [{ "@context": "https://schema.org", "@type": "WebSite", "name": "..." }]
+  },
+  "bodyEnd": {
+    "script": [{ "src": "https://widget.chat.com/loader.js", "async": true }]
+  }
+}
+```
+
+Todo es opcional. `src` o `innerHTML` en scripts. Es contenido de confianza (vive
+en el storage del fork). Logica: `src/lib/seo/siteInjections.tsx`.
+
 ## Tipos De Datos
 
 Importa tipos del contrato generado:

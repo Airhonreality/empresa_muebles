@@ -48,6 +48,12 @@ storage/*
 !storage/.gitkeep
 !storage/AGENTS.md
 !storage/definition-revision.json
+# Capas de personalización del fork (se versionan y deployan)
+!storage/styles/
+!storage/styles/**
+!storage/site-injections.json
+!storage/head.html
+!storage/body-end.html
 !storage/progreso/
 !storage/progreso/**
 # backups del CLI agno / ciclo gobernado: locales, no se versionan

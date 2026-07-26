@@ -32,6 +32,7 @@ import fs from "fs/promises";
 import path from "path";
 import { SYSTEM_NS } from "@/lib/agnostic/constants";
 import { buildOrganizationSchema, readCommercialConfig, readSiteIdentity, serializeJsonLd } from "@/lib/seo/siteConfig";
+import { readSiteInjections, HeadInjections, BodyEndInjections } from "@/lib/seo/siteInjections";
 import { sessionOptions, type SessionData } from "@/lib/agnostic/session";
 
 /**
@@ -123,6 +124,12 @@ export default async function RootLayout({
     // No custom fork CSS yet.
   }
 
+  // Fork-owned marketing/SEO injections (pixels, GTM, verification meta, extra
+  // JSON-LD, preconnects, chat widgets). Structured so scripts render as REAL
+  // <script> elements (they execute; raw innerHTML would not) and meta is SSR'd.
+  // Lets a fork add any tag WITHOUT editing this engine file. Absent → nothing.
+  const injections = await readSiteInjections(storageRoot);
+
   let dna: Record<string, unknown> = {};
   try {
     const manifestPath = path.join(storageRoot, "manifest.json");
@@ -192,6 +199,8 @@ export default async function RootLayout({
             />
           </>
         )}
+
+        <HeadInjections injections={injections} />
       </head>
       <body className="antialiased">
         {isPublicShare ? children : (
@@ -203,6 +212,8 @@ export default async function RootLayout({
             </AuthProvider>
           </AppProvider>
         )}
+
+        <BodyEndInjections injections={injections} />
       </body>
     </html>
   );
