@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { SESSION_COOKIE } from '@/lib/agnostic/session';
+import { routing } from '@/../agnostic.routing';
 
 /**
- * Route protection — engine defaults + fork additions via env vars.
- * ─────────────────────────────────────────────────────────────────
- * A fork adds its own protected/public/public-share prefixes through env vars
- * (comma-separated) so it NEVER edits this engine file. Middleware runs on the
- * edge runtime, so config comes from process.env (not storage/fs):
- *
- *   AGNOSTIC_PROTECTED_PATHS       e.g. "/app,/setup"
- *   AGNOSTIC_PROTECTED_API_PATHS   e.g. "/api/billing"
- *   AGNOSTIC_PUBLIC_PATHS          e.g. "/pricing"
- *   AGNOSTIC_PUBLIC_SHARE_PATHS    e.g. "/propuesta"   (SSR public-share mode)
+ * Route protection — engine defaults + fork additions.
+ * ─────────────────────────────────────────────────────
+ * A fork adds its own protected/public/public-share prefixes WITHOUT editing this
+ * engine file. Middleware runs on the edge runtime (no storage/fs), so config
+ * comes from a static fork-owned module: `agnostic.routing.ts` (versioned, set
+ * once). Env vars (AGNOSTIC_*_PATHS, comma-separated) still work as a deploy-time
+ * supplement. Everything is added to the engine's own defaults below.
  */
 const ENGINE_PROTECTED_PATHS = ['/schema', '/_data'];
 const ENGINE_PROTECTED_API_PATHS = ['/api/admin', '/api/engine', '/api/public-links', '/api/pulse'];
@@ -26,10 +24,14 @@ function envPaths(key: string): string[] {
     .filter(Boolean);
 }
 
-const PROTECTED_PATHS = [...ENGINE_PROTECTED_PATHS, ...envPaths('AGNOSTIC_PROTECTED_PATHS')];
-const PROTECTED_API_PATHS = [...ENGINE_PROTECTED_API_PATHS, ...envPaths('AGNOSTIC_PROTECTED_API_PATHS')];
-const PUBLIC_PATHS = [...ENGINE_PUBLIC_PATHS, ...envPaths('AGNOSTIC_PUBLIC_PATHS')];
-const PUBLIC_SHARE_PATHS = [...ENGINE_PUBLIC_SHARE_PATHS, ...envPaths('AGNOSTIC_PUBLIC_SHARE_PATHS')];
+function paths(engine: string[], configList: string[] | undefined, envKey: string): string[] {
+  return Array.from(new Set([...engine, ...(configList ?? []), ...envPaths(envKey)]));
+}
+
+const PROTECTED_PATHS = paths(ENGINE_PROTECTED_PATHS, routing.protectedPaths, 'AGNOSTIC_PROTECTED_PATHS');
+const PROTECTED_API_PATHS = paths(ENGINE_PROTECTED_API_PATHS, routing.protectedApiPaths, 'AGNOSTIC_PROTECTED_API_PATHS');
+const PUBLIC_PATHS = paths(ENGINE_PUBLIC_PATHS, routing.publicPaths, 'AGNOSTIC_PUBLIC_PATHS');
+const PUBLIC_SHARE_PATHS = paths(ENGINE_PUBLIC_SHARE_PATHS, routing.publicSharePaths, 'AGNOSTIC_PUBLIC_SHARE_PATHS');
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

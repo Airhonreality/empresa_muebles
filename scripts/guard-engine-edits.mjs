@@ -60,7 +60,7 @@ Editar engine reintroduce conflictos en el upstream. Usa la capa de extensión:
   · pixels / GTM / meta / JSON-LD→ storage/site-injections.json
   · colores / radios / fuentes   → design_tokens  (tokens.css)
   · @font-face / temas / CSS libre→ storage/styles/custom.css
-  · rutas protegidas / públicas  → env AGNOSTIC_*_PATHS
+  · rutas protegidas / públicas  → agnostic.routing.ts (o env AGNOSTIC_*_PATHS)
   · páginas bespoke              → src/app/<ruta>/page.tsx (rutas explícitas)
 Si el archivo es 100% del fork, protégelo con merge=ours en .gitattributes.
 ${C.reset}`);
