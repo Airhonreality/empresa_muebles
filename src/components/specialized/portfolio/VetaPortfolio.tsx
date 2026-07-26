@@ -1,12 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import VetaHeader from '../VetaHeader';
 import VetaFooter from '../VetaFooter';
+import VetaProjectGallery from '../shared/VetaProjectGallery';
 
 type PublicPortfolioImage = {
   imagen_url: string;
@@ -20,12 +18,14 @@ export type PublicPortfolioEntry = {
   zona: string;
   categoria_espacio: string;
   materiales_destacados?: string;
+  precio_referencial?: number;
   destacado: boolean;
   imagenes: PublicPortfolioImage[];
 };
 
-const categorias = ['cocinas', 'cavas_bares', 'dormitorios_closets', 'consolas_recibidores', 'otros'];
+const categorias = ['todos', 'cocinas', 'cavas_bares', 'dormitorios_closets', 'consolas_recibidores', 'otros'];
 const categoriasLabels: Record<string, string> = {
+  todos: 'Todos',
   cocinas: 'Cocinas',
   cavas_bares: 'Cavas & Bares',
   dormitorios_closets: 'Dormitorios & Closets',
@@ -33,125 +33,257 @@ const categoriasLabels: Record<string, string> = {
   otros: 'Otros',
 };
 
-/**
- * Presentation-only public component. The server passes a constrained projection;
- * this component never fetches Vault or receives portfolio relation identifiers.
- */
-export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEntry[] }) {
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedPortfolio, setSelectedPortfolio] = useState<PublicPortfolioEntry | null>(null);
-  const [currentImageIdx, setCurrentImageIdx] = useState(0);
+/* ── Smart image layout ──────────────────────────────────────────── */
 
-  const filteredPortfolios = useMemo(() => {
-    if (!selectedCategory) return entries;
-    return entries.filter((entry) => entry.categoria_espacio === selectedCategory);
-  }, [entries, selectedCategory]);
+type Orientation = 'landscape' | 'portrait' | 'square';
 
-  const portfolioImages = selectedPortfolio?.imagenes ?? [];
-  const currentImage = portfolioImages[currentImageIdx];
-  const selectPortfolio = (entry: PublicPortfolioEntry) => {
-    setSelectedPortfolio(entry);
-    setCurrentImageIdx(0);
-  };
+function useImageOrientations(urls: string[]): Orientation[] {
+  const [dims, setDims] = useState<Map<string, Orientation>>(new Map());
+
+  useEffect(() => {
+    let active = true;
+    const pending = new Map<string, Orientation>();
+    const load = async (url: string) => {
+      try {
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        const orient = img.naturalWidth > img.naturalHeight ? 'landscape'
+          : img.naturalWidth < img.naturalHeight ? 'portrait' : 'square';
+        pending.set(url, orient);
+      } catch {
+        pending.set(url, 'landscape');
+      }
+    };
+    Promise.all(urls.map(load)).then(() => { if (active) setDims(new Map(pending)); });
+    return () => { active = false; };
+  }, [urls.join(',')]);
+
+  return urls.map((u) => dims.get(u) ?? 'landscape');
+}
+
+type ImageItem = { url: string; description?: string };
+
+function SmartImageGrid({
+  images,
+  onImageClick,
+}: {
+  images: ImageItem[];
+  onImageClick: (index: number) => void;
+}) {
+  const urls = useMemo(() => images.map((i) => i.url), [images]);
+  const orientations = useImageOrientations(urls);
+  const count = images.length;
+
+  if (count === 0) return null;
+
+  const allPortrait = orientations.every((o) => o === 'portrait');
+  const allLandscape = orientations.every((o) => o === 'landscape');
+  const maxShow = Math.min(count, 6);
+  const display = images.slice(0, maxShow);
+
+  let gridClass = 'grid grid-cols-2 gap-2 h-full';
+  let childClass: ((i: number) => string) = () => '';
+
+  if (count === 1) {
+    gridClass = 'grid grid-cols-1 gap-0 h-full';
+  } else if (count === 2 && allPortrait) {
+    gridClass = 'grid grid-cols-2 gap-2 h-full';
+  } else if (count === 2 && allLandscape) {
+    gridClass = 'grid grid-rows-2 gap-2 h-full';
+  } else if (count === 3) {
+    gridClass = 'grid grid-cols-2 gap-2 h-full';
+    childClass = (i) => i === 0 ? 'row-span-2' : '';
+  } else if (count === 4) {
+    gridClass = 'grid grid-cols-2 gap-2 h-full';
+  } else if (count >= 5) {
+    gridClass = 'grid grid-cols-3 gap-2 h-full';
+    childClass = (i) => i < 2 ? 'col-span-1 row-span-2' : '';
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className={gridClass}>
+      {display.map((img, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onImageClick(i)}
+          className={`group relative overflow-hidden rounded-lg bg-[hsl(var(--veta-bg-linen))] ${childClass(i)}`}
+        >
+          <img
+            src={img.url}
+            alt={img.description ?? ''}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading={i === 0 ? 'eager' : 'lazy'}
+          />
+          <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
+        </button>
+      ))}
+      {count > maxShow && (
+        <button
+          type="button"
+          onClick={() => onImageClick(0)}
+          className="relative overflow-hidden rounded-lg bg-[hsl(var(--veta-bg-linen))] flex items-center justify-center text-xs font-semibold uppercase tracking-wider text-[hsl(var(--veta-text-stone))] hover:bg-[hsl(var(--veta-bg-linen))]/80 transition-colors"
+        >
+          +{count - maxShow} más
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ── Page component ──────────────────────────────────────────────── */
+
+export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEntry[] }) {
+  const [activeCategory, setActiveCategory] = useState('todos');
+  const [galleryEntry, setGalleryEntry] = useState<{ slug: string; startIdx: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = useMemo(() => {
+    if (activeCategory === 'todos') return entries;
+    return entries.filter((e) => e.categoria_espacio === activeCategory);
+  }, [entries, activeCategory]);
+
+  useEffect(() => {
+    containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeCategory]);
+
+  const openGallery = useCallback((slug: string, startIdx: number) => {
+    setGalleryEntry({ slug, startIdx });
+  }, []);
+
+  const activeEntry = useMemo(() => {
+    if (!galleryEntry) return null;
+    return entries.find((e) => e.slug === galleryEntry.slug) ?? null;
+  }, [galleryEntry, entries]);
+
+  return (
+    <div className="min-h-screen bg-[hsl(var(--veta-bg-warm-paper))]">
       <VetaHeader />
 
-      {/* Hero header — más padding-top por el header fijo */}
-      <section className="pt-28 pb-10 px-4 sm:px-8 lg:px-12">
+      {/* Hero + category filter */}
+      <section className="pt-28 pb-6 px-4 sm:px-8 lg:px-12 border-b border-[hsl(var(--veta-glass-light-border))]">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-light text-slate-900 mb-2" style={{ fontFamily: 'Futura BT, sans-serif' }}>Portafolio</h1>
-          <p className="text-lg text-slate-600">Proyectos realizados con materiales de calidad</p>
-        </div>
-      </section>
-
-      {/* Respuesta Atómica — intención de búsqueda */}
-      <section className="pb-10 px-4 sm:px-8 lg:px-12">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl font-light text-slate-900 mb-3" style={{ fontFamily: 'Futura BT, sans-serif' }}>
-            Carpintería y diseño en Bogotá
-          </h2>
-          <p className="text-sm leading-relaxed text-slate-600 max-w-2xl mx-auto">
-            Cada proyecto de nuestro portafolio representa una solución real de mobiliario
-            arquitectónico para hogares en Bogotá. Diseñamos y fabricamos cocinas integrales,
-            closets empotrados, centros de entretenimiento y piezas especiales en melanina RH,
-            maderas certificadas y herrajes europeos. Atendemos proyectos en Usaquén,
-            Chapinero, Teusaquillo, Suba norte y toda la capital.
+          <h1 className="veta-heading text-3xl font-semibold tracking-tight mb-2">Portafolio</h1>
+          <p className="text-sm text-[hsl(var(--veta-text-stone))] mb-5">
+            Proyectos realizados con materiales de calidad
           </p>
+          <nav className="flex gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {categorias.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                  activeCategory === cat
+                    ? 'bg-[hsl(var(--veta-text-carbon))] text-white'
+                    : 'text-[hsl(var(--veta-text-stone))] border border-[hsl(var(--veta-glass-light-border))] hover:bg-white/70'
+                }`}
+              >
+                {categoriasLabels[cat]}
+              </button>
+            ))}
+          </nav>
         </div>
       </section>
 
-      <section className="py-6 px-4 sm:px-8 lg:px-12 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto flex gap-3 overflow-x-auto pb-2">
-          <Button variant={selectedCategory === '' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedCategory('')}>Todos</Button>
-          {categorias.map((category) => (
-            <Button key={category} variant={selectedCategory === category ? 'default' : 'outline'} size="sm" onClick={() => setSelectedCategory(category)}>
-              {categoriasLabels[category]}
-            </Button>
-          ))}
+      {filtered.length === 0 ? (
+        <div className="flex h-[60vh] items-center justify-center text-sm text-[hsl(var(--veta-text-stone))]">
+          No hay proyectos en esta categoría
         </div>
-      </section>
+      ) : (
+        <div
+          ref={containerRef}
+          className="h-[calc(100vh-200px)] overflow-y-auto snap-y snap-mandatory scroll-smooth"
+        >
+          {filtered.map((entry, index) => {
+            const materials = entry.materiales_destacados
+              ? entry.materiales_destacados.split(/[\n,]+/).map((m) => m.trim()).filter(Boolean)
+              : [];
 
-      <section className="py-14 px-4 sm:px-8 lg:px-12">
-        <div className="max-w-7xl mx-auto">
-          {filteredPortfolios.length === 0 ? (
-            <div className="text-center py-16 text-slate-500">Sin proyectos en esta categoría</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPortfolios.map((portfolio) => {
-                const mainImage = portfolio.imagenes[0];
-                return (
-                  <button key={portfolio.slug} type="button" onClick={() => selectPortfolio(portfolio)} className="group cursor-pointer text-left">
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <div className="aspect-square overflow-hidden bg-slate-100">
-                        {mainImage ? <img src={mainImage.imagen_url} alt={portfolio.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center text-slate-400">Sin imagen</div>}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-2">{portfolio.titulo}</h3>
-                        <p className="text-sm text-slate-600 mb-3">{portfolio.zona}</p>
-                        <span className="inline-flex items-center text-sm text-blue-600"><span>Ver más</span><ChevronRight className="w-4 h-4 ml-1" /></span>
-                      </div>
-                    </Card>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <Dialog open={selectedPortfolio !== null} onOpenChange={(open) => { if (!open) setSelectedPortfolio(null); }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedPortfolio && (
-            <>
-              <DialogHeader><DialogTitle>{selectedPortfolio.titulo}</DialogTitle></DialogHeader>
-              <div className="space-y-6">
-                {portfolioImages.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="aspect-video bg-slate-100 overflow-hidden rounded-lg">
-                      {currentImage && <img src={currentImage.imagen_url} alt={currentImage.descripcion || 'Imagen del proyecto'} className="w-full h-full object-cover" />}
+            return (
+              <section
+                key={entry.slug}
+                className="snap-start min-h-[calc(100vh-200px)] flex flex-col lg:flex-row"
+              >
+                {/* Gallery side — 65% */}
+                <div className="lg:w-[65%] lg:h-[calc(100vh-200px)] p-3 lg:p-4 flex flex-col">
+                  <SmartImageGrid
+                    images={entry.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion }))}
+                    onImageClick={(idx) => openGallery(entry.slug, idx)}
+                  />
+                  {index === 0 && filtered.length > 1 && (
+                    <div className="flex items-center justify-center gap-1 mt-2 text-[9px] uppercase tracking-widest text-[hsl(var(--veta-text-stone))] lg:hidden">
+                      <span>Desliza</span>
+                      <ChevronDown className="h-3 w-3 animate-bounce" />
                     </div>
-                    {portfolioImages.length > 1 && (
-                      <div className="flex items-center justify-between text-sm text-slate-600">
-                        <span>{currentImageIdx + 1} de {portfolioImages.length}</span>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setCurrentImageIdx((index) => index === 0 ? portfolioImages.length - 1 : index - 1)}>Anterior</Button>
-                          <Button variant="outline" size="sm" onClick={() => setCurrentImageIdx((index) => index === portfolioImages.length - 1 ? 0 : index + 1)}>Siguiente</Button>
-                        </div>
+                  )}
+                </div>
+
+                {/* Info side — 35% */}
+                <div className="lg:w-[35%] px-6 py-6 lg:px-8 lg:py-10 lg:h-[calc(100vh-200px)] lg:overflow-y-auto flex flex-col justify-center">
+                  <span className="inline-block rounded-full bg-[hsl(var(--veta-gold-muted))]/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[hsl(var(--veta-gold-hover))] mb-3 self-start">
+                    {categoriasLabels[entry.categoria_espacio] || entry.categoria_espacio}
+                  </span>
+
+                  <h2 className="veta-heading text-2xl lg:text-3xl font-semibold leading-tight tracking-tight mb-3">
+                    {entry.titulo}
+                  </h2>
+
+                  <p className="text-xs uppercase tracking-wider text-[hsl(var(--veta-text-stone))] mb-4">
+                    {entry.zona}
+                  </p>
+
+                  {entry.descripcion_comercial && (
+                    <p className="text-sm leading-relaxed text-[hsl(var(--veta-text-stone))] mb-6">
+                      {entry.descripcion_comercial}
+                    </p>
+                  )}
+
+                  {materials.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(var(--veta-text-stone))] mb-2">
+                        Materiales
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {materials.map((m) => (
+                          <span
+                            key={m}
+                            className="rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--veta-text-stone))]"
+                          >
+                            {m}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                    {currentImage?.descripcion && <p className="text-sm text-slate-600">{currentImage.descripcion}</p>}
-                  </div>
-                )}
-                {selectedPortfolio.descripcion_comercial && <div><h3 className="text-lg font-semibold mb-2">Descripción</h3><p className="text-slate-700 whitespace-pre-wrap">{selectedPortfolio.descripcion_comercial}</p></div>}
-                {selectedPortfolio.materiales_destacados && <div><h3 className="text-lg font-semibold mb-3">Materiales utilizados</h3><p className="text-slate-700 whitespace-pre-wrap">{selectedPortfolio.materiales_destacados}</p></div>}
-                <div className="border-t pt-4 flex justify-between text-sm text-slate-600"><span>Proyecto residencial</span><span>{selectedPortfolio.zona}</span></div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+                    </div>
+                  )}
+
+                  {index === 0 && filtered.length > 1 && (
+                    <div className="hidden lg:flex items-center gap-2 mt-8 text-[10px] uppercase tracking-widest text-[hsl(var(--veta-text-stone))]">
+                      <ChevronDown className="h-3.5 w-3.5 animate-bounce" />
+                      <span>Desliza para ver más proyectos</span>
+                    </div>
+                  )}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
+      <VetaProjectGallery
+        open={activeEntry !== null}
+        onOpenChange={(open) => { if (!open) setGalleryEntry(null); }}
+        title={activeEntry?.titulo ?? ''}
+        description={activeEntry?.descripcion_comercial}
+        images={activeEntry?.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion })) ?? []}
+        materials={
+          activeEntry?.materiales_destacados
+            ? activeEntry.materiales_destacados.split(/[\n,]+/).map((m) => m.trim()).filter(Boolean)
+            : undefined
+        }
+        startIndex={galleryEntry?.startIdx ?? 0}
+      />
 
       <VetaFooter />
     </div>
