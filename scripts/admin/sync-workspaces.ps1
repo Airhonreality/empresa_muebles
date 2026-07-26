@@ -144,8 +144,11 @@ foreach ($ws in $registry.workspaces) {
     # igual en storage/, src/generated/, specialized/ y agnostic.config.ts.
     git config merge.ours.driver true
 
+    # --no-renames: evita que la deteccion de renames de git empareje un
+    # directorio de engine borrado con uno de producto del fork (falsos
+    # conflictos "file location", p.ej. src/lib/veta/*).
     Write-Step "$behind commit(s) nuevos. Fusionando..."
-    $mergeOutput = git merge "upstream/$seedBranch" --no-ff -m "chore: sync engine ($seedBranch)" 2>&1
+    $mergeOutput = git merge "upstream/$seedBranch" --no-ff --no-renames -m "chore: sync engine ($seedBranch)" 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Fail "Merge bloqueado. Detalle:"
         $mergeOutput | ForEach-Object { Write-Host "      $_" -ForegroundColor Red }
