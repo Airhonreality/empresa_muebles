@@ -72,6 +72,19 @@ function VetaTiendaContent() {
           </p>
         </div>
 
+        {/* Respuesta Atómica — intención de búsqueda */}
+        <section className="mx-auto mb-12 max-w-3xl text-center">
+          <h2 className="veta-heading mb-3 text-xl font-semibold tracking-[-0.02em]">
+            Muebles a medida en Bogotá con precio claro
+          </h2>
+          <p className="text-sm leading-relaxed text-[hsl(var(--veta-text-stone))]">
+            En Veta Dorada publicamos el valor de nuestros prefabricados y productos de catálogo
+            para que sepas exactamente cuánto invertir en tu espacio. Cada pieza se fabrica en
+            nuestro taller de la Carrera 72A con materiales premium y acabado profesional.
+            Trabajamos en Usaquén, Chapinero, Rosales, Chicó y toda la zona norte de Bogotá.
+          </p>
+        </section>
+
         {/* Cart Badge */}
         <div className="mb-8 flex justify-end">
           <button

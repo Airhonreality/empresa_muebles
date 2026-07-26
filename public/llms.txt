@@ -1,21 +1,27 @@
-# Documentación Fáctica y Comercial - Veta Dorada
+# Veta Dorada — Mobiliario y Carpintería Arquitectónica en Bogotá
 
-Este archivo resume únicamente las rutas públicas indexables y la información comercial visible en el sitio.
+Fabricación, diseño e instalación de mobiliario a medida para hogares y oficinas en Bogotá.
+Cobertura: Usaquén, Chapinero, Rosales, Chicó, Quinta Camacho, Teusaquillo, Cedritos, Suba norte.
 
 ## Rutas indexables
 
-- `/`
-- `/portafolio`
-- `/agendar`
+- `/` — Inicio: estudio y servicios de carpintería arquitectónica.
+- `/tienda` — Productos y prefabricados con precio publicado.
+- `/tienda/[slug]` — Detalle de cada pieza con especificaciones.
+- `/portafolio` — Galería de proyectos residenciales realizados.
+- `/colecciones` — Mobiliario de colección con disponibilidad clara.
+- `/agendar` — Formulario de contacto y agendamiento de visita.
 
-`/colecciones` permanece disponible por URL para usuarios, pero no debe indexarse.
+## Materiales y servicios
+
+- Cocinas integrales en melanina RH y maderas certificadas.
+- Closets empotrados y walk-in closets con herrajes europeos (Blum, Häfele).
+- Centros de entretenimiento, bibliotecas y escritorios a medida.
+- Mesones de cuarzo y sinterizados para cocinas y baños.
+- Diseño 3D con renders fotorrealistas previo a fabricación.
 
 ## Contacto y pie legal
 
-- El contacto principal del sitio se canaliza por `/agendar` y por los datos de WhatsApp visibles en la interfaz pública.
-- El pie legal muestra la razón social y el NIT configurados en el sitio.
-
-## Alcance público
-
-- El sitio publica portafolio y contenido de agenda.
-- Este documento no presenta `/colecciones` como catálogo de adquisición.
+- Taller: Carrera 72A # 71A-57, Bogotá D.C., Colombia.
+- WhatsApp y formulario de contacto en `/agendar`.
+- Razón social: Hermanos Garcia Gonzalez SAS — NIT 901421357-9.

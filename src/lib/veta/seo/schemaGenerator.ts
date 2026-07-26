@@ -218,3 +218,83 @@ function offer(name: string, description: string): Record<string, unknown> {
     },
   };
 }
+
+type StoreProduct = {
+  slug_publico: string;
+  nombre: string;
+  descripcion_comercial?: string;
+  precio_publico: number;
+  imagen_url?: string;
+  disponibilidad: 'disponible' | 'bajo_pedido' | 'agotado';
+};
+
+const STOCK_MAP: Record<string, string> = {
+  disponible: 'https://schema.org/InStock',
+  bajo_pedido: 'https://schema.org/PreOrder',
+  agotado: 'https://schema.org/OutOfStock',
+};
+
+export function buildProductSchema(product: StoreProduct): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.nombre,
+    description: product.descripcion_comercial ?? product.nombre,
+    image: product.imagen_url ? absoluteUrl(product.imagen_url) : undefined,
+    brand: { '@id': ORGANIZATION_ID },
+    offers: {
+      '@type': 'Offer',
+      price: product.precio_publico,
+      priceCurrency: 'COP',
+      availability: STOCK_MAP[product.disponibilidad] ?? 'https://schema.org/PreOrder',
+      url: absoluteUrl(`/tienda/${product.slug_publico}`),
+      seller: { '@id': ORGANIZATION_ID },
+    },
+  };
+}
+
+export function buildBreadcrumbSchema(items: { name: string; url: string }[]): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.url),
+    })),
+  };
+}
+
+type PortfolioEntry = {
+  titulo: string;
+  descripcion_comercial?: string;
+  zona: string;
+  categoria_espacio: string;
+  imagenes: { imagen_url: string; descripcion?: string }[];
+};
+
+export function buildPortfolioItemSchema(entry: PortfolioEntry): Record<string, unknown> {
+  const image = entry.imagenes[0]?.imagen_url;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: entry.titulo,
+    description: entry.descripcion_comercial ?? entry.titulo,
+    image: image ? absoluteUrl(image) : undefined,
+    locationCreated: {
+      '@type': 'Place',
+      name: `${entry.zona}, Bogotá`,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: entry.zona,
+        addressRegion: 'Bogotá D.C.',
+        addressCountry: 'CO',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': absoluteUrl('/portafolio'),
+    },
+  };
+}

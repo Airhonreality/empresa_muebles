@@ -5,6 +5,8 @@ import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import VetaHeader from '../VetaHeader';
+import VetaFooter from '../VetaFooter';
 
 type PublicPortfolioImage = {
   imagen_url: string;
@@ -54,14 +56,33 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
+      <VetaHeader />
+
+      {/* Hero header — más padding-top por el header fijo */}
+      <section className="pt-28 pb-10 px-4 sm:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-light text-slate-900 mb-2" style={{ fontFamily: 'Futura BT, sans-serif' }}>Portafolio</h1>
           <p className="text-lg text-slate-600">Proyectos realizados con materiales de calidad</p>
         </div>
       </section>
 
-      <section className="py-8 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
+      {/* Respuesta Atómica — intención de búsqueda */}
+      <section className="pb-10 px-4 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-2xl font-light text-slate-900 mb-3" style={{ fontFamily: 'Futura BT, sans-serif' }}>
+            Carpintería y diseño en Bogotá
+          </h2>
+          <p className="text-sm leading-relaxed text-slate-600 max-w-2xl mx-auto">
+            Cada proyecto de nuestro portafolio representa una solución real de mobiliario
+            arquitectónico para hogares en Bogotá. Diseñamos y fabricamos cocinas integrales,
+            closets empotrados, centros de entretenimiento y piezas especiales en melanina RH,
+            maderas certificadas y herrajes europeos. Atendemos proyectos en Usaquén,
+            Chapinero, Teusaquillo, Suba norte y toda la capital.
+          </p>
+        </div>
+      </section>
+
+      <section className="py-6 px-4 sm:px-8 lg:px-12 border-b border-slate-200">
         <div className="max-w-7xl mx-auto flex gap-3 overflow-x-auto pb-2">
           <Button variant={selectedCategory === '' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedCategory('')}>Todos</Button>
           {categorias.map((category) => (
@@ -72,7 +93,7 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
         </div>
       </section>
 
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
+      <section className="py-14 px-4 sm:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
           {filteredPortfolios.length === 0 ? (
             <div className="text-center py-16 text-slate-500">Sin proyectos en esta categoría</div>
@@ -131,6 +152,8 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
           )}
         </DialogContent>
       </Dialog>
+
+      <VetaFooter />
     </div>
   );
 }
