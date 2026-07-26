@@ -32,5 +32,10 @@ agnostic.config.ts             merge=ours
 
 # Puntos de entrada de ruta que el fork posee (home + modelo de ruteo público).
 # El seed trae versiones "thin" por defecto; el fork mantiene las suyas.
-src/app/page.tsx               merge=ours
-src/app/[...slug]/page.tsx     merge=ours
+# Nota: los corchetes se escapan como [[] y []] porque en gitattributes son
+# clases de caracteres (si no, la regla no matchea el directorio [...slug]).
+src/app/page.tsx                    merge=ours
+src/app/[[]...slug[]]/page.tsx      merge=ours
+
+# El fork mantiene su propia documentación de entorno (superset del engine).
+.env.example                        merge=ours
