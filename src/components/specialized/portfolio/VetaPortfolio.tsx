@@ -158,11 +158,11 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
   }, [galleryEntry, entries]);
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--veta-bg-warm-paper))]">
+    <div className="min-h-screen flex flex-col bg-[hsl(var(--veta-bg-warm-paper))]">
       <VetaHeader />
 
-      {/* Hero + category filter */}
-      <section className="pt-28 pb-6 px-4 sm:px-8 lg:px-12 border-b border-[hsl(var(--veta-glass-light-border))]">
+      {/* Hero + category filter — static, outside scroll */}
+      <section className="pt-24 pb-5 px-4 sm:px-8 lg:px-12 border-b border-[hsl(var(--veta-glass-light-border))] shrink-0">
         <div className="max-w-7xl mx-auto">
           <h1 className="veta-heading text-3xl font-semibold tracking-tight mb-2">Portafolio</h1>
           <p className="text-sm text-[hsl(var(--veta-text-stone))] mb-5">
@@ -187,14 +187,15 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
         </div>
       </section>
 
+      {/* Scrollable area — flex-1 fills remaining space between header+hero and footer */}
       {filtered.length === 0 ? (
-        <div className="flex h-[60vh] items-center justify-center text-sm text-[hsl(var(--veta-text-stone))]">
+        <div className="flex-1 flex items-center justify-center text-sm text-[hsl(var(--veta-text-stone))]">
           No hay proyectos en esta categoría
         </div>
       ) : (
         <div
           ref={containerRef}
-          className="h-[calc(100vh-200px)] overflow-y-auto snap-y snap-mandatory scroll-smooth"
+          className="flex-1 overflow-y-auto snap-y snap-mandatory scroll-smooth"
         >
           {filtered.map((entry, index) => {
             const materials = entry.materiales_destacados
@@ -204,10 +205,10 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
             return (
               <section
                 key={entry.slug}
-                className="snap-start min-h-[calc(100vh-200px)] flex flex-col lg:flex-row"
+                className="snap-start min-h-full flex flex-col lg:flex-row"
               >
                 {/* Gallery side — 65% */}
-                <div className="lg:w-[65%] lg:h-[calc(100vh-200px)] p-3 lg:p-4 flex flex-col">
+                <div className="lg:w-[65%] lg:h-full p-3 lg:p-4 flex flex-col">
                   <SmartImageGrid
                     images={entry.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion }))}
                     onImageClick={(idx) => openGallery(entry.slug, idx)}
@@ -221,7 +222,7 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
                 </div>
 
                 {/* Info side — 35% */}
-                <div className="lg:w-[35%] px-6 py-6 lg:px-8 lg:py-10 lg:h-[calc(100vh-200px)] lg:overflow-y-auto flex flex-col justify-center">
+                <div className="lg:w-[35%] px-6 py-6 lg:px-8 lg:py-10 lg:h-full lg:overflow-y-auto flex flex-col justify-center">
                   <span className="inline-block rounded-full bg-[hsl(var(--veta-gold-muted))]/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[hsl(var(--veta-gold-hover))] mb-3 self-start">
                     {categoriasLabels[entry.categoria_espacio] || entry.categoria_espacio}
                   </span>

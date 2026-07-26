@@ -103,7 +103,7 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
         imagen_url: imageByPortfolioId.get(record.id),
       }];
     })
-    .slice(0, 6);
+    .slice(0, 3);
 
   return { commercial_config, testimonials, spaces };
 }
