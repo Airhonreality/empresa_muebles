@@ -95,9 +95,13 @@ export default async function RootLayout({
   const isPublicShare = (await headers()).get('x-agnostic-public-share') === '1';
   const storageRoot = getProjectStorageRoot();
   const session = isPublicShare ? null : await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const vaultData = isPublicShare ? {} : await getVaultData([
-    SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.TOKENS, "configuracion_comercial",
-  ]);
+  // Public-share pages still need the site's public identity (SEO org schema,
+  // analytics) — load only configuracion_comercial, never private namespaces.
+  const vaultData = isPublicShare
+    ? await getVaultData(["configuracion_comercial"])
+    : await getVaultData([
+        SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.TOKENS, "configuracion_comercial",
+      ]);
 
   let tokenStyles = "";
   try {
