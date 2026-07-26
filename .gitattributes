@@ -39,3 +39,11 @@ src/app/[[]...slug[]]/page.tsx      merge=ours
 
 # El fork mantiene su propia documentación de entorno (superset del engine).
 .env.example                        merge=ours
+
+# El fork mantiene su propio .gitignore (superset con sus reglas de producto).
+.gitignore                          merge=ours
+
+# SEO por-ruta del fork (lista sus páginas públicas explícitas). El seed trae
+# versiones data-driven por defecto; el fork mantiene las suyas.
+src/app/robots.ts                   merge=ours
+src/app/sitemap.ts                  merge=ours
