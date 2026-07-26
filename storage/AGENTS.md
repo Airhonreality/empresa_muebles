@@ -2,6 +2,48 @@
 
 This file belongs to the fork layer. Update it in each project fork.
 
+## 🚧 Frontera engine ⇄ fork — NUNCA editar archivos de engine
+
+Un fork **nunca** edita archivos de engine para necesidades de producto. Hacerlo
+reintroduce conflictos en el upstream y desincroniza el fork del motor. Cada
+necesidad de producto tiene una **capa de extensión** (dato/config del fork):
+
+| Necesidad | Va aquí (fork-owned) | NO tocar (engine) |
+|---|---|---|
+| Nombre, título, descripción, favicon, GA, JSON-LD Organization | `storage/db/configuracion_comercial.json` | `src/app/layout.tsx` |
+| Open Graph / Twitter | mismos datos (`og_image`, `twitter_handle`, `site_url`) | `src/app/layout.tsx` |
+| Marketing: pixels, GTM, meta de verificación, JSON-LD extra, widgets | `storage/site-injections.json` | `src/app/layout.tsx` |
+| Colores / radios / fuentes (variables) | `design_tokens` → `storage/styles/tokens.css` | `src/app/globals.css` |
+| @font-face / temas `.theme-*` / CSS libre | `storage/styles/custom.css` | `src/app/globals.css` |
+| Rutas protegidas / públicas | `agnostic.routing.ts` | `src/middleware.ts` |
+| Adapters | `agnostic.config.ts` (zona `agno:adapters`) | `src/lib/integrations/adapters.server.ts` |
+| Bloques custom | `agnostic.config.ts` + `src/components/specialized/` | `src/components/agnostic/**` |
+| Páginas públicas bespoke | `src/app/<ruta>/page.tsx` (rutas explícitas ganan sobre `[...slug]`) | `src/app/[...slug]/page.tsx` |
+| robots / sitemap con rutas propias | `src/app/robots.ts` / `sitemap.ts` (son fork-owned aquí) | — |
+
+**Rutas de engine que NO se editan por producto** (son del seed; se sincronizan):
+`src/app/layout.tsx`, `src/app/globals.css`, `src/middleware.ts`,
+`src/components/agnostic/**`, `src/lib/agnostic/**`, `src/core/**`, `src/server/**`
+(salvo helpers de producto ya existentes), `packages/**`, `src/app/api/**`
+(las rutas de engine; un fork puede añadir SUS propias rutas pero no modificar las del motor),
+`scripts/**` del motor. Un componente que dependa de auth va en `specialized/`, no en
+`components/agnostic/`.
+
+Si de verdad necesitas cambiar engine (mejora genuina del motor, no producto), **no lo
+edites en el fork**: súbelo al seed por su flujo, o abre una lane con gate humano.
+
+**Enforcement (cuando la rama tenga el sync del seed):** `scripts/guard-engine-edits.mjs`
+(pre-commit) avisa/bloquea edits de engine; `scripts/sync-preflight.mjs` reporta el drift
+antes de cada sync. Ver `storage/progreso/EXTENSION_POINTS_Y_ENFORCEMENT_2026-07-26.md`.
+
+### Incidente 2026-07-26 (rama `goal/webstore-seo-lanzamiento`)
+Un agente editó ~7 archivos de engine (`layout.tsx` hardcodeando marca/favicon,
+`api/upload`, `components/agnostic/auth/AuthBoundary.tsx`, `scripts/sync-routes-on-deploy.ts`,
+`components/ui/SmartImageInput.tsx`, rutas debug `api/*/neon`) en una rama previa a los
+puntos de extensión y sin el guardián activo. Resolución: marca/favicon → `configuracion_comercial`;
+componentes de producto (AuthBoundary) → `specialized/`; mejoras genuinas de engine (upload,
+SmartImageInput) → subir al seed; rutas `public-debug/neon` → eliminar (exponían la DB).
+
 ## Gobierno del catálogo estructural (decisión vigente; controles técnicos pendientes)
 
 La autoridad del catálogo se define en
