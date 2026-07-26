@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   },
 };
 
-/** Isolated public product route. Product data comes only from the public projection endpoint. */
-export default function StoreProductPage() {
+export default function CollectionsProductPage() {
   return <VetaProductoDetalle />;
 }

@@ -5,6 +5,9 @@
 
 export const dynamic = 'force-dynamic';
 
+// No requerir autenticación para debug
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const DATABASE_URL = process.env.DATABASE_URL;

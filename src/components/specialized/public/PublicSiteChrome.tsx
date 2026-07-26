@@ -41,7 +41,7 @@ export function PublicSiteFooter() {
           <p className="mt-1 text-sm text-[hsl(var(--veta-text-stone))]">Carpintería arquitectónica en Bogotá.</p>
         </div>
         <div className="flex items-center gap-5 text-sm text-[hsl(var(--veta-text-stone))]">
-          <Link href="/tienda" className="inline-flex items-center gap-2 hover:text-[hsl(var(--veta-text-carbon))]"><Layers className="h-4 w-4" /> Tienda</Link>
+          <Link href="/colecciones" className="inline-flex items-center gap-2 hover:text-[hsl(var(--veta-text-carbon))]"><Layers className="h-4 w-4" /> Colecciones</Link>
           <Link href="/agendar" className="inline-flex items-center gap-2 hover:text-[hsl(var(--veta-text-carbon))]"><MessageCircle className="h-4 w-4" /> Contacto</Link>
         </div>
       </div>

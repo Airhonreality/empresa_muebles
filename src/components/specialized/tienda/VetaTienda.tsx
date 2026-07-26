@@ -150,7 +150,7 @@ function VetaTiendaContent() {
 
                   {/* CTA */}
                   <Link
-                    href={`/tienda/${product.slug}`}
+                    href={`/colecciones/${product.slug}`}
                     className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-[hsl(var(--veta-gold-muted))] px-4 py-2 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[hsl(var(--veta-gold-hover))]"
                   >
                     Ver detalle

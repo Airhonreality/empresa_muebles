@@ -81,11 +81,11 @@ function VetaProductoDetalleContent({ block }: Partial<BlockProps>) {
               Producto no encontrado
             </h1>
             <Link
-              href="/tienda"
+              href="/colecciones"
               className="inline-flex items-center gap-2 text-[hsl(var(--veta-gold-hover))]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Volver a la tienda
+              Volver a colecciones
             </Link>
           </div>
         </div>
@@ -117,11 +117,11 @@ function VetaProductoDetalleContent({ block }: Partial<BlockProps>) {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         {/* Back Button */}
         <Link
-          href="/tienda"
+          href="/colecciones"
           className="mb-8 inline-flex items-center gap-2 text-[hsl(var(--veta-gold-hover))] transition-colors hover:text-[hsl(var(--veta-gold-muted))]"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver a la tienda
+          Volver a colecciones
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-2">
@@ -259,7 +259,7 @@ function VetaProductoDetalleContent({ block }: Partial<BlockProps>) {
               {relatedProducts.map((related) => (
                 <Link
                   key={related.id}
-                  href={`/tienda/${related.slug}`}
+                  href={`/colecciones/${related.slug}`}
                   className="flex flex-col overflow-hidden rounded-xl border border-[hsl(var(--veta-glass-light-border))] bg-white transition-all hover:shadow-lg"
                 >
                   {related.imagen_url ? (

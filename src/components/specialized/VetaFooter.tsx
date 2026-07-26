@@ -85,8 +85,8 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
                 </Link>
               </li>
               <li>
-                <Link href="/tienda" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
-                  Tienda
+                <Link href="/colecciones" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
+                  Colecciones
                 </Link>
               </li>
               <li>

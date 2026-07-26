@@ -24,6 +24,7 @@ export type PublicHomeSpace = {
   descripcion: string;
   materiales: string[];
   imagen_url?: string;
+  destacado: boolean;
 };
 
 export type PublicHomeContent = {

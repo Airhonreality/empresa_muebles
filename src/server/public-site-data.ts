@@ -101,6 +101,7 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
         descripcion: description,
         materiales: rawMaterials.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean).slice(0, 4),
         imagen_url: imageByPortfolioId.get(record.id),
+        destacado: data.destacado === true,
       }];
     })
     .slice(0, 6);
