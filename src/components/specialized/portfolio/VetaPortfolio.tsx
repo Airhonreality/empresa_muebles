@@ -195,7 +195,7 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
       ) : (
         <div
           ref={containerRef}
-          className="flex-1 overflow-y-auto snap-y snap-mandatory scroll-smooth"
+          className="flex-1 min-h-0 overflow-y-auto snap-y snap-mandatory scroll-smooth"
         >
           {filtered.map((entry, index) => {
             const materials = entry.materiales_destacados
@@ -205,16 +205,18 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
             return (
               <section
                 key={entry.slug}
-                className="snap-start min-h-full flex flex-col lg:flex-row"
+                className="snap-start lg:h-full min-h-0 flex flex-col lg:flex-row"
               >
                 {/* Gallery side — 65% */}
-                <div className="lg:w-[65%] lg:h-full p-3 lg:p-4 flex flex-col">
-                  <SmartImageGrid
-                    images={entry.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion }))}
-                    onImageClick={(idx) => openGallery(entry.slug, idx)}
-                  />
+                <div className="lg:w-[65%] lg:h-full min-h-0 p-3 lg:p-4 flex flex-col">
+                  <div className="flex-1 min-h-0">
+                    <SmartImageGrid
+                      images={entry.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion }))}
+                      onImageClick={(idx) => openGallery(entry.slug, idx)}
+                    />
+                  </div>
                   {index === 0 && filtered.length > 1 && (
-                    <div className="flex items-center justify-center gap-1 mt-2 text-[9px] uppercase tracking-widest text-[hsl(var(--veta-text-stone))] lg:hidden">
+                    <div className="flex-none flex items-center justify-center gap-1 mt-2 text-[9px] uppercase tracking-widest text-[hsl(var(--veta-text-stone))] lg:hidden">
                       <span>Desliza</span>
                       <ChevronDown className="h-3 w-3 animate-bounce" />
                     </div>
