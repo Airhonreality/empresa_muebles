@@ -29,3 +29,8 @@ src/lib/veta/**                 merge=ours
 
 # Bridge de configuración del fork (bloques + zona de adapters instalados)
 agnostic.config.ts             merge=ours
+
+# Puntos de entrada de ruta que el fork posee (home + modelo de ruteo público).
+# El seed trae versiones "thin" por defecto; el fork mantiene las suyas.
+src/app/page.tsx               merge=ours
+src/app/[...slug]/page.tsx     merge=ours

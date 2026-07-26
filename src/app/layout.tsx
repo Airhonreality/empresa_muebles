@@ -1,10 +1,24 @@
 /**
- * Root layout for the Agnostic Shell.
+ * 🏛️ PORTAL: Root Layout (The Agnostic Shell)
+ * ────────────────────────────────────────────
+ * AXIOMATIC_CONTRACT:
+ * - MUST: Inyectar tokens CSS de satélite inline para prevenir FOUC.
+ * - NEVER: Contener lógica de negocio o de transformación de DNA.
+ *
+ * ADR: Se opta por inyección inline de estilos de satélite para garantizar
+ * que la identidad visual sea soberana desde el primer frame de renderizado.
+ *
+ * RELATIONSHIPS:
+ * - Padre de todas las rutas del sistema.
  */
 import type { Metadata } from "next";
-import { Capriola, Comfortaa, Outfit, Inter, Manrope } from "next/font/google";
-import { cookies, headers } from "next/headers";
-import { getIronSession } from "iron-session";
+import {
+  Candal,
+  Capriola,
+  Comfortaa,
+  Outfit,
+  Inter,
+} from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -12,50 +26,101 @@ import { Toaster } from "sonner";
 import { AdminTools } from "@/components/agnostic/admin/AdminTools";
 import { getVaultData } from "@/core/server/vault";
 import { getProjectStorageRoot } from "@/server/activeProject";
+import { getIronSession } from "iron-session";
+import { cookies, headers } from "next/headers";
 import fs from "fs/promises";
 import path from "path";
 import { SYSTEM_NS } from "@/lib/agnostic/constants";
-import { buildOrganizationSchema, readCommercialConfig, serializeJsonLd } from "@/lib/veta/seo/schemaGenerator";
-import { getGoogleAnalyticsMeasurementId } from "@/lib/veta/seo/publicSite";
+import { buildOrganizationSchema, readCommercialConfig, readSiteIdentity, serializeJsonLd } from "@/lib/seo/siteConfig";
 import { sessionOptions, type SessionData } from "@/lib/agnostic/session";
-import { getPublicHomeContent } from '@/server/public-site-data';
 
-export const metadata: Metadata = {
-  title: "Veta Dorada | Carpintería Arquitectónica",
-  description: "Diseñamos, fabricamos e instalamos espacios integrales con tecnología 3D y materiales premium.",
-  icons: {
-    icon: "/favicon.svg",
-  },
-};
+/**
+ * Default site identity (browser tab, description, favicon) resolved from the
+ * fork's `configuracion_comercial` data. Per-page titles override this via each
+ * page's own generateMetadata. A commercial fork sets its identity in storage
+ * and never edits this file.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const data = await getVaultData(["configuracion_comercial"]);
+    const identity = readSiteIdentity(readCommercialConfig(data["configuracion_comercial"] as unknown));
+    return {
+      title: { default: identity.title, template: `%s · ${identity.name}` },
+      description: identity.description ?? "A professional, storage-based agnostic framework",
+      icons: identity.faviconUrl ? { icon: identity.faviconUrl } : undefined,
+    };
+  } catch {
+    return { title: "Agnostic System", description: "A professional, storage-based agnostic framework" };
+  }
+}
 
-const outfit = Outfit({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-outfit", display: "swap" });
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-inter", display: "swap" });
-const comfortaa = Comfortaa({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-comfortaa", display: "swap" });
-const capriola = Capriola({ subsets: ["latin"], weight: "400", variable: "--font-capriola", display: "swap" });
-const manrope = Manrope({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-manrope", display: "swap" });
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-outfit",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const comfortaa = Comfortaa({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-comfortaa",
+  display: "swap",
+});
+
+const capriola = Capriola({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-capriola",
+  display: "swap",
+});
+
+const candal = Candal({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-candal",
+  display: "swap",
+});
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const isPublicSite = (await headers()).get('x-agnostic-public-site') === '1';
+  const isPublicShare = (await headers()).get('x-agnostic-public-share') === '1';
   const storageRoot = getProjectStorageRoot();
-  const session = isPublicSite ? null : await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const vaultData = isPublicSite
-    ? { configuracion_comercial: (await getPublicHomeContent()).commercial_config }
+  const session = isPublicShare ? null : await getIronSession<SessionData>(await cookies(), sessionOptions);
+  // Public-share pages still need the site's public identity (SEO org schema,
+  // analytics) — load only configuracion_comercial, never private namespaces.
+  const vaultData = isPublicShare
+    ? await getVaultData(["configuracion_comercial"])
     : await getVaultData([
-      SYSTEM_NS.ROUTES,
-      SYSTEM_NS.SCHEMAS,
-      SYSTEM_NS.CONFIG,
-      SYSTEM_NS.TOKENS,
-      "configuracion_comercial",
-    ]);
+        SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS, SYSTEM_NS.CONFIG, SYSTEM_NS.TOKENS, "configuracion_comercial",
+      ]);
 
   let tokenStyles = "";
   try {
     const tokensPath = path.join(storageRoot, "styles", "tokens.css");
     tokenStyles = await fs.readFile(tokensPath, "utf-8");
   } catch {
-    // Use seed defaults when the fork has no tokens yet.
+    // The satellite still has no tokens and falls back to the Seed defaults.
+  }
+
+  // Fork-owned free-form CSS: @font-face for custom (non-Google) fonts, component
+  // themes (.theme-*), and any override. Injected AFTER tokens.css so it wins by
+  // cascade. Lets a commercial fork own all its CSS in storage/ without ever
+  // editing globals.css (an engine file). Optional — absent on a virgin fork.
+  let customStyles = "";
+  try {
+    const customPath = path.join(storageRoot, "styles", "custom.css");
+    customStyles = await fs.readFile(customPath, "utf-8");
+  } catch {
+    // No custom fork CSS yet.
   }
 
   let dna: Record<string, unknown> = {};
@@ -64,36 +129,56 @@ export default async function RootLayout({
     const manifestContent = await fs.readFile(manifestPath, "utf-8");
     dna = JSON.parse(manifestContent.replace(/^\uFEFF/, ""));
   } catch {
-    // Keep the local strategy fallback.
+    // No manifest yet, keep the default local strategy.
   }
 
-  const commercialConfig = readCommercialConfig(vaultData["configuracion_comercial"] as any);
-  const organizationSchema = buildOrganizationSchema(commercialConfig);
-  const gaMeasurementId = isPublicSite ? getGoogleAnalyticsMeasurementId() : '';
   void dna;
+  const commercialConfig = readCommercialConfig(vaultData["configuracion_comercial"] as unknown);
+  const organizationSchema = buildOrganizationSchema(commercialConfig);
+  const gaMeasurementId = readSiteIdentity(commercialConfig).gaMeasurementId;
 
   return (
     <html
       lang="es"
       suppressHydrationWarning
-      className={[outfit.variable, inter.variable, comfortaa.variable, capriola.variable, manrope.variable].join(" ")}
+      className={[
+        outfit.variable,
+        inter.variable,
+        comfortaa.variable,
+        capriola.variable,
+        candal.variable,
+      ].join(" ")}
     >
       <head>
         {tokenStyles && (
-          <style id="agnostic-tokens" dangerouslySetInnerHTML={{ __html: tokenStyles }} />
+          <style
+            id="agnostic-tokens"
+            dangerouslySetInnerHTML={{ __html: tokenStyles }}
+          />
         )}
-        <link rel="stylesheet" href="/api/satellite-styles" precedence="satellite" />
+
+        <link
+          rel="stylesheet"
+          href="/api/satellite-styles"
+          precedence="satellite"
+        />
+
+        {customStyles && (
+          <style
+            id="agnostic-custom"
+            dangerouslySetInnerHTML={{ __html: customStyles }}
+          />
+        )}
+
         <script
           id="organization-jsonld"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationSchema) }}
         />
+
         {gaMeasurementId && (
           <>
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
-            />
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} />
             <script
               id="google-analytics"
               dangerouslySetInnerHTML={{
@@ -102,22 +187,22 @@ export default async function RootLayout({
                   "function gtag(){window.dataLayer.push(arguments);}",
                   "gtag('js', new Date());",
                   `gtag('config', ${JSON.stringify(gaMeasurementId)}, { anonymize_ip: true });`,
-                ].join('\n'),
+                ].join("\n"),
               }}
             />
           </>
         )}
       </head>
       <body className="antialiased">
-        <AppProvider initialData={vaultData}>
-          {isPublicSite ? children : (
+        {isPublicShare ? children : (
+          <AppProvider initialData={vaultData}>
             <AuthProvider initialUser={session?.user ?? null}>
               {children}
               <AdminTools />
               <Toaster position="bottom-left" expand={false} richColors />
             </AuthProvider>
-          )}
-        </AppProvider>
+          </AppProvider>
+        )}
       </body>
     </html>
   );
