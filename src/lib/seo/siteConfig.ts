@@ -95,10 +95,32 @@ function normalizeRecord(input: unknown): MaybeRecord {
   return input as MaybeRecord;
 }
 
+/**
+ * Some forks store commercial config as a flat object per record
+ * ({ data: { brand_name, site_title, ... } }); others as a key/value list
+ * ({ data: { llave, valor } } — one pair per record). Flatten the key/value
+ * shape into a single object so both conventions resolve identically.
+ */
+function flattenKeyValueRecords(records: Array<{ data?: MaybeRecord }>): MaybeRecord | null {
+  const map: MaybeRecord = {};
+  let matched = false;
+  for (const rec of records) {
+    const key = firstString(rec?.data?.llave ?? rec?.data?.key ?? rec?.data?.clave);
+    const value = rec?.data?.valor ?? rec?.data?.value ?? rec?.data?.val;
+    if (key && value !== undefined && value !== null) {
+      map[key] = value;
+      matched = true;
+    }
+  }
+  return matched ? map : null;
+}
+
 export function readCommercialConfig(source: unknown): CommercialConfig {
   if (Array.isArray(source)) {
-    const first = source.find(item => item && typeof item === 'object') as DataItem | undefined;
-    return first ? normalizeCommercialConfig(first.data) : {};
+    const records = source.filter(item => item && typeof item === 'object') as Array<{ data?: MaybeRecord }>;
+    const keyValue = flattenKeyValueRecords(records);
+    if (keyValue) return normalizeCommercialConfig(keyValue);
+    return records[0]?.data ? normalizeCommercialConfig(records[0].data) : {};
   }
   return normalizeCommercialConfig(source);
 }
@@ -110,7 +132,11 @@ export function normalizeCommercialConfig(source: unknown): CommercialConfig {
     legal_name: readCandidate(record, ['legal_name', 'company_name']),
     website_url: readCandidate(record, ['website_url', 'site_url', 'url', 'public_url']),
     logo_url: readCandidate(record, ['logo_url', 'brand_logo', 'logo', 'brand_image']),
-    same_as: toStringArray(record.same_as ?? record.social_links ?? record.social_urls),
+    same_as: Array.from(new Set([
+      ...toStringArray(record.same_as ?? record.social_links ?? record.social_urls),
+      ...['instagram_url', 'tiktok_url', 'facebook_url', 'youtube_url', 'linkedin_url', 'x_url', 'twitter_url']
+        .map(k => firstString(record[k])).filter((v): v is string => !!v),
+    ])),
     contact_email: readCandidate(record, ['contact_email', 'email', 'support_email']),
     telephone: readCandidate(record, ['telephone', 'phone', 'contact_phone']),
     address: normalizeRecord(record.address),
@@ -133,7 +159,9 @@ export function readSiteIdentity(config: CommercialConfig): SiteIdentity {
     title: config.site_title ?? name,
     description: config.site_description,
     faviconUrl: config.favicon_url,
-    gaMeasurementId: config.ga_measurement_id,
+    // Fall back to the conventional NEXT_PUBLIC_GA_MEASUREMENT_ID env var so forks
+    // that keep their analytics id in env (not storage) still work unchanged.
+    gaMeasurementId: config.ga_measurement_id ?? firstString(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
   };
 }
 
