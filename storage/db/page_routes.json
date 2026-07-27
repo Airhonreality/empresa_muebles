@@ -69,7 +69,11 @@
     "data": {
       "path": "/app/ficha/:id",
       "title": "Ficha de Producción",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "produccion"
+      ],
       "blocks": [
         {
           "id": "92376842-424c-4139-8d78-f01e1813d70e",
@@ -174,7 +178,11 @@
     "data": {
       "path": "/app/erp/finanzas",
       "title": "Finanzas Operativas",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "finanzas"
+      ],
       "layout_mode": "full",
       "layout": {
         "max_width": "full",
@@ -203,7 +211,12 @@
     "data": {
       "path": "/app/erp/catalogo",
       "title": "ERP Catalogo",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "comercial",
+        "produccion"
+      ],
       "blocks": [
         {
           "id": "ffe6e8d2-fd4a-4d0a-bb97-fa273715864b",
@@ -223,7 +236,11 @@
     "data": {
       "path": "/app/erp/comercial",
       "title": "ERP Comercial",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "comercial"
+      ],
       "blocks": [
         {
           "id": "3a2c7f42-366c-4a83-b67c-203f104b326b",
@@ -242,7 +259,13 @@
     "data": {
       "path": "/app/erp/calendar",
       "title": "ERP Calendario",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "comercial",
+        "produccion",
+        "finanzas"
+      ],
       "blocks": [
         {
           "id": "63171d14-f09e-4989-a214-41eb191a81d1",
@@ -261,7 +284,12 @@
     "data": {
       "path": "/app/erp/proveedores",
       "title": "ERP Proveedores",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "produccion",
+        "finanzas"
+      ],
       "blocks": [
         {
           "id": "d3da0a50-3a58-481b-8688-9e1efe41bbce",
@@ -280,7 +308,13 @@
     "data": {
       "path": "/app/erp/perfil",
       "title": "ERP Perfil",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "comercial",
+        "produccion",
+        "finanzas"
+      ],
       "blocks": [
         {
           "id": "7d362d9a-74be-434f-bab2-42c6aa04b37a",
@@ -299,7 +333,11 @@
     "data": {
       "path": "/app/erp/taller",
       "title": "ERP Taller",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "produccion"
+      ],
       "blocks": [
         {
           "id": "2140370b-9a4d-4ae8-951d-b73033d9c310",
@@ -318,7 +356,10 @@
     "data": {
       "path": "/app/erp/equipo",
       "title": "ERP Equipo",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin"
+      ],
       "blocks": [
         {
           "id": "5e1312e7-2a65-4cf9-8a7e-1b1753196398",
@@ -337,7 +378,11 @@
     "data": {
       "path": "/app/erp/cotizador",
       "title": "ERP Cotizador",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "comercial"
+      ],
       "blocks": [
         {
           "id": "fa8b140f-56b6-4290-88cf-fac36b78d9c7",
@@ -356,7 +401,11 @@
     "data": {
       "path": "/app/erp/portfolio",
       "title": "ERP Portafolio",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "comercial"
+      ],
       "blocks": [
         {
           "id": "b99e06cd-ac00-4028-a9ef-33ec4f72e6b2",
@@ -412,7 +461,11 @@
     "data": {
       "path": "/app/erp/pedidos",
       "title": "Pedidos",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "produccion"
+      ],
       "blocks": [
         {
           "id": "78f1011e-cd50-4784-a72c-64c539943025",
@@ -423,5 +476,55 @@
       "order": 0
     },
     "updated_at": "2026-07-07T04:02:48.546Z"
+  },
+  {
+    "id": "851b8b99-a030-4c11-9471-c3ba45a85e73",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/dashboard",
+      "title": "Inicio",
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "comercial",
+        "produccion",
+        "finanzas"
+      ],
+      "blocks": [
+        {
+          "id": "ca183abc-b0be-4f4d-afb4-09dafa890011",
+          "type": "erp_home_dashboard",
+          "context": "proyectos",
+          "blocks": []
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-27T00:00:00.000Z"
+  },
+  {
+    "id": "738d70bf-9a75-4168-ac8f-a24e357d5e5b",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/proyectos",
+      "title": "Proyectos",
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "comercial",
+        "produccion",
+        "finanzas"
+      ],
+      "blocks": [
+        {
+          "id": "a04cc75c-6484-4539-9251-74e91646123f",
+          "type": "project_overview",
+          "context": "proyectos",
+          "blocks": []
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-27T00:00:00.000Z"
   }
 ]

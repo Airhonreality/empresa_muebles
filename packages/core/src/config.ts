@@ -69,6 +69,14 @@ export interface PublicReadModel {
 // Lazy loader signature — same as React.lazy's factory argument
 export type BlockLoader = () => Promise<{ default: React.ComponentType<BlockProps> }>
 
+export interface ApplicationShellProps {
+  children: React.ReactNode
+}
+
+export type ApplicationShellLoader = () => Promise<{
+  default: React.ComponentType<ApplicationShellProps>
+}>
+
 /**
  * A block entry can be a plain lazy loader (short form) or an object
  * with an optional settings_schema for the designer panel.
@@ -97,6 +105,13 @@ export interface AgnosticConfig {
    *   }
    */
   blocks?: Record<string, BlockConfig>
+
+  /**
+   * Optional fork-owned chrome for authenticated application routes.
+   * The engine keeps authentication and routing responsibilities; the fork
+   * owns product navigation, labels and information architecture.
+   */
+  applicationShell?: ApplicationShellLoader
 
   /**
    * Optional engine feature flags.

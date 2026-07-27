@@ -30,6 +30,7 @@ import { defineConfig } from './packages/core/src/config'
 export default defineConfig({
   storage:   './storage',
   adminPath: '/_agnostic',
+  applicationShell: () => import('./src/components/specialized/navigation/ErpApplicationShell'),
 
   // ── Custom block registrations ────────────────────────────────────
   // Add your AI-generated specialized components here.
@@ -57,6 +58,8 @@ export default defineConfig({
     calendar_scheduler: () => import('./src/components/specialized/calendar/CalendarScheduler'),
     portfolio_manager:  () => import('./src/components/specialized/portfolio/PortfolioManager'),
     veta_cuenta:       () => import('./src/components/specialized/cuenta/VetaCuenta'),
+    erp_home_dashboard: () => import('./src/components/specialized/navigation/ErpHomeDashboard'),
+    project_overview:   () => import('./src/components/specialized/navigation/ProjectOverview'),
   },
 
   features: {

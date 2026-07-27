@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CircleUser } from "lucide-react";
 import { redirect } from 'next/navigation';
 import { requireSession } from '@/lib/agnostic/require-session';
+import agnosticConfig from '@/../agnostic.config';
 
 export default async function AppLayout({
   children,
@@ -20,6 +21,11 @@ export default async function AppLayout({
     await requireSession();
   } catch {
     redirect('/login?from=/app');
+  }
+
+  if (agnosticConfig.applicationShell) {
+    const ApplicationShell = (await agnosticConfig.applicationShell()).default;
+    return <ApplicationShell>{children}</ApplicationShell>;
   }
 
   return (

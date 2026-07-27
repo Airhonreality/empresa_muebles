@@ -3,9 +3,13 @@ import { resolveAgnosticRoute } from '@/lib/agnostic/resolver'
 import { AgnosticShell } from '@/components/agnostic/engine/AgnosticShell'
 import { AgnosticGuard } from '@/components/agnostic/layouts/AgnosticGuard'
 import { SYSTEM_NS } from '@/lib/agnostic/constants'
+import { requireSession } from '@/lib/agnostic/require-session'
+import { isRouteAuthorized } from '@/lib/agnostic/route-authorization'
+import { redirect } from 'next/navigation'
 
 // /app root → renders /app/dashboard via engine (role-aware blocks via page_routes.json)
 export default async function AppDashboard() {
+  const user = await requireSession()
   const fullSlug = ['app', 'dashboard']
 
   const coreContexts = [SYSTEM_NS.ROUTES, SYSTEM_NS.SCHEMAS]
@@ -35,6 +39,7 @@ export default async function AppDashboard() {
   const allowedLists: string[] = routeData.allowed_lists ?? []
   const requiredRole: string | null = routeData.requiredRole ?? null
   const needsGuard = allowedLists.length > 0 || !!requiredRole
+  if (!isRouteAuthorized(user, routeData)) redirect('/')
 
   return needsGuard ? (
     <AgnosticGuard allowedLists={allowedLists} requiredRole={requiredRole}>

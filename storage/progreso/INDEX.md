@@ -33,6 +33,8 @@ Agents should keep this file short. Link only active or still-useful documents.
 
 ## Active Lanes
 
+- [goal-erp-navigation-capabilities-implementation.md](lanes/goal-erp-navigation-capabilities-implementation.md): shell global del ERP, catálogo único de navegación, capacidades, rutas Inicio/Proyectos y autorización server-side; pendiente de promoción del puerto genérico al seed.
+
 - [goal-catalog-authority-adr.md](lanes/goal-catalog-authority-adr.md): lane documental cerrada — decisión de autoridad del catálogo; no implementa pipeline ni modifica producción.
 - [goal-neon-cotizaciones-recovery.md](lanes/goal-neon-cotizaciones-recovery.md): KEYSTONE — recuperación de datos huérfanos Neon (cotizaciones->proyectos) + caso Lorena Vaca (cobros + reconexión de espacio) + diagnóstico de `zap_activar_produccion`. Fases 0-3 cerradas y auditadas (2026-07-07); Fase 4 (limpieza de huérfanos) bloqueada, requiere aprobación aparte.
 - [goal-cotizador-iva-opcional.md](lanes/goal-cotizador-iva-opcional.md): IVA opcional en cotizador (placeholder 19%). CERRADA (2026-07-07) — campos `aplica_iva`/`porcentaje_iva` en `proyectos`, cálculo con fallback en `CotizadorPro.tsx`. Hallazgo de gobernanza abierto: `add-field` no crea backup automático (ver el archivo).

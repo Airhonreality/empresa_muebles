@@ -5,6 +5,9 @@ import { AgnosticGuard } from '@/components/agnostic/layouts/AgnosticGuard';
 import { Layers } from 'lucide-react';
 import { Metadata } from 'next';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
+import { requireSession } from '@/lib/agnostic/require-session';
+import { isRouteAuthorized } from '@/lib/agnostic/route-authorization';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Cargando Proyección...',
@@ -16,6 +19,7 @@ interface PageProps {
 
 // Todas las rutas bajo /app/** pasan por aquí → activa src/app/app/layout.tsx (navbar ERP)
 export default async function AppRoute({ params }: PageProps) {
+  const user = await requireSession();
   const { slug } = await params;
   const fullSlug = ['app', ...slug];
 
@@ -55,6 +59,7 @@ export default async function AppRoute({ params }: PageProps) {
   const allowedLists: string[] = routeData.allowed_lists ?? [];
   const requiredRole: string | null = routeData.requiredRole ?? null;
   const needsGuard = allowedLists.length > 0 || !!requiredRole;
+  if (!isRouteAuthorized(user, routeData)) redirect('/');
 
   return needsGuard ? (
     <AgnosticGuard allowedLists={allowedLists} requiredRole={requiredRole}>

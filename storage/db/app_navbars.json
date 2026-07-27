@@ -6,54 +6,87 @@
       "name": "nav_erp_main",
       "links": [
         {
+          "label": "Inicio",
+          "path": "/app/dashboard",
+          "icon": "House",
+          "capability": "dashboard:view"
+        },
+        {
           "label": "Comercial",
           "path": "/app/erp/comercial",
-          "icon": "ShoppingCart"
+          "icon": "Handshake",
+          "capability": "commercial:view"
         },
         {
-          "label": "Cotizador",
-          "path": "/app/erp/cotizador",
-          "icon": "FileText"
+          "label": "Proyectos",
+          "path": "/app/erp/proyectos",
+          "icon": "FolderKanban",
+          "capability": "projects:view"
         },
         {
-          "label": "Taller",
+          "label": "Producción",
           "path": "/app/erp/taller",
-          "icon": "Hammer"
+          "icon": "Factory",
+          "capability": "production:view"
         },
         {
           "label": "Finanzas",
           "path": "/app/erp/finanzas",
-          "icon": "Wallet"
+          "icon": "WalletCards",
+          "capability": "finance:view"
         },
         {
           "label": "Calendario",
           "path": "/app/erp/calendar",
-          "icon": "CalendarDays"
+          "icon": "CalendarDays",
+          "capability": "calendar:view"
         },
         {
-          "label": "Equipo",
-          "path": "/app/erp/equipo",
-          "icon": "Users"
-        },
-        {
-          "label": "Proveedores",
-          "path": "/app/erp/proveedores",
-          "icon": "Truck"
-        },
-        {
-          "label": "Catalogo",
+          "label": "Catálogo",
           "path": "/app/erp/catalogo",
-          "icon": "HardDrive"
+          "icon": "LibraryBig",
+          "capability": "catalog:view"
         },
         {
-          "label": "Perfil",
-          "path": "/app/erp/perfil",
-          "icon": "UserCircle"
+          "label": "Más",
+          "icon": "Ellipsis",
+          "children": [
+            {
+              "label": "Portafolio",
+              "path": "/app/erp/portfolio",
+              "icon": "Images",
+              "capability": "portfolio:view"
+            },
+            {
+              "label": "Equipo",
+              "path": "/app/erp/equipo",
+              "icon": "Users",
+              "capability": "team:view"
+            },
+            {
+              "label": "Proveedores",
+              "path": "/app/erp/proveedores",
+              "icon": "Truck",
+              "capability": "suppliers:view"
+            },
+            {
+              "label": "Configuración",
+              "icon": "Settings",
+              "capability": "settings:view",
+              "disabled": true
+            },
+            {
+              "label": "Perfil",
+              "path": "/app/erp/perfil",
+              "icon": "UserCircle",
+              "capability": "profile:view"
+            }
+          ]
         }
       ],
       "brand": {
-        "label": "ERP_Muebles",
-        "path": "/app/erp/comercial"
+        "label": "Veta Dorada",
+        "path": "/app/dashboard"
       }
     },
     "updated_at": "2026-07-02T17:57:20.461Z"
