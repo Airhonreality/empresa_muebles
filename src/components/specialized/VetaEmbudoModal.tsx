@@ -28,13 +28,12 @@ export function VetaEmbudoModal({
               </DialogDescription>
             </DialogHeader>
             <div className="mt-8 space-y-4 text-sm text-[hsl(var(--veta-text-stone))]">
-              <p>• Respondes 2 preguntas sobre tu espacio</p>
-              <p>• Dejas tus datos de contacto</p>
-              <p>• Recibes el presupuesto por WhatsApp listo para continuar</p>
+              <p>• Seleccionas el espacio y el estado de tu proyecto</p>
+              <p>• Recibes el presupuesto por WhatsApp</p>
             </div>
           </div>
           <div className="p-8">
-            <VetaEmbudoForm configRecords={configRecords} mode="modal" onSuccess={() => onOpenChange(false)} />
+            <VetaEmbudoForm configRecords={configRecords} onSuccess={() => onOpenChange(false)} />
           </div>
         </div>
       </DialogContent>
