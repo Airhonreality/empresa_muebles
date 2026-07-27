@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, RefreshCw, Search, Trash2, ChevronDown, Image } from 'lucide-react';
+import { Plus, Pencil, RefreshCw, Search, Trash2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -473,16 +473,27 @@ export default function PortfolioManager() {
             <div className="space-y-3 border-t pt-4">
               <div className="text-sm font-semibold">Imágenes del Portafolio</div>
               {imagenesList.length > 0 && (
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {imagenesList.map((img, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 bg-muted rounded">
-                      <div className="text-sm">
-                        <Image className="w-4 h-4 inline mr-2" />
-                        {img.descripcion || 'Sin descripción'}
+                    <div key={idx} className="group relative aspect-[4/3] overflow-hidden rounded-lg border bg-muted">
+                      <img
+                        src={img.imagen_url}
+                        alt={img.descripcion || ''}
+                        className="h-full w-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                        <p className="truncate text-xs text-white">
+                          {img.descripcion || `Imagen ${idx + 1}`}
+                        </p>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => handleRemoveImage(idx)}>
-                        Quitar
-                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
                   ))}
                 </div>
