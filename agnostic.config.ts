@@ -47,8 +47,6 @@ export default defineConfig({
     veta_catalog:      () => import('./src/components/specialized/VetaCatalog'),
     veta_agendar:      () => import('./src/components/specialized/VetaAgendar'),
     veta_portfolio:    () => import('./src/components/specialized/portfolio/VetaPortfolio'),
-    veta_tienda:       () => import('./src/components/specialized/tienda/VetaTienda'),
-    veta_producto_detalle: () => import('./src/components/specialized/tienda/VetaProductoDetalle'),
     workspace_switcher:() => import('./src/components/specialized/WorkspaceSwitcher'),
     widget_armado_orden_compra: () => import('./src/components/specialized/WidgetArmadoOrdenCompra'),
     equipo_directory:  () => import('./src/components/specialized/equipo/EquipoDirectory'),

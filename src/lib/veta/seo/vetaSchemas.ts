@@ -1,5 +1,3 @@
-import { PUBLIC_SITE_URL } from './publicSite';
-
 type ConfigMap = Record<string, string>;
 
 type TestimonialRecord = {
@@ -7,7 +5,7 @@ type TestimonialRecord = {
   data?: Record<string, unknown>;
 };
 
-const SITE_URL = PUBLIC_SITE_URL;
+const SITE_URL = 'https://vetadeoro.co';
 const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const LOCAL_BUSINESS_ID = `${SITE_URL}/#local-business`;
@@ -219,41 +217,40 @@ function offer(name: string, description: string): Record<string, unknown> {
   };
 }
 
-type StoreProduct = {
-  slug_publico: string;
-  nombre: string;
-  descripcion_comercial?: string;
-  precio_publico: number;
-  imagen_url?: string;
-  disponibilidad: 'disponible' | 'bajo_pedido' | 'agotado';
-};
+export function buildProductSchema(
+  product: { id?: string; data?: Record<string, unknown> }
+): Record<string, unknown> {
+  const baseUrl = `${SITE_URL}/colecciones`;
+  const data = product.data || {};
+  const slug = data.slug as string | undefined;
 
-const STOCK_MAP: Record<string, string> = {
-  disponible: 'https://schema.org/InStock',
-  bajo_pedido: 'https://schema.org/PreOrder',
-  agotado: 'https://schema.org/OutOfStock',
-};
-
-export function buildProductSchema(product: StoreProduct): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: product.nombre,
-    description: product.descripcion_comercial ?? product.nombre,
-    image: product.imagen_url ? absoluteUrl(product.imagen_url) : undefined,
-    brand: { '@id': ORGANIZATION_ID },
+    '@id': slug ? `${baseUrl}/${encodeURIComponent(slug)}` : undefined,
+    name: (data.descripcion as string) || 'Producto Veta Dorada',
+    sku: data.sku || undefined,
+    description: (data.url_referencia as string) || `Mueble de colección de Veta Dorada en Bogotá.`,
+    image: data.imagen_url ? absoluteUrl(data.imagen_url as string) : undefined,
     offers: {
       '@type': 'Offer',
-      price: product.precio_publico,
+      price: data.precio_publico ?? data.precio_directo ?? 0,
       priceCurrency: 'COP',
-      availability: STOCK_MAP[product.disponibilidad] ?? 'https://schema.org/PreOrder',
-      url: absoluteUrl(`/tienda/${product.slug_publico}`),
-      seller: { '@id': ORGANIZATION_ID },
+      availability: (data.stock_actual as number) > 0
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/MadeToOrder',
+      url: slug ? `${baseUrl}/${encodeURIComponent(slug)}` : baseUrl,
+    },
+    brand: {
+      '@type': 'Brand',
+      name: 'Veta Dorada',
     },
   };
 }
 
-export function buildBreadcrumbSchema(items: { name: string; url: string }[]): Record<string, unknown> {
+export function buildBreadcrumbSchema(
+  items: { name: string; url: string }[]
+): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -261,40 +258,53 @@ export function buildBreadcrumbSchema(items: { name: string; url: string }[]): R
       '@type': 'ListItem',
       position: index + 1,
       name: item.name,
-      item: absoluteUrl(item.url),
+      item: item.url,
     })),
   };
 }
 
-type PortfolioEntry = {
-  titulo: string;
-  descripcion_comercial?: string;
-  zona: string;
-  categoria_espacio: string;
-  imagenes: { imagen_url: string; descripcion?: string }[];
-};
+export function buildPortfolioItemSchema(
+  item: { id?: string; data?: Record<string, unknown> }
+): Record<string, unknown> {
+  const data = item.data || {};
+  const baseUrl = `${SITE_URL}/portafolio`;
+  const slug = data.slug as string | undefined;
 
-export function buildPortfolioItemSchema(entry: PortfolioEntry): Record<string, unknown> {
-  const image = entry.imagenes[0]?.imagen_url;
   return {
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',
-    name: entry.titulo,
-    description: entry.descripcion_comercial ?? entry.titulo,
-    image: image ? absoluteUrl(image) : undefined,
+    '@id': slug ? `${baseUrl}/${encodeURIComponent(slug)}` : undefined,
+    name: (data.titulo as string) || 'Proyecto Veta Dorada',
+    description: (data.descripcion_comercial as string) || undefined,
+    creator: { '@type': 'Organization', name: 'Veta Dorada' },
     locationCreated: {
       '@type': 'Place',
-      name: `${entry.zona}, Bogotá`,
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: entry.zona,
-        addressRegion: 'Bogotá D.C.',
-        addressCountry: 'CO',
+      name: data.barrio || 'Bogotá',
+      address: { '@type': 'PostalAddress', addressLocality: 'Bogotá', addressCountry: 'CO' },
+    },
+    image: undefined,
+    dateCreated: data.fecha_publicacion as string | undefined,
+  };
+}
+
+export function buildItemListSchema(
+  items: { name: string; url?: string }[],
+  type: 'Product' | 'CreativeWork',
+  name: string
+): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name,
+    url: type === 'Product' ? `${SITE_URL}/colecciones` : `${SITE_URL}/portafolio`,
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': type,
+        name: item.name,
+        url: item.url || undefined,
       },
-    },
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': absoluteUrl('/portafolio'),
-    },
+    })),
   };
 }

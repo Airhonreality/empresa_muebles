@@ -34,7 +34,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
   return (
     <>
-      {/* Overlay */}
       <div
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -42,13 +41,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         onClick={() => onOpenChange(false)}
       />
 
-      {/* Drawer */}
       <div
         className={`fixed right-0 top-0 z-50 flex h-screen w-full flex-col bg-white transition-transform duration-300 ease-in-out sm:w-96 ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-[hsl(var(--veta-glass-light-border))] px-4 py-4">
           <h2 className="veta-heading text-lg font-semibold text-[hsl(var(--veta-text-carbon))]">
             Carrito ({items.length})
@@ -63,7 +60,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
           </button>
         </div>
 
-        {/* Items List */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {items.length === 0 ? (
             <div className="flex h-full items-center justify-center text-center">
@@ -130,10 +126,8 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
           )}
         </div>
 
-        {/* Footer */}
         {items.length > 0 && (
           <div className="border-t border-[hsl(var(--veta-glass-light-border))] px-4 py-4">
-            {/* Subtotal */}
             <div className="mb-4 flex items-center justify-between">
               <span className="text-sm font-medium text-[hsl(var(--veta-text-carbon))]">
                 Subtotal
@@ -143,7 +137,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               </span>
             </div>
 
-            {/* Checkout Section (collapsed by default) */}
             <div className="mb-3 overflow-hidden rounded-xl border border-[hsl(var(--veta-glass-light-border))]">
               <button
                 type="button"
@@ -162,7 +155,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
               {checkoutOpen && (
                 <div className="space-y-2 border-t border-[hsl(var(--veta-glass-light-border))] px-4 py-3">
-                  {/* WhatsApp CTA */}
                   <a
                     href={waLink}
                     target="_blank"
@@ -172,7 +164,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     Cotizar por WhatsApp
                   </a>
 
-                  {/* Checkout Form */}
                   <div data-checkout-slot="payment-online">
                     <CheckoutForm />
                   </div>
@@ -180,7 +171,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               )}
             </div>
 
-            {/* Close button */}
             <button
               type="button"
               onClick={() => onOpenChange(false)}
