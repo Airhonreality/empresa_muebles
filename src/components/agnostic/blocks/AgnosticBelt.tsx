@@ -6,7 +6,6 @@
 
 import React from 'react';
 import { useAppState } from '@/context/AppContext';
-import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +24,6 @@ interface Props {
 
 export function AgnosticBelt({ moduleName, config, configSchema, onOpenConfig, className }: Props) {
   const { state } = useAppState();
-  const { user } = useAuth();
 
   // Resolve Context Path for Breadcrumb
   const path = state.system.currentPath || '';

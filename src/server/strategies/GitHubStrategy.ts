@@ -71,17 +71,33 @@ export class GitHubStrategy implements AgnosticBridge {
     };
   }
 
-  private async fetchFile(namespace: string): Promise<{ items: DataItem[]; sha: string | undefined }> {
+  private async fetchFile(
+    namespace: string,
+    strict = false,
+  ): Promise<{ items: DataItem[]; sha: string | undefined }> {
     const apiUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/storage/db/${namespace}.json`;
     const res = await fetch(`${apiUrl}?ref=${this.branch}`, {
       headers: this.headers,
       cache: 'no-store',
     });
-    if (!res.ok) return { items: [], sha: undefined };
+    if (!res.ok) {
+      if (strict) {
+        throw new Error(
+          `[GitHubStrategy] GET failed for ${namespace}: HTTP ${res.status} ${res.statusText}`,
+        );
+      }
+      return { items: [], sha: undefined };
+    }
     const file = await res.json() as { content: string; sha: string };
     const content = Buffer.from(file.content, 'base64').toString('utf-8');
     const parsed = JSON.parse(content);
-    const items = Array.isArray(parsed) ? parsed : (parsed[namespace] || []);
+    const candidate = Array.isArray(parsed) ? parsed : parsed?.[namespace];
+    if (strict && !Array.isArray(candidate)) {
+      throw new Error(
+        `[GitHubStrategy] Invalid JSON shape for namespace "${namespace}": expected an array.`,
+      );
+    }
+    const items = Array.isArray(candidate) ? candidate : [];
     return { items, sha: file.sha };
   }
 
@@ -113,20 +129,26 @@ export class GitHubStrategy implements AgnosticBridge {
 
   async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
-      if (!this.owner || !this.repo) return [];
-      const { items } = await this.fetchFile(namespace);
-      if (query?.where) {
-        return items.filter((i: any) => {
-          return Object.entries(query.where!).every(([k, v]) => {
-            return (k === 'id' && i.id === v) || i.data?.[k] === v || i[k] === v;
-          });
-        });
-      }
-      return items;
+      return await this.readStrict(namespace, query);
     } catch (err) {
       console.error('[GitHubStrategy] Read Error:', err);
       return [];
     }
+  }
+
+  async readStrict(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
+    if (!this.owner || !this.repo) {
+      throw new Error('[GitHubStrategy] Owner and repo are required to read.');
+    }
+    const { items } = await this.fetchFile(namespace, true);
+    if (query?.where) {
+      return items.filter((i: any) => {
+        return Object.entries(query.where!).every(([k, v]) => {
+          return (k === 'id' && i.id === v) || i.data?.[k] === v || i[k] === v;
+        });
+      });
+    }
+    return items;
   }
 
   async write(namespace: string, record: Partial<DataItem> & { data: Record<string, unknown> }): Promise<DataItem> {

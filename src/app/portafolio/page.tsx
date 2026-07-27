@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import VetaPortfolio from '@/components/specialized/portfolio/VetaPortfolio';
 import { getPublicPortfolio } from '@/server/public-site-data';
-import { buildPortfolioItemSchema, serializeJsonLd } from '@/lib/veta/seo/schemaGenerator';
+import { buildPortfolioItemSchema, serializeJsonLd } from '@/lib/veta/seo/vetaSchemas';
 
 export const dynamic = 'force-dynamic';
 

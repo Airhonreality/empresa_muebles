@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import VetaTienda from '@/components/specialized/tienda/VetaTienda';
 import { getPublicStoreProducts } from '@/server/public-site-data';
-import { buildBreadcrumbSchema, serializeJsonLd } from '@/lib/veta/seo/schemaGenerator';
+import { buildBreadcrumbSchema, serializeJsonLd } from '@/lib/veta/seo/vetaSchemas';
 
 export const dynamic = 'force-dynamic';
 

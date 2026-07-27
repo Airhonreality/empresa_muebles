@@ -10,10 +10,11 @@
  * - NEVER: Add business logic or transformations here
  */
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getVaultData } from '@/core/server/vault';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { DataBrowser } from '@/components/specialized/DataBrowser';
+import { requireSession } from '@/lib/agnostic/require-session';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,12 @@ interface PageProps {
 export default async function DataPage({ params, searchParams }: PageProps) {
   const { schema: schemaName } = await params;
   const { view } = await searchParams;
+
+  try {
+    await requireSession();
+  } catch {
+    redirect(`/login?from=/_data/${encodeURIComponent(schemaName)}`);
+  }
 
   const data = await getVaultData([SYSTEM_NS.SCHEMAS, schemaName]);
   const schemas = (data[SYSTEM_NS.SCHEMAS] ?? []) as any[];

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useSystemStore } from "@/lib/agnostic/store";
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useSystemStore } from '@/lib/agnostic/store';
 
 interface User {
   id: string;
@@ -38,21 +38,20 @@ export function AuthProvider({
     syncUserToStore(user);
   }, [user, syncUserToStore]);
 
+  // If the server already hydrated the session, do not refetch it on mount.
   useEffect(() => {
     if (hasInitialUser) return;
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d?.user) setUser(d.user);
-      })
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.user) setUser(d.user); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [hasInitialUser]);
 
   const login = useCallback(async (email: string, pass: string): Promise<boolean> => {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: pass }),
     });
     if (!res.ok) return false;
@@ -62,7 +61,7 @@ export function AuthProvider({
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
   }, []);
 
@@ -73,8 +72,6 @@ export function AuthProvider({
   );
 }
 
-export function useAuth(): AuthContextType {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+export function useAuth(): AuthContextType | null {
+  return useContext(AuthContext);
 }

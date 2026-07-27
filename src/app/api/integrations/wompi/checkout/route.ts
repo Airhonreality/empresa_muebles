@@ -53,6 +53,16 @@ interface ProductoCatalogo {
   };
 }
 
+interface PrefabricadoRecord {
+  id: string;
+  context: string;
+  data: {
+    nombre: string;
+    precio_publico: number;
+    [key: string]: unknown;
+  };
+}
+
 interface PedidoWebRecord {
   id: string;
   context: string;
@@ -88,6 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     const catalogo = readJsonFile<ProductoCatalogo>('productos_catalogo.json');
+    const prefabricados = readJsonFile<PrefabricadoRecord>('prefabricados.json');
 
     let serverSubtotal = 0;
     for (const item of body.items) {
@@ -95,12 +106,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: false, error: `Item inválido: ${item.nombre}` }, { status: 400 });
       }
 
-      const producto = catalogo.find(p => p.id === item.ref_id || p.data?.descripcion === item.nombre);
-      if (!producto) {
-        return NextResponse.json({ ok: false, error: `Producto no encontrado: ${item.nombre}` }, { status: 400 });
+      let precioReal = 0;
+      if (item.tipo === 'prefabricado') {
+        const prefab = prefabricados.find(p => p.id === item.ref_id);
+        if (!prefab) {
+          return NextResponse.json({ ok: false, error: `Prefabricado no encontrado: ${item.nombre}` }, { status: 400 });
+        }
+        precioReal = prefab.data.precio_publico || 0;
+      } else {
+        const producto = catalogo.find(p => p.id === item.ref_id || p.data?.descripcion === item.nombre);
+        if (!producto) {
+          return NextResponse.json({ ok: false, error: `Producto no encontrado: ${item.nombre}` }, { status: 400 });
+        }
+        precioReal = producto.data.precio_publico || producto.data.precio_directo || 0;
       }
 
-      const precioReal = producto.data.precio_publico || producto.data.precio_directo || 0;
       const cantidad = Math.max(1, Math.floor(Number(item.cantidad)));
       serverSubtotal += precioReal * cantidad;
     }

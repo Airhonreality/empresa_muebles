@@ -58,6 +58,15 @@ export interface AgnosticBridge {
   read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]>;
 
   /**
+   * Strict read for control-plane consumers.
+   *
+   * Unlike the compatibility `read`, implementations must propagate transport,
+   * decoding, and malformed-storage errors instead of converting them to an
+   * empty collection.
+   */
+  readStrict?(namespace: string, query?: AgnosticQuery): Promise<DataItem[]>;
+
+  /**
    * Persists or updates a single record under a specific namespace.
    * Merges fields if the ID already exists, or generates a new one.
    */
@@ -78,4 +87,12 @@ export interface AgnosticBridge {
   
   /** Deletes a field from all records in a collection */
   deleteField?(namespace: string, key: string): Promise<void>;
+}
+
+export interface StrictReadableBridge extends AgnosticBridge {
+  readStrict(namespace: string, query?: AgnosticQuery): Promise<DataItem[]>;
+}
+
+export function hasStrictRead(bridge: AgnosticBridge): bridge is StrictReadableBridge {
+  return typeof bridge.readStrict === 'function';
 }

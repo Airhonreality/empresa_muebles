@@ -14,6 +14,9 @@
 
 import fs from 'fs';
 import path from 'path';
+import { loadLocalEnvFiles } from './load-local-env';
+
+loadLocalEnvFiles();
 
 async function push() {
   const namespace = process.argv[2];
@@ -21,7 +24,7 @@ async function push() {
   
   // Buscar target en los argumentos o en el entorno
   const targetArg = process.argv.find(arg => arg.startsWith('--target='));
-  let targetUrl = targetArg ? targetArg.split('=')[1] : process.env.PRODUCTION_URL;
+  let targetUrl = targetArg ? targetArg.split('=')[1] : (process.env.NEXT_PUBLIC_BASE_URL || process.env.PRODUCTION_URL);
 
   if (!namespace || !recordName || namespace.startsWith('--') || recordName.startsWith('--')) {
     console.error('\n❌ Error: Parámetros incorrectos.');
@@ -33,7 +36,7 @@ async function push() {
 
   if (!targetUrl) {
     console.error('\n❌ Error: Falta la URL de Producción.');
-    console.log('💡 Solución: Define PRODUCTION_URL en tu .env o pásala por --target=https://...\n');
+    console.log('💡 Solución: Define NEXT_PUBLIC_BASE_URL (o PRODUCTION_URL legado) en tu .env.local o .env.vercel.local, o pásala por --target=https://...\n');
     process.exit(1);
   }
 

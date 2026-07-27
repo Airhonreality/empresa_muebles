@@ -1,168 +1,162 @@
-/**
- * 🔄 SYNC ROUTES ON DEPLOY
- * ────────────────────────
- * Post-deploy hook que sincroniza page_routes.json de storage/db/ a Neon.
- *
- * Ejecución: npm run post-deploy (automático en Vercel)
- * Exit Codes: 0=éxito, 1=error (triggers rollback)
- */
-
 import fs from 'fs';
 import path from 'path';
+import type { DataItem } from '@agnostic/core';
+import { loadLocalEnvFiles } from './load-local-env';
+import { PostgresStrategy } from '../src/server/strategies/PostgresStrategy';
 
-const ROUTES_FILE = path.join(process.cwd(), 'storage/db/page_routes.json');
-const DATABASE_URL = process.env.DATABASE_URL || '';
-const STORAGE_STRATEGY = process.env.AGNOSTIC_STORAGE_STRATEGY?.toLowerCase() || 'local';
-
-interface PageRoute {
-  id: string;
-  context: string;
-  data: {
-    path: string;
-    [key: string]: any;
-  };
-  updated_at?: string;
-}
+loadLocalEnvFiles();
 
 /**
- * Valida la estructura de page_routes.json
+ * 🛣️ AGNOSTIC ROUTES SYNCHRONIZER (sync-routes-on-deploy.ts)
+ * ===========================================================
+ *
+ * ROLE: Reads page_routes.json from storage/db/ and synchronizes them
+ *       to the active persistence layer. Runs as part of the post-build
+ *       pipeline to ensure deployed routes match storage.
+ *       Fails if validation detects inconsistencies, triggering deploy rollback.
+ *
+ * USAGE:
+ * npx tsx scripts/sync-routes-on-deploy.ts
+ * (Intended to run as part of: npm run build && npm run post-deploy)
  */
-function validateRoutes(routes: PageRoute[]): { valid: boolean; errors: string[] } {
+
+interface RouteData {
+  path: string;
+  title: string;
+  system_group?: string;
+  isPrivate?: boolean;
+  blocks: Array<{ id: string; type: string; context: string; blocks: unknown[] }>;
+  order?: number;
+}
+
+async function validateRoutes(routes: DataItem[]): Promise<{ valid: boolean; errors: string[] }> {
   const errors: string[] = [];
   const seenPaths = new Set<string>();
 
   routes.forEach((route, idx) => {
-    // Validar contexto
-    if (!route.context || route.context !== 'page_routes') {
-      errors.push(`[${idx}] Contexto inválido: ${route.context}`);
+    if (route.context !== 'page_routes') {
+      errors.push(`[Row ${idx}] Invalid context: expected "page_routes", got "${route.context}"`);
     }
 
-    // Validar data.path
-    if (!route.data?.path || typeof route.data.path !== 'string') {
-      errors.push(`[${idx}] data.path requerido y debe ser string`);
+    const data = route.data as Partial<RouteData>;
+
+    if (!data.path) {
+      errors.push(`[Row ${idx}] Missing required field: path`);
+    } else if (typeof data.path !== 'string') {
+      errors.push(`[Row ${idx}] Invalid path type: expected string, got ${typeof data.path}`);
+    } else {
+      if (seenPaths.has(data.path)) {
+        errors.push(`[Row ${idx}] Duplicate path detected: "${data.path}"`);
+      }
+      seenPaths.add(data.path);
     }
 
-    // Validar rutas duplicadas
-    if (route.data?.path && seenPaths.has(route.data.path)) {
-      errors.push(`[${idx}] Ruta duplicada: ${route.data.path}`);
+    if (!data.title || typeof data.title !== 'string') {
+      errors.push(`[Row ${idx}] Missing or invalid title field`);
     }
-    if (route.data?.path) seenPaths.add(route.data.path);
 
-    // Validar tipo de data
-    if (typeof route.data !== 'object' || route.data === null) {
-      errors.push(`[${idx}] data debe ser un objeto`);
+    if (data.blocks && !Array.isArray(data.blocks)) {
+      errors.push(`[Row ${idx}] Invalid blocks type: expected array, got ${typeof data.blocks}`);
+    }
+
+    if (data.isPrivate !== undefined && typeof data.isPrivate !== 'boolean') {
+      errors.push(`[Row ${idx}] Invalid isPrivate type: expected boolean, got ${typeof data.isPrivate}`);
+    }
+
+    if (data.order !== undefined && typeof data.order !== 'number') {
+      errors.push(`[Row ${idx}] Invalid order type: expected number, got ${typeof data.order}`);
     }
   });
 
-  return { valid: errors.length === 0, errors };
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
 }
 
-/**
- * Lee page_routes.json del storage local
- */
-function readRoutesFile(): PageRoute[] {
-  try {
-    if (!fs.existsSync(ROUTES_FILE)) {
-      throw new Error(`Archivo no encontrado: ${ROUTES_FILE}`);
-    }
-    const content = fs.readFileSync(ROUTES_FILE, 'utf-8');
-    const routes = JSON.parse(content);
-    if (!Array.isArray(routes)) {
-      throw new Error('page_routes.json debe ser un array');
-    }
-    return routes;
-  } catch (error) {
-    throw new Error(`Error leyendo ${ROUTES_FILE}: ${error instanceof Error ? error.message : String(error)}`);
+async function syncRoutesToDatabase(routes: DataItem[]): Promise<void> {
+  const strategy = process.env.AGNOSTIC_STORAGE_STRATEGY;
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (strategy !== 'postgres' || !databaseUrl) {
+    console.log('[sync-routes] Strategy is not postgres or DATABASE_URL not configured. Skipping DB sync.');
+    return;
   }
+
+  console.log(`\n📡 Syncing to Postgres/Neon...`);
+  console.log(`📦 Routes to sync: ${routes.length}`);
+
+  const postgres = new PostgresStrategy(databaseUrl);
+
+  for (const route of routes) {
+    try {
+      await postgres.write('page_routes', {
+        id: route.id,
+        context: 'page_routes',
+        data: route.data,
+      });
+      console.log(`  ✅ Synced: ${(route.data as Partial<RouteData>).path}`);
+    } catch (err: any) {
+      throw new Error(`Failed to sync route ${route.id}: ${err.message}`);
+    }
+  }
+
+  console.log(`✨ All routes synced to Postgres/Neon successfully.`);
 }
 
-/**
- * Sincroniza rutas a Neon (PostgreSQL)
- */
-async function syncToPostgres(routes: PageRoute[]): Promise<void> {
-  if (!DATABASE_URL) {
-    throw new Error('DATABASE_URL no está configurado. Skipping Postgres sync.');
+async function syncRoutes() {
+  const routesPath = path.join(process.cwd(), 'storage', 'db', 'page_routes.json');
+
+  console.log(`\n🛣️ Starting Route Synchronizer...`);
+  console.log(`📂 Source: ${routesPath}`);
+
+  if (!fs.existsSync(routesPath)) {
+    console.log(`⚠️  Routes file not found at ${routesPath}. Skipping sync.`);
+    return;
   }
 
-  const postgres = await import('postgres');
-  const sql = postgres.default(DATABASE_URL);
-
+  let routes: DataItem[];
   try {
-    console.log('✓ Conectado a Neon');
-
-    // Estrategia: DELETE todas las rutas existentes + INSERT las nuevas
-    // (evita problemas de constraints en ON CONFLICT)
-    await sql`
-      DELETE FROM agnostic_records
-      WHERE namespace = 'page_routes'
-    `;
-
-    // Insertar todas las nuevas rutas
-    // ⚠️ IMPORTANTE: No usar JSON.stringify() para columna JSONB
-    // Pasar el objeto directamente - postgres package lo convierte a JSONB automáticamente
-    for (const route of routes) {
-      // LOG: Verificar qué se escribe (solo primeras 3)
-      if (routes.indexOf(route) < 3) {
-        console.log(`  [${routes.indexOf(route) + 1}] ${route.data.path} -> ${route.data.title || 'SIN TITLE'}`);
-      }
-
-      await sql`
-        INSERT INTO agnostic_records (id, namespace, context, data, created_at, updated_at)
-        VALUES (${route.id}, 'page_routes', ${route.context}, ${route.data}, NOW(), NOW())
-      `;
-    }
-
-    console.log(`✓ ${routes.length} rutas sincronizadas a Neon`);
-    await sql.end();
-  } catch (error) {
-    throw error;
-  }
-}
-
-/**
- * Main: Valida y sincroniza (best-effort)
- */
-async function main() {
-  try {
-    console.log('\n🔄 Iniciando validación de rutas...\n');
-
-    // Paso 1: Leer
-    console.log('📖 Leyendo storage/db/page_routes.json...');
-    const routes = readRoutesFile();
-    console.log(`   ✓ ${routes.length} rutas encontradas\n`);
-
-    // Paso 2: Validar (CRÍTICO - debe pasar)
-    console.log('✅ Validando estructura...');
-    const validation = validateRoutes(routes);
-    if (!validation.valid) {
-      console.error('   ✗ Errores de validación:');
-      validation.errors.forEach(err => console.error(`     - ${err}`));
-      process.exit(1);
-    }
-    console.log('   ✓ Validación completada\n');
-
-    // Paso 3: Sincronizar (best-effort - no bloquea deploy si falla)
-    if (STORAGE_STRATEGY === 'postgres') {
-      console.log('🔗 Sincronizando a Neon (PostgreSQL)...');
-      try {
-        await syncToPostgres(routes);
-        console.log('✓ Sincronización completada exitosamente\n');
-      } catch (syncError) {
-        console.warn('⚠️  Sync falló (best-effort):', syncError instanceof Error ? syncError.message : String(syncError));
-        console.warn('📌 Las rutas fueron validadas correctamente, pero el sync a Neon no se ejecutó.');
-        console.warn('💡 Intenta el sync manualmente o en el próximo deploy.\n');
-      }
-    } else {
-      console.log(`⏭️  Storage strategy es '${STORAGE_STRATEGY}', skip Postgres sync\n`);
-    }
-
-    console.log('✨ Validación de rutas completada.\n');
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Error crítico:', error instanceof Error ? error.message : String(error));
-    console.error('⚠️  Deploy será bloqueado por validación fallida.\n');
+    const rawData = fs.readFileSync(routesPath, 'utf8');
+    routes = JSON.parse(rawData);
+  } catch (err: any) {
+    console.error(`❌ Failed to parse routes file: ${err.message}`);
     process.exit(1);
   }
+
+  if (!Array.isArray(routes)) {
+    console.error(`❌ Routes file must be a JSON array. Got: ${typeof routes}`);
+    process.exit(1);
+  }
+
+  if (routes.length === 0) {
+    console.log(`⚠️  Routes file is empty. No routes to sync.`);
+    return;
+  }
+
+  console.log(`--------------------------------------------------`);
+  console.log(`📋 Found ${routes.length} route(s)`);
+
+  const validation = await validateRoutes(routes);
+  if (!validation.valid) {
+    console.error(`\n❌ Validation failed:`);
+    validation.errors.forEach(err => console.error(`   • ${err}`));
+    process.exit(1);
+  }
+
+  console.log(`✅ Validation passed`);
+
+  try {
+    await syncRoutesToDatabase(routes);
+  } catch (err: any) {
+    console.error(`\n❌ Database sync failed: ${err.message}`);
+    process.exit(1);
+  }
+
+  console.log(`\n✨ Route synchronization completed successfully.\n`);
 }
 
-main();
+syncRoutes().catch(err => {
+  console.error(`❌ Critical error during route synchronization:`, err);
+  process.exit(1);
+});

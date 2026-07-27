@@ -20,7 +20,7 @@
  *     Datos y schema son staged para revisión humana antes de escribir.
  */
 
-import { getStrategy } from '../src/server/getStrategy';
+import { getDefinitionAwareBridge } from '../src/server/definitions/topology';
 import { LocalStrategy } from '../src/server/strategies/LocalStrategy';
 import { PostgresStrategy } from '../src/server/strategies/PostgresStrategy';
 import { getProjectStorageRoot } from '../src/server/activeProject';
@@ -47,15 +47,22 @@ import {
   printListAdapters,
 } from './agno-adapters';
 import { createCliResult, printCliResult } from './cli-reporter';
-import { getAdapter } from '../src/lib/integrations/adapters.server';
-import { previewWhatsappSendMessage } from '../src/integrations/whatsapp/adapter';
-import { previewTiktokSendMessage } from '../src/integrations/tiktok/adapter';
-import { previewGmailSendMessage } from '../src/integrations/gmail/adapter';
-import { previewWompiChargeRequest } from '../src/integrations/wompi/adapter';
+import { printValidateRoutes } from './agno-validate-routes';
+import {
+  printListModules,
+  printInstallModulePlan,
+  applyInstallModule,
+  printRemoveModulePlan,
+  applyRemoveModule,
+} from './agno-modules';
+import { loadLocalEnvFiles } from './load-local-env';
+import { printEnvCheck } from './env-check';
+
+loadLocalEnvFiles();
 
 const LOG_FILE = path.join(process.cwd(), '.agno-log.jsonl');
 
-const _rawAdapter = getStrategy();
+const _rawAdapter = getDefinitionAwareBridge();
 
 // Proxy that intercepts writes and fires appendAgnoLog after the fact.
 // appendAgnoLog is defined later in this file — hoisting is safe because
@@ -349,8 +356,6 @@ function belt(layer: string, focus?: string) {
   return focus ? `[${layer} · ${focus}]` : `[${layer}]`;
 }
 
-
-
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
 async function getSchemas() { return (await adapter.read('schema_definitions')) as any[]; }
@@ -598,8 +603,7 @@ async function cmdContext() {
 async function cmdDiffEnv() {
   if (!process.env.DATABASE_URL) {
     console.log('[DIFF-ENV] DATABASE_URL no está definida en process.env.');
-    console.log('  -> Para auditar divergencias con Neon Postgres, pasa tu archivo de entorno al invocar:');
-    console.log('  -> npx tsx --env-file=.env.local scripts/agno.ts diff-env');
+    console.log('  -> Carga DATABASE_URL en .env.local o .env.vercel.local, o exporta la variable antes de ejecutar diff-env.');
     return;
   }
 
@@ -1882,636 +1886,6 @@ async function cmdRemoveAdapter(args: string[]) {
 
 // ── AYUDA ─────────────────────────────────────────────────────────────────────
 
-function parseFlagValue(args: string[], key: string): string | undefined {
-  const index = args.indexOf(key);
-  if (index === -1) return undefined;
-  return args[index + 1];
-}
-
-function parseRecordValue(value?: string): Record<string, string> {
-  if (!value) return {};
-  const trimmed = value.trim();
-  if (!trimmed) return {};
-  if (trimmed.startsWith('{')) {
-    const parsed = JSON.parse(trimmed);
-    return Object.fromEntries(Object.entries(parsed).map(([key, entryValue]) => [key, String(entryValue)]));
-  }
-  return Object.fromEntries(
-    trimmed
-      .split(',')
-      .filter(Boolean)
-      .map(pair => {
-        const [key, ...rest] = pair.split('=');
-        return [key.trim(), rest.join('=').trim()];
-      }),
-  );
-}
-
-function tokenizeCliLine(line: string): string[] {
-  const args: string[] = [];
-  let current = '';
-  let quote: '"' | "'" | null = null;
-  let escaped = false;
-
-  for (const char of line.trim()) {
-    if (escaped) {
-      current += char;
-      escaped = false;
-      continue;
-    }
-
-    if (char === '\\') {
-      escaped = true;
-      continue;
-    }
-
-    if (quote) {
-      if (char === quote) {
-        quote = null;
-      } else {
-        current += char;
-      }
-      continue;
-    }
-
-    if (char === '"' || char === "'") {
-      quote = char;
-      continue;
-    }
-
-    if (/\s/.test(char)) {
-      if (current) {
-        args.push(current);
-        current = '';
-      }
-      continue;
-    }
-
-    current += char;
-  }
-
-  if (current) args.push(current);
-  return args;
-}
-
-async function cmdAdapter(args: string[]) {
-  const positional = args.filter(arg => !arg.startsWith('--'));
-  const [id, verb, threadId] = positional;
-
-  if (!id || !verb) {
-    console.log('[ERROR] uso: adapter <id> <verbo> [args] [--json] [--dry]');
-    return;
-  }
-
-  const dryRun = args.includes('--dry');
-
-  if (verb === 'charge') {
-    const filePath = parseFlagValue(args, '--file');
-    if (!filePath) {
-      printCliResult(createCliResult({
-        command: 'adapter',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_CHARGE_FILE_REQUIRED',
-          message: 'Falta --file <payload.json> para charge.',
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-
-    const payloadPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-    const rawPayload = await fs.readFile(payloadPath, 'utf8');
-    const payload = JSON.parse(rawPayload);
-
-    if (dryRun) {
-      if (id === 'wompi') {
-        const credentials = {
-          WOMPI_PUBLIC_KEY: process.env.WOMPI_PUBLIC_KEY ?? '',
-          WOMPI_PRIVATE_KEY: process.env.WOMPI_PRIVATE_KEY ?? '',
-          WOMPI_EVENTS_SECRET: process.env.WOMPI_EVENTS_SECRET ?? '',
-          WOMPI_ENV: process.env.WOMPI_ENV ?? '',
-        };
-        const request = previewWompiChargeRequest(credentials, payload);
-        printCliResult(createCliResult({
-          command: 'adapter charge --dry',
-          summary: { id, verb, dry: true },
-          findings: [],
-          metadata: request,
-        }), { json: true });
-        return;
-      }
-
-      printCliResult(createCliResult({
-        command: 'adapter charge --dry',
-        summary: { id, verb, dry: true },
-        findings: [],
-        metadata: payload,
-      }), { json: true });
-      return;
-    }
-  }
-
-  if (verb === 'compose' && dryRun) {
-    try {
-      const filePath = parseFlagValue(args, '--file');
-      if (!filePath) {
-        printCliResult(createCliResult({
-          command: 'adapter',
-          summary: { id, verb, ok: false },
-          findings: [{
-            level: 'error',
-            code: 'AGNO_ADAPTER_COMPOSE_FILE_REQUIRED',
-            message: 'Falta --file <edl.json> para compose.',
-          }],
-        }), { json: args.includes('--json') });
-        return;
-      }
-
-      const payloadPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-      const request = JSON.parse(await fs.readFile(payloadPath, 'utf8'));
-
-
-
-      printCliResult(createCliResult({
-        command: 'adapter compose --dry',
-        summary: { id, verb, dry: true },
-        findings: [],
-        metadata: request,
-      }), { json: true });
-      return;
-    } catch (error: any) {
-      printCliResult(createCliResult({
-        command: 'adapter compose --dry',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_COMPOSE_FAILED',
-          message: error?.message ?? String(error),
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-  }
-
-  let adapter: any;
-  try {
-    adapter = getAdapter(id);
-  } catch (error: any) {
-    printCliResult(createCliResult({
-      command: 'adapter',
-      summary: { id, ok: false },
-      findings: [{
-        level: 'error',
-        code: 'AGNO_ADAPTER_INSTANTIATION_FAILED',
-        message: error?.message ?? String(error),
-      }],
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  if (!adapter) {
-    printCliResult(createCliResult({
-      command: 'adapter',
-      summary: { id, ok: false },
-      findings: [{
-        level: 'error',
-        code: 'AGNO_ADAPTER_NOT_INSTALLED',
-        message: `El adapter '${id}' no esta instalado.`,
-      }],
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  if (verb === 'send-message') {
-    const type = parseFlagValue(args, '--type') ?? 'text';
-    const body = parseFlagValue(args, '--body');
-    const templateRef = parseFlagValue(args, '--template');
-    const params = parseRecordValue(parseFlagValue(args, '--params'));
-    const payload = {
-      type: type as any,
-      body: body ?? undefined,
-      templateRef: templateRef ?? undefined,
-      templateParams: Object.keys(params).length ? params : undefined,
-    };
-
-    if (args.includes('--dry')) {
-      if (id === 'whatsapp') {
-        const credentials = {
-          WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN ?? '',
-          WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID ?? '',
-          WHATSAPP_WABA_ID: process.env.WHATSAPP_WABA_ID ?? '',
-          WHATSAPP_WEBHOOK_VERIFY_TOKEN: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ?? '',
-          WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET ?? '',
-        };
-        const request = previewWhatsappSendMessage(credentials, threadId ?? '', payload as any);
-        printCliResult(createCliResult({
-          command: 'adapter send-message --dry',
-          summary: { id, verb, dry: true },
-          findings: [],
-          metadata: request,
-        }), { json: true });
-        return;
-      }
-
-      if (id === 'tiktok') {
-        const credentials = {
-          TIKTOK_CLIENT_ID: process.env.TIKTOK_CLIENT_ID ?? '',
-          TIKTOK_CLIENT_SECRET: process.env.TIKTOK_CLIENT_SECRET ?? '',
-          TIKTOK_ACCESS_TOKEN: process.env.TIKTOK_ACCESS_TOKEN ?? '',
-          TIKTOK_REFRESH_TOKEN: process.env.TIKTOK_REFRESH_TOKEN ?? '',
-          TIKTOK_REFRESH_TOKEN_EXPIRES_AT: process.env.TIKTOK_REFRESH_TOKEN_EXPIRES_AT ?? '',
-        };
-        const request = previewTiktokSendMessage(credentials, threadId ?? '', payload as any);
-        printCliResult(createCliResult({
-          command: 'adapter send-message --dry',
-          summary: { id, verb, dry: true },
-          findings: [],
-          metadata: request,
-        }), { json: true });
-        return;
-      }
-
-      if (id === 'gmail') {
-        const credentials = {
-          GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? '',
-          GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? '',
-          GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN ?? '',
-          GMAIL_PUBSUB_TOPIC: process.env.GMAIL_PUBSUB_TOPIC ?? '',
-          GMAIL_PUBSUB_VERIFICATION_AUDIENCE: process.env.GMAIL_PUBSUB_VERIFICATION_AUDIENCE ?? '',
-        };
-        const request = await previewGmailSendMessage(credentials, threadId ?? '', payload as any, { fetch: globalThis.fetch.bind(globalThis) });
-        printCliResult(createCliResult({
-          command: 'adapter send-message --dry',
-          summary: { id, verb, dry: true },
-          findings: [],
-          metadata: request,
-        }), { json: true });
-        return;
-      }
-
-      printCliResult(createCliResult({
-        command: 'adapter send-message --dry',
-        summary: { id, verb, dry: true },
-        findings: [],
-        metadata: { payload },
-      }), { json: true });
-      return;
-    }
-
-    const result = await adapter.sendMessage(threadId ?? '', payload);
-    printCliResult(createCliResult({
-      command: 'adapter send-message',
-      summary: { id, verb, ok: true },
-      findings: [],
-      metadata: result,
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  if (verb === 'report-conversion') {
-    const filePath = parseFlagValue(args, '--file');
-    if (!filePath) {
-      printCliResult(createCliResult({
-        command: 'adapter',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_REPORT_CONVERSION_FILE_REQUIRED',
-          message: 'Falta --file <evento.json> para report-conversion.',
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-
-    const payloadPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-    const event = JSON.parse(await fs.readFile(payloadPath, 'utf8'));
-
-    if (args.includes('--dry')) {
-      printCliResult(createCliResult({
-        command: 'adapter report-conversion --dry',
-        summary: { id, verb, dry: true },
-        findings: [],
-        metadata: event,
-      }), { json: true });
-      return;
-    }
-
-    if (typeof adapter.reportConversion !== 'function') {
-      printCliResult(createCliResult({
-        command: 'adapter',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_VERB_UNSUPPORTED',
-          message: `El verbo '${verb}' no esta soportado por el adapter '${id}'.`,
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-
-    const result = await adapter.reportConversion(event);
-    printCliResult(createCliResult({
-      command: 'adapter report-conversion',
-      summary: { id, verb, ok: true },
-      findings: [],
-      metadata: result,
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  if (verb === 'report-conversions') {
-    const filePath = parseFlagValue(args, '--file');
-    if (!filePath) {
-      printCliResult(createCliResult({
-        command: 'adapter',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_REPORT_CONVERSIONS_FILE_REQUIRED',
-          message: 'Falta --file <eventos.json> para report-conversions.',
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-
-    const payloadPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-    const events = JSON.parse(await fs.readFile(payloadPath, 'utf8'));
-
-    if (args.includes('--dry')) {
-      printCliResult(createCliResult({
-        command: 'adapter report-conversions --dry',
-        summary: { id, verb, dry: true },
-        findings: [],
-        metadata: events,
-      }), { json: true });
-      return;
-    }
-
-    if (typeof adapter.reportConversions !== 'function') {
-      printCliResult(createCliResult({
-        command: 'adapter',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_VERB_UNSUPPORTED',
-          message: `El verbo '${verb}' no esta soportado por el adapter '${id}'.`,
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-
-    const result = await adapter.reportConversions(events);
-    printCliResult(createCliResult({
-      command: 'adapter report-conversions',
-      summary: { id, verb, ok: true },
-      findings: [],
-      metadata: result,
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  if (verb === 'list-threads') {
-    const result = await adapter.listThreads?.({ cursor: parseFlagValue(args, '--cursor'), limit: Number(parseFlagValue(args, '--limit') ?? '20') });
-    printCliResult(createCliResult({
-      command: 'adapter list-threads',
-      summary: { id, verb, ok: true },
-      findings: [],
-      metadata: result ?? null,
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  if (verb === 'list-messages') {
-    const result = await adapter.listMessages?.(threadId ?? '', { cursor: parseFlagValue(args, '--cursor'), limit: Number(parseFlagValue(args, '--limit') ?? '20') });
-    printCliResult(createCliResult({
-      command: 'adapter list-messages',
-      summary: { id, verb, ok: true },
-      findings: [],
-      metadata: result ?? null,
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  if (verb === 'get-result') {
-    if (!adapter.getResult) {
-      printCliResult(createCliResult({
-        command: 'adapter',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_VERB_UNSUPPORTED',
-          message: `El verbo '${verb}' no esta soportado por el adapter '${id}'.`,
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-
-    try {
-      const result = await adapter.getResult(threadId ?? '');
-      printCliResult(createCliResult({
-        command: 'adapter get-result',
-        summary: { id, verb, ok: true },
-        findings: [],
-        metadata: result,
-      }), { json: args.includes('--json') });
-    } catch (error: any) {
-      printCliResult(createCliResult({
-        command: 'adapter get-result',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_GET_RESULT_FAILED',
-          message: error?.message ?? String(error),
-        }],
-      }), { json: args.includes('--json') });
-    }
-    return;
-  }
-
-  if (verb === 'list-workflows') {
-    if (!adapter.listWorkflows) {
-      printCliResult(createCliResult({
-        command: 'adapter',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_VERB_UNSUPPORTED',
-          message: `El verbo '${verb}' no esta soportado por el adapter '${id}'.`,
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-
-    const result = await adapter.listWorkflows();
-    printCliResult(createCliResult({
-      command: 'adapter list-workflows',
-      summary: { id, verb, ok: true },
-      findings: [],
-      metadata: result,
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  if (verb === 'submit') {
-    try {
-      const filePath = parseFlagValue(args, '--file');
-      const request = filePath
-        ? JSON.parse(await fs.readFile(path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath), 'utf8'))
-        : {
-            workflow: parseFlagValue(args, '--workflow') ?? '',
-            prompt: parseFlagValue(args, '--prompt') ?? '',
-            negativePrompt: parseFlagValue(args, '--negative-prompt') ?? undefined,
-            webhookUrl: parseFlagValue(args, '--webhook-url') ?? undefined,
-          };
-
-      if (args.includes('--dry')) {
-        printCliResult(createCliResult({
-          command: 'adapter submit --dry',
-          summary: { id, verb, dry: true },
-          findings: [],
-          metadata: request,
-        }), { json: true });
-        return;
-      }
-
-      if (typeof adapter.submit !== 'function') {
-        printCliResult(createCliResult({
-          command: 'adapter',
-          summary: { id, verb, ok: false },
-          findings: [{
-            level: 'error',
-            code: 'AGNO_ADAPTER_VERB_UNSUPPORTED',
-            message: `El verbo '${verb}' no esta soportado por el adapter '${id}'.`,
-          }],
-        }), { json: args.includes('--json') });
-        return;
-      }
-
-      const result = await adapter.submit(request);
-      printCliResult(createCliResult({
-        command: 'adapter submit',
-        summary: { id, verb, ok: true },
-        findings: [],
-        metadata: result,
-      }), { json: args.includes('--json') });
-      return;
-    } catch (error: any) {
-      printCliResult(createCliResult({
-        command: 'adapter submit',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_SUBMIT_FAILED',
-          message: error?.message ?? String(error),
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-  }
-
-  if (verb === 'compose') {
-    try {
-      const filePath = parseFlagValue(args, '--file');
-      if (!filePath) {
-        printCliResult(createCliResult({
-          command: 'adapter',
-          summary: { id, verb, ok: false },
-          findings: [{
-            level: 'error',
-            code: 'AGNO_ADAPTER_COMPOSE_FILE_REQUIRED',
-            message: 'Falta --file <edl.json> para compose.',
-          }],
-        }), { json: args.includes('--json') });
-        return;
-      }
-
-      const payloadPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-      const request = JSON.parse(await fs.readFile(payloadPath, 'utf8'));
-
-      if (args.includes('--dry')) {
-        printCliResult(createCliResult({
-          command: 'adapter compose --dry',
-          summary: { id, verb, dry: true },
-          findings: [],
-          metadata: request,
-        }), { json: true });
-        return;
-      }
-
-      if (typeof adapter.compose !== 'function') {
-        printCliResult(createCliResult({
-          command: 'adapter',
-          summary: { id, verb, ok: false },
-          findings: [{
-            level: 'error',
-            code: 'AGNO_ADAPTER_VERB_UNSUPPORTED',
-            message: `El verbo '${verb}' no esta soportado por el adapter '${id}'.`,
-          }],
-        }), { json: args.includes('--json') });
-        return;
-      }
-
-      const result = await adapter.compose(request);
-      printCliResult(createCliResult({
-        command: 'adapter compose',
-        summary: { id, verb, ok: true },
-        findings: [],
-        metadata: result,
-      }), { json: args.includes('--json') });
-      return;
-    } catch (error: any) {
-      printCliResult(createCliResult({
-        command: 'adapter compose',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_COMPOSE_FAILED',
-          message: error?.message ?? String(error),
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-  }
-
-  if (verb === 'charge') {
-    const filePath = parseFlagValue(args, '--file');
-    if (!filePath) {
-      printCliResult(createCliResult({
-        command: 'adapter',
-        summary: { id, verb, ok: false },
-        findings: [{
-          level: 'error',
-          code: 'AGNO_ADAPTER_CHARGE_FILE_REQUIRED',
-          message: 'Falta --file <payload.json> para charge.',
-        }],
-      }), { json: args.includes('--json') });
-      return;
-    }
-
-    const payloadPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-    const payload = JSON.parse(await fs.readFile(payloadPath, 'utf8'));
-    const result = await adapter.charge(payload);
-    printCliResult(createCliResult({
-      command: 'adapter charge',
-      summary: { id, verb, ok: true },
-      findings: [],
-      metadata: result,
-    }), { json: args.includes('--json') });
-    return;
-  }
-
-  printCliResult(createCliResult({
-    command: 'adapter',
-    summary: { id, verb, ok: false },
-    findings: [{
-      level: 'error',
-      code: 'AGNO_ADAPTER_VERB_UNSUPPORTED',
-      message: `El verbo '${verb}' no esta soportado por el runner. Usa send-message, list-threads, list-messages, report-conversion o report-conversions.`,
-    }],
-  }), { json: args.includes('--json') });
-}
-
 function cmdHelp() {
   console.log(`
 agno — Agnostic CLI / MCP de Interfaz  (ver AGNO_MCP_PLAN.md)
@@ -2533,6 +1907,7 @@ agno — Agnostic CLI / MCP de Interfaz  (ver AGNO_MCP_PLAN.md)
   validate                                verificar invariantes
   validate --zaps [--json]                verificar invariantes + zaps
   validate:zaps [--json]                  analizar referencias de zaps
+  validate:routes [--file <path>]         validar tipos de bloque y contextos por ruta
 
 ══ CAPA 2 — COMPOSICIÓN INMEDIATA ════════════════════════════════════
   add-block <route> <type> [context:<s>] [intent:<i>] [zap:<z>]
@@ -2589,14 +1964,17 @@ ADAPTERS
   install <id> plan [--json]
   install <id> [--dry] [--yes] [--json]
   remove-adapter <id> [--dry] [--yes] [--json]
-  adapter <id> send-message|list-threads|list-messages [args] [--json] [--dry]
-  adapter <id> charge|compose|get-result [args] [--json] [--dry]
-  adapter <id> submit|list-workflows [args] [--json] [--dry]
-  adapter <id> report-conversion|report-conversions [args] [--json] [--dry]
+
+MODULES
+  list-modules [--json]                    disponibles + instalados
+  install-module <id> plan [--json]        preview: colisiones, sin escribir
+  install-module <id> [--dry] [--yes]      instalar modulo compuesto
+  remove-module <id> [--dry] [--yes]       desinstalar modulo compuesto
 
 DOCS / BOOTSTRAP
   docs schemas|zaps|routes|modules|all
   bootstrap install|resume|status|doctor|verify
+  env:check [--json]                       audita el contrato de configuración local
 
 ══ COLA DE CAMBIOS (solo capas 4 y 5) ════════════════════════════════
   status              ver cola actual
@@ -2613,9 +1991,8 @@ NOTA: Capas 2 y 3 se aplican INMEDIATAMENTE. No requieren commit.
 
 // ── DISPATCHER ────────────────────────────────────────────────────────────────
 
-async function dispatch(input: string | string[]) {
-  const parsed = Array.isArray(input) ? input : tokenizeCliLine(input);
-  const [cmd, ...args] = parsed;
+async function dispatch(line: string) {
+  const [cmd, ...args] = line.trim().split(/\s+/);
   if (!cmd) return;
 
   switch (cmd) {
@@ -2643,6 +2020,11 @@ async function dispatch(input: string | string[]) {
       if (args.includes('--zaps')) await printValidateZaps({ json: args.includes('--json') });
       return;
     case 'validate:zaps': return printValidateZaps({ json: args.includes('--json') });
+    case 'validate:routes': {
+      const fileIdx = args.indexOf('--file');
+      const filePath = fileIdx !== -1 ? args[fileIdx + 1] : undefined;
+      return printValidateRoutes({ file: filePath, json: args.includes('--json') });
+    }
 
     // Composición inmediata
     case 'add-block':      return cmdAddBlock(args);
@@ -2685,10 +2067,28 @@ async function dispatch(input: string | string[]) {
     case 'docs':    return cmdDocs(args);
     case 'bootstrap': return cmdBootstrap(args);
     case 'refactor-schema': return cmdRefactorSchema(args);
+    case 'env:check': return printEnvCheck({ json: args.includes('--json') });
     case 'list-adapters':   return cmdListAdapters(args);
     case 'install':         return cmdInstall(args);
     case 'remove-adapter':  return cmdRemoveAdapter(args);
-    case 'adapter':         return cmdAdapter(args);
+
+    // Modules
+    case 'list-modules':    return printListModules({ json: args.includes('--json') });
+    case 'install-module': {
+      const pos = args.filter(a => !a.startsWith('--'));
+      const iId = pos[0];
+      if (!iId) { console.log('[ERROR] uso: install-module <id> [plan] [--dry] [--yes]'); return; }
+      if (pos.includes('plan')) return printInstallModulePlan(iId, { json: args.includes('--json') });
+      return applyInstallModule(iId, { dryRun: args.includes('--dry'), yes: args.includes('--yes'), json: args.includes('--json') });
+    }
+    case 'remove-module': {
+      const rPos = args.filter(a => !a.startsWith('--'));
+      const rId = rPos[0];
+      if (!rId) { console.log('[ERROR] uso: remove-module <id> [plan] [--dry] [--yes]'); return; }
+      if (rPos.includes('plan')) return printRemoveModulePlan(rId, { json: args.includes('--json') });
+      return applyRemoveModule(rId, { dryRun: args.includes('--dry'), yes: args.includes('--yes'), json: args.includes('--json') });
+    }
+
     case 'help':    return cmdHelp();
 
     default:
@@ -2701,7 +2101,7 @@ async function dispatch(input: string | string[]) {
 const cliArgs = process.argv.slice(2);
 
 if (cliArgs.length > 0) {
-  dispatch(cliArgs).catch(e => console.error('[FATAL]', e.message));
+  dispatch(cliArgs.join(' ')).catch(e => console.error('[FATAL]', e.message));
 } else {
   const rl    = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false });
   const isTTY = process.stdin.isTTY;

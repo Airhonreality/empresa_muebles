@@ -1,4 +1,4 @@
-import { getStrategy } from '@/server/getStrategy';
+import { getDefinitionAwareBridge } from '@/server/definitions/topology';
 import { SYSTEM_NS } from '@/lib/agnostic/constants';
 import { triggerSchemaCompile } from '@/lib/agnostic/schema-compiler-trigger';
 import { appendLog } from '@/lib/agnostic/activity-log';
@@ -20,7 +20,7 @@ export class RefactoringManager {
    * pointers in all other schemas and page routes.
    */
   static async renameCollection(fromNs: string, toNs: string): Promise<void> {
-    const strategy = getStrategy();
+    const strategy = getDefinitionAwareBridge();
     
     // 1. Data Migration
     if (typeof strategy.renameCollection === 'function') {
@@ -49,7 +49,7 @@ export class RefactoringManager {
    * and cascades the field binding in page routes.
    */
   static async renameField(namespace: string, oldKey: string, newKey: string): Promise<void> {
-    const strategy = getStrategy();
+    const strategy = getDefinitionAwareBridge();
     
     // 1. Data Migration
     if (typeof strategy.renameField === 'function') {
@@ -78,7 +78,7 @@ export class RefactoringManager {
    * Deletes a field from all historical records in a collection to clean up space.
    */
   static async deleteField(namespace: string, key: string): Promise<void> {
-    const strategy = getStrategy();
+    const strategy = getDefinitionAwareBridge();
     
     if (typeof strategy.deleteField === 'function') {
       await strategy.deleteField(namespace, key);
@@ -101,7 +101,7 @@ export class RefactoringManager {
 
   /** Updates 'relation.entity' values across all schemas if they point to the old namespace */
   private static async cascadeRelationUpdates(fromNs: string, toNs: string): Promise<void> {
-    const strategy = getStrategy();
+    const strategy = getDefinitionAwareBridge();
     const schemas = await strategy.read(SYSTEM_NS.SCHEMAS);
     
     for (const schema of schemas) {
@@ -130,7 +130,7 @@ export class RefactoringManager {
 
   /** Updates active 'contexts' in page blocks if a collection is renamed */
   private static async cascadeRouteContextUpdates(fromNs: string, toNs: string): Promise<void> {
-    const strategy = getStrategy();
+    const strategy = getDefinitionAwareBridge();
     const routes = await strategy.read(SYSTEM_NS.ROUTES);
     
     for (const route of routes) {
@@ -155,7 +155,7 @@ export class RefactoringManager {
 
   /** Updates 'field_key' in UI atoms if a schema field was renamed */
   private static async cascadeFieldUpdates(namespace: string, oldKey: string, newKey: string): Promise<void> {
-    const strategy = getStrategy();
+    const strategy = getDefinitionAwareBridge();
     const routes = await strategy.read(SYSTEM_NS.ROUTES);
     
     for (const route of routes) {

@@ -125,8 +125,17 @@ export function initializeRegistry() {
   // ── Custom blocks from agnostic.config.ts ─────────────────────────────────
   // These are project-specific components registered without touching the engine.
   // Each custom block wraps its lazy loader in Suspense so the renderer stays sync.
+  // Supports both plain loader functions and `{ loader, settings_schema }` objects.
   const customBlocks = agnosticConfig.blocks ?? {}
-  for (const [type, loader] of Object.entries(customBlocks)) {
+  for (const [type, entry] of Object.entries(customBlocks)) {
+    let loader: any
+    let settingsSchema: Record<string, unknown> | undefined
+    if (typeof entry === 'function') {
+      loader = entry
+    } else {
+      loader = entry.loader
+      settingsSchema = entry.settings_schema
+    }
     const Lazy = React.lazy(loader)
     const Wrapped = (props: any) => (
       React.createElement(React.Suspense, { fallback: null },
@@ -134,7 +143,9 @@ export function initializeRegistry() {
       )
     )
     Wrapped.displayName = `CustomBlock(${type})`
-    registry.register(type, Wrapped, { category: 'guest', name: type })
+    const opts: any = { category: 'guest', name: type }
+    if (settingsSchema) opts.settings_schema = settingsSchema
+    registry.register(type, Wrapped, opts)
     console.log(`[RegistryInit] Custom block registered: "${type}"`)
   }
 }

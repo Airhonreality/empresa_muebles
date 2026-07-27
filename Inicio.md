@@ -79,12 +79,12 @@ Cuando levantas el sistema por primera vez en un nuevo fork, la interfaz detecta
 
 | Estrategia | Cuándo usarla | Variables requeridas |
 |---|---|---|
-| **Local** (dev) | Desarrollo en tu máquina | Ninguna |
-| **GitHub** (prod) | Producción gratuita, datos en JSON | `GITHUB_TOKEN`, `GITHUB_REPO` |
-| **PostgreSQL** (prod) | BD relacional universal (Neon, Supabase Postgres, etc.) | `DATABASE_URL` |
-| **Supabase** (prod) | API REST de Supabase (Legacy, requiere DDL manual) | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| **Local** (dev) | Desarrollo en tu máquina | `AGNOSTIC_STORAGE_STRATEGY=local` |
+| **GitHub** (prod) | Producción gratuita, datos en JSON | `AGNOSTIC_STORAGE_STRATEGY=github`, `GITHUB_TOKEN`, `GITHUB_REPO` |
+| **PostgreSQL** (prod) | BD relacional universal (Neon, Supabase Postgres, etc.) | `AGNOSTIC_STORAGE_STRATEGY=postgres`, `DATABASE_URL` |
+| **Supabase** (prod) | API REST de Supabase (Legacy, requiere DDL manual) | `AGNOSTIC_STORAGE_STRATEGY=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 
-Prioridad de resolución: `GITHUB_REPO` → `DATABASE_URL` → `SUPABASE_URL` → Local (fallback). Si configuras ambas, GitHub gana.
+Prioridad de resolución: `AGNOSTIC_STORAGE_STRATEGY` explícita → `GITHUB_REPO` → `DATABASE_URL` → `SUPABASE_URL` → Local (fallback). Si configuras varias, la estrategia explícita gana.
 
 ### Archivos (subidas) — Cloudflare R2
 
@@ -104,6 +104,7 @@ Por defecto el panel está abierto (modo desarrollo). Para activar login:
 
 ```
 SESSION_SECRET=un_secreto_de_64_caracteres_hexadecimales
+NEXT_PUBLIC_BASE_URL=https://tu-dominio-publico.com
 ```
 
 Genera el secreto con PowerShell:
