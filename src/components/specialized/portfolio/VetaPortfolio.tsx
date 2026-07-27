@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import VetaHeader from '../VetaHeader';
 import VetaFooter from '../VetaFooter';
 import VetaProjectGallery from '../shared/VetaProjectGallery';
@@ -33,120 +32,22 @@ const categoriasLabels: Record<string, string> = {
   otros: 'Otros',
 };
 
-/* ── Smart image layout ──────────────────────────────────────────── */
-
-type Orientation = 'landscape' | 'portrait' | 'square';
-
-function useImageOrientations(urls: string[]): Orientation[] {
-  const [dims, setDims] = useState<Map<string, Orientation>>(new Map());
-
-  useEffect(() => {
-    let active = true;
-    const pending = new Map<string, Orientation>();
-    const load = async (url: string) => {
-      try {
-        const img = new Image();
-        img.src = url;
-        await img.decode();
-        const orient = img.naturalWidth > img.naturalHeight ? 'landscape'
-          : img.naturalWidth < img.naturalHeight ? 'portrait' : 'square';
-        pending.set(url, orient);
-      } catch {
-        pending.set(url, 'landscape');
-      }
-    };
-    Promise.all(urls.map(load)).then(() => { if (active) setDims(new Map(pending)); });
-    return () => { active = false; };
-  }, [urls.join(',')]);
-
-  return urls.map((u) => dims.get(u) ?? 'landscape');
-}
-
-type ImageItem = { url: string; description?: string };
-
-function SmartImageGrid({
-  images,
-  onImageClick,
-}: {
-  images: ImageItem[];
-  onImageClick: (index: number) => void;
-}) {
-  const urls = useMemo(() => images.map((i) => i.url), [images]);
-  const orientations = useImageOrientations(urls);
-  const count = images.length;
-
-  if (count === 0) return null;
-
-  const allPortrait = orientations.every((o) => o === 'portrait');
-  const allLandscape = orientations.every((o) => o === 'landscape');
-  const maxShow = Math.min(count, 6);
-  const display = images.slice(0, maxShow);
-
-  let gridClass = 'grid grid-cols-2 gap-2 h-full';
-  let childClass: ((i: number) => string) = () => '';
-
-  if (count === 1) {
-    gridClass = 'grid grid-cols-1 gap-0 h-full';
-  } else if (count === 2 && allPortrait) {
-    gridClass = 'grid grid-cols-2 gap-2 h-full';
-  } else if (count === 2 && allLandscape) {
-    gridClass = 'grid grid-rows-2 gap-2 h-full';
-  } else if (count === 3) {
-    gridClass = 'grid grid-cols-2 gap-2 h-full';
-    childClass = (i) => i === 0 ? 'row-span-2' : '';
-  } else if (count === 4) {
-    gridClass = 'grid grid-cols-2 gap-2 h-full';
-  } else if (count >= 5) {
-    gridClass = 'grid grid-cols-3 gap-2 h-full';
-    childClass = (i) => i < 2 ? 'col-span-1 row-span-2' : '';
-  }
-
-  return (
-    <div className={gridClass}>
-      {display.map((img, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => onImageClick(i)}
-          className={`group relative overflow-hidden rounded-lg bg-[hsl(var(--veta-bg-linen))] ${childClass(i)}`}
-        >
-          <img
-            src={img.url}
-            alt={img.description ?? ''}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading={i === 0 ? 'eager' : 'lazy'}
-          />
-          <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
-        </button>
-      ))}
-      {count > maxShow && (
-        <button
-          type="button"
-          onClick={() => onImageClick(0)}
-          className="relative overflow-hidden rounded-lg bg-[hsl(var(--veta-bg-linen))] flex items-center justify-center text-xs font-semibold uppercase tracking-wider text-[hsl(var(--veta-text-stone))] hover:bg-[hsl(var(--veta-bg-linen))]/80 transition-colors"
-        >
-          +{count - maxShow} más
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* ── Page component ──────────────────────────────────────────────── */
+const CATEGORY_COLORS: Record<string, string> = {
+  cocinas: '#D4AF37',
+  cavas_bares: '#8B7355',
+  dormitorios_closets: '#4A6670',
+  consolas_recibidores: '#8B4513',
+  otros: '#6B5B4F',
+};
 
 export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEntry[] }) {
   const [activeCategory, setActiveCategory] = useState('todos');
   const [galleryEntry, setGalleryEntry] = useState<{ slug: string; startIdx: number } | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
     if (activeCategory === 'todos') return entries;
     return entries.filter((e) => e.categoria_espacio === activeCategory);
   }, [entries, activeCategory]);
-
-  useEffect(() => {
-    containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeCategory]);
 
   const openGallery = useCallback((slug: string, startIdx: number) => {
     setGalleryEntry({ slug, startIdx });
@@ -158,125 +59,88 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
   }, [galleryEntry, entries]);
 
   return (
-    <div className="h-dvh grid grid-rows-[auto_1fr_auto] bg-[hsl(var(--veta-bg-warm-paper))]">
-      {/* Top: header + hero in a column */}
-      <div className="flex flex-col shrink-0">
-        <VetaHeader />
-        <section className="px-4 sm:px-8 lg:px-12 py-4 border-b border-[hsl(var(--veta-glass-light-border))]">
-          <div className="max-w-7xl mx-auto">
-            <h1 className="veta-heading text-3xl font-semibold tracking-tight mb-2">Portafolio</h1>
-            <p className="text-sm text-[hsl(var(--veta-text-stone))] mb-4">
+    <div className="min-h-screen bg-[hsl(var(--veta-bg-warm-paper))]">
+      <VetaHeader />
+
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 pt-28 pb-12">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="veta-heading text-4xl font-semibold tracking-tight text-[hsl(var(--veta-text-carbon))]">
+              Portafolio
+            </h1>
+            <p className="mt-1.5 text-sm text-[hsl(var(--veta-text-stone))]">
               Proyectos realizados con materiales de calidad
             </p>
-            <nav className="flex gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {categorias.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setActiveCategory(cat)}
-                  className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
-                    activeCategory === cat
-                      ? 'bg-[hsl(var(--veta-text-carbon))] text-white'
-                      : 'text-[hsl(var(--veta-text-stone))] border border-[hsl(var(--veta-glass-light-border))] hover:bg-white/70'
-                  }`}
-                >
-                  {categoriasLabels[cat]}
-                </button>
-              ))}
-            </nav>
           </div>
-        </section>
-      </div>
-
-      {/* Scrollable snap area — 1fr = remaining dvh */}
-      {filtered.length === 0 ? (
-        <div className="flex items-center justify-center text-sm text-[hsl(var(--veta-text-stone))]">
-          No hay proyectos en esta categoría
-        </div>
-      ) : (
-        <div
-          ref={containerRef}
-          className="overflow-y-auto snap-y snap-mandatory min-h-0"
-        >
-          {filtered.map((entry, index) => {
-            const materials = entry.materiales_destacados
-              ? entry.materiales_destacados.split(/[\n,]+/).map((m) => m.trim()).filter(Boolean)
-              : [];
-
-            return (
-              <section
-                key={entry.slug}
-                className="snap-start h-full flex flex-col lg:flex-row min-h-0"
+          <nav className="flex gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {categorias.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                  activeCategory === cat
+                    ? 'bg-[hsl(var(--veta-text-carbon))] text-white'
+                    : 'text-[hsl(var(--veta-text-stone))] border border-[hsl(var(--veta-glass-light-border))] hover:bg-white/70'
+                }`}
               >
-                {/* Gallery side — 65% */}
-                <div className="lg:w-[65%] lg:h-full p-3 lg:p-4 flex flex-col min-h-0">
-                  <div className="flex-1 min-h-0">
-                    <SmartImageGrid
-                      images={entry.imagenes.map((img) => ({ url: img.imagen_url, description: img.descripcion }))}
-                      onImageClick={(idx) => openGallery(entry.slug, idx)}
-                    />
-                  </div>
-                  {index === 0 && filtered.length > 1 && (
-                    <div className="flex-none flex items-center justify-center gap-1 mt-2 text-[9px] uppercase tracking-widest text-[hsl(var(--veta-text-stone))] lg:hidden">
-                      <span>Desliza</span>
-                      <ChevronDown className="h-3 w-3 animate-bounce" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Info side — 35% */}
-                <div className="lg:w-[35%] lg:h-full px-6 py-6 lg:px-8 lg:py-10 lg:overflow-y-auto flex flex-col justify-center">
-                  <span className="inline-block rounded-full bg-[hsl(var(--veta-gold-muted))]/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[hsl(var(--veta-gold-hover))] mb-3 self-start">
-                    {categoriasLabels[entry.categoria_espacio] || entry.categoria_espacio}
-                  </span>
-
-                  <h2 className="veta-heading text-2xl lg:text-3xl font-semibold leading-tight tracking-tight mb-3">
-                    {entry.titulo}
-                  </h2>
-
-                  <p className="text-xs uppercase tracking-wider text-[hsl(var(--veta-text-stone))] mb-4">
-                    {entry.zona}
-                  </p>
-
-                  {entry.descripcion_comercial && (
-                    <p className="text-sm leading-relaxed text-[hsl(var(--veta-text-stone))] mb-6">
-                      {entry.descripcion_comercial}
-                    </p>
-                  )}
-
-                  {materials.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(var(--veta-text-stone))] mb-2">
-                        Materiales
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {materials.map((m) => (
-                          <span
-                            key={m}
-                            className="rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--veta-text-stone))]"
-                          >
-                            {m}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {index === 0 && filtered.length > 1 && (
-                    <div className="hidden lg:flex items-center gap-2 mt-8 text-[10px] uppercase tracking-widest text-[hsl(var(--veta-text-stone))]">
-                      <ChevronDown className="h-3.5 w-3.5 animate-bounce" />
-                      <span>Desliza para ver más proyectos</span>
-                    </div>
-                  )}
-                </div>
-              </section>
-            );
-          })}
-
-          {/* Footer inside scroll, after all projects — no snap */}
-          <VetaFooter />
+                {categoriasLabels[cat]}
+              </button>
+            ))}
+          </nav>
         </div>
-      )}
+
+        {filtered.length === 0 ? (
+          <div className="flex h-[50vh] items-center justify-center text-sm text-[hsl(var(--veta-text-stone))]">
+            No hay proyectos en esta categoría
+          </div>
+        ) : (
+          <div className="columns-2 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 [column-fill:_balance]">
+            {filtered.map((entry) => {
+              const img = entry.imagenes[0];
+              const categoryColor = CATEGORY_COLORS[entry.categoria_espacio] || CATEGORY_COLORS.otros;
+
+              return (
+                <button
+                  key={entry.slug}
+                  type="button"
+                  onClick={() => openGallery(entry.slug, 0)}
+                  className="group relative mb-4 block w-full overflow-hidden rounded-xl bg-[hsl(var(--veta-bg-linen))] text-left transition-transform duration-300 hover:-translate-y-0.5 break-inside-avoid"
+                >
+                  {img ? (
+                    <>
+                      <img
+                        src={img.imagen_url}
+                        alt={entry.titulo}
+                        className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <span
+                          className="inline-block rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white mb-1.5"
+                          style={{ backgroundColor: categoryColor }}
+                        >
+                          {categoriasLabels[entry.categoria_espacio] || entry.categoria_espacio}
+                        </span>
+                        <h2 className="veta-heading text-base font-semibold text-white">
+                          {entry.titulo}
+                        </h2>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex aspect-square items-center justify-center p-6">
+                      <p className="text-center text-xs text-[hsl(var(--veta-text-stone))]">
+                        {entry.titulo}
+                      </p>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </main>
 
       <VetaProjectGallery
         open={activeEntry !== null}
@@ -291,6 +155,8 @@ export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEnt
         }
         startIndex={galleryEntry?.startIdx ?? 0}
       />
+
+      <VetaFooter />
     </div>
   );
 }
