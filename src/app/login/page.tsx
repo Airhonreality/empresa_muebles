@@ -32,7 +32,7 @@ export default function LoginPage() {
     async function init() {
       // If already authenticated go straight to panel
       const meRes = await fetch('/api/auth/me').catch(() => null);
-      if (meRes?.ok) { router.replace('/schema'); return; }
+      if (meRes?.ok) { window.location.href = '/schema'; return; }
 
       // Check if any users exist to decide mode
       const statusRes = await fetch('/api/auth/status').catch(() => null);
@@ -61,7 +61,7 @@ export default function LoginPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       toast.success(`Bienvenido, ${json.user.name || json.user.email}`);
-      router.push('/schema');
+      window.location.href = '/schema';
     } catch (err: any) {
       toast.error(err.message ?? 'Credenciales incorrectas');
       setLoading(false);
@@ -86,7 +86,7 @@ export default function LoginPage() {
       if (!res.ok || !json.success) throw new Error(json.error ?? 'Error al crear usuario');
 
       toast.success('Administrador creado. Bienvenido.');
-      router.push('/schema');
+      window.location.href = '/schema';
     } catch (err: any) {
       toast.error(err.message ?? 'Error al crear el administrador');
       setLoading(false);

@@ -90,7 +90,17 @@ export function VetaEmbudoForm({
         throw new Error(result.error || 'No se pudo registrar el lead');
       }
 
-      await processEvents(result.events ?? []);
+      // Abrir WhatsApp con mensaje que incluye los datos del formulario
+      const mensaje = [
+        `Hola Veta Dorada, soy ${form.nombre_completo}.`,
+        `Necesito: ${form.tipo_espacio}.`,
+        `Estado: ${form.estado_proyecto}.`,
+        form.barrio_zona ? `Zona: ${form.barrio_zona}.` : '',
+        form.mensaje ? `Detalle: ${form.mensaje}` : '',
+      ].filter(Boolean).join('\n');
+
+      window.open(`https://wa.me/${whatsappDestination}?text=${encodeURIComponent(mensaje)}`, '_blank');
+
       setSuccess(true);
       onSuccess?.();
     } catch (err: any) {
@@ -145,8 +155,14 @@ export function VetaEmbudoForm({
           ¡Solicitud recibida!
         </h3>
         <p className="mt-2 text-sm text-[hsl(var(--veta-text-stone))]">
-          Ya registramos tu solicitud y abrimos WhatsApp para continuar la conversación.
+          Tus datos quedaron registrados y abrimos WhatsApp con el resumen de tu solicitud para que continúes la conversación.
         </p>
+        <div className="mx-auto mt-4 max-w-sm space-y-1 rounded-xl bg-[hsl(var(--veta-bg-linen))] p-4 text-left text-sm text-[hsl(var(--veta-text-stone))]">
+          <p><strong className="text-[hsl(var(--veta-text-carbon))]">Nombre:</strong> {form.nombre_completo}</p>
+          <p><strong className="text-[hsl(var(--veta-text-carbon))]">Espacio:</strong> {form.tipo_espacio}</p>
+          <p><strong className="text-[hsl(var(--veta-text-carbon))]">Proyecto:</strong> {form.estado_proyecto}</p>
+          {form.barrio_zona && <p><strong className="text-[hsl(var(--veta-text-carbon))]">Zona:</strong> {form.barrio_zona}</p>}
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -155,7 +171,7 @@ export function VetaEmbudoForm({
           }}
           className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full border border-[hsl(var(--veta-gold-muted))]/30 px-5 text-xs font-semibold uppercase tracking-[0.22em] text-[hsl(var(--veta-text-carbon))] transition-colors hover:bg-[hsl(var(--veta-bg-linen))]"
         >
-          Enviar otro lead
+          Enviar otra solicitud
         </button>
       </div>
     );

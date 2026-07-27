@@ -84,11 +84,7 @@ const normalizeRecords = <T,>(payload: unknown): RecordItem<T>[] => {
 };
 
 async function readRecords(namespace: string) {
-  const res = await fetch('/api/vault', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'READ', namespace })
-  });
+  const res = await fetch(`/api/vault?namespace=${encodeURIComponent(namespace)}`);
   if (!res.ok) throw new Error(await res.text());
   const body = await res.json();
   return normalizeRecords(body.records ?? body.data ?? []);
