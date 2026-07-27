@@ -1,5 +1,15 @@
 [
   {
+    "id": "config-home-vetadeoro-home-hero-principal-jpg",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "home_hero_url",
+      "valor": "/vetadeoro/vetadeoro-cocinas-cocina-de-superficies-continuas-img-1.jpg",
+      "fuente": "vetadeoro.co"
+    },
+    "updated_at": "2026-07-25T02:01:43.032Z"
+  },
+  {
     "id": "veta-config-whatsapp-num",
     "context": "configuracion_comercial",
     "data": {
@@ -92,7 +102,7 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "logo_negativo_url",
-      "valor": "/api/assets/logo_veta_dorada_negative.svg",
+      "valor": "/logo_veta_dorada_negative.svg",
       "grupo": "Branding",
       "etiqueta": "Logotipo Vectorial Negativo (Fondo Oscuro)"
     },
@@ -103,7 +113,7 @@
     "context": "configuracion_comercial",
     "data": {
       "llave": "logo_positivo_url",
-      "valor": "/api/assets/logo_veta_dorada_positive.svg",
+      "valor": "/logo_veta_dorada_positive.svg",
       "grupo": "Branding",
       "etiqueta": "Logotipo Vectorial Positivo (Fondo Claro)"
     },
@@ -185,5 +195,55 @@
       "etiqueta": "Horario Sábado"
     },
     "updated_at": "2026-07-03T13:39:38.904Z"
+  },
+  {
+    "id": "veta-identity-brand_name",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "brand_name",
+      "valor": "Veta Dorada",
+      "grupo": "Identidad",
+      "etiqueta": "brand_name"
+    }
+  },
+  {
+    "id": "veta-identity-site_title",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "site_title",
+      "valor": "Veta Dorada | Carpinteria Arquitectonica",
+      "grupo": "Identidad",
+      "etiqueta": "site_title"
+    }
+  },
+  {
+    "id": "veta-identity-site_description",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "site_description",
+      "valor": "Disenamos, fabricamos e instalamos espacios integrales con tecnologia 3D y materiales premium.",
+      "grupo": "Identidad",
+      "etiqueta": "site_description"
+    }
+  },
+  {
+    "id": "veta-identity-favicon_url",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "favicon_url",
+      "valor": "/favicon.svg",
+      "grupo": "Identidad",
+      "etiqueta": "favicon_url"
+    }
+  },
+  {
+    "id": "veta-identity-website_url",
+    "context": "configuracion_comercial",
+    "data": {
+      "llave": "website_url",
+      "valor": "https://vetadorada.co",
+      "grupo": "Identidad",
+      "etiqueta": "website_url"
+    }
   }
 ]

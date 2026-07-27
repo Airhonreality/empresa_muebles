@@ -17,15 +17,17 @@
  * - ALWAYS: Limit list_records output with pagination parameters (limit and offset) and project summary fields.
  */
 
-import { getStrategy } from '../src/server/getStrategy';
+import { getDefinitionAwareBridge } from '../src/server/definitions/topology';
 import crypto from 'crypto';
 import vm from 'vm';
+import { loadLocalEnvFiles } from './load-local-env';
 
 // Configure environment variables in case they are needed for SupabaseStrategy
+loadLocalEnvFiles();
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || '';
 process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-const adapter = getStrategy();
+const adapter = getDefinitionAwareBridge();
 const MCP_PROTOCOL_VERSION = '2024-11-05';
 const MCP_SERVER_NAME = 'agnostic-system-seed';
 const MCP_SERVER_VERSION = '2.0.0';

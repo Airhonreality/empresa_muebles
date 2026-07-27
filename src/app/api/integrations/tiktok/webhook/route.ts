@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   let adapter;
   try {
-    adapter = getAdapter('tiktok');
+    adapter = await getAdapter('tiktok');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'TikTok adapter unavailable';
     const code = error instanceof TiktokConfigurationError ? error.code : 'TIKTOK_ADAPTER_UNAVAILABLE';
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: 'TikTok adapter is not installed', code: 'TIKTOK_ADAPTER_NOT_INSTALLED' }, { status: 500 });
   }
 
-  const tiktokAdapter = adapter as TiktokAdapter;
+  const tiktokAdapter = adapter as unknown as TiktokAdapter;
 
   if (!tiktokAdapter.verifyWebhook(rawBody, headers)) {
     return NextResponse.json({ ok: false, error: 'Invalid TikTok webhook signature', code: 'TIKTOK_WEBHOOK_SIGNATURE_INVALID' }, { status: 401 });

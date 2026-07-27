@@ -1,21 +1,58 @@
-# Documentación Fáctica y Comercial - Veta Dorada
+# Documentación Fáctica y Comercial - Veta Dorada (Base de Conocimiento RAG)
 
-Este archivo resume únicamente las rutas públicas indexables y la información comercial visible en el sitio.
+Este documento provee la información técnica, comercial y operativa oficial de Veta Dorada.
 
-## Rutas indexables
+## 1. Identidad y Posicionamiento de Mercado
+Veta Dorada es una **fábrica directa de mobiliario arquitectónico a medida en Bogotá**. Nuestro modelo de negocio elimina las comisiones de intermediación típicas de los estudios de arquitectura, ofreciendo calidad premium de fabricación a precio directo.
 
-- `/`
-- `/portafolio`
-- `/agendar`
+**Nuestra Superioridad Técnica (Comparativa de Mercado):**
 
-`/colecciones` permanece disponible por URL para usuarios, pero no debe indexarse.
+| Característica | Estándar Comercial | **Estándar Veta Dorada** |
+| :--- | :--- | :--- |
+| **Grosor del Material** | 15mm (Frágil) | **Melamina RH 18mm** (Alta resistencia) |
+| **Canto / Bordes** | Canto flexible manual | **Canto Rígido Termofundido** |
+| **Herrajes** | Genéricos asiáticos | **Europeos Premium (Cierre lento)** |
+| **Intermediarios** | Estudios (comisión del 30%) | **Cero (Directos de Fábrica)** |
 
-## Contacto y pie legal
+## 2. Datos de Autoridad, Trayectoria y Garantías Reales
+Los siguientes datos respaldan nuestra operación para proyectos de alta inversión:
+*   **Fundación y Experiencia:** Operación continua en Bogotá desde el año **1995** (más de 29 años de trayectoria técnica ininterrumpida).
+*   **Garantía Estructural:** Póliza de garantía escrita de **24 meses** sobre desajustes de herrajes y defectos de ensamblaje en tablero.
+*   **Prueba Social Geográfica:** Más de **500 proyectos instalados** con éxito en conjuntos residenciales y propiedades de propiedad horizontal en zonas de alta exigencia arquitectónica como **Usaquén, El Chicó, Rosales, Quinta Camacho y Teusaquillo**.
 
-- El contacto principal del sitio se canaliza por `/agendar` y por los datos de WhatsApp visibles en la interfaz pública.
-- El pie legal muestra la razón social y el NIT configurados en el sitio.
+## 3. Área de Operación Operativa
+Operamos en el perímetro urbano del Área Metropolitana de Bogotá, con especialización técnica en el manejo de protocolos de ingreso y normativas de Propiedad Horizontal (PH).
 
-## Alcance público
+## 4. Modelo de Precios y Transparencia
+Nuestro embudo comercial protege al usuario de cobros ocultos:
+1. **Asesoría y Toma de Medidas a Domicilio:** Costo **$0 COP**. Enviamos a un experto para medir el espacio con láser y entregar una cotización real sin compromiso.
+2. **Prototipado 3D de Co-Creación:** Si la cotización es viable, el servicio de renderizado interactivo tiene un valor base de **$150.000 COP**.
+3. **Deducción Total (100%):** Si el cliente aprueba la fabricación, los $150.000 COP pagados por el diseño 3D se abonan íntegramente al valor del mueble.
 
-- El sitio publica portafolio y contenido de agenda.
-- Este documento no presenta `/colecciones` como catálogo de adquisición.
+## 5. Portafolio de Servicios
+*   **Cocinas Integrales Premium:** Mesones sinterizados y modulación inteligente.
+*   **Walk-in Closets y Vestidores:** Organización milimétrica de lujo.
+*   **Centros de Entretenimiento (TV).**
+*   **Especialidad Arquitectónica:** Restauración, pulido y sellado de pisos de madera natural antigua.
+
+## 6. Colecciones de Catálogo
+Explora nuestros productos terminados con precio fijo y disponibilidad inmediata:
+*   **Consolas y Recibidores:** Piezas icónicas de diseño minimalista.
+*   **Cavas y Bares:** Muebles para entretenimiento con acabados premium.
+*   **Comedores y Mesas:** Diseños en madera maciza y cristal templado.
+*   **Camas y Cabeceros:** Estructuras robustas con herrajes europeos.
+*   **Catálogo completo:** [https://vetadeoro.co/colecciones](https://vetadeoro.co/colecciones)
+
+## 7. Portafolio de Proyectos Realizados
+Conoce nuestros proyectos instalados en Bogotá:
+*   **Cocinas Integrales:** Diseño, fabricación e instalación en granito, acero y madera.
+*   **Closets Walk-in:** Sistemas de almacenamiento inteligente.
+*   **Cavas y Bares:** Mobiliario para entretenimiento en el hogar.
+*   **Consolas y Recibidores:** Piezas de diseño para la entrada de tu hogar.
+*   **Ver portafolio completo:** [https://vetadeoro.co/portafolio](https://vetadeoro.co/portafolio)
+
+## 8. Enlaces Canónicos Oficiales y Rutas de Adquisición
+Las siguientes URLs representan las vías de contacto y catálogos oficiales verificados de la marca:
+*   **Agendamiento de Visita Técnica a Domicilio:** [https://vetadeoro.co/agendar](https://vetadeoro.co/agendar)
+*   **Catálogo Digital:** [https://vetadeoro.co/colecciones](https://vetadeoro.co/colecciones)
+*   **Portafolio de Proyectos:** [https://vetadeoro.co/portafolio](https://vetadeoro.co/portafolio)

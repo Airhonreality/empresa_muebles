@@ -68,7 +68,7 @@ export default function VetaAgendar({ block = {}, records, api }: Partial<BlockP
           </aside>
 
           <div className="veta-surface-glass rounded-[2rem] p-6 md:p-8">
-            <VetaEmbudoForm mode="page" />
+            <VetaEmbudoForm />
           </div>
         </div>
       </section>

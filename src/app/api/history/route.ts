@@ -13,6 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getStrategy } from '@/server/getStrategy';
+import { isDefinitionNamespace } from '@agnostic/core';
+import { createPersistenceTopology } from '@/server/definitions/topology';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,11 +28,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'namespace param required' }, { status: 400 });
     }
 
-    const strategy = getStrategy() as any;
-
-    const history = typeof strategy.getHistory === 'function'
-      ? await strategy.getHistory(namespace, limit)
-      : [];
+    let history: unknown[];
+    const topology = createPersistenceTopology();
+    if (isDefinitionNamespace(namespace) && topology.mode === 'revision') {
+      const revision = await topology.definitionReader.readActiveRevision();
+      history = [{
+        sha: revision.id,
+        message: `Active definition revision (${revision.consistency})`,
+        author: revision.source.kind,
+        timestamp: null,
+        url: null,
+      }];
+    } else {
+      const strategy = getStrategy() as any;
+      history = typeof strategy.getHistory === 'function'
+        ? await strategy.getHistory(namespace, limit)
+        : [];
+    }
 
     return NextResponse.json({ namespace, history });
   } catch (err) {

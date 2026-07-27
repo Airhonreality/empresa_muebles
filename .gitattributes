@@ -1,2 +1,52 @@
 * text=auto eol=lf
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Fork-owned layers — protegidas del sync de engine (merge driver "ours")
+# ──────────────────────────────────────────────────────────────────────────────
+# Cuando un fork ejecuta `git merge upstream/<branch>` (scripts/admin/
+# sync-workspaces.ps1), estas rutas conservan SIEMPRE la versión del fork.
+# El engine nunca las pisa. Esto elimina los conflictos de estado (adapters
+# instalados, bloques del fork, schemas generados, storage del proyecto).
+#
+# El driver "ours" se registra en el .git/config de cada workspace con:
+#     git config merge.ours.driver true
+# (lo hace automáticamente sync-workspaces.ps1 antes de fusionar).
+#
+# Ownership: ver CLAUDE.md → "Ownership Boundaries".
+
+# Contexto del proyecto (datos, progreso, docs auto-generados)
+storage/**                     merge=ours
+
+# Tipos generados desde los schemas del fork
+src/generated/**               merge=ours
+
+# Componentes custom del fork
+src/components/specialized/**   merge=ours
+
+# Código de producto del fork (SEO, sitio público "veta") — vive en src/lib pero
+# es 100% del fork. Stopgap hasta migrar el SEO a capa de datos (site_config).
+src/lib/veta/**                 merge=ours
+
+# Bridge de configuración del fork (bloques + zona de adapters instalados)
+agnostic.config.ts             merge=ours
+
+# Puntos de entrada de ruta que el fork posee (home + modelo de ruteo público).
+# El seed trae versiones "thin" por defecto; el fork mantiene las suyas.
+# Nota: los corchetes se escapan como [[] y []] porque en gitattributes son
+# clases de caracteres (si no, la regla no matchea el directorio [...slug]).
+src/app/page.tsx                    merge=ours
+src/app/[[]...slug[]]/page.tsx      merge=ours
+
+# El fork mantiene su propia documentación de entorno (superset del engine).
+.env.example                        merge=ours
+
+# Config de rutas del fork (áreas protegidas/públicas). La llena el fork.
+agnostic.routing.ts                 merge=ours
+
+# El fork mantiene su propio .gitignore (superset con sus reglas de producto).
+.gitignore                          merge=ours
+
+# SEO por-ruta del fork (lista sus páginas públicas explícitas). El seed trae
+# versiones data-driven por defecto; el fork mantiene las suyas.
+src/app/robots.ts                   merge=ours
+src/app/sitemap.ts                  merge=ours

@@ -1,0 +1,37 @@
+/**
+ * 🎨 CSS libre del fork (Veta Dorada) — inyectado por el engine DESPUES de
+ * tokens.css, gana por cascada. Aqui va lo que no es una variable de design_tokens:
+ * fuentes de marca, @font-face, clases de tema, overrides.
+ *
+ * NO editar src/app/globals.css (archivo de engine): mantenerlo identico al seed
+ * garantiza cero conflictos en el upstream. Ruta: storage/styles/custom.css
+ */
+
+/* Manrope (headings de marca, .veta-font-heading). Antes se cargaba via next/font
+   en layout.tsx; ahora que el layout es generico, se carga aqui. El @import debe
+   ir primero. */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap');
+
+:root {
+  --font-manrope: 'Manrope', 'Avenir Next', 'Helvetica Neue', sans-serif;
+}
+
+/* Tipografia de marca — Futura BT con stack de fallbacks (no requiere @font-face;
+   se referencia por nombre). Sobrescribe los --sat-font-* que trae tokens.css. */
+:root {
+  --sat-font-sans: 'Futura BT', 'Futura', 'Century Gothic', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+  --sat-font-serif: 'Futura BT', 'Futura', 'Century Gothic', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+  --sat-font-heading: 'Futura BT', 'Futura', 'Century Gothic', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Tema de componente del fork (antes en globals.css). */
+.theme-veta_de_oro {
+  background-color: #8b6f3c !important;
+  color: white !important;
+  border: 1px solid rgba(166, 140, 89, 0.35) !important;
+  box-shadow: 0 10px 15px -3px rgba(139, 111, 60, 0.2), 0 4px 6px -4px rgba(139, 111, 60, 0.2) !important;
+}
+
+.theme-veta_de_oro:hover {
+  background-color: #a68c59 !important;
+}

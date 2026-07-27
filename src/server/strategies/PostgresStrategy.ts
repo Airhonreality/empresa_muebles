@@ -75,47 +75,51 @@ export class PostgresStrategy implements AgnosticBridge {
 
   async read(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
     try {
-      await ensureTable(this.sql, this.url);
+      return await this.readStrict(namespace, query);
+    } catch (err) {
+      console.error('[PostgresStrategy] Read error:', err);
+      return [];
+    }
+  }
 
-      let rows: Record<string, unknown>[];
+  async readStrict(namespace: string, query?: AgnosticQuery): Promise<DataItem[]> {
+    await ensureTable(this.sql, this.url);
 
-      if (query?.where) {
-        const entries = Object.entries(query.where);
-        if (entries.length === 1 && entries[0][0] === 'id') {
-          rows = await this.sql`
+    let rows: Record<string, unknown>[];
+
+    if (query?.where) {
+      const entries = Object.entries(query.where);
+      if (entries.length === 1 && entries[0][0] === 'id') {
+        rows = await this.sql`
             SELECT id, namespace, context, data, created_at, updated_at
             FROM agnostic_records
             WHERE namespace = ${namespace} AND id = ${String(entries[0][1])}
           `;
-        } else {
-          // JSONB filter for data fields
-          rows = await this.sql`
+      } else {
+        // JSONB filter for data fields
+        rows = await this.sql`
             SELECT id, namespace, context, data, created_at, updated_at
             FROM agnostic_records
             WHERE namespace = ${namespace}
           `;
-          return rows
-            .filter(r =>
-              entries.every(([k, v]) =>
-                k === 'id' ? r.id === v : (r.data as Record<string, unknown>)?.[k] === v,
-              ),
-            )
-            .map(toDataItem);
-        }
-      } else {
-        rows = await this.sql`
+        return rows
+          .filter(r =>
+            entries.every(([k, v]) =>
+              k === 'id' ? r.id === v : (r.data as Record<string, unknown>)?.[k] === v,
+            ),
+          )
+          .map(toDataItem);
+      }
+    } else {
+      rows = await this.sql`
           SELECT id, namespace, context, data, created_at, updated_at
           FROM agnostic_records
           WHERE namespace = ${namespace}
           ORDER BY created_at ASC
         `;
-      }
-
-      return rows.map(toDataItem);
-    } catch (err) {
-      console.error('[PostgresStrategy] Read error:', err);
-      return [];
     }
+
+    return rows.map(toDataItem);
   }
 
   async write(

@@ -12,7 +12,9 @@ interface Props {
 }
 
 export function AgnosticGuard({ children, allowedLists, requiredRole, fallbackPath = '/login' }: Props) {
-  const { user, isLoading } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user ?? null;
+  const isLoading = auth?.isLoading ?? true;
   const router = useRouter();
   const pathname = usePathname();
 

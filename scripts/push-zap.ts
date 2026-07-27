@@ -8,18 +8,21 @@
  * 
  * USAGE:
  * npm run push-zap mi_script_pdf --target=https://mi-dominio-real.com
- * (O puedes configurar PRODUCTION_URL en tu archivo .env para no escribir el dominio siempre)
+ * (O puedes configurar NEXT_PUBLIC_BASE_URL, o PRODUCTION_URL como alias legado, en tu archivo .env.local o .env.vercel.local)
  */
 
 import fs from 'fs';
 import path from 'path';
+import { loadLocalEnvFiles } from './load-local-env';
+
+loadLocalEnvFiles();
 
 async function push() {
   const zapName = process.argv[2];
   
   // Buscar target en los argumentos o en el entorno
   const targetArg = process.argv.find(arg => arg.startsWith('--target='));
-  let targetUrl = targetArg ? targetArg.split('=')[1] : process.env.PRODUCTION_URL;
+  let targetUrl = targetArg ? targetArg.split('=')[1] : (process.env.NEXT_PUBLIC_BASE_URL || process.env.PRODUCTION_URL);
 
   if (!zapName || zapName.startsWith('--')) {
     console.error('\n❌ Error: Debes especificar el nombre del zap.');
@@ -29,7 +32,7 @@ async function push() {
 
   if (!targetUrl) {
     console.error('\n❌ Error: Falta la URL de Producción.');
-    console.log('💡 Solución: Pasa el argumento --target=https://... o define PRODUCTION_URL en tu .env\n');
+    console.log('💡 Solución: Pasa el argumento --target=https://... o define NEXT_PUBLIC_BASE_URL (o PRODUCTION_URL legado) en tu .env.local o .env.vercel.local\n');
     process.exit(1);
   }
 

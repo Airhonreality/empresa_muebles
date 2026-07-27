@@ -1,5 +1,5 @@
 import VetaHome from '@/components/specialized/VetaHome';
-import { buildLocalBusinessSchema, buildWebsiteSchema, readCommercialConfig, serializeJsonLd } from '@/lib/veta/seo/schemaGenerator';
+import { buildLocalBusinessSchema, buildWebsiteSchema, readCommercialConfig, serializeJsonLd } from '@/lib/veta/seo/vetaSchemas';
 import { getPublicHomeContent } from '@/server/public-site-data';
 
 export const dynamic = 'force-dynamic';

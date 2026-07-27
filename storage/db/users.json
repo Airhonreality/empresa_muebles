@@ -7,7 +7,7 @@
       "type": [
         "admin"
       ],
-      "password_hash": "scrypt$16384$8$1$BouNuxPM2jN_lxJ4vvxiJw$day_VsAEvYA0D7L6wCwyd7u8vs5s4ifaYw6__uXCNmPPnhJIK4UHL69XMqc09_ZXLBOWR0hFwuwGBVdsgLGOhg",
+      "password_hash": "scrypt$16384$8$1$d_kigLFEaiPh1HtFMMA1KQ$HfqbckbiKziqfq-XTnvqa_kwO4qzoutbe9xxK-PWSDcgJxddJ1ypZ6RhjS9BpQyauhfjh_93bLHmB7Tg7jnynw",
       "password_algo": "scrypt",
       "password_updated_at": "2026-07-15T21:54:10.549Z"
     },

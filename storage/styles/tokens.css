@@ -1,0 +1,324 @@
+/**
+ * 🪵 SATELLITE TOKENS — Empresa de Muebles (Premium Warm Palette)
+ * ─────────────────────────────────────────────────────────────────
+ * Estos tokens se inyectan DESPUÉS de globals.css en el <head>,
+ * por lo que sobrescriben los defaults del engine por cascada CSS.
+ *
+ * Editarlos aquí NO genera conflictos con el seed/upstream.
+ * Ruta: storage/styles/tokens.css
+ */
+:root {
+  /* 🪵 Paleta de Muebles Base */
+  --background: 30 15% 98.5%;        /* Arena ultra suave (Warm Off-white) */
+  --foreground: 20 20% 12%;          /* Carbón orgánico */
+  --card: 30 10% 99.5%;
+  --card-foreground: 20 20% 12%;
+  --popover: 30 10% 99.5%;
+  --popover-foreground: 20 20% 12%;
+
+  --secondary: 35 12% 93%;           /* Crema suave */
+  --secondary-foreground: 28 45% 35%;
+  --muted: 30 10% 94.5%;             /* Warm Muted Gray */
+  --muted-foreground: 25 10% 46%;
+  --accent: 30 10% 93%;
+  --accent-foreground: 28 45% 30%;
+
+  --border: 30 10% 87%;              /* Líneas sutiles de color tierra */
+  --input: 30 10% 87%;
+  --radius: 0.85rem;                 /* Esquinas redondeadas premium */
+
+  /* 🛰️ Satellite overrides (consumed by Tailwind via --sat-*) */
+  --sat-bg:             hsl(var(--background));
+  --sat-fg:             hsl(var(--foreground));
+  --sat-card:           hsl(var(--card));
+  --sat-card-fg:        hsl(var(--card-foreground));
+  --sat-muted:          hsl(var(--muted));
+  --sat-muted-fg:       hsl(var(--muted-foreground));
+  --sat-border:         hsl(var(--border));
+  --sat-input:          hsl(var(--input));
+  --sat-radius:         var(--radius);
+
+  /* 🧭 Tipografía contemporánea del fork — Outfit/Inter cargadas vía next/font en layout.tsx */
+  --sat-font-sans: var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
+  --sat-font-serif: var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
+  --sat-font-heading: var(--font-outfit), 'Helvetica Neue', Arial, sans-serif;
+
+  /* ✨ VETA DORADA PREMIUM DARK TOKENS */
+  --veta-bg-dark: 0 0% 4%;            /* Obsidiana (#0A0A0A) */
+  --veta-bg-light: 38 33% 97%;         /* Champaña Cálido (#FAF7F2) */
+  --veta-gold-muted: 43 36% 73%;       /* Oro Viejo (#D4C5A1) */
+  --veta-gold-hover: 39 50% 56%;       /* Miel Intenso (#C5A059) */
+  --veta-text-main: 0 0% 96%;          /* Blanco Hueso (#F5F5F5) */
+  --veta-text-sub: 40 6% 53%;          /* Kaki Mudo (#8E8A80) */
+  --veta-border-thin: rgba(212, 197, 161, 0.12);
+  --veta-bg-warm-paper: 40 30% 98%;    /* Fondo principal claro */
+  --veta-bg-linen: 38 26% 93%;         /* Fondo alterno tipo lino */
+  --veta-text-carbon: 0 0% 17%;        /* Texto principal */
+  --veta-text-stone: 43 4% 46%;        /* Texto secundario */
+  --veta-glass-light-bg: rgba(255, 255, 255, 0.55);
+  --veta-glass-light-border: rgba(43, 43, 43, 0.08);
+
+  --veta-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  /* 🌬️ Espaciado fluido (respiro que escala con el viewport, ver INS_Pantallas responsive y CSS.md) */
+  --veta-space-xs: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
+  --veta-space-sm: clamp(0.75rem, 0.55rem + 1vw, 1.25rem);
+  --veta-space-md: clamp(1.5rem, 1rem + 2.2vw, 2.5rem);
+  --veta-space-lg: clamp(2.5rem, 1.3rem + 5vw, 5rem);
+  --veta-space-xl: clamp(4rem, 1.8rem + 9vw, 8rem);
+
+  /* 🪟 Sistema de materiales — Glass & Material */
+  --veta-blur-sm: 12px;
+  --veta-blur-md: 24px;
+  --veta-blur-lg: 48px;
+  --veta-saturate: 1.6;
+
+  --veta-noise-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* Semantic bridge tokens that keep brand values centralized in the fork */
+  --veta-ink-strong: #0A0A0A;
+  --veta-text-muted-on-dark: rgba(255, 255, 255, 0.5);
+  --veta-text-strong-on-dark: rgba(255, 255, 255, 0.85);
+  --veta-surface-lifted: rgba(255, 255, 255, 0.7);
+  --veta-surface-hover-soft: rgba(255, 255, 255, 0.75);
+  --veta-navbar-light-bg: rgba(252, 251, 249, 0.94);
+  --veta-divider-dark: rgba(212, 197, 161, 0.12);
+  --veta-divider-strong: rgba(212, 197, 161, 0.18);
+  --veta-divider-soft: rgba(212, 197, 161, 0.25);
+  --veta-divider-sheen: rgba(212, 197, 161, 0.35);
+  --veta-divider-sheen-hover: rgba(212, 197, 161, 0.4);
+  --veta-surface-glass-dark-bg: rgba(255, 255, 255, 0.02);
+  --veta-surface-glass-dark-hover-bg: rgba(255, 255, 255, 0.04);
+  --veta-surface-glass-dark-border: rgba(212, 197, 161, 0.12);
+  --veta-surface-glass-dark-hover-border: rgba(212, 197, 161, 0.25);
+  --veta-surface-stone-bg: linear-gradient(155deg, #efeae1 0%, #e4dccd 55%, #ece6da 100%);
+  --veta-surface-stone-border: rgba(43, 43, 43, 0.06);
+  --veta-surface-stone-shadow: 0 18px 40px -18px rgba(43, 43, 43, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --veta-surface-matte-bg: linear-gradient(180deg, #f8f5ef, #f1ece2);
+  --veta-surface-matte-border: rgba(43, 43, 43, 0.05);
+  --veta-surface-matte-shadow: 0 10px 24px -14px rgba(43, 43, 43, 0.14);
+  --veta-surface-sheen-bg: linear-gradient(150deg, rgba(212, 197, 161, 0.42), rgba(255, 255, 255, 0.85) 65%);
+  --veta-surface-sheen-border: rgba(212, 197, 161, 0.35);
+  --veta-surface-sheen-shadow: 0 22px 50px -20px rgba(197, 160, 89, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --veta-media-tint: linear-gradient(165deg, rgba(10, 10, 10, 0.74) 0%, rgba(10, 10, 10, 0.5) 45%, rgba(10, 10, 10, 0.8) 100%);
+  --veta-surface-contrast-bg: linear-gradient(165deg, hsl(var(--veta-bg-dark)) 0%, #171310 100%);
+  --veta-surface-contrast-border: rgba(212, 197, 161, 0.18);
+  --veta-surface-contrast-shadow: 0 22px 50px -20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --veta-tab-underline-glow: 0 0 10px rgba(212, 197, 161, 0.85);
+  --veta-chip-bg-soft: rgba(255, 255, 255, 0.6);
+  --veta-surface-overlay-15: rgba(255, 255, 255, 0.15);
+  --veta-surface-overlay-10: rgba(255, 255, 255, 0.1);
+  --veta-theme-gold-bg: #8b6f3c;
+  --veta-theme-gold-fg: white;
+  --veta-theme-gold-border: rgba(166, 140, 89, 0.35);
+  --veta-theme-gold-shadow: 0 10px 15px -3px rgba(139, 111, 60, 0.2), 0 4px 6px -4px rgba(139, 111, 60, 0.2);
+  --veta-theme-gold-bg-hover: #a68c59;
+}
+
+/* Glassmorphic classes custom utility */
+.veta-glass-navbar {
+  background: rgba(10, 10, 10, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--veta-divider-dark);
+}
+
+.veta-glass-card {
+  background: var(--veta-surface-glass-dark-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--veta-surface-glass-dark-border);
+  border-radius: 12px;
+  transition: var(--veta-transition);
+}
+
+.veta-glass-card:hover {
+  transform: translateY(-4px);
+  background: var(--veta-surface-glass-dark-hover-bg);
+  border-color: var(--veta-surface-glass-dark-hover-border);
+}
+
+.veta-glass-navbar-light {
+  background: var(--veta-navbar-light-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--veta-glass-light-border);
+}
+
+.veta-glass-card-light {
+  background: var(--veta-glass-light-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--veta-glass-light-border);
+  border-radius: 12px;
+  transition: var(--veta-transition);
+}
+
+.veta-glass-card-light:hover {
+  transform: translateY(-4px);
+  background: var(--veta-surface-hover-soft);
+  border-color: var(--veta-divider-sheen-hover);
+}
+
+.veta-btn-gold {
+  background-color: hsl(var(--veta-gold-muted));
+  color: var(--veta-ink-strong);
+  font-weight: 600;
+  transition: var(--veta-transition);
+}
+
+.veta-btn-gold:hover {
+  background-color: hsl(var(--veta-gold-hover));
+  box-shadow: 0 8px 20px rgba(212, 197, 161, 0.2);
+}
+
+/* 🌬️ Sección con respiro fluido — reemplaza py-24 fijo en las secciones principales */
+.veta-section {
+  padding-block: var(--veta-space-xl);
+}
+
+/*
+ * 🪟 Sistema de materiales — Glass & Material
+ * Cuatro superficies distintas para romper la monotonía de "tarjeta blanca +
+ * borde 1px + shadow" repetida en todo el sitio. Se combinan entre sí en una
+ * misma sección para dar variedad de peso/textura, no se aplica una sola a todo.
+ */
+
+/* Vidrio translúcido: blur gaussiano saturado + canto de luz en vez de borde plano */
+.veta-surface-glass {
+  position: relative;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.24));
+  backdrop-filter: blur(var(--veta-blur-md)) saturate(var(--veta-saturate));
+  -webkit-backdrop-filter: blur(var(--veta-blur-md)) saturate(var(--veta-saturate));
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 24px 60px -24px rgba(43, 43, 43, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* Pétreo: gradiente cálido opaco + ruido sutil, sensación de piedra pulida */
+.veta-surface-stone {
+  position: relative;
+  background-image: var(--veta-noise-texture), var(--veta-surface-stone-bg);
+  background-blend-mode: overlay, normal;
+  background-size: 140px 140px, cover;
+  border: 1px solid var(--veta-surface-stone-border);
+  box-shadow: var(--veta-surface-stone-shadow);
+}
+
+/* Mate rugoso: opaco, sin brillo, para contenido que debe "pesar" menos */
+.veta-surface-matte {
+  position: relative;
+  background-image: var(--veta-noise-texture), var(--veta-surface-matte-bg);
+  background-blend-mode: overlay, normal;
+  background-size: 140px 140px, cover;
+  border: 1px solid var(--veta-surface-matte-border);
+  box-shadow: var(--veta-surface-matte-shadow);
+}
+
+/* Brillante / lacado: reflejo diagonal sutil, reservado para paneles destacados */
+.veta-surface-sheen {
+  position: relative;
+  overflow: hidden;
+  background: var(--veta-surface-sheen-bg);
+  border: 1px solid var(--veta-surface-sheen-border);
+  box-shadow: var(--veta-surface-sheen-shadow);
+}
+
+.veta-sheen-highlight::before {
+  content: '';
+  position: absolute;
+  inset: -20% -40%;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.55) 48%, transparent 62%);
+  transform: translateX(-15%);
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+  pointer-events: none;
+}
+
+@media not all and (hover: none) {
+  .veta-sheen-highlight:hover::before {
+    transform: translateX(15%);
+  }
+}
+
+/* Tipografias del home: locales al satelite y sin tocar el engine */
+.veta-font-body {
+  font-family: var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
+}
+
+.veta-font-heading {
+  font-family: var(--font-manrope), 'Avenir Next', 'Helvetica Neue', sans-serif;
+}
+
+.veta-heading {
+  font-family: var(--font-manrope), 'Avenir Next', 'Helvetica Neue', sans-serif;
+  text-wrap: balance;
+}
+
+/* Proposal and quotation primitives: inherit the public Veta Dorada language. */
+.veta-quote-section-label {
+  color: hsl(var(--veta-gold-hover));
+  font-family: var(--font-comfortaa), 'Century Gothic', 'Avenir Next', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.font-outfit,
+.font-heading,
+.font-serif {
+  font-family: var(--sat-font-heading) !important;
+}
+
+/*
+ * 🖼️ Tarjeta con imagen real desenfocada detrás del glass — el blur necesita
+ * algo rico que desenfocar; sobre un fondo plano backdrop-filter no aporta nada.
+ * Estructura esperada:
+ *   <div class="veta-media-card">
+ *     <img class="veta-media-card__bg" ... />
+ *     <div class="veta-media-card__tint" />
+ *     <div class="veta-media-card__content"> ... </div>
+ *   </div>
+ */
+.veta-media-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.veta-media-card__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.veta-media-card:hover .veta-media-card__bg {
+  transform: scale(1.06);
+}
+
+/* Velo oscuro directo sobre la foto (nítida, sin blur) para legibilidad del texto claro encima */
+.veta-media-card__tint {
+  position: absolute;
+  inset: 0;
+  background: var(--veta-media-tint);
+  z-index: 1;
+}
+
+.veta-media-card__content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Tarjeta de contraste: fondo oscuro sólido, sin depender de utilidades externas que puedan perder la cascada */
+.veta-surface-contrast {
+  position: relative;
+  background: var(--veta-surface-contrast-bg);
+  border: 1px solid var(--veta-surface-contrast-border);
+  box-shadow: var(--veta-surface-contrast-shadow);
+}

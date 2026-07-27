@@ -5,15 +5,27 @@ import type { PublicTestimonial } from '@/lib/veta/public-content';
 
 const surfaces = ['veta-surface-glass', 'veta-surface-stone', 'veta-surface-matte'] as const;
 
+// El grid asume 3 columnas; con menos reseñas reales publicadas, degrada a un
+// ancho contenido y centrado en vez de dejar columnas vacías (bug visible cuando
+// solo hay 1-2 testimonios destacados).
+const gridLayoutByCount: Record<number, string> = {
+  1: 'max-w-xl mx-auto grid-cols-1',
+  2: 'max-w-4xl mx-auto grid-cols-1 sm:grid-cols-2',
+};
+const defaultGridLayout = 'md:grid-cols-2 xl:grid-cols-3';
+
 export default function VetaTestimonials({ testimonios = [] }: { testimonios?: PublicTestimonial[] }) {
 
   if (testimonios.length === 0) return null;
+
+  const gridLayout = gridLayoutByCount[testimonios.length] ?? defaultGridLayout;
 
   return (
     <section className="veta-section bg-[hsl(var(--veta-bg-linen))] px-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-[var(--veta-space-lg)] max-w-2xl space-y-3">
-          <span className="text-xs font-bold uppercase tracking-[0.28em] text-[hsl(var(--veta-gold-hover))]">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.28em] text-[hsl(var(--veta-text-stone))]">
+            <span className="h-px w-6 bg-[hsl(var(--veta-gold-muted))]" />
             Prueba social real
           </span>
           <h2 className="veta-heading text-3xl font-semibold tracking-tight text-[hsl(var(--veta-text-carbon))] md:text-5xl">
@@ -24,7 +36,7 @@ export default function VetaTestimonials({ testimonios = [] }: { testimonios?: P
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className={`grid gap-6 ${gridLayout}`}>
           {testimonios.map((item, cardIndex) => {
             const dataItem = item.data;
             const rating = Number(dataItem.calificacion || 0);

@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'integrationId y credentials requeridos' }, { status: 400 });
     }
 
-    const adapter = getAdapter(integrationId, credentials);
+    const adapter = await getAdapter(integrationId, credentials);
     if (!adapter) {
         return NextResponse.json({ error: `Integración desconocida: ${integrationId}` }, { status: 404 });
     }

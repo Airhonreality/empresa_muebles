@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useAppState } from '@/context/AppContext';
 import { getCommercialValue } from '@/lib/veta/config';
 import { Instagram, MapPin, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
 import { VetaEmbudoModal } from './VetaEmbudoModal';
-import type { PublicCommercialRecord } from '@/lib/veta/public-content';
 
-export default function VetaFooter({ configRecords = [] }: { configRecords?: PublicCommercialRecord[] }) {
+export default function VetaFooter() {
+  const { data } = useAppState();
   const [embudoOpen, setEmbudoOpen] = useState(false);
+  const configRecords = data['configuracion_comercial'] || [];
 
   const logoPositive = getCommercialValue(configRecords, 'logo_positivo_url', '');
   const brandLabel = getCommercialValue(configRecords, 'brand_label_alternative', 'VETA DORADA');
@@ -84,11 +86,7 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
                   Espacios a Medida
                 </Link>
               </li>
-              <li>
-                <Link href="/tienda" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
-                  Tienda
-                </Link>
-              </li>
+
               <li>
                 <Link href="/portafolio" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
                   Portafolio
@@ -155,7 +153,7 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
         </div>
       </footer>
 
-      <VetaEmbudoModal configRecords={configRecords} open={embudoOpen} onOpenChange={setEmbudoOpen} />
+      <VetaEmbudoModal open={embudoOpen} onOpenChange={setEmbudoOpen} />
     </>
   );
 }

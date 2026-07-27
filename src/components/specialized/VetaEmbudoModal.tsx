@@ -3,14 +3,11 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { VetaEmbudoForm } from './VetaEmbudoForm';
-import type { PublicCommercialRecord } from '@/lib/veta/public-content';
 
 export function VetaEmbudoModal({
-  configRecords = [],
   open,
   onOpenChange,
 }: {
-  configRecords?: PublicCommercialRecord[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -21,20 +18,19 @@ export function VetaEmbudoModal({
           <div className="veta-surface-stone border-b p-8 lg:border-b-0 lg:border-r">
             <DialogHeader className="text-left">
               <DialogTitle className="veta-heading text-3xl font-semibold tracking-tight text-[hsl(var(--veta-text-carbon))]">
-                Agenda una visita sin ruido
+                Tu proyecto en minutos
               </DialogTitle>
               <DialogDescription className="mt-3 max-w-md text-sm leading-relaxed text-[hsl(var(--veta-text-stone))]">
-                Filtramos el proyecto en dos pasos, guardamos tus datos y abrimos WhatsApp con el mensaje listo para continuar.
+                Cuéntanos qué necesitas, te guiamos con una visita sin compromiso y te enviamos el presupuesto por WhatsApp.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-8 space-y-4 text-sm text-[hsl(var(--veta-text-stone))]">
-              <p>• Captura de GCLID y UTMs en segundo plano.</p>
-              <p>• Registro en el CRM local antes de abrir WhatsApp.</p>
-              <p>• Enfoque en Bogotá y sectores de investigación confirmados.</p>
+              <p>• Seleccionas el espacio y el estado de tu proyecto</p>
+              <p>• Recibes el presupuesto por WhatsApp</p>
             </div>
           </div>
           <div className="p-8">
-            <VetaEmbudoForm configRecords={configRecords} mode="modal" onSuccess={() => onOpenChange(false)} />
+            <VetaEmbudoForm onSuccess={() => onOpenChange(false)} />
           </div>
         </div>
       </DialogContent>
