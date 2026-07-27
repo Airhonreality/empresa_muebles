@@ -144,12 +144,12 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
           </div>
 
           <div className="flex items-center justify-center gap-5 text-[11px] text-[hsl(var(--veta-text-stone))]">
-            <Link href="/terminos" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
-              Términos
+            <Link href="/#espacios-hud" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
+              Espacios a medida
             </Link>
             <span className="h-1 w-1 rounded-full bg-[hsl(var(--veta-gold-muted))]" />
-            <Link href="/privacidad" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
-              Privacidad
+            <Link href="/portafolio" className="transition-colors hover:text-[hsl(var(--veta-text-carbon))]">
+              Portafolio
             </Link>
           </div>
         </div>

@@ -21,12 +21,12 @@ const validacionTecnica = [
   {
     title: 'Disminuye la incertidumbre',
     text: 'Te mostramos el espacio antes de fabricarlo, con visualización y detalle de materiales para reducir decisiones ambiguas.',
-    media: 'https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format&fit=crop&q=80&w=1000',
+    media: '/images/diseno-3d.jpg',
   },
   {
     title: 'Punto de fábrica directo',
     text: 'Trabajamos sin intermediarios. Eso nos permite controlar calidad, tiempos y detalle final desde el taller hasta la instalación.',
-    media: 'https://images.unsplash.com/photo-1615529182904-14819c35db37?auto=format&fit=crop&q=80&w=1000',
+    media: '/images/taller-carpinteros.jpg',
   },
 ] as const;
 
@@ -82,14 +82,13 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
 
       {/* Hero + HUD — primer fold full-bleed */}
       <section className="relative isolate overflow-hidden bg-black">
-        {/* TODO: reemplazar por fotografía real de proyecto Veta Dorada */}
         <img
           src={heroNarrative.imageUrl}
           alt="Cocina integral con luz natural, proyecto Veta Dorada"
           className="absolute inset-0 h-full w-full object-cover object-center"
           fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/42 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-black/42 to-black/82" />
 
         <div className="relative flex min-h-[calc(100svh-3.5rem)] w-full flex-col">
           <div className="flex flex-1 items-center">
@@ -113,7 +112,7 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
                 </button>
                 <Link
                   href="#espacios-hud"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-md transition-colors hover:bg-white/15 sm:px-6 sm:text-xs"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/40 bg-white/20 px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-md transition-colors hover:bg-white/30 sm:px-6 sm:text-xs"
                 >
                   Ver portafolio
                 </Link>
@@ -121,9 +120,9 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
 
               <div className="mt-6 grid w-full max-w-6xl gap-4 sm:grid-cols-3 lg:gap-6">
                 {[
-                  { value: 'Bogotá', label: 'Cobertura focalizada', icon: MapPin },
-                  { value: '3D', label: 'Diseño y modelado', icon: Ruler },
-                  { value: 'Premium', label: 'Fabricación directa', icon: ShieldCheck },
+                  { value: 'Bogotá', label: 'Fabricación local', sub: 'Taller en la Carrera 72A', icon: MapPin },
+                  { value: 'Sin intermediarios', label: 'Precio directo de fábrica', sub: 'Diseño, fabricación e instalación', icon: ShieldCheck },
+                  { value: 'Diseño 3D', label: 'Visualización previa', sub: 'Render antes de fabricar', icon: Ruler },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
@@ -131,6 +130,7 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
                       <Icon className="mb-2 h-4 w-4 text-[hsl(var(--veta-gold-muted))]" />
                       <p className="veta-heading text-lg font-semibold text-white sm:text-xl">{item.value}</p>
                       <p className="text-[9px] uppercase tracking-[0.18em] text-white/60 sm:text-[10px] sm:tracking-[0.2em]">{item.label}</p>
+                      <p className="mt-1 text-[10px] text-white/40">{item.sub}</p>
                     </div>
                   );
                 })}
@@ -178,10 +178,10 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
             </div>
 
             <Link
-              href="/_data/espacio_variantes?view=form"
+              href="/portafolio"
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white/70 px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsl(var(--veta-text-carbon))] backdrop-blur-md transition-colors hover:bg-white hover:border-[hsl(var(--veta-gold-muted))]"
             >
-              Ingresar espacio
+              Ver portafolio
             </Link>
           </div>
 
@@ -191,19 +191,19 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
                 No hay espacios publicados en esta categoría todavía
               </p>
               <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link
-                  href="/_data/espacio_variantes?view=form"
-                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-[hsl(var(--veta-gold-muted))] px-6 text-xs font-semibold uppercase tracking-wider text-[#0A0A0A]"
-                >
-                  Ingresar espacio
-                </Link>
                 <button
                   type="button"
                   onClick={() => setEmbudoOpen(true)}
-                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-[hsl(var(--veta-glass-light-border))] px-6 text-xs font-semibold uppercase tracking-wider text-[hsl(var(--veta-text-carbon))]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-[hsl(var(--veta-gold-muted))] px-6 text-xs font-semibold uppercase tracking-wider text-[#0A0A0A]"
                 >
                   Agendar Visita
                 </button>
+                <Link
+                  href="/portafolio"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-[hsl(var(--veta-glass-light-border))] px-6 text-xs font-semibold uppercase tracking-wider text-[hsl(var(--veta-text-carbon))]"
+                >
+                  Ver Portafolio
+                </Link>
               </div>
             </div>
           ) : (
@@ -252,70 +252,51 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
         </div>
       </section>
 
-      {/* Validación técnica */}
+      {/* Por qué Veta Dorada */}
       <section className="veta-section bg-[hsl(var(--veta-bg-linen))] px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mb-[var(--veta-space-lg)] max-w-2xl space-y-3">
-            <span className="text-xs font-bold uppercase tracking-[0.28em] text-[hsl(var(--veta-gold-hover))]">
-              Validación técnica
-            </span>
             <h2 className="veta-heading text-[clamp(2rem,calc(1.2rem+2.4vw),3.8rem)] font-semibold leading-[0.98] tracking-[-0.03em]">
               Por qué Veta Dorada
             </h2>
-            {/* Respuesta atómica (~46 palabras) para lectura rápida y búsqueda generativa */}
             <p className="max-w-[62ch] text-sm leading-[1.75] text-[hsl(var(--veta-text-stone))]">
-              Veta Dorada es un estudio de carpintería arquitectónica ubicado en Bogotá. Especializados en diseño, modelado 3D y fabricación directa de cocinas integrales, vestidores y mobiliario residencial de alta gama, con precisión milimétrica y herrajes de estándar global.
+              Somos un estudio de carpintería arquitectónica en Bogotá. Diseñamos, modelamos en 3D y fabricamos cocinas, closets y muebles a medida sin intermediarios, con materiales premium y herrajes de importación.
             </p>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-3">
-            {validacionTecnica.map((item, index) => (
-              <article key={item.title} className="veta-media-card rounded-2xl">
-                {/* TODO: reemplazar por fotografía real de proyecto Veta Dorada */}
-                <img src={item.media} alt="" aria-hidden="true" className="veta-media-card__bg" />
-                <div className="veta-media-card__tint" />
-                <div className="veta-media-card__content p-7 lg:p-8">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-[hsl(var(--veta-gold-muted))]">
+            {[...validacionTecnica, { title: 'Asesoría de diseño interior', text: 'Te ayudamos a justificar la visita gratuita y a ordenar criterios de uso, estética y ergonomía desde la primera conversación.', media: '/images/herrajes.jpg' }].map((item, index) => (
+              <article key={item.title} className="group relative overflow-hidden rounded-2xl bg-black">
+                <div className="aspect-[4/3]">
+                  <img src={item.media} alt="" aria-hidden="true" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+                <div className="absolute inset-0 flex flex-col justify-end p-7 lg:p-8">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-[hsl(var(--veta-gold-muted))]">
                     0{index + 1}
                   </div>
                   <h3 className="veta-heading text-xl font-semibold tracking-tight text-white">
                     {item.title}
                   </h3>
-                  <p className="mt-3 max-w-[38ch] text-sm leading-relaxed text-white/85">
+                  <p className="mt-2 max-w-[38ch] text-sm leading-relaxed text-white/80">
                     {item.text}
                   </p>
                 </div>
               </article>
             ))}
-
-            {/* Tarjeta de contraste: fondo oscuro entre las dos claras */}
-            <article className="veta-surface-contrast veta-sheen-highlight overflow-hidden rounded-2xl p-7">
-              <div className="relative z-10">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-[hsl(var(--veta-gold-muted))]">
-                  03
-                </div>
-                <h3 className="veta-heading text-xl font-semibold tracking-tight text-[hsl(var(--veta-text-main))]">
-                  Asesoría de diseño interior
-                </h3>
-                <p className="mt-3 max-w-[38ch] text-sm leading-relaxed text-white/70">
-                  Te ayudamos a justificar la visita gratuita y a ordenar criterios de uso, estética y ergonomía desde la primera conversación.
-                </p>
-              </div>
-            </article>
           </div>
         </div>
       </section>
 
       <VetaTestimonials testimonios={publicContent.testimonials} />
 
-      {/* CTA final — fondo ambiental para no dejar la zona en blanco plano */}
+      {/* CTA final — fondo ambiental */}
       <section className="veta-section relative overflow-hidden px-4 sm:px-6">
-        {/* TODO: reemplazar por fotografía real de proyecto Veta Dorada */}
         <img
-          src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=60&w=1600"
+          src="/images/cocina-naturaleza.jpg"
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full scale-110 object-cover opacity-[0.14] blur-2xl saturate-150"
+          className="absolute inset-0 h-full w-full scale-110 object-cover opacity-[0.12] blur-2xl"
         />
         <div className="veta-surface-sheen veta-sheen-highlight relative z-10 mx-auto max-w-7xl rounded-[2rem] px-8 py-14 text-center md:px-12 md:py-16">
           <span className="text-xs font-bold uppercase tracking-[0.28em] text-[hsl(var(--veta-gold-hover))]">

@@ -173,19 +173,14 @@ export function VetaEmbudoForm({
       }}
       className="space-y-6"
     >
-      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[hsl(var(--veta-gold-hover))]">
-        <Sparkles className="h-4 w-4" />
-        <span>Embudo híbrido</span>
-      </div>
-
       <div className="space-y-2">
         <h3 className="veta-heading text-2xl font-semibold tracking-tight text-[hsl(var(--veta-text-carbon))]">
-          {step === 1 ? 'Cuéntanos qué necesitas' : 'Deja tus datos de contacto'}
+          {step === 1 ? 'Cuéntanos qué necesitas' : 'Tus datos de contacto'}
         </h3>
         <p className="text-sm leading-relaxed text-[hsl(var(--veta-text-stone))]">
           {step === 1
-            ? 'Primero filtramos el tipo de proyecto y el estado actual de tu espacio.'
-            : 'Después registramos tu contacto y te enviamos a WhatsApp con el mensaje prellenado.'}
+            ? 'Selecciona el tipo de espacio y el estado de tu proyecto.'
+            : 'Completa tus datos y recibe el presupuesto por WhatsApp.'}
         </p>
       </div>
 

@@ -21,16 +21,16 @@ export function VetaEmbudoModal({
           <div className="veta-surface-stone border-b p-8 lg:border-b-0 lg:border-r">
             <DialogHeader className="text-left">
               <DialogTitle className="veta-heading text-3xl font-semibold tracking-tight text-[hsl(var(--veta-text-carbon))]">
-                Agenda una visita sin ruido
+                Tu proyecto en minutos
               </DialogTitle>
               <DialogDescription className="mt-3 max-w-md text-sm leading-relaxed text-[hsl(var(--veta-text-stone))]">
-                Filtramos el proyecto en dos pasos, guardamos tus datos y abrimos WhatsApp con el mensaje listo para continuar.
+                Cuéntanos qué necesitas, te guiamos con una visita sin compromiso y te enviamos el presupuesto por WhatsApp.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-8 space-y-4 text-sm text-[hsl(var(--veta-text-stone))]">
-              <p>• Captura de GCLID y UTMs en segundo plano.</p>
-              <p>• Registro en el CRM local antes de abrir WhatsApp.</p>
-              <p>• Enfoque en Bogotá y sectores de investigación confirmados.</p>
+              <p>• Respondes 2 preguntas sobre tu espacio</p>
+              <p>• Dejas tus datos de contacto</p>
+              <p>• Recibes el presupuesto por WhatsApp listo para continuar</p>
             </div>
           </div>
           <div className="p-8">
