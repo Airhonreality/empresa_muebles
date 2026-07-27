@@ -25,6 +25,7 @@
     --input: 240 5.9% 90%;
     --ring: 28 45% 45%;
     --radius: 0.5rem;
+    --z-portal: 60;
 
     /* 🛰️ Default Satellite Fallback Variables (Delegated to Core Shadcn UI tokens) */
     --sat-bg: hsl(var(--background));
