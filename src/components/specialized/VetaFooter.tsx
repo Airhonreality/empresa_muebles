@@ -2,24 +2,21 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { getCommercialValue } from '@/lib/veta/config';
 import { Instagram, MapPin, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
 import { VetaEmbudoModal } from './VetaEmbudoModal';
-import type { PublicCommercialRecord } from '@/lib/veta/public-content';
 
-export default function VetaFooter({ configRecords = [] }: { configRecords?: PublicCommercialRecord[] }) {
+const BRAND_LABEL = 'VETA DORADA';
+const WHATSAPP_NUM = '+57 302 592 2101';
+const WHATSAPP_LINK = 'https://wa.me/573025922101';
+const INSTAGRAM_URL = 'https://instagram.com/veta.dorada';
+const TIKTOK_URL = '';
+const DIRECCION_TALLER = 'Carrera 72A # 71A-57, Bogotá D.C., Colombia';
+const CIUDAD_OPERACION = 'Bogotá D.C.';
+const NIT_LEGAL = '901421357';
+const NOMBRE_EMPRESA = 'Hermanos García González SAS';
+
+export default function VetaFooter() {
   const [embudoOpen, setEmbudoOpen] = useState(false);
-
-  const logoPositive = getCommercialValue(configRecords, 'logo_positivo_url', '');
-  const brandLabel = getCommercialValue(configRecords, 'brand_label_alternative', 'VETA DORADA');
-  const whatsappNum = getCommercialValue(configRecords, 'whatsapp_number', '+57 300 123 4567');
-  const whatsappLink = getCommercialValue(configRecords, 'whatsapp_link', 'https://wa.me/573001234567');
-  const instagramUrl = getCommercialValue(configRecords, 'instagram_url', 'https://instagram.com/vetadora');
-  const tiktokUrl = getCommercialValue(configRecords, 'tiktok_url', 'https://tiktok.com/@vetadorada');
-  const direccionTaller = getCommercialValue(configRecords, 'direccion_taller', 'Carrera 72A # 71A-57, Bogotá D.C., Colombia');
-  const ciudadOperacion = getCommercialValue(configRecords, 'ciudad_operacion', 'Bogotá D.C.');
-  const nitLegal = getCommercialValue(configRecords, 'nit_legal', '901421357');
-  const nombreEmpresa = getCommercialValue(configRecords, 'nombre_empresa', 'Hermanos García González SAS');
 
   return (
     <>
@@ -27,25 +24,14 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
         <div className="mx-auto mb-16 grid max-w-7xl gap-12 px-6 md:grid-cols-4">
           <div className="space-y-5 md:col-span-2">
             <Link href="/" className="flex items-center gap-3 select-none">
-              {logoPositive ? (
-                <img src={logoPositive} alt={brandLabel} className="h-9 w-auto object-contain" />
-              ) : (
-                <div className="flex flex-col">
-                  <span className="veta-heading text-lg font-semibold tracking-[0.08em] uppercase text-[hsl(var(--veta-text-carbon))]">
-                    {brandLabel}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-[0.42em] text-[hsl(var(--veta-text-stone))]">
-                    estudio de carpintería
-                  </span>
-                </div>
-              )}
+              <img src="/logo_veta_dorada_positive.svg" alt="VETA DORADA" className="h-9 w-auto object-contain" />
             </Link>
             <p className="max-w-sm text-sm leading-relaxed text-[hsl(var(--veta-text-stone))]">
               Carpintería arquitectónica de alta precisión, con diseño, fabricación e instalación para hogares en Bogotá.
             </p>
             <div className="flex items-center gap-3 pt-2">
               <a
-                href={instagramUrl}
+                href={INSTAGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white/70 transition-colors hover:border-[hsl(var(--veta-gold-muted))]"
@@ -53,9 +39,9 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
               >
                 <Instagram className="h-4 w-4" />
               </a>
-              {tiktokUrl && (
+              {TIKTOK_URL && (
                 <a
-                  href={tiktokUrl}
+                  href={TIKTOK_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white/70 text-xs font-bold transition-colors hover:border-[hsl(var(--veta-gold-muted))]"
@@ -65,7 +51,7 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
                 </a>
               )}
               <a
-                href={whatsappLink}
+                href={WHATSAPP_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white/70 transition-colors hover:border-[hsl(var(--veta-gold-muted))]"
@@ -112,15 +98,15 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
             <ul className="space-y-3 text-sm text-[hsl(var(--veta-text-stone))]">
               <li className="flex items-start gap-3">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--veta-gold-hover))]" />
-                <span>{direccionTaller}</span>
+                <span>{DIRECCION_TALLER}</span>
               </li>
               <li className="flex items-start gap-3">
                 <Phone className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--veta-gold-hover))]" />
-                <span>{whatsappNum}</span>
+                <span>{WHATSAPP_NUM}</span>
               </li>
               <li className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--veta-gold-hover))]" />
-                <span>{ciudadOperacion}</span>
+                <span>{CIUDAD_OPERACION}</span>
               </li>
             </ul>
             <button
@@ -139,7 +125,7 @@ export default function VetaFooter({ configRecords = [] }: { configRecords?: Pub
               © {new Date().getFullYear()} VETA DORADA. Todos los derechos reservados.
             </p>
             <p className="text-[11px] text-[hsl(var(--veta-text-stone))]">
-              Operado legalmente por <strong className="text-[hsl(var(--veta-text-carbon))]">{nombreEmpresa}</strong> - NIT {nitLegal}
+              Operado legalmente por <strong className="text-[hsl(var(--veta-text-carbon))]">{NOMBRE_EMPRESA}</strong> - NIT {NIT_LEGAL}
             </p>
           </div>
 

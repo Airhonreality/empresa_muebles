@@ -40,7 +40,6 @@ const PUBLIC_COMMERCIAL_KEYS = new Set([
   'codigo_postal',
   'horario_semana',
   'horario_sabado',
-  'home_hero_url',
 ]);
 
 /**

@@ -3,14 +3,11 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { VetaEmbudoForm } from './VetaEmbudoForm';
-import type { PublicCommercialRecord } from '@/lib/veta/public-content';
 
 export function VetaEmbudoModal({
-  configRecords = [],
   open,
   onOpenChange,
 }: {
-  configRecords?: PublicCommercialRecord[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -33,7 +30,7 @@ export function VetaEmbudoModal({
             </div>
           </div>
           <div className="p-8">
-            <VetaEmbudoForm configRecords={configRecords} onSuccess={() => onOpenChange(false)} />
+            <VetaEmbudoForm onSuccess={() => onOpenChange(false)} />
           </div>
         </div>
       </DialogContent>

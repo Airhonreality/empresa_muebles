@@ -12,7 +12,6 @@ import { useGclidCapture } from '@/lib/veta/useGclidCapture';
 import type { PublicHomeContent } from '@/lib/veta/public-content';
 import {
   buildSpaceCatalog,
-  homeHeroNarrative,
   SPACE_CATEGORY_TABS,
   type SpaceCategoryId,
 } from '@/lib/veta/portfolio';
@@ -34,7 +33,6 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
   useGclidCapture();
   const [embudoOpen, setEmbudoOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SpaceCategoryId>('todos');
-  const heroNarrative = homeHeroNarrative(publicContent.commercial_config);
   const spaceCatalog = useMemo(
     () => buildSpaceCatalog(publicContent.spaces.map((space) => ({
       data: {
@@ -78,12 +76,12 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
 
   return (
     <div className="veta-font-body min-h-screen bg-[hsl(var(--veta-bg-warm-paper))] text-[hsl(var(--veta-text-carbon))] selection:bg-[hsl(var(--veta-gold-muted))]/30 selection:text-[hsl(var(--veta-text-carbon))]">
-      <VetaHeader configRecords={publicContent.commercial_config} />
+      <VetaHeader />
 
       {/* Hero + HUD — primer fold full-bleed */}
       <section className="relative isolate overflow-hidden bg-black">
         <img
-          src={heroNarrative.imageUrl}
+          src="/vetadeoro/vetadeoro-cocinas-cocina-de-superficies-continuas-img-1.jpg"
           alt="Cocina integral con luz natural, proyecto Veta Dorada"
           className="absolute inset-0 h-full w-full object-cover object-center"
           fetchPriority="high"
@@ -321,8 +319,8 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
         </div>
       </section>
 
-      <VetaFooter configRecords={publicContent.commercial_config} />
-      <VetaEmbudoModal configRecords={publicContent.commercial_config} open={embudoOpen} onOpenChange={setEmbudoOpen} />
+      <VetaFooter />
+      <VetaEmbudoModal open={embudoOpen} onOpenChange={setEmbudoOpen} />
     </div>
   );
 }

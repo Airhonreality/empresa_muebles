@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { ArrowRight, MessageCircle } from 'lucide-react';
-import { getCommercialValue, normalizeWhatsappDestination } from '@/lib/veta/config';
-import type { PublicCommercialRecord } from '@/lib/veta/public-content';
+import { normalizeWhatsappDestination } from '@/lib/veta/config';
+
+const WHATSAPP_DESTINATION = normalizeWhatsappDestination('+57 302 592 2101');
 
 const tipoEspacioOptions = [
   { label: 'Cocina', value: 'Cocina' },
@@ -19,22 +20,16 @@ const estadoProyectoOptions = [
 ];
 
 export function VetaEmbudoForm({
-  configRecords = [],
   onSuccess,
 }: {
-  configRecords?: PublicCommercialRecord[];
   onSuccess?: () => void;
 }) {
   const [tipoEspacio, setTipoEspacio] = useState(tipoEspacioOptions[0].value);
   const [estadoProyecto, setEstadoProyecto] = useState(estadoProyectoOptions[0].value);
 
-  const whatsappDestination = normalizeWhatsappDestination(
-    getCommercialValue(configRecords, 'whatsapp_number', '+57 300 123 4567')
-  );
-
   const abrirWhatsApp = () => {
     const mensaje = `Hola Veta Dorada, necesito: ${tipoEspacio}. Estado: ${estadoProyecto}.`.toLocaleLowerCase();
-    window.open(`https://wa.me/${whatsappDestination}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    window.open(`https://wa.me/${WHATSAPP_DESTINATION}?text=${encodeURIComponent(mensaje)}`, '_blank');
     onSuccess?.();
   };
 

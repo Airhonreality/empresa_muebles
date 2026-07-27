@@ -4,16 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Calendar, Compass, Layers, Menu, X } from 'lucide-react';
-import { getCommercialValue } from '@/lib/veta/config';
 import { VetaEmbudoModal } from './VetaEmbudoModal';
-import type { PublicCommercialRecord } from '@/lib/veta/public-content';
 
-export default function VetaHeader({ configRecords = [] }: { configRecords?: PublicCommercialRecord[] }) {
+export default function VetaHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [embudoOpen, setEmbudoOpen] = useState(false);
-  const logoPositive = getCommercialValue(configRecords, 'logo_positivo_url', '');
-  const brandLabel = getCommercialValue(configRecords, 'brand_label_alternative', 'VETA DORADA');
 
   const links = [
     { label: 'Espacios a Medida', path: '/#espacios-hud', icon: Compass },
@@ -26,12 +22,10 @@ export default function VetaHeader({ configRecords = [] }: { configRecords?: Pub
       <header className="veta-glass-navbar-light sticky top-0 z-50 w-full rounded-none border-x-0 border-t-0 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
         <div className="mx-auto flex h-14 max-w-none items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3 select-none">
-            {logoPositive && (
-              <img src={logoPositive} alt={brandLabel} className="h-7 w-auto object-contain sm:h-8" />
-            )}
+            <img src="/logo_veta_dorada_positive.svg" alt="VETA DORADA" className="h-7 w-auto object-contain sm:h-8" />
             <div className="flex flex-col">
               <span className="veta-heading text-[0.95rem] font-semibold tracking-[0.08em] uppercase text-[hsl(var(--veta-text-carbon))] sm:text-[1rem]">
-                {brandLabel}
+                VETA DORADA
               </span>
               <span className="text-[8px] uppercase tracking-[0.32em] text-[hsl(var(--veta-text-stone))] sm:text-[9px] sm:tracking-[0.42em]">
                 estudio de carpintería
@@ -124,7 +118,7 @@ export default function VetaHeader({ configRecords = [] }: { configRecords?: Pub
         )}
       </header>
 
-      <VetaEmbudoModal configRecords={configRecords} open={embudoOpen} onOpenChange={setEmbudoOpen} />
+      <VetaEmbudoModal open={embudoOpen} onOpenChange={setEmbudoOpen} />
     </>
   );
 }
