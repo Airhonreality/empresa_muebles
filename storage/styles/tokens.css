@@ -243,7 +243,7 @@
 
 /* Tipografias del home: locales al satelite y sin tocar el engine */
 .veta-font-body {
-  font-family: var(--font-comfortaa), 'Century Gothic', 'Avenir Next', sans-serif;
+  font-family: var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
 }
 
 .veta-font-heading {

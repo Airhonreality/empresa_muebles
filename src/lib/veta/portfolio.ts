@@ -45,3 +45,44 @@ export function uniqueCategories(records: { categoria_espacio?: string }[]): Spa
   }
   return cats;
 }
+
+type SpaceCatalogInput = {
+  data: {
+    nombre_espacio?: string;
+    categoria_espacio?: string;
+    descripcion?: string;
+    colores?: string;
+    imagenes?: string;
+  };
+};
+
+export type SpaceCatalogItem = {
+  id: string;
+  title: string;
+  category: string;
+  categoryLabel: string;
+  description: string;
+  materials: string[];
+  image: string;
+};
+
+export function buildSpaceCatalog(items: SpaceCatalogInput[]): SpaceCatalogItem[] {
+  return items.map((item, idx) => {
+    const d = item.data;
+    const cat = d.categoria_espacio ?? '';
+    return {
+      id: `space_${idx}`,
+      title: d.nombre_espacio ?? '',
+      category: cat,
+      categoryLabel: categoryLabel(cat),
+      description: d.descripcion ?? '',
+      materials: (d.colores ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+      image: d.imagenes ?? '/images/placeholder.jpg',
+    };
+  });
+}
+
+export const SPACE_CATEGORY_TABS: { id: SpaceCategoryId; label: string }[] = [
+  { id: 'todos', label: 'Todos' },
+  ...Object.entries(CATEGORY_LABELS).map(([id, label]) => ({ id: id as SpaceCategoryId, label })),
+];
