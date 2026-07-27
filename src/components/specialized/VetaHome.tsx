@@ -57,19 +57,10 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
       window.requestAnimationFrame(() => {
         const target = document.getElementById('espacios-grid');
         const header = document.querySelector('header');
-        const hud = document.getElementById('espacios-hud');
-
         if (!target) return;
-
         const headerHeight = header?.getBoundingClientRect().height ?? 0;
-        const hudHeight = hud?.getBoundingClientRect().height ?? 0;
-        const offset = headerHeight + Math.max(96, Math.round(hudHeight * 0.95));
-        const top = window.scrollY + target.getBoundingClientRect().top - offset;
-
-        window.scrollTo({
-          top: Math.max(0, top),
-          behavior: 'smooth',
-        });
+        const top = window.scrollY + target.getBoundingClientRect().top - headerHeight - 24;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
       });
     }
   };
@@ -136,51 +127,50 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
             </div>
           </div>
 
-          <div className="absolute inset-x-0 bottom-4 z-30 px-3 sm:bottom-5 sm:px-4 lg:bottom-6 lg:px-8">
-            <div
-              id="espacios-hud"
-              className="mx-auto w-full max-w-[80rem] rounded-full border border-white/18 bg-[rgba(252,251,249,0.72)] px-3 py-2.5 backdrop-blur-3xl sm:px-4 sm:py-3 lg:px-5"
-            >
-              <div className="flex items-center gap-0.5 overflow-x-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                {SPACE_CATEGORY_TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => handleCategorySelect(tab.id)}
-                    className={`relative shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors duration-300 sm:px-4 sm:py-2.5 sm:text-[11px] ${
-                      activeCategory === tab.id
-                        ? 'bg-[hsl(var(--veta-text-carbon))] text-white'
-                        : 'text-[hsl(var(--veta-text-stone))] hover:bg-white/70 hover:text-[hsl(var(--veta-text-carbon))]'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Espacios a medida — fusionado en el Home, filtrado por el HUD de arriba */}
+      {/* Espacios a medida */}
       <section id="espacios-grid" className="veta-section px-4 pt-16 sm:px-6 lg:pt-20">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-[var(--veta-space-lg)] flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl space-y-3">
+          <div className="mb-[var(--veta-space-lg)] grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="max-w-2xl space-y-2">
               <span className="text-xs font-bold uppercase tracking-[0.28em] text-[hsl(var(--veta-gold-hover))]">
                 Espacios a medida
               </span>
               <h2 className="veta-heading text-[clamp(2rem,calc(1.2rem+2.4vw),3.8rem)] font-semibold leading-[0.98] tracking-[-0.03em]">
-                Diseños reales que pueden convertirse en tu próximo espacio
+                <span className="block">Diseños reales que</span>
+                <span className="block">se convierten en tu próximo espacio</span>
               </h2>
+              <p className="max-w-[56ch] pt-1 text-sm leading-relaxed text-[hsl(var(--veta-text-stone))]">
+                Modelamos, fabricamos e instalamos muebles a medida en Bogotá. Sin intermediarios, con materiales premium y herrajes de importación.
+              </p>
             </div>
-
             <Link
               href="/portafolio"
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white/70 px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsl(var(--veta-text-carbon))] backdrop-blur-md transition-colors hover:bg-white hover:border-[hsl(var(--veta-gold-muted))]"
             >
               Ver portafolio
             </Link>
+          </div>
+
+          <div id="espacios-hud" className="mb-8">
+            <div className="mx-auto inline-flex items-center gap-1 rounded-full border border-[hsl(var(--veta-glass-light-border))] bg-white p-1 shadow-sm">
+              {SPACE_CATEGORY_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleCategorySelect(tab.id)}
+                  className={`relative shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors duration-300 sm:px-5 sm:text-[11px] ${
+                    activeCategory === tab.id
+                      ? 'bg-[hsl(var(--veta-text-carbon))] text-white'
+                      : 'text-[hsl(var(--veta-text-stone))] hover:bg-[hsl(var(--veta-bg-linen))] hover:text-[hsl(var(--veta-text-carbon))]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {filteredSpaces.length === 0 ? (
@@ -253,13 +243,18 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
       {/* Por qué Veta Dorada */}
       <section className="veta-section bg-[hsl(var(--veta-bg-linen))] px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-[var(--veta-space-lg)] max-w-2xl space-y-3">
+          <div className="mb-[var(--veta-space-lg)] grid gap-6 lg:grid-cols-[1fr_1.6fr]">
             <h2 className="veta-heading text-[clamp(2rem,calc(1.2rem+2.4vw),3.8rem)] font-semibold leading-[0.98] tracking-[-0.03em]">
-              Por qué Veta Dorada
+              Por qué<br />Veta Dorada
             </h2>
-            <p className="max-w-[62ch] text-sm leading-[1.75] text-[hsl(var(--veta-text-stone))]">
-              Somos un estudio de carpintería arquitectónica en Bogotá. Diseñamos, modelamos en 3D y fabricamos cocinas, closets y muebles a medida sin intermediarios, con materiales premium y herrajes de importación.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm leading-[1.75] text-[hsl(var(--veta-text-stone))]">
+                Somos un estudio de carpintería arquitectónica en Bogotá. Diseñamos, modelamos en 3D y fabricamos cocinas, closets y muebles a medida sin intermediarios, con materiales premium y herrajes de importación.
+              </p>
+              <p className="text-sm leading-[1.75] text-[hsl(var(--veta-text-stone))]">
+                Cada proyecto empieza con una visita gratuita para entender el espacio, tomar medidas y recomendar la mejor solución antes de fabricar. Sin compromisos, sin letra pequeña.
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-3">

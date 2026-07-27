@@ -141,7 +141,7 @@ export default function VetaFooter() {
         </div>
       </footer>
 
-      <VetaEmbudoModal configRecords={configRecords} open={embudoOpen} onOpenChange={setEmbudoOpen} />
+      <VetaEmbudoModal open={embudoOpen} onOpenChange={setEmbudoOpen} />
     </>
   );
 }
