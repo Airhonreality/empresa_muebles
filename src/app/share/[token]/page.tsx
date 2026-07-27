@@ -1,5 +1,18 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolvePublicLink, type PublicField } from '@/server/public-links';
+import { buildPublicShareMetadata } from '@/lib/seo/metadata-helpers';
+
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const document = await resolvePublicLink(token);
+  if (!document) return { title: 'Documento no encontrado' };
+
+  return buildPublicShareMetadata({
+    title: document.title,
+    description: `Documento compartido: ${document.title}`,
+  });
+}
 
 function formatValue(value: unknown, field: PublicField): string {
   if (value === null || value === undefined || value === '') return '—';
