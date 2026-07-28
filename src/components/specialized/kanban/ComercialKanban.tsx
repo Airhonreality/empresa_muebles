@@ -2,7 +2,9 @@
 import type { BlockProps } from '@agnostic/core'
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { LayoutGrid, PanelsTopLeft } from 'lucide-react'
+import { LayoutGrid, PanelsTopLeft, Plus, Search } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useRelationData } from '@/lib/agnostic/hooks/useRelationData'
 import { useMateriaStore } from '@/lib/agnostic/store'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
@@ -10,8 +12,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { useSmartSearch } from '@/hooks/useSmartSearch'
+import { SmartSearchBar } from '@/components/ui/SmartSearchBar'
 import KanbanCanvas, { STAGE_COLORS, type KanbanStage, type KanbanRecord } from './KanbanCanvas'
 import ComercialCard from './ComercialCard'
+import { createProjectDraft } from '@/components/specialized/projectDraft'
 import type {
   ProyectosRecord, ClientesRecord, ContratosRecord,
   AbonosContratoRecord, EspacioVariantesRecord,
@@ -72,6 +77,13 @@ export default function ComercialKanban({ records }: BlockProps) {
 
   const isLoading = loadingCli || loadingCon || loadingAbo || loadingEsp
 
+  // Smart search hook
+  const smartSearch = useSmartSearch(
+    localProyectos.map(p => ({ id: p.id, nombre_proyecto: (p.data as any)?.nombre_proyecto || '' })),
+    'proyectos',
+    ['id', 'nombre_proyecto']
+  )
+
   const clientMap = useMemo(() => {
     const map: Record<string, ClientesRecord> = {}
     for (const c of allClientes as ClientesRecord[]) map[c.id] = c
@@ -106,16 +118,22 @@ export default function ComercialKanban({ records }: BlockProps) {
     return map
   }, [allEspacios])
 
+  const filteredProyectos = useMemo(() => {
+    if (!smartSearch.query) return localProyectos
+    const matchIds = new Set(smartSearch.results.matches.map(m => m.item.id))
+    return localProyectos.filter(p => matchIds.has(p.id))
+  }, [smartSearch.query, smartSearch.results, localProyectos])
+
   const groupedByStage = useMemo(() => {
     const map: Record<string, KanbanRecord[]> = {}
     for (const stage of STAGES) map[stage.value] = []
-    for (const project of localProyectos) {
+    for (const project of filteredProyectos) {
       const stage = String(project.data.estado || 'activa')
       if (!map[stage]) map[stage] = []
       map[stage].push(project)
     }
     return map
-  }, [localProyectos])
+  }, [filteredProyectos])
 
   const handleMove = async (record: KanbanRecord, newStage: string) => {
     const previous = localProyectos
@@ -180,7 +198,27 @@ export default function ComercialKanban({ records }: BlockProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex-1 min-w-[200px] sm:max-w-sm">
+            <SmartSearchBar
+              query={smartSearch.query}
+              onQueryChange={smartSearch.setQuery}
+              results={smartSearch.results}
+              onSelect={(item) => {
+                smartSearch.trackUsage(item.id)
+              }}
+              onHistoryClick={(query) => smartSearch.setQuery(query)}
+              history={smartSearch.history}
+              placeholder="Buscar proyectos…"
+              contextLabel="proyectos"
+              renderItem={(item, type) => (
+                <div className="flex items-center gap-2 text-sm">
+                  <Search size={14} className="text-stone-400 shrink-0" />
+                  <span className="flex-1 truncate">{item.nombre_proyecto || item.id.slice(0, 8)}</span>
+                </div>
+              )}
+            />
+          </div>
           <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white p-1">
             <button
               type="button"
@@ -212,7 +250,7 @@ export default function ComercialKanban({ records }: BlockProps) {
 
       {viewMode === 'tree' ? (
         <KanbanCanvas
-          records={localProyectos}
+          records={filteredProyectos}
           stages={STAGES}
           stageKey="estado"
           defaultStage="activa"

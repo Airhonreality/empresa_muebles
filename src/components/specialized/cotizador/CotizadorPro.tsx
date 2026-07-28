@@ -4,8 +4,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import type { BlockProps, DataItem } from '@agnostic/core'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Trash2, Edit3, X, Copy, Play, ExternalLink, Link2, RotateCcw } from 'lucide-react'
+import { Loader2, User, ChevronDown, ChevronUp, FileText, Plus, Eye, EyeOff, Trash2, Edit3, X, Copy, Play, ExternalLink, Link2, RotateCcw, Search } from 'lucide-react'
 
 import { EspacioCard } from './EspacioCard'
 import { MoneyInput } from './MoneyInput'
@@ -16,8 +17,11 @@ import { ContratoEmailModal } from './ContratoEmailModal'
 import ProductionTransitionDialog from '../kanban/ProductionTransitionDialog'
 import { COP, vWrite, vRemove } from './utils'
 import { useAutoSave } from '@/hooks/useAutoSave'
+import { useSmartSearch } from '@/hooks/useSmartSearch'
+import { SmartSearchBar } from '@/components/ui/SmartSearchBar'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
 import { useMateriaStore } from '@/lib/agnostic/store'
+import { createProjectDraft } from '@/components/specialized/projectDraft'
 import type {
   Proyectos as ProyectoData,
   EspacioVariantes,
@@ -38,18 +42,6 @@ type PublicProposalData = {
   estado: 'borrador' | 'publicada' | 'revocada'
   emitida_en?: string
   revocado_en?: string
-}
-
-function createPublicSlug(title?: string) {
-  const editorialPart = (title || 'propuesta')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48) || 'propuesta'
-
-  return `${editorialPart}-${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`
 }
 
 export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecord }: CotizadorProProps) {
@@ -92,6 +84,13 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     data: {}
   })
 
+  // Smart search hook
+  const smartSearch = useSmartSearch(
+    proyectosList.map(p => ({ id: p.id, nombre_proyecto: (p.data as any)?.nombre_proyecto || '' })),
+    'cotizaciones',
+    ['id', 'nombre_proyecto']
+  )
+
   const activeCot = proyectosList.find(c => c.id === activeCotId)
   const activeContrato = useMemo(() => {
     if (!activeCotId) return null
@@ -101,6 +100,13 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     () => publicProposals.find(record => (record.data as PublicProposalData).proyecto_id === activeCotId) ?? null,
     [publicProposals, activeCotId],
   )
+
+  const sortedProyectos = useMemo(() => {
+    return [...proyectosList].sort((a, b) =>
+      (b as any).updated_at?.localeCompare?.((a as any).updated_at) ?? 0
+    )
+  }, [proyectosList])
+
 
   const clienteData = useMemo(() => {
     if (!headerLocal?.cliente_id) return null
@@ -935,15 +941,13 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
 
   // ── Handlers: new quote ──────────────────────────────────────────
   const newCot = async () => {
-    const id = crypto.randomUUID()
-    const data: ProyectoData = { nombre_proyecto: 'Nuevo Proyecto', estado: 'activa' }
-    await vWrite('proyectos', id, data)
-    const publicProposalId = crypto.randomUUID()
-    const publicData: PublicProposalData = { proyecto_id: id, public_slug: createPublicSlug(data.nombre_proyecto), snapshot_json: {}, estado: 'borrador' }
-    await vWrite('propuestas_publicas', publicProposalId, publicData)
-    setProyectos(prev => [...prev, { id, context: 'proyectos', data: data as any }])
-    setPublicProposals(prev => [...prev, { id: publicProposalId, context: 'propuestas_publicas', data: publicData as any }])
-    setActiveCotId(id); setHeaderLocal(data)
+    const draft = createProjectDraft('Nuevo Proyecto')
+    await vWrite('proyectos', draft.projectId, draft.projectData)
+    await vWrite('propuestas_publicas', draft.publicProposalId, draft.publicProposalData)
+    setProyectos(prev => [...prev, { id: draft.projectId, context: 'proyectos', data: draft.projectData as any }])
+    setPublicProposals(prev => [...prev, { id: draft.publicProposalId, context: 'propuestas_publicas', data: draft.publicProposalData as any }])
+    setActiveCotId(draft.projectId)
+    setHeaderLocal(draft.projectData)
   }
 
   const handleExportPdf = async () => {
@@ -1223,55 +1227,90 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   // ──────────────────────────────────────────────────────────────────
   // RENDER — selector
   if (!activeCotId) {
-    const sorted = [...proyectosList].sort((a, b) =>
-      (b as any).updated_at?.localeCompare?.((a as any).updated_at) ?? 0
-    )
     return (
       <div className="min-h-screen bg-stone-50 p-6">
         <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <div className="w-full min-w-0 flex-1">
               <h1 className="text-2xl font-bold text-stone-800 tracking-tight w-full max-w-full break-words text-balance">Proyectos</h1>
               <p className="text-stone-400 text-sm mt-1">Selecciona o crea una nueva</p>
             </div>
+          </div>
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="w-full sm:max-w-md">
+              <SmartSearchBar
+                query={smartSearch.query}
+                onQueryChange={smartSearch.setQuery}
+                results={smartSearch.results}
+                onSelect={(item) => {
+                  smartSearch.trackUsage(item.id)
+                  smartSearch.saveToHistory(smartSearch.query)
+                  setActiveCotId(item.id)
+                  const proj = proyectosList.find(p => p.id === item.id)
+                  if (proj) setHeaderLocal(proj.data as any as ProyectoData)
+                }}
+                onHistoryClick={(query) => smartSearch.setQuery(query)}
+                history={smartSearch.history}
+                placeholder="Buscar proyectos, cliente o espacio…"
+                contextLabel="cotizaciones"
+                renderItem={(item, type) => (
+                  <div className="flex items-center gap-2 text-sm">
+                    <FileText size={14} className="text-amber-500 shrink-0" />
+                    <span className="flex-1 truncate">{item.nombre_proyecto || item.id.slice(0, 8)}</span>
+                  </div>
+                )}
+              />
+            </div>
             <button onClick={newCot}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 transition-colors shadow-sm">
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 transition-colors shadow-sm">
               <Plus size={14} /> Nueva
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sorted.map(c => {
-              const d = c.data as any as ProyectoData
-              const cli = clientes.find(cl => cl.id === d.cliente_id)?.data as any
+            {(() => {
+              const displayResults = smartSearch.query
+                ? smartSearch.results.matches
+                : smartSearch.results.recentlyUsed.length > 0
+                  ? smartSearch.results.recentlyUsed
+                  : sortedProyectos.slice(0, 12).map(p => ({
+                      item: { id: p.id, nombre_proyecto: (p.data as any)?.nombre_proyecto || '' },
+                      relevance: 1,
+                      type: 'match' as const
+                    }))
 
-              // Count unique physical space names in this quotation
-              const spacesList = variantes.filter(v => (v.data as any as EspacioVariantes).proyecto_id === c.id)
-              const uniqueSpaceNames = new Set(
-                spacesList.map(v => (v.data as any as EspacioVariantes).nombre_espacio?.trim()).filter(Boolean)
-              )
-              const spacesCount = uniqueSpaceNames.size
-              return (
-                <div key={c.id}
-                  className="relative p-5 bg-white border border-stone-200 rounded-2xl hover:border-amber-300 hover:shadow-md transition-all group flex flex-col justify-between min-h-[140px]">
-                  <div onClick={() => { setActiveCotId(c.id); setHeaderLocal(d) }} className="cursor-pointer flex-1 flex flex-col justify-start">
-                    <div className="flex items-center justify-between mb-3" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setActiveCotId(c.id); setHeaderLocal(d) }}>
-                        <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
-                          <FileText size={13} className="text-amber-500" />
+              return displayResults.map(result => {
+                const c = proyectosList.find(p => p.id === result.item.id)
+                if (!c) return null
+                const d = c.data as any as ProyectoData
+                const cli = clientes.find(cl => cl.id === d.cliente_id)?.data as any
+
+                const spacesList = variantes.filter(v => (v.data as any as EspacioVariantes).proyecto_id === c.id)
+                const uniqueSpaceNames = new Set(
+                  spacesList.map(v => (v.data as any as EspacioVariantes).nombre_espacio?.trim()).filter(Boolean)
+                )
+                const spacesCount = uniqueSpaceNames.size
+                return (
+                  <div key={c.id}
+                    className="relative p-5 bg-white border border-stone-200 rounded-2xl hover:border-amber-300 hover:shadow-md transition-all group flex flex-col justify-between min-h-[140px]">
+                    <div onClick={() => { smartSearch.trackUsage(c.id); setActiveCotId(c.id); setHeaderLocal(d) }} className="cursor-pointer flex-1 flex flex-col justify-start">
+                      <div className="flex items-center justify-between mb-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => { smartSearch.trackUsage(c.id); setActiveCotId(c.id); setHeaderLocal(d) }}>
+                          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
+                            <FileText size={13} className="text-amber-500" />
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-stone-300 group-hover:text-amber-400 transition-colors truncate">
+                            {c.id.slice(0, 8)}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-300 group-hover:text-amber-400 transition-colors truncate">
-                          {c.id.slice(0, 8)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => duplicateCotizacion(c.id)}
-                          className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                          title="Duplicar cotización"
-                        >
-                          <Copy size={13} />
-                        </button>
-                        <button
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => duplicateCotizacion(c.id)}
+                            className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                            title="Duplicar cotización"
+                          >
+                            <Copy size={13} />
+                          </button>
+                          <button
                           onClick={() => deleteCotizacionById(c.id)}
                           className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                           title="Eliminar cotización"
@@ -1292,12 +1331,8 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
                   </div>
                 </div>
               )
-            })}
-            {sorted.length === 0 && (
-              <div className="col-span-3 text-center py-16 text-stone-300 text-sm">
-                Sin proyectos. Crea el primero.
-              </div>
-            )}
+              })
+            })()}
           </div>
         </div>
       </div>
