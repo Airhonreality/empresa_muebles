@@ -300,6 +300,35 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                           ))}
                         </div>
                       )}
+                      {activeVariant?.labor_breakdown && (activeVariant.labor_breakdown.dev_days > 0 || activeVariant.labor_breakdown.assembly_days > 0 || activeVariant.labor_breakdown.install_days > 0) && (
+                        <div className="ml-5 mb-2 space-y-1 text-xs text-[hsl(var(--veta-text-muted))]">
+                          <p className="font-medium text-[10px] uppercase tracking-wider opacity-70">Mano de obra:</p>
+                          {activeVariant.labor_breakdown.dev_days > 0 && (
+                            <div className="flex justify-between gap-4 pl-2">
+                              <span>• Jornadas desarrollo técnico: {activeVariant.labor_breakdown.dev_days}</span>
+                              <span className="tabular-nums font-medium text-[hsl(var(--veta-text-main))]">{formatCop(activeVariant.labor_breakdown.dev_days * activeVariant.labor_breakdown.dev_rate)}</span>
+                            </div>
+                          )}
+                          {activeVariant.labor_breakdown.assembly_days > 0 && (
+                            <div className="flex justify-between gap-4 pl-2">
+                              <span>• Jornadas ensamblaje taller: {activeVariant.labor_breakdown.assembly_days}</span>
+                              <span className="tabular-nums font-medium text-[hsl(var(--veta-text-main))]">{formatCop(activeVariant.labor_breakdown.assembly_days * activeVariant.labor_breakdown.assembly_rate)}</span>
+                            </div>
+                          )}
+                          {activeVariant.labor_breakdown.install_days > 0 && (
+                            <div className="flex justify-between gap-4 pl-2">
+                              <span>• Jornadas instalación: {activeVariant.labor_breakdown.install_days}</span>
+                              <span className="tabular-nums font-medium text-[hsl(var(--veta-text-main))]">{formatCop(activeVariant.labor_breakdown.install_days * activeVariant.labor_breakdown.install_rate)}</span>
+                            </div>
+                          )}
+                          {(activeVariant.labor_total ?? 0) > 0 && (
+                            <div className="flex justify-between gap-4 pl-2 pt-1 border-t border-[var(--veta-divider-soft)]/50">
+                              <span className="font-medium">Subtotal mano de obra</span>
+                              <strong className="tabular-nums text-[hsl(var(--veta-text-main))]">{formatCop(activeVariant.labor_total ?? 0)}</strong>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {civilEstimate.length > 0 && (
                         <div className="ml-5 mb-2 space-y-1 text-xs text-[hsl(var(--veta-text-muted))]">
                           <p className="font-medium text-[10px] uppercase tracking-wider opacity-70">Costos adicionales:</p>

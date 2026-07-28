@@ -28,6 +28,16 @@ export type PublicProposalSnapshot = {
       notes?: string[]
       items: Array<{ name: string; quantity: number; unit?: string; image_url?: string; unit_price?: number; total?: number }>
       civil_estimate?: Array<{ category: string; name: string; quantity: number; unit?: string; unit_price?: number; total?: number; notes?: string }>
+      materials_total?: number
+      labor_total?: number
+      labor_breakdown?: {
+        dev_days: number
+        dev_rate: number
+        assembly_days: number
+        assembly_rate: number
+        install_days: number
+        install_rate: number
+      }
       total: number
     }>
   }>
@@ -111,6 +121,19 @@ function projectPublicProposal(snapshot: SnapshotRecord): PublicProposalSnapshot
                 notes: asText(item.notes) || undefined,
               }
             }),
+            materials_total: asNumber(variant.materials_total),
+            labor_total: asNumber(variant.labor_total),
+            labor_breakdown: (() => {
+              const breakdown = variant.labor_breakdown as SnapshotRecord | undefined
+              return breakdown ? {
+                dev_days: asNumber(breakdown.dev_days),
+                dev_rate: asNumber(breakdown.dev_rate),
+                assembly_days: asNumber(breakdown.assembly_days),
+                assembly_rate: asNumber(breakdown.assembly_rate),
+                install_days: asNumber(breakdown.install_days),
+                install_rate: asNumber(breakdown.install_rate),
+              } : undefined
+            })(),
             total: asNumber(variant.total),
           }
         }) : [],

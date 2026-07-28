@@ -880,6 +880,16 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
           notes: (variantData.notas_markdown || '').split('\n').map(note => note.trim()).filter(Boolean),
           items: itemProjection,
           civil_estimate: civilEstimate,
+          materials_total: materialsTotal,
+          labor_total: laborTotal,
+          labor_breakdown: {
+            dev_days: Number(variantData.jornadas_desarrollo_tecnico) || 0,
+            dev_rate: tarifas.dev,
+            assembly_days: Number(variantData.jornadas_ensamblaje_taller) || 0,
+            assembly_rate: tarifas.assembly,
+            install_days: Number(variantData.jornadas_instalacion_obra) || 0,
+            install_rate: tarifas.install,
+          },
           total: materialsTotal + laborTotal,
         }
       }),
