@@ -21,9 +21,18 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** Isolated public route: it bypasses AgnosticShell and receives only the public projection. */
-export default async function PortfolioPage() {
+export default async function PortfolioPage({ searchParams }: { searchParams: Promise<{ categoria?: string }> }) {
   const entries = await getPublicPortfolio();
-  const portfolioSchemas = entries.map(buildPortfolioItemSchema);
+  const portfolioSchemas = entries.map((entry) => buildPortfolioItemSchema({
+    id: entry.slug,
+    data: {
+      slug: entry.slug,
+      titulo: entry.titulo,
+      descripcion_comercial: entry.descripcion_comercial,
+      barrio: entry.zona,
+    },
+  }));
+  const { categoria } = await searchParams;
 
   return (
     <>
@@ -34,7 +43,7 @@ export default async function PortfolioPage() {
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(portfolioSchemas) }}
         />
       )}
-      <VetaPortfolio entries={entries} />
+      <VetaPortfolio entries={entries} initialCategory={categoria} />
     </>
   );
 }
