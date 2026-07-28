@@ -1163,7 +1163,13 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     setCatalogModal({
       isOpen: true,
       mode: 'create',
-      data: { descripcion: initialSearch, unidad_medida: 'unidad', precio_publico: 0, precio_directo: 0 }
+      data: {
+        descripcion: initialSearch,
+        tipo: 'Herrajes / Accesorios',
+        unidad_medida: 'unidad',
+        precio_publico: 0,
+        precio_directo: 0
+      }
     })
   }
 
@@ -1171,6 +1177,10 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
     const { mode, id, data } = catalogModal
     if (!data.descripcion?.trim()) {
       toast.error('La descripción es obligatoria')
+      return
+    }
+    if (!data.tipo?.trim()) {
+      toast.error('El tipo de producto es obligatorio')
       return
     }
 
@@ -1681,13 +1691,19 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase tracking-widest text-stone-400 font-bold">Tipo / Categoría</label>
+                  <label className="text-[9px] uppercase tracking-widest text-stone-400 font-bold">
+                    Tipo / Categoría <span className="text-red-500">*</span>
+                  </label>
                   <select
                     value={catalogModal.data.tipo || ''}
                     onChange={e => setCatalogModal(prev => ({ ...prev, data: { ...prev.data, tipo: e.target.value } }))}
-                    className="w-full text-xs border border-stone-200 rounded-lg px-2.5 py-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-700"
+                    className={`w-full text-xs border rounded-lg px-2.5 py-2.5 bg-white focus:outline-none focus:ring-1 text-stone-700 transition-colors ${
+                      !catalogModal.data.tipo
+                        ? 'border-amber-300 focus:ring-red-400 text-stone-400'
+                        : 'border-stone-200 focus:ring-amber-300'
+                    }`}
                   >
-                    <option value="">Seleccionar...</option>
+                    <option value="">Seleccionar tipo...</option>
                     {tiposOptions.map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
