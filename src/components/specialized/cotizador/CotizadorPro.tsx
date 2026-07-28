@@ -1287,11 +1287,10 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {(() => {
+              // Mostrar: 1) matches si hay búsqueda activa, 2) todos los proyectos por defecto
               const displayResults = smartSearch.query
                 ? smartSearch.results.matches
-                : smartSearch.results.recentlyUsed.length > 0
-                  ? smartSearch.results.recentlyUsed
-                  : sortedProyectos.slice(0, 12).map(p => ({
+                : sortedProyectos.map(p => ({
                       item: { id: p.id, nombre_proyecto: (p.data as any)?.nombre_proyecto || '' },
                       relevance: 1,
                       type: 'match' as const

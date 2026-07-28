@@ -81,11 +81,11 @@ export function SmartSearchBar<T extends SearchableItem>({
     history.length === 0
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button className="w-full text-left" ref={triggerRef}>
+    <div className="w-full" ref={triggerRef}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
               placeholder={placeholder}
               value={query}
@@ -94,8 +94,7 @@ export function SmartSearchBar<T extends SearchableItem>({
               className="pl-9 pr-3"
             />
           </div>
-        </button>
-      </PopoverTrigger>
+        </PopoverTrigger>
 
       <PopoverContent
         className="p-0 w-screen sm:w-auto"
@@ -214,6 +213,7 @@ export function SmartSearchBar<T extends SearchableItem>({
           </CommandList>
         </Command>
       </PopoverContent>
-    </Popover>
+      </Popover>
+    </div>
   )
 }
