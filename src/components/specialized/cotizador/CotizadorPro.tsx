@@ -268,23 +268,23 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
   }, [variantes])
 
   const tiposOptions = useMemo(() => {
-    const base = [
+    // Catálogo interno (componentes/materiales para cotizador)
+    const tiposInternos = [
       'Tableros / Maderas',
       'Herrajes / Accesorios',
       'Modulos prefabricados',
       'Piedras / Mesones',
       'Electrodomesticos / Gasodomesticos',
-      'Servicio'
+      'Servicio',
+      'Mano de Obra Civil',
+      'Logística Obra Civil',
+      'Materiales Obra Civil'
     ]
-    const set = new Set(base)
-    catalogo.forEach(c => {
-      const val = (c.data as any).tipo
-      if (val && typeof val === 'string' && val.trim() && !val.includes('-') && val !== 'servicio') {
-        set.add(val.trim())
-      }
-    })
-    return Array.from(set)
-  }, [catalogo])
+    // Catálogo público (productos para venta al cliente)
+    const tiposPublicos = ['Mueble Terminado']
+
+    return { internos: tiposInternos, publicos: tiposPublicos }
+  }, [])
 
   const unidadesOptions = useMemo(() => {
     const base = [
@@ -1165,7 +1165,6 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
       mode: 'create',
       data: {
         descripcion: initialSearch,
-        tipo: 'Herrajes / Accesorios',
         unidad_medida: 'unidad',
         precio_publico: 0,
         precio_directo: 0
@@ -1704,9 +1703,16 @@ export default function CotizadorPro({ block = {}, forcedProyectoId, activeRecor
                     }`}
                   >
                     <option value="">Seleccionar tipo...</option>
-                    {tiposOptions.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
+                    <optgroup label="📦 Catálogo interno (componentes)">
+                      {tiposOptions.internos.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="🏠 Catálogo público (productos venta)">
+                      {tiposOptions.publicos.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
 

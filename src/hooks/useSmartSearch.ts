@@ -28,6 +28,7 @@ interface ItemUsage {
 const STORAGE_KEY_HISTORY = 'smart-search-history'
 const STORAGE_KEY_USAGE = 'smart-search-usage'
 const MAX_HISTORY = 20
+const MAX_USAGE_ITEMS = 50  // Limitar items rastreados para evitar saturar localStorage
 const MAX_RESULTS = 8
 
 // Fuzzy search implementation
@@ -113,7 +114,7 @@ export function useSmartSearch<T extends SearchableItem>(
   const trackUsage = useCallback((itemId: string) => {
     setUsage((prev) => {
       const item = prev[itemId] || { id: itemId, count: 0, lastUsed: 0, context }
-      const updated = {
+      let updated = {
         ...prev,
         [itemId]: {
           ...item,
@@ -122,6 +123,15 @@ export function useSmartSearch<T extends SearchableItem>(
           context,
         },
       }
+
+      // Si excedemos MAX_USAGE_ITEMS, eliminar el item menos usado
+      if (Object.keys(updated).length > MAX_USAGE_ITEMS) {
+        const sortedByUsage = Object.entries(updated)
+          .sort(([, a], [, b]) => a.lastUsed - b.lastUsed)
+        const toRemove = sortedByUsage[0][0]
+        delete updated[toRemove]
+      }
+
       if (typeof window !== 'undefined') {
         localStorage.setItem(STORAGE_KEY_USAGE, JSON.stringify(updated))
       }
