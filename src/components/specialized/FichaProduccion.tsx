@@ -333,7 +333,7 @@ export default function FichaProduccion({ block, activeRecord, forcedProyectoId 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div className="flex items-center gap-3 min-w-0 flex-1 w-full">
           <a
-            href="/app/production"
+            href="/app/erp/taller"
             className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:shadow-sm transition-all shrink-0"
             title="Volver a Producción"
           >

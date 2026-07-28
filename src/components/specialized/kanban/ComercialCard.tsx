@@ -326,7 +326,7 @@ export default function ComercialCard({
                   type="button"
                   variant="outline"
                   className="h-11 px-4 text-xs font-semibold rounded-lg border-stone-200 hover:bg-stone-50"
-                  onClick={() => window.location.href = `/app/quoting/${cot.id}`}
+                  onClick={() => window.location.href = `/app/erp/cotizador/${cot.id}`}
                 >
                   Ver Cotización
                 </Button>

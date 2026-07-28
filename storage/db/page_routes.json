@@ -351,12 +351,35 @@
     "updated_at": "2026-07-02T17:56:53.584Z"
   },
   {
+    "id": "8d8d4be5-3d10-4f9e-bc47-0c3c6be2d9d1",
+    "context": "page_routes",
+    "data": {
+      "path": "/app/erp/cotizador/:id",
+      "title": "ERP Cotizador",
+      "isPrivate": false,
+      "blocks": [
+        {
+          "id": "fa8b140f-56b6-4290-88cf-fac36b78d9c7",
+          "type": "cotizador_pro",
+          "blocks": [],
+          "context": "proyectos"
+        }
+      ],
+      "order": 0
+    },
+    "updated_at": "2026-07-27T00:00:00.000Z"
+  },
+  {
     "id": "12ec54a5-b710-4df3-9568-f5e77ace5808",
     "context": "page_routes",
     "data": {
       "path": "/app/erp/portfolio",
       "title": "ERP Portafolio",
-      "isPrivate": false,
+      "isPrivate": true,
+      "allowed_lists": [
+        "admin",
+        "equipo"
+      ],
       "blocks": [
         {
           "id": "b99e06cd-ac00-4028-a9ef-33ec4f72e6b2",

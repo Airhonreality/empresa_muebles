@@ -3,6 +3,7 @@ import path from 'path';
 import type { DataItem } from '@agnostic/core';
 import { loadLocalEnvFiles } from './load-local-env';
 import { PostgresStrategy } from '../src/server/strategies/PostgresStrategy';
+import { resolveStorageStrategyName } from '../src/lib/agnostic/env-contract';
 
 loadLocalEnvFiles();
 
@@ -75,7 +76,7 @@ async function validateRoutes(routes: DataItem[]): Promise<{ valid: boolean; err
 }
 
 async function syncRoutesToDatabase(routes: DataItem[]): Promise<void> {
-  const strategy = process.env.AGNOSTIC_STORAGE_STRATEGY;
+  const strategy = resolveStorageStrategyName();
   const databaseUrl = process.env.DATABASE_URL;
 
   if (strategy !== 'postgres' || !databaseUrl) {

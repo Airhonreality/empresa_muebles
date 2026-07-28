@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CircleUser } from "lucide-react";
 import { redirect } from 'next/navigation';
 import { requireSession } from '@/lib/agnostic/require-session';
+import ErpNavigation from '@/components/specialized/ErpNavigation';
 
 export default async function AppLayout({
   children,
@@ -47,9 +48,12 @@ export default async function AppLayout({
           </DropdownMenu>
         </div>
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        {children}
-      </main>
+      <div className="flex min-h-0 flex-1">
+        <ErpNavigation />
+        <main className="min-w-0 flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
