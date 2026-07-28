@@ -262,7 +262,7 @@ export default function PublicProposal({ proposal }: { proposal: PublicProposalS
                   </button>
                   {selectedGalleryImage.description && <p className="text-xs leading-5 text-[hsl(var(--veta-text-muted))]">{selectedGalleryImage.description}</p>}
                   {gallery.length > 1 && <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label={`Galeria de ${space.name}`}>{gallery.slice(0, 5).map((image, imageIndex) => <button key={`${image.url}-${imageIndex}`} type="button" onClick={() => setSelectedGalleryImages(current => ({ ...current, [space.id]: imageIndex }))} aria-label={`Ver imagen ${imageIndex + 1}`} aria-pressed={image.url === selectedGalleryImage.url} className={`h-16 overflow-hidden rounded-lg border-2 transition ${image.url === selectedGalleryImage.url ? 'border-[hsl(var(--veta-gold-muted))]' : 'border-transparent opacity-70 hover:opacity-100'}`}><img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /></button>)}</div>}
-                </div> : <div className="grid max-h-[min(70vh,600px)] place-items-center rounded-2xl border border-dashed border-[var(--veta-divider-soft)] bg-white/35 p-8 text-center text-sm text-[hsl(var(--veta-text-muted))]">Referencia visual pendiente</div>}
+                </div> : null}
               </div>
             </div>
           </article>
