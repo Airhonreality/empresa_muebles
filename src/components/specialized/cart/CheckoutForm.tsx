@@ -8,7 +8,9 @@ import { Loader2 } from 'lucide-react';
 
 export function CheckoutForm() {
   const { items, subtotal, clearCart } = useCart();
-  const { user, isLoading: authLoading } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user ?? null;
+  const authLoading = auth?.isLoading ?? false;
 
   const [nombre, setNombre] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');

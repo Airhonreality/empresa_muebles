@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
   let adapter;
   try {
-    adapter = getAdapter('wompi');
+    adapter = await getAdapter('wompi');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Wompi adapter unavailable';
     const code = error instanceof WompiConfigurationError ? error.code : 'WOMPI_ADAPTER_UNAVAILABLE';

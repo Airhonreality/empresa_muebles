@@ -1,3 +1,5 @@
+export {};
+
 /**
  * 🔍 DEBUG NEON - Verificar qué hay realmente en la base de datos
  */

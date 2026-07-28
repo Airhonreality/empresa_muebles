@@ -2,7 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useSystemStore } from '@/lib/agnostic/store';
+
+async function executeZap(zap: string, payload: Record<string, unknown>) {
+  const response = await fetch('/api/engine', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zap, payload }),
+  });
+  const result = await response.json();
+  if (!response.ok || result.success === false) throw new Error(result.error || 'No fue posible consultar el portal.');
+  const event = Array.isArray(result.events)
+    ? result.events.find((item: any) => item?.payload && typeof item.payload === 'object')
+    : null;
+  return event?.payload || result;
+}
 
 interface ProyectoCliente {
   id: string;
@@ -68,8 +81,11 @@ const PEDIDO_ESTADO_COLORS: Record<string, string> = {
 };
 
 export default function VetaCuenta() {
-  const { user, login, logout, isLoading } = useAuth();
-  const { executeZap } = useSystemStore();
+  const auth = useAuth();
+  const user = auth?.user ?? null;
+  const login = auth?.login ?? (async () => false);
+  const logout = auth?.logout ?? (async () => undefined);
+  const isLoading = auth?.isLoading ?? false;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

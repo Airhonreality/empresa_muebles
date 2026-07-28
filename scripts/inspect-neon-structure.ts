@@ -1,3 +1,5 @@
+export {};
+
 /**
  * 🔍 INSPECT NEON TABLE STRUCTURE
  * Verificar tipo de datos y estructura exacta

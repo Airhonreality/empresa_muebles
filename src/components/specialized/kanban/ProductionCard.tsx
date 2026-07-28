@@ -80,7 +80,7 @@ export default function ProductionCard({
     const isCompleted = task.data.estado === 'completada'
     setUpdatingTaskId(task.id)
     try {
-      const saved = await updateTaskStatus(task.id, task.data, !isCompleted)
+      const saved = await updateTaskStatus(task.id, { ...task.data } as Record<string, unknown>, !isCompleted)
       useMateriaStore.getState().updateItem('tareas_produccion', saved)
       toast.success(isCompleted ? 'Tarea marcada como pendiente' : 'Tarea completada con éxito')
     } catch (err) {

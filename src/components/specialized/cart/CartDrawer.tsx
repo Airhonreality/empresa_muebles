@@ -27,7 +27,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const waMessage = encodeURIComponent(
     `Hola! Me interesa cotizar los siguientes productos:\n\n${items
       .map((item) => `${item.nombre} x${item.cantidad}`)
-      .join('\n')}\n\nSubtotal: ${COP.format(subtotal)}`
+      .join('\n')}\n\nSubtotal: ${COP(subtotal)}`
   );
 
   const waLink = `${whatsappLink}?text=${waMessage}`;
@@ -85,7 +85,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                         {item.nombre}
                       </h3>
                       <p className="text-xs text-[hsl(var(--veta-text-stone))]">
-                        {COP.format(item.precio_unitario)}
+                        {COP(item.precio_unitario)}
                       </p>
                     </div>
                     <div className="flex items-center justify-between">
@@ -133,7 +133,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 Subtotal
               </span>
               <span className="text-lg font-semibold text-[hsl(var(--veta-text-carbon))]">
-                {COP.format(subtotal)}
+                {COP(subtotal)}
               </span>
             </div>
 

@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useMemo } from 'react'
-import type { BlockProps } from 'packages/core/src/types'
+import type { BlockProps } from '@agnostic/core'
 import type { ProductosCatalogoRecord } from '@/generated/agnostic-schemas'
 import Link from 'next/link'
 import VetaHeader from './VetaHeader'
@@ -57,7 +57,7 @@ export default function VetaCatalog({ block = {}, records = [], api }: Partial<B
     getCommercialValue(configRecords, 'whatsapp_number', '+57 300 123 4567')
   )
 
-  const catalogRecords = records as ProductosCatalogoRecord[]
+  const catalogRecords = records as unknown as ProductosCatalogoRecord[]
 
   // Clean products list loaded dynamically from the Adapter
   const furnitureItems = useMemo(() => {

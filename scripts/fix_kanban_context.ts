@@ -6,7 +6,8 @@ async function run() {
   
   const route = routes.find(r => r.data.path === '/app/erp/taller');
   if (route) {
-    const kanbanBlock = route.data.blocks.find((b: any) => b.type === 'production_kanban');
+    const routeData = route.data as { blocks?: any[] };
+    const kanbanBlock = (routeData.blocks || []).find((b: any) => b.type === 'production_kanban');
     if (kanbanBlock) {
       kanbanBlock.context = 'ordenes_trabajo'; // ¡Esto es crucial!
     }

@@ -16,7 +16,7 @@ import {
   type SpaceCategoryId,
 } from '@/lib/veta/portfolio';
 
-export default function VetaHome({ publicContent }: { publicContent: PublicHomeContent }) {
+export default function VetaHome({ publicContent = { commercial_config: [], testimonials: [], spaces: [] } }: Partial<BlockProps> & { publicContent?: PublicHomeContent }) {
   useGclidCapture();
   const [embudoOpen, setEmbudoOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SpaceCategoryId>('todos');

@@ -65,7 +65,9 @@ const currency = (value: unknown) =>
   });
 
 export default function UserProfile() {
-  const { user, isLoading } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user ?? null;
+  const isLoading = auth?.isLoading ?? false;
   const [records, setRecords] = useState<RecordItem<UserRecord>[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [loadingRecords, setLoadingRecords] = useState(true);

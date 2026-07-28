@@ -148,11 +148,11 @@ export function TimelineTareas({ proyectoId, faseActual }: TimelineTareasProps) 
                     
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${completada ? 'text-stone-400 line-through' : 'text-stone-700'}`}>
-                        {t.data.titulo}
+                        {String(t.data.titulo || '')}
                       </p>
                       <div className="flex items-center gap-3 mt-1.5 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
                         <span className="bg-stone-100 px-1.5 py-0.5 rounded text-stone-500">
-                          {t.data.departamento}
+                          {String(t.data.departamento || '')}
                         </span>
                         {assigneeName && (
                           <span className="flex items-center gap-1">

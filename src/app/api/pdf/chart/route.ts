@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'config is required' }, { status: 400 });
     }
 
-    const { ChartJSNodeCanvas } = await import('chartjs-node-canvas').catch(() => {
+    const { ChartJSNodeCanvas } = await import(/* webpackIgnore: true */ 'chartjs-node-canvas').catch(() => {
       throw new Error('PDF chart renderer is not installed');
     });
     const renderer = new ChartJSNodeCanvas({ width, height, backgroundColour: 'white' });

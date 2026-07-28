@@ -45,7 +45,8 @@ function parseOptions(args: string[]): Options {
   throw new Error('Usage: npm run catalog:export -- --out storage/progreso/snapshots/catalog/<name>.json');
 }
 
-async function writeSnapshot(requestedPath: string, content: string): Promise<void> {
+async function writeSnapshot(requestedPath: string | undefined, content: string): Promise<void> {
+  if (!requestedPath) throw new Error('Snapshot output path is required.');
   const root = path.resolve(process.cwd(), 'storage', 'progreso', 'snapshots', 'catalog');
   const output = path.resolve(process.cwd(), requestedPath);
   const relative = path.relative(root, output);

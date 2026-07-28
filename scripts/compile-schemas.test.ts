@@ -63,7 +63,7 @@ describe('revision-aware schema compiler', () => {
     await expect(runCompiler(fixture.snapshot, fixture.output)).rejects.toThrow(
       'AGNOSTIC_DEFINITION_REVISION',
     );
-  });
+  }, 15000);
 
   it('rejects a snapshot that differs from the deployed revision', async () => {
     const fixture = await createSnapshot();

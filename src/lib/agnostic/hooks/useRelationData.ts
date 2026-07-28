@@ -4,11 +4,26 @@ import { useMateriaStore } from '@/lib/agnostic/store';
 export function useRelationData(entity: string | null | undefined): {
   data: any[];
   isLoading: boolean;
+  mutate: () => Promise<void>;
 } {
   const [data, setData] = React.useState<any[]>(() =>
     entity ? (useMateriaStore.getState().data[entity] || []) : []
   );
   const [isLoading, setIsLoading] = React.useState(false);
+
+  const mutate = React.useCallback(async () => {
+    if (!entity) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/vault?namespace=${entity}`);
+      const result = await response.json();
+      const records = result.records || [];
+      if (records.length > 0) useMateriaStore.getState().setMateria(entity, records);
+      setData(records);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [entity]);
 
   React.useEffect(() => {
     if (!entity) return;
@@ -17,21 +32,8 @@ export function useRelationData(entity: string | null | undefined): {
       setData(existing);
       return;
     }
-    setIsLoading(true);
-    fetch(`/api/vault?namespace=${entity}`)
-      .then(r => r.json())
-      .then(result => {
-        const records = result.records || [];
-        // Hidratar el store: el segundo componente que pida la misma entidad
-        // no hace fetch — lee del store directamente.
-        if (records.length > 0) {
-          useMateriaStore.getState().setMateria(entity, records);
-        }
-        setData(records);
-      })
-      .catch(() => setData([]))
-      .finally(() => setIsLoading(false));
-  }, [entity]);
+    mutate().catch(() => setData([]));
+  }, [entity, mutate]);
 
-  return { data, isLoading };
+  return { data, isLoading, mutate };
 }

@@ -26,7 +26,7 @@ async function main(): Promise<void> {
       if (existing.length === 0) {
         await transaction`
           INSERT INTO agnostic_definition_revisions (revision_id, catalog_sha256, source_commit, catalog)
-          VALUES (${options.revisionId}, ${snapshot.catalog_sha256}, ${options.sourceCommit}, ${transaction.json(snapshot)})
+          VALUES (${options.revisionId}, ${snapshot.catalog_sha256}, ${options.sourceCommit}, ${transaction.json(JSON.parse(JSON.stringify(snapshot)))})
         `;
       }
       const active = await transaction<{ active_revision_id: string }[]>`

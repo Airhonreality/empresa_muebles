@@ -453,7 +453,7 @@ export default function ProjectDetails({
                             <input
                               type="text"
                               value={item.data.notas_compra as string || ''}
-                              onChange={(e) => handleUpdateNotasCompra(item.id, item.data, e.target.value)}
+                              onChange={(e) => handleUpdateNotasCompra(item.id, { ...item.data } as Record<string, unknown>, e.target.value)}
                               placeholder="Notas de herraje, corte, color..."
                               disabled={!!item.data.anulado}
                               className="w-full h-8 px-2 rounded border border-stone-200 text-xs focus:border-amber-500 focus:outline-none bg-stone-50/40 focus:bg-white"
@@ -464,7 +464,7 @@ export default function ProjectDetails({
                             <input
                               type="checkbox"
                               checked={!!item.data.anulado}
-                              onChange={() => handleToggleAnulado(item.id, item.data, !!item.data.anulado)}
+                              onChange={() => handleToggleAnulado(item.id, { ...item.data } as Record<string, unknown>, !!item.data.anulado)}
                               className="h-4.5 w-4.5 rounded border-stone-300 accent-amber-500 cursor-pointer"
                             />
                           </td>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import VetaHeader from '../VetaHeader';
 import VetaFooter from '../VetaFooter';
+import type { BlockProps } from '@agnostic/core';
 
 type PublicPortfolioImage = {
   imagen_url: string;
@@ -47,7 +48,7 @@ type FlatImage = {
   projectCategory: string;
 };
 
-export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEntry[] }) {
+export default function VetaPortfolio({ entries = [] }: Partial<BlockProps> & { entries?: PublicPortfolioEntry[] }) {
   const [activeCategory, setActiveCategory] = useState('todos');
   const [selectedProject, setSelectedProject] = useState<PublicPortfolioEntry | null>(null);
 

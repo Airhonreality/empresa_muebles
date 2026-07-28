@@ -23,7 +23,15 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Isolated public route: it bypasses AgnosticShell and receives only the public projection. */
 export default async function PortfolioPage() {
   const entries = await getPublicPortfolio();
-  const portfolioSchemas = entries.map(buildPortfolioItemSchema);
+  const portfolioSchemas = entries.map((entry) => buildPortfolioItemSchema({
+    data: {
+      slug: entry.slug,
+      titulo: entry.titulo,
+      descripcion_comercial: entry.descripcion_comercial,
+      barrio: entry.zona,
+      fecha_publicacion: undefined,
+    },
+  }));
 
   return (
     <>
