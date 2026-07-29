@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, RefreshCw, Search, Trash2, ChevronDown } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { SeoImageUploader, type SeoImageData } from '@/components/ui/SeoImageUploader';
 
 type RecordItem<T = Record<string, unknown>> = {
   id: string;
@@ -64,11 +65,19 @@ type PortfolioPublicoRecord = {
 };
 
 type ImagenPortfolioRecord = {
+  id?: string;
   portfolio_id?: string;
   imagen_url?: string;
   descripcion?: string;
+  alt_text?: string;
+  image_title?: string;
+  keywords?: string;
+  imagen_filename?: string;
   orden?: number;
+  structured_data?: Record<string, unknown>;
 };
+
+const categorias = ['cocinas', 'cavas_bares', 'dormitorios_closets', 'consolas_recibidores', 'otros'];
 
 const normalizeRecords = <T,>(payload: unknown): RecordItem<T>[] => {
   const source = Array.isArray(payload)
@@ -90,6 +99,11 @@ async function readRecords(namespace: string) {
   return normalizeRecords(body.records ?? body.data ?? []);
 }
 
+async function readRecordById<T>(namespace: string, id: string) {
+  const records = await readRecords(namespace);
+  return (records as RecordItem<T>[]).find(record => record.id === id) ?? null;
+}
+
 async function writeRecord(namespace: string, id: string | undefined, data: Record<string, unknown>) {
   const res = await fetch('/api/vault', {
     method: 'POST',
@@ -99,6 +113,17 @@ async function writeRecord(namespace: string, id: string | undefined, data: Reco
   if (!res.ok) throw new Error(await res.text());
   const body = await res.json();
   return body.record ?? body;
+}
+
+async function writeMergedRecord(namespace: string, id: string | undefined, data: Record<string, unknown>) {
+  if (!id) return writeRecord(namespace, undefined, data);
+
+  const existing = await readRecordById<Record<string, unknown>>(namespace, id);
+  const currentData = existing?.data && typeof existing.data === 'object'
+    ? (existing.data as Record<string, unknown>)
+    : {};
+
+  return writeRecord(namespace, id, { ...currentData, ...data });
 }
 
 async function removeRecord(namespace: string, id: string) {
@@ -152,8 +177,6 @@ async function deriveMateriales(projectId: string): Promise<string[]> {
   }
 }
 
-const categorias = ['cocinas', 'cavas_bares', 'dormitorios_closets', 'consolas_recibidores', 'otros'];
-
 export default function PortfolioManager() {
   const [portfolios, setPortfolios] = useState<RecordItem<PortfolioPublicoRecord>[]>([]);
   const [proyectos, setProyectos] = useState<RecordItem<ProyectoRecord>[]>([]);
@@ -177,10 +200,8 @@ export default function PortfolioManager() {
     orden: 0,
     fecha_publicacion: new Date().toISOString().split('T')[0]
   });
-  const [imagenesList, setImagenesList] = useState<Partial<ImagenPortfolioRecord>[]>([]);
-  const [imageForm, setImageForm] = useState({ imagen_url: '', descripcion: '' });
+  const [imagenesList, setImagenesList] = useState<SeoImageData[]>([]);
 
-  // Load data
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -201,6 +222,7 @@ export default function PortfolioManager() {
         setIsLoading(false);
       }
     };
+
     loadData();
   }, []);
 
@@ -255,35 +277,85 @@ export default function PortfolioManager() {
     setForm({ ...portfolio });
     const relatedImages = imagenes.filter(img => img.portfolio_id === portfolio.id);
     setImagenesList(relatedImages.map(img => ({
-      imagen_url: img.imagen_url,
+      imagen_url: img.imagen_url || '',
       descripcion: img.descripcion,
-      orden: img.orden
-    })));
+      alt_text: img.alt_text,
+      image_title: img.image_title,
+      keywords: img.keywords,
+      imagen_filename: img.imagen_filename,
+      structured_data: img.structured_data,
+    } as SeoImageData)));
     setDialogOpen(true);
   }, [imagenes]);
 
   const handleSave = async () => {
-    if (!form.titulo || !form.slug || !form.categoria_espacio) {
-      toast.error('Completa al menos título, slug y categoría');
+    if (!form.titulo || !form.slug || !form.categoria_espacio || !form.descripcion_comercial) {
+      toast.error('Completa título, slug, categoría y descripción');
+      return;
+    }
+
+    if (form.publicado && imagenesList.length === 0) {
+      toast.error('Para publicar necesitas al menos una imagen');
       return;
     }
 
     try {
-      const portfolio = await writeRecord('portfolio_publico', editingId || undefined, form);
+      const portfolioData = { ...form };
+      const portfolio = (editingId
+        ? await writeMergedRecord('portfolio_publico', editingId, portfolioData)
+        : await writeRecord('portfolio_publico', undefined, portfolioData)) as RecordItem<PortfolioPublicoRecord>;
 
-      // Save images
-      for (const img of imagenesList) {
-        if (img.imagen_url) {
-          await writeRecord('imagenes_portfolio', undefined, {
-            portfolio_id: portfolio.id,
-            ...img
-          });
+      const existingImages = (await readRecords('imagenes_portfolio'))
+        .filter(img => (img as RecordItem<ImagenPortfolioRecord>).portfolio_id === portfolio.id) as RecordItem<ImagenPortfolioRecord>[];
+
+      const nextUrls = new Set(
+        imagenesList
+          .map(img => img.imagen_url)
+          .filter((value): value is string => Boolean(value))
+      );
+      const previousByUrl = new Map(
+        existingImages
+          .filter(img => img.imagen_url)
+          .map(img => [img.imagen_url as string, img])
+      );
+
+      for (const image of existingImages) {
+        if (!image.imagen_url || !nextUrls.has(image.imagen_url)) {
+          await removeRecord('imagenes_portfolio', image.id);
         }
       }
 
-      // Reload
-      const updated = await readRecords('portfolio_publico');
-      setPortfolios(updated as RecordItem<PortfolioPublicoRecord>[]);
+      for (const [index, img] of imagenesList.entries()) {
+        if (!img.imagen_url) continue;
+
+        const payload: Record<string, unknown> = {
+          portfolio_id: portfolio.id,
+          imagen_url: img.imagen_url,
+          descripcion: img.descripcion ?? '',
+          alt_text: img.alt_text,
+          image_title: img.image_title,
+          keywords: img.keywords,
+          imagen_filename: img.imagen_filename,
+          orden: index,
+        };
+        if (img.structured_data) {
+          payload.structured_data = img.structured_data;
+        }
+
+        const previous = previousByUrl.get(img.imagen_url);
+        if (previous?.id) {
+          await writeMergedRecord('imagenes_portfolio', previous.id, payload);
+        } else {
+          await writeRecord('imagenes_portfolio', undefined, payload);
+        }
+      }
+
+      const [updatedPortfolios, updatedImages] = await Promise.all([
+        readRecords('portfolio_publico'),
+        readRecords('imagenes_portfolio')
+      ]);
+      setPortfolios(updatedPortfolios as RecordItem<PortfolioPublicoRecord>[]);
+      setImagenes(updatedImages as RecordItem<ImagenPortfolioRecord>[]);
 
       toast.success(editingId ? 'Actualizado' : 'Creado');
       setDialogOpen(false);
@@ -303,26 +375,6 @@ export default function PortfolioManager() {
     }
   };
 
-  const handleAddImage = () => {
-    if (!imageForm.imagen_url) {
-      toast.error('Ingresa URL de imagen');
-      return;
-    }
-    setImagenesList([
-      ...imagenesList,
-      {
-        imagen_url: imageForm.imagen_url,
-        descripcion: imageForm.descripcion,
-        orden: imagenesList.length
-      }
-    ]);
-    setImageForm({ imagen_url: '', descripcion: '' });
-  };
-
-  const handleRemoveImage = (idx: number) => {
-    setImagenesList(imagenesList.filter((_, i) => i !== idx));
-  };
-
   return (
     <div className="space-y-4 p-4">
       <Card>
@@ -336,20 +388,20 @@ export default function PortfolioManager() {
               onChange={e => setSearch(e.target.value)}
             />
             <Button onClick={handleNew} size="sm">
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Nuevo
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">Cargando...</div>
+            <div className="py-8 text-center">Cargando...</div>
           ) : filteredPortfolios.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">Sin portafolios</div>
+            <div className="py-8 text-center text-muted-foreground">Sin portafolios</div>
           ) : (
             <div className="space-y-2">
               {filteredPortfolios.map(p => (
-                <div key={p.id} className="flex items-center justify-between p-3 border rounded">
+                <div key={p.id} className="flex items-center justify-between rounded border p-3">
                   <div>
                     <div className="font-semibold">{p.titulo}</div>
                     <div className="text-sm text-muted-foreground">
@@ -359,14 +411,14 @@ export default function PortfolioManager() {
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(p)}>
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(p.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -377,14 +429,14 @@ export default function PortfolioManager() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Editar' : 'Nuevo'} Portafolio</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Proyecto</label>
+              <label className="mb-1 block text-sm font-medium">Proyecto</label>
               <Select value={selectedProyecto} onValueChange={handleSelectProyecto}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona proyecto..." />
@@ -401,7 +453,7 @@ export default function PortfolioManager() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Título</label>
+                <label className="mb-1 block text-sm font-medium">Título</label>
                 <Input
                   value={form.titulo}
                   onChange={e => setForm({ ...form, titulo: e.target.value })}
@@ -409,7 +461,7 @@ export default function PortfolioManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Slug</label>
+                <label className="mb-1 block text-sm font-medium">Slug</label>
                 <Input
                   value={form.slug}
                   onChange={e => setForm({ ...form, slug: e.target.value })}
@@ -419,7 +471,7 @@ export default function PortfolioManager() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Descripción Comercial</label>
+              <label className="mb-1 block text-sm font-medium">Descripción Comercial</label>
               <Textarea
                 value={form.descripcion_comercial}
                 onChange={e => setForm({ ...form, descripcion_comercial: e.target.value })}
@@ -430,7 +482,7 @@ export default function PortfolioManager() {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Iniciales Cliente</label>
+                <label className="mb-1 block text-sm font-medium">Iniciales Cliente</label>
                 <Input
                   value={form.cliente_iniciales}
                   onChange={e => setForm({ ...form, cliente_iniciales: e.target.value })}
@@ -439,14 +491,14 @@ export default function PortfolioManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Barrio</label>
+                <label className="mb-1 block text-sm font-medium">Barrio</label>
                 <Input
                   value={form.barrio}
                   onChange={e => setForm({ ...form, barrio: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Categoría</label>
+                <label className="mb-1 block text-sm font-medium">Categoría</label>
                 <Select value={form.categoria_espacio} onValueChange={val => setForm({ ...form, categoria_espacio: val })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -461,7 +513,7 @@ export default function PortfolioManager() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Materiales Destacados</label>
+              <label className="mb-1 block text-sm font-medium">Materiales Destacados</label>
               <Textarea
                 value={form.materiales_destacados}
                 onChange={e => setForm({ ...form, materiales_destacados: e.target.value })}
@@ -471,49 +523,13 @@ export default function PortfolioManager() {
             </div>
 
             <div className="space-y-3 border-t pt-4">
-              <div className="text-sm font-semibold">Imágenes del Portafolio</div>
-              {imagenesList.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {imagenesList.map((img, idx) => (
-                    <div key={idx} className="group relative aspect-[4/3] overflow-hidden rounded-lg border bg-muted">
-                      <img
-                        src={img.imagen_url}
-                        alt={img.descripcion || ''}
-                        className="h-full w-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                        <p className="truncate text-xs text-white">
-                          {img.descripcion || `Imagen ${idx + 1}`}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(idx)}
-                        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Input
-                  value={imageForm.imagen_url}
-                  onChange={e => setImageForm({ ...imageForm, imagen_url: e.target.value })}
-                  placeholder="URL de imagen"
-                />
-                <Input
-                  value={imageForm.descripcion}
-                  onChange={e => setImageForm({ ...imageForm, descripcion: e.target.value })}
-                  placeholder="Descripción"
-                  className="flex-1"
-                />
-                <Button onClick={handleAddImage} size="sm">
-                  Agregar
-                </Button>
-              </div>
+              <div className="text-sm font-semibold">Imágenes del Portafolio (con SEO)</div>
+              <SeoImageUploader
+                value={imagenesList}
+                onChange={setImagenesList}
+                spaceCategoryId={form.categoria_espacio}
+                spaceName={form.titulo || 'Espacio'}
+              />
             </div>
 
             <div className="space-y-2 border-t pt-4">
@@ -535,7 +551,7 @@ export default function PortfolioManager() {
                 <label className="text-sm">Destacado</label>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Orden</label>
+                <label className="mb-1 block text-sm font-medium">Orden</label>
                 <Input
                   type="number"
                   value={form.orden}

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
 
 import { getProjectStorageRoot } from '@/server/activeProject';
+import { sessionOptions, type SessionData } from '@/lib/agnostic/session';
 
 const ALLOWED_MIME = new Set([
   'image/jpeg',
@@ -10,11 +13,6 @@ const ALLOWED_MIME = new Set([
   'image/gif',
   'image/webp',
   'image/svg+xml',
-  'application/pdf',
-  'text/plain',
-  'text/csv',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]);
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -35,6 +33,25 @@ function isAllowedContentType(contentType: string) {
 function cleanFilename(name: string) {
   const base = path.basename(name).trim() || 'asset';
   return base.replace(/[^a-zA-Z0-9._-]/g, '-');
+}
+
+function normalizeForFilename(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // Remove diacritics
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 30);
+}
+
+async function requireUploadAccess() {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const role = session.user?.role;
+  if (!session.user || (role !== 'admin' && role !== 'equipo')) {
+    throw new Error('AUTHENTICATION_REQUIRED');
+  }
+  return session.user;
 }
 
 async function persistAsset(params: {
@@ -95,17 +112,25 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    await requireUploadAccess();
+
     let file: File | null = null;
     let sourceUrl = '';
+    let spaceName = '';
+    let category = '';
 
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       const body = await req.json().catch(() => ({} as Record<string, unknown>));
       sourceUrl = String(body.source_url || body.url || '').trim();
+      spaceName = String(body.space_name || '').trim();
+      category = String(body.category || '').trim();
     } else {
       const formData = await req.formData();
       file = formData.get('file') as File | null;
       sourceUrl = String(formData.get('source_url') || formData.get('url') || '').trim();
+      spaceName = String(formData.get('space_name') || '').trim();
+      category = String(formData.get('category') || '').trim();
     }
 
     let buffer: Buffer;
@@ -122,14 +147,22 @@ export async function POST(req: NextRequest) {
 
       buffer = Buffer.from(await file.arrayBuffer());
       mimeType = file.type;
-      filename = `${Date.now()}-${cleanFilename(file.name)}`;
+      // Generate SEO-friendly filename: {space}-{category}-{timestamp}.ext
+      let baseName = cleanFilename(file.name);
+      if (spaceName) {
+        const normalized = normalizeForFilename(spaceName);
+        const catSuffix = category ? `-${normalizeForFilename(category)}` : '';
+        baseName = `${normalized}${catSuffix}-${Date.now()}`;
+      } else {
+        baseName = `${Date.now()}-${baseName}`;
+      }
+      const ext = path.extname(file.name);
+      filename = baseName + (ext ? ext : '.jpg');
     } else if (sourceUrl) {
       if (!isHttpUrl(sourceUrl)) {
         return NextResponse.json({ error: 'Source URL must use http or https.' }, { status: 400 });
       }
 
-      // Send browser-like headers: many image hosts / CDNs return an HTML
-      // page (or 403) to header-less server fetches (bot / hotlink protection).
       const response = await fetch(sourceUrl, {
         redirect: 'follow',
         headers: {
@@ -163,6 +196,9 @@ export async function POST(req: NextRequest) {
     const url = await persistAsset({ buffer, contentType: mimeType, filename });
     return NextResponse.json({ url });
   } catch (err) {
+    if (err instanceof Error && err.message === 'AUTHENTICATION_REQUIRED') {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Upload failed' },
       { status: 500 },
