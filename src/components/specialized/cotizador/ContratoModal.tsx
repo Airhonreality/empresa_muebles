@@ -7,6 +7,7 @@ import { COP } from './utils'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
 import { useMateriaStore } from '@/lib/agnostic/store'
 import { toContractZapRecord } from './contrato-payload'
+import { PaymentScheduleCalculator, type PaymentMilestone } from './PaymentScheduleCalculator'
 
 interface ContratoModalProps {
   isOpen: boolean
@@ -99,6 +100,7 @@ export function ContratoModal({
   const [especMesones, setEspecMesones] = useState('')
   const [condDesmonte, setCondDesmonte] = useState('')
   const [valorTotal, setValorTotal] = useState(0)
+  const [paymentMilestones, setPaymentMilestones] = useState<PaymentMilestone[]>([])
 
   const [isSaving, setIsSaving] = useState(false)
 
@@ -194,11 +196,6 @@ export function ContratoModal({
     loadOrCreateContrato()
   }, [isOpen])
 
-  // ── Derived: abonos calculations ────────────────────────────────
-  const abono1 = Math.round(valorTotal * 0.50)
-  const abono2 = Math.round(valorTotal * 0.25)
-  const abono3 = valorTotal - abono1 - abono2
-
   const performSave = async (isBorradorOnly: boolean) => {
     if (!clienteNombre.trim()) {
       toast.error('El nombre del contratante es requerido.')
@@ -206,6 +203,18 @@ export function ContratoModal({
     }
     if (valorTotal <= 0) {
       toast.error('El valor total del contrato debe ser mayor a cero.')
+      return
+    }
+
+    // Validar que los hitos sumen exactamente al total
+    const totalMilestones = paymentMilestones.reduce((acc, m) => {
+      if (m.type === 'percentage') {
+        return acc + (valorTotal * m.amount) / 100
+      }
+      return acc + m.amount
+    }, 0)
+    if (Math.abs(totalMilestones - valorTotal) > 0.01) {
+      toast.error('La suma de los hitos de pago debe ser exactamente igual al valor total del contrato.')
       return
     }
 
@@ -246,7 +255,8 @@ export function ContratoModal({
               especificaciones_herrajes: especHerrajes,
               especificaciones_mesones: especMesones,
               condiciones_desmonte: condDesmonte,
-              valor_total: valorTotal
+              valor_total: valorTotal,
+              hitos_pago: paymentMilestones
             }
           }
         })
@@ -513,49 +523,31 @@ export function ContratoModal({
             <h4 className="font-bold text-stone-900 text-[10px] uppercase tracking-widest text-amber-800 border-b border-amber-200/40 pb-1.5">
               5. Condiciones Económicas y Plan de Pagos
             </h4>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1 col-span-3 md:col-span-1">
-                <label className="text-[9px] uppercase tracking-widest text-stone-400 font-bold">Valor Total Pactado (COP) *</label>
-                <input
-                  type="text"
-                  required
-                  value={totalVal}
-                  onFocus={handleTotalFocus}
-                  onBlur={handleTotalBlur}
-                  onChange={e => setTotalVal(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.currentTarget.blur()
-                    }
-                  }}
-                  className="w-full border border-stone-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-300 font-semibold text-amber-700 bg-white"
-                  placeholder="$ 0"
-                />
-              </div>
 
-              <div className="col-span-3 md:col-span-2 bg-white rounded-lg border border-stone-200/60 p-3 grid grid-cols-3 gap-2 text-center text-[10px]">
-                <div>
-                  <span className="block text-stone-400 font-bold uppercase tracking-widest text-[8px]">50% Anticipo</span>
-                  <span className="block font-bold text-stone-700 mt-0.5">{COP(abono1)}</span>
-                </div>
-                <div className="border-l border-stone-100">
-                  <span className="block text-stone-400 font-bold uppercase tracking-widest text-[8px]">25% Instalación</span>
-                  <span className="block font-bold text-stone-700 mt-0.5">{COP(abono2)}</span>
-                </div>
-                <div className="border-l border-stone-100">
-                  <span className="block text-stone-400 font-bold uppercase tracking-widest text-[8px]">25% Final</span>
-                  <span className="block font-bold text-stone-700 mt-0.5">{COP(abono3)}</span>
-                </div>
-              </div>
+            <div className="flex flex-col gap-1 col-span-3">
+              <label className="text-[9px] uppercase tracking-widest text-stone-400 font-bold">Valor Total Pactado (COP) *</label>
+              <input
+                type="text"
+                required
+                value={totalVal}
+                onFocus={handleTotalFocus}
+                onBlur={handleTotalBlur}
+                onChange={e => setTotalVal(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur()
+                  }
+                }}
+                className="w-full border border-stone-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-300 font-semibold text-amber-700 bg-white"
+                placeholder="$ 0"
+              />
             </div>
 
-            <div className="flex gap-2 text-[10px] text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-100">
-              <Info size={14} className="shrink-0 mt-0.5" />
-              <p className="margin-0 leading-relaxed font-medium">
-                El valor total se inicializa con el total neto de la cotización actual, pero es editable si decide pactar un monto cerrado diferente. Los abonos del 50-25-25 se recalculan al instante.
-              </p>
-            </div>
+            <PaymentScheduleCalculator
+              totalContract={valorTotal}
+              onUpdate={setPaymentMilestones}
+              initialMilestones={paymentMilestones}
+            />
           </div>
 
           {/* Footer Actions */}
