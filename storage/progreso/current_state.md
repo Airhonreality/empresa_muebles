@@ -31,6 +31,25 @@
 - Ver [DEFINITION_REVISIONS_RUNTIME.md](../fork_doc/DEFINITION_REVISIONS_RUNTIME.md). La unidad de
   publicación es siempre `schemas + routes + zaps`; nunca se sincronizan colecciones por separado.
 
+---
+
+## 🚀 INICIATIVA VIGENTE: SEO Imágenes + Spaces Conversion (2026-07-29)
+
+### Estado Actual
+- **Fase**: Ejecución Agentica Paralela (Haiku x2)
+- **Coordinador**: Opus 4.5
+- **Plan**: `storage/progreso/lanes/LANE_seo-imagenes-spaces-conversion.md`
+
+### Tareas Activas
+- ✅ SEO Audit + SeoImageUploader.tsx (Opus)
+- 🔄 LLM helper (Haiku-1) - seo-metadata-generator.ts
+- 🔄 UI Components (Haiku-2) - SpaceShowcasePage + páginas estáticas
+
+### Timeline
+~2 horas total | 1/3 completado | Validación Opus próxima
+
+---
+
 ## Summary
 
 This repository is the Agnostic Seed baseline for forked projects.
@@ -45,8 +64,8 @@ fork -> owns storage and specialized UI
 
 ## Daily Closeout
 
-
-Date: 2026-07-14 (PM) — Lane obra civil CERRADA + auditoría contrato
+Date: 2026-07-29 (PM) — SEO Imágenes + Spaces iniciado / Haikus en ejecución paralela
+Previous: 2026-07-14 (PM) — Lane obra civil CERRADA + auditoría contrato
 
 **CIERRE: `goal/cotizador-obra-civil-estimada` mergeada a `dev` (commit `bd22330`)**
 - Fases 1-4 completas: schema `items_obra_civil` (9 campos, opcional catálogo), UI (3 categorías 
@@ -216,6 +235,8 @@ Work completed today:
 
 ## Pending Next Session
 
+- Revisar en contenido real las categorías nuevas de Centros de entretenimiento y Estudios y home office; no publicar casos inventados en el portafolio.
+- Ejecutar QA visual y enlaces internos de la navegación comercial Veta Dorada en un entorno local desplegado.
 - Start the next implementation wave only for the approved adapters from QA.
 - Handle the manual prerequisite tasks for `gmail`, `meta-conversions-api`, and `google-ads-conversions` in a second wave before re-entering implementation.
 - Keep the approval flow adapter-by-adapter so each `plan_aprobado` can move cleanly into the next prompt of implementation.

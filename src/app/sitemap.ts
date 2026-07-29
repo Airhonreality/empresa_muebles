@@ -15,6 +15,13 @@ function readJsonFile<T>(filename: string): T[] {
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: SITE_URL, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
+    { url: `${SITE_URL}/espacios`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${SITE_URL}/cocinas-integrales-bogota`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${SITE_URL}/closets-vestidores-bogota`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${SITE_URL}/cavas-y-bares`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${SITE_URL}/centros-de-entretenimiento`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${SITE_URL}/estudios-home-office`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${SITE_URL}/proceso`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${SITE_URL}/colecciones`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
     { url: `${SITE_URL}/portafolio`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/agendar`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },

@@ -245,65 +245,50 @@ export default function VetaHome({ publicContent }: { publicContent: PublicHomeC
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-12">
-            {/* Bloque protagonista — la prueba más fuerte (taller real) se lleva el peso visual */}
-            <article className="group relative overflow-hidden rounded-2xl bg-black lg:col-span-7">
-              <div className="aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[26rem]">
-                <img
-                  src="/images/taller-carpinteros.jpg"
-                  alt=""
-                  aria-hidden="true"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/5" />
-              <div className="absolute inset-0 flex flex-col justify-end p-7 lg:p-10">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-[hsl(var(--veta-gold-muted))]">
-                  01
+          <div className="grid gap-8 lg:grid-cols-3">
+            {[
+              {
+                n: '01',
+                title: 'Punto de fábrica directo',
+                text: 'Trabajamos sin intermediarios. Eso nos permite controlar calidad, tiempos y detalle final desde el taller hasta la instalación.',
+                media: '/images/taller-carpinteros.jpg',
+              },
+              {
+                n: '02',
+                title: 'Disminuye la incertidumbre',
+                text: 'Te mostramos el espacio antes de fabricarlo, con visualización y detalle de materiales para reducir decisiones ambiguas.',
+                media: '/images/diseno-3d.jpg',
+              },
+              {
+                n: '03',
+                title: 'Asesoría de diseño interior',
+                text: 'Te ayudamos a justificar la visita gratuita y a ordenar criterios de uso, estética y ergonomía desde la primera conversación.',
+                media: '/images/herrajes.jpg',
+              },
+            ].map((item) => (
+              <article key={item.n} className="group relative overflow-hidden rounded-2xl bg-black">
+                <div className="aspect-[4/3]">
+                  <img
+                    src={item.media}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                 </div>
-                <h3 className="veta-heading text-2xl font-semibold tracking-tight text-white lg:text-3xl">
-                  Punto de fábrica directo
-                </h3>
-                <p className="mt-2 max-w-[42ch] text-sm leading-relaxed text-white/80 lg:text-base">
-                  Trabajamos sin intermediarios. Eso nos permite controlar calidad, tiempos y detalle final desde el taller hasta la instalación.
-                </p>
-              </div>
-            </article>
-
-            {/* Columna secundaria — apoyo compacto, no compite en peso con el bloque principal */}
-            <div className="flex flex-col gap-6 lg:col-span-5">
-              {[
-                {
-                  n: '02',
-                  title: 'Disminuye la incertidumbre',
-                  text: 'Te mostramos el espacio antes de fabricarlo, con visualización y detalle de materiales para reducir decisiones ambiguas.',
-                  media: '/images/diseno-3d.jpg',
-                },
-                {
-                  n: '03',
-                  title: 'Asesoría de diseño interior',
-                  text: 'Te ayudamos a justificar la visita gratuita y a ordenar criterios de uso, estética y ergonomía desde la primera conversación.',
-                  media: '/images/herrajes.jpg',
-                },
-              ].map((item) => (
-                <article key={item.n} className="veta-surface-matte flex flex-1 items-center gap-5 rounded-2xl p-5 lg:p-6">
-                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl sm:h-24 sm:w-24">
-                    <img src={item.media} alt="" aria-hidden="true" className="h-full w-full object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+                <div className="absolute inset-0 flex flex-col justify-end p-6 lg:p-8">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-[hsl(var(--veta-gold-muted))]">
+                    {item.n}
                   </div>
-                  <div>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[hsl(var(--veta-gold-hover))]">
-                      {item.n}
-                    </span>
-                    <h3 className="veta-heading text-base font-semibold tracking-tight text-[hsl(var(--veta-text-carbon))]">
-                      {item.title}
-                    </h3>
-                    <p className="mt-1 text-xs leading-relaxed text-[hsl(var(--veta-text-stone))]">
-                      {item.text}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
+                  <h3 className="veta-heading text-lg font-semibold tracking-tight text-white lg:text-xl">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 max-w-[38ch] text-sm leading-relaxed text-white/80">
+                    {item.text}
+                  </p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>

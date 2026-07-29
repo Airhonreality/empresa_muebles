@@ -22,6 +22,7 @@ Agents should keep this file short. Link only active or still-useful documents.
 
 ## Active Plans
 
+- [ARQUITECTURA_NAVEGACION_OPERACION_ERP.md](../fork_doc/ARQUITECTURA_NAVEGACION_OPERACION_ERP.md): mapa maestro de navegación y flujos Comercial → Proyectos → Producción/Abastecimiento → Finanzas; consolida decisiones, arquitectura axiomática y programa de implementación.
 - [ESTRATEGIA_DATOS_LOCAL_VS_PROD.md](../fork_doc/ESTRATEGIA_DATOS_LOCAL_VS_PROD.md): estrategia local (`LocalStrategy` + mocks trazables via `seed_registros`, lote `webstore_r2`) vs producción (env vars del panel Netlify), con procedimiento de limpieza y checklist pre-push.
 - [SESION_2026-07-02_HOME_SEO_EMBUDO/00_INDICE.md](../fork_doc/SESION_2026-07-02_HOME_SEO_EMBUDO/00_INDICE.md): carpeta de sesión temporal — planes ejecutables para reconstruir el Home (Luz & Biofilia), el embudo híbrido de leads y el JSON-LD/SEO técnico. Se elimina tras el cierre (ver `07_PROGRESO_Y_CIERRE.md` dentro de la carpeta).
 - [PLAN_IMPLEMENTACION_ERP.md](../fork_doc/PLAN_IMPLEMENTACION_ERP.md): plan y lista de chequeo de cambios pendientes.
@@ -33,6 +34,11 @@ Agents should keep this file short. Link only active or still-useful documents.
 
 ## Active Lanes
 
+- [goal-erp-navigation-operation-program.md](lanes/goal-erp-navigation-operation-program.md): contrato documental del programa ERP; descompone navegación, comercial, proyecto/producción, abastecimiento, finanzas, 3D y QA. Implementación no iniciada.
+- [goal-webstore-navegacion.md](lanes/goal-webstore-navegacion.md): navegación pública Veta Dorada con Espacios desplegable, Portafolio, Proceso y CTA de agenda.
+- [goal-webstore-paginas-espacios.md](lanes/goal-webstore-paginas-espacios.md): índice y páginas públicas de Cocinas, Closets, Cavas, Entretenimiento y Estudios.
+- [goal-webstore-conexion-espacios-portafolio.md](lanes/goal-webstore-conexion-espacios-portafolio.md): enlaces de servicio a evidencia de proyectos filtrada por categoría.
+- [goal-webstore-qa-seo.md](lanes/goal-webstore-qa-seo.md): validación de rutas, metadatos, sitemap y límites fork/engine.
 - [goal-catalog-authority-adr.md](lanes/goal-catalog-authority-adr.md): lane documental cerrada — decisión de autoridad del catálogo; no implementa pipeline ni modifica producción.
 - [goal-neon-cotizaciones-recovery.md](lanes/goal-neon-cotizaciones-recovery.md): KEYSTONE — recuperación de datos huérfanos Neon (cotizaciones->proyectos) + caso Lorena Vaca (cobros + reconexión de espacio) + diagnóstico de `zap_activar_produccion`. Fases 0-3 cerradas y auditadas (2026-07-07); Fase 4 (limpieza de huérfanos) bloqueada, requiere aprobación aparte.
 - [goal-cotizador-iva-opcional.md](lanes/goal-cotizador-iva-opcional.md): IVA opcional en cotizador (placeholder 19%). CERRADA (2026-07-07) — campos `aplica_iva`/`porcentaje_iva` en `proyectos`, cálculo con fallback en `CotizadorPro.tsx`. Hallazgo de gobernanza abierto: `add-field` no crea backup automático (ver el archivo).

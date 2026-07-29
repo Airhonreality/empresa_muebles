@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import type { BlockProps } from '@agnostic/core';
 import VetaHeader from '../VetaHeader';
 import VetaFooter from '../VetaFooter';
 
@@ -47,8 +48,15 @@ type FlatImage = {
   projectCategory: string;
 };
 
-export default function VetaPortfolio({ entries }: { entries: PublicPortfolioEntry[] }) {
-  const [activeCategory, setActiveCategory] = useState('todos');
+type VetaPortfolioProps = Partial<BlockProps> & {
+  entries?: PublicPortfolioEntry[];
+  initialCategory?: string;
+};
+
+export default function VetaPortfolio({ entries = [], initialCategory }: VetaPortfolioProps) {
+  const [activeCategory, setActiveCategory] = useState(() =>
+    initialCategory && categorias.includes(initialCategory) ? initialCategory : 'todos'
+  );
   const [selectedProject, setSelectedProject] = useState<PublicPortfolioEntry | null>(null);
 
   const filtered = useMemo(() => {
