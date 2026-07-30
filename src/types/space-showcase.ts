@@ -100,6 +100,30 @@ export interface SpaceDescriptionProps {
 }
 
 /**
+ * datos completos de página (generados por script de build)
+ */
+export interface SpacePageData {
+  categoryId: SpaceCategory;
+  title: string;
+  subtitle?: string;
+  description: string;
+  descriptionExtended?: string;
+  slug: string;
+  route: string;
+  ogImage?: string;
+  benefits?: string[];
+  socialProofStats?: {
+    projectsCompleted?: number;
+    satisfiedClients?: number;
+    yearsExperience?: number;
+  };
+  processNote?: string;
+  ctaConfig?: SpaceShowcaseCtaConfig;
+  testimonials?: TestimonialItem[];
+  images: SeoImageData[];
+}
+
+/**
  * sección de testimonios
  */
 export interface SpaceTestimonialsProps {
