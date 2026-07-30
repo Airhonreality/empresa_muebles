@@ -146,6 +146,8 @@ export function ContratoModal({
     // Pre-cargar total calculado
     setValorTotal(calculatedTotal)
     setGarantiaAnios(Number(cotizacion?.data?.garantia_anios || cotizacion?.garantia_anios || 2))
+    // Reset hitos para que se carguen desde storage o se usen los estándar
+    setPaymentMilestones([])
 
     // Compilar Objeto de Contrato solo con espacios visibles y sin nombre de variante
     const defaultItemsText = espacios
@@ -177,6 +179,12 @@ export function ContratoModal({
           setCondDesmonte(d.condiciones_desmonte || '')
           setValorTotal(Number(d.valor_total) || calculatedTotal)
           setObjetoItems(d.objeto_items || defaultItemsText)
+          // Cargar hitos de pago guardados
+          if (d.hitos_pago && Array.isArray(d.hitos_pago) && d.hitos_pago.length > 0) {
+            setPaymentMilestones(d.hitos_pago)
+          } else {
+            setPaymentMilestones([])
+          }
         } else {
           // Compilar especificaciones dinámicamente si no existe contrato previo
           const specs = compileSpecifications(espacios, activeVarMap, items, catalogo)
