@@ -25,7 +25,7 @@ export function createPublicSlug(title?: string) {
   return `${editorialPart}-${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`
 }
 
-export function createProjectDraft(nombreProyecto = 'Nuevo Proyecto'): ProjectDraft {
+export function createProjectDraft(nombreProyecto: string = 'Nuevo Proyecto'): ProjectDraft {
   const projectId = crypto.randomUUID()
   const publicProposalId = crypto.randomUUID()
 
