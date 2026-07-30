@@ -50,7 +50,7 @@ export function PaymentScheduleCalculator({
   // Notificar cambios al padre
   useEffect(() => {
     onUpdate(milestones)
-  }, [milestones])
+  }, [milestones, onUpdate])
 
   const handleAddMilestone = () => {
     const newId = String(Math.max(...milestones.map(m => parseInt(m.id) || 0), 0) + 1)

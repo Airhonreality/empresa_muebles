@@ -214,17 +214,20 @@ export function ContratoModal({
       return
     }
 
-    // Validar que los hitos sumen exactamente al total
-    const totalMilestones = paymentMilestones.reduce((acc, m) => {
-      if (m.type === 'percentage') {
-        return acc + (valorTotal * m.amount) / 100
+    // Validar que los hitos sumen exactamente al total (solo si hay hitos personalizados)
+    if (paymentMilestones.length > 0) {
+      const totalMilestones = paymentMilestones.reduce((acc, m) => {
+        if (m.type === 'percentage') {
+          return acc + (valorTotal * m.amount) / 100
+        }
+        return acc + m.amount
+      }, 0)
+      if (Math.abs(totalMilestones - valorTotal) > 0.01) {
+        toast.error('La suma de los hitos de pago debe ser exactamente igual al valor total del contrato.')
+        return
       }
-      return acc + m.amount
-    }, 0)
-    if (Math.abs(totalMilestones - valorTotal) > 0.01) {
-      toast.error('La suma de los hitos de pago debe ser exactamente igual al valor total del contrato.')
-      return
     }
+    // Si paymentMilestones está vacío, el componente lo inicializó con estándar y lo enviará correctamente
 
     const contractRecord = toContractZapRecord(cotizacion)
     if (!contractRecord?.id) {
@@ -264,7 +267,11 @@ export function ContratoModal({
               especificaciones_mesones: especMesones,
               condiciones_desmonte: condDesmonte,
               valor_total: valorTotal,
-              hitos_pago: paymentMilestones
+              hitos_pago: paymentMilestones.length > 0 ? paymentMilestones : [
+                { id: '1', type: 'percentage', amount: 50, reason: 'Anticipo inicial' },
+                { id: '2', type: 'percentage', amount: 25, reason: 'Al momento de instalación' },
+                { id: '3', type: 'percentage', amount: 25, reason: 'Pago final' }
+              ]
             }
           }
         })
