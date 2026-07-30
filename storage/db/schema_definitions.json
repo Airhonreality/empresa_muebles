@@ -1425,6 +1425,16 @@
           "type": "markdown",
           "label": "Descripcion Semantica",
           "required": false
+        },
+        {
+          "id": "ct17_hitos",
+          "key": "hitos_pago",
+          "type": "json",
+          "label": "Hitos de Pago Personalizados",
+          "width": "full",
+          "config": {},
+          "section": "Pagos",
+          "required": false
         }
       ]
     },
@@ -3233,9 +3243,18 @@
           "width": "full",
           "config": {},
           "options": [
-            { "label": "Mano de obra", "value": "mano_obra" },
-            { "label": "Logística", "value": "logistica" },
-            { "label": "Materiales", "value": "materiales" }
+            {
+              "label": "Mano de obra",
+              "value": "mano_obra"
+            },
+            {
+              "label": "Logística",
+              "value": "logistica"
+            },
+            {
+              "label": "Materiales",
+              "value": "materiales"
+            }
           ],
           "section": "General",
           "required": true
@@ -3271,7 +3290,10 @@
           "config": {
             "derivation": {
               "op": "LOOKUP",
-              "args": ["catalogo_id", "unidad_medida"],
+              "args": [
+                "catalogo_id",
+                "unidad_medida"
+              ],
               "context": "productos_catalogo"
             }
           },
@@ -3296,7 +3318,10 @@
           "config": {
             "derivation": {
               "op": "LOOKUP",
-              "args": ["catalogo_id", "precio_publico"],
+              "args": [
+                "catalogo_id",
+                "precio_publico"
+              ],
               "context": "productos_catalogo"
             }
           },
@@ -3311,7 +3336,10 @@
           "config": {
             "derivation": {
               "op": "MULTIPLY",
-              "args": ["cantidad", "precio_unitario"]
+              "args": [
+                "cantidad",
+                "precio_unitario"
+              ]
             }
           },
           "section": "Valores",
@@ -3502,13 +3530,34 @@
           "label": "Estado",
           "required": true,
           "options": [
-            { "label": "iniciado", "value": "iniciado" },
-            { "label": "pendiente_pago", "value": "pendiente_pago" },
-            { "label": "pagado", "value": "pagado" },
-            { "label": "en_preparacion", "value": "en_preparacion" },
-            { "label": "enviado", "value": "enviado" },
-            { "label": "entregado", "value": "entregado" },
-            { "label": "cancelado", "value": "cancelado" }
+            {
+              "label": "iniciado",
+              "value": "iniciado"
+            },
+            {
+              "label": "pendiente_pago",
+              "value": "pendiente_pago"
+            },
+            {
+              "label": "pagado",
+              "value": "pagado"
+            },
+            {
+              "label": "en_preparacion",
+              "value": "en_preparacion"
+            },
+            {
+              "label": "enviado",
+              "value": "enviado"
+            },
+            {
+              "label": "entregado",
+              "value": "entregado"
+            },
+            {
+              "label": "cancelado",
+              "value": "cancelado"
+            }
           ]
         }
       ]
@@ -3516,4 +3565,3 @@
     "updated_at": "2026-07-07T03:53:56.345Z"
   }
 ]
-
