@@ -1,0 +1,10 @@
+{
+  "name": "empresa-muebles-dev",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Rearquitectura del ERP + sitio Veta de Oro (rama dev, andamiaje inicial). Sin dependencias de producto todavia.",
+  "scripts": {
+    "validate:storage": "node scripts/validate-storage.mjs",
+    "validate:encoding": "node scripts/validate-text-encoding.mjs"
+  }
+}
