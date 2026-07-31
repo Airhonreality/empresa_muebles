@@ -7,7 +7,7 @@ import { COP } from './utils'
 import { processEvents } from '@/lib/agnostic/eventProcessor'
 import { useMateriaStore } from '@/lib/agnostic/store'
 import { toContractZapRecord } from './contrato-payload'
-import { PaymentScheduleCalculator, type PaymentMilestone } from './PaymentScheduleCalculator'
+import { PaymentScheduleCalculator, STANDARD_MILESTONES, type PaymentMilestone } from './PaymentScheduleCalculator'
 
 interface ContratoModalProps {
   isOpen: boolean
@@ -100,7 +100,9 @@ export function ContratoModal({
   const [especMesones, setEspecMesones] = useState('')
   const [condDesmonte, setCondDesmonte] = useState('')
   const [valorTotal, setValorTotal] = useState(0)
-  const [paymentMilestones, setPaymentMilestones] = useState<PaymentMilestone[]>([])
+  const [paymentMilestones, setPaymentMilestones] = useState<PaymentMilestone[]>(
+    STANDARD_MILESTONES.map(m => ({ ...m }))
+  )
 
   const [isSaving, setIsSaving] = useState(false)
 
@@ -164,7 +166,13 @@ export function ContratoModal({
         const res = await fetch('/api/vault?namespace=contratos')
         const json = await res.json()
         const allContratos = json.records || []
-        const existing = allContratos.find((c: any) => (c.data?.proyecto_id || c.proyecto_id) === cotizacion.id)
+        // Buscar el contrato más reciente para este proyecto (no el primero)
+        const contratosPorProyecto = allContratos.filter((c: any) => (c.data?.proyecto_id || c.proyecto_id) === cotizacion.id)
+        const existing = contratosPorProyecto.length > 0
+          ? contratosPorProyecto.sort((a: any, b: any) =>
+              new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime()
+            )[0]
+          : null
 
         if (existing) {
           const d = existing.data || {}
@@ -177,13 +185,12 @@ export function ContratoModal({
           setCondDesmonte(d.condiciones_desmonte || '')
           setValorTotal(Number(d.valor_total) || calculatedTotal)
           setObjetoItems(d.objeto_items || defaultItemsText)
-          // Cargar hitos de pago guardados - SIEMPRE establecer estado
-          if (d.hitos_pago && Array.isArray(d.hitos_pago) && d.hitos_pago.length > 0) {
-            setPaymentMilestones(d.hitos_pago)
-          } else {
-            // Si no hay hitos guardados, iniciar vacío (PaymentScheduleCalculator usará estándar)
-            setPaymentMilestones([])
-          }
+          // Cargar hitos de pago guardados, o estándar si no hay
+          setPaymentMilestones(
+            d.hitos_pago && Array.isArray(d.hitos_pago) && d.hitos_pago.length > 0
+              ? d.hitos_pago
+              : STANDARD_MILESTONES.map(m => ({ ...m }))
+          )
         } else {
           // Compilar especificaciones dinámicamente si no existe contrato previo
           const specs = compileSpecifications(espacios, activeVarMap, items, catalogo)
@@ -194,8 +201,8 @@ export function ContratoModal({
           setPlazoSemanas('4 a 5')
           setHolguraDias(8)
           setObjetoItems(defaultItemsText)
-          // Iniciar hitos vacío para nuevo contrato
-          setPaymentMilestones([])
+          // Nuevo contrato: hitos estándar por defecto
+          setPaymentMilestones(STANDARD_MILESTONES.map(m => ({ ...m })))
         }
       } catch (e) {
         console.error('Error al inicializar contrato:', e)
@@ -215,20 +222,17 @@ export function ContratoModal({
       return
     }
 
-    // Validar que los hitos sumen exactamente al total (solo si hay hitos personalizados)
-    if (paymentMilestones.length > 0) {
-      const totalMilestones = paymentMilestones.reduce((acc, m) => {
-        if (m.type === 'percentage') {
-          return acc + (valorTotal * m.amount) / 100
-        }
-        return acc + m.amount
-      }, 0)
-      if (Math.abs(totalMilestones - valorTotal) > 0.01) {
-        toast.error('La suma de los hitos de pago debe ser exactamente igual al valor total del contrato.')
-        return
+    // Validar que los hitos sumen exactamente al total
+    const totalMilestones = paymentMilestones.reduce((acc, m) => {
+      if (m.type === 'percentage') {
+        return acc + (valorTotal * m.amount) / 100
       }
+      return acc + m.amount
+    }, 0)
+    if (Math.abs(totalMilestones - valorTotal) > 0.01) {
+      toast.error('La suma de los hitos de pago debe ser exactamente igual al valor total del contrato.')
+      return
     }
-    // Si paymentMilestones está vacío, el componente lo inicializó con estándar y lo enviará correctamente
 
     const contractRecord = toContractZapRecord(cotizacion)
     if (!contractRecord?.id) {
@@ -237,8 +241,8 @@ export function ContratoModal({
     }
 
     setIsSaving(true)
-    const actionMsg = isBorradorOnly 
-      ? 'Guardando borrador de contrato...' 
+    const actionMsg = isBorradorOnly
+      ? 'Guardando borrador de contrato...'
       : 'Creando contrato legal y sincronizando datos de cliente...'
     const toastId = toast.loading(actionMsg)
 
@@ -268,11 +272,7 @@ export function ContratoModal({
               especificaciones_mesones: especMesones,
               condiciones_desmonte: condDesmonte,
               valor_total: valorTotal,
-              hitos_pago: paymentMilestones.length > 0 ? paymentMilestones : [
-                { id: '1', type: 'percentage', amount: 50, reason: 'Anticipo inicial' },
-                { id: '2', type: 'percentage', amount: 25, reason: 'Al momento de instalación' },
-                { id: '3', type: 'percentage', amount: 25, reason: 'Pago final' }
-              ]
+              hitos_pago: paymentMilestones
             }
           }
         })
@@ -561,8 +561,8 @@ export function ContratoModal({
 
             <PaymentScheduleCalculator
               totalContract={valorTotal}
-              onUpdate={setPaymentMilestones}
-              initialMilestones={paymentMilestones}
+              milestones={paymentMilestones}
+              onChange={setPaymentMilestones}
             />
           </div>
 

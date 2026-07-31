@@ -1,6 +1,5 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
 import { Trash2, Plus, AlertCircle, CheckCircle2, Info } from 'lucide-react'
 import { COP } from './utils'
 
@@ -12,27 +11,33 @@ export interface PaymentMilestone {
   reason?: string
 }
 
-interface PaymentScheduleCalculatorProps {
-  totalContract: number
-  onUpdate: (milestones: PaymentMilestone[]) => void
-  initialMilestones?: PaymentMilestone[]
+export const STANDARD_MILESTONES: PaymentMilestone[] = [
+  { id: '1', type: 'percentage', amount: 50, reason: 'Anticipo inicial' },
+  { id: '2', type: 'percentage', amount: 25, reason: 'Al momento de instalación' },
+  { id: '3', type: 'percentage', amount: 25, reason: 'Pago final' }
+]
+
+function isStandardShape(milestones: PaymentMilestone[]): boolean {
+  if (milestones.length !== STANDARD_MILESTONES.length) return false
+  return milestones.every((m, i) =>
+    m.type === STANDARD_MILESTONES[i].type && m.amount === STANDARD_MILESTONES[i].amount
+  )
 }
 
+interface PaymentScheduleCalculatorProps {
+  totalContract: number
+  milestones: PaymentMilestone[]
+  onChange: (milestones: PaymentMilestone[]) => void
+}
+
+// Componente totalmente controlado: no guarda estado propio.
+// La fuente de verdad es siempre `milestones` (prop del padre).
 export function PaymentScheduleCalculator({
   totalContract,
-  onUpdate,
-  initialMilestones = []
+  milestones,
+  onChange
 }: PaymentScheduleCalculatorProps) {
-  const [useStandard, setUseStandard] = useState(true)
-  const [milestones, setMilestones] = useState<PaymentMilestone[]>(
-    initialMilestones.length > 0
-      ? initialMilestones
-      : [
-          { id: '1', type: 'percentage', amount: 50, reason: 'Anticipo inicial' },
-          { id: '2', type: 'percentage', amount: 25, reason: 'Al momento de instalación' },
-          { id: '3', type: 'percentage', amount: 25, reason: 'Pago final' }
-        ]
-  )
+  const useStandard = isStandardShape(milestones)
 
   // Calcular suma total de los hitos
   const totalMilestones = milestones.reduce((acc, m) => {
@@ -45,16 +50,10 @@ export function PaymentScheduleCalculator({
   const difference = totalContract - totalMilestones
   const isValid = Math.abs(difference) < 0.01
   const isOver = difference < -0.01
-  const isUnder = difference > 0.01
-
-  // Notificar cambios al padre
-  useEffect(() => {
-    onUpdate(milestones)
-  }, [milestones, onUpdate])
 
   const handleAddMilestone = () => {
     const newId = String(Math.max(...milestones.map(m => parseInt(m.id) || 0), 0) + 1)
-    setMilestones([
+    onChange([
       ...milestones,
       { id: newId, type: 'percentage', amount: 10, reason: '' }
     ])
@@ -62,51 +61,40 @@ export function PaymentScheduleCalculator({
 
   const handleRemoveMilestone = (id: string) => {
     if (milestones.length > 1) {
-      setMilestones(milestones.filter(m => m.id !== id))
+      onChange(milestones.filter(m => m.id !== id))
     }
   }
 
   const handleUpdateMilestone = (id: string, updates: Partial<PaymentMilestone>) => {
-    setMilestones(
-      milestones.map(m => (m.id === id ? { ...m, ...updates } : m))
-    )
+    onChange(milestones.map(m => (m.id === id ? { ...m, ...updates } : m)))
   }
 
   const applyStandard = () => {
-    setUseStandard(true)
-    setMilestones([
-      { id: '1', type: 'percentage', amount: 50, reason: 'Anticipo inicial' },
-      { id: '2', type: 'percentage', amount: 25, reason: 'Al momento de instalación' },
-      { id: '3', type: 'percentage', amount: 25, reason: 'Pago final' }
-    ])
+    onChange(STANDARD_MILESTONES.map(m => ({ ...m })))
   }
 
   return (
     <div className="space-y-4">
-      {/* Toggle between standard and custom */}
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setUseStandard(true)}
-          className={`flex-1 px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
+      {/* Modo actual (derivado de los datos) + acción de reset */}
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={`px-3 py-1.5 rounded-lg font-semibold text-xs border ${
             useStandard
-              ? 'bg-amber-100 text-amber-800 border border-amber-300'
-              : 'bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-150'
+              ? 'bg-amber-100 text-amber-800 border-amber-300'
+              : 'bg-stone-100 text-stone-600 border-stone-200'
           }`}
         >
-          Anticipos Estándar (50-25-25)
-        </button>
-        <button
-          type="button"
-          onClick={() => setUseStandard(false)}
-          className={`flex-1 px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
-            !useStandard
-              ? 'bg-amber-100 text-amber-800 border border-amber-300'
-              : 'bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-150'
-          }`}
-        >
-          Plan Personalizado
-        </button>
+          {useStandard ? 'Anticipos Estándar (50-25-25)' : 'Plan Personalizado'}
+        </span>
+        {!useStandard && (
+          <button
+            type="button"
+            onClick={applyStandard}
+            className="px-3 py-1.5 rounded-lg font-semibold text-xs bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-150 transition-colors"
+          >
+            Restablecer a Estándar
+          </button>
+        )}
       </div>
 
       {/* Milestones list */}
@@ -142,8 +130,7 @@ export function PaymentScheduleCalculator({
                   onChange={e => handleUpdateMilestone(milestone.id, {
                     type: e.target.value as 'percentage' | 'fixed'
                   })}
-                  disabled={useStandard}
-                  className="w-full px-2 py-1.5 border border-stone-200 rounded text-stone-700 text-[10px] disabled:opacity-50 disabled:bg-stone-50"
+                  className="w-full px-2 py-1.5 border border-stone-200 rounded text-stone-700 text-[10px]"
                 >
                   <option value="percentage">%</option>
                   <option value="fixed">Valor Fijo</option>
@@ -161,11 +148,10 @@ export function PaymentScheduleCalculator({
                   onChange={e => handleUpdateMilestone(milestone.id, {
                     amount: parseFloat(e.target.value) || 0
                   })}
-                  disabled={useStandard}
                   min={0}
                   max={milestone.type === 'percentage' ? 100 : undefined}
                   step={milestone.type === 'percentage' ? 1 : 1000}
-                  className="w-full px-2 py-1.5 border border-stone-200 rounded text-stone-700 text-[10px] disabled:opacity-50 disabled:bg-stone-50"
+                  className="w-full px-2 py-1.5 border border-stone-200 rounded text-stone-700 text-[10px]"
                 />
               </div>
 
@@ -182,7 +168,6 @@ export function PaymentScheduleCalculator({
               </div>
             </div>
 
-            {/* Date and reason (disabled in standard mode) */}
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               <div>
                 <label className="text-[9px] uppercase tracking-widest text-stone-400 font-bold block mb-1">
@@ -192,8 +177,7 @@ export function PaymentScheduleCalculator({
                   type="date"
                   value={milestone.date || ''}
                   onChange={e => handleUpdateMilestone(milestone.id, { date: e.target.value })}
-                  disabled={useStandard}
-                  className="w-full px-2 py-1.5 border border-stone-200 rounded text-stone-700 text-[9px] disabled:opacity-50 disabled:bg-stone-50"
+                  className="w-full px-2 py-1.5 border border-stone-200 rounded text-stone-700 text-[9px]"
                 />
               </div>
               <div>
@@ -204,8 +188,7 @@ export function PaymentScheduleCalculator({
                   type="text"
                   value={milestone.reason || ''}
                   onChange={e => handleUpdateMilestone(milestone.id, { reason: e.target.value })}
-                  disabled={useStandard}
-                  className="w-full px-2 py-1.5 border border-stone-200 rounded text-stone-700 text-[9px] disabled:opacity-50 disabled:bg-stone-50"
+                  className="w-full px-2 py-1.5 border border-stone-200 rounded text-stone-700 text-[9px]"
                   placeholder="Ej: Anticipo, entrega parcial..."
                 />
               </div>
@@ -214,17 +197,15 @@ export function PaymentScheduleCalculator({
         ))}
       </div>
 
-      {/* Add milestone button (only in custom mode) */}
-      {!useStandard && (
-        <button
-          type="button"
-          onClick={handleAddMilestone}
-          className="w-full py-2 border border-dashed border-stone-300 rounded-lg text-stone-600 hover:bg-stone-50 transition-colors flex items-center justify-center gap-2 text-sm font-semibold"
-        >
-          <Plus size={14} />
-          Agregar Hito
-        </button>
-      )}
+      {/* Add milestone button */}
+      <button
+        type="button"
+        onClick={handleAddMilestone}
+        className="w-full py-2 border border-dashed border-stone-300 rounded-lg text-stone-600 hover:bg-stone-50 transition-colors flex items-center justify-center gap-2 text-sm font-semibold"
+      >
+        <Plus size={14} />
+        Agregar Hito
+      </button>
 
       {/* Status bar */}
       <div className="space-y-2">
@@ -235,17 +216,15 @@ export function PaymentScheduleCalculator({
           </span>
         </div>
 
-        {/* Progress bar */}
         <div className="h-2 bg-stone-200 rounded-full overflow-hidden">
           <div
             className={`h-full transition-all ${
               isValid ? 'bg-green-500' : isOver ? 'bg-red-500' : 'bg-orange-500'
             }`}
-            style={{ width: `${Math.min((totalMilestones / totalContract) * 100, 100)}%` }}
+            style={{ width: `${Math.min((totalMilestones / (totalContract || 1)) * 100, 100)}%` }}
           />
         </div>
 
-        {/* Status message */}
         {isValid ? (
           <div className="flex items-start gap-2 text-green-700 bg-green-50 p-2.5 rounded-lg border border-green-200/60 text-[9px]">
             <CheckCircle2 size={14} className="shrink-0 mt-0.5" />
@@ -271,7 +250,7 @@ export function PaymentScheduleCalculator({
           <Info size={12} className="shrink-0 mt-0.5" />
           <p>
             {useStandard
-              ? 'Modo anticipos estándar. Cambiar a "Plan Personalizado" para diseñar tu propio cronograma.'
+              ? 'Modo anticipos estándar. Edita cualquier campo para pasar a un plan personalizado.'
               : 'Diseña tu propio cronograma de pagos. La suma de hitos debe ser exacta.'}
           </p>
         </div>
