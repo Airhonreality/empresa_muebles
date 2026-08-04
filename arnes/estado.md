@@ -2,6 +2,24 @@
 
 Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada tarea o al reiniciar contexto.
 
+## TRANSICIÓN A LA V3 "VETA DORADA REAL" (2026-08-04) — EL ARNÉS VIVE ACÁ
+
+**Decisión del Supervisor (2026-08-04):** el prototipo v2 se descarta por completo. Su código nunca se pusheó a producción, era prototipo sin uso y heredaba patrones viejos. Lo único valioso era el conocimiento en `arnes/`, que se conserva íntegro en esta carpeta.
+
+**Qué pasó (checkpoint aprobado por el Supervisor):**
+1. Se commiteó todo el arnés v2 sin commitear (entrada Ola 7, afinaciones OLA_6, plan maestro, ledger t-035..t-073) en la rama `dev` vieja.
+2. La rama `dev` vieja se renombró a `backup/dev-v2-arquitectura-20260804` (congelada en 8526676) — respaldo puro, no se le hace push de código nuevo.
+3. Se creó **esta carpeta** (`empresa_muebles_clone_v3`) como worktree de una **rama `dev` huérfana** (sin historia de código v2), con `arnes/` + config. Commit fundacional: `e2c765b`.
+4. `main` y `legacy-agnostic-backup` intactos. No hubo push a `origin` todavía.
+
+**Próxima acción permitida:**
+- **Diamante 4 (sistema visual) ABIERTO** — metodología en `arnes/diagnostico/diamante4_metodologia.md`. Primera fase de la V3, previa a Ola 7.
+- Ola 7 (Execute) sigue su plan maestro (`arnes/planes/plan_ola7_maestro.md`, fases F0-F9) pero **las pantallas consumirán los tokens del D4** — no estilo improvisado.
+
+**Regla nueva de esta carpeta:** nunca reutilizar código del prototipo v2; si un patrón resultara necesario, se discute con el Supervisor antes de copiarlo.
+
+---
+
 ## Oleada de paridad con el legacy (2026-08-02) — 9 tareas, 21 archivos nuevos
 
 Contexto: una auditoría comparativa (inventario de rutas legacy vs. nuevas) encontró 13 pantallas del sistema viejo sin equivalente todavía. El Supervisor delegó la planeación completa y autorizó ejecución en paralelo con subagentes mientras estaba fuera.

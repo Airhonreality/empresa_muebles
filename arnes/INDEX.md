@@ -16,10 +16,10 @@ Lee en este orden:
 Declara las zonas del proyecto, sus dueños, y qué sí/qué no se puede hacer en cada una. Es la ley del arnés.
 
 ### 2. arnes/estado.md
-Dónde estamos ahora. Mapeo sistémico del negocio (Double Diamond) convergido e integrado; **Fase 2 (diamante de solución: schema/UI/automatizaciones de capa 1) recién abierta**.
+Dónde estamos ahora. Mapeo sistémico del negocio (Double Diamond) convergido e integrado; **Fase 2 (diamante de solución: schema/UI/automatizaciones de capa 1) completada**; **Diamante 4 (sistema visual) ABIERTO — primera fase de la V3**.
 
 ### 3. arnes/diagnostico/
-Carpeta destino de los hallazgos del mapeo. Orden de lectura para entender el negocio:
+Carpeta destino de los hallazgos del mapeo. **NUEVO: `diamante4_metodologia.md` — el sistema visual de la V3, fase previa a Ola 7.** Orden de lectura para entender el negocio:
 1. `logica_de_negocio.md` — el mapa maestro (Parte I: negocio, Parte II: implicaciones técnicas). **Documento 1.**
 2. `segunda_ronda_preguntas.md` — banco de preguntas + respuestas crudas de Javier (21, todas respondidas).
 3. `cierre_diamante.md` — convergencia del Define (tesis, invariantes, bounded contexts, capacidad).

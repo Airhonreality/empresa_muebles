@@ -1,4 +1,4 @@
-# Hermanos García González S.A.S (Veta de Oro) — ERP + Sitio Web (rearquitectura)
+# Hermanos García González S.A.S (Veta de Oro) — ERP + Sitio Web — V3 "Veta Dorada Real"
 
 **Fuente de verdad del arnés agéntico.** Todo agente lee este archivo antes de actuar. Si algo que quieres que haga un agente no está aquí, no va a pasar.
 
@@ -23,9 +23,15 @@ Si nadie te dijo qué rol asumir, asume **Orquestador** y pregunta antes de actu
 
 **Regla de arranque que no se negocia:** no escribas ni modifiques código sin un plan aprobado para una tarea registrada.
 
+## Ruta de la V3 (el orden importa)
+
+1. **Diamante 4 (diseño visual)** — ABIERTO. Define el sistema visual antes de escribir código: stack técnico del arnés de estilos, diseño conceptual UI (arte, tipografía, librería de iconos premium, bordes/contenedores, efectos y animaciones). Entrada: `arnes/diagnostico/diamante4_metodologia.md`. Produce los design tokens + primitivas que Ola 7 consumirá en cada pantalla.
+2. **Ola 7 (Execute)** — codificación de las 34 pantallas + 65 tablas + 5 gates según `arnes/diagnostico/OLA_7_ENTRADA.md` y el contrato maestro `arnes/planes/plan_ola7_maestro.md` (fases F0-F9). **Ninguna pantalla se codifica con estilo improvisado: consume los tokens del Diamante 4.**
+3. **Checkpoint final del Supervisor** antes de mergear `dev` → `main`.
+
 ## Qué construye este proyecto
 
-Reconstrucción completa del ERP + sitio web público de Hermanos García González S.A.S (Veta de Oro), reemplazando el motor genérico "Agnostic Seed" (schema-driven, zaps interpretados en runtime) por código explícito React/Next.js/TypeScript. **Mismo negocio, misma infraestructura de proveedores, arquitectura de aplicación nueva.**
+**V3 "Veta Dorada Real"** — reconstrucción completa del ERP + sitio web público de Hermanos García González S.A.S (Veta de Oro), con **código nuevo desde cero** (sin el motor "Agnostic Seed" ni los patrones del prototipo v2). **Mismo negocio, misma infraestructura de proveedores, arquitectura de aplicación nueva.** El conocimiento del negocio (schema de 65 tablas, 34 pantallas, 5 gates, decisiones) vive en `arnes/` y es repo-independiente; el código se escribe nuevo.
 
 ## Modelo de repositorio y despliegue (léelo antes de tocar git)
 
@@ -35,14 +41,17 @@ Reconstrucción completa del ERP + sitio web público de Hermanos García Gonzá
 main                     → producción real (empresa-muebles-vl37.vercel.app). NO se toca hasta el corte final.
 legacy-agnostic-backup   → snapshot de seguridad del sistema Agnostic, congelado en el commit fbe9bdd (2026-07-31).
                             Puro respaldo. Nunca se le hace push de código nuevo.
-dev                      → rama huérfana (sin historia de main) donde se construye la arquitectura nueva.
-                            Se trabaja en el worktree `../empresa_muebles_clone-dev`, nunca en el
-                            working tree principal del humano (que sigue en `main` con su propio trabajo
-                            en curso, no relacionado con esta migración).
+backup/dev-v2-arquitectura-20260804
+                         → snapshot del trabajo de arquitectura v2 (prototipo) congelado en 8526676 (2026-08-04).
+                            Puro respaldo: la rama `dev` v2 nunca se pusheó a producción y su código se descartó.
+                            Todo el conocimiento valioso ya está en `arnes/`.
+dev                      → rama huérfana (sin historia de main) donde se construye la V3.
+                            Se trabaja en el worktree `../empresa_muebles_clone_v3` (ESTA carpeta), nunca en el
+                            working tree principal del humano (que sigue en `main` con su propio trabajo en curso).
 ```
 
 **Flujo de corte:**
-1. Todo el trabajo de reconstrucción ocurre en `dev` (este worktree).
+1. Todo el trabajo de reconstrucción ocurre en `dev` (este worktree, `empresa_muebles_clone_v3`).
 2. Vercel, al tener Git Integration activada sobre este mismo proyecto, genera automáticamente una URL de preview por cada push a `dev` — usando las MISMAS variables de entorno de Neon/R2 que producción (verificar en el dashboard de Vercel que `DATABASE_URL`, `CF_R2_*` estén habilitadas para el entorno Preview, no solo Production — checkpoint pendiente, ver `arnes/estado.md`).
 3. Javier prueba esa URL de preview con datos REALES (misma base de datos que producción — cuidado: esto significa que escrituras desde `dev` SÍ tocan datos reales, no hay entorno de pruebas aislado a menos que se decida lo contrario).
 4. Solo cuando Javier aprueba explícitamente, se hace merge de `dev` → `main`. Ese merge es lo único que dispara el redeploy de producción real.
@@ -56,7 +65,8 @@ dev                      → rama huérfana (sin historia de main) donde se cons
 - No se debe migrar un registro de datos "as-is" sin haberlo revisado en el diagnóstico de Fase 0 (`arnes/diagnostico/`).
 - No se debe modificar el schema de datos (ORM) ni las reglas de este `AGENTS.md` sin pasar por el checkpoint de Supervisor.
 - Credenciales y secretos nunca viven en archivos versionados. Las credenciales reales (Neon, R2, GitHub) ya existen en las variables de entorno de Vercel de este mismo proyecto — no hay que crear ni copiar ninguna.
-- Un agente **nunca** hace `checkout` de `dev` sobre el working tree principal del humano (`c:\Users\javir\Documents\DEVs\empresa_muebles_clone`). Todo trabajo de esta migración ocurre en el worktree `../empresa_muebles_clone-dev`.
+- Un agente **nunca** hace `checkout` de `dev` sobre el working tree principal del humano (`c:\Users\javir\Documents\DEVs\empresa_muebles_clone`). Todo trabajo de la V3 ocurre en el worktree `../empresa_muebles_clone_v3`.
+- No se debe reutilizar código del prototipo v2 (`backup/dev-v2-arquitectura-20260804`) — la V3 es código nuevo a propósito. Si un patrón del prototipo resultara necesario, se discute con el Supervisor antes de copiarlo.
 
 ## Zonas y dueños
 
@@ -66,12 +76,13 @@ Zonas activas hoy:
 |------|--------------|-------|--------|
 | `arnes/` | Arnés, ledger, roles, planes, diagnóstico | Supervisor | alto |
 | `arnes/diagnostico/` | Hallazgos de Fase 0 (solo lectura sobre datos reales) | Supervisor | bajo |
+| `arnes/diagnostico/diamante4_*` | Entregables del Diamante 4 (diseño visual) | Supervisor | alto |
 
 Las zonas de código de producto (auth, catálogo, cotizador, contratos, producción, finanzas, sitio público, etc.) se declaran cuando el plan de arquitectura (`arnes/planes/plan_arquitectura_destino.md`) sea aprobado por el Supervisor.
 
 ## Comandos de verificación
 
-Stack confirmado: Next.js + TypeScript + Drizzle ORM + Neon Postgres (misma base de datos de producción, ver modelo de ramas arriba).
+Stack en definición por el **Diamante 4** (`arnes/diagnostico/diamante4_metodologia.md`). Referencia de v2 (prototipo, validada en runtime contra `dev-local`): Next.js + TypeScript + Drizzle ORM + Neon Postgres (misma base de datos de producción, ver modelo de ramas arriba). Los comandos de esta tabla se confirman/ajustan cuando el D4 cierre el stack definitivo.
 
 | Qué verifica | Comando | Nota |
 |--------------|---------|------|
