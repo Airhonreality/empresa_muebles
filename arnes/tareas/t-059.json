@@ -1,0 +1,20 @@
+{
+    "tipo":  "mutacion_arnes",
+    "id":  "t-059",
+    "riesgo":  "alto",
+    "criterios_aceptacion":  [
+                                 "Output con formato de diamante3_metodologia.md",
+                                 "Trazabilidad archivo:linea al 100%",
+                                 "Solo escribe su archivo de salida"
+                             ],
+    "creada_en":  "2026-08-03T00:00:00Z",
+    "zona":  "arnes/diagnostico/pasadas",
+    "titulo":  "Schema A2-4 contrato vivo",
+    "verificador":  "opencode orquestador (auditor)",
+    "plan_ref":  "arnes/diagnostico/pasadas/diamante3_metodologia.md",
+    "archivos_afectados":  [
+                               "arnes/diagnostico/pasadas/d3_schema_a2_4_contrato_vivo.md"
+                           ],
+    "ejecutor":  "opencode subagente t-059",
+    "estado":  "ejecucion"
+}

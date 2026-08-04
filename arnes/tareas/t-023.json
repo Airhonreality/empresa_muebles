@@ -1,0 +1,59 @@
+{
+  "id": "t-023",
+  "titulo": "Schema: unificar prefabricados dentro de proyectos (tipo_proyecto + proyecto_origen_id)",
+  "intencion_negocio": "Un 'prefabricado' no es un concepto distinto de un proyecto -- es un proyecto de un solo espacio marcado como reutilizable, cuyo resultado calculado (nombre, valor, imagen) se publica como fila en productos_catalogo. Evita recrear el problema del sistema legacy donde prefabricados y catalogo eran tablas separadas sin sincronizacion clara. Clarificacion de negocio dada explicitamente por el Supervisor el 2026-08-01.",
+  "zona": "lib/db/schema.ts",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/db/schema.ts (modificado -- 2 columnas nuevas + 1 enum + 2 relations, 0 tablas nuevas)",
+    "lib/db/migrations/0001_swift_norman_osborn.sql (creado, aplicado contra dev-local)",
+    "lib/modules/cotizador/queries.ts (modificado -- CrearProyectoInput.tipoProyecto + listarProyectosProductoFijo)",
+    "lib/modules/prefabricados/publicar.ts (creado -- logica de publicacion/sync)",
+    "lib/modules/prefabricados/publicar.test.ts (creado, requiere dev-local real)",
+    "lib/modules/prefabricados/queries.ts (creado -- obtenerPrefabricadoConPublicacion)",
+    "app/api/erp/prefabricados/route.ts (creado -- listar/crear)",
+    "app/api/erp/prefabricados/publicar/route.ts (creado)",
+    "app/app/erp/prefabricados/page.tsx (creado)",
+    "app/app/erp/prefabricados/[proyectoId]/page.tsx (creado)",
+    "components/erp/CrearPrefabricadoForm.tsx (creado)",
+    "components/erp/PublicarPrefabricadoForm.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "proyectos.tipo_proyecto enum('personalizado','producto_fijo') default 'personalizado' -- no rompe proyectos existentes",
+    "productos_catalogo.proyecto_origen_id uuid nullable FK -> proyectos.id -- no rompe productos existentes (todos quedan null)",
+    "npx drizzle-kit generate + migrate aplicado contra dev-local sin error",
+    "funcion publicarComoProducto(proyectoId): recalcula con lib/modules/cotizador/calculo.ts sobre el unico espacio del proyecto, hace UPSERT en productos_catalogo por proyecto_origen_id (update si ya existe una fila con ese origen, insert si es la primera vez)",
+    "test que reproduce el caso descrito: publicar, editar el proyecto origen, publicar de nuevo -> misma fila de catalogo actualizada, no una fila duplicada",
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "npx next build con DATABASE_URL placeholder sin bugs nuevos",
+    "verificacion end-to-end contra dev-local: crear proyecto tipo producto_fijo, agregar item, publicar, confirmar la fila en productos_catalogo con los valores correctos"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (orquestador, directo -- riesgo alto, no delegado a opencode)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit: exit 0 (2 errores reales encontrados y corregidos en el camino: aplicaIva boolean|null, updatedAt Date vs string)",
+      "npx eslint .: exit 0",
+      "npx next build con DATABASE_URL placeholder: mismo ECONNREFUSED esperado en /sitemap.xml, sin bugs nuevos",
+      "npx drizzle-kit generate + migrate contra dev-local: migracion no destructiva confirmada por lectura del SQL antes de aplicar (2 ALTER TABLE ADD COLUMN, 0 DROP, defaults seguros)",
+      "npx tsx lib/modules/prefabricados/publicar.test.ts contra dev-local: 4/4 OK -- incluye el caso exacto de la circularidad (publicar, agregar item, republicar -> MISMA fila actualizada por id, sku intacto, precio recalculado de 100000 a 150000) y el caso negativo (proyecto personalizado no se puede publicar)",
+      "Verificacion end-to-end manual via curl contra dev-local: crear prefabricado -> agregar espacio+item (reusando la API existente del cotizador) -> publicar con sku -> confirmado en la respuesta (precio 220000 = precio del item) -> confirmado que aparece en GET /api/erp/catalogo (interopera con t-021/t-022) -> ambas paginas (listado y detalle) responden 200",
+      "Datos de prueba limpiados de dev-local al terminar (proyecto + espacio + item + fila de catalogo creados por la prueba manual, todos borrados)"
+    ],
+    "salida_cruda": "Todo verde. La circularidad central (republicar actualiza la misma fila via proyecto_origen_id, nunca duplica, el sku nunca cambia en republicaciones) quedo probada dos veces: una vez con datos sinteticos en el test automatizado, otra vez de punta a punta via HTTP real contra dev-local.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-08-01T17:10:00Z",
+    "nota": "Supervisor aprobo explicitamente el delta de schema (2 columnas, 0 tablas nuevas) antes de escribir codigo, tal como exige AGENTS.md. Aprobacion cubre el delta de schema descrito; la implementacion completa (publicacion, UI) se verifica con QA propia antes de considerarse cerrada."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-08-01T17:10:00Z",
+  "cerrada_en": null
+}

@@ -1,0 +1,31 @@
+{
+  "id": "t-028",
+  "titulo": "Landing publica /espacios (indice de categorias)",
+  "intencion_negocio": "Ruta migrada del legacy /espacios. Pagina de indice que enlaza a las 6 categorias de espacios (cocinas, closets, cavas, etc).",
+  "zona": "app/(publico)/espacios",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/(publico)/espacios/page.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "generateMetadata con title/description propios",
+    "6 links a /cocinas-integrales-bogota, /closets-vestidores-bogota, /cavas-y-bares, /centros-de-entretenimiento, /estudios-home-office, /consolas-recibidores (next/link, no <a>)",
+    "sin Tailwind ni componentes de diseno del legacy -- estilo simple con inline styles, igual que el resto de app/(publico)/"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["npx tsc --noEmit: exit 0", "npx eslint .: exit 0", "curl end-to-end: GET /espacios -> 200"],
+    "salida_cruda": "Exacto al prompt en el primer intento, next/link usado correctamente.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T00:00:00Z",
+  "cerrada_en": "2026-08-02T04:20:00Z"
+}

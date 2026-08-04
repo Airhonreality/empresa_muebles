@@ -1,0 +1,39 @@
+{
+  "id": "t-030",
+  "titulo": "6 landings SEO por categoria de espacio (componente compartido + contenido real)",
+  "intencion_negocio": "6 rutas migradas del legacy: cavas-y-bares, centros-de-entretenimiento, closets-vestidores-bogota, cocinas-integrales-bogota, consolas-recibidores, estudios-home-office. En el legacy eran 6 paginas independientes usando un componente compartido por categoria -- se migra como 1 componente parametrizable + 6 configs de contenido real extraido del legacy, no 6 implementaciones sueltas.",
+  "zona": "app/(publico)",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "components/specialized/LandingEspacio.tsx (creado)",
+    "app/(publico)/cavas-y-bares/page.tsx (creado)",
+    "app/(publico)/centros-de-entretenimiento/page.tsx (creado)",
+    "app/(publico)/closets-vestidores-bogota/page.tsx (creado)",
+    "app/(publico)/cocinas-integrales-bogota/page.tsx (creado)",
+    "app/(publico)/consolas-recibidores/page.tsx (creado)",
+    "app/(publico)/estudios-home-office/page.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "LandingEspacio recibe titulo, descripcion, imagenUrl, altText como props -- NO hardcodea contenido de ninguna categoria especifica",
+    "las 6 paginas usan el mismo componente con datos DISTINTOS (title/description/imagen reales provistos en el prompt, extraidos del legacy, no inventados)",
+    "cada pagina tiene su propio generateMetadata con el title/description real de esa categoria",
+    "CTA a /agendar en cada una",
+    "sin Tailwind ni VetaHeader/VetaFooter del legacy (no existen en este repo) -- inline styles simples, consistente con el resto de app/(publico)/"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["npx tsc --noEmit: exit 0", "npx eslint .: exit 0", "lectura completa de LandingEspacio.tsx + 2 de las 6 paginas (cavas-y-bares, estudios-home-office) como muestra: componente parametrizable correcto, contenido real preservado del legacy, sin Tailwind/VetaHeader inexistentes", "curl end-to-end contra las 6 rutas: todas 200"],
+    "salida_cruda": "Exacto al prompt en el primer intento, incluyendo las 6 paginas con contenido real distinto (no genericas).",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T00:00:00Z",
+  "cerrada_en": "2026-08-02T04:20:00Z"
+}

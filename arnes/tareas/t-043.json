@@ -1,0 +1,40 @@
+{
+    "checkpoint":  {
+                       "nota":  "Ciclo C1-C6 consolidado (2026-08-03): convergencia estructuralmente estable. Checkpoint APROBADO por el Supervisor el 2026-08-03: todas las decisiones del Bloque C/B2/D y P5-09 fueron respondidas y aplicadas al Define y al mapa (ver log_insights_fase2.md I-053 y la seccion 'Checkpoint de decisiones' del consolidado). Se abre el loop 2 de diseno (schema/UI); quedan solo valores numericos configurables (ventanas SLA, % carpintero, neto disenador).",
+                       "requerido":  true,
+                       "veredicto_humano":  "aprobado",
+                       "fecha":  "2026-08-03"
+                   },
+    "id":  "t-043",
+    "plan_ref":  "arnes/diagnostico/pasadas/diamante2_metodologia_define.md",
+    "riesgo":  "alto",
+    "verificador":  "opencode orquestador (auditor)",
+    "zona":  "arnes/diagnostico/pasadas",
+    "criterios_aceptacion":  [
+                                 "Output con formato exacto de diamante2_metodologia_define.md (iteraciones 1/2/3 + tabla de hallazgos + notas para el Orquestador)",
+                                 "Cada hallazgo clasificado (MOVER_CONTEXTO/PARTIR_CONTEXTO/REFORZAR_FRONTERA/NUEVO_CONTRATO/DECISION_PENDIENTE/CORRECCION/OK_CON_DOC/DIFERIDO) y con trazabilidad archivo:linea",
+                                 "Anti-duplicacion: descarta YA RESUELTO (P2-P8 resueltos en el Define) y YA DIAMANTE 1 (cierre §4)",
+                                 "Regla de escepticismo: no inventa reglas de negocio; lo ambiguo se marca DECISION_PENDIENTE",
+                                 "Solo escribe su archivo de salida; no toca define, inventario, mapa ni cierre"
+                             ],
+    "archivos_afectados":  [
+                               "arnes/diagnostico/pasadas/define_c2_fronteras.md"
+                           ],
+    "qa":  {
+               "intentos":  2,
+               "salida_cruda":  "define_c2_fronteras.md: 13 hallazgos (C2-01..13), 45 trazas archivo:linea, formato OK. Veredicto: 9 contratos de §5 bien formados, ninguno contradictorio. Tabla §5 incompleta (>=6 flujos cruzados fuera, C2-01). 3 NUEVO_CONTRATO: C2-03 (E-59 fila del taller, cruza capas -> checkpoint), C2-04 (E-31 Taller->Finanzas), C2-05 (E-52 Comercial->Control). C2-11 CORRECCION E-23 destinatario del push.",
+               "veredicto":  "aprobado",
+               "comandos":  [
+                                "lectura del output",
+                                "verificacion de formato/clasificacion/trazabilidad",
+                                "cruce contra inventario y panorama (anti-duplicacion)"
+                            ]
+           },
+    "intencion_negocio":  "Ciclo de pasadas agentivas sobre la CONVERGENCIA del segundo diamante (el par de contextos como unidad). Cada interfaz del §5 es explicita, minima, estable y tipada? Acoplamiento oculto? Contextos que se hablan sin evento de frontera? Contratos con dueno? Valida P3-02 (dinero Contratos-Finanzas) y E-08.. No escribe inventario ni mapa: solo su archivo de salida. Valida resoluciones de P2-P8, no re-reporta problemas.",
+    "tipo":  "mutacion_arnes",
+    "ejecutor":  "opencode subagente t-043",
+    "creada_en":  "2026-08-03T00:00:00Z",
+    "estado":  "cerrada",
+    "titulo":  "Pasada C2 fronteras: interfaces entre contextos",
+    "cerrada_en":  "2026-08-03T00:00:00Z"
+}

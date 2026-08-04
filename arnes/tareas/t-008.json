@@ -1,0 +1,46 @@
+{
+  "id": "t-008",
+  "titulo": "Modulo Cotizador: crear/editar proyecto con espacios, variantes e items",
+  "intencion_negocio": "El equipo comercial arma cotizaciones (proyecto -> espacios -> variantes -> items de catalogo) y ve el total calculado. Es el modulo mas complejo del ERP legacy.",
+  "zona": "app/app/erp/cotizador",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "app/app/erp/cotizador/page.tsx (creado)",
+    "app/app/erp/cotizador/[proyectoId]/page.tsx (creado)",
+    "app/api/erp/proyectos/route.ts (creado)",
+    "app/api/erp/proyectos/[id]/espacios/route.ts (creado)",
+    "lib/modules/cotizador/calculo.ts (creado)",
+    "lib/modules/cotizador/calculo.test.ts (creado, no listado originalmente pero requerido por criterios de aceptacion)",
+    "lib/modules/cotizador/queries.ts (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "lib/modules/cotizador/calculo.ts es logica pura con 3+ casos de prueba",
+    "Componentes de edicion de espacios/items 100% controlados desde el padre",
+    "No inventa campos que no esten en lib/db/schema.ts"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (subagente)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit (orquestador, re-ejecutado): exit 0",
+      "npx tsx lib/modules/cotizador/calculo.test.ts (orquestador, re-ejecutado): 5/5 casos OK, exit 0",
+      "grep 'useState(' en calculo.ts: cero ocurrencias, confirmado logica pura",
+      "find de los 7 archivos esperados: todos presentes"
+    ],
+    "salida_cruda": "PASS materiales+manoObra / PASS costos_operativos+descuento+ajuste / PASS IVA condicional / PASS variantes activa=false excluidas / PASS totalLinea precalculado. 5/5. tsc exit 0.",
+    "veredicto": "aprobado",
+    "verificacion_end_to_end_2026_08_01": "Contra dev-local (Neon real): GET /api/erp/proyectos?id=... con sesion admin devolvio el proyecto sembrado con espacios e items reales (join correcto). No se probo el PUT de guardado de espacios en esta pasada (se probo POST de contratos y checkout, que eran mas criticos); queda como verificacion end-to-end pendiente si se quiere blindar mas antes del checkpoint."
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "logica_negocio, riesgo alto: codigo commiteado en dev (reversible), pero NO se considera terminado para produccion hasta que el Supervisor lo revise. Decisiones del ejecutor no cubiertas por el plan original: tarifas de mano de obra se pasan como parametro (no hay columna en schema para eso), campos financieros del proyecto (costos_operativos etc) se muestran pero no son editables desde esta UI todavia -- falta un PATCH /api/erp/proyectos/[id] futuro."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": null
+}

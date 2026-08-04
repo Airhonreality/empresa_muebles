@@ -1,0 +1,49 @@
+{
+  "id": "t-009",
+  "titulo": "Modulo Contratos: generar contrato + hitos de pago (componente controlado desde el dia 1)",
+  "intencion_negocio": "Recrear el flujo de contrato que causo el incidente de hoy, pero bien: hitos_pago como tabla relacional, componente de edicion sin el bug de estado-desde-props.",
+  "zona": "app/app/erp/contratos",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "app/app/erp/contratos/[proyectoId]/page.tsx (creado)",
+    "app/api/erp/contratos/route.ts (creado)",
+    "components/erp/PaymentScheduleEditor.tsx (creado)",
+    "components/erp/ContratoForm.tsx (creado, no listado originalmente -- necesario porque page.tsx debe ser server component)",
+    "lib/modules/contratos/queries.ts (creado)",
+    "lib/modules/contratos/pdf.ts (creado)",
+    "lib/modules/contratos/types.ts (creado, no listado originalmente -- evita que el componente cliente importe el driver de Postgres)",
+    "lib/modules/contratos/validacion.ts (creado)",
+    "lib/modules/contratos/validacion.test.ts + pdf.test.ts (creados, requeridos por criterios de aceptacion)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "PaymentScheduleEditor.tsx 100% controlado, CERO useState propio de la lista de hitos",
+    "Suma de hitos validada con tolerancia 0.01, test con hitos mixtos",
+    "Texto del contrato refleja hitos reales, sin 'undefined' cuando falta razon"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (subagente)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit (orquestador, re-ejecutado): exit 0",
+      "npx tsx lib/modules/contratos/validacion.test.ts (orquestador, re-ejecutado): 3/3 OK",
+      "npx tsx lib/modules/contratos/pdf.test.ts (orquestador, re-ejecutado): 4/4 OK",
+      "grep 'useState(' en PaymentScheduleEditor.tsx: CERO ocurrencias reales (solo aparece la palabra dentro de un comentario que explica el incidente y cita el commit legacy 5da0f95 -- verificado leyendo el archivo completo, no solo el grep)"
+    ],
+    "salida_cruda": "validacion.test.ts: OK caso1/caso2/caso3, todos pasaron. pdf.test.ts: OK caso1 (sin undefined)/caso2 (cronograma dinamico)/caso3 (fallback sin placeholder redundante)/caso4 (contrato sin hitos). tsc exit 0.",
+    "veredicto": "aprobado",
+    "verificacion_end_to_end_2026_08_01": "Contra dev-local (Neon real, ver arnes/estado.md): POST /api/erp/contratos con hitos NO estandar (40/35/25, exactamente el tipo de caso que causo el bug original) sobre el proyecto sembrado. Releido directo de la tabla hitos_pago despues: se guardo 40/35/25 exacto, SIN revertir a 50/25/25. El bug original de esta migracion, confirmado corregido de punta a punta, no solo a nivel de codigo aislado."
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "logica_negocio + es el modulo del incidente de hoy: codigo commiteado en dev (reversible), pero NO se considera terminado para produccion hasta que el Supervisor lo revise explicitamente. El comentario en PaymentScheduleEditor.tsx cita el incidente real y el commit legacy 5da0f95 -- verificado que es preciso, no inventado. Ahora hay ademas evidencia end-to-end real (ver qa.verificacion_end_to_end_2026_08_01), pero el veredicto sigue siendo exclusivo del Supervisor."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": null
+}

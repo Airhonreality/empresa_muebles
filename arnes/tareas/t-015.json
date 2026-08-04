@@ -1,0 +1,50 @@
+{
+  "id": "t-015",
+  "titulo": "Checkout: cliente autenticado crea un pedido_web desde el catalogo publico",
+  "intencion_negocio": "Cierra el flujo de tienda que motivo el autoregistro (§2.1 del plan): un cliente ya logueado debe poder armar un carrito simple de productos publicados y confirmar un pedido real.",
+  "zona": "app/cuenta/pedido",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/modules/pedidos/calculo.ts (creado)",
+    "lib/modules/pedidos/calculo.test.ts (creado)",
+    "lib/modules/pedidos/queries.ts (creado)",
+    "app/api/pedidos/route.ts (creado)",
+    "app/cuenta/pedido/page.tsx (creado)",
+    "components/cuenta/PedidoCarritoForm.tsx (creado, no listado originalmente -- necesario para el carrito interactivo)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "Test unitario confirma que el precio se recalcula server-side, ignorando cualquier precio del cliente",
+    "clienteId siempre de la sesion, nunca del body",
+    "Componentes controlados sin useState-desde-props"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (subagente)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente, QA exhaustivo dado el riesgo)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit (orquestador): exit 0",
+      "npx eslint . (orquestador): exit 0",
+      "npx tsx lib/modules/pedidos/calculo.test.ts (orquestador): 5/5 OK",
+      "Lectura manual COMPLETA de calculo.ts: confirmado que ItemPedidoInput NO tiene campo precioUnitario -- estructuralmente imposible leer un precio del cliente",
+      "Lectura manual COMPLETA de app/api/pedidos/route.ts: confirmado que crearPedidoSchema (zod) no declara precioUnitario, que preciosReales se consulta FRESCO en cada POST via obtenerPreciosPublicadosPorIds, y que clienteId sale de requireCliente() (user.clienteId), nunca de parsed.data",
+      "Lectura manual COMPLETA de queries.ts: confirmado que el WHERE filtra publicado_web=true AND precio_publico IS NOT NULL, y que crearPedidoWeb nunca recibe un precio distinto al ya validado",
+      "grep 'useState' en PedidoCarritoForm.tsx: confirmado que items inicia en [] (no derivado de prop async), patron seguro"
+    ],
+    "salida_cruda": "Todos los comandos exit 0. Cadena de seguridad de precio verificada linea por linea, no solo aceptado el reporte del ejecutor -- esta es la tarea de mayor riesgo real (dinero) de toda la sesion, se le dio el nivel de escrutinio correspondiente.",
+    "veredicto": "aprobado",
+    "verificacion_end_to_end_2026_08_01": "Contra dev-local (Neon real): se ejecuto el ataque exacto que esta logica esta disenada para prevenir -- POST /api/pedidos con sesion cliente@dev.local, body { items: [{ catalogoId, cantidad: 2, precioUnitario: 1 }] } (precio inventado por el cliente). Respuesta 201, pedido creado con itemsSnapshot.precioUnitario=65000 (el real, de productos_catalogo) y subtotal/total=130000.00 (2 x 65000), NO 2. Confirmado en runtime, no solo por lectura de codigo: un cliente no puede fijar su propio precio."
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "logica_negocio + dinero real: codigo commiteado en dev (reversible) pero NO se considera terminado para produccion hasta revision explicita del Supervisor. A diferencia de otras tareas, esta se verifico con lectura completa de los 3 archivos criticos, no solo comandos automatizados -- el criterio de 'nunca confiar en el precio del cliente' es exactamente el tipo de cosa que un comando automatizado (tsc/eslint) NO puede detectar si el codigo estuviera mal escrito de otra forma (ej. si alguien hubiera agregado un campo precioUnitario opcional 'por si acaso'). Ahora ademas verificado en runtime real con el ataque exacto (ver qa.verificacion_end_to_end_2026_08_01) -- el veredicto de produccion sigue siendo exclusivo del Supervisor."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-07-31T22:35:00Z",
+  "cerrada_en": null
+}

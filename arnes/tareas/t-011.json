@@ -1,0 +1,31 @@
+{
+  "id": "t-011",
+  "titulo": "Extension no planeada de t-006: detalle de producto + CRUD helpers + join con proveedores + API REST",
+  "intencion_negocio": "Ampliar el listado basico de catalogo (t-006) a algo usable: ver detalle de un producto y tener las funciones de escritura (y ahora endpoint REST) listas para una futura pantalla de edicion.",
+  "zona": "app/app/erp/catalogo",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/app/erp/catalogo/[id]/page.tsx (creado)",
+    "app/app/erp/catalogo/page.tsx (modificado: mas columnas, link a detalle, formato de moneda)",
+    "lib/modules/catalogo/queries.ts (modificado: join con proveedores, CRUD completo)",
+    "app/api/erp/catalogo/route.ts (creado despues, en una segunda ronda de la misma anomalia: GET/POST/PATCH/DELETE con zod + manejo de SKU duplicado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores (verificado, exit 0, junto con el resto del arbol)"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 2,
+    "comandos": ["npx tsc --noEmit", "Read manual de [id]/page.tsx y de app/api/erp/catalogo/route.ts completos"],
+    "salida_cruda": "exit 0 en ambas rondas. Codigo revisado manualmente: sigue las mismas convenciones (requireEmpleado, formato es-CO), route.ts valida con zod, maneja error 23505 (SKU duplicado) devolviendo 409 en vez de 500 generico -- manejo de errores correcto, no generico.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T21:10:00Z",
+  "cerrada_en": "2026-07-31T21:35:00Z",
+  "nota_proceso": "ANOMALIA DE PROCESO recurrente, marcada honestamente: opencode siguio escribiendo en catalogo/ en DOS rondas separadas, ninguna pedida explicitamente por el orquestador despues del prompt original de t-006. Confirma la hipotesis de que el proceso de opencode invocado para t-006/t-010 continua trabajando en segundo plano mas alla de la notificacion de 'completado' del comando -- el orquestador NO tiene visibilidad/control total sobre el ciclo de vida real de estos procesos una vez lanzados. Se acepto el trabajo ambas veces tras QA real (no solo aceptar la palabra de nadie), pero esto es una limitacion de la herramienta que el Supervisor debe conocer: no usar opencode para tareas donde el descontrol de alcance sea inaceptable, y considerar matar procesos node.exe huerfanos al final de la sesion."
+}

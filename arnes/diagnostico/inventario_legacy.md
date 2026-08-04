@@ -1,0 +1,116 @@
+# Inventario arquitectónico del repo legacy — tarea t-002
+
+> Fuente: `empresa_muebles_clone` (motor "Agnostic Seed" + fork "Veta de Oro / Hermanos García González S.A.S."). Observación pura, sin propuesta de arquitectura destino. Fecha de lectura: 2026-07-31. Nota de método: los árboles auto-generados en `storage/docs/*.md` están fechados 2026-07-03 y quedaron desactualizados frente a `storage/db/*.json` (39 schemas reales vs. 37 documentados, 31 zaps reales vs. 25 documentados, 20 rutas reales). Este inventario usa los JSON crudos como fuente y los `.md` solo como guía de lectura.
+
+## 1. Módulos funcionales reales
+
+- **Cotizador (`/app/erp/cotizador`, `cotizador_pro`)** — Arma un proyecto por "espacios" (cocina, closet, etc.) con variantes, ítems de catálogo/prefabricados y cálculo de precios (`CotizadorPro.tsx`, `EspacioCard.tsx`, `ItemRow.tsx`, `MoneyInput.tsx`). Incluye selector de cliente híbrido, panel de apoyo técnico (`apoyo_tecnico`), lista de tareas del proyecto y línea de tiempo. Dispara `generar_contrato`, `zap_activar_produccion`, `recalcular_precio_prefabricado`. Datos: `proyectos`, `espacio_variantes`, `items_variante`, `productos_catalogo`.
+- **Contratos (`ContratoModal.tsx`, `ContratoGenerator.tsx`, `ContratoEmailModal.tsx`)** — Genera el contrato legal de un proyecto (código, plazo, garantía, especificaciones de estructura/herrajes/mesones, condiciones de desmonte) y un cronograma de "hitos de pago" (`PaymentScheduleCalculator.tsx`) editable, con validación de que la suma cubra el valor total. Envía email y exporta PDF. Zaps: `generar_contrato`, `exportar_contrato_pdf`, `exportar_propuesta_pdf(_simplificada)`, `reimprimir_snapshot`.
+- **Producción / Taller (`/app/erp/taller`, `production_kanban`, `FichaProduccion.tsx`)** — Kanban de órdenes de trabajo y tareas de producción por operario, ficha de producción por proyecto (`/app/ficha/:id`), semáforo de suministros (`SemaforoSuministrosBadge`) y radar de pedidos al taller (`RadarPedidosTaller`). Datos: `ordenes_trabajo`, `tareas_produccion`. Zaps: `crear_orden_trabajo`, `pausar_tarea`, `finalizar_tarea`, `zap_activar_produccion`, `analisis_lista_corte`.
+- **Compras / Abastecimiento (`WidgetArmadoOrdenCompra.tsx` → `CentralAbastecimientoGlobal`, `compras/CatalogoManager.tsx`, `compras/ProveedoresDirectory.tsx`)** — Consolida órdenes de compra por proveedor o por proyecto; gestiona proveedores. Datos: `compras_materiales`, `proveedores`. Zap: `zap_generar_orden_compra`.
+- **Finanzas (`/app/erp/finanzas`, `finanzas_shell`)** — Shell de KPIs + colecciones de cuentas, movimientos, categorías, obligaciones pendientes y comprobantes; incluye conciliación bancaria (`ConciliacionBancaria.tsx`, movimiento vs. obligación). Datos: `cuentas_financieras`, `movimientos_financieros`, `categorias_financieras`, `obligaciones_pendientes`, `comprobantes_financieros`. Zaps: `zap_registrar_pago`, `zap_registrar_cobro_contrato`, `zap_registrar_ingreso_banco`, `zap_liquidar_obligacion`, `zap_liquidar_utilidades_proyecto`, `zap_anular_movimiento`, `zap_convertir_orden_en_obligacion`, `zap_crear_obligacion_pendiente`, `zap_conciliar_movimiento`, `zap_registrar_horas_laborales`, `zap_actualizar_costos_proyecto`.
+- **Catálogo (`/app/erp/catalogo`, `catalogo_manager`)** — Administra productos de catálogo (precio directo/público, dimensiones, modelo 3D, stock) y prefabricados (kits compuestos de ítems de catálogo). Zaps: `actualizar_catalogo_precio`, `recalcular_precio_prefabricado`.
+- **Clientes** — No tiene ruta ERP dedicada propia en `page_routes.json` (se gestiona embebido dentro del cotizador vía `HybridClientSelector.tsx`); el namespace `clientes` es transversal a proyectos, contratos y obligaciones.
+- **Kanban comercial (`/app/erp/comercial`, `comercial_kanban`)** — Tablero de estados del embudo de ventas de `proyectos` (`ComercialKanban.tsx`, `ComercialCard.tsx`, `KanbanCanvas.tsx` genérico reutilizado también por producción). Incluye diálogo de transición comercial→producción (`ProductionTransitionDialog.tsx`) y `zap_validar_transicion_estado`.
+- **Calendario (`/app/erp/calendar`, `calendar_scheduler`)** — Agenda operativa por departamento con vistas mes/semana/día/agenda (`calendar-scheduler/` es el módulo activo con capas `model/`, `views/`, `primitives/`; existe además una carpeta hermana `calendar/CalendarScheduler.tsx` que parece una versión anterior/paralela no confirmada como activa). Datos: `tareas_operativas`.
+- **Equipo / Proveedores / Perfil (`equipo_directory`, `proveedores_directory`, `user_profile`)** — Directorios CRUD simples de personal (`usuarios_equipo`) y proveedores, más perfil de usuario autenticado.
+- **Portafolio (`/portafolio` público + `/app/erp/portfolio` privado, `portfolio_manager`/`veta_portfolio`)** — Casos de proyectos reales publicados sin precios, con imágenes (`portfolio_publico`, `imagenes_portfolio`), filtrado por barrio/categoría.
+- **Sitio público / marketing (Veta*)** — Home (`VetaHome.tsx`), catálogo público (`/colecciones`, `veta_catalog`), ficha de producto (`/colecciones/:slug`), formulario de agendamiento de asesoría (`/agendar`, `veta_agendar` → namespace `leads`), testimonios, footer/header, y un set nuevo de landing pages por categoría de espacio ("Espacios High-Design", carpeta `spaces/`: `CochinasPage`, `ClosetsPage`, `CavasPage`, `RecibidoresPage`, `EntretenimientoPage`, `EstudiosPage`) en desarrollo activo al momento de este inventario (iniciativa vigente según `current_state.md`).
+- **Cuenta de cliente / tienda (`/cuenta`, `veta_cuenta`, carpeta `cart/`, `public/`)** — Portal de cliente con carrito (`CartContext.tsx`, `CartDrawer.tsx`, `CheckoutForm.tsx`), consulta de pedidos y acceso web (`ClienteAccesoWeb.tsx`). Zaps: `consultar_portal_cliente`, `consultar_pedidos_cliente`. Datos: `pedidos_web`, `propuestas_publicas`. Nota: `current_state.md` (2026-07-06/07) documenta que esta lane (`webstore-clientes`) quedó con "DoD SIN verificar" en cierto punto y que `/tienda` fue eliminada a favor de `/colecciones` como ruta canónica — no está confirmado en este inventario si toda esa deuda ya se saldó.
+- **Diseñador / motor genérico (`DataBrowser.tsx`, `WorkspaceSwitcher.tsx`, `AgnosticHeader/Navbar.tsx`)** — No es un módulo de negocio; es la UI del motor Agnostic Seed para inspeccionar/editar schemas, rutas y registros. Se documenta aquí solo porque ocupa espacio real en `specialized/` aunque pertenece a la capa de motor, no de negocio.
+
+## 2. Schemas de datos (namespaces) traducidos a lenguaje de negocio
+
+| Namespace | Qué representa en el negocio | Campos clave | Relaciones |
+|---|---|---|---|
+| `clientes` | Persona o empresa que compra | nombre, documento, teléfono, email, domicilio | referenciado por `proyectos`, `obligaciones_pendientes` |
+| `proyectos` | Un proyecto de mueble a medida para un cliente (unidad central del negocio) | nombre_proyecto, dirección_obra, estado, descuento_comercial, costos_operativos | → `clientes`; referenciado por casi todo (contratos, órdenes, espacios, obligaciones) |
+| `espacio_variantes` | Una habitación/espacio del proyecto (ej. "cocina") con variantes de diseño alternativas | nombre_espacio, nombre_variante, jornadas de desarrollo/ensamblaje/instalación, imágenes, `visible_pdf` | → `proyectos`; referenciado por `items_variante`, `imagenes_espacio`, `registros_tecnicos`, `items_obra_civil` |
+| `items_variante` | Línea de producto/material dentro de una variante de espacio (lo que se cotiza) | catalogo_id, cantidad, precio_unitario, total_línea, origen_prefabricado_id | → `espacio_variantes`, `productos_catalogo`, `prefabricados` |
+| `items_obra_civil` | Ítems de obra civil (mano de obra, logística, materiales) asociados a un espacio, con o sin ítem de catálogo | categoría, catalogo_id opcional, descripción manual, cantidad | → `espacio_variantes`, `productos_catalogo` |
+| `productos_catalogo` | Catálogo maestro de productos/materiales (venta y compra) | sku, precio_directo, precio_publico, stock_actual, modelo_3d, categoria_comercial | → `proveedores` |
+| `prefabricados` / `prefabricados_items` / `imagenes_prefabricado` | Kits compuestos de varios ítems de catálogo, vendibles como unidad | nombre, catalogo_id, cantidad por ítem | → `productos_catalogo` |
+| `contratos` | El contrato legal firmado de un proyecto | codigo_contrato, plazo_ejecucion_texto, garantía, especificaciones (estructura/herrajes/mesones), valor_total, estado, `hitos_pago` (usado en runtime, no listado como campo formal en el árbol generado — ver sección 4) | → `proyectos` |
+| `abonos_contrato` | Registro de un abono/pago parcial recibido contra un contrato | numero_abono, valor_abono, fecha_recibido, verificado | → `contratos` |
+| `ordenes_trabajo` | Orden de producción emitida para el taller a partir de un proyecto | codigo_orden, estado, fecha_entrega | → `proyectos`; referenciado por `tareas_produccion` |
+| `tareas_produccion` | Tarea operativa dentro de una orden de trabajo (ej. "cortar tablero X") | nombre_tarea, estado, operario_id | → `ordenes_trabajo`, `espacio_variantes` |
+| `tareas_operativas` | Tarea de calendario/agenda por departamento (no necesariamente de taller) | titulo, departamento, estado, fase_kanban, fecha_limite | → `proyectos`, `usuarios_equipo` |
+| `plantillas_tareas` | Plantilla que genera tareas automáticamente al entrar a cierta fase del kanban | fase_kanban_trigger, titulo_tarea, departamento, dias_offset | (metadato, no relacional) |
+| `compras_materiales` | Compra real de material a un proveedor, opcionalmente ligada a un proyecto | material_id, cantidad, costo_real_compra, estado | → `productos_catalogo`, `proveedores`, `proyectos` |
+| `proveedores` | Proveedor de materiales/servicios | nombre, nit, categoría | referenciado por `productos_catalogo`, `compras_materiales`, `obligaciones_pendientes` |
+| `cuentas_financieras` | Cuenta bancaria/caja de la empresa | nombre, tipo, saldo_inicial, saldo_actual | referenciada por `movimientos_financieros` |
+| `categorias_financieras` | Categoría de ingreso/egreso para reportería financiera | nombre, tipo_flujo, subtipo | referenciada por `movimientos_financieros` |
+| `movimientos_financieros` | Un movimiento real de dinero (ingreso/egreso/transferencia) | fecha, tipo, monto, estado, cuenta_origen/destino | → `cuentas_financieras`, `categorias_financieras`, `obligaciones_pendientes` |
+| `obligaciones_pendientes` | Deuda pendiente (por cobrar o por pagar), unifica cxc y cxp | monto_total, monto_pagado, fecha_vencimiento, estado | → `proveedores`, `clientes`, `usuarios_equipo`, `proyectos`, `contratos` |
+| `comprobantes_financieros` | Soporte documental de un movimiento | numero_referencia, archivo_soporte | referenciado desde `movimientos_financieros.comprobante_ref` (no tipada) |
+| `usuarios_equipo` | Empleado/miembro del equipo (login, costo por hora) | nombre, email, rol, estado, costo_hora | referenciado por `tareas_operativas`, `obligaciones_pendientes`, `registro_horas` |
+| `registro_horas` | Horas trabajadas por un empleado en un proyecto | usuario_id, proyecto_id, horas_ordinarias, horas_extras, estado_pago | → `usuarios_equipo`, `proyectos` |
+| `registro_logistica` | Envío/flete de un pedido | nombre_flete, dirección_destino, estado_flete, fecha_viaje | sin relación tipada visible |
+| `registros_tecnicos` | Bitácora de eventos técnicos de una variante (visita, medición, etc.) con archivos multimedia | etiqueta_evento, responsable, archivos_multimedia | → `espacio_variantes` |
+| `project_tasks` | Tarea de seguimiento a nivel de variante de espacio (distinta de `tareas_operativas`/`tareas_produccion`) | descripción, estado, creado_por | → `espacio_variantes` |
+| `apoyo_tecnico` | Recurso de apoyo técnico para un proyecto (visita, imagen, requisitos) | tipo_recurso, fecha_visita, lista_requisitos | → `proyectos` |
+| `leads` | Prospecto capturado por el embudo de marketing del sitio público | nombre, teléfono_whatsapp, gclid, utm_*, score_conversion | sin relación tipada; se convierte manualmente en `proyectos` |
+| `testimonios` | Reseña de cliente para mostrar en el sitio público | nombre_cliente, texto_resena, calificación, destacado | relación libre a `proyecto_relacionado` (texto no tipado) |
+| `configuracion_comercial` | Pares llave/valor de configuración (ej. datos NAP del negocio) | llave, valor, grupo, etiqueta | metadato |
+| `portfolio_publico` / `imagenes_portfolio` | Caso de proyecto publicado en el portafolio público (sin precios) | titulo, slug, categoria_espacio, barrio | → `proyectos` (portfolio_publico); `imagenes_portfolio` → `portfolio_publico` |
+| `propuestas_publicas` | Snapshot de una propuesta comercial expuesta públicamente vía slug | public_slug, snapshot_json, estado, emitida_en/revocado_en | → `proyectos` |
+| `pedidos_web` | Pedido generado desde la tienda/checkout web | items_snapshot, subtotal, total, dirección_entrega | cliente_id/user_id como texto libre, no relación tipada |
+| `nav_links` | Enlaces de navegación configurables | label, path, icon, orden, grupo | metadato de UI |
+| `system_groups` | Agrupador de metadatos del diseñador (agrupa rutas/schemas/scripts) | name, kind | metadato del motor, no de negocio |
+| `seed_registros` | Registro de rastreo de datos mock sembrados en local, para poder limpiarlos antes de un push a producción | namespace, record_id, lote, nota | ver sección 4, contrato operativo |
+
+## 3. Automatizaciones de servidor (zaps) relevantes
+
+| Zap | Qué hace | Namespaces que toca |
+|---|---|---|
+| `generar_contrato` | Crea el contrato de un proyecto a partir de los espacios/ítems cotizados | clientes, contratos, espacio_variantes, items_variante, productos_catalogo, proyectos |
+| `zap_activar_produccion` | Pasa un proyecto de comercial a producción: crea orden de trabajo y obligación pendiente | clientes, contratos, espacio_variantes, items_variante, obligaciones_pendientes, ordenes_trabajo, productos_catalogo, proyectos |
+| `zap_validar_transicion_estado` | Valida que una transición de estado del kanban comercial/producción sea legal según la matriz de estados | cableado en kanban comercial, según `current_state.md` |
+| `registrar_abono_y_activar` | Registra un abono de contrato y activa el siguiente paso | abonos_contrato, contratos, ordenes_trabajo, proyectos |
+| `zap_registrar_cobro_contrato` | Registra un cobro contra un contrato y lo refleja en cuentas/movimientos | abonos_contrato, cuentas_financieras, movimientos_financieros, obligaciones_pendientes |
+| `zap_registrar_pago` / `zap_registrar_ingreso_banco` | Registra un pago/ingreso bancario | cuentas_financieras, movimientos_financieros, obligaciones_pendientes |
+| `zap_liquidar_obligacion` | Marca una obligación pendiente como pagada/liquidada | cuentas_financieras, movimientos_financieros, obligaciones_pendientes |
+| `zap_liquidar_utilidades_proyecto` | Calcula y liquida la utilidad de un proyecto terminado | compras_materiales, movimientos_financieros, obligaciones_pendientes, proyectos, usuarios_equipo |
+| `zap_anular_movimiento` | Reversa un movimiento financiero | cuentas_financieras, movimientos_financieros, obligaciones_pendientes |
+| `zap_conciliar_movimiento` | Concilia un movimiento bancario contra una obligación | namespaces no confirmados por el árbol generado (ver sección 5) |
+| `zap_convertir_orden_en_obligacion` / `zap_crear_obligacion_pendiente` | Convierte una orden de compra en una obligación por pagar / crea una obligación manual | obligaciones_pendientes |
+| `zap_generar_orden_compra` | Genera una orden de compra consolidada | namespaces no confirmados por el árbol generado |
+| `zap_registrar_horas_laborales` | Registra horas trabajadas de un empleado | namespaces no confirmados (presumiblemente `registro_horas`) |
+| `zap_actualizar_costos_proyecto` | Recalcula costos operativos de un proyecto | namespaces no confirmados |
+| `crear_orden_trabajo` | Crea una orden de trabajo de producción | ordenes_trabajo |
+| `pausar_tarea` / `finalizar_tarea` | Cambian el estado de una tarea de producción | tareas_produccion |
+| `analisis_lista_corte` | Genera análisis de lista de corte para taller | namespaces no confirmados |
+| `actualizar_catalogo_precio` | Actualiza precios del catálogo | productos_catalogo |
+| `recalcular_precio_prefabricado` | Recalcula el precio público de un prefabricado a partir de sus ítems | namespaces no confirmados (presumiblemente `prefabricados`, `productos_catalogo`) |
+| `exportar_contrato_pdf` / `reimprimir_snapshot` | Exportan el contrato firmado a PDF / reimprimen el snapshot de un proyecto | clientes, contratos, proyectos |
+| `exportar_propuesta_pdf` / `exportar_propuesta_pdf_simplificada` | Exportan la propuesta comercial (pre-contrato) a PDF, en dos formatos | clientes, espacio_variantes, imagenes_espacio, items_variante, productos_catalogo, proyectos, templates |
+| `capturar_lead_embudo` | Captura un lead del formulario público de agendamiento | leads |
+| `actualizar_score_lead` | Recalcula el score de conversión de un lead | leads |
+| `consultar_portal_cliente` / `consultar_pedidos_cliente` | Autentican/consultan datos del portal de cliente y sus pedidos | probablemente `pedidos_web`, `clientes` — no confirmado, posterior a la fecha del árbol generado |
+| `script_evento_0411` | Zap sin propósito de negocio identificable desde su nombre/namespaces (`no_detectados` en ambos campos) | no identificado |
+
+Nota: `zap_conciliar_movimiento`, `zap_generar_orden_compra`, `zap_registrar_horas_laborales`, `zap_actualizar_costos_proyecto`, `recalcular_precio_prefabricado`, `consultar_portal_cliente`, `consultar_pedidos_cliente` no tienen namespaces resueltos en `storage/docs/arbol_de_zaps.md` (desactualizado al 2026-07-03) o son posteriores a esa fecha; su lógica real vive en `storage/db/scripts.json` y no se leyó línea por línea en este inventario.
+
+## 4. Patrones de arquitectura que NO deben repetirse en el repo nuevo
+
+- **Estado de React inicializado desde props sin sincronización posterior (`useState(prop)` en un hijo montado antes de que el padre termine de cargar datos async).** Evidencia real: commit `5da0f95` ("fix: hitos de pago personalizados no persistian por estado no controlado"). `PaymentScheduleCalculator.tsx` guardaba su propio `useState` inicializado desde `initialMilestones` solo al montar; cuando `ContratoModal.tsx` cargaba el contrato existente de forma asíncrona (después del montaje del hijo), el hijo ya estaba montado y nunca reflejaba los datos cargados — siempre mostraba el cronograma estándar 50-25-25 sin importar lo guardado en base de datos. Tomó al menos 7 commits de fix (`fbe9bdd`, `5da0f95`, `2ed962d`, `3359229`, `7cbe59a`, `3ac1291`, `a93a104`) antes de resolverse convirtiendo el componente en totalmente controlado (props `milestones`/`onChange`, sin estado propio).
+- **Cambios de lógica de servidor en git que nunca se sincronizan automáticamente a la base de datos de producción.** El contrato operativo vigente (`storage/AGENTS.md`, `current_state.md`) establece que git/`main` es el "estado deseado" de `schema_definitions`, `page_routes` y `scripts`, pero Neon es "la proyección aplicada que usa producción", sincronizada por un comando manual (`npm run push-data` / `scripts/push-data.ts`). `current_state.md` documenta explícitamente que "migración idempotente, registro de revisión/checksum, CI de reconciliación, guardas del diseñador y promoción verificable todavía **no están implementados**".
+- **Motor genérico schema-driven con invariante no negociable sin chequeo de tipos en compilación.** `CLAUDE.md`: `block.context === schema.data.name === data_file_name_without_json`; si diverge, "el engine puede no renderizar nada sin un error obvio" — el propio motor admite fallos de contrato silenciosos.
+- **Mutaciones de storage/config en un solo paso no inspeccionable.** `CLAUDE.md` ("Harness Mutation Rule") impone `plan → --dry → confirmación explícita → backup automático` para cualquier comando que mute `storage/` o `agnostic.config.ts` más allá de un registro trivial — señal de que mutaciones directas fueron riesgo real.
+- **Trabajo concurrente de agentes sobre el mismo `.git`/worktree sin serialización + herramientas GUI de git en paralelo.** `current_state.md` (cierre 2026-07-06): "dos rondas de agentes en paralelo sobre el mismo `.git` + `worktree remove` abortado por rutas largas + watcher GitKraken → se perdió `.git/objects`", requirió trasplantar `.git` desde un remoto de respaldo (`INCIDENTE_GIT_2026-07-06.md`).
+- **Cambiar la "superficie" de una lane/tarea sin contrato explícito ni checkpoint.** Cierre 2026-07-29: cambios de flujo de contrato hechos en la rama `goal/webstore-checkout-pagos` modificaron la superficie "prohibida" de otra lane ya cerrada; quedó "documentado como desviación, no revertido".
+
+## 5. Zonas grises / deuda no resuelta que el Supervisor debe decidir
+
+- **Autoridad real de datos de producción (Git vs. Neon) es un contrato operativo declarado, no forzado técnicamente** ("no se autoriza... es un contrato operativo; no afirmar que esté bloqueado técnicamente hasta que una lane lo evidencie").
+- **ADR de "revisiones de definiciones" implementado solo parcialmente** — export/bundle/CAS/`DefinitionReader` existen, pero activación real (migración Neon, primera revisión publicada, vars Vercel) pendiente de gate humano; modo efectivo sigue en `legacy`.
+- **Warnings inheridos de `validate:zaps` no resueltos** (alias `cotizacion_id`, `producto_id`, `cuenta_id`, zaps con `body`-stored no estándar) — no bloquean pero no está claro si siguen en uso real.
+- **Ruta corrupta (`"C:/Program Files/Git/tienda"` en `page_routes.json`, hallazgo 2026-07-07)** — no aparece en la versión leída hoy, pero sin commit/nota explícita que confirme la limpieza.
+- **`db/` raíz duplicando `storage/db/`**, y `storage/db/` fuera del whitelist de `.gitignore` (hallazgo 2026-07-05, sin cierre documentado).
+- **Deuda TypeScript: 21 errores de `tsc`** detectados 2026-07-06 (7 de componentes de la extinta `/tienda`), lane `ts-debt` planeada sin evidencia de cierre.
+- **`cobro.json` sin destino** — hallazgo abierto 2026-07-06, sin resolución documentada.
+- **Lane `webstore-clientes` con "DoD SIN verificar"** al cierre 2026-07-06 (zap `consultar_portal_cliente`, `register/route.ts`, `VetaCuenta`, `ClienteAccesoWeb`) — no confirmado si se verificó después.
+- **Duplicación de módulo calendario:** `calendar/CalendarScheduler.tsx` (un archivo) vs. `calendar-scheduler/` (módulo completo con tests). No se verificó cuál sirve realmente la ruta `/app/erp/calendar` — código muerto posible en cualquiera.
+- **Zaps con namespaces "no_detectados"** (`zap_conciliar_movimiento`, `zap_generar_orden_compra`, `zap_registrar_horas_laborales`, `zap_actualizar_costos_proyecto`, `analisis_lista_corte`, `script_evento_0411`) — cuerpo JS no leído, alcance de negocio sin confirmar.
+- **Adapters "segunda ola" pendientes:** `gmail`, `meta-conversions-api`, `google-ads-conversions` fuera de la primera ola (2026-07-03) por requerir ajuste manual; sin evidencia de cierre posterior.
+- **Iniciativa "Espacios High-Design" en ejecución activa** (Fase 2 de 3) al momento de este inventario, con pendiente explícito de no publicar casos inventados en el portafolio.

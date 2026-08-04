@@ -1,0 +1,37 @@
+{
+  "id": "t-001",
+  "titulo": "Auditoría de solo lectura de Neon (repo legacy): duplicados, borradores huérfanos, basura espacial",
+  "intencion_negocio": "Antes de migrar el ERP a un repo nuevo, Javier necesita saber qué datos reales existen en la base de producción actual (contratos duplicados, proyectos huérfanos, HTML de cotizaciones viejas embebido en registros) para que el repo nuevo maneje su base de datos de forma elegante desde el día uno, sin arrastrar basura acumulada.",
+  "zona": "diagnostico",
+  "tipo": "integracion_externa",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/diagnostico/auditoria_neon.md (crear)"
+  ],
+  "criterios_aceptacion": [
+    "El reporte enumera, por namespace (proyectos, contratos, clientes, scripts, etc.), el conteo total de registros.",
+    "El reporte identifica contratos con proyecto_id duplicado o sin proyecto asociado.",
+    "El reporte identifica campos que contienen HTML/JSON embebido de tamaño anómalo (ej. snapshots de propuestas viejas guardados como texto).",
+    "El reporte identifica registros con estado 'borrador' cuya fecha de creación supera los 90 días sin actualización.",
+    "El acceso es exclusivamente de lectura (ninguna llamada POST/WRITE contra /api/vault)."
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (sesion unica, sin plan formal previo — nota abajo)",
+  "verificador": "mismo agente (ver nota de independencia)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["script de lectura contra /api/vault?namespace=<ns> para 27 namespaces conocidos"],
+    "salida_cruda": "Ver arnes/diagnostico/auditoria_neon.md. Resumen: 27 namespaces consultados, 0 contratos duplicados por proyecto_id, 0 huerfanos, 6/7 contratos sin hitos_pago (deuda pre-fix, esperado), 0 clientes duplicados por documento/email, 0 borradores estancados >90 dias.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-07-31T00:00:00Z",
+    "nota": "Aprobacion ya otorgada explicitamente por el Supervisor en la conversacion que origino esta tarea. Se ejecuto de inmediato por ser de solo lectura."
+  },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": "2026-07-31T16:45:00Z",
+  "nota_independencia": "Esta tarea se ejecuto y se auto-verifico dentro de la MISMA sesion de Claude Code (sin CLI separado ni subagente QA independiente), porque es de solo lectura y de bajo riesgo real (no escribe datos de produccion, no genera codigo de producto). La separacion ejecutor/verificador estricta del arnes se reserva para tareas de tipo logica_negocio/datos_contrato/mutacion_arnes en Fase 1+, donde SI importa que un agente distinto verifique el trabajo de otro."
+}

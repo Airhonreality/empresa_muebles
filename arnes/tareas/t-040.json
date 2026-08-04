@@ -1,0 +1,40 @@
+{
+  "id": "t-040",
+  "titulo": "Pasada P7 sistémica: Arquetipos sistémicos y bucles de retroalimentación (lente: la causalidad)",
+  "intencion_negocio": "El Supervisor aprobo un ciclo de 6 pasadas metodologicas de auditoria sistemica sobre el inventario de 47 eventos del diamante 2, cada una con un lente distinto, orquestadas con subagentes. P7 modela los ciclos causales del sistema (cronograma -> comisiones -> cumplimiento -> calidad -> garantia -> reputacion -> demanda), identifica bucles de refuerzo y de equilibrio, y detecta donde el software debe intervenir y los limites al crecimiento (capacidad 1 proy/semana, restriccion de dinero).",
+  "zona": "arnes/diagnostico/pasadas",
+  "tipo": "mutacion_arnes",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/diagnostico/pasadas/pasada7_arquetipos.md"
+  ],
+  "criterios_aceptacion": [
+    "Output con el formato exacto del documento de metodologia (iteraciones 1/2/3 + tabla de hallazgos + notas para el Define)",
+    "Cada hallazgo clasificado (ADICION/REFUERZO/DIFERIDO/VACIO) y con trazabilidad archivo:linea",
+    "No duplica hallazgos de diamante2_loop_apertura.md (regla anti-duplicacion)",
+    "Solo escribe su archivo de salida; no toca inventario ni mapa",
+    "No inventa reglas de negocio no escritas en el mapa (regla de escepticismo)"
+  ],
+  "plan_ref": "arnes/diagnostico/pasadas/diamante2_metodologia_pasadas.md",
+  "ejecutor": "opencode subagente P7",
+  "verificador": "opencode orquestador (auditor)",
+  "qa": {
+    "intentos": 0,
+    "comandos": [
+      "lectura del output pasada7_arquetipos.md",
+      "verificacion de formato, clasificacion y trazabilidad",
+      "cruce contra diamante2_loop_apertura.md (anti-duplicacion)"
+    ],
+    "salida_cruda": "",
+    "veredicto": "no_verificable"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "Los hallazgos NO se aplican al inventario hasta checkpoint del Supervisor. Si alguno cambia bounded contexts o gates, es loop focalizado."
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-03T00:00:00Z",
+  "cerrada_en": null
+}

@@ -1,0 +1,43 @@
+{
+  "id": "t-007",
+  "titulo": "Sitio publico: home + colecciones + portafolio (contenido real, sin precios en portafolio)",
+  "intencion_negocio": "El sitio publico necesita paginas reales de marketing (no los placeholders actuales) para colecciones y portafolio, con SEO.",
+  "zona": "app/(publico)",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/(publico)/page.tsx (modificado)",
+    "app/(publico)/colecciones/page.tsx (creado)",
+    "app/(publico)/colecciones/[sku]/page.tsx (creado)",
+    "app/(publico)/portafolio/page.tsx (creado)",
+    "app/(publico)/portafolio/[slug]/page.tsx (creado)",
+    "lib/modules/publico/queries.ts (creado)",
+    "lib/seo/jsonld.ts (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "Cada pagina define generateMetadata con title/description reales",
+    "/colecciones lista solo productos_catalogo.publicado_web = true",
+    "/portafolio lista solo portfolio_publico.publicado = true, sin mostrar precios en ningun lado",
+    "lib/seo/jsonld.ts exporta al menos Organization y LocalBusiness reutilizables"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (subagente)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit (orquestador, re-ejecutado independientemente)",
+      "ls de los 6 archivos esperados (orquestador)",
+      "grep -in 'precio' sobre portafolio/page.tsx y portafolio/[slug]/page.tsx (chequeo de regla de negocio critica: cero menciones de precio en portafolio)"
+    ],
+    "salida_cruda": "tsc --noEmit: exit 0, sin output. 6/6 archivos confirmados. grep de 'precio' en paginas de portafolio: CERO resultados (regla de negocio cumplida, verificada mecanicamente, no solo declarada por el ejecutor).",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": "2026-07-31T21:05:00Z",
+  "notas_ejecutor": "El agente reporto observar cambios concurrentes en app/app/erp/catalogo/* durante su ejecucion (correcto: era t-006 corriendo en paralelo en el mismo worktree). Verificado por el orquestador antes de paralelizar que t-006 y t-007 no comparten NINGUN archivo -- la alarma del agente fue apropiada (senal correcta de estar atento a colisiones) pero en este caso no habia riesgo real.",
+  "bug_encontrado_post_cierre": "El 2026-07-31, al correr `npx next build` por primera vez en la sesion (verificacion que tsc --noEmit no puede hacer), se encontro que lib/db/schema.ts le faltaba el lado inverso de la relacion imagenesPortfolio->portfolioPublico, causando 'not enough information to infer relation' en la query relacional de lib/modules/publico/queries.ts. Corregido agregando imagenesPortfolioRelations en schema.ts (commit posterior). No era un bug del codigo de t-007 en si, sino de una relacion incompleta en la fundacion (schema.ts) que solo se manifestaba al ejecutar la query real."
+}

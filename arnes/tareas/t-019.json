@@ -1,0 +1,40 @@
+{
+  "id": "t-019",
+  "titulo": "Taller: UI para actualizar estado de una tarea de produccion",
+  "intencion_negocio": "La API para actualizar estado de tarea (app/api/erp/tareas-produccion/route.ts) ya existe con auth y validacion correctas, pero la pagina de detalle de orden (t-016) es de solo lectura -- el equipo de taller no tiene forma de marcar una tarea como en_progreso/completada desde el ERP. Hallazgo de la oleada de auditoria del 2026-07-31.",
+  "zona": "app/app/erp/taller",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "components/erp/TareaEstadoSelect.tsx (creado)",
+    "app/app/erp/taller/[ordenId]/page.tsx (modificado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "TareaEstadoSelect es 'use client', recibe tareaId + estadoInicial, NO tiene useState que se desincronice del padre en re-renders posteriores (mismo patron de componente controlado establecido en t-008/t-009: si el padre vuelve a renderizar con un estadoInicial distinto, el componente debe reflejarlo)",
+    "select con las 4 opciones exactas del enum de zod: pendiente, en_progreso, pausada, completada",
+    "on change: POST a /api/erp/tareas-produccion con { tareaId, estado }, manejo de error visible si falla, estado de 'guardando'",
+    "no se modifica lib/db/schema.ts ni app/api/erp/tareas-produccion/route.ts (ya existen y estan correctos)",
+    "page.tsx sigue siendo Server Component (mantiene requireEmpleado(['admin','taller'])), solo reemplaza el texto estatico del estado por <TareaEstadoSelect> por cada tarea"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "git status --short (orquestador): solo los 2 archivos previstos modificados/creados, ningun otro archivo tocado",
+      "Lectura manual COMPLETA de components/erp/TareaEstadoSelect.tsx y app/app/erp/taller/[ordenId]/page.tsx: identicos a lo prescrito, sin desviaciones",
+      "npx tsc --noEmit (orquestador): exit 0",
+      "npx eslint . (orquestador): exit 0",
+      "npx next build con DATABASE_URL placeholder (orquestador): mismo ECONNREFUSED esperado en /sitemap.xml (unica ruta afectada), sin bugs nuevos"
+    ],
+    "salida_cruda": "4/4 verificaciones limpias en el primer intento. useEffect sincroniza estado con estadoInicial en cada re-render del padre (criterio de aceptacion sobre componente controlado cumplido). Rollback optimista correcto: si el POST falla, vuelve al estado anterior y muestra error.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T23:20:00Z",
+  "cerrada_en": "2026-07-31T23:35:00Z"
+}

@@ -1,0 +1,28 @@
+{
+  "id": "t-003",
+  "titulo": "Auditoría de Cloudflare R2 (bucket de producción): archivos huérfanos, duplicados, sin referencia en Neon",
+  "intencion_negocio": "Mismo objetivo que t-001 pero para el almacenamiento de archivos (imágenes de espacios, firmas, PDFs si los hubiera): saber qué hay realmente en R2 antes de decidir qué se migra al bucket nuevo.",
+  "zona": "diagnostico",
+  "tipo": "integracion_externa",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/diagnostico/auditoria_r2.md (crear, cuando se ejecute)"
+  ],
+  "criterios_aceptacion": [
+    "Lista de objetos en el bucket con tamaño y fecha de última modificación.",
+    "Cruce contra las URLs referenciadas en Neon (imagenes_espacio, productos_catalogo, etc.) para detectar objetos huérfanos (en R2 pero sin referencia) y referencias rotas (en Neon pero sin objeto en R2)."
+  ],
+  "plan_ref": null,
+  "ejecutor": "[SOLO_HUMANO]",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": null,
+  "nota_bloqueo": "Requiere CF_ACCOUNT_ID, CF_R2_ACCESS_KEY_ID, CF_R2_SECRET_ACCESS_KEY, CF_R2_BUCKET — todas redactadas automáticamente por el sandbox del agente (no legibles ni siquiera leyendo el archivo .env.local directamente). Opciones para desbloquear: (a) Javier corre un script que el agente le entrega, con sus propias credenciales, y pega el resultado; (b) Javier crea un token R2 de solo-lectura acotado y lo entrega por un canal fuera de este repo."
+}

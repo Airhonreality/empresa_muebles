@@ -1,0 +1,31 @@
+{
+  "id": "t-006",
+  "titulo": "Modulo Catalogo: listado de productos_catalogo en el ERP",
+  "intencion_negocio": "El equipo comercial necesita ver el catalogo de productos (precio publico, stock) desde el ERP nuevo.",
+  "zona": "app/app/erp/catalogo",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/app/erp/catalogo/page.tsx (creado)",
+    "lib/modules/catalogo/queries.ts (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "La pagina /app/erp/catalogo lista productos_catalogo via Drizzle, no fetch directo",
+    "Usa requireEmpleado(['admin','comercial'])"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador)",
+  "qa": {
+    "intentos": 2,
+    "comandos": ["npx tsc --noEmit (re-ejecutado independientemente por el orquestador, no solo aceptada la palabra del ejecutor)"],
+    "salida_cruda": "Primer intento: el modelo gratis exploro el repo (11 pasos) sin llegar a escribir codigo -- 0 archivos creados. Segundo intento (prompt reescrito con codigo casi completo, sin permitir exploracion libre): escribio ambos archivos, corrio tsc el mismo y reporto 0 errores. El orquestador re-corrio `npx tsc --noEmit` de forma independiente: exit 0, sin output.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": "2026-07-31T20:26:00Z",
+  "nota_alcance": "Reducido de la version original: sin pagina de detalle/edicion ni API route de escritura -- esas quedan para una tarea futura de edicion de catalogo. Este cierre cubre solo listado de lectura."
+}

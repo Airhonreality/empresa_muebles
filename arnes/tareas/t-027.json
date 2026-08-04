@@ -1,0 +1,32 @@
+{
+  "id": "t-027",
+  "titulo": "Ficha de produccion imprimible de un proyecto",
+  "intencion_negocio": "Ruta migrada del legacy /app/ficha/:id. Hoja de referencia para taller: espacios/items de un proyecto en formato simple, apto para imprimir.",
+  "zona": "app/app/ficha",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/app/ficha/[id]/page.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "requireEmpleado() (cualquier rol -- cualquier empleado puede ver la ficha de taller)",
+    "reusa obtenerProyectoConEspacios de lib/modules/cotizador/queries.ts, no duplica logica de consulta",
+    "muestra: nombre del proyecto, y por cada espacio activo: nombre, jornadas, tabla de items no anulados con cantidad/nombre (SIN precios -- es una ficha de produccion para taller, no una cotizacion comercial)",
+    "notFound() si el proyecto no existe"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["npx tsc --noEmit: exit 0", "npx eslint .: exit 0", "lectura manual: reusa obtenerProyectoConEspacios sin duplicar consulta, sin precios (correcto para ficha de taller)", "curl end-to-end contra dev-local: GET /app/ficha/<proyecto sembrado> -> 200"],
+    "salida_cruda": "Exacto al prompt en el primer intento.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T00:00:00Z",
+  "cerrada_en": "2026-08-02T04:20:00Z"
+}

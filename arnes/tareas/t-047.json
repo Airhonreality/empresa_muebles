@@ -1,0 +1,40 @@
+{
+    "checkpoint":  {
+                       "nota":  "Ciclo C1-C6 consolidado (2026-08-03): convergencia estructuralmente estable. Checkpoint APROBADO por el Supervisor el 2026-08-03: todas las decisiones del Bloque C/B2/D y P5-09 fueron respondidas y aplicadas al Define y al mapa (ver log_insights_fase2.md I-053 y la seccion 'Checkpoint de decisiones' del consolidado). Se abre el loop 2 de diseno (schema/UI); quedan solo valores numericos configurables (ventanas SLA, % carpintero, neto disenador).",
+                       "requerido":  true,
+                       "veredicto_humano":  "aprobado",
+                       "fecha":  "2026-08-03"
+                   },
+    "id":  "t-047",
+    "plan_ref":  "arnes/diagnostico/pasadas/diamante2_metodologia_define.md",
+    "riesgo":  "alto",
+    "verificador":  "opencode orquestador (auditor)",
+    "zona":  "arnes/diagnostico/pasadas",
+    "criterios_aceptacion":  [
+                                 "Output con formato exacto de diamante2_metodologia_define.md (iteraciones 1/2/3 + tabla de hallazgos + notas para el Orquestador)",
+                                 "Cada hallazgo clasificado (MOVER_CONTEXTO/PARTIR_CONTEXTO/REFORZAR_FRONTERA/NUEVO_CONTRATO/DECISION_PENDIENTE/CORRECCION/OK_CON_DOC/DIFERIDO) y con trazabilidad archivo:linea",
+                                 "Anti-duplicacion: descarta YA RESUELTO (P2-P8 resueltos en el Define) y YA DIAMANTE 1 (cierre §4)",
+                                 "Regla de escepticismo: no inventa reglas de negocio; lo ambiguo se marca DECISION_PENDIENTE",
+                                 "Solo escribe su archivo de salida; no toca define, inventario, mapa ni cierre"
+                             ],
+    "archivos_afectados":  [
+                               "arnes/diagnostico/pasadas/define_c6_restriccion.md"
+                           ],
+    "qa":  {
+               "intentos":  1,
+               "salida_cruda":  "define_c6_restriccion.md: 8 hallazgos (C6-01..08), 31 trazas archivo:linea, formato OK. Veredicto: el grafo soporta la tesis de capacidad; ningun contexto diferido bloquea el core (backlog limpio). Cuello no declarado = Taller (capa 2, ~1 semana del tramo critico; fila del taller es input de E-59/E-34 sin contrato, C6-01). C6-02 NUEVO_CONTRATO E-52; C6-03 DECISION_PENDIENTE identidad verificador unico vs cuello comercial; C6-07 E-60 depende de E-41; C6-05 CORRECCION §8 omite rol-vs-persona.",
+               "veredicto":  "aprobado",
+               "comandos":  [
+                                "lectura del output",
+                                "verificacion de formato/clasificacion/trazabilidad",
+                                "cruce contra inventario y panorama (anti-duplicacion)"
+                            ]
+           },
+    "intencion_negocio":  "Ciclo de pasadas agentivas sobre la CONVERGENCIA del segundo diamante (el flujo del proyecto como unidad). El grafo de contextos soporta la tesis de capacidad (demanda 1.25/mes \u003c fabrica 5/mes)? Donde esta la restriccion? Diferidos (Marketing/Tienda/Gobierno) bloquean o son backlog? Precondiciones capa 1 (firma virtual, pasarela) completas?. No escribe inventario ni mapa: solo su archivo de salida. Valida resoluciones de P2-P8, no re-reporta problemas.",
+    "tipo":  "mutacion_arnes",
+    "ejecutor":  "opencode subagente t-047",
+    "creada_en":  "2026-08-03T00:00:00Z",
+    "estado":  "cerrada",
+    "titulo":  "Pasada C6 restriccion: camino critico del proyecto",
+    "cerrada_en":  "2026-08-03T00:00:00Z"
+}

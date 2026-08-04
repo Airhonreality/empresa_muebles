@@ -1,0 +1,33 @@
+{
+  "id": "t-025",
+  "titulo": "ERP: perfil de empleado (ver/editar nombre, cambiar password)",
+  "intencion_negocio": "Ruta migrada del legacy /app/erp/perfil. Un empleado logueado ve y edita su propio nombre y puede cambiar su password.",
+  "zona": "app/app/erp/perfil",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/api/erp/perfil/route.ts (creado -- GET propio + PATCH nombre/password)",
+    "app/app/erp/perfil/page.tsx (creado)",
+    "components/erp/EditarPerfilForm.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "GET y PATCH usan requireEmpleado() (cualquier rol) y operan SOLO sobre el usuario de la sesion actual -- nunca reciben un id de usuario del body/query",
+    "cambio de password requiere la password actual (verificada con verifyPassword/lib de auth existente) antes de aceptar la nueva",
+    "password nueva se hashea con hashPassword antes de guardar, nunca en texto plano"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["npx tsc --noEmit: exit 0", "npx eslint .: exit 0", "lectura manual completa de app/api/erp/perfil/route.ts: opera solo sobre user.id de la sesion, nunca un id externo", "curl end-to-end contra dev-local: password actual incorrecta -> 400 rechazado; cambio de nombre solo -> 200 OK; revertido despues de probar"],
+    "salida_cruda": "Exacto al prompt. Verificado en runtime real que la validacion de password actual funciona (no solo que el codigo parece correcto).",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T00:00:00Z",
+  "cerrada_en": "2026-08-02T04:20:00Z"
+}

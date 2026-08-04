@@ -1,0 +1,21 @@
+{
+  "id": "t-032",
+  "titulo": "Decision: /share/:token NO se migra (motor generico descartado a proposito)",
+  "intencion_negocio": "El legacy tenia /share/:token: un mecanismo GENERICO para compartir CUALQUIER registro (context+record_id) con CUALQUIER campo seleccionado, con token hasheado/expiracion/revocacion. Es exactamente el tipo de 'herramienta para construir herramientas' que esta migracion decidio dejar de construir (ver conversacion: paradigma de Agnostic vs React puro). El unico caso de uso real conocido de esta capacidad (compartir una cotizacion) ya quedo cubierto por t-031 (/propuesta/:proyectoId), construido directamente para ESE caso, sin motor generico de por medio.",
+  "zona": "N/A -- decision de alcance, no codigo",
+  "tipo": "andamiaje",
+  "riesgo": "bajo",
+  "archivos_afectados": [],
+  "criterios_aceptacion": [
+    "Documentada la decision y su razon en el ledger para que quede trazable",
+    "Si en el futuro aparece un SEGUNDO caso de uso real de 'compartir algo publicamente con control de campos', se evalua en ese momento si construirlo especificamente (como se hizo con t-031) o si a esa altura, con 2+ casos repetidos, se justifica una capacidad mas generica -- NO antes, sin evidencia de repeticion"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (orquestador)",
+  "verificador": "claude-sonnet-5 (orquestador)",
+  "qa": { "intentos": 1, "comandos": [], "salida_cruda": "Decision de alcance, no hay codigo que verificar.", "veredicto": "aprobado" },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null, "nota": "Decision de diseno tomada con buen juicio en modo autonomo, documentada para revision del Supervisor cuando vuelva -- no requiere bloquear el resto del trabajo." },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T04:00:00Z",
+  "cerrada_en": "2026-08-02T04:00:00Z"
+}

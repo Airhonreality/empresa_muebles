@@ -1,0 +1,20 @@
+{
+    "tipo":  "mutacion_arnes",
+    "id":  "t-061",
+    "riesgo":  "alto",
+    "criterios_aceptacion":  [
+                                 "Output con formato de diamante3_metodologia.md",
+                                 "Trazabilidad archivo:linea al 100%",
+                                 "Solo escribe su archivo de salida"
+                             ],
+    "creada_en":  "2026-08-03T00:00:00Z",
+    "zona":  "arnes/diagnostico/pasadas",
+    "titulo":  "UI B2-1 destilacion INV",
+    "verificador":  "opencode orquestador (auditor)",
+    "plan_ref":  "arnes/diagnostico/pasadas/diamante3_metodologia.md",
+    "archivos_afectados":  [
+                               "arnes/diagnostico/pasadas/d3_ui_b2_1_destilacion_inv.md"
+                           ],
+    "ejecutor":  "opencode subagente t-061",
+    "estado":  "ejecucion"
+}

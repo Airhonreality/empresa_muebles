@@ -1,0 +1,42 @@
+{
+  "id": "t-041",
+  "titulo": "Pasada P8 sistémica: Excepciones y fricción (lente: el fallo) — 7ma pasada",
+  "intencion_negocio": "El Supervisor aprobo la 7ma pasada de auditoria sistemica sobre el inventario de eventos del diamante 2. P8 usa el lente del FALLO: por cada evento del inventario, que pasa cuando NO ocurre, falla o se sale del camino feliz. Es el ataque directo al punto debil detectado por P2-P7 (inventario fuerte en eventos de estado, debil en negacion/enforcement). Ademas, el Supervisor entrego 4 decisiones de negocio que P8 debe auditar como reglas nuevas (I-024 a I-027): promesa contractual de 7 semanas, check de los 15 dias (log real de produccion), cuestionario de viajes del cliente, calidad por comercial vendedor o gerente, y flow organizado de cambios de contrato (adicional/cambio/protocolo con impacto medible/costos al cliente).",
+  "zona": "arnes/diagnostico/pasadas",
+  "tipo": "mutacion_arnes",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/diagnostico/pasadas/pasada8_excepciones.md"
+  ],
+  "criterios_aceptacion": [
+    "Output con el formato exacto del documento de metodologia (iteraciones 1/2/3 + tabla de hallazgos + notas para el Define)",
+    "Cada hallazgo clasificado (ADICION/REFUERZO/DIFERIDO/VACIO) y con trazabilidad archivo:linea",
+    "No duplica hallazgos de diamante2_loop_apertura.md ni de las pasadas P2-P7 (anti-duplicacion)",
+    "Audita las decisiones del Supervisor I-024..I-027 como reglas nuevas: si una no tiene evento que la cubra, es ADICION",
+    "Solo escribe su archivo de salida; no toca inventario ni mapa",
+    "No inventa reglas de negocio mas alla de las decisiones I-024..I-027 (regla de escepticismo)"
+  ],
+  "plan_ref": "arnes/diagnostico/pasadas/diamante2_metodologia_pasadas.md",
+  "ejecutor": "opencode subagente P8",
+  "verificador": "opencode orquestador (auditor)",
+  "qa": {
+    "intentos": 0,
+    "comandos": [
+      "lectura del output pasada8_excepciones.md",
+      "verificacion de formato, clasificacion y trazabilidad",
+      "cruce contra diamante2_loop_apertura.md y las pasadas P2-P7 (anti-duplicacion)",
+      "verificacion de cobertura de I-024..I-027"
+    ],
+    "salida_cruda": "",
+    "veredicto": "no_verificable"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "Los hallazgos NO se aplican al inventario hasta checkpoint del Supervisor. Las decisiones I-024..I-027 cambian contrato vivo (Parte I) y requieren integracion explicita en el Define o loop focalizado."
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-03T00:00:00Z",
+  "cerrada_en": null
+}

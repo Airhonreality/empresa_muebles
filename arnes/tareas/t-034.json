@@ -1,0 +1,55 @@
+{
+  "id": "t-034",
+  "titulo": "Linea de demanda: captacion, conversion y sistema de marca (marco v3, seis ramas)",
+  "intencion_negocio": "El Supervisor confirmo que la restriccion #2 del negocio (demanda, ratio 4:1) estaba documentada y sin dueno, y pidio abrir la linea. Objetivo declarado: 'conseguir mas leads cualificados reales, aumentar las ventas y poner al departamento de diseno comercial a visitar clientes en forma'. El marco paso por dos correcciones suyas antes de estabilizarse (ver criterios): v1 era un programa de investigacion de mercados (recortado), v2 se sobrecorrigio a solo metricas de embudo (ampliado). La v3 cubre seis ramas de diagnostico de activos que YA existen: captacion, sitio y contenido, lead y cualificacion, flujo comercial, sistema de marca y tono, y ad management agentivo.",
+  "zona": "arnes/diagnostico",
+  "tipo": "mutacion_arnes",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/diagnostico/marco_estrategia_mercado.md (v3; v1 y v2 en historial de git)",
+    "arnes/diagnostico/log_insights_fase2.md (I-005 a I-010)",
+    "arnes/tareas/t-034.json",
+    "arnes/estado.md",
+    "arnes/INDEX.md"
+  ],
+  "criterios_aceptacion": [
+    "Las DOS correcciones del Supervisor quedan registradas como autocorreccion visible en el propio documento (seccion 0), no borradas. Correccion 1 (recorte): 2.D obliga al abanico ancho pero no exime de preguntar si el problema es de desconocimiento o de ejecucion. Correccion 2 (sobrecorreccion del asesor): 'no es investigacion de mercado' NO significa 'solo metricas de embudo' -- diagnosticar el sitio, el contenido, el flujo comercial y la marca propios ES tomar lo que ya hay y organizarlo",
+    "El alcance cubre las seis areas que el Supervisor enumero (sitio web, contenido, flow comercial, flow captacion, sistema de marca, tono) y no solo la rama del lead",
+    "La carpeta de contexto previo del Supervisor tiene PUERTA explicita con ruteo por rama (SEO->R1/R2, marca->R5, negocio->contraste contra logica_de_negocio.md). El sello de la v1/v2 se levanta con su razon escrita, no por olvido",
+    "Los 8 hallazgos son evidencia verificada en el codigo, no hipotesis: score_conversion muerto (schema.ts:279, cero lecturas/escrituras), gclid ausente del schema nuevo (el legacy lo tenia), leads sin etapa ni FK a proyectos, visita sin registro, CERO tag de analitica en app/lib/components, NAP incompleto bloqueando SEO local (jsonld.ts:4-8), testimonios no migrados (prueba social perdida), y desfase entre el canal real (WhatsApp) y los CTA del sitio (5 enlaces a /agendar, cero a WhatsApp)",
+    "Los hallazgos se destilan al log de Fase 2 existente (I-005 a I-010), NO a un log paralelo -- fragmentar la memoria del proyecto va contra la regla de oro del INDEX.md",
+    "R6 (ad management agentivo) declara su dependencia dura de H1/H2/H3/H5 con la razon escrita: sin verdad de terreno un agente optimizando campanas amplifica el error mas rapido que un humano",
+    "Ninguna escritura a la cuenta de Google Ads (pujas, presupuestos, pausar campanas) sin checkpoint explicito: es plata real, mismo criterio que t-015",
+    "El informe autoetnografico del Supervisor tiene protocolo antisesgo escrito ANTES de recibirlo: cada afirmacion entra al registro de hipotesis con su falsador declarado",
+    "checkpoint.veredicto_humano pasa a 'aprobado' antes de ejecutar cualquier rama"
+  ],
+  "plan_ref": "arnes/planes/plan_demanda.md",
+  "nota_convergencia": "2026-08-03: el Supervisor aporto un 'Segundo input' (23 archivos: Fase paralela de mercados con su propio mapa de 11 fases, Marca y discurso, y la tabla de contenido de Notion). El pase 6 revelo que existian DOS planeaciones buenas de la misma linea, nunca fusionadas -- eso era lo que impedia cerrar el diamante. Se ejecuto la segunda convergencia: plan_demanda.md reemplaza a marco_estrategia_mercado.md y absorbe el mapa de 11 fases. Ambos pasan a registro historico. El plan nuevo aplica las contramedidas del diagnostico de proceso: WIP=1, 'hecho' es cambio de estado en el mundo (no documento aprobado), y regla de sucesion explicita.",
+  "ejecutor": "claude-opus-5 (asesor estrategico, rol 2.D)",
+  "verificador": "pendiente -- debe ser identidad distinta del ejecutor (regla 2 del ledger)",
+  "qa": {
+    "intentos": 0,
+    "comandos": [
+      "grep score_conversion en todo el repo -> solo schema.ts:279 + migraciones; cero lecturas/escrituras en app/ o lib/",
+      "grep gclid excluyendo arnes/ -> cero resultados; el legacy si lo tenia (inventario_legacy.md:52)",
+      "grep gtag|googletagmanager|dataLayer|GoogleAnalytics en app lib components -> CERO resultados (no hay tag de analitica)",
+      "grep testimonio|configuracion_comercial en app lib components -> cero resultados (no migrados)",
+      "grep pgTable en lib/db/schema.ts -> 18 tablas, sin testimonios ni configuracion_comercial",
+      "lectura de lib/db/schema.ts:271-281 -> leads sin etapa, sin fecha de contacto, sin FK a proyectos",
+      "lectura de lib/seo/jsonld.ts -> NAP incompleto a proposito, esperando dato del Supervisor",
+      "conteo de href en app/(publico) -> 5 a /agendar, 2 portafolio, 2 colecciones, 0 a WhatsApp",
+      "ls app/robots.ts app/sitemap.ts -> ambos existen (base SEO tecnica sana)"
+    ],
+    "salida_cruda": "H1-H8 verificados mecanicamente contra el codigo real. El documento en si es de metodo: la verificacion posible es que un verificador distinto confirme (a) que H1-H8 siguen siendo ciertos en el repo, (b) que las seis areas pedidas por el Supervisor estan cubiertas, (c) que las citas marcadas con advertencia se verifiquen antes de usarlas por fuera del repo.",
+    "veredicto": "no_verificable"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "Bloquea por tipo mutacion_arnes y por ARNES_AGENTICO.md 2.D. Faltan del Supervisor: (1) aprobar alcance (Base / Recomendada / Completa, seccion 8), (2) la RUTA de la carpeta de contexto previo, (3) credenciales de solo lectura de Ads/GA4/Search Console/Meta -- [SOLO_HUMANO], (4) datos NAP reales (desbloquea H6, 5 minutos, impacto gratis), (5) el informe de sector con el guion de la seccion 5, (6) confirmar que H1-H8 entran a Fase 2 como tareas de codigo. OJO: H1-H3 y H7 tocan el schema de datos, que AGENTS.md prohibe modificar sin checkpoint -- necesitan aprobacion explicita propia ademas de esta."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-08-03T00:00:00Z",
+  "cerrada_en": null
+}

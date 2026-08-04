@@ -1,0 +1,42 @@
+{
+  "id": "t-033",
+  "titulo": "Titulos de pestana del navegador en todas las paginas (resolver el bug de Agnostic para siempre)",
+  "intencion_negocio": "El Supervisor reporto que Agnostic mostraba un placeholder generico en la pestana del navegador en vez del nombre de la pagina. Se audito el nuevo sistema: el layout raiz ya tenia un title.default con el nombre real de la marca (nunca puede mostrar un placeholder de framework), pero 26 de 40 paginas no definian titulo propio y caian en ese default generico -- gap de UX real, no el bug original, pero vale la pena cerrarlo.",
+  "zona": "app/**/page.tsx (26 archivos)",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "15 Server Components con metadata estatico (calendario, catalogo, comercial, equipo, finanzas, erp/page, pedidos, perfil-erp, portfolio, prefabricados, proveedores, taller, cuenta/page, cuenta/pedido, cuenta/perfil)",
+    "6 Server Components con generateMetadata dinamico (catalogo/[id], contratos/[proyectoId], prefabricados/[proyectoId], taller/[ordenId], ficha/[id], cuenta/proyectos/[id])",
+    "5 Client Components con document.title via useEffect (login, registro, agendar, cotizador, cotizador/[proyectoId])"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "las 40 paginas del repo tienen un titulo especifico (ninguna cae en el default generico del layout salvo que sea la intencion, como / la home)",
+    "cuenta/proyectos/[id]/generateMetadata usa la MISMA verificacion de propiedad por cliente que la pagina (obtenerProyectoDeCliente con clienteId) -- nunca una consulta sin filtrar, para no filtrar el nombre de un proyecto ajeno a traves del <title> aunque el contenido de la pagina de 404",
+    "verificado en runtime contra dev-local: titulos estaticos y dinamicos confirmados leyendo el <title> real del HTML devuelto",
+    "el patron document.title en Client Components esta documentado con un comentario explicando por que (un 'use client' no puede exportar metadata)"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (orquestador, directo -- ediciones quirurgicas sobre 26 archivos ya funcionando, no delegado a opencode)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit: exit 0",
+      "npx eslint .: exit 0",
+      "npx next build placeholder: sin bugs nuevos",
+      "curl end-to-end contra dev-local con sesion admin: /app/erp/taller, /app/erp/finanzas, /app/erp/catalogo -> titulos estaticos correctos",
+      "curl end-to-end: /app/erp/contratos/<proyecto sembrado> -> 'Contrato — Cocina Integral de Prueba — Veta de Oro' (dinamico correcto)",
+      "curl end-to-end con sesion cliente: /cuenta/proyectos/<su propio proyecto> -> nombre real mostrado (correcto, es su proyecto)",
+      "curl end-to-end sin sesion: /login -> titulo SSR inicial es el default del layout (esperado, document.title lo cambia en el navegador via JS despues de hidratar, no visible para curl)"
+    ],
+    "salida_cruda": "26/26 archivos editados sin romper nada existente, verificado con tsc/eslint/build limpios y titulos reales confirmados en runtime contra datos reales.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T05:00:00Z",
+  "cerrada_en": "2026-08-02T05:20:00Z"
+}

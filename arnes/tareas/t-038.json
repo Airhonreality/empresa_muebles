@@ -1,0 +1,40 @@
+{
+  "id": "t-038",
+  "titulo": "Pasada P5 sistémica: Tiempo y dependencias ocultas (lente: la secuencia)",
+  "intencion_negocio": "El Supervisor aprobo un ciclo de 6 pasadas metodologicas de auditoria sistemica sobre el inventario de 47 eventos del diamante 2, cada una con un lente distinto, orquestadas con subagentes. P5 construye el grafo de precedencias entre los 47 eventos y rastrea donde se gasta el tiempo (el ciclo promete 15-20 dias: donde estan esos dias, cuanto es espera). Detecta esperas silenciosas del cliente, eventos paralelizables que hoy son secuenciales, y dependencias no declaradas.",
+  "zona": "arnes/diagnostico/pasadas",
+  "tipo": "mutacion_arnes",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/diagnostico/pasadas/pasada5_tiempo.md"
+  ],
+  "criterios_aceptacion": [
+    "Output con el formato exacto del documento de metodologia (iteraciones 1/2/3 + tabla de hallazgos + notas para el Define)",
+    "Cada hallazgo clasificado (ADICION/REFUERZO/DIFERIDO/VACIO) y con trazabilidad archivo:linea",
+    "No duplica hallazgos de diamante2_loop_apertura.md (regla anti-duplicacion)",
+    "Solo escribe su archivo de salida; no toca inventario ni mapa",
+    "No inventa reglas de negocio no escritas en el mapa (regla de escepticismo)"
+  ],
+  "plan_ref": "arnes/diagnostico/pasadas/diamante2_metodologia_pasadas.md",
+  "ejecutor": "opencode subagente P5",
+  "verificador": "opencode orquestador (auditor)",
+  "qa": {
+    "intentos": 0,
+    "comandos": [
+      "lectura del output pasada5_tiempo.md",
+      "verificacion de formato, clasificacion y trazabilidad",
+      "cruce contra diamante2_loop_apertura.md (anti-duplicacion)"
+    ],
+    "salida_cruda": "",
+    "veredicto": "no_verificable"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "Los hallazgos NO se aplican al inventario hasta checkpoint del Supervisor. Si alguno cambia bounded contexts o gates, es loop focalizado."
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-03T00:00:00Z",
+  "cerrada_en": null
+}

@@ -1,0 +1,20 @@
+{
+    "tipo":  "mutacion_arnes",
+    "id":  "t-067",
+    "riesgo":  "alto",
+    "criterios_aceptacion":  [
+                                 "Output con formato de diamante3_metodologia.md",
+                                 "Trazabilidad archivo:linea al 100%",
+                                 "Solo escribe su archivo de salida"
+                             ],
+    "creada_en":  "2026-08-03T00:00:00Z",
+    "zona":  "arnes/diagnostico/pasadas",
+    "titulo":  "UI B3-4 finanzas compensacion",
+    "verificador":  "opencode orquestador (auditor)",
+    "plan_ref":  "arnes/diagnostico/pasadas/diamante3_metodologia.md",
+    "archivos_afectados":  [
+                               "arnes/diagnostico/pasadas/d3_ui_b3_4_finanzas_compensacion.md"
+                           ],
+    "ejecutor":  "opencode subagente t-067",
+    "estado":  "ejecucion"
+}

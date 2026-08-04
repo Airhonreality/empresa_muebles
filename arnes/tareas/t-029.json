@@ -1,0 +1,31 @@
+{
+  "id": "t-029",
+  "titulo": "Landing publica /proceso (como trabajamos, 4 pasos)",
+  "intencion_negocio": "Ruta migrada del legacy /proceso. Explica el proceso de diseno/fabricacion/instalacion en 4 pasos, con CTA a /agendar.",
+  "zona": "app/(publico)/proceso",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/(publico)/proceso/page.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "generateMetadata con title/description propios",
+    "4 pasos con titulo+descripcion (contenido real provisto en el prompt, no inventar copy nuevo)",
+    "CTA final con next/link a /agendar"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["npx tsc --noEmit: exit 0", "npx eslint .: exit 0", "curl end-to-end: GET /proceso -> 200"],
+    "salida_cruda": "Exacto al prompt en el primer intento, copy real preservada.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T00:00:00Z",
+  "cerrada_en": "2026-08-02T04:20:00Z"
+}

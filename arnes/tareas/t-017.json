@@ -1,0 +1,51 @@
+{
+  "id": "t-017",
+  "titulo": "Finanzas: registrar pago (egreso) y cobro (ingreso) contra una obligacion pendiente",
+  "intencion_negocio": "El shell de finanzas (t-010) es solo lectura. El equipo necesita poder liquidar obligaciones pendientes (pagar una deuda, cobrar un saldo) desde el ERP, actualizando el saldo de la cuenta y el estado de la obligacion de forma consistente.",
+  "zona": "app/app/erp/finanzas",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/modules/finanzas/acciones.ts (creado)",
+    "lib/modules/finanzas/estado.ts (creado -- logica pura de calculo de estado)",
+    "lib/modules/finanzas/estado.test.ts (creado)",
+    "app/api/erp/movimientos/route.ts (creado)",
+    "app/app/erp/finanzas/page.tsx (modificado)",
+    "lib/modules/finanzas/queries.ts (modificado -- agregada listarCuentasFinancieras)",
+    "components/erp/RegistrarMovimientoForm.tsx (creado, no listado originalmente -- necesario porque page.tsx es Server Component y la interactividad exige 'use client' en archivo aparte)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "Las 3 escrituras (movimiento + saldo + obligacion) dentro de una unica db.transaction",
+    "Estado recalculado via SUM real, nunca contador incrementado",
+    "monto validado > 0 con zod",
+    "requireEmpleado(['admin','finanzas'])",
+    "Test unitario de calcularEstadoObligacion sin DB"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (subagente)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente, QA exhaustivo dado el riesgo)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit (orquestador): exit 0",
+      "npx eslint . (orquestador): exit 0",
+      "npx tsx lib/modules/finanzas/estado.test.ts (orquestador): 6/6 OK",
+      "Lectura manual COMPLETA de lib/modules/finanzas/acciones.ts: confirmado que las 6 operaciones (leer obligacion, leer cuenta, insert movimiento, update saldo, SUM, update obligacion) corren dentro de db.transaction(async (tx) => {...}), TODAS usando tx, ninguna usando db suelto dentro del callback",
+      "Confirmado que el SUM (linea 106-109) corre DENTRO de la misma transaccion, despues del insert -- ve la fila recien insertada (comportamiento estandar de Postgres dentro de una transaccion), no es un contador incrementado a ciegas",
+      "Hallazgo adicional (no pedido explicitamente pero correcto): tipoMovimiento se deriva de obligacion.tipo ('por_cobrar'->ingreso, 'por_pagar'->egreso), nunca aceptado del llamador -- mismo patron defensivo que t-015 (nunca confiar en el cliente)"
+    ],
+    "salida_cruda": "tsc exit 0, eslint exit 0, test 6/6 OK. Transaccion e integridad verificadas linea por linea, no solo aceptado el reporte del ejecutor -- misma rigurosidad que t-015 dado que ambas tocan dinero real.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "logica_negocio + dinero real + integridad transaccional: codigo commiteado en dev (reversible) pero NO se considera terminado para produccion hasta revision explicita del Supervisor. Verificado con lectura completa del codigo de la transaccion, no solo comandos automatizados. UNICO de los 5 modulos de riesgo alto que NO se pudo probar en runtime el 2026-08-01 (ver arnes/estado.md): scripts/seed-dev.ts no crea cuentas_financieras ni obligaciones_pendientes, asi que registrarMovimiento() no tuvo datos reales contra los que ejercitarse. La pagina /app/erp/finanzas si carga (200) con sesion admin. Sigue con QA de codigo completa pero no runtime."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-07-31T23:05:00Z",
+  "cerrada_en": null
+}

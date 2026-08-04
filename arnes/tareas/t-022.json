@@ -1,0 +1,42 @@
+{
+  "id": "t-022",
+  "titulo": "Catalogo: UI para editar y eliminar un producto existente",
+  "intencion_negocio": "Mismo hallazgo que t-021 en el detalle: app/api/erp/catalogo/route.ts ya tiene PATCH y DELETE con auth/validacion, pero app/app/erp/catalogo/[id]/page.tsx es de solo lectura (una lista de definicion estatica dl/dt/dd).",
+  "zona": "app/app/erp/catalogo",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "components/erp/EditarProductoForm.tsx (creado)",
+    "app/app/erp/catalogo/[id]/page.tsx (modificado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "EditarProductoForm es 'use client', recibe producto (con id, sku, descripcion, tipo, unidadMedida, precioDirecto, precioPublico, stockActual, proveedorId, publicadoWeb -- tal como los devuelve obtenerProductoCatalogo) y proveedores: { id: string; nombre: string }[] como props",
+    "formulario PRE-LLENADO con los valores actuales de producto, mismos campos editables que t-021 (sku, descripcion, tipo, unidadMedida, precioDirecto, precioPublico, stockActual, proveedorId select, publicadoWeb checkbox)",
+    "on submit: PATCH a /api/erp/catalogo?id=<producto.id> con los campos cambiados; tras exito router.refresh() y muestra un mensaje 'Guardado' momentaneo",
+    "boton separado 'Eliminar producto': pide confirm() del navegador antes, si confirma hace DELETE a /api/erp/catalogo?id=<producto.id>, y si sale bien usa router.push('/app/erp/catalogo') (next/navigation) para volver al listado",
+    "maneja errores del backend visibles (incluye 409 SKU duplicado en el PATCH)",
+    "NO se modifica lib/db/schema.ts, app/api/erp/catalogo/route.ts, ni lib/modules/catalogo/queries.ts",
+    "page.tsx sigue siendo Server Component (mantiene requireEmpleado(['admin','comercial']) y notFound() si no existe), agrega el fetch de proveedores y renderiza <EditarProductoForm producto={producto} proveedores={...} /> en vez de (o ademas de) la lista de definicion actual"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "git status --short (orquestador): solo los 2 archivos previstos modificados/creados",
+      "Lectura manual COMPLETA de components/erp/EditarProductoForm.tsx y app/app/erp/catalogo/[id]/page.tsx: identicos a lo prescrito",
+      "npx tsc --noEmit (orquestador, corrido junto con t-021): exit 0",
+      "npx eslint . (orquestador, corrido junto con t-021): exit 0",
+      "npx next build con DATABASE_URL placeholder (orquestador, corrido junto con t-021): mismo ECONNREFUSED esperado en / y /sitemap.xml, sin bugs nuevos"
+    ],
+    "salida_cruda": "Ejecutado en paralelo con t-021 (archivos disjuntos), QA combinada porque ambos tocan el mismo arbol. 4/4 verificaciones limpias en el primer intento. Formulario pre-llenado con los valores actuales, confirm() del navegador antes de eliminar, router.push tras eliminar exitoso.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-01T00:05:00Z",
+  "cerrada_en": "2026-08-01T00:20:00Z"
+}

@@ -1,0 +1,20 @@
+{
+    "tipo":  "mutacion_arnes",
+    "id":  "t-073",
+    "riesgo":  "alto",
+    "criterios_aceptacion":  [
+                                 "Output con formato de diamante3_metodologia.md",
+                                 "Trazabilidad archivo:linea al 100%",
+                                 "Solo escribe su archivo de salida"
+                             ],
+    "creada_en":  "2026-08-03T00:00:00Z",
+    "zona":  "arnes/diagnostico/pasadas",
+    "titulo":  "UI B5 auditor final",
+    "verificador":  "opencode orquestador (auditor)",
+    "plan_ref":  "arnes/diagnostico/pasadas/diamante3_metodologia.md",
+    "archivos_afectados":  [
+                               "arnes/diagnostico/pasadas/d3_ui_b5_auditor.md"
+                           ],
+    "ejecutor":  "opencode subagente t-073",
+    "estado":  "ejecucion"
+}

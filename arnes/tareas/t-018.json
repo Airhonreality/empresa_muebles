@@ -1,0 +1,34 @@
+{
+  "id": "t-018",
+  "titulo": "Equipo: crear empleado (admin) con password temporal",
+  "intencion_negocio": "El plan (§2.1) exige que el autoregistro sea SOLO para clientes -- un empleado nunca se crea cuenta solo, un admin lo hace desde /app/erp/equipo. Hoy esa pantalla es de solo lectura.",
+  "zona": "app/app/erp/equipo",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/api/erp/equipo/route.ts (creado)",
+    "app/app/erp/equipo/page.tsx (modificado)",
+    "lib/modules/equipo/queries.ts (modificado -- agregada crearEmpleado)",
+    "components/erp/CrearEmpleadoForm.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "Solo requireEmpleado(['admin'])",
+    "Password temporal generada server-side, devuelta una vez",
+    "Email unico, 409 si duplicado"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["ls de 4 archivos", "npx tsc --noEmit", "npx eslint .", "grep requireEmpleado en route.ts (confirma ['admin'] exacto, no otro rol)", "lectura de queries.ts completa"],
+    "salida_cruda": "4/4 archivos correctos y completos en el primer intento (sin la carrera de tiempo de t-016 esta vez). tsc exit 0, eslint exit 0. requireEmpleado(['admin']) confirmado, unica opcion de rol. randomBytes(9) para password temporal, hashPassword() antes de guardar, chequeo de email duplicado antes del insert.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T23:08:00Z",
+  "cerrada_en": "2026-07-31T23:14:00Z"
+}

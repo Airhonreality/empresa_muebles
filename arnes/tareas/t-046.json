@@ -1,0 +1,40 @@
+{
+    "checkpoint":  {
+                       "nota":  "Ciclo C1-C6 consolidado (2026-08-03): convergencia estructuralmente estable. Checkpoint APROBADO por el Supervisor el 2026-08-03: todas las decisiones del Bloque C/B2/D y P5-09 fueron respondidas y aplicadas al Define y al mapa (ver log_insights_fase2.md I-053 y la seccion 'Checkpoint de decisiones' del consolidado). Se abre el loop 2 de diseno (schema/UI); quedan solo valores numericos configurables (ventanas SLA, % carpintero, neto disenador).",
+                       "requerido":  true,
+                       "veredicto_humano":  "aprobado",
+                       "fecha":  "2026-08-03"
+                   },
+    "id":  "t-046",
+    "plan_ref":  "arnes/diagnostico/pasadas/diamante2_metodologia_define.md",
+    "riesgo":  "alto",
+    "verificador":  "opencode orquestador (auditor)",
+    "zona":  "arnes/diagnostico/pasadas",
+    "criterios_aceptacion":  [
+                                 "Output con formato exacto de diamante2_metodologia_define.md (iteraciones 1/2/3 + tabla de hallazgos + notas para el Orquestador)",
+                                 "Cada hallazgo clasificado (MOVER_CONTEXTO/PARTIR_CONTEXTO/REFORZAR_FRONTERA/NUEVO_CONTRATO/DECISION_PENDIENTE/CORRECCION/OK_CON_DOC/DIFERIDO) y con trazabilidad archivo:linea",
+                                 "Anti-duplicacion: descarta YA RESUELTO (P2-P8 resueltos en el Define) y YA DIAMANTE 1 (cierre §4)",
+                                 "Regla de escepticismo: no inventa reglas de negocio; lo ambiguo se marca DECISION_PENDIENTE",
+                                 "Solo escribe su archivo de salida; no toca define, inventario, mapa ni cierre"
+                             ],
+    "archivos_afectados":  [
+                               "arnes/diagnostico/pasadas/define_c5_contrato_vivo.md"
+                           ],
+    "qa":  {
+               "intentos":  2,
+               "salida_cruda":  "define_c5_contrato_vivo.md: 5 hallazgos propios (C5-01..05), 73 trazas archivo:linea, formato OK. Veredicto: 0 contradicciones silenciosas; ningun checkpoint nuevo. C5-01 invariante 4 (calendario por rol) sin respaldo; C5-02 I-027 doble destino sin fronteras tipadas; C5-03 E-21 reasignado a Compras sin declarar; C5-04 E-53 consumidor sin frontera; C5-05 capa 1 excede MVP sin criterio. Refs cruzadas a C4/C6 legitimas (anti-duplicacion).",
+               "veredicto":  "aprobado",
+               "comandos":  [
+                                "lectura del output",
+                                "verificacion de formato/clasificacion/trazabilidad",
+                                "cruce contra inventario y panorama (anti-duplicacion)"
+                            ]
+           },
+    "intencion_negocio":  "Ciclo de pasadas agentivas sobre la CONVERGENCIA del segundo diamante (la consistencia como unidad). Los 15 contextos son compatibles con los 12 del cierre §4? P5-09 es la unica contradiccion o hay silenciosas? Capa 1 vs capa 2 respeta las 4 rutinas clave (A10)? Tesis/invariantes sin respaldo?. No escribe inventario ni mapa: solo su archivo de salida. Valida resoluciones de P2-P8, no re-reporta problemas.",
+    "tipo":  "mutacion_arnes",
+    "ejecutor":  "opencode subagente t-046",
+    "creada_en":  "2026-08-03T00:00:00Z",
+    "estado":  "cerrada",
+    "titulo":  "Pasada C5 contrato vivo: consistencia con mapa y cierre",
+    "cerrada_en":  "2026-08-03T00:00:00Z"
+}

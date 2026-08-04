@@ -1,0 +1,38 @@
+{
+  "id": "t-010",
+  "titulo": "Shells de ERP para comercial, taller, finanzas, equipo, calendario",
+  "intencion_negocio": "Cada modulo restante del ERP necesita al menos una pantalla real navegable con datos reales para que el sistema sea usable de punta a punta.",
+  "zona": "app/app/erp/{comercial,taller,finanzas,equipo,calendario}",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/app/erp/comercial/page.tsx (creado)",
+    "app/app/erp/taller/page.tsx (creado)",
+    "app/app/erp/finanzas/page.tsx (creado)",
+    "app/app/erp/equipo/page.tsx (creado)",
+    "app/app/erp/calendario/page.tsx (creado, placeholder deliberado)",
+    "lib/modules/comercial/queries.ts (creado)",
+    "lib/modules/taller/queries.ts (creado)",
+    "lib/modules/finanzas/queries.ts (creado)",
+    "lib/modules/equipo/queries.ts (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "Cada pagina consulta datos reales via Drizzle",
+    "Cada pagina usa requireEmpleado con el rol correcto",
+    "calendario es placeholder explicito (ambiguedad conocida, no se inventa cual version legacy migrar)"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["ls de los 9 archivos esperados (orquestador, independiente)", "npx tsc --noEmit (orquestador, independiente)"],
+    "salida_cruda": "9/9 archivos confirmados existentes por el orquestador. npx tsc --noEmit corrido de forma independiente por el orquestador (no aceptada la palabra del ejecutor): exit code 0, sin output.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": "2026-07-31T20:32:00Z"
+}

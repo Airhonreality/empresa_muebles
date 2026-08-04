@@ -1,0 +1,43 @@
+{
+  "id": "t-031",
+  "titulo": "Visor publico de propuesta/cotizacion (/propuesta/:proyectoId)",
+  "intencion_negocio": "Ruta migrada del legacy /propuesta/:slug. El legacy mostraba un SNAPSHOT guardado que podia desincronizarse de los precios reales (incidente documentado en memoria: omitia unit_price/total). Rediseñado para consultar el proyecto EN VIVO con el mismo motor de calculo del ERP -- estructuralmente no puede mostrar un total viejo.",
+  "zona": "app/(publico)/propuesta",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "app/(publico)/propuesta/[proyectoId]/page.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "sin snapshot guardado -- consulta obtenerProyectoConEspacios + calcularTotalProyecto (mismo motor del ERP) en cada carga",
+    "solo proyectos en estado 'enviada','en_contrato','pre_produccion','produccion','entregado' son visibles -- 'activa' (borrador) y estados terminales negativos dan 404",
+    "el proyectoId (UUID v4) funciona como token de capacidad implicito -- decision consciente de NO reconstruir el motor generico de public_links del legacy (context+record_id+campos configurables), que es exactamente el tipo de herramienta generica que la migracion decidio no repetir",
+    "no expone clienteId, direccionObra ni otros datos que no formen parte de la propuesta misma"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (orquestador, directo -- riesgo alto por exponer precios/datos publicamente, no delegado a opencode)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit: exit 0",
+      "npx eslint .: exit 0",
+      "npx next build placeholder: sin bugs nuevos",
+      "curl end-to-end contra dev-local: GET /propuesta/<proyecto sembrado, estado en_contrato> -> 200, total mostrado $1.800.000 verificado a mano (650.000 materiales + 900.000 mano de obra + 250.000 costos operativos, sin IVA) -- coincide exacto con el motor de calculo",
+      "prueba de control de acceso: se creo un proyecto nuevo en estado 'activa' (default) y GET /propuesta/<ese id> -> 404 confirmado, luego se borro el proyecto de prueba"
+    ],
+    "salida_cruda": "Calculo verificado a mano contra el resultado mostrado, coincide exacto. Control de acceso por estado confirmado con un caso real creado y verificado, no solo por lectura de codigo.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "riesgo alto por exponer precios de cotizacion publicamente sin autenticacion -- mismo nivel de escrutinio que checkout/finanzas. Queda esperando_humano igual que los demas modulos de riesgo alto de esta migracion."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-08-02T04:00:00Z",
+  "cerrada_en": null
+}

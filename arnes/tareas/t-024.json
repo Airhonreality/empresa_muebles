@@ -1,0 +1,33 @@
+{
+  "id": "t-024",
+  "titulo": "ERP: ver pedidos web (contraparte ERP del checkout de cliente)",
+  "intencion_negocio": "El checkout (t-015) ya crea filas en pedidos_web, pero nadie del equipo puede verlas desde el ERP. Ruta migrada del legacy /app/erp/pedidos.",
+  "zona": "app/app/erp/pedidos",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "lib/modules/pedidos/queries.ts (modificado -- agregar listarPedidosWeb)",
+    "app/api/erp/pedidos/route.ts (creado -- GET)",
+    "app/app/erp/pedidos/page.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "listarPedidosWeb hace join con clientes para mostrar el nombre, no solo el id",
+    "requireEmpleado(['admin','comercial']) en la API y la pagina",
+    "solo lectura -- no se agrega edicion de estado en esta tarea"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["npx tsc --noEmit (junto con t-025..t-030): exit 0", "npx eslint . (junto con t-025..t-030): exit 0", "npx next build placeholder: sin bugs nuevos, 53 paginas generadas (antes 38)", "lectura manual completa de lib/modules/pedidos/queries.ts: import extendido correcto, funcion nueva exacta", "curl end-to-end contra dev-local con sesion admin: GET /app/erp/pedidos -> 200"],
+    "salida_cruda": "Exacto al prompt en el primer intento. join con clientes correcto para mostrar nombre en vez de solo id.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T00:00:00Z",
+  "cerrada_en": "2026-08-02T04:20:00Z"
+}

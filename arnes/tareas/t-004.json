@@ -1,0 +1,35 @@
+{
+  "id": "t-004",
+  "titulo": "[OBSOLETA] Provisionar infraestructura nueva — reemplazada por modelo de ramas sobre el mismo repo",
+  "intencion_negocio": "Descartada: el Supervisor corrigió el enfoque. No hace falta repo/Neon/R2/Vercel nuevos — se reutiliza toda la infraestructura existente. La migración es de código, no de proveedor.",
+  "zona": "diagnostico",
+  "tipo": "andamiaje",
+  "riesgo": "bajo",
+  "archivos_afectados": [],
+  "criterios_aceptacion": [
+    "Rama legacy-agnostic-backup creada y pusheada, apuntando al commit fbe9bdd (snapshot de main pre-migracion).",
+    "Rama dev (huerfana) creada en worktree separado (../empresa_muebles_clone-dev), sin tocar el working tree principal del humano.",
+    "AGENTS.md del worktree dev documenta el modelo de ramas y el flujo de corte (dev -> main solo con aprobacion explicita)."
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5",
+  "verificador": "claude-sonnet-5 (tarea de andamiaje/git, bajo riesgo, sin codigo de producto)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "git branch -vv (confirma legacy-agnostic-backup y dev existen con los commits correctos)",
+      "git worktree list (confirma worktree separado para dev)"
+    ],
+    "salida_cruda": "legacy-agnostic-backup -> fbe9bdd (origin/legacy-agnostic-backup, pusheada). dev -> huerfana, 0 commits, worktree en ../empresa_muebles_clone-dev, no pusheada aun (se pushea con el primer commit real de contenido).",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-07-31T00:00:00Z",
+    "nota": "El Supervisor pidio explicitamente este cambio de enfoque en la conversacion (reusar mismo backend, no crear infra nueva)."
+  },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": "2026-07-31T17:30:00Z"
+}

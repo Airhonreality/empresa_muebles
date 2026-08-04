@@ -1,0 +1,42 @@
+{
+  "id": "t-021",
+  "titulo": "Catalogo: UI para crear un producto nuevo",
+  "intencion_negocio": "app/api/erp/catalogo/route.ts ya tiene CRUD completo (POST/PATCH/DELETE) con auth y validacion zod (incluyendo manejo de SKU duplicado con 409), pero app/app/erp/catalogo/page.tsx es de solo lectura -- mismo patron de hallazgo que t-019/t-020, encontrado en el barrido sistematico de la oleada de auditoria del 2026-07-31 sobre TODAS las rutas de app/api/erp con metodos de escritura.",
+  "zona": "app/app/erp/catalogo",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "components/erp/CrearProductoForm.tsx (creado)",
+    "app/app/erp/catalogo/page.tsx (modificado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "CrearProductoForm es 'use client', recibe proveedores: { id: string; nombre: string }[] como prop (la pagina server component ya hace listarProveedores() y se lo pasa)",
+    "campos del formulario: sku (requerido), descripcion (requerido), tipo (texto libre opcional), unidadMedida (texto opcional), precioDirecto (numero opcional), precioPublico (numero opcional), stockActual (numero opcional), proveedorId (select con las opciones de proveedores, opcional -- opcion vacia = sin proveedor), publicadoWeb (checkbox)",
+    "POST a /api/erp/catalogo con esos campos (strings vacios se mandan como undefined/null, no como '')",
+    "muestra data.error del backend si falla (incluye el caso 409 de SKU duplicado, que ya viene con mensaje claro del backend)",
+    "tras exito: router.refresh() (next/navigation) y limpia el formulario",
+    "NO se modifica lib/db/schema.ts, app/api/erp/catalogo/route.ts, ni lib/modules/catalogo/queries.ts (ya existen y estan correctos)",
+    "page.tsx sigue siendo Server Component (mantiene requireEmpleado(['admin','comercial'])), solo agrega el fetch de proveedores y <CrearProductoForm proveedores={...} /> antes de la tabla"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "git status --short (orquestador): solo los 2 archivos previstos modificados/creados",
+      "Lectura manual COMPLETA de components/erp/CrearProductoForm.tsx y app/app/erp/catalogo/page.tsx: identicos a lo prescrito",
+      "npx tsc --noEmit (orquestador, corrido junto con t-022): exit 0",
+      "npx eslint . (orquestador, corrido junto con t-022): exit 0",
+      "npx next build con DATABASE_URL placeholder (orquestador, corrido junto con t-022): mismo ECONNREFUSED esperado en / y /sitemap.xml, sin bugs nuevos"
+    ],
+    "salida_cruda": "Ejecutado en paralelo con t-022 (archivos disjuntos), QA combinada porque ambos tocan el mismo arbol. 4/4 verificaciones limpias en el primer intento. proveedorId select con opcion vacia = sin proveedor, tal como se pidio.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-01T00:05:00Z",
+  "cerrada_en": "2026-08-01T00:20:00Z"
+}

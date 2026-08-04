@@ -1,0 +1,32 @@
+{
+  "id": "t-016",
+  "titulo": "Taller: detalle de orden de trabajo con sus tareas de produccion",
+  "intencion_negocio": "El shell de taller (t-010) solo lista ordenes; falta ver/gestionar las tareas dentro de cada orden.",
+  "zona": "app/app/erp/taller/[ordenId]",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/app/erp/taller/[ordenId]/page.tsx (creado)",
+    "app/api/erp/tareas-produccion/route.ts (creado)",
+    "lib/modules/taller/queries.ts (modificado -- agregadas obtenerOrdenConTareas, actualizarEstadoTarea, imports fusionados correctamente)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "Usa requireEmpleado(['admin','taller'])",
+    "No inventa campos fuera del schema"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["find de los 2 archivos + verificacion de queries.ts", "npx tsc --noEmit", "npx eslint ."],
+    "salida_cruda": "Nota de proceso: la primera verificacion inmediatamente despues de la notificacion de 'completado' mostro los archivos como faltantes -- carrera de tiempo (el proceso de opencode aun no habia flush-eado a disco), no una falla real. Re-verificado ~1 minuto despues: 2/2 archivos presentes, queries.ts fusiono los imports correctamente (eq agregado a la linea existente de drizzle-orm, tareasProduccion agregado a la linea existente de schema, sin duplicados). tsc exit 0. eslint exit 0 (uso Link correctamente, siguiendo la advertencia explicita del prompt sobre la regla no-html-link-for-pages).",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T22:35:00Z",
+  "cerrada_en": "2026-07-31T22:42:00Z"
+}

@@ -1,0 +1,36 @@
+{
+  "id": "t-026",
+  "titulo": "ERP: gestion de portafolio publico (crear/editar casos, imagenes)",
+  "intencion_negocio": "Ruta migrada del legacy /app/erp/portfolio (portfolio_manager). El sitio publico (/portafolio) ya lee portfolio_publico + imagenes_portfolio (t-007), pero nadie puede crearlos/editarlos desde el ERP todavia.",
+  "zona": "app/app/erp/portfolio",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "lib/modules/portfolio/queries.ts (creado -- listarTodoElPortfolio incluye no publicados, crearCasoPortfolio, actualizarPublicado)",
+    "app/api/erp/portfolio/route.ts (creado -- GET/POST)",
+    "app/api/erp/portfolio/publicar/route.ts (creado -- PATCH publicado true/false)",
+    "app/app/erp/portfolio/page.tsx (creado)",
+    "components/erp/CrearPortfolioForm.tsx (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "requireEmpleado(['admin','comercial'])",
+    "slug unico -- 409 si duplicado",
+    "crear un caso NO agrega imagenes en esta tarea (eso es un componente de galeria mas complejo, fuera de alcance) -- solo titulo/slug/categoria/barrio/publicado",
+    "listado muestra tambien los NO publicados (a diferencia de la vista publica), con un boton para publicar/despublicar"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["npx tsc --noEmit: exit 0", "npx eslint .: exit 0", "lectura manual completa de queries.ts y route.ts: exactos al prompt, 409 en slug duplicado correcto", "curl end-to-end contra dev-local: GET /app/erp/portfolio -> 200"],
+    "salida_cruda": "Exacto al prompt en el primer intento.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-08-02T00:00:00Z",
+  "cerrada_en": "2026-08-02T04:20:00Z"
+}

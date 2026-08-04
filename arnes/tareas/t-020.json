@@ -1,0 +1,41 @@
+{
+  "id": "t-020",
+  "titulo": "Proveedores: UI para crear un proveedor nuevo",
+  "intencion_negocio": "La API para crear proveedor (POST /api/erp/proveedores, con crearProveedor en lib/modules/proveedores/queries.ts) ya existe con auth y validacion correctas, pero app/app/erp/proveedores/page.tsx es de solo lectura (tabla estatica). Mismo patron de hallazgo que t-019 (API construida sin UI que la use), encontrado en la misma oleada de auditoria del 2026-07-31.",
+  "zona": "app/app/erp/proveedores",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "components/erp/CrearProveedorForm.tsx (creado)",
+    "app/app/erp/proveedores/page.tsx (modificado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "npx eslint . sin errores",
+    "CrearProveedorForm es 'use client', formulario con nombre (requerido), nit (opcional), categoria (opcional)",
+    "POST a /api/erp/proveedores con { nombre, nit, categoria }, requireEmpleado ya esta en la API, no se toca esa ruta",
+    "tras crear con exito: usa router.refresh() (next/navigation) para que la tabla del Server Component se actualice con el nuevo proveedor, y limpia el formulario",
+    "manejo de error visible si falla (incluyendo 400 de validacion zod)",
+    "no se modifica lib/db/schema.ts ni app/api/erp/proveedores/route.ts ni lib/modules/proveedores/queries.ts (ya existen y estan correctos)",
+    "page.tsx sigue siendo Server Component (mantiene requireEmpleado(['admin','comercial']) y la tabla), solo agrega <CrearProveedorForm /> antes o despues de la tabla"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "git status --short (orquestador): solo los 2 archivos previstos modificados/creados",
+      "Lectura manual COMPLETA de components/erp/CrearProveedorForm.tsx y app/app/erp/proveedores/page.tsx: identicos a lo prescrito",
+      "npx tsc --noEmit (orquestador): exit 0",
+      "npx eslint . (orquestador): exit 0",
+      "npx next build con DATABASE_URL placeholder (orquestador): mismo ECONNREFUSED esperado en / y /sitemap.xml, sin bugs nuevos"
+    ],
+    "salida_cruda": "4/4 verificaciones limpias en el primer intento. router.refresh() tras exito para reflejar el nuevo proveedor en la tabla del Server Component sin recargar toda la pagina. Formulario se limpia solo si el POST fue exitoso.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T23:40:00Z",
+  "cerrada_en": "2026-07-31T23:55:00Z"
+}

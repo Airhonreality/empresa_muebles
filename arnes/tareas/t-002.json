@@ -1,0 +1,34 @@
+{
+  "id": "t-002",
+  "titulo": "Inventario arquitectónico del repo legacy (empresa_muebles_clone): qué es real, qué es deuda, qué NO se debe copiar",
+  "intencion_negocio": "Javier quiere una migración total pero minimalista y elegante: no copiar errores ni patrones que ya demostraron fallar (motor schema-driven genérico, zaps-como-datos desincronizados de Neon). Se necesita un mapa honesto del repo legacy antes de diseñar los módulos del repo nuevo.",
+  "zona": "diagnostico",
+  "tipo": "andamiaje",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "arnes/diagnostico/inventario_legacy.md (crear)"
+  ],
+  "criterios_aceptacion": [
+    "El inventario lista cada módulo funcional real del ERP legacy (cotizador, contratos, producción, finanzas, catálogo, clientes, sitio público) con una frase de qué hace.",
+    "El inventario señala explícitamente los patrones de arquitectura que NO deben repetirse en el repo nuevo, con el incidente concreto que lo justifica (ej. hitos_pago / deriva Neon-git).",
+    "El inventario lista los schemas de datos reales usados en producción (storage/db/schema_definitions.json) traducidos a lenguaje de negocio, no como JSON crudo.",
+    "El inventario no propone código ni arquitectura de destino todavía — es observación, no diseño."
+  ],
+  "plan_ref": null,
+  "ejecutor": "subagente Explore (claude, read-only)",
+  "verificador": "claude-sonnet-5 (orquestador, persistio el archivo entregado por el subagente ya que Explore no tiene Write/Edit)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["lectura de CLAUDE.md, current_state.md, schema_definitions.json, page_routes.json, src/components/specialized/, arbol_de_zaps.md"],
+    "salida_cruda": "Ver arnes/diagnostico/inventario_legacy.md. 15 modulos funcionales identificados, 33 namespaces traducidos a lenguaje de negocio, ~28 zaps catalogados, 5 patrones de arquitectura a NO repetir con evidencia de commit/incidente real, 12 zonas grises pendientes de decision del Supervisor.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T00:00:00Z",
+  "cerrada_en": "2026-07-31T17:05:00Z"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "t-012",
+  "titulo": "Captura de leads: pagina /agendar publica + guardado en tabla leads",
+  "intencion_negocio": "El sitio publico necesita un formulario real de agendamiento de asesoria que capture leads reales, no un placeholder.",
+  "zona": "app/(publico)/agendar",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/(publico)/agendar/page.tsx (creado)",
+    "app/api/leads/route.ts (creado)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "Formulario client component, POST a /api/leads",
+    "Validacion con zod, sin requerir sesion",
+    "Captura utm_source/medium/campaign de searchParams"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode/deepseek-v4-flash-free",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": ["ls de ambos archivos", "npx tsc --noEmit"],
+    "salida_cruda": "2/2 archivos confirmados. tsc exit 0.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "cerrada",
+  "creada_en": "2026-07-31T21:40:00Z",
+  "cerrada_en": "2026-07-31T21:44:00Z",
+  "bug_encontrado_post_cierre": "El 2026-07-31, al correr `npx next build` por primera vez en la sesion, se encontro que app/(publico)/agendar/page.tsx usaba useSearchParams() sin envolverlo en <Suspense>, causando fallo de prerender ('useSearchParams() should be wrapped in a suspense boundary'). Este era un criterio real de Next.js App Router que ni t-012.json ni el prompt prescriptivo de opencode declararon explicitamente -- leccion de proceso: prompts prescriptivos para opencode deben incluir explicitamente los requisitos de framework conocidos (Suspense para useSearchParams/useSearchParams-like hooks), no asumir que el modelo los conoce. Corregido separando el formulario en un componente interno envuelto en Suspense (commit posterior). tsc --noEmit no detecto este bug -- solo `next build` lo hizo."
+}

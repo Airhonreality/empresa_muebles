@@ -1,0 +1,46 @@
+{
+  "id": "t-013",
+  "titulo": "Portal de cliente: /cuenta con proyectos y perfil reales",
+  "intencion_negocio": "Un cliente autenticado necesita ver sus proyectos y contratos reales, no el placeholder actual.",
+  "zona": "app/cuenta",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/cuenta/page.tsx (modificado)",
+    "app/cuenta/proyectos/[id]/page.tsx (creado)",
+    "app/cuenta/perfil/page.tsx (creado)",
+    "lib/modules/cuenta/queries.ts (creado)",
+    "lib/modules/cuenta/queries.test.ts (creado, no listado originalmente pero necesario para probar el aislamiento mecanicamente)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit sin errores",
+    "Usa requireCliente()",
+    "Consultas siempre filtran por clienteId de la sesion",
+    "notFound() (no 403) si el proyecto es de otro cliente"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude-sonnet-5 (subagente)",
+  "verificador": "claude-sonnet-5 (orquestador, independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit (orquestador, re-ejecutado): exit 0",
+      "npx tsx lib/modules/cuenta/queries.test.ts (orquestador, re-ejecutado): 2/2 OK",
+      "Lectura manual completa de lib/modules/cuenta/queries.ts: confirmado que obtenerProyectoDeCliente incluye clienteId en el WHERE (no eq(id) suelto)",
+      "Lectura manual de app/cuenta/proyectos/[id]/page.tsx: confirmado que el orden es obtenerProyectoDeCliente() PRIMERO (con notFound si null) y recien despues obtenerContratoDeProyecto(proyecto.id) -- la cadena de seguridad se sostiene de punta a punta, no solo en la funcion aislada"
+    ],
+    "salida_cruda": "tsc exit 0. Test: 'OK: caso 1 (la condicion incluye cliente_id en el WHERE, no solo id)' + 'OK: caso 2 (mismo proyectoId + clienteId distinto => parametro de cliente distinto en el WHERE)'. El propio test dejo una nota honesta: prueba la condicion SQL compilada, no una corrida end-to-end contra la base real (no hay forma segura de insertar filas de prueba en la Neon compartida sin un checkpoint de escritura que no existe todavia).",
+    "veredicto": "aprobado",
+    "verificacion_end_to_end_2026_08_01": "Contra dev-local (Neon real): login cliente@dev.local OK. GET /cuenta/proyectos/<su-propio-proyecto> -> 200. GET /cuenta/proyectos/<uuid-inventado-que-no-existe> -> 404 (no 403, tal como exige el diseno). Cliente intentando GET /api/erp/catalogo (ruta de ERP) -> 403, aislamiento de superficie confirmado. No se probo el caso de un SEGUNDO cliente accediendo al proyecto del primero (el seed solo crea un cliente) -- la logica esta verificada por codigo (nota_gap_critico ya no aplica al gap de runtime, pero este caso especifico de dos-clientes sigue sin probarse en runtime)."
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "Aislamiento de datos verificado a nivel de codigo/SQL-compilado Y ahora con una corrida real parcial (ver qa.verificacion_end_to_end_2026_08_01) -- pendiente especificamente el caso de dos clientes distintos compitiendo por el mismo proyecto, que requeriria ampliar el seed. El veredicto de produccion sigue siendo exclusivo del Supervisor."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-07-31T21:40:00Z",
+  "cerrada_en": null,
+  "nota_gap_critico": "RESUELTO 2026-08-01 (ver arnes/estado.md, seccion de hallazgo critico): se creo la rama dev-local de Neon, se corrio migrate+seed+dev, y se probaron varios flujos reales incluido este modulo. Se deja este texto como registro historico de por que la verificacion original fue solo estatica."
+}

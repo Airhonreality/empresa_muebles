@@ -1,0 +1,40 @@
+{
+    "checkpoint":  {
+                       "nota":  "Ciclo C1-C6 consolidado (2026-08-03): convergencia estructuralmente estable. Checkpoint APROBADO por el Supervisor el 2026-08-03: todas las decisiones del Bloque C/B2/D y P5-09 fueron respondidas y aplicadas al Define y al mapa (ver log_insights_fase2.md I-053 y la seccion 'Checkpoint de decisiones' del consolidado). Se abre el loop 2 de diseno (schema/UI); quedan solo valores numericos configurables (ventanas SLA, % carpintero, neto disenador).",
+                       "requerido":  true,
+                       "veredicto_humano":  "aprobado",
+                       "fecha":  "2026-08-03"
+                   },
+    "id":  "t-042",
+    "plan_ref":  "arnes/diagnostico/pasadas/diamante2_metodologia_define.md",
+    "riesgo":  "alto",
+    "verificador":  "opencode orquestador (auditor)",
+    "zona":  "arnes/diagnostico/pasadas",
+    "criterios_aceptacion":  [
+                                 "Output con formato exacto de diamante2_metodologia_define.md (iteraciones 1/2/3 + tabla de hallazgos + notas para el Orquestador)",
+                                 "Cada hallazgo clasificado (MOVER_CONTEXTO/PARTIR_CONTEXTO/REFORZAR_FRONTERA/NUEVO_CONTRATO/DECISION_PENDIENTE/CORRECCION/OK_CON_DOC/DIFERIDO) y con trazabilidad archivo:linea",
+                                 "Anti-duplicacion: descarta YA RESUELTO (P2-P8 resueltos en el Define) y YA DIAMANTE 1 (cierre §4)",
+                                 "Regla de escepticismo: no inventa reglas de negocio; lo ambiguo se marca DECISION_PENDIENTE",
+                                 "Solo escribe su archivo de salida; no toca define, inventario, mapa ni cierre"
+                             ],
+    "archivos_afectados":  [
+                               "arnes/diagnostico/pasadas/define_c1_cohesion.md"
+                           ],
+    "qa":  {
+               "intentos":  3,
+               "salida_cruda":  "define_c1_cohesion.md: 7 hallazgos (C1-01..07), 35 trazas archivo:linea, formato OK. Veredicto: 0 PARTIR/MOVER_CONTEXTO; Comercial (15) y Finanzas (12) se sostienen; sin cajon de sastre. 3 ambiguedades de frontera (C1-03 E-20/E-08, C1-04 E-59/E-35, C1-06 E-54 multi-contexto) derivadas a Bloque B/C.",
+               "veredicto":  "aprobado",
+               "comandos":  [
+                                "lectura del output",
+                                "verificacion de formato/clasificacion/trazabilidad",
+                                "cruce contra inventario y panorama (anti-duplicacion)"
+                            ]
+           },
+    "intencion_negocio":  "Ciclo de pasadas agentivas sobre la CONVERGENCIA del segundo diamante (el contexto como unidad). Cada bounded context es internamente cohesivo (lenguaje + datos + motivo de cambio) o es cajon de sastre? Comercial/Cotizador (15) y Finanzas (12) son los mas grandes: se sostienen o piden subdivision? Eventos en contexto equivocado.. No escribe inventario ni mapa: solo su archivo de salida. Valida resoluciones de P2-P8, no re-reporta problemas.",
+    "tipo":  "mutacion_arnes",
+    "ejecutor":  "opencode subagente t-042",
+    "creada_en":  "2026-08-03T00:00:00Z",
+    "estado":  "cerrada",
+    "titulo":  "Pasada C1 cohesion: contextos como cajon de sastre",
+    "cerrada_en":  "2026-08-03T00:00:00Z"
+}
