@@ -13,7 +13,7 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 4. `main` y `legacy-agnostic-backup` intactos. No hubo push a `origin` todavía.
 
 **Próxima acción permitida:**
-- **Diamante 4 (sistema visual) ABIERTO** — metodología en `arnes/diagnostico/diamante4_metodologia.md`. Primera fase de la V3, previa a Ola 7.
+- **Diamante 4 (sistema visual) ABIERTO — Ola 4 cerrada, consolidado listo** (`arnes/diagnostico/pasadas/d4_consolidado_diseño.md`). Auditor B1 APROBADO (6/6 goals) con 5 condiciones de formalización, todas cerradas en el consolidado (numeración CC-DD-01..25, tokens de motion formales `--dur-*`/`--ease-*`, tokens de componente promovidos, botón `sm` corregido vs R35, conteo canónico ~143 tokens). **Siguiente: PoC (t-098)** — 3 pantallas piloto (P-04 cotizador, P-09 cronograma doble, F-01 landing) con `tsc`/`eslint`/`next build` limpios y screenshot; luego checkpoint humano del Supervisor (Ola 6).
 - Ola 7 (Execute) sigue su plan maestro (`arnes/planes/plan_ola7_maestro.md`, fases F0-F9) pero **las pantallas consumirán los tokens del D4** — no estilo improvisado.
 
 **Regla nueva de esta carpeta:** nunca reutilizar código del prototipo v2; si un patrón resultara necesario, se discute con el Supervisor antes de copiarlo.

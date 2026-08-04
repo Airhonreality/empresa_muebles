@@ -1,0 +1,33 @@
+{
+    "tipo": "mutacion_arnes",
+    "id": "t-096",
+    "riesgo": "alto",
+    "criterios_aceptacion": [
+        "Veredicto APROBADO/RECHAZADO contra goals duros del diamante 4",
+        "Audita coherencia de marca, cobertura 34 pantallas, contraste AA, a11y, implementabilidad en el stack (Next 15 + React 19 + Tailwind 4)",
+        "Audita que el out no contradice las decisiones cerradas del Supervisor (Luz & Biofilia, nunca verde literal, acento dorado)",
+        "Clasificacion de hallazgos con vocabulario del diamante 4",
+        "Trazabilidad archivo:linea al 100%",
+        "Solo escribe su archivo de salida"
+    ],
+    "creada_en": "2026-08-04T17:30:00Z",
+    "zona": "arnes/diagnostico/pasadas",
+    "titulo": "D4-B1 auditor final de diseño",
+    "verificador": "opencode orquestador (auditor)",
+    "plan_ref": "arnes/diagnostico/diamante4_metodologia.md",
+    "archivos_afectados": [
+        "arnes/diagnostico/pasadas/d4_b1_auditor_diseño.md"
+    ],
+    "ejecutor": "opencode subagente t-096",
+    "verificador": "opencode orquestador (auditor)",
+    "qa": {
+        "intentos": 1,
+        "comandos": [
+            "git status --porcelain (serializacion: solo d4_b1 y t-096 tocados)",
+            "lectura manual del output (veredicto por goal, contradicciones entre pases, trazabilidad archivo:linea)"
+        ],
+        "salida_cruda": "Veredicto GLOBAL APROBADO. Goals: coherencia APROBADO, cobertura 34/34 APROBADO, contraste AA APROBADO (24 ratios recalculados), a11y APROBADO (excepcion boton sm 32px), implementabilidad APROBADO condicionado (motion tokens, iconos, sonner), decisiones cerradas APROBADO. 5 condiciones de consolidacion: (1) colision numeracion DD-05..08 A2 vs A1/A3/A4, (2) motion tokens contados pero no definidos en A3, (3) tokens consumidos por A4 sin fila formal, (4) boton sm 32px vs R35, (5) conteo tokens A3 inexacto. 15 hallazgos: 1 CORRECCION, 5 GAP, 4 RUIDO, 5 DECISION_DISEÑO.",
+        "veredicto": "aprobado"
+    },
+    "estado": "cerrada"
+}

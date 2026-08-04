@@ -1,0 +1,33 @@
+{
+    "tipo": "mutacion_arnes",
+    "id": "t-093",
+    "riesgo": "alto",
+    "criterios_aceptacion": [
+        "Output con formato de diamante4_metodologia.md",
+        "Trazabilidad archivo:linea al 100%",
+        "Tokens completos y escalables: color+tipografia+spacing+radio+borde+sombra+z+motion, contraste WCAG AA, sin huecos para las 34 pantallas",
+        "Reconcilia el output de A1 (hex) y el supuesto de A2 (fuente display)",
+        "Clasificacion de hallazgos: CORRECCION_VISUAL / GAP_VISUAL / RUIDO_VISUAL / DECISION_DISEÑO / DIFERIDO",
+        "Solo escribe su archivo de salida"
+    ],
+    "creada_en": "2026-08-04T16:30:00Z",
+    "zona": "arnes/diagnostico/pasadas",
+    "titulo": "D4-A3 tokens visuales",
+    "verificador": "opencode orquestador (auditor)",
+    "plan_ref": "arnes/diagnostico/diamante4_metodologia.md",
+    "archivos_afectados": [
+        "arnes/diagnostico/pasadas/d4_a3_tokens_visuales.md"
+    ],
+    "ejecutor": "opencode subagente t-093",
+    "verificador": "opencode orquestador (auditor)",
+    "qa": {
+        "intentos": 2,
+        "comandos": [
+            "git status --porcelain (serializacion: solo d4_a3 y t-093/t-094 tocados)",
+            "lectura manual del output (formato diamante 4, trazabilidad archivo:linea, cobertura 34 pantallas)"
+        ],
+        "salida_cruda": "Primer intento no escribio archivo (resultado vacio). Segundo intento OK. ~135 tokens canonicos: color/estado 64, tipografia 19, spacing 13, radio 5, borde 10, sombra 8, z-index 11, motion 6. 34/34 pantallas cubiertas. Fuente display Fraunces + Inter UI + IBM Plex Mono. 4 GAP, 4 DECISION_DISEÑO (incluye exito DD-05), 5 CORRECCION, 3 RUIDO, 2 DIFERIDO.",
+        "veredicto": "aprobado"
+    },
+    "estado": "cerrada"
+}

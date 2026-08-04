@@ -1,0 +1,34 @@
+{
+    "tipo": "mutacion_arnes",
+    "id": "t-095",
+    "riesgo": "alto",
+    "criterios_aceptacion": [
+        "Output con formato de diamante4_metodologia.md",
+        "Trazabilidad archivo:linea al 100%",
+        "Primitivas cubriendo toda la biblioteca UI de las 34 pantallas, por estado y variante, con token por propiedad",
+        "Contrato: primitiva | estados (default/hover/active/disabled/error/loading) | variantes | medidas | token que usa | pantalla donde se aplica",
+        "Un desarrollador codifica el componente sin releer otra fuente",
+        "Clasificacion de hallazgos: CORRECCION_VISUAL / GAP_VISUAL / RUIDO_VISUAL / DECISION_DISEÑO / DIFERIDO",
+        "Solo escribe su archivo de salida"
+    ],
+    "creada_en": "2026-08-04T17:00:00Z",
+    "zona": "arnes/diagnostico/pasadas",
+    "titulo": "D4-A4 primitivas UI",
+    "verificador": "opencode orquestador (auditor)",
+    "plan_ref": "arnes/diagnostico/diamante4_metodologia.md",
+    "archivos_afectados": [
+        "arnes/diagnostico/pasadas/d4_a4_primitivas_ui.md"
+    ],
+    "ejecutor": "opencode subagente t-095",
+    "verificador": "opencode orquestador (auditor)",
+    "qa": {
+        "intentos": 1,
+        "comandos": [
+            "git status --porcelain (serializacion: solo d4_a4 y t-095 tocados)",
+            "lectura manual del output (formato diamante 4, trazabilidad archivo:linea, cobertura 34 pantallas)"
+        ],
+        "salida_cruda": "38 primitivas en 8 categorias, contrato completo por primitiva (estados/variantes/medidas/tokens por nombre/pantallas/a11y). 9 implicadas en los 5 gates (6 dedicadas + 3 de apoyo). 34/34 pantallas. 8 GAP, 10 DECISION_DISEÑO, 5 CORRECCION, 5 RUIDO, 3 DIFERIDO. Bloqueador de corte: token de exito DD-05 LOCKED (afecta 5 primitivas, no bloquea PoC por R14 icono+texto+neutral).",
+        "veredicto": "aprobado"
+    },
+    "estado": "cerrada"
+}

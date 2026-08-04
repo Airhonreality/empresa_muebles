@@ -1,0 +1,32 @@
+{
+    "tipo": "mutacion_arnes",
+    "id": "t-091",
+    "riesgo": "alto",
+    "criterios_aceptacion": [
+        "Output con formato de diamante4_metodologia.md",
+        "Trazabilidad archivo:linea al 100%",
+        "Identidad de marca destilada del corpus real (color/tono/tipografia), 0 invencion sin traza",
+        "Clasificacion de hallazgos: CORRECCION_VISUAL / GAP_VISUAL / RUIDO_VISUAL / DECISION_DISEÑO / DIFERIDO",
+        "Solo escribe su archivo de salida"
+    ],
+    "creada_en": "2026-08-04T16:00:00Z",
+    "zona": "arnes/diagnostico/pasadas",
+    "titulo": "D4-A1 auditoría visual de identidad",
+    "verificador": "opencode orquestador (auditor)",
+    "plan_ref": "arnes/diagnostico/diamante4_metodologia.md",
+    "archivos_afectados": [
+        "arnes/diagnostico/pasadas/d4_a1_auditoria_visual.md"
+    ],
+    "ejecutor": "opencode subagente t-091",
+    "verificador": "opencode orquestador (auditor)",
+    "qa": {
+        "intentos": 1,
+        "comandos": [
+            "git status --porcelain (serializacion: solo d4_a1 y t-091/t-092 tocados)",
+            "lectura manual del output (formato diamante 4, trazabilidad archivo:linea)"
+        ],
+        "salida_cruda": "23 hallazgos (4 CORRECCION_VISUAL, 5 GAP_VISUAL, 3 RUIDO_VISUAL, 8 DECISION_DISEÑO, 3 DIFERIDO). Trazabilidad archivo:linea en todas las afirmaciones. Identidad: Luz & Biofilia, Veta Dorada, Creador Experto.",
+        "veredicto": "aprobado"
+    },
+    "estado": "cerrada"
+}

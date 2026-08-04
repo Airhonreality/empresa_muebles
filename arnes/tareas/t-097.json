@@ -1,0 +1,30 @@
+{
+    "tipo": "mutacion_arnes",
+    "id": "t-097",
+    "riesgo": "alto",
+    "criterios_aceptacion": [
+        "Aplica las 5 condiciones de consolidacion del B1 (numeracion CC-DD normalizada, tokens de motion formales, tokens de componente promovidos, boton sm corregido, conteo canonico)",
+        "Registro canonico de DECISION_DISEÑO CC-DD-01..25 con tabla de equivalencias A1/A2 -> A3/A4",
+        "Contrato de salida para PoC/Ola 7 (tokens, primitivas, librerias, motion, verificacion)",
+        "Trazabilidad archivo:linea al 100%",
+        "Solo escribe su archivo de salida"
+    ],
+    "creada_en": "2026-08-04T18:00:00Z",
+    "zona": "arnes/diagnostico/pasadas",
+    "titulo": "D4-CONSOLIDADO sistema visual canonico",
+    "plan_ref": "arnes/diagnostico/diamante4_metodologia.md",
+    "archivos_afectados": [
+        "arnes/diagnostico/pasadas/d4_consolidado_diseño.md"
+    ],
+    "ejecutor": "opencode orquestador",
+    "verificador": "opencode orquestador (auditor)",
+    "qa": {
+        "intentos": 1,
+        "comandos": [
+            "lectura manual del output (5 condiciones del B1 aplicadas, numeracion normalizada, trazabilidad archivo:linea)"
+        ],
+        "salida_cruda": "Consolidado escrito. 5 condiciones cerradas: (1) numeracion canonica CC-DD-01..25 con equivalencias, (2) tokens de motion formales (7 dur + 5 ease), (3) tokens de componente promovidos (8), (4) boton sm excluido como interactivo, (5) conteo canonico ~143 tokens. Correcciones de reporte RUIDO-02/03/04 aplicadas. Contrato de salida para PoC documentado.",
+        "veredicto": "aprobado"
+    },
+    "estado": "cerrada"
+}

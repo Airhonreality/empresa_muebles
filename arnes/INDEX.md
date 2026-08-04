@@ -19,7 +19,7 @@ Declara las zonas del proyecto, sus dueños, y qué sí/qué no se puede hacer e
 Dónde estamos ahora. Mapeo sistémico del negocio (Double Diamond) convergido e integrado; **Fase 2 (diamante de solución: schema/UI/automatizaciones de capa 1) completada**; **Diamante 4 (sistema visual) ABIERTO — primera fase de la V3**.
 
 ### 3. arnes/diagnostico/
-Carpeta destino de los hallazgos del mapeo. **NUEVO: `diamante4_metodologia.md` — el sistema visual de la V3, fase previa a Ola 7.** Orden de lectura para entender el negocio:
+Carpeta destino de los hallazgos del mapeo. **NUEVO: `diamante4_metodologia.md` — el sistema visual de la V3, fase previa a Ola 7.** El sistema visual consolidado es **`pasadas/d4_consolidado_diseño.md`** (tokens canónicos ~143, 38 primitivas, motion formal, numeración CC-DD-01..25 — el out que Ola 7 consume). Orden de lectura para entender el negocio:
 1. `logica_de_negocio.md` — el mapa maestro (Parte I: negocio, Parte II: implicaciones técnicas). **Documento 1.**
 2. `segunda_ronda_preguntas.md` — banco de preguntas + respuestas crudas de Javier (21, todas respondidas).
 3. `cierre_diamante.md` — convergencia del Define (tesis, invariantes, bounded contexts, capacidad).
