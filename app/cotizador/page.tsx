@@ -97,7 +97,8 @@ export default function CotizadorPage() {
                   {col.items.map((c) => (
                     <li
                       key={c.n}
-                      className="rounded-md border border-border-subtle bg-bg-raised p-3 shadow-xs"
+                      className="group rounded-md border border-border-subtle bg-bg-raised p-3 shadow-xs transition-all duration-soft cursor-pointer hover:border-gold-400 hover:shadow-md focus-within:ring-2 focus-within:ring-gold-400"
+                      onClick={() => setModalItem({ n: c.n, palo: c.palo, cliente: c.cliente })}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-text-heading">{c.n}</span>
@@ -111,7 +112,10 @@ export default function CotizadorPage() {
                           variant="ghost"
                           size="md"
                           aria-label={`Detalle ${c.n}`}
-                          onClick={() => setModalItem({ n: c.n, palo: c.palo, cliente: c.cliente })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalItem({ n: c.n, palo: c.palo, cliente: c.cliente });
+                          }}
                         >
                           Detalle
                         </Button>

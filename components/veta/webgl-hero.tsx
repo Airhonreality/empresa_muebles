@@ -105,26 +105,26 @@ export function WebGLHero() {
         colorOffsets[i] = Math.random();
       }
 
-      const posBuffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-      const posLoc = gl.getAttribLocation(program, 'aPos');
-      gl.enableVertexAttribArray(posLoc);
-      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+      // Regla C6 (PoC 3.1): nunca habilitar un attribute sin buffer ligado.
+      // getAttribLocation devuelve -1 si el compilador descarta el atributo;
+      // habilitar -1 deja un array enabled sin buffer → INVALID_OPERATION en drawArrays.
+      const setupAttrib = (
+        buffer: WebGLBuffer,
+        data: Float32Array,
+        size: number,
+        name: string,
+      ) => {
+        const loc = gl.getAttribLocation(program, name);
+        if (loc < 0) return;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+      };
 
-      const sizeBuffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, sizeBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, sizes, gl.STATIC_DRAW);
-      const sizeLoc = gl.getAttribLocation(program, 'aSize');
-      gl.enableVertexAttribArray(sizeLoc);
-      gl.vertexAttribPointer(sizeLoc, 1, gl.FLOAT, false, 0, 0);
-
-      const colorBuffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, colorOffsets, gl.STATIC_DRAW);
-      const colorLoc = gl.getAttribLocation(program, 'aColorOffset');
-      gl.enableVertexAttribArray(colorLoc);
-      gl.vertexAttribPointer(colorLoc, 1, gl.FLOAT, false, 0, 0);
+      setupAttrib(gl.createBuffer()!, positions, 2, 'aPos');
+      setupAttrib(gl.createBuffer()!, sizes, 1, 'aSize');
+      setupAttrib(gl.createBuffer()!, colorOffsets, 1, 'aColorOffset');
 
       // --- Uniforms ---
       const uTime = gl.getUniformLocation(program, 'uTime')!;
@@ -183,12 +183,11 @@ export function WebGLHero() {
         window.removeEventListener('deviceorientation', onOrient);
         ro.disconnect();
         io.disconnect();
-        gl.deleteBuffer(posBuffer);
-        gl.deleteBuffer(sizeBuffer);
-        gl.deleteBuffer(colorBuffer);
-        gl.deleteProgram(program);
-        gl.deleteShader(vs);
-        gl.deleteShader(fs);
+        // PoC 3.1: sin deleteBuffer/deleteProgram en cleanup. En StrictMode
+        // (mount→cleanup→mount) el segundo mount REUTILIZA el mismo contexto;
+        // borrar buffers deja los attrib arrays enabled apuntando a buffers
+        // borrados → drawArrays INVALID_OPERATION. El contexto se libera solo
+        // al desmontar el canvas.
       };
     } catch {
       setWebglError(true);

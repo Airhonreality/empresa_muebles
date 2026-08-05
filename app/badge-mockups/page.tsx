@@ -13,6 +13,10 @@ export default function BadgeMockupsPage() {
         <p className="mt-2 text-text-muted">
           3 variantes visuales × 4 tonos semánticos. Variante <code className="bg-bg-alt px-1 rounded">mist</code> tiene micro-motion hover (glow + pulse dot).
         </p>
+        <p className="mt-2 rounded-md border border-gold-300 bg-gold-100/60 px-3 py-2 text-sm text-gold-800">
+          Dirección aprobada por el Supervisor (PoC 3.1): <strong>material → ERP</strong> ·{" "}
+          <strong>mist → web pública</strong> · glass queda exploratoria.
+        </p>
       </header>
 
       {variants.map((variant) => (

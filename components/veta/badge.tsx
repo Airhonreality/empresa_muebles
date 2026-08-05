@@ -46,13 +46,23 @@ const toneColors: Record<Tone, { bg: string; text: string; glow: string; border:
 
 const variantStyles: Record<Variant, string> = {
   glass: 'backdrop-blur-sm border ring-1 ring-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]',
-  material: 'bg-gradient-to-b from-white/90 to-white/60 border shadow-[inset_0_-1px_1px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.6)]',
-  mist: 'bg-white/70 border-0 ring-1 ring-transparent transition-all duration-300 hover:ring-current/40 hover:shadow-[0_0_16px_currentColor]',
+  material:
+    'bg-gradient-to-b from-white/90 to-white/60 border shadow-[inset_0_-1px_1px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.6)] transition-all duration-soft hover:-translate-y-px hover:shadow-[inset_0_-1px_1px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.12)] active:translate-y-0',
+  mist: 'bg-white/70 border-0 ring-1 ring-transparent transition-all duration-300 hover:ring-current/40 hover:shadow-[0_0_16px_currentColor] hover:-translate-y-px',
 };
 
-export function Badge({ tone = 'neutral', variant = 'glass', dot = false, children }: BadgeProps) {
+/* Dirección aprobada por el Supervisor (PoC 3.1): material → ERP,
+   mist → web pública. glass queda como opción exploratoria en mockups. */
+export function Badge({
+  tone = 'neutral',
+  variant = 'material',
+  dot = false,
+  children,
+}: BadgeProps) {
   const { bg, text, glow, border } = toneColors[tone];
   const vStyle = variantStyles[variant];
+  const dotAnim =
+    tone === 'danger' ? 'animate-dot-danger' : 'animate-dot-subtle';
 
   return (
     <span
@@ -69,8 +79,7 @@ export function Badge({ tone = 'neutral', variant = 'glass', dot = false, childr
           className={`
             h-1.5 w-1.5 rounded-full shrink-0
             bg-current/90
-            shadow-[0_0_4px_currentColor]
-            ${variant === 'mist' && 'animate-pulse'}
+            ${variant === 'mist' ? 'animate-pulse' : dotAnim}
           `}
         />
       )}

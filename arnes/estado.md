@@ -13,7 +13,7 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 4. `main` y `legacy-agnostic-backup` intactos. No hubo push a `origin` todavía.
 
 **Próxima acción permitida:**
-- **Diamante 4 (sistema visual) — PoC 3 EJECUTADA (C1–C6, 16/16 runtime PASS, ver abajo).** Siguiente: **checkpoint humano del Supervisor** con capturas (hub, landing, cotizador, cronograma, badge-mockups, modal-open) para decidir la dirección de badges (C2: glass/material/mist) y cerrar el Diamante 4 (Ola 6). **Tercer input humano** (`arnes/diagnostico/Tercer input/flujo_automatizacion/`) pendiente de revisión **antes de la Ola 7** (decisión del Supervisor).
+- **Diamante 4 (sistema visual) — PoC 3.1 (reauditoría) EJECUTADA (13/13 interacciones reales PASS, ver abajo).** Siguiente: **checkpoint humano del Supervisor** sobre la reauditoría (capturas en `poc31_shots`) para aprobar el cierre del D4 y arrancar **Ola 7**. **Tercer input humano** (`arnes/diagnostico/Tercer input/flujo_automatizacion/`) pendiente de revisión **antes de la Ola 7**.
 - Ola 7 (Execute) sigue su plan maestro (`arnes/planes/plan_ola7_maestro.md`, fases F0-F9) pero **las pantallas consumirán los tokens del D4** — no estilo improvisado.
 
 **Regla nueva de esta carpeta:** nunca reutilizar código del prototipo v2; si un patrón resultara necesario, se discute con el Supervisor antes de copiarlo.
@@ -40,6 +40,24 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 **Capturas de evidencia (6 PNG):** hub, landing, cotizador, cronograma, badge-mockups, modal-open — ruta local `C:\Users\javir\AppData\Local\Temp\opencode\poc3_shots\`.
 
 **Pendientes antes de Ola 7:** (a) checkpoint Supervisor PoC 3 (decidir badge direction); (b) revisar `Tercer input/flujo_automatizacion/` (flujo de automatización, sin registrar).
+
+---
+
+## ✅ Diamante 4 — PoC 3.1 (reauditoría) EJECUTADA Y VERIFICADA (2026-08-04)
+
+**Contexto:** el Supervisor aprobó la PoC 3 CON CONDICIONES. Crítica principal: el runtime "funcionaba" en los checks automáticos pero **no mostraba interacción real** (no había dónde clicar). Decisión: PoC 3.1 mínima pero reauditada ("cumplamos completamente ese requerimiento para poder comenzar Ola 7"). Plan y resultados en `d4_prueba_concepto.md` §9–§10 (t-099).
+
+**Qué se hizo (6 items):**
+1. **Kanban clickeable** — tarjeta completa abre modal (cursor + hover ring + focus-within), botón Detalle con stopPropagation.
+2. **Landing viva** — CTAs son `<Link>` reales (→ /cotizador, → /badge-mockups); tarjetas de obras abren modal Radix.
+3. **Checklist interactivo** — checkbox real con toggle de estado.
+4. **Fix WebGL** — `setupAttrib()` guard `loc<0` + sin `delete*` en cleanup (StrictMode remount).
+5. **Fix scroll** — `data-scroll-behavior="smooth"` en `<html>`.
+6. **Badges dirección aprobada** — `material` default en ERP, `mist` en web; dot pulse sutil neutro / acelerado danger; hover en material.
+
+**Verificación:** tsc 0 · eslint 0 · build 6 rutas · **Playwright 13/13 interacciones REALES PASS** (clic tarjeta kanban abre modal, clic CTA navega, clic obra abre modal, checkbox toggle, badge directions) · **consola 0 errores** (sin WebGL, sin scroll warning). Capturas en `C:\Users\javir\AppData\Local\Temp\opencode\poc31_shots\`.
+
+**Nota operativa:** el `next build` pisa `.next` y rompe el dev server; se reinició limpio en `:3215` (PID guardado).
 
 ---
 

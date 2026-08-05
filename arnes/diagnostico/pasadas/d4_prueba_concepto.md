@@ -360,6 +360,106 @@ El layout raíz `app/layout.tsx` es mínimo (`<html>`+`<body>`+`children`): **si
 
 ---
 
+## 9. Plan PoC 3.1 — reauditoría del Supervisor (interacción real) · t-099
+
+**Fecha:** 2026-08-04 · **Decisión del Supervisor sobre PoC 3:** APROBADO CON CONDICIONES.
+
+### 9.1 Rúbrica puntuada por el Supervisor
+
+| Criterio | Puntaje | Comentario del Supervisor |
+|---|---|---|
+| C1 Tipografía | 5/5 | — |
+| C2 Badges | Aprobado condicional | **Dirección:** `material` → ERP, `mist` → web pública. Mejorar animación: pulso sutil en estados neutros, pulso acelerado visible en `danger`. Casi no hay interacción en la variante `material` → acentuar. |
+| C3 Motion | Aprobado parcial | El desarrollo existente es de calidad pero **muy poco**: no hay interacción real (checks no hacen nada, no abre modales, no hay transiciones percibidas). Falta más desarrollo en más elementos de UI. |
+| C4 AppShell | Aprobado | — |
+| C5 Modal Radix | Aprobado (n/d) | El Supervisor no sabía dónde verlo (gatillo solo en el botón ghost "Detalle" del cotizador). |
+| C6 WebGL | Aprobado parcial | Bien, pero "casi no hubo un concept design art". Explotar más. |
+| Q Calidad | Aprobado con 2 fixes | `data-scroll-behavior="smooth"` faltante en `<html>` (warning Next 15) + **bug WebGL**: `drawArrays: no buffer is bound to enabled attribute` (`webgl-hero.tsx:169`). |
+
+### 9.2 Hallazgo crítico de la reauditoría (diagnóstico Playwright)
+
+**El runtime de la PoC 3 NO mostraba interacción real al Supervisor**, a pesar de que la verificación Playwright 16/16 pasó:
+
+| Página | Qué pasó en la PoC 3 | Qué NO pasaba (crítica) |
+|---|---|---|
+| Cotizador | Modal funciona SOLO desde el botón ghost "Detalle" | Las **tarjetas kanban enteras** no eran clickeables ni tenían affordance (hover) |
+| Landing | Botones "Cotizar un proyecto" / "Ver portafolio" eran `<button>` **sin** `onClick` ni `href` | **Nada navega ni abre nada**; tarjetas de obras no responden |
+| Cronograma | Checklist = `<span>` estáticos | **No hay checkbox real** ni toggle |
+| Hub | Solo los links del nav funcionan | (única interacción que el Supervisor vio) |
+
+**Causa raíz:** el requisito original de la PoC 3 era "ver interacción real en runtime" y se implementó interacción mínima pero **sin affordance ni handlers reales** en la mayoría de elementos. La verificación automática pasó porque clickeaba el botón programáticamente; el humano no encuentra dónde clicar.
+
+### 9.3 Plan PoC 3.1 (aprobado por el Supervisor — "cumplamos completamente ese requerimiento para poder comenzar Ola 7")
+
+| # | Item | Archivos |
+|---|---|---|
+| 1 | **Kanban clickeable:** tarjeta entera abre modal (cursor-pointer + hover ring + `onClick` en `<li>`), mantener botón Detalle | `app/cotizador/page.tsx` |
+| 2 | **Landing viva:** "Cotizar un proyecto" → navega a `/cotizador` (Link); "Ver portafolio" → navega a `/badge-mockups` (Link); tarjetas de obras clickeables → abre modal de obra | `app/landing/page.tsx` (pasa a `'use client'` donde haga falta) |
+| 3 | **Checklist interactivo:** checkbox real con toggle de estado (aria-checked, animación de check) | `app/cronograma/page.tsx` (pasa a `'use client'`) |
+| 4 | **Fix WebGL:** quitar `deleteBuffer`/`deleteProgram` del cleanup (rompen remount StrictMode) + guard `getAttribLocation` < 0 + try/catch total | `components/veta/webgl-hero.tsx` |
+| 5 | **Fix scroll:** `data-scroll-behavior="smooth"` en `<html>` | `app/layout.tsx` |
+| 6 | **Badges dirección:** `material` por defecto en ERP, `mist` por defecto en web pública + animación (pulso sutil neutro, pulso acelerado danger, interacción en material) | `components/veta/badge.tsx` + páginas |
+
+**Criterio de éxito PoC 3.1 (reauditoría):** Playwright con **interacciones humanas reales** (click en tarjeta kanban → modal abre; click en botones landing → navegación; toggle de checklist → estado cambia) + consola 0 errores (sin warning scroll, sin WebGL) + `tsc`/`eslint` 0 + build OK.
+
+---
+
+## 10. Resultados PoC 3.1 — reauditoría (rol Código) · t-099
+
+**Fecha:** 2026-08-04 · **Estado:** los 6 items del plan §9.3 implementados y verificados con **interacciones humanas reales**.
+
+### 10.1 Verificación mecánica
+
+| Verificación | Comando | Umbral | Resultado |
+|---|---|---|---|
+| Tipos | `npx tsc --noEmit` | 0 errores | ✅ PASS |
+| Estilo | `npx eslint .` | 0 errores | ✅ PASS |
+| Build | `npx next build` | rutas OK | ✅ 6 rutas static |
+| Runtime reauditado | Playwright dev (`:3215`) | interacciones reales | ✅ **13/13 PASS** |
+
+### 10.2 Checks de interacción real (Playwright — clics de usuario, no programáticos)
+
+1. Tarjeta kanban completa: `cursor: pointer` + **clic en la tarjeta** (posición interior, no el botón) abre modal `role=dialog` con título "Detalle #1042" — PASS
+2. Escape cierra el modal — PASS
+3. Landing: "Cotizar un proyecto" es un **`<a href="/cotizador">`** real y navega — PASS
+4. Tarjeta de obra en landing: clic abre modal de obra — PASS
+5. Cronograma: checkbox real (rol `checkbox`), toggle on/off cambia estado — PASS
+6. Badge ERP usa `material` (hover translate) — PASS
+7. Badge landing usa `mist` (hover glow) — PASS
+8. **Sin** error WebGL `no buffer is bound` — PASS (fix §10.4)
+9. **Sin** warning `data-scroll-behavior` — PASS (fix §10.4)
+10. Consola: 0 pageerror / 0 console.error — PASS
+
+### 10.3 Bugs corregidos en la reauditoría
+
+| # | Bug | Causa raíz | Fix |
+|---|---|---|---|
+| 1 | **WebGL `drawArrays: no buffer is bound to enabled attribute`** (consola runtime, no visible con tsc/eslint/build) | Dos causas: (a) si `getAttribLocation` devuelve -1 (atributo descartado por el compilador), `enableVertexAttribArray(-1)` dejaba un array enabled sin buffer ligado; (b) los `deleteBuffer`/`deleteProgram` del cleanup de la PoC 3 rompían el remount de StrictMode (mount→cleanup→mount reutiliza el MISMO contexto → arrays enabled apuntando a buffers borrados). | (a) `setupAttrib()` guarda `loc < 0` y solo habilita con buffer ligado; (b) **sin** `delete*` en cleanup — el contexto se libera al desmontar el canvas. |
+| 2 | **Warning Next 15 `scroll-behavior: smooth`** | Falta el atributo `data-scroll-behavior` en `<html>`. | `data-scroll-behavior="smooth"` en `app/layout.tsx`. |
+| 3 | **Interacción ausente** (crítica del Supervisor): el runtime "funcionaba" (16/16 checks previos) pero el humano no encontraba dónde clicar | La PoC 3 solo tenía 1 gatillo (botón ghost "Detalle" en cotizador); el resto de elementos eran `<span>`/`<article>` inertes, botones `<button>` sin `onClick` ni `href`. | Kanban entera clickeable (cursor + hover ring + focus); landing CTAs son `<Link>` reales; tarjetas de obra abren modal; checklist convertido en checkbox real con toggle. |
+
+### 10.4 Artefactos PoC 3.1 (rama `dev`)
+
+- `app/cotizador/page.tsx` — tarjeta kanban completa abre modal (`onClick` en `<li>` + `cursor-pointer` + `hover:border-gold-400` + `focus-within:ring`), botón Detalle con `stopPropagation`.
+- `app/landing/page.tsx` — pasa a `'use client'`; CTAs como `<Link>` a `/cotizador` y `/badge-mockups`; tarjetas de obras clickeables abren `Modal` de obra (Radix, con badge `mist`).
+- `app/cronograma/page.tsx` — pasa a `'use client'`; checklist a checkbox real (`aria-label`, `checked` state, toggle, check `✓` con `peer`).
+- `components/veta/webgl-hero.tsx` — `setupAttrib()` con guard `loc < 0`; cleanup sin `delete*`.
+- `app/layout.tsx` — `data-scroll-behavior="smooth"`.
+- `components/veta/badge.tsx` — dirección aprobada: **default `material`** (ERP), `mist` explícito en web; dot con `animate-dot-subtle` (neutro/info/warning) y `animate-dot-danger` (acelerado 0.9s en danger); `material` con hover-elevate + sombra; `mist` con glow hover.
+- `app/globals.css` — `@keyframes dotPulseSubtle` + `@utility animate-dot-subtle` + `@keyframes dotPulseDanger` + `@utility animate-dot-danger`.
+- `app/badge-mockups/page.tsx` — nota de dirección aprobada (material→ERP, mist→web).
+
+### 10.5 Capturas de evidencia (5 PNG en `C:\Users\javir\AppData\Local\Temp\opencode\poc31_shots\`)
+
+`kanban-modal.png` · `landing.png` · `landing-obra-modal.png` · `cronograma-checkbox.png` · `badge-mockups.png`
+
+### 10.6 Pendiente
+
+- **Checkpoint del Supervisor** sobre la reauditoría: aprobar cierre del D4 y arrancar **Ola 7**.
+- **Tercer input humano** (`Tercer input/flujo_automatizacion/`): revisar antes de la Ola 7.
+
+---
+
 ## 7.4 Anexo C6 — Informe completo sub-agente explore (raw WebGL)
 
 **Hallazgo crítico:** Three.js **EXCEDE budget** (112–137KB gz vs 50KB target). **Decisión: raw WebGL / Canvas 2D** (~3–8KB gz, PASS rendimiento).

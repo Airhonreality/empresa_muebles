@@ -1,9 +1,25 @@
+"use client";
+
+import { useState } from "react";
 import { Badge } from "@/components/veta/badge";
 
 /* P-09 · Cronograma doble operativo (PoC D4).
    Valida: timeline doble (#34), checklist de entrega E-21 (#35),
    tabla de caja (#14), tokens de warning/info semánticos. */
 export default function CronogramaPage() {
+  const [checklist, setChecklist] = useState([
+    { item: "Cortes con tolerancia ±1mm", ok: true },
+    { item: "Canteado en todas las aristas visibles", ok: true },
+    { item: "Lijado fino calibre 220", ok: true },
+    { item: "Prueba de herrajes antes de empaque", ok: false },
+  ]);
+
+  const toggleCheck = (index: number) => {
+    setChecklist((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, ok: !c.ok } : c)),
+    );
+  };
+
   const lineas = [
     {
       semana: "S1",
@@ -33,13 +49,6 @@ export default function CronogramaPage() {
       encargado: "Logística · R. Gómez",
       estado: "pending" as const,
     },
-  ];
-
-  const checklist = [
-    { item: "Cortes con tolerancia ±1mm", ok: true },
-    { item: "Canteado en todas las aristas visibles", ok: true },
-    { item: "Lijado fino calibre 220", ok: true },
-    { item: "Prueba de herrajes antes de empaque", ok: false },
   ];
 
   const partidas = [
@@ -113,28 +122,33 @@ export default function CronogramaPage() {
               Checklist pre-entrega
             </h2>
             <ul className="mt-4 flex flex-col gap-2">
-              {checklist.map((c) => (
+              {checklist.map((c, i) => (
                 <li
                   key={c.item}
-                  className="flex items-start gap-3 rounded-md border border-border-subtle bg-bg-raised p-3"
+                  className="flex items-start gap-3 rounded-md border border-border-subtle bg-bg-raised p-3 transition-colors duration-fast hover:border-gold-400 focus-within:ring-2 focus-within:ring-gold-400"
                 >
-                  <span
-                    aria-hidden
-                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-xs font-bold ${
-                      c.ok
-                        ? "bg-gold-600 text-white"
-                        : "border border-border-default bg-bg-raised text-transparent"
-                    }`}
-                  >
-                    ✓
-                  </span>
-                  <span
-                    className={`text-sm ${
-                      c.ok ? "text-text-primary" : "font-medium text-warning-text"
-                    }`}
-                  >
-                    {c.item}
-                  </span>
+                  <label className="relative flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={c.ok}
+                      onChange={() => toggleCheck(i)}
+                      aria-label={c.item}
+                      className="peer mt-0.5 h-5 w-5 shrink-0 appearance-none rounded-sm border border-border-default bg-bg-raised transition-colors duration-fast checked:border-gold-600 checked:bg-gold-600 focus-visible:shadow-ring-focus"
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute left-[5px] top-[3px] hidden text-xs font-bold text-white peer-checked:inline"
+                    >
+                      ✓
+                    </span>
+                    <span
+                      className={`text-sm ${
+                        c.ok ? "text-text-primary" : "font-medium text-warning-text"
+                      }`}
+                    >
+                      {c.item}
+                    </span>
+                  </label>
                 </li>
               ))}
             </ul>

@@ -46,6 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      data-scroll-behavior="smooth"
       className={`${fraunces.variable} ${inter.variable} ${plexMono.variable} ${teachers.variable} h-full antialiased`}
     >
       <head>

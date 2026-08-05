@@ -222,3 +222,37 @@ html:focus-within {
 @utility animate-pulse-subtle {
   animation: pulseSubtle 2s var(--ease-out) infinite;
 }
+
+/* Pulse sutil para dot de badge — latido calmado (estados neutral/info/warning) */
+@keyframes dotPulseSubtle {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 4px currentColor;
+  }
+  50% {
+    opacity: 0.45;
+    box-shadow: 0 0 1px currentColor;
+  }
+}
+
+@utility animate-dot-subtle {
+  animation: dotPulseSubtle 2.4s var(--ease-out) infinite;
+}
+
+/* Pulse acelerado y visible para badge danger — latido de alerta */
+@keyframes dotPulseDanger {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 6px currentColor;
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+    box-shadow: 0 0 12px currentColor;
+  }
+}
+
+@utility animate-dot-danger {
+  animation: dotPulseDanger 0.9s var(--ease-in-out) infinite;
+}
