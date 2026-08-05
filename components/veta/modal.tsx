@@ -1,68 +1,42 @@
-"use client";
+'use client';
 
-import { type ReactNode, useEffect } from "react";
+import * as Dialog from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
+import { Button } from '@/components/veta/button';
 
-export interface ModalProps {
+interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-/* Primitiva Modal (A4 #2). Motion real (entrada/salida) sobre propiedades
-   compositor-only (opacity, translateY). Focus trap básico (tablero de
-   a11y). Overlay z-index token (`z-modal`). backdrop-token (`overlay-backdrop`). */
 export function Modal({ open, onClose, title, children }: ModalProps) {
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.activeElement as HTMLElement | null;
-    const first = document.querySelector<HTMLElement>(
-      '[data-modal-content] button, [data-modal-content] input, [data-modal-content] button'
-    );
-    first?.focus();
-    return () => {
-      prev?.focus();
-    };
-  }, [open]);
-
-  useEffect((/* cmd/enter-to-close intent */) => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
   return (
-      <div
-        aria-modal="true"
-        role="dialog"
-        aria-label={title}
-        className="fixed inset-0 z-modal flex items-center justify-center bg-overlay-backdrop p-4"
-        onClick={onClose}
-      >
-        <div
-          data-modal-content
-          role="document"
-          className="w-full max-w-lg animate-slide-in rounded-lg border border-border-subtle bg-bg-raised p-6 shadow-xl duration-200 ease-out"
-          onClick={(e) => e.stopPropagation()}
+    <Dialog.Root open={open} onOpenChange={onClose}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-modal bg-overlay-backdrop data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Content
+          className="fixed left-[50%] top-[50%] z-modal grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border-subtle bg-bg-raised p-6 shadow-xl duration-200 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-2 sm:max-w-lg"
         >
-          <header className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold text-text-heading">{title}</h2>
-            <button
-              type="button"
+          <Dialog.Title className="font-display text-xl font-semibold text-text-heading">
+            {title}
+          </Dialog.Title>
+          <Dialog.Description asChild>
+            <div className="text-sm text-text-muted">{children}</div>
+          </Dialog.Description>
+          <Dialog.Close asChild>
+            <Button
+              variant="icon"
+              size="md"
+              className="absolute right-4 top-4 rounded-sm text-text-muted hover:text-text-heading"
               aria-label="Cerrar"
-              onClick={onClose}
-              className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-sm text-text-muted hover:text-text-heading"
             >
-              ✕
-            </button>
-        </header>
-        {children}
-      </div>
-    </div>
+              <X className="h-5 w-5" />
+            </Button>
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

@@ -6,7 +6,8 @@ interface StatCardProps {
 }
 
 /* Primitiva StatCard / KPI con diseño de número (A4 + consolidado CC-DD-23).
-   El número salta al valor (motion, en PoC render estático). */
+   El número salta al valor (motion, en PoC render estático).
+   C3 PoC 3: hover-elevate transition. */
 export function StatCard({ label, value, unit, tone = "neutral" }: StatCardProps) {
   const valueColors: Record<string, string> = {
     neutral: "text-text-heading",
@@ -20,7 +21,7 @@ export function StatCard({ label, value, unit, tone = "neutral" }: StatCardProps
   };
   return (
     <div
-      className={`flex flex-col gap-1 rounded-md border bg-bg-raised p-4 shadow-xs ${accentBorders[tone]}`}
+      className={`flex flex-col gap-1 rounded-md border bg-bg-raised p-4 shadow-xs transition-all duration-soft hover:shadow-lg hover:-translate-y-1 ${accentBorders[tone]}`}
     >
       <span className="text-sm text-text-muted">{label}</span>
       <span className={`font-display text-kpi font-semibold leading-none ${valueColors[tone]}`}>

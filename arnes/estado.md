@@ -13,10 +13,33 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 4. `main` y `legacy-agnostic-backup` intactos. No hubo push a `origin` todavía.
 
 **Próxima acción permitida:**
-- **Diamante 4 (sistema visual) ABIERTO — Ola 4 cerrada, consolidado listo** (`arnes/diagnostico/pasadas/d4_consolidado_diseño.md`). Auditor B1 APROBADO (6/6 goals) con 5 condiciones de formalización, todas cerradas en el consolidado (numeración CC-DD-01..25, tokens de motion formales `--dur-*`/`--ease-*`, tokens de componente promovidos, botón `sm` corregido vs R35, conteo canónico ~143 tokens). **Siguiente: PoC (t-098)** — 3 pantallas piloto (P-04 cotizador, P-09 cronograma doble, F-01 landing) con `tsc`/`eslint`/`next build` limpios y screenshot; luego checkpoint humano del Supervisor (Ola 6).
+- **Diamante 4 (sistema visual) — PoC 3 EJECUTADA (C1–C6, 16/16 runtime PASS, ver abajo).** Siguiente: **checkpoint humano del Supervisor** con capturas (hub, landing, cotizador, cronograma, badge-mockups, modal-open) para decidir la dirección de badges (C2: glass/material/mist) y cerrar el Diamante 4 (Ola 6). **Tercer input humano** (`arnes/diagnostico/Tercer input/flujo_automatizacion/`) pendiente de revisión **antes de la Ola 7** (decisión del Supervisor).
 - Ola 7 (Execute) sigue su plan maestro (`arnes/planes/plan_ola7_maestro.md`, fases F0-F9) pero **las pantallas consumirán los tokens del D4** — no estilo improvisado.
 
 **Regla nueva de esta carpeta:** nunca reutilizar código del prototipo v2; si un patrón resultara necesario, se discute con el Supervisor antes de copiarlo.
+
+---
+
+## ✅ Diamante 4 — PoC 3 (C1–C6) EJECUTADA Y VERIFICADA (2026-08-04)
+
+**Plan:** `arnes/diagnostico/pasadas/d4_prueba_concepto.md` §7 (aprobado por el Supervisor). Resultados detallados en §8 del mismo archivo.
+
+| C | Item | Resultado |
+|---|---|---|
+| C1 | Fuente Teachers (next/font → `--font-sans`) | ✅ |
+| C2 | Badges solar punk: 3 variantes (glass+glow / material+bevel / mist niebla) + preview `/badge-mockups` | ✅ pendiente elección Supervisor |
+| C3 | Runtime viva: View Transitions + hover-elevate + stepper pulse + `active:scale` | ✅ |
+| C4 | AppShell (header sticky z-nav + nav global NavItem + footer) + deshardcodear hub | ✅ |
+| C5 | Radix incremental: `@radix-ui/react-dialog` 1.1.23 replace Modal (FocusScope, Escape, aria-hidden) + `lucide-react` | ✅ |
+| C6 | WebGL hero raw WebGL2 (GLSL ES 3.00, 200 partículas, parallax, IntersectionObserver) + fallback CSS + reduce-motion | ✅ chunk **2KB gz** |
+
+**Verificación mecánica:** `tsc` 0 · `eslint` 0 · `next build` 6 rutas · **Playwright 16/16 PASS** (AppShell en 5 rutas, nav activo, Teachers, View Transitions, hover, modal Radix focus+Escape, 3 badges, canvas webgl2, reduce-motion CSS, consola limpia).
+
+**2 bugs reales encontrados solo en runtime (no en tsc/eslint/build) y corregidos:** (1) shader WebGL con sintaxis GLSL ES 1.00 en contexto WebGL2 + `loseContext()` en cleanup que rompía el remount de StrictMode → migrado a GLSL ES 3.00 + guard `isContextLost()` + try/catch → fallback CSS; (2) modal `<p>` (DialogDescription) conteniendo `<div>` → `asChild` con `<div>`.
+
+**Capturas de evidencia (6 PNG):** hub, landing, cotizador, cronograma, badge-mockups, modal-open — ruta local `C:\Users\javir\AppData\Local\Temp\opencode\poc3_shots\`.
+
+**Pendientes antes de Ola 7:** (a) checkpoint Supervisor PoC 3 (decidir badge direction); (b) revisar `Tercer input/flujo_automatizacion/` (flujo de automatización, sin registrar).
 
 ---
 

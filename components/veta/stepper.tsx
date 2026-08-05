@@ -70,7 +70,7 @@ function StepMarker({ state }: { state: StepDef["state"] }) {
     ),
     active: (
       <span
-        className="h-6 w-6 rounded-full border-2 border-gold-600 bg-gold-200 shadow-[0_0_0_4px_rgba(139,105,20,0.12)]"
+        className="h-6 w-6 rounded-full border-2 border-gold-600 bg-gold-200 shadow-[0_0_0_4px_rgba(139,105,20,0.12)] animate-pulse-subtle"
         aria-hidden
       />
     ),

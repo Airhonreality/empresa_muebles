@@ -1,5 +1,6 @@
 import { Button } from "@/components/veta/button";
 import { Badge } from "@/components/veta/badge";
+import { WebGLHeroWrapper } from '@/components/veta/webgl-hero-wrapper';
 
 /* F-01 · Landing público (PoC del D4 §Ola4-Objetivo 1).
    Valida: display tipográfico público, paleta Luz y Biofilia, layout seccional. */
@@ -13,8 +14,11 @@ export default function LandingPage() {
   return (
     <main className="flex-1">
       {/* Header hereda del layout raíz; hero aquí */}
-      <section className="border-b border-border-subtle bg-bg-paper">
-        <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-end lg:py-28">
+      <section className="relative border-b border-border-subtle bg-bg-paper overflow-hidden">
+        <WebGLHeroWrapper />
+        {/* CSS Fallback hero (partículas CSS @keyframes) */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--gold-300)_0%,_transparent_70%)] opacity-30" aria-hidden="true" />
+        <div className="relative mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-end lg:py-28">
           <div>
           <Badge tone="neutral" dot>
             Normativa Veta Dorada
@@ -65,7 +69,7 @@ export default function LandingPage() {
             {obras.map((o) => (
               <article
                 key={o.titulo}
-                className="rounded-md border border-border-subtle bg-bg-raised p-6 shadow-xs transition-shadow duration-soft hover:shadow-lg"
+                className="rounded-md border border-border-subtle bg-bg-raised p-6 shadow-xs transition-all duration-soft hover:shadow-lg hover:-translate-y-1"
               >
                 <div className="mb-4 h-28 rounded-sm bg-skeleton-bg" aria-hidden />
                 <h3 className="font-display text-lg font-semibold text-text-heading">

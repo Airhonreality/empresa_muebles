@@ -77,7 +77,7 @@
 
   /* ---- Tipografía · familias ---- */
   --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Teachers", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
   /* ---- Tipografía · escala estática redesign ERP + fluida público ---- */
@@ -207,4 +207,18 @@ html:focus-within {
 
 @utility animate-slide-in {
   animation: slideIn var(--dur-base) var(--ease-out);
+}
+
+/* Pulse sutil para stepper activo — usa tokens de motion */
+@keyframes pulseSubtle {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(139, 105, 20, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(139, 105, 20, 0.08);
+  }
+}
+
+@utility animate-pulse-subtle {
+  animation: pulseSubtle 2s var(--ease-out) infinite;
 }

@@ -1,6 +1,3 @@
-import Link from "next/link";
-import { Button } from "@/components/veta/button";
-
 /* Hub de la PoC del Diamante 4 — enlaza las tres pantallas piloto. */
 export default function Home() {
   const pantallas = [
@@ -21,18 +18,20 @@ export default function Home() {
           Tres pantallas piloto que validan la implementabilidad del sistema visual
           canónico (tokens + primitivas) sobre Next 15 + React 19 + Tailwind v4.
         </p>
-        <nav className="mt-10 flex flex-col gap-4 sm:flex-row">
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
           {pantallas.map((p) => (
-            <Link key={p.href} href={p.href} className="flex-1">
-              <Button variant="secondary" className="w-full">
-                <span className="block">
-                  <span className="block font-medium">{p.titulo}</span>
-                  <span className="block text-xs font-normal text-text-muted">{p.desc}</span>
-                </span>
-              </Button>
-            </Link>
+            <a
+              key={p.href}
+              href={p.href}
+              className="rounded-md border border-border-subtle bg-bg-raised p-6 shadow-xs transition-shadow duration-soft hover:shadow-lg"
+            >
+              <h2 className="font-display text-lg font-semibold text-text-heading">
+                {p.titulo}
+              </h2>
+              <p className="mt-1 text-sm text-text-muted">{p.desc}</p>
+            </a>
           ))}
-        </nav>
+        </div>
       </div>
     </main>
   );
