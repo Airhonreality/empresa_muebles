@@ -20,6 +20,33 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 
 ---
 
+## ✅ Diamante 4 — Prueba de concepto (t-098) COMPLETADA (2026-08-04)
+
+**Auditoría B1 (2026-08-04):** APROBADO 6/6 goals con 5 condiciones de consolidación, todas cerradas en `arnes/diagnostico/pasadas/d4_consolidado_diseño.md` (numeración CC-DD-01..25, tokens motion formales `--dur-*`/`--ease-*`, tokens componente promovidos, botón `sm` corregido vs R35, conteo ~143 tokens).
+
+**PoC ejecutada (t-098) — 3 pantallas piloto con stack Next 15 + React 19 + Tailwind v4:**
+- `app/globals.css` — `@theme` canónico (~143 tokens; color 54 / spacing 10 / radius 4 / sombra 7 / z 9 / motion 12). **Cero literales de color inline.**
+- `app/layout.tsx` — `next/font/google` Fraunces (display) / Inter (cuerpo) / IBM Plex Mono (mono), subset `latin`/`latin-ext`.
+- `components/veta/{button,badge,stat-card,stepper}.tsx` — primitivas UI de la PoC.
+- `/landing` (F-01 landing público), `/cotizador` (P-04, ERP/comercial: kanban #32, stepper #33, tabla de caja #14) y `/cronograma` (P-09, ERP/operativo: timeline doble #34, checklist E-21 #35, tabla #14).
+
+**Verificación (evidencia mecánica):**
+| Herramienta | Comando | Resultado |
+|---|---|---|
+| Tipos | `npx tsc --noEmit` | 0 errores |
+| Estilo | `npx eslint .` | 0 errores (FlatCompat por eslint-config-next@15) |
+| Build | `npx next build` | ✓ 8 rutas estáticas, sin DB |
+| Runtime | `next start` + `curl` | `/`, `/landing`, `/cotizador`, `/cronograma` → **200** |
+| Tokens | `getComputedStyle` | `btn bg=#8B6914`, `btn color=#FFFFFF`, `hero color=#3E2A21`, fonts Fraunces/Inter ✓ |
+
+**Conclusión t-098:** el D4 es implementable. Detalle técnico en `arnes/diagnostico/pasadas/d4_prueba_concepto.md`.
+
+**Pendientes que la PoC no puede resolver (escalan al Supervisor con checkpoint Ola 6):** CC-DD-07 (éxito, A/B iconos), CC-DD-15 (librería de iconos → `lucide-react` recomendado), CC-DD-16 (toasts → `sonner`). **A-01 contador** (`umbral_novedad_check15`, `recargo_hora_extra_pct`, `neto/iva_diseno_3d`, marca) — no bloquea.
+
+**Próxima acción:** con A-01 resuelta → **Ola 7 (Execute)** codifica las 34 pantallas + migración de schema en 4 fases con los tokens del D4 como fuente única de estilo. Mientras tanto, el trabajo de las tareas `esperando_humano` de Fase 2 (t-008/t-009/t-013/t-015/t-017, fase 2) sigue con checkpoint pendiente del Supervisor.
+
+---
+
 ## Oleada de paridad con el legacy (2026-08-02) — 9 tareas, 21 archivos nuevos
 
 Contexto: una auditoría comparativa (inventario de rutas legacy vs. nuevas) encontró 13 pantallas del sistema viejo sin equivalente todavía. El Supervisor delegó la planeación completa y autorizó ejecución en paralelo con subagentes mientras estaba fuera.
