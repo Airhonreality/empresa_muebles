@@ -41,6 +41,20 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 - `audit_logs.actor_id` **nullable** (permite actor `'sistema'`, coherente con el ejemplo de insert del doc de logs).
 - F0 no siembra parámetros del negocio A-01 (los valores v1 viven en el legacy; la confirmación cambia números, no schema).
 
+## ✅ Ola 7 — Bucle F0 (determinantes) VALIDADO por el Supervisor (2026-08-05)
+
+**Metodología activada (aprobada por el Supervisor):** bucle de retroalimentación por fase — el Orquestador presenta determinantes/requerimientos/decisiones/uso de pantallas → el Supervisor decide y valida → detalle final registrado en el arnés → input del agente Código.
+
+**4 decisiones cerradas del Supervisor (2026-08-05):**
+1. **Catálogo de roles canónico = 7:** `admin`, `comercial`, `desarrollador`, `compras`, `taller`, `finanzas`, `supervisora_qa`. Resuelve DP-02 a favor de la decisión de negocio (compras SÍ es rol tipado). Seed actualizado (7 roles, idempotente).
+2. **`eventos.tipo_evento` = `text` con validación en la app** (catálogo de 61 eventos como constante tipada en código), NO enum DB. Justificación: aditivo por definición, sin `ALTER TYPE` por fase.
+3. **F0 = base de datos + lógica, SIN UI.** La administración de identidad/parámetros entra en una fase posterior con sus determinantes.
+4. **Sembrar los 4 parámetros A-01 con valores v1** (ajustables por `UPDATE`, no tocan schema): `neto_diseno_3d_pct`=97.5 (retención 2.5% servicios CO, validar contador), `iva_diseno_3d_pct`=19, `recargo_hora_extra_pct`=25 (legal estándar CO, revisar 2026), `umbral_novedad_check15`=3 días (E-59).
+
+**Consecuencia técnica:** seed actualizado y verificado contra dev-local (7 roles + 4 parámetros, `onConflictDoNothing` idempotente). `tsc` 0 · `eslint` 0.
+
+**Próxima acción F0:** el Iniciador escribe `arnes/planes/plan_t-074.md` (plan de detalle de F0 con base en estas decisiones) para que el agente Código ejecute la lógica de identidad/auditoría (helpers de roles, parámetros con historial append-only, registro de eventos).
+
 ---
 
 ## ✅ Diamante 4 — PoC 3 (C1–C6) EJECUTADA Y VERIFICADA (2026-08-04)
