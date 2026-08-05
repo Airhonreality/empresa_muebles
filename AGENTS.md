@@ -2,6 +2,14 @@
 
 **Fuente de verdad del arnés agéntico.** Todo agente lee este archivo antes de actuar. Si algo que quieres que haga un agente no está aquí, no va a pasar.
 
+**Regla canónica: Skill @arnes/ARNES_AGENTICO (obligatorio).** Este repo adopta el modelo de arneses agéntico maestro (`@arnes/ARNES_AGENTICO`). Al arrancar cualquier agente OpenCode, usar siempre:
+
+```bash
+opencode run -m opencode/deepseek-v4-flash-free --agent hermes "prompt"
+```
+
+Los agentes `hermes` y sus children (`hermes-b2-research`, `hermes-b3-tools`, `hermes-b4-multimedia`, `hermes-b5-b6-adapters`, `hermes-qa`) viven en `.opencode/agents/` y implementan el Diamond Flow (7 fases) + 5 roles + rotación obligatoria de modelos (nunca el mismo modelo dos veces seguidas). Ver `ARNES_AGENTICO.md` del repo `Airhonreality/skills` para el methodology completo.
+
 ## Cómo arrancar (si eres un agente, esto es lo primero)
 
 Este proyecto se trabaja por roles. Ningún agente actúa por su cuenta: cada uno asume un rol y cumple su contrato.
@@ -77,8 +85,9 @@ Zonas activas hoy:
 | `arnes/` | Arnés, ledger, roles, planes, diagnóstico | Supervisor | alto |
 | `arnes/diagnostico/` | Hallazgos de Fase 0 (solo lectura sobre datos reales) | Supervisor | bajo |
 | `arnes/diagnostico/diamante4_*` | Entregables del Diamante 4 (diseño visual) | Supervisor | alto |
+| `datos` | Cimientos F0: schema Drizzle (`lib/db/`), lógica de identidad/auditoría (`lib/modules/f0/`: roles, parámetros con historial, eventos, audit) — SIN UI | Código | alto |
 
-Las zonas de código de producto (auth, catálogo, cotizador, contratos, producción, finanzas, sitio público, etc.) se declaran cuando el plan de arquitectura (`arnes/planes/plan_arquitectura_destino.md`) sea aprobado por el Supervisor.
+Las zonas de código de producto (auth, catálogo, cotizador, contratos, producción, finanzas, sitio público, etc.) se declaran cuando el plan de arquitectura (`arnes/planes/plan_arquitectura_destino.md`) sea aprobado por el Supervisor. `datos` (F0) es la primera zona de código declarada, aprobada por el Supervisor el 2026-08-05 junto con el arranque de t-074.
 
 ## Comandos de verificación
 
