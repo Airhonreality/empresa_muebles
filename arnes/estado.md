@@ -13,10 +13,33 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 4. `main` y `legacy-agnostic-backup` intactos. No hubo push a `origin` todavía.
 
 **Próxima acción permitida:**
-- **Diamante 4 (sistema visual) — PoC 3.1 (reauditoría) EJECUTADA (13/13 interacciones reales PASS, ver abajo).** Siguiente: **checkpoint humano del Supervisor** sobre la reauditoría (capturas en `poc31_shots`) para aprobar el cierre del D4 y arrancar **Ola 7**. **Tercer input humano** (`arnes/diagnostico/Tercer input/flujo_automatizacion/`) pendiente de revisión **antes de la Ola 7**.
-- Ola 7 (Execute) sigue su plan maestro (`arnes/planes/plan_ola7_maestro.md`, fases F0-F9) pero **las pantallas consumirán los tokens del D4** — no estilo improvisado.
+- **Ola 7 — Bucle por fase F0→F9.** El setup de stack está COMPLETO (ver sección abajo). Siguiente: **bucle de retroalimentación F0** — el Orquestador presenta determinantes/requerimientos/decisiones/uso de pantallas de F0 (cimientos: `roles`, `personas`, `personas_roles`, `parametros`, `parametros_historial`, `eventos`, `audit_logs`, `procedencia`), el Supervisor decide y valida, el detalle final se registra en el arnés y recién ahí entra el agente Código.
+- **Tercer input humano** (`arnes/diagnostico/Tercer input/flujo_automatizacion/`) → **ola futura** (no bloquea Ola 7, ya decidido).
 
 **Regla nueva de esta carpeta:** nunca reutilizar código del prototipo v2; si un patrón resultara necesario, se discute con el Supervisor antes de copiarlo.
+
+---
+
+## ✅ Ola 7 — Setup de stack de base de datos COMPLETO (2026-08-05)
+
+**Autorización del Supervisor:** "instala todo el stack, ejecuta todos los puntos tanto bloqueantes como no bloqueantes en un paso, y luego comenzamos la metodología de bucle por fase".
+
+**Qué se instaló/configuró (todo en V3, contra dev-local):**
+1. **Deps Drizzle:** `drizzle-orm@0.36.4`, `drizzle-kit@0.28.1` (dev), `postgres@3.4.9` (postgres-js, NO `@neondatabase/serverless`), `tsx@4.23.1` (dev), `dotenv` (dev).
+2. **`.env.local` V3 creado** con `DATABASE_URL` + `SESSION_SECRET` + `NEON_API_KEY` de la rama dev-local (copiado de clone-dev, **nunca versionado** — `git check-ignore` OK).
+3. **`neonctl` instalado global** (CLI de ramas Neon).
+4. **Pipeline Drizzle:** `drizzle.config.ts` (dialect postgresql, carga `.env.local` vía dotenv), `lib/db/client.ts` (Pool postgres-js + `db` drizzle + export `client`), scripts `db:generate` / `db:migrate` / `db:studio` / `db:seed` en `package.json`.
+5. **`lib/db/schema.ts` — 26 tablas:** las 18 reales de dev-local extraídas con `drizzle-kit pull` (contrato de la DB existente, NO código v2) + las 8 tablas nuevas de F0 (`roles`, `personas`, `personas_roles`, `parametros` con CHECK de exclusión de valores, `parametros_historial`, `eventos` append-only con context FKs y self-FK, `procedencia`, `audit_logs`).
+6. **Migración `0001` aplicada contra dev-local** — 100% aditiva (8 `CREATE TABLE IF NOT EXISTS` + `usuarios.persona_id` + 11 FKs). El historial de migraciones del v2 se respetó: `drizzle.__drizzle_migrations` quedó con 3 entradas (2 del v2 + 0000 del pull marcada como aplicada), y `migrate` solo aplicó el diff.
+7. **Seed `db:seed` OK contra dev-local:** 6 roles base (`admin`, `comercial`, `desarrollador`, `taller`, `finanzas`, `supervisora_qa`) con guardia anti-producción de doble capa (allowlist de host dev + `NODE_ENV` no producción).
+
+**Verificación mecánica:** `tsc --noEmit` 0 · `eslint .` 0 · 26 tablas confirmadas en dev-local (verificación `information_schema`) · dev server `:3215` intacto (no se corrió `next build` para no pisar `.next`).
+
+**Decisiones/observaciones abiertas para el bucle F0 (no son decisiones cerradas):**
+- `eventos.tipo_evento` materializado como **`text`**, no enum DB de 61 valores (los enums de 61 valores requieren `ALTER TYPE ... ADD VALUE` por fase). Validar con el Supervisor en el bucle F0.
+- Seed de roles **sin `compras`** (la contradicción DP-02 "compras SÍ es rol tipado" vs. esquema sin él sigue abierta para el bucle F0).
+- `audit_logs.actor_id` **nullable** (permite actor `'sistema'`, coherente con el ejemplo de insert del doc de logs).
+- F0 no siembra parámetros del negocio A-01 (los valores v1 viven en el legacy; la confirmación cambia números, no schema).
 
 ---
 
@@ -58,6 +81,20 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 **Verificación:** tsc 0 · eslint 0 · build 6 rutas · **Playwright 13/13 interacciones REALES PASS** (clic tarjeta kanban abre modal, clic CTA navega, clic obra abre modal, checkbox toggle, badge directions) · **consola 0 errores** (sin WebGL, sin scroll warning). Capturas en `C:\Users\javir\AppData\Local\Temp\opencode\poc31_shots\`.
 
 **Nota operativa:** el `next build` pisa `.next` y rompe el dev server; se reinició limpio en `:3215` (PID guardado).
+
+---
+
+## 📌 Tercer input humano → OLAS FUTURAS (decidido 2026-08-04)
+
+**Decisión del Supervisor:** el tercer input (`arnes/diagnostico/Tercer input/flujo_automatizacion/`) **NO bloquea la Ola 7**. Se difiere a una **ola futura distinta** (registrada como pendiente, no como tarea de Ola 7).
+
+**Contenido del input (para la ola futura):**
+- **Exportaciones de conversaciones de WhatsApp con clientes reales que han comprado** → material para **entrenar modelos** (asistente/chat, ver `marco_estrategia_mercado.md`). Esto es un activo de datos sensible: clientes reales + historial de compra → requiere política de privacidad/anonimización antes de usarlo en entrenamiento.
+- Flujo de automatización completo (8 archivos XLSX + dashboard PNG + imágenes de productos): compras, inventario (retales/productos), proveedores, matriz de costos, sincronizador, formato de compra, marco lógico.
+
+**Cuándo:** después de Ola 7 (corte), en la ola dedicada a automatización/ML. No tiene dependencia de schema — usa datos reales existentes.
+
+**Ola 7 en curso:** nunca usa el corpus de WhatsApp ni el tercer input como fuente de decisiones de pantalla.
 
 ---
 
