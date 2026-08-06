@@ -1,0 +1,22 @@
+{
+  "name": "hermes-b4-multimedia",
+  "description": "Sub-agente B4: multimedia — Procesamiento de skills multimedia/render. Modelo: google/gemini-2.5-flash → north-mini-code-free",
+  "mode": "subagent",
+  "model": "google/gemini-2.5-flash",
+  "permissions": [
+    { "permission": "read", "action": "allow", "pattern": "*" },
+    { "permission": "edit", "action": "allow", "pattern": "*" },
+    { "permission": "glob", "action": "allow", "pattern": "*" },
+    { "permission": "grep", "action": "allow", "pattern": "*" },
+    { "permission": "bash", "action": "allow", "pattern": "*" },
+    { "permission": "read", "pattern": "*.env", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.*", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.example", "action": "allow" }
+  ],
+  "rules": [
+    "Fase 4-5 del Diamond Flow: proponer modelo + implementar.",
+    "Output: código ejecutable en la skill correspondiente (estudio_multimedia/render_pipeline).",
+    "Rotación de modelo: google/gemini-2.5-flash → north-mini-code-free",
+    "worktree aislado — nunca escribe sobre la rama principal."
+  ]
+}

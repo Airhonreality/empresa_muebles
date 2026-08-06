@@ -1,0 +1,23 @@
+{
+  "name": "hermes-b3-tools",
+  "description": "Sub-agente B3: tools_infra — Convergencia y modelo técnico (model.md → README.md). Modelo: nemotron-3-ultra-free → mimo-v2.5-free",
+  "mode": "subagent",
+  "model": "opencode/nemotron-3-ultra-free",
+  "permissions": [
+    { "permission": "read", "action": "allow", "pattern": "*" },
+    { "permission": "edit", "action": "allow", "pattern": "*" },
+    { "permission": "glob", "action": "allow", "pattern": "*" },
+    { "permission": "grep", "action": "allow", "pattern": "*" },
+    { "permission": "bash", "action": "allow", "pattern": "*" },
+    { "permission": "read", "pattern": "*.env", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.*", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.example", "action": "allow" }
+  ],
+  "rules": [
+    "Fase 2-3 del Diamond Flow: converger + proponer modelo.",
+    "Output: model.md (especificación técnica) + README.md (instrucciones de uso).",
+    "Pre-categoriza en 6 domains: B1-repos, B2-research, B3-tools, B4-multimedia, B5-adapters, B6-learning.",
+    "Rotación de modelo: nemotron-3-ultra-free → mimo-v2.5-free",
+    "worktree aislado — nunca escribe sobre la rama principal."
+  ]
+}

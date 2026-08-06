@@ -1,0 +1,23 @@
+{
+  "name": "hermes-b2-research",
+  "description": "Sub-agente B2: research_notes — Divergencia y diagnóstico (DIAMANTE → model.md). Modelo: deepseek-v4-flash-free → ling-3.0-flash-free",
+  "mode": "subagent",
+  "model": "opencode/deepseek-v4-flash-free",
+  "permissions": [
+    { "permission": "read", "action": "allow", "pattern": "*" },
+    { "permission": "glob", "action": "allow", "pattern": "*" },
+    { "permission": "grep", "action": "allow", "pattern": "*" },
+    { "permission": "webfetch", "action": "allow", "pattern": "*" },
+    { "permission": "websearch", "action": "allow", "pattern": "*" },
+    { "permission": "read", "pattern": "*.env", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.*", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.example", "action": "allow" }
+  ],
+  "rules": [
+    "Fase 1-2 del Diamond Flow: diagnósparse + diverger.",
+    "Output: DIAMANTE.md con Event Storming (línea de timeline → módulos emergentes → schema/UI).",
+    "No implementa, solo investiga y propone.",
+    "Usa Mermaid para diagramas versionados.",
+    "Rotación de modelo: deepseek-v4-flash-free → ling-3.0-flash-free"
+  ]
+}

@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm"
 
 export const estadoContrato = pgEnum("estado_contrato", ['borrador', 'firmado'])
 export const estadoProyecto = pgEnum("estado_proyecto", ['activa', 'enviada', 'en_contrato', 'pre_produccion', 'produccion', 'entregado', 'perdida', 'cancelada'])
-export const rolEmpleado = pgEnum("rol_empleado", ['admin', 'comercial', 'taller', 'finanzas'])
+export const rolEmpleado = pgEnum("rol_empleado", ['admin', 'comercial', 'desarrollador', 'compras', 'taller', 'finanzas', 'supervisora_qa'])
 export const tipoHitoPago = pgEnum("tipo_hito_pago", ['percentage', 'fixed'])
 export const tipoProyecto = pgEnum("tipo_proyecto", ['personalizado', 'producto_fijo'])
 export const tipoUsuario = pgEnum("tipo_usuario", ['empleado', 'cliente'])
@@ -183,6 +183,30 @@ export const itemsVariante = pgTable("items_variante", {
 			columns: [table.catalogoId],
 			foreignColumns: [productosCatalogo.id],
 			name: "items_variante_catalogo_id_productos_catalogo_id_fk"
+		}),
+	}
+});
+
+// ── F3 · Retoma de medidas (P-07) — checklist de definición de proyecto ──────
+export const espaciosArtefactos = pgTable("espacios_artefactos", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	espacioVarianteId: uuid("espacio_variante_id").notNull(),
+	categoria: text().notNull(),
+	dimensionesMm: text("dimensiones_mm"),
+	tipoSpecifique: text("tipo_specifique"),
+	ubicacion: text(),
+	fotoUrl: text("foto_url"),
+	requiereVerificacion: boolean("requiere_verificacion").default(false).notNull(),
+	validadoPor: uuid("validado_por"),
+	validadoEn: timestamp("validado_en", { mode: 'string' }),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		espaciosArtefactosEspacioVarianteIdEspacioVariantesIdFk: foreignKey({
+			columns: [table.espacioVarianteId],
+			foreignColumns: [espacioVariantes.id],
+			name: "espacios_artefactos_espacio_variante_id_espacio_variantes_id_fk"
 		}),
 	}
 });
@@ -416,6 +440,7 @@ export const productosCatalogo = pgTable("productos_catalogo", {
 export const proyectos = pgTable("proyectos", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	clienteId: uuid("cliente_id"),
+	comercialId: uuid("comercial_id"),
 	nombreProyecto: text("nombre_proyecto").notNull(),
 	direccionObra: text("direccion_obra"),
 	estado: estadoProyecto().default('activa').notNull(),
@@ -437,6 +462,11 @@ export const proyectos = pgTable("proyectos", {
 			columns: [table.clienteId],
 			foreignColumns: [clientes.id],
 			name: "proyectos_cliente_id_clientes_id_fk"
+		}),
+		proyectosComercialIdPersonasIdFk: foreignKey({
+			columns: [table.comercialId],
+			foreignColumns: [personas.id],
+			name: "proyectos_comercial_id_personas_id_fk"
 		}),
 	}
 });

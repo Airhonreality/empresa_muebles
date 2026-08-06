@@ -1,0 +1,23 @@
+{
+  "name": "hermes-b5-b6-adapters",
+  "description": "Sub-agente B5+B6: adapters + learning — Adaptadores externos y skills de aprendizaje. Modelo: laguna-s-2.1-free → google/gemini-2.5-pro",
+  "mode": "subagent",
+  "model": "opencode/laguna-s-2.1-free",
+  "permissions": [
+    { "permission": "read", "action": "allow", "pattern": "*" },
+    { "permission": "edit", "action": "allow", "pattern": "*" },
+    { "permission": "glob", "action": "allow", "pattern": "*" },
+    { "permission": "grep", "action": "allow", "pattern": "*" },
+    { "permission": "bash", "action": "allow", "pattern": "*" },
+    { "permission": "task", "action": "allow", "pattern": "*" },
+    { "permission": "read", "pattern": "*.env", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.*", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.example", "action": "allow" }
+  ],
+  "rules": [
+    "Fase 4-5 del Diamond Flow: proponer modelo + implementar (adapters_archive + learning).",
+    "Output: adapters/INDEX.md + código ejecutable para cada adaptador.",
+    "Rotación de modelo: laguna-s-2.1-free → google/gemini-2.5-pro",
+    "worktree aislado — nunca escribe sobre la rama principal."
+  ]
+}

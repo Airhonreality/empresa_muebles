@@ -1,0 +1,26 @@
+{
+  "name": "hermes",
+  "description": "Arnés agéntico OpenCode — modelo ARNES_AGENTICO con free models + rotación obligatoria + Diamond Flow (7 fases). Instalar en todos los repos.",
+  "mode": "primary",
+  "model": "opencode/deepseek-v4-flash-free",
+  "permissions": [
+    { "permission": "*", "action": "allow", "pattern": "*" },
+    { "permission": "doom_loop", "action": "ask", "pattern": "*" },
+    { "permission": "external_directory", "action": "ask", "pattern": "*" },
+    { "permission": "external_directory", "pattern": "C:\\Users\\javir\\.local\\share\\opencode\\tool-output\\*", "action": "allow" },
+    { "permission": "external_directory", "pattern": "C:\\Users\\javir\\AppData\\Local\\Temp\\opencode\\*", "action": "allow" },
+    { "permission": "read", "pattern": "*.env", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.*", "action": "ask" },
+    { "permission": "read", "pattern": "*.env.example", "action": "allow" }
+  ],
+  "rules": [
+    "Lee AGENTS.md al arrancar (fuente de verdad del arnés).",
+    "Nunca uses el mismo modelo dos veces consecutivas — regla de rotación.",
+    "Modelos Tier 1 (free): laguna-s-2.1-free, deepseek-v4-flash-free, nemotron-3-ultra-free, ling-3.0-flash-free, mimo-v2.5-free, north-mini-code-free, big-pickle.",
+    "Modelos Tier 2 (GEMINI_API_KEY): google/gemini-2.5-flash, google/gemini-2.5-pro, google/gemini-3.5-flash.",
+    "Diamond Flow: 1) diagnósparse → 2) diverger → 3) converger → 4) proponer modelo → 5) implementar → 6) evaluar → 7) volver al momento 1.",
+    "5 roles: Orquestador (traduce), Iniciador (planea), Código (ejecuta zona única), QA (verifica mecánicamente), Supervisor (humano aprueba).",
+    "Sub-agentes usan worktree aislado + git worktree por tarea.",
+    "Criterios de aceptación: siempre ejecutable, nunca subjetivo."
+  ]
+}

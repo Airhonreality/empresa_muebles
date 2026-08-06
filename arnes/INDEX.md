@@ -38,6 +38,12 @@ Carpeta destino de los hallazgos del mapeo. **NUEVO: `diamante4_metodologia.md` 
 ### 4. arnes/planes/
 Planes de arquitectura. El plan de la arquitectura destino (`plan_arquitectura_destino.md`) fue aprobado; la Parte II del mapa define qué módulos entran a diseño en Fase 2.
 
+**Glosario de UI: `glosario_h07.md`** — resuelto 2026-08-05. Fuente única de vocabulario de negocio: 36 entidades, ~70 estados, ~73 verbos, ~50 mapeos campo-schema→nombre natural + reglas de gobernanza. Consumir ANTES de escribir labels en cada fase F2+.
+
+**M-06 · Capa Técnica Transversal L1: `m06_capa_tecnica_transversal.md`** — 23 patrones de infraestructura identificados del legacy, 14 patrones aprobados para el nuevo schema, contrato de no-rotura (7 áreas). Se aplica al final de F9 como prerequisito de cruce entre todas las F0-F9. No bloquea F2-F10.
+
+**Diamante exclusivo — Contradicciones Legacy vs. Diseño Actual: CERRADO (2026-08-05).** 4 decisiones aprobadas y corregidas (C1: tarifas MO derivadas de 5 params físicos en parametros, runtime calculation; C2: items referenciales en items_variante +3 campos, sin tablas nuevas; C3: transiciones a parametros JSON; C4: semántica precios clarificada). Requieren reprocesar schema Ola 6 (schema.ts +3 campos items_variante, +4 params) + migración + seed. **Pendiente: aprobación pantalla cotizador (P-04) → desbloquea F2.**
+
 ### 5. Línea de demanda — reglas de operación (t-034)
 Línea **paralela** a la Fase 2 técnica, abierta el 2026-08-03. Ataca la restricción #2 del negocio (demanda, ratio 4:1). **Objetivo:** más leads cualificados reales → más ventas → comercial visitando clientes en forma.
 

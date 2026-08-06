@@ -31,7 +31,7 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 4. **Pipeline Drizzle:** `drizzle.config.ts` (dialect postgresql, carga `.env.local` vía dotenv), `lib/db/client.ts` (Pool postgres-js + `db` drizzle + export `client`), scripts `db:generate` / `db:migrate` / `db:studio` / `db:seed` en `package.json`.
 5. **`lib/db/schema.ts` — 26 tablas:** las 18 reales de dev-local extraídas con `drizzle-kit pull` (contrato de la DB existente, NO código v2) + las 8 tablas nuevas de F0 (`roles`, `personas`, `personas_roles`, `parametros` con CHECK de exclusión de valores, `parametros_historial`, `eventos` append-only con context FKs y self-FK, `procedencia`, `audit_logs`).
 6. **Migración `0001` aplicada contra dev-local** — 100% aditiva (8 `CREATE TABLE IF NOT EXISTS` + `usuarios.persona_id` + 11 FKs). El historial de migraciones del v2 se respetó: `drizzle.__drizzle_migrations` quedó con 3 entradas (2 del v2 + 0000 del pull marcada como aplicada), y `migrate` solo aplicó el diff.
-7. **Seed `db:seed` OK contra dev-local:** 6 roles base (`admin`, `comercial`, `desarrollador`, `taller`, `finanzas`, `supervisora_qa`) con guardia anti-producción de doble capa (allowlist de host dev + `NODE_ENV` no producción).
+7. **Seed `db:seed` OK contra dev-local:** 7 roles base (`admin`, `comercial`, `desarrollador`, `compras`, `taller`, `finanzas`, `supervisora_qa`) con guardia anti-producción de doble capa (allowlist de host dev + `NODE_ENV` no producción). Corregido 2026-08-06 (decía 6, faltaba `compras`; el seed real `scripts/seed-dev.ts` ya tenía los 7).
 
 **Verificación mecánica:** `tsc --noEmit` 0 · `eslint .` 0 · 26 tablas confirmadas en dev-local (verificación `information_schema`) · dev server `:3215` intacto (no se corrió `next build` para no pisar `.next`).
 
@@ -95,6 +95,110 @@ Este archivo se lee al arrancar cualquier sesión y se actualiza al cerrar cada 
 **Verificación:** tsc 0 · eslint 0 · build 6 rutas · **Playwright 13/13 interacciones REALES PASS** (clic tarjeta kanban abre modal, clic CTA navega, clic obra abre modal, checkbox toggle, badge directions) · **consola 0 errores** (sin WebGL, sin scroll warning). Capturas en `C:\Users\javir\AppData\Local\Temp\opencode\poc31_shots\`.
 
 **Nota operativa:** el `next build` pisa `.next` y rompe el dev server; se reinició limpio en `:3215` (PID guardado).
+
+---
+
+## ✅ M-06 · Capa Técnica Transversal L1 — COMPLETADO (2026-08-05)
+
+**Diamante:** M-06 (Reconstrucción del Cotizador y Módulos ERP)
+**Capa ejecutada:** L1 — Infraestructura técnica transversal de patrones de interfaz
+**Artefacto:** `arnes/planes/m06_capa_tecnica_transversal.md`
+
+**Qué contiene:**
+- 23 patrones de infraestructura identificados del legacy (autosave, smart search, debounce, parallel loading, vault CRUD, COP formatter, MoneyInput, Zustand, polling, Suspense, etc.)
+- 14 patrones aprobados para el nuevo schema con ubicación propuesta (`lib/utils.ts`, `lib/hooks/`, `components/veta/`, `app/globals.css`)
+- Contrato de no-rotura (7 áreas que no pueden cambiar sin afectar todas las F0-F9)
+- Definición de la capa L1 como cruce técnico transversal que se aplica al final de F9
+
+**Nota:** L2 (las 4 contradicciones legacy de negocio/pantallas) fue retirado de M-06 y se maneja en un diamante exclusivo separado (ver sección siguiente). M-06 L1 no afecta el flujo de F2-F9 — se aplica como prerequisito de cruce al final de F9.
+
+---
+
+## ✅ Destilación Cotizador + Contrato Legacy — COMPLETADA (2026-08-05)
+
+**Artefacto:** `arnes/planes/destilacion_cotizador_contrato.md` (399 líneas)
+
+**Qué contiene:**
+- **Inventario completo** de 9 namespaces legacy mapeados a 26 tablas del nuevo schema
+- **8 flujos de negocio** documentados: carga paralela, selección cliente/proyecto, configuración espacios/variantes/items, cálculo precios (materiales + 3 tarifas MO + costos operativos + IVA), auto-save race-safe, búsqueda fuzzy con historial localStorage, generación contrato via zap, propuesta pública con snapshot
+- **Lógica de cálculo core:** precios por ítem (precio_publico default editable), mano de obra via 3 SKUs catálogo (SERV-DEV/ASSEMBLY/INSTALL), costos operativos/imprevistos/descuento/ajuste, IVA condicional
+- **Patrones UI:** Kanban 8 estados (activa→entregado/perdida), EspacioCard con 11 collapse strips, ItemRow con Popover fuzzy search + MoneyInput, ContratoModal 5 secciones + PaymentScheduleCalculator 100% controlado
+- **Contrato Legacy (P-05):** Estructura completa, hitos en tabla separada, especificaciones compiladas dinámicamente por tipo de catálogo
+- **Mapeo detallado** legacy→nuevo schema con campos que cambian/eliminan/nuevos por tabla
+
+---
+
+## ✅ DIAMANTE EXCLUSIVO — Contradicciones Legacy vs. Diseño Actual — CERRADO (2026-08-05)
+
+**Decisiones aprobadas por el Supervisor (corregidas tras auditoría axiomática):**
+
+| # | Contradicción | Decisión Final (Axiomática) | Impacto en Schema / Pantallas |
+|---|---|---|---|
+| **C1** | Tarifas mano de obra | **5 parámetros físicos en `parametros`** (variables independientes): `arriendo_mensual_taller`, `horas_mes_taller`, `pct_mantenimiento_maquinas`, `factor_logistica_install`, `costo_hora_operario_base` (ya existe en F0). **3 tarifas calculadas en runtime** (función pura server-side): `tarifa_dev = costo_hora_taller`, `tarifa_assembly = costo_hora_taller + costo_hora_operario_base`, `tarifa_install = costo_hora_taller * factor_logistica_install`. Eliminar SKUs `SERV-*` de `productos_catalogo`. Respeta FLAG-4: costear al detalle → derivar costos precisos. | **Schema:** +4 filas en `parametros` (la 5ª ya existe). **Pantalla:** Cotizador lee base `costo_hora_taller` y coeficientes físicos, calcula 3 tarifas en server. Quita búsqueda de 3 SKUs mágicos. |
+| **C2** | Ítems referenciales (ex Obra Civil) | **Sin tablas nuevas**. 3 campos en `items_variante` existente: `es_referencial` (boolean, default false), `fuente_referencial` (text: 'electrodomestico'\|'obra_civil'\|'servicio_tercero'\|'otro'), `grupo_referencial` (text libre: "Electrodomésticos", "Ventanas", etc.). **No va a contrato**. UI: toggle "Es referencial" en ItemRow, badge "Referencial", agrupación visual por `grupo_referencial`, botón "Anexar a catálogo" → crea producto catálogo completo. Axiomático: 1 tabla, 3 campos, reutiliza UI existente. | **Schema:** 3 campos nullable en `items_variante` (migración aditiva). **Pantalla:** ItemRow extendido con toggle + selector fuente + input grupo. Agrupación visual en EspacioCard. Cero nuevas entidades. |
+| **C3** | Transiciones proyecto.estado | **Mover a `parametros` JSON** (clave `transiciones_proyecto`: `{ desde: [hacia, ...] }`). Configurable sin deploy. | **Schema:** +1 fila en `parametros`. **Pantalla:** Kanban comercial usa matriz desde `parametros` (no hardcoded). Botón "Gestionar transiciones" en admin (fase posterior). |
+| **C4** | Semántica precios catálogo | **Mantener ambos en `productos_catalogo`**: `precio_directo` = costo base / lista sin margen; `precio_publico` = PVP sugerido (default en cotizador, editable). **`productos_tienda.valor_tienda`** = precio web fijo (independiente). Cotizador usa `precio_publico` como default; tienda usa `valor_tienda`. | **Schema:** Sin cambios (campos ya existen). **Pantalla:** ItemRow muestra `precio_publico` como default, editable. Margen visible = (precio_editado - precio_directo) / precio_editado. Tienda no toca catálogo. |
+
+**Consecuencias técnicas (requieren reprocesar Ola 6):**
+1. **Schema Drizzle (`lib/db/schema.ts`):** Añadir 3 campos en `items_variante` (`es_referencial`, `fuente_referencial`, `grupo_referencial`). Añadir 4 filas en `parametros` (`arriendo_mensual_taller`, `horas_mes_taller`, `pct_mantenimiento_maquinas`, `factor_logistica_install`, `transiciones_proyecto` — `costo_hora_operario_base` ya existe).
+2. **Migración DB:** Nueva migración aditiva contra `dev-local` (3 campos + 4 params).
+3. **Seed:** Valores por defecto para 4 params físicos + matriz de transiciones (8→8 legacy + nuevos estados F3).
+4. **Cotizador (P-04):** Pantalla modificada — leer base tarifas de `parametros`, cálculo runtime, nueva UI referencial en ItemRow, semántica precios clarificada.
+
+---
+
+## ✅ DISEÑO P-04 COTIZADOR — APROBADO (2026-08-05)
+
+**Artefacto:** `arnes/planes/disenio_p04_cotizador.md`
+
+**Componentes aprobados:**
+- Header Proyecto (nombre, cliente, estado, tipo, dirección, costos, IVA, garantía) — **C3: estado usa matriz `parametros.transiciones_proyecto`**
+- Panel Configuración Taller (5 params físicos editables → 3 tarifas calculadas read-only) — **C1**
+- Panel Transiciones (read-only matriz desde `parametros`) — **C3**
+- EspacioCard (11 CollapseStrips: Header, Desc, Variantes, DescAlt, **Items**, Imágenes, Notas, Colores, **MO**, Subtotal, **Presupuesto Adic.**)
+- ItemRow (SmartSearch catálogo, MoneyInput default `precio_publico`, **☑ Referencial**, **Fuente ▼**, **Grupo**) — **C4: default PVP, margen visible vs `precio_directo`** / **C2: toggle referencial + fuente + grupo**
+- Mano de Obra por Variante (3 DayCounters + tarifas read-only + link config taller) — **C1**
+- Presupuesto Adicional (agrupación visual por `grupo_referencial`, badge "Referencial", no suma a total) — **C2**
+- Resumen Grand Totals (Materiales + MO + Costos + Imprev - Desc + Ajuste + IVA condicional) — **C1, C2**
+- ContratoModal (5 secciones + PaymentScheduleCalculator controlado) — **C4: valor_total editable**
+- Acciones (Guardar auto-save, Generar Contrato, PDF, Activar Producción)
+
+**Sub-Diamante Pendiente:** Propuesta de Diseño Virtual (`/propuesta/{slug}` + `Viewer3DModal`) — **NO en F2**. Fase F7 o fase dedicada. Requiere destilar `PublicProposal.tsx` (454 líneas) + `Viewer3DModal.tsx` (221 líneas) + `public-proposal.ts`. Bloqueante: 3D real (SketchUp/OpenCutList → CVC → visor web).
+
+---
+
+## ✅ DISEÑO P-01 KANBAN COMERCIAL — APROBADO (2026-08-05)
+
+**Artefacto:** `arnes/planes/disenio_p01_kanban_comercial.md`
+
+**Componentes aprobados:**
+- Header: Título, SmartSearch (fuzzy + historial + uso frecuente), [Nuevo +], Filtros colapsables
+- 8 Columnas: Estados legacy (activa→entregado/perdida/cancelada) + colores + contadores
+- Transiciones: Drag-drop + menú "Cambiar estado →" validados contra `parametros.transiciones_proyecto` — **C3**
+- ComercialCard: Nombre, cliente, espacios, items, **total estimado server-side** (mat+MO+costos), fechas, días en estado — **C1, C2, C4**
+- Columnas solo-lectura: `produccion`, `entregado`, `perdida`, `cancelada` (sin drag, sin +Añadir)
+- Filtros: Comercial, Tipo proyecto, Fecha, Solo mis leads (persistidos localStorage)
+- Nuevo Proyecto Modal (P-02 preview): Nombre, HybridClientSelector, Tipo, Estado (fijo si viene de columna), Dirección
+- Acciones tarjeta: Abrir → P-04, Duplicar, Cambiar estado (solo válidos), Historial, Eliminar
+- Accesibilidad: Drag-drop teclado (menú alternativo), ARIA, focus, reduced-motion — M-06 L1 tokens
+
+---
+
+## 📋 CHECKLIST F2 — COMERCIAL + COTIZADOR
+
+**Fuente:** `plan_ola7_maestro.md` §1 — B3-1: P-01..P-05 + F-01/F-02/F-03/F-08
+
+| Código | Pantalla | Descripción | Estado |
+|---|---|---|---|
+| **P-01** | **Kanban Comercial** | Embudo leads→cotizaciones→contratos (8 estados legacy + nuevos F3). SmartSearch, transiciones desde `parametros`. | ✅ **APROBADA** |
+| **P-02** | **Nueva Cotización / Proyecto** | Crear proyecto draft (`activa`), HybridClientSelector, tipo proyecto, datos iniciales. | 🔄 **SIGUIENTE: DISEÑAR** |
+| **P-03** | **Detalle Cotización (Solo Lectura)** | Vista read-only para taller/finanzas. Header + espacios + items + totales. | 🔄 Pendiente |
+| **P-04** | **Cotizador (Editor Completo)** | **✅ APROBADA** — `disenio_p04_cotizador.md` | ✅ |
+| **P-05** | **Contrato (Modal Integrado)** | **✅ INCLUIDA EN P-04** — 5 secciones + PaymentScheduleCalculator | ✅ |
+| **F-01** | **Landing / Home Público** | Ya existe (PoC 3: `/landing`, `/`, `/proceso`, `/espacios`, 6 landings SEO). | ✅ EXISTE |
+| **F-02** | **Catálogo Público** | `/colecciones`, `/categoria/[slug]` — grid productos, filtros, solo `publicado_web=true`. | 🔄 Parcial |
+| **F-03** | **Portafolio Público** | `/portafolio`, `/proyecto/[id]` — casos reales, imágenes, sin precios. | 🔄 Parcial |
+| **F-08** | **Propuesta Pública (Cliente)** | `/propuesta/{slug}` — **Sub-diamante F7/fase dedicada**. Legacy: `PublicProposal` + `Viewer3DModal`. | 🔻 NO EN F2 |
 
 ---
 
@@ -530,3 +634,58 @@ Se abrió la línea que atacaba la restricción #2 del negocio (demanda, ratio 4
 - Infraestructura de proveedores NO cambia.
 - `main` no recibe push directo bajo ninguna circunstancia durante la migración.
 - Ningún agente corre la app (`npm run dev`) ni prueba flujos de escritura mientras `DATABASE_URL` apunte a la Neon de producción compartida.
+
+## F2 = COMPLETADA (2026-08-05) — Checklist de Cierre (portado de v2, convergencia E2)
+
+| Pantalla | Ruta | Estado | Artefacto |
+|---|---|---|---|
+| **P-01** | Kanban Comercial | ✅ Aprobado | `disenio_p01_kanban_comercial.md` |
+| **P-02** | Nueva Cotización | ✅ Aprobado | `disenio_p02_nueva_cotizacion.md` |
+| **P-03** | Detalle Solo Lectura | ✅ Aprobado | `disenio_p03_detalle_solo_lectura.md` |
+| **P-04** | Cotizador (Editor) | ✅ Aprobado | `disenio_p04_cotizador.md` |
+| **P-05** | Contrato Modal | ✅ Incluido en P-04 | `contrato_modal` sección P-04 |
+| **F-01** | Landing/Home público | ✅ Existente (PoC 3) | — |
+| **F-02** | Catálogo público (`/colecciones`) | ✅ Destilado | `destilacion_f3_publico.md` §1 |
+| **F-03** | Portafolio (`/portafolio`) | ✅ Destilado | `destilacion_f3_publico.md` §2 |
+| **F-08** | Propuesta pública (`/propuesta/{slug}`) | ✅ Destilado | `destilacion_f3_publico.md` §3 (UI pendiente F7) |
+
+**Contradicciones del diamante resueltas (C1-C4):**
+- C1: Tarifas MO derivadas de params en `parametros` (runtime calc)
+- C2: Items referenciales como 3 campos en `items_variante`
+- C3: Transiciones `proyectos.estado` como JSON en `parametros`
+- C4: Precios semántica clara (`precio_publico` vs `precio_directo` vs `tienda.valor_tienda`)
+
+## ✅ F3 = COMPLETADA (2026-08-05) — Aprobada por Supervisor (portada v2, convergencia 2026-08-06)
+
+**Schema F3 aprobado (con valores convergidos del diamante, NO los originales):**
+- `cronogramas(id, proyecto_id, base_semanas=4, holgura_max_dias=5, promesa_semanas=4)` — `base_semanas` CONVERGIDO a 4 (chequeo E2-2); el `7` del diseño v2 queda fuera
+- `cronograma_etapas(id, cronograma_id, linea ENUM['contractual','interna'], etapa, fecha_ideal, fecha_real, estado)` — I-034: línea contractual inmutable
+- `desfases_cronograma` (+4 campos en `items_variante` para C2/C4)
+- `proyectos` ampliada: `estado` (enum 8), `verificador_id`, `fecha_entrada_desarrollo`, `comercial_vendedor_id`
+
+**Pantallas F3 (P-06..P-12) — Diseños aprobados:**
+| Pantalla | Evento | Estado | Artefacto |
+|----------|--------|--------|-----------|
+| P-06 | Mapa de gates (sumidero) | ✅ Aprobado | `disenio_f3_cronograma_gates.md` |
+| P-07 | Retoma de medidas (E-15→E-16) | ✅ Aprobado | `disenio_f3_cronograma_gates.md` §3 |
+| P-08 | Desarrollo técnico (E-18) | ✅ Aprobado | `disenio_f3_cronograma_gates.md` §4 |
+| P-09 | Cronograma doble (E-33) | ✅ Aprobado | `disenio_f3_cronograma_gates.md` §5 |
+| P-10 | Novedades críticas (E-34) | ✅ Aprobado | `disenio_f3_cronograma_gates.md` §6 |
+| P-11 | Check 15 días (E-59) | ✅ Aprobado | `disenio_f3_cronograma_gates.md` §7 |
+| P-12 | Equipo/Verificador | ✅ Aprobado | `disenio_f3_cronograma_gates.md` §8 |
+
+**Decisión de negocio aplicada a P-07:**
+- P-07 expandida con checklist de definición de proyecto: `espacios_artefactos` (categoría, dimensiones, tipo_specifique, ubicación, foto_url, requiere_verificacion, validado_por) — **tabla ya añadida a `lib/db/schema.ts`**(FK→`espacio_variantes`) el 2026-08-06; NO toca `items_variante` (C2 intacta)
+- Mapeo a `parametros` con prefijo `retoma_` para SLA de respuesta (C1 runtime)
+
+**Integration F2↔F3:**
+- P-04 consume `proyectos.estado`, `parametros.transiciones_proyecto`, `parametros.tarifa_*`, badges gates E-18
+- Kanban P-01 lee estados + transiciones desde `parametros`
+
+**Predicados verificables (§5):**
+```sql
+P18(p) = estado='desarrollo' ∧ ∃verificaciones: tipo_gate='schema' ∧ veredicto='aprobado' ∧ verificador_id=proyectos.verificador_id
+P33(p) = ∃desfases_cronograma: aplicado=true ∧ causa∈{interna,externa,cambio_contrato} ∧ motivo>0 ∧ composicion_causal>0
+```
+
+**F3 = COMPLETADA.** Próxima: Ola 7 Execute (codificación schema + 34 pantallas).

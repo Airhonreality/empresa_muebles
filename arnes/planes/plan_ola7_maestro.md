@@ -50,17 +50,25 @@ E-18 (schema aprobado, F3/P-08) ─→ E-20/E-21 (compras, F4/P-13/P-14) ─→ 
 
 ---
 
-## 3. Mini-diamantes M-01..M-05 (no bloquean, pero fijan semántica antes de congelar schema)
+## 3. Mini-diamantes M-01..M-06 (no bloquean, pero fijan semántica antes de congelar schema)
 
-| ID | Tema | Impacta | Cuándo debe estar resuelto |
-|---|---|---|---|
-| M-01 | Causalidad (E-33 determinismo): protocolo de auditoría de desfases + justificación humana | F3 (t-080, guard E-33) | Antes de cerrar t-080: reabrir el guard después es caro |
-| M-02 | Grafos catálogo: semántica insumo→producto→herraje | F1 (t-075), F2 (P-04 cotizador) | Antes de cerrar t-075: reabrir catálogos después toca seed + cotizador |
-| M-03 | Derivación de parámetros (factores que afectan comisiones) | F6 (P-22, gates E-31/E-35) | Antes de cerrar t-086 |
-| M-04 | Logging/KPIs: diseño de `eventos` como observabilidad | F3 (t-082), F6 (P-23) | Antes de cerrar t-082 |
-| M-05 | Modularización: inventario de procesos elementales del taller | F5 (P-16 fila taller, P-18 instalación) | Antes de cerrar F5 |
+| ID | Tema | Capa | Impacta | Cuándo debe estar resuelto |
+|---|---|---|---|---|
+| M-01 | Causalidad (E-33 determinismo): protocolo de auditoría de desfases + justificación humana | Negocio | F3 (t-080, guard E-33) | Antes de cerrar t-080: reabrir el guard después es caro |
+| M-02 | Grafos catálogo: semántica insumo→producto→herraje | Negocio | F1 (t-075), F2 (P-04 cotizador) | Antes de cerrar t-075: reabrir catálogos después toca seed + cotizador |
+| M-03 | Derivación de parámetros (factores que afectan comisiones) | Negocio | F6 (P-22, gates E-31/E-35) | Antes de cerrar t-086 |
+| M-04 | Logging/KPIs: diseño de `eventos` como observabilidad | Negocio | F3 (t-082), F6 (P-23) | Antes de cerrar t-082 |
+| M-05 | Modularización: inventario de procesos elementales del taller | Negocio | F5 (P-16 fila taller, P-18 instalación) | Antes de cerrar F5 |
+| M-06 | Capa técnica transversal de infraestructura de interfaz | Técnico | Transversal a F0-F9 (L1: patrones de infraestructura) | Se aplica al final de F9 como prerequisito de cruce entre todas las fases; no bloquea F2-F10 |
 
 **Regla:** si un mini-diamante no está cerrado cuando se congela su fase, se implementa con la decisión más conservadora ya diseñada (las columnas/tablas existen en el consolidado) y el refinamiento entra como parámetro o dato, nunca como cambio de schema.
+
+**M-06 estructura:**
+- **L1 (capa técnica):** patrones de infraestructura transversal (autosave, debounce, smart search, parallel loading, COP formatter, MoneyInput, Suspense, design tokens, primitives). Completado 2026-08-05. No bloquea ninguna fase.
+- **L2 (contradicciones legacy):** retirado de M-06 y movido a un diamante exclusivo que resuelve las 4 contradicciones de lógica de negocio/pantallas que bloquean F2.
+- **L3 (diseño P-04 cotizador):** depende de que el diamante exclusivo de contradicciones cierre.
+- **L4 (diseño P-05 contrato):** depende de L1 (patrones técnicos) pero no de L2/L3.
+- **Intersección:** M-06 se cruza con todas las fases F0-F9 solo al final de F9 como prerequisito de cruce, antes de la fase de código.
 
 ---
 
