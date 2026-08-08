@@ -1,0 +1,266 @@
+{
+  "lote": "L3",
+  "generado_por": "subagente",
+  "fuentes_consultadas": [
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/diamante2_discover_eventos.md",
+    "arnes/diagnostico/diamante2_define_eventos.md",
+    "arnes/planes/disenio_p04_cotizador.md",
+    "arnes/planes/destilacion_cotizador_contrato.md",
+    "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md",
+    "arnes/diagnostico/OLA_6_SCHEMAS_APROBADOS.md",
+    "arnes/diagnostico/OLA_6_SUBSISTEMA_LOGS.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_1_normalizacion.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "contratos",
+      "origen_punto0": {
+        "hallazgo": "Contrato ya construido en V2, se revisa en ronda de auditoría. Gap real detectado: no existe mecanismo de firma virtual (RED2). El contrato es el artefacto donde nace el cronograma y los hitos de pago.",
+        "fuente": "arnes/diagnostico/logica_de_negocio.md:420,478"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "UUID PK estándar, toda entidad del schema",
+          "fuente": "lib/db/schema.ts:55",
+          "punto0_ref": "logica de negocio: entidad contrato documentada como módulo en logica_de_negocio.md:535",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proyecto_id",
+          "origen": "FK a proyectos. El contrato siempre está ligado a un proyecto. El contrato nace de la cotización formal (E-11→E-12).",
+          "fuente": "lib/db/schema.ts:56; arnes/planes/destilacion_cotizador_contrato.md:310",
+          "punto0_ref": "diamante2_discover_eventos.md:54 (E-12: contrato se crea con cotización formal); define_eventos.md:37 (Contratos bounded context)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "codigo_contrato",
+          "origen": "Código único generado por engine al crear contrato (zap generar_contrato). UNIQUE constraint en schema.",
+          "fuente": "lib/db/schema.ts:57,81; arnes/planes/destilacion_cotizador_contrato.md:311",
+          "punto0_ref": "destilacion_cotizador_contrato.md:311 (generado por engine); no es evento directo sino atributo de E-12",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "fecha_contrato",
+          "origen": "Fecha del contrato (YYYY-MM-DD). Se asigna al generar el contrato.",
+          "fuente": "lib/db/schema.ts:58; arnes/planes/destilacion_cotizador_contrato.md:312",
+          "punto0_ref": "destilacion_cotizador_contrato.md:312 ('Hoy al generar')",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "contratante_domicilio",
+          "origen": "Domicilio del contratante, autollenado desde cliente.domicilio o proyecto.direccion_obra",
+          "fuente": "lib/db/schema.ts:59; arnes/planes/destilacion_cotizador_contrato.md:313",
+          "punto0_ref": "disenio_p04_cotizador.md:300 (ContratoModal sección 1: 'Autollenado: Cliente + proyecto.direccion_obra')",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "plazo_ejecucion_texto",
+          "origen": "Texto del plazo de ejecución, default '4 a 5' (semanas). Input del usuario en ContratoModal.",
+          "fuente": "lib/db/schema.ts:60; arnes/planes/destilacion_cotizador_contrato.md:314",
+          "punto0_ref": "disenio_p04_cotizador.md:301 (sección Plazos); logica_de_negocio.md:249 (promesa contractual 7 semanas, entregable antes — I-024); diamante2_define_eventos.md:18 (7 semanas ancla E-14)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "holgura_dias",
+          "origen": "Días de holgura en ejecución del contrato, default 8. Input en ContratoModal sección Plazos.",
+          "fuente": "lib/db/schema.ts:61; arnes/planes/destilacion_cotizador_contrato.md:315",
+          "punto0_ref": "disenio_p04_cotizador.md:301; logica_de_negocio.md:255 (holgura total máxima 5 días entre fases); logica_de_negocio.md:480 (12 días de holgura operativa post-entrega — concepto distinto, no es este campo)",
+          "salto": null,
+          "inconsistencia_archivo": "POSIBLE: schema default=8 (destilacion:315) pero logica_de_negocio.md:255 dice holgura máxima 5 días entre fases. Podrían ser conceptos distintos (holgura contractual general vs. holgura entre fases del cronograma), pero ambos usan el término 'holgura' sin desambiguar. Requiere reconciliación."
+        },
+        {
+          "campo": "garantia_anios",
+          "origen": "Años de garantía, default 2. Heredado de proyecto.garantia_anios. Garantía de 2 años sobre estructura modular documentada en lógica de negocio.",
+          "fuente": "lib/db/schema.ts:62; arnes/planes/destilacion_cotizador_contrato.md:316",
+          "punto0_ref": "logica_de_negocio.md:484 (garantía 2 años sobre estructura modular); disenio_p04_cotizador.md:301",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "objeto_items",
+          "origen": "Lista de ítems del contrato (1 por línea), pre-llenada con espacios visibles del proyecto.",
+          "fuente": "lib/db/schema.ts:63; arnes/planes/destilacion_cotizador_contrato.md:317",
+          "punto0_ref": "disenio_p04_cotizador.md:304 (sección Objeto: 'Lista items, Espacios visible_pdf + items'); destilacion_cotizador_contrato.md:184 (compileSpecifications)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "especificaciones_estructura",
+          "origen": "Compilado dinámico desde items tipo 'Tableros / Maderas' en compileSpecifications.",
+          "fuente": "lib/db/schema.ts:64; arnes/planes/destilacion_cotizador_contrato.md:318",
+          "punto0_ref": "destilacion_cotizador_contrato.md:327-331 (compileSpecifications: agrupa por tipo de catálogo); disenio_p04_cotizador.md:302",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "especificaciones_herrajes",
+          "origen": "Compilado dinámico desde items tipo 'Herrajes / Accesorios'.",
+          "fuente": "lib/db/schema.ts:65; arnes/planes/destilacion_cotizador_contrato.md:319",
+          "punto0_ref": "destilacion_cotizador_contrato.md:328; disenio_p04_cotizador.md:302",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "especificaciones_mesones",
+          "origen": "Compilado dinámico desde items tipo 'Piedras / Mesones'.",
+          "fuente": "lib/db/schema.ts:66; arnes/planes/destilacion_cotizador_contrato.md:320",
+          "punto0_ref": "destilacion_cotizador_contrato.md:329; disenio_p04_cotizador.md:302",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "condiciones_desmonte",
+          "origen": "Compilado dinámico desde items tipo 'Servicio'.",
+          "fuente": "lib/db/schema.ts:67; arnes/planes/destilacion_cotizador_contrato.md:321",
+          "punto0_ref": "destilacion_cotizador_contrato.md:330; disenio_p04_cotizador.md:302",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "valor_total",
+          "origen": "Valor total del contrato. Proviene del calculatedTotal del cotizador, editable en ContratoModal. Regla CC-10: NO se toca estructuralmente.",
+          "fuente": "lib/db/schema.ts:68; arnes/planes/destilacion_cotizador_contrato.md:322",
+          "punto0_ref": "d3_schema_consolidado.md:67 (CC-10: valor_total NO se toca); disenio_p04_cotizador.md:304 (MoneyInput editable, default = calculatedTotal); destilacion_cotizador_contrato.md:283 (valor_total viene de calculatedTotal)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "estado",
+          "origen": "Enum 'borrador'|'firmado'. E-12 crea borrador, E-13 transiciona a firmado. Gap real: mecanismo de firma virtual no existe hoy (RED2).",
+          "fuente": "lib/db/schema.ts:5,69; arnes/planes/destilacion_cotizador_contrato.md:323",
+          "punto0_ref": "logica_de_negocio.md:478 (gap firma virtual RED2); diamante2_discover_eventos.md:55 (E-13: contrato borrador→firmado); diamante2_define_eventos.md:37 (firma virtual precondición del rol más activo P4-F7)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "email_asunto",
+          "origen": "Asunto de email generado por engine zap al crear contrato.",
+          "fuente": "lib/db/schema.ts:70; arnes/planes/destilacion_cotizador_contrato.md:324",
+          "punto0_ref": "destilacion_cotizador_contrato.md:90 (engine genera email); no es evento directo sino subproducto de E-12",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "email_cuerpo",
+          "origen": "Cuerpo de email generado por engine zap al crear contrato.",
+          "fuente": "lib/db/schema.ts:71; arnes/planes/destilacion_cotizador_contrato.md:324",
+          "punto0_ref": "destilacion_cotizador_contrato.md:90",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "created_at",
+          "origen": "Timestamp de creación. Auditoría estándar.",
+          "fuente": "lib/db/schema.ts:72",
+          "punto0_ref": "no_encontrado evento directo; campo transversal de auditoría",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "updated_at",
+          "origen": "Timestamp de última actualización. Auditoría estándar.",
+          "fuente": "lib/db/schema.ts:73",
+          "punto0_ref": "no_encontrado evento directo; campo transversal de auditoría",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "contratos es tabla [conservada] en d3_schema_consolidado.md:67 — sin cambios estructurales respecto al schema actual",
+        "CC-10: valor_total NO se toca (d3_schema_consolidado.md:67)",
+        "La firma virtual (E-13) es subsistema DIFERIDO según d3_schema_consolidado.md:69, pero es precondición de capa 1 (P4-F7, define_eventos.md:176)",
+        "E-12 crea contrato borrador + hitos; E-13 firma; E-16 cambia contrato (flow I-027); E-53 captura disponibilidad del cliente",
+        "El bounded context Contratos tiene 4 eventos (E-12, E-13, E-16, E-53) según diamante2_define_eventos.md:37"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": [
+        "holgura_dias: schema tiene default=8 pero logica_de_negocio.md:255 habla de holgura máxima 5 días entre fases del cronograma. Posiblemente son conceptos distintos: 'holgura_dias' del contrato es margen contractual general (8 días), mientras que la 'holgura entre fases' del cronograma (máx 5) es un concepto separado en cronogramas.holguraTotalDias. Verificar con Supervisor si desambiguar nomenclatura."
+      ]
+    },
+    {
+      "tabla": "hitos_pago",
+      "origen_punto0": {
+        "hallazgo": "Tabla 1:N ligada a contratos. Los hitos definen el plan de pagos del cliente. PaymentScheduleCalculator los gestiona. E-12 crea hitos junto con el contrato. E-56 usa los hitos para nacimiento de obligación de cobro.",
+        "fuente": "arnes/planes/destilacion_cotizador_contrato.md:32,387; arnes/diagnostico/diamante2_discover_eventos.md:54"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "UUID PK estándar",
+          "fuente": "lib/db/schema.ts:112",
+          "punto0_ref": "no_encontrado evento directo; campo transversal",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "contrato_id",
+          "origen": "FK a contratos. Los hitos se crean junto con el contrato en E-12.",
+          "fuente": "lib/db/schema.ts:113,121-124; arnes/planes/destilacion_cotizador_contrato.md:32",
+          "punto0_ref": "diamante2_discover_eventos.md:54 (E-12: 'contrato + hitos de pago'); destilacion_cotizador_contrato.md:387 (tabla hitos_pago 1:N)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "orden",
+          "origen": "Orden del hito dentro del plan de pagos. PaymentScheduleCalculator gestiona add/remove/reorder.",
+          "fuente": "lib/db/schema.ts:114; arnes/planes/destilacion_cotizador_contrato.md:337",
+          "punto0_ref": "disenio_p04_cotizador.md:308 (Add/Remove hitos); destilacion_cotizador_contrato.md:337 (PaymentScheduleCalculator: add/remove hitos)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "tipo",
+          "origen": "Enum 'percentage'|'fixed'. Define si el hito es porcentaje o monto fijo del valor total.",
+          "fuente": "lib/db/schema.ts:7,115; arnes/planes/destilacion_cotizador_contrato.md:32",
+          "punto0_ref": "disenio_p04_cotizador.md:308 (tipo % | fijo); destilacion_cotizador_contrato.md:338 (tipo % o fijo)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "monto_o_porcentaje",
+          "origen": "Valor numérico del hito (monto en COP si fixed, porcentaje si percentage). Validación: suma exacta = valor_total (±0.01).",
+          "fuente": "lib/db/schema.ts:116; arnes/planes/destilacion_cotizador_contrato.md:32",
+          "punto0_ref": "disenio_p04_cotizador.md:309 (validación suma exacta = valor_total ±0.01); destilacion_cotizador_contrato.md:340 (suma exacta requerida para guardar)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "razon",
+          "origen": "Razón/descripción del hito (ej. '50% anticipo', '25% instalación', '25% final').",
+          "fuente": "lib/db/schema.ts:117; arnes/planes/destilacion_cotizador_contrato.md:338",
+          "punto0_ref": "disenio_p04_cotizador.md:308 (razón en PaymentScheduleCalculator); destilacion_cotizador_contrato.md:338 (razón)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "fecha_limite",
+          "origen": "Fecha límite opcional del hito. Alimenta E-27 (notificación de pago al cliente).",
+          "fuente": "lib/db/schema.ts:118; arnes/planes/destilacion_cotizador_contrato.md:338",
+          "punto0_ref": "disenio_p04_cotizador.md:308 (fecha límite); diamante2_discover_eventos.md:99 (E-27: notificación de pago al cliente por hito a vencer)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "hitos_pago es tabla [conservada] en d3_schema_consolidado.md:68 — sin cambios estructurales",
+        "Destilación confirma: 'Legacy guarda hitos en JSON + engine. Nuevo schema: tabla hitos_pago 1:N. PaymentScheduleEditor ya emite array compatible' (destilacion_cotizador_contrato.md:387)",
+        "E-56 (nacimiento de obligación de cobro) usa hitos_pago como especificación para crear obligaciones_pendientes (diamante2_discover_eventos.md:98)",
+        "d3_schema_consolidado.md:139 confirma ampliación de obligaciones_pendientes con +hitoId (FK → hitos_pago) en Fase 1 de migración",
+        "Estándar: 3 hitos % (50% anticipo, 25% instalación, 25% final) — destilacion_cotizador_contrato.md:337"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    }
+  ],
+  "veredicto_lote": "CON_INCONSISTENCIAS"
+}

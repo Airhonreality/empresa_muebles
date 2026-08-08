@@ -1,0 +1,34 @@
+{
+  "id": "t-081",
+  "titulo": "F3 — Pantalla P-09 Cronograma doble (editor de desfase E-33)",
+  "intencion_negocio": "El equipo operativo necesita una pantalla que muestre el cronograma de un proyecto en dos lineas (contractual fija e interna movible), permita registrar un desfase de fechas con causa, motivo y composicion causal, y al aplicar ese desfase recalcule solo la linea interna. Es la parte visible del gate E-33 que el Supervisor aprobo en el diseno F3.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "app/erp/cronograma/page.tsx",
+    "app/erp/proyectos/[id]/cronograma/page.tsx",
+    "components/veta/cronograma/",
+    "lib/modules/f3/cronograma.ts",
+    "arnes/planes/plan_t-081.md"
+  ],
+  "criterios_aceptacion": [
+    "Ejecutar npx tsc --noEmit y obtener 0 errores.",
+    "Ejecutar npx eslint . y obtener 0 errores.",
+    "La ruta /app/erp/cronograma y /app/erp/proyectos/[id]/cronograma renderizan la tabla doble (contractual interna) leyendo cronograma_etapas de dev-local.",
+    "El editor de desfase no permite Aplicar si causa, motivo o composicion causal estan vacios (validacion de predicado P33).",
+    "Al aplicar un desfase, por falla separada ejecutor-verificador se confirma en DB que SOLO cronograma_etapas linea interna cambio y la contractual queda intacta."
+  ],
+  "plan_ref": "arnes/planes/plan_t-081.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

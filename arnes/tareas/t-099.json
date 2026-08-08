@@ -1,0 +1,31 @@
+{
+  "id": "t-099",
+  "titulo": "F5 — Diseno/Plan P-17 Calidad (citacion E-23 + veredicto gate E-24)",
+  "intencion_negocio": "La calidad verifica los modulos antes del despacho: el desarrollador empuja la citacion de calidad (E-23, senal) y el comercial vendedor (verificador unico) decide el veredicto (E-24, gate) cuando el proyecto esta en 'armado'. El determinismo obliga a que el veredicto NO mueva proyectos.estado: solo E-25 (P-18) lo saca de 'armado' para evitar deadlock. Bajo estrategia V3, esto NO se codifica: diseno + plan aprobado.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/planes/plan_f5.md (plan global F5)",
+    "arnes/diagnostico/pasadas/d3_ui_b3_3_compras_taller_calidad.md (fuente)"
+  ],
+  "criterios_aceptacion": [
+    "El plan documenta el gate E-24 con predicado P24 completo (estado='armado' + citacion citada + veredicto del verificador unico con creado_en >= citado_en) evaluable en servidor.",
+    "El plan fija el determinismo: aprobar E-24 NO cambia proyectos.estado (permanece 'armado'); solo E-25 lo saca.",
+    "El plan define roles: desarrollador empuja E-23 (push, senal), comercial vendedor ejecuta E-24, gerente ve; guard de verificador unico en UI (R16).",
+    "El plan incluye rama negativa E-54 (origen='calidad') con modal R18, Familia B y badges material (D4).",
+    "No incluye codigo."
+  ],
+  "plan_ref": "arnes/planes/plan_f5.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

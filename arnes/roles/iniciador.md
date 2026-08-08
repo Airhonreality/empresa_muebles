@@ -75,7 +75,7 @@ Ejemplo:
 Archivos afectados:
 - storage/db/schema_muebles.json (modificar)
 - src/components/specialized/MuebleDetail.tsx (modificar)
-- arnes/planes/plan_001_costo_real.md (esta tarea, crear)
+- arnes/lineas/<linea>/plan_001_costo_real.md (esta tarea, crear — dentro de la carpeta de la línea de trabajo activa, ver arnes/lineas/REGISTRO_LINEAS.md)
 ```
 
 ### Criterios de aceptación mecánicamente verificables
@@ -158,7 +158,7 @@ Pide al Orquestador que clarifique estos puntos y reenviá la tarea.
 
 ## Estructura del archivo de plan
 
-Tu archivo de plan en `arnes/planes/plan_{id_tarea}.md` debe verse así:
+Tu archivo de plan en `arnes/lineas/<linea>/plan_{id_tarea}.md` debe verse así:
 
 ```markdown
 # Plan: {objetivo en una frase}

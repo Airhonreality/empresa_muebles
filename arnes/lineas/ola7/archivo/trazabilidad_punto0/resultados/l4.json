@@ -1,0 +1,373 @@
+{
+  "lote": "L4",
+  "generado_por": "subagente de TRAZABILIDAD punto-0 (rol Código/QA documental)",
+  "descripcion": "Compras/Proveedores — F4. Cadena: origen -> evento/E-job -> pasada d3 -> fuente OLA_6 -> logica_de_negocio (punto 0). NO se resuelven conflictos de naming; se reportan con fuentes enfrentadas.",
+  "fuentes_consultadas": [
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/diamante2_discover_eventos.md",
+    "arnes/diagnostico/diamante2_define_eventos.md",
+    "arnes/diagnostico/OLA_6_SCHEMAS_APROBADOS.md",
+    "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md",
+    "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md",
+    "arnes/diagnostico/OLA_6_METODOLOGIA_GRAFOS.md",
+    "arnes/diagnostico/OLA_6_SUBSISTEMA_LOGS.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_1_contextos.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_4_dinero.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_1_normalizacion.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_2_determinismo.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_3_trazabilidad.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_4_contrato_vivo.md",
+    "arnes/diagnostico/pasadas/d3_schema_a3_auditor.md",
+    "arnes/diagnostico/pasadas/d3_ui_b3_3_compras_taller_calidad.md",
+    "arnes/planes/plan_f4.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "proveedores",
+      "origen_punto0": {
+        "hallazgo": "Compras/Proveedores NO es un flujo único: cada proveedor tiene mecánica real distinta (melamina corte con anticipo+saldo, prefabricados de terceros subcontratados, ferretería pago simple). Implicación: la orden de compra debe soportar >=3 mecánicas.",
+        "fuente": "arnes/diagnostico/logica_de_negocio.md:346-352 (narrativa Compras, logica:352); logica_de_negocio.md:324 (subsistema parcial)"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "Existente en codigo F0 (tabla viva CONSERVADA)",
+          "fuente": "lib/db/schema.ts:316",
+          "punto0_ref": "proveedor es destinatario del evento de compra E-19 (logica_de_negocio.md:324)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nombre",
+          "origen": "Existente codigo F0",
+          "fuente": "lib/db/schema.ts:317",
+          "punto0_ref": "proveedor como actor-externo del flujo de compra (logica_de_negocio.md:346-350)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nit",
+          "origen": "Existente codigo F0",
+          "fuente": "lib/db/schema.ts:318",
+          "punto0_ref": "identificacion del proveedor para regimen/factura (sin cita explicita en punto 0)",
+          "salto": null,
+          "inconsistencia_archivo": "plan_f4.md:79 lo declara nullable 'regimen/factura'"
+        },
+        {
+          "campo": "categoria",
+          "origen": "Existente codigo F0",
+          "fuente": "lib/db/schema.ts:319",
+          "punto0_ref": "categoria material/servicio/ferreteria/tercero (plan_f4.md:80)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "created_at",
+          "origen": "Existente codigo F0",
+          "fuente": "lib/db/schema.ts:320",
+          "punto0_ref": "timestamp de auditoria (patron F0)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "telefono_comercial, direccion_despacho, ciudad, medio_pago, dias_entrega_default, transportadora, tarifa_flete, activo",
+          "origen": "DECISION NUEVA D-2026-08-07-B (ampliacion 3.b); hallazgo F4-01 'proveedores legacy solo 5 campos (sin telefono/comercial/contacto/direccion)'",
+          "fuente": "arnes/planes/plan_f4.md:73-89 y 138 (F4-01)",
+          "punto0_ref": "realidad multi-mecanica del proveedor (logica_de_negocio.md:346-352)",
+          "salto": "Sin pasada previa en d3 ni OLA_6: campos nuevos de una decision del Supervisor 2026-08-07, ausentes en d3_schema_consolidado (solo [conservada], linea 175) y en OLA_6",
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "D-2026-08-07-B: ampliar proveedores con SLA (dias_entrega_default integer) que deriva fecha_recepcion_esperada de la OC",
+        "F4-01: ampliacion porque el legacy solo tenia 5 campos",
+        "DP-02 resuelto: rol 'compras' tipado dedicado (d3_ui_b3_3_compras_taller_calidad.md:449; d3_schema_a2_1_normalizacion.md:311)"
+      ],
+      "saltos_detectados": [
+        "Campos de ampliacion (telefono_comercial, direccion_despacho, ciudad, etc.) sin pasada anterior ni cita punto_0 individual: decision nueva D-2026-08-07-B, no presente en d3_schema_consolidado 5. Compras ni en OLA_6. El consolidado solo lista 'proveedores [conservada]' (d3_schema_consolidado.md:175) sin la ampliacion."
+      ],
+      "reconciliaciones_propuestas": [
+        "Fusionar la ampliacion 3.b de plan_f4 dentro del schema del consolidado proveedores (hoy [conservada], d3_schema_consolidado.md:175) junto con sus FKs (ordenes_compra, herramientas, productos_catalogo, obligaciones_pendientes) - Master de naming #4."
+      ]
+    },
+    {
+      "tabla": "proveedores_contactos",
+      "origen_punto0": {
+        "hallazgo": "Javier respondio: multiples contactos (persona->telefono) por proveedor; cada proveedor es atendido por contactos distintos (quien atiende pedidos).",
+        "fuente": "arnes/planes/plan_f4.md:70-71 y 91 (D-2026-08-07-B)"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "Decision nueva D-2026-08-07-B (3.b)",
+          "fuente": "arnes/planes/plan_f4.md:95",
+          "punto0_ref": "logica_de_negocio.md:345-350 (cada proveedor tiene mecanica/contacto distinto)",
+          "salto": "NO existe en d3_schema_consolidado, ni OLA_6, ni schema.ts: tabla nueva solo en plan_f4",
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proveedor_id",
+          "origen": "Decision nueva D-2026-08-07-B (1-N)",
+          "fuente": "arnes/planes/plan_f4.md:96",
+          "punto0_ref": "relacion 1-N proveedor->contactos",
+          "salto": "sin pasada previa",
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nombre_contacto, cargo, telefono, email, es_principal",
+          "origen": "Decision nueva D-2026-08-07-B",
+          "fuente": "arnes/planes/plan_f4.md:97-101",
+          "punto0_ref": "logica_de_negocio.md:345-350",
+          "salto": "sin pasada previa en d3 ni OLA_6",
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "D-2026-08-07-B: 1-N multiples contactos por proveedor"
+      ],
+      "saltos_detectados": [
+        "Tabla ausente por completo en las fuentes previas al plan (d3_schema_consolidado 15, OLA_6, schema.ts). Es decision D-2026-08-07-B sin cadena de pasadas: salto documental."
+      ],
+      "reconciliaciones_propuestas": [
+        "Incorporar la tabla al schema consolidado dentro de la ampliacion de proveedores; definir unicidad es_principal por proveedor."
+      ]
+    },
+    {
+      "tabla": "catalogo_proveedor",
+      "origen_punto0": {
+        "hallazgo": "productos_catalogo hoy tiene un SOLO proveedor_id (N:1), incompatible con la realidad multi-proveedor/homologacion. Se anade la tabla puente multi-proveedor.",
+        "fuente": "arnes/planes/plan_f4.md:103-105 y 139 (F4-02: resuelve DECISION_PENDIENTE del arnes)"
+      },
+      "campos": [
+        {
+          "campo": "id, catalogo_id, proveedor_id, precio_unitario, sla_dias, activo, unique(catalogo_id, proveedor_id)",
+          "origen": "Nueva tabla puente (3.b)",
+          "fuente": "arnes/planes/plan_f4.md:107-115",
+          "punto0_ref": "logica_de_negocio.md:348 (prefabricados de terceros, mismos items de varios proveedores)",
+          "salto": "No presente en d3_schema_consolidado ni OLA_6; el N:1 vigente esta en schema.ts:406-438",
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "productos_catalogo.proveedor_id (conservado como conveniencia)",
+          "origen": "Se mantiene como FK directa de conveniencia (proveedor principal); no se elimina, no hay migracion destructiva",
+          "fuente": "arnes/planes/plan_f4.md:117; lib/db/schema.ts:415 y 425-429",
+          "punto0_ref": "logica_de_negocio.md:348",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "Resuelve la DECISION_PENDIENTE del arnes (multi-proveedor / homologacion) mediante tabla puente (plan_f4:103-105, 139)"
+      ],
+      "saltos_detectados": [
+        "Tabla no citada en ninguna pasada d3 ni OLA_6: es decision D-2026-08-07-B de plan_f4. Ademas convive sin resolver con DP-05 (insumos vs producto terminado, catalogo dual)."
+      ],
+      "reconciliaciones_propuestas": [
+        "Reconciliar con DP-05 (insumos vs producto terminado) y con materiales_insumos.catalogo_id; verificar que la puente conviva sin duplicar el N:1 de productos_catalogo."
+      ]
+    },
+    {
+      "tabla": "ordenes_compra",
+      "origen_punto0": {
+        "hallazgo": "E-19 Pedido de compra (soporta >=3 mecanicas: anticipo+saldo / unico / subcontratacion); E-20 pago a proveedor con gate de caja bloqueante (D1); E-45 compra operativa sin proyecto.",
+        "fuente": "arnes/diagnostico/diamante2_discover_eventos.md:72-75; logica_de_negocio.md:352"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "Tabla nueva (OLA_6)",
+          "fuente": "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:85",
+          "punto0_ref": "E-19 orden de compra (diamante2_discover_eventos.md:72)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proyecto_id",
+          "origen": "E-19/E-45 (nullable para compra operativa)",
+          "fuente": "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:86; d3_schema_a1_4_dinero.md:113-120; d3_schema_a2_1_normalizacion.md:169",
+          "punto0_ref": "E-19 (diamante2_discover_eventos.md:72), E-45 (diamante2_discover_eventos.md:75)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "schema_id",
+          "origen": "E-19 - guard E-18 (schema aprobado)",
+          "fuente": "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:87; d3_schema_a2_1_normalizacion.md:169",
+          "punto0_ref": "gate E-18 pre-compras (logica_de_negocio.md:284-285; diamante2_define_eventos.md:103)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proveedor_id",
+          "origen": "E-19/E-20/E-45",
+          "fuente": "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:98; d3_schema_a2_1_normalizacion.md:169",
+          "punto0_ref": "proveedor es destino de la compra E-19 (logica_de_negocio.md:324)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "origen (proyecto/operativa)",
+          "origen": "'proyecto'|'operativa' (E-45 reposicion de herramientas)",
+          "fuente": "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:90; d3_schema_a2_1_normalizacion.md:169",
+          "punto0_ref": "E-45 (diamante2_discover_eventos.md:75)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "estado",
+          "origen": "CONFLICTO DE NAMING: 4 vs 7 valores",
+          "fuente": "OLA_6: 'creada','enviada','recibida','rechazada' (OLA_6_GATES_SCHEMAS.md:91); CONSOLIDADO/DISENO: 7 valores 'solicitada/aprobada/en_pago/pagada/recibida_verificada | rechazada/cancelada' (d3_schema_consolidado.md:99, d3_schema_a2_1_normalizacion.md:169, plan_f4.md:31)",
+          "punto0_ref": "transiciones E-19 -> E-20 -> E-21 (diamante2_discover_eventos.md:72-74)",
+          "salto": null,
+          "inconsistencia_archivo": "MASTER DE NAMING #2: legacy/OLA_6 4 valores (creada/enviada/recibida/rechazada) vs diseno 7 valores. NO resuelto, solo reportado."
+        },
+        {
+          "campo": "monto_total, anticipo_monto",
+          "origen": "E-20 gate de caja; fuente del monto a pagar (CF-16)",
+          "fuente": "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:94-95; d3_schema_a2_1_normalizacion.md:169",
+          "punto0_ref": "logica_de_negocio.md:358 (politica 'no acumular deuda') y E-20 (D1, bloqueante)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "fecha_recepcion_esperada, tiempo_entrega_dias (ampliacion D-2026-08-07)",
+          "origen": "Decision del Supervisor: modelar ciclo abono->tiempo->entrega->saldo dentro de ordenes_compra; fecha derivada del SLA del proveedor/tercero",
+          "fuente": "arnes/planes/plan_f4.md:35-44 (D-2026-08-07); arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:101-102 (solo fecha en borrador de gates)",
+          "punto0_ref": "SLA de recepcion de material E-21 y check de los 15 dias (insumo en taller) (logica_de_negocio.md:286, 251)",
+          "salto": "fecha_recepcion_esperada solo existia en el borrador de gates (OLA_6_GATES_SCHEMAS:102); D-2026-08-07 la promueve y anade tiempo_entrega_dias que NO esta en el schema consolidado (a2_1:169 solo 'fechas') - ver plan_f4:43",
+          "inconsistencia_archivo": "Nota de consistencia explicitada en plan_f4:43 (promocion al schema consolidado que hoy solo dice 'fechas')"
+        }
+      ],
+      "decisiones_clave": [
+        "E-20 gate de caja COMPLETAMENTE BLOQUEANTE (D1): no se registra pago sin caja real; rama negativa = fila `eventos` gate con payload y decision del gerente (d3_schema_a2_1_normalizacion.md:34, CF-06)",
+        "3 mecanicas de pago: anticipo+saldo / unico / subcontratacion (plan_f4.md:33)",
+        "D-2026-08-07: fecha_recepcion_esperada alimenta el cronograma (F3/P-09, E-33) sin recalcularse aqui (plan_f4.md:41-42)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": [
+        "Unificar enum estado `ordenes_compra`: 4 (OLA_6) vs 7 (consolidado/plan). Es el MASTER DE NAMING #2: no resuelto en este lote, solo reportado con ambas fuentes.",
+        "Alta de fecha_recepcion_esperada y tiempo_entrega_dias (decision D-2026-08-07) en el consolidado d3_schema_a2_1_normalizacion.md:169 que hoy solo enumera 'fechas'."
+      ]
+    },
+    {
+      "tabla": "recepciones vs recepciones_material",
+      "origen_punto0": {
+        "hallazgo": "E-21 Recepcion de material con TRIPLE verificacion (pedido bien / despacho bien / material verificado) - gate estructural de la Capa 1; el proyecto pasa a control total del subsistema desarrollo-taller. Rama defectuosa -> E-54 reproceso con rastreo de origen (culpable proveedor/desarrollador/comercial).",
+        "fuente": "arnes/diagnostico/diamante2_discover_eventos.md:74; logica_de_negocio.md:286"
+      },
+      "campos": [
+        {
+          "campo": "recepciones (nombre de tabla, OLA_6)",
+          "origen": "Borrador de gates OLA_6 usa `recepciones` + los 3 checks",
+          "fuente": "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:128-145",
+          "punto0_ref": "E-21 (diamante2_discover_eventos.md:74)",
+          "salto": null,
+          "inconsistencia_archivo": "MASTER DE NAMING #1: OLA_6 llama la tabla `recepciones`; el consolidado la llama `recepciones_material`. NO resuelto."
+        },
+        {
+          "campo": "recepciones_material (nombre de tabla, consolidado)",
+          "origen": "CONVERGENCIA del consolidado: CF-03 adopta `recepciones_material` (checks + estado) + checklist por item en items_orden_compra",
+          "fuente": "arnes/diagnostico/pasadas/d3_schema_consolidado.md:101; d3_schema_a2_1_normalizacion.md:73 (CF-03)",
+          "punto0_ref": "E-21 gate (diamante2_discover_eventos.md:74)",
+          "salto": null,
+          "inconsistencia_archivo": "mismo conflicto del #1"
+        },
+        {
+          "campo": "check_pedido_bien, check_despacho_bien, check_material",
+          "origen": "Validacion E-21 (3 checks de la triple verificacion)",
+          "fuente": "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md:135-137; d3_schema_a2_1_normalizacion.md:171",
+          "punto0_ref": "triple verificacion (logica_de_negocio.md:286)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "estado (pendiente/recibido_verificado/recibido_defectuoso)",
+          "origen": "Transicion E-21 (predicado P21)",
+          "fuente": "d3_schema_a2_1_normalizacion.md:171; d3_schema_consolidado.md:217 (predicado P21)",
+          "punto0_ref": "triple verificacion (logica_de_negocio.md:286); si falla -> E-54 origen D2",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "verificado_por_rol='desarrollador'",
+          "origen": "Rol ejecutor del checklist C3 de E-21",
+          "fuente": "d3_schema_a1_1_contextos.md:165; d3_schema_consolidado.md:101-102",
+          "punto0_ref": "definicion C3 del checklist por item (diamante2_define_eventos.md:76)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "E-21 es gate estructural de la Capa 1 (logica_de_negocio.md:286)",
+        "CF-03 rechazo el blob jsonb `checklist` (DET-10) y uso columnas tipadas por item en `items_orden_compra` (recibido_cantidad, sin_defectos, catalogo_id) (d3_schema_a2_1_normalizacion.md:73, 170)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": [
+        "MASTER DE NAMING #1: resolver `recepciones` (OLA_6) vs `recepciones_material` (consolidado). No se resuelve en este lote, solo se reporta.",
+        "Plan F4 P-14 (gate E-21) refiere al estado derivado del predicado P21 (plan_f4.md:48-50); reconciliar denominacion unica con el consolidado."
+      ]
+    },
+    {
+      "tabla": "materiales_insumos (campo SLA/tiempo_entrega_dias y su relacion con compras)",
+      "origen_punto0": {
+        "hallazgo": "El material/insumo lleva un SLA de proveedor (`tiempo_entrega_dias`) que define el lead time de la OC; junto a lote_minimo/punto_reorden alimenta la compra operativa (E-45). Nota: el SLA de ventana 5-24h de E-34 es un concepto distinto (novedad critica), no este.",
+        "fuente": "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:86-98; logica_de_negocio.md:259"
+      },
+      "campos": [
+        {
+          "campo": "tiempo_entrega_dias (INTEGER NOT NULL, 'SLA de proveedor')",
+          "origen": "Universo de compra/almacen del insumo",
+          "fuente": "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:98",
+          "punto0_ref": "relacion con compras: junto a lote_minimo y punto_reorden alimenta la OC (FLAG4:96-100); E-21/E-45",
+          "salto": null,
+          "inconsistencia_archivo": "MASTER DE NAMING #3 - SLA por entregas en 3 sitios: materiales_insumos.tiempo_entrega_dias (FLAG4:98) / proveedores.dias_entrega_default (plan_f4:85) / catalogo_proveedor.sla_dias (plan_f4:113). Ver reconcilacion."
+        },
+        {
+          "campo": "catalogo_id (FK -> productos_catalogo, 1:1)",
+          "origen": "FLAG4 extension",
+          "fuente": "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:93",
+          "punto0_ref": "base de OC / BOM (diamante2_define_eventos.md:76)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "lote_minimo, lote_multiplo, punto_reorden_unidades",
+          "origen": "Universo de compra/almacen (OC operativa automatica)",
+          "fuente": "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:96-100",
+          "punto0_ref": "E-45 reposicion operativa y E-19 orden de compra",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "plan_f4 D-2026-08-07 (linea 42): 'Fuente del SLA: materiales_insumos.tiempo_entrega_dias ya existe (FLAG-4:98); se reutiliza/consolida en el proveedor, no se duplica a nivel insumo' - tension directa con FLAG4 que lo declara POR INSUMO."
+      ],
+      "saltos_detectados": [
+        "materiales_insumos NO esta en d3_schema_consolidado ni en schema.ts: solo vive en OLA_6_FLAG4 (documento FLAG4). No tiene fila en el consolidado d3 ni en plan_f4 (que solo la cita via FLAG-4:98).",
+        "SLA por entregas redundante en 3 sitios sin decision de fuente de verdad (ver MASTER #3)."
+      ],
+      "reconciliaciones_propuestas": [
+        "MASTER DE NAMING #3: decidir la ubicacion del SLA de entrega (insumo vs proveedor vs catalogo_proveedor) - si es el mismo concepto o 3 atributos distintos. NO resuelto en este lote.",
+        "Si materiales_insumos.tiempo_entrega_dias se conserva, debe definirse la precedencia frente a proveedores.dias_entrega_default y catalogo_proveedor.sla_dias (overrides, plan_f4:113)."
+      ]
+    }
+  ],
+  "veredicto_lote": "CON_INCONSISTENCIAS",
+  "resumen": {
+    "n_tablas": 6,
+    "n_saltos": 9,
+    "n_inconsistencias": 4,
+    "masters_naming_lote": [
+      "#1: recepciones (OLA_6) vs recepciones_material (consolidado) - OLA_6_GATES_SCHEMAS.md:128 vs d3_schema_consolidado.md:101",
+      "#2: ordenes_compra.estado 4 valores (OLA_6_GATES_SCHEMAS.md:91: creada/enviada/recibida/rechazada) vs 7 valores (d3_schema_a2_1_normalizacion.md:169 y plan_f4.md:31)",
+      "#3: SLA por entregas en 3 sitios: materiales_insumos.tiempo_entrega_dias (FLAG4:98) vs proveedores.dias_entrega_default (plan_f4:85) vs catalogo_proveedor.sla_dias (plan_f4:113)",
+      "#4: ampliacion D-2026-08-07-B (proveedores + proveedores_contactos + catalogo_proveedor) NO contenida en el consolidado d3: solo en plan_f4"
+    ],
+    "decisiones_nuevas_sin_cadena": [
+      "D-2026-08-07-B: proveedores_contactos y catalogo_proveedor no existen en ninguna pasada previa (solo plan_f4).",
+      "D-2026-08-07: tiempo_entrega_dias en OC no esta en el consolidado (a2_1:169 solo 'fechas')."
+    ]
+  }
+}

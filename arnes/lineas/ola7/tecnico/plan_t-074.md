@@ -1,4 +1,4 @@
-# Plan de Tarea: t-074
+﻿# Plan de Tarea: t-074
 
 **Título:** Lógica de identidad y auditoría de F0 (roles, parámetros con historial, eventos y audit) sobre las tablas core ya migradas
 
@@ -47,7 +47,7 @@ El ERP podrá gestionar por código, sin interfaz, los cimientos de identidad y 
 3. Ejecutar `DATABASE_URL=<dev-local> npx tsx lib/modules/f0/roles.test.ts` y obtener tests en verde: el catálogo contiene exactamente los 7 roles canónicos (`admin`, `comercial`, `desarrollador`, `compras`, `taller`, `finanzas`, `supervisora_qa`) y `esRolValido` acepta los 7 y rechaza un código inventado.
 4. Ejecutar `DATABASE_URL=<dev-local> npx tsx lib/modules/f0/parametros.test.ts` y obtener tests en verde contra dev-local: `actualizarParametro` sobre una clave de prueba crea exactamente 1 fila nueva en `parametros_historial` con los valores anterior/nuevo correctos según el tipo del parámetro, actualiza el valor en `parametros` y actualiza `vigente_desde` y `updated_at` al momento del cambio. El test limpia sus propias filas de prueba al terminar (append-only es regla de la app, no del fixture).
 5. Ejecutar `DATABASE_URL=<dev-local> npx tsx lib/modules/f0/eventos.test.ts` y obtener tests en verde contra dev-local: `registrarEvento` inserta en `eventos` y `registrarAuditLog` en `audit_logs`. El módulo `eventos.ts` NO exporta operaciones de update ni delete sobre `eventos`/`audit_logs` (verificación por grep).
-6. Verificar por grep que `lib/modules/f0/eventos.ts` contiene los 61 códigos de evento del dominio (E-01..E-61), derivados de `arnes/diagnostico/diamante2_discover_eventos.md`, como constante tipada. Código `tipo_evento` fuera del catálogo se rechaza con error claro en `registrarEvento`.
+6. Verificar por grep que `lib/modules/f0/eventos.ts` contiene los 61 códigos de evento del dominio (E-01..E-61), derivados de `arnes/lineas/ola7/archivo/diamante2_discover_eventos.md`, como constante tipada. Código `tipo_evento` fuera del catálogo se rechaza con error claro en `registrarEvento`.
 7. Round-trip real de trazabilidad: ejecutar un query contra dev-local que devuelva la cadena completa de cambios de una clave de parámetro (anterior → nuevo, actor, motivo) leyendo `parametros_historial`, confirmando que el historial acumula en vez de reescribir.
 
 ---

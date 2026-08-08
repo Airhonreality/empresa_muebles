@@ -1,0 +1,32 @@
+{
+  "id": "t-085",
+  "titulo": "F4 — Diseno/Plan P-14 Recepcion de material (gate E-21, triple verificacion)",
+  "intencion_negocio": "Cuando llega material comprado, el desarrollador verifica cada ítem con triple check (pedido bien, despacho bien, sin defectos) y recien cuando todos pasan el material queda recibido_verificado y pasa el control al taller. Si hay defecto, se abre reproceso con rastreo de origen compra (E-54). Bajo la estrategia V3, esto NO se implementa: diseño + plan de código aprobado.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/planes/plan_t-085.md",
+    "arnes/diagnostico/pasadas/d3_ui_b3_3_compras_taller_calidad.md (fuente)"
+  ],
+  "criterios_aceptacion": [
+    "El plan documenta el gate E-21 con predicado P21 (check_pedido_bien + check_despacho_bien + NOT EXISTS items sin verificar).",
+    "El plan fija el checklist por ítem: cantidad esperada, cantidad recibida, tipo, despacho, sin defectos; filas ≥48px, checkboxes grandes, foco visible.",
+    "El plan define el estado global DERIVADO del predicado, no un campo manual; boton deshabilitado con razon visible (R16).",
+    "El plan incorpora modal de confirmacion destructiva (R18) al rechazar recepcion y dispara reprocesos con origen='compra' (E-54).",
+    "El plan incorpora las recomendaciones de usabilidad aprobadas (toast al recibido-verificado).",
+    "No incluye codigo."
+  ],
+  "plan_ref": "arnes/planes/plan_f4.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

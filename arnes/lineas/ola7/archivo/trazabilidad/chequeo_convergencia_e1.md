@@ -1,8 +1,8 @@
-# Chequeo de Convergencia — Eslabón E1 (Público: F-02/F-03/F-08)
+﻿# Chequeo de Convergencia — Eslabón E1 (Público: F-02/F-03/F-08)
 
 **Fecha:** 2026-08-06
 **Loop:** 5 capas (invaración → lógica de negocio → fase schema → flag/registro → veredicto)
-**Fuente del eslabón:** `arnes/planes/destilacion_f3_publico.md` (en clone-dev / port candidato)
+**Fuente del eslabón:** `arnes/lineas/ola7/destilacion_f3_publico.md` (en clone-dev / port candidato)
 **Referencias contraste (V3):** `d3_schema_consolidado.md`, `OLA_6_FLAG4_PRODUCTOS_CATALOGO.md`, `estado.md` (F2), `t-007`, `inventario_legacy.md`
 
 ---

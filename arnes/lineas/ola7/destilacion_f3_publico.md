@@ -133,7 +133,7 @@ Layout de storytelling: header sticky, navegación de ambientes, galería de im�
 
 | Feature | Ruta | Estado |
 |---|---|---|
-| **F-01** Landing/Home | `/` | ✅ Existente (PoC 3) |
+| **F-01** Landing/Home | `/` | 🔲 Por construir — PoC 3 es demo de tokens D4, no pantalla de negocio. Ver `plan_estructura_sitio_publico.md` |
 | **F-02** Catálogo | `/colecciones` | ✅ Destilado — listo para schema `productos_tienda` |
 | **F-03** Portafolio | `/portafolio` | ✅ Destilado — listo para schema `portafolio_proyectos` |
 | **F-08** Propuesta | `/propuesta/{slug}` | ✅ Destilado — pendiente refactorizar en F7 |

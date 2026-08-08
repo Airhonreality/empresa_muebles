@@ -1,0 +1,33 @@
+{
+  "id": "t-082",
+  "titulo": "F3 — Registro de eventos/auditoria del cronograma (E-33, E-18) + alertas",
+  "intencion_negocio": "Todo cambio de cronograma y cada evaluacion de gate (E-18 schema, E-33 desfase) debe quedar en el subsistema de logs (eventos + audit_logs) para poder trazar por que un proyecto se atraso y quien lo autorizo. Es la observabilidad de la fase cronograma previa a que F6 use el desfaseId para comisiones.",
+  "zona": "datos",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/modules/f0/eventos.ts",
+    "lib/modules/f3/cronograma.ts",
+    "lib/modules/f3/cronograma.test.ts",
+    "arnes/planes/plan_t-082.md"
+  ],
+  "criterios_aceptacion": [
+    "Ejecutar npx tsc --noEmit y obtener 0 errores.",
+    "Ejecutar npx eslint . y obtener 0 errores.",
+    "Ejecutar DATABASE_URL=<dev-local> npx tsx lib/modules/f3/cronograma.test.ts y obtener tests en verde: al aplicar un desfase se inserta 1 evento y 1 audit_log; al evaluar un gate se registra el resultado.",
+    "Verificar por grep que el modulo NO exporta update/delete sobre eventos/audit_logs (append-only).",
+    "La guia de los codigos de evento de cronograma (E-14, E-33, E-59, E-60 y los del gate de desfase) existe en el catalogo tipado E-01..E-61."
+  ],
+  "plan_ref": "arnes/planes/plan_t-082.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

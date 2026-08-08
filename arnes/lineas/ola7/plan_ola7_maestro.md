@@ -2,8 +2,19 @@
 
 **Supervisor:** Javier
 **Fecha:** 2026-08-04
-**Status:** PROPUESTO — pendiente aprobación del Supervisor
-**Alcance:** contrato maestro de ejecución. No es rediseño: codifica exactamente lo que Ola 6 especificó (65 tablas, 34 pantallas, 5 gates).
+**Status:** VIGENTE — banda F0–F9 en ejecución bajo la estrategia "planes primero, código después" (ver §0). F0–F7 con diseño/plan aprobado; F8 es la fase abierta.
+**Alcance:** contrato maestro de la banda de diseño F0–F9. No es rediseño: codifica exactamente lo que Ola 6 especificó (65 tablas, 34 pantallas, 5 gates) — pero "codificar" aquí significa producir el plan/diseño aprobado de cada fase, no escribir `lib/`/`app/` (ver §0, estrategia del Supervisor 2026-08-07).
+
+---
+
+## ⚠️ ESTRATEGIA DE EJECUCIÓN (SUPERVISOR, 2026-08-07) — PLANES PRIMERO, CÓDIGO DESPUÉS
+
+> **Entre F0 y F9 NO se codifica.** La banda F0–F9 produce (por fase, en bucle arrancando en F4) `aprobación → diseño → plan de código aprobado`. La codificación comienza recién cuando todos los planes de la banda están aprobados y se sale de F0–F9.
+
+**Implicaciones sobre la tabla de fases de abajo:**
+- Las columnas "Pantallas / Gates", "Tareas" y "Salida verificable" de F0–F9 se entienden ahora como **plazos de DISEÑO/PLAN aprobado**, no como código ejecutado.
+- NINGUNA fase F0–F9 escribe `lib/` o `app/`. Solo produce documentos (diseño + plan aprobado) en `arnes/`.
+- El checklist de aprobación (§6) y el siguiente plan que escriba el Iniciador (F8) siguen vigentes como gate de la banda de diseño.
 
 ---
 
@@ -16,12 +27,12 @@ Regla de oro: ninguna fase rompe un módulo que ya corre. Cada fase cierra con v
 | **F0** | Cimientos — identidad y auditoría | `roles`, `personas`, `personas_roles`, `parametros`, `parametros_historial`, `eventos`, `audit_logs`, `procedencia` (F0+F2) | — (rol tipado `erp-nav.ts`; precondición de todo guard) | t-074, t-076 (base) | `db:migrate`+`db:seed` limpios en dev-local; `eventos` append-only OK |
 | **F1** | Catálogos + embudo ampliado | catálogos FLAG-4 (herrajes, insumos, procesos, componentes, espacios); `leads`/`clientes`/`proyectos` ampliadas (F1) | — | t-075, t-077 (seed real) | 65 tablas creadas; seed real cargado |
 | **F2** | Comercial + cotizador | `cotizaciones`, `diseños3d`, `citas`, `visitas`, `conversaciones` | B3-1: P-01..P-05 + F-01/F-02/F-03/F-08 | t-078 (P-04), t-079 (P-01) | Matemática en servidor (R05) testeada; embudo kanban con datos reales |
-| **F3** | Cronograma + gates E-18/E-33 | `cronogramas`, `cronograma_etapas`, `desfases_cronograma`, `check_15_dias`, `novedades_criticas`, `schemas_proyecto`, `bom_materiales`, `retomas`, `reprocesos` (F2) | B3-2: P-06..P-12, **E-18**, **E-33** | t-080 (E-33), t-081 (P-09), t-082 (logs+alertas) | Test de gate E-18/E-33 contra datos reales; recálculo solo `linea='interna'` |
+| **F3** | Cronograma + gates E-18/E-33 | `cronogramas`, `cronograma_etapas`, `desfases_cronograma`, `check_produccion`, `novedades_criticas`, `schemas_proyecto`, `bom_materiales`, `retomas`, `reprocesos` (F2) | B3-2: P-06..P-12, **E-18**, **E-33** | t-080 (E-33), t-081 (P-09), t-082 (logs+alertas) | Test de gate E-18/E-33 contra datos reales; recálculo solo `linea='interna'` |
 | **F4** | Compras + gates E-20/E-21 | `ordenes_compra`, `items_orden_compra`, `recepciones_material`, `herramientas` (F2) | B3-3a: **P-13 (E-20 dispara)**, **P-14 (E-21)**, P-15 | t-083 (E-20), t-084 (E-21), t-085 (P-13) | P21 triple verificación OK; caja bloqueante en servidor |
-| **F5** | Taller + Calidad + Entrega | `modulos_armado`, `citaciones_calidad`, `instalaciones`, `actas_entrega`, `citas_garantia` (F2) | B3-3b: P-16, **P-17 (E-24)**, P-18, P-19 | — (heredadas de F4) | Gate E-24 E2E; rango 5 días |
+| **F5** | Taller + Calidad + Entrega | `modulos`, `citaciones_calidad`, `instalaciones`, `actas_entrega`, `citas_garantia` (F2) | B3-3b: P-16, **P-17 (E-24)**, P-18, P-19 | — (heredadas de F4) | Gate E-24 E2E; rango 5 días |
 | **F6** | Finanzas + Compensación | `liquidaciones_compensacion`, `comisiones_proyecto`, `registros_horas` (F2) | B3-4: **P-20 (E-20)**, P-21, P-22, P-23 | t-086 (P-22), t-087 (config nómina) | Dualidad tiempo/módulo funcional; caja derivada con `SUM` real |
 | **F7** | Cliente/docs + frontstage | `documentos_proyecto` (F2) | B3-5: P-24, P-25, P-26, F-07 | — | Aislamiento `clienteId` (R26) |
-| **F8** | Migración rompiente | enums aditivos + backfill (`proyectos.estado`, `ordenes_trabajo.estado`, `obligaciones_pendientes.estado`, `fecha`→timestamp) (F3); deprecación `rolEmpleado`→`personas_roles` (F4) | — (toca datos existentes, ÚLTIMO) | — | Backfill 1:1 8 valores legacy; `session.ts`/`erp-nav.ts` en `personas_roles`; tests re-corridos |
+| **F8** | Hardening / integraciones | enums aditivos + backfill (`proyectos.estado`, `ordenes_trabajo.estado`, `obligaciones_pendientes.estado`, `fecha`→timestamp) (F3); deprecación `rolEmpleado`→`personas_roles` (F4); integraciones diferidas (Viewer 3D SketchUp→CVC, ver `disenio_F08_propuesta_publica.md` §8) — usa `PLANTILLA_HARDENING.md` | — (toca datos existentes, ÚLTIMO) | — | Backfill 1:1 8 valores legacy; `session.ts`/`erp-nav.ts` en `personas_roles`; tests re-corridos |
 | **F9** | QA + corte | — | Todos los gates | t-088 (E2E gates), t-089 (trazabilidad `audit_logs`), t-090 (checkpoint) | 5/5 gates E2E; 61/61 eventos trazables; checkpoint aprobado |
 
 ---

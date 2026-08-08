@@ -1,0 +1,39 @@
+{
+  "id": "t-083",
+  "titulo": "Mutacion de estrategia: modelo F0-F9 = diseno + planes aprobados SIN codigo; bucle por fase (aprobacion -> diseno -> plan de codigo aprobado) desde F4",
+  "intencion_negocio": "El Supervisor definio el flow correcto del proyecto: no se codifica entre F0 y F9. Cada fase corre el bucle aprobacion -> diseno -> plan de codigo aprobado, arrancando en F4, luego F5, y asi hasta F6 y el resto. La ausencia de codigo en F0-F2 es el estado buscado y debe reportarse como warn, no como error. La estrategia general del arnes se actualiza para reflejar este modelo.",
+  "zona": "arnes",
+  "tipo": "mutacion_arnes",
+  "riesgo": "maximo",
+  "archivos_afectados": [
+    "arnes/estado.md",
+    "arnes/planes/plan_ola7_maestro.md"
+  ],
+  "criterios_aceptacion": [
+    "arnes/estado.md documenta la nueva estrategia general: entre F0 y F9 NO se escribe codigo; el bucle por fase es aprobacion -> diseno -> plan de codigo aprobado, arrancando en F4.",
+    "arnes/planes/plan_ola7_maestro.md declara el modelo de ejecucion actualizado: F0-F9 producen disenos y planes aprobados, la codificacion queda diferida fuera de esa banda.",
+    "El estado registra el arranque en F4 del bucle (proxima fase del loop).",
+    "Se reporta como warn la ausencia de codigo en F0-F2 como estado deseado del plan (no error).",
+    "Solo se tocan archivos de arnes, ningun codigo vivo."
+  ],
+  "plan_ref": "instruccion directa del Supervisor (2026-08-07)",
+  "ejecutor": "opencode orquestador",
+  "verificador": "opencode orquestador (auditor)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "git status --porcelain (solo arnes tocado)",
+      "lectura de las secciones actualizadas en estado.md y plan_ola7_maestro.md"
+    ],
+    "salida_cruda": "Estrategia general actualizada en estado.md y plan_ola7_maestro.md; solo archivos de arnes modificados.",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-08-07T00:00:00Z"
+  },
+  "estado": "cerrada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

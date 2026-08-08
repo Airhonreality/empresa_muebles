@@ -1,0 +1,30 @@
+{
+  "id": "t-098",
+  "titulo": "F5 — Diseno/Plan P-16 Fila del taller (avance por modulo, capa 1)",
+  "intencion_negocio": "El equipo de taller necesita ver el avance de cada modulo por orden de trabajo y avanzarlo de estado, con el control que ya recibio de compras (E-21). El detalle interno de tareas es capa 2 DIFERIDO: F5 solo produce la fila de salida (modulos_armado). Bajo la estrategia V3, esto NO se codifica: se produce diseno + plan de codigo aprobado.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/planes/plan_f5.md (plan global F5)",
+    "arnes/diagnostico/pasadas/d3_ui_b3_3_compras_taller_calidad.md (fuente)"
+  ],
+  "criterios_aceptacion": [
+    "El plan documenta el diseno P-16 (fila por modulo con estados por_armar->en_armado->armado->en_calidad->aprobado->en_instalacion) con Familia A y vocabulario H07.",
+    "El plan incorpora los patrones L1 aplicables (Loading+Suspense, Promise.all, SmartSearch).",
+    "El plan deja el detalle de tareas (tareas_produccion) como capa 2 DIFERID y marca la entrada desde E-21 (F4).",
+    "No incluye codigo."
+  ],
+  "plan_ref": "arnes/planes/plan_f5.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

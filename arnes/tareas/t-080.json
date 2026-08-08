@@ -1,0 +1,35 @@
+{
+  "id": "t-080",
+  "titulo": "F3 — Schema cronograma + gate E-33 (desfase con causa estructurada)",
+  "intencion_negocio": "El negocio necesita controlar el cronograma de cada proyecto con un cronograma doble (línea contractual inmutable e interna recalculable) y que cualquier desfase de fechas solo se registre cuando tiene causa estructurada (interna, externa o cambio de contrato), motivo y composición causal. Eso permite auditar qué cambió en las fechas y por qué, antes de que el cambio afecte promesas de entrega o comisiones.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/db/schema.ts",
+    "drizzle/0002_cronograma_f3.sql",
+    "lib/modules/f0/eventos.ts",
+    "lib/modules/f3/cronograma.ts",
+    "arnes/planes/plan_t-080.md"
+  ],
+  "criterios_aceptacion": [
+    "Ejecutar npx tsc --noEmit y obtener 0 errores en todo el arbol.",
+    "Ejecutar npx eslint . y obtener 0 errores.",
+    "Ejecutar npm run db:migrate contra dev-local y crear las tablas F3: cronogramas, cronograma_etapas, desfases_cronograma, check_15_dias, novedades_criticas (mas las de gates: verificaciones, schemas_proyecto, bom_materiales, retomas, reprocesos cuando apliquen a F3).",
+    "Ejecutar el test del gate: el predicado P33 devuelve true SOLO cuando existe un desfase aplicado con causa en {interna,externa,cambio_contrato}, motivo no vacio y composicion_causal no vacia; devuelve false en todos los demas casos.",
+    "Verificar por query que el recalculo de fechas al aplicar un desfase toca SOLO cronograma_etapas.linea='interna' y nunca la linea 'contractual' (regla I-034).",
+    "Round-trip: registrar un desfase contra dev-local y releerlo sin perdida de causa/motivo/composicion."
+  ],
+  "plan_ref": "arnes/planes/plan_t-080.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "planificada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

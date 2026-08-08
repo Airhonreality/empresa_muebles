@@ -1,0 +1,269 @@
+{
+  "lote": "L6",
+  "generado_por": "subagente",
+  "fuentes_consultadas": [
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/diamante2_discover_eventos.md",
+    "arnes/diagnostico/diamante2_define_eventos.md",
+    "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_1_contextos.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_3_roles.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_2_determinismo.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_4_contrato_vivo.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "verificaciones",
+      "origen_punto0": {
+        "hallazgo": "Tabla multipropósito de veredictos de los gates E-18 (check de schema) y E-24 (verificación de calidad). Nace de los gates estructurales de capa 1 del negocio: check de schema pre-compras y citación de calidad push. Es la materialización del 'verificador único designado' (comercial vendedor, D3/I-035).",
+        "fuente": "logica_de_negocio.md:284-291"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "PK de tabla nueva, sin origen en evento específico",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:44",
+          "punto0_ref": "no directo (infraestructura)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proyecto_id",
+          "origen": "E-18/E-24: el veredicto del gate es sobre un proyecto",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:45; d3_schema_consolidado.md:40",
+          "punto0_ref": "logica_de_negocio.md:285 (gate (a) sobre proyecto); logica_de_negocio.md:287 (gate (c) sobre proyecto)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "tipo_gate",
+          "origen": "E-18 y E-24 como gates distintos del mismo mecanismo de veredicto. discrimina schema vs calidad",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:46; d3_schema_consolidado.md:40",
+          "punto0_ref": "logica_de_negocio.md:285 (check de schema gate a); logica_de_negocio.md:287 (citación de calidad gate c); diamante2_discover_eventos.md:66 (E-18 schema), 83 (E-24 calidad)",
+          "salto": null,
+          "inconsistencia_archivo": "OLA_6_GATES_SCHEMAS.md:46 enum incluye 'recepcion' → 'schema','recepcion','calidad'; d3_schema_consolidado.md:40 solo 'schema','calidad'. El tercer valor 'recepcion' desaparece en el consolidado."
+        },
+        {
+          "campo": "verificador_id",
+          "origen": "I-035/D3: verificador único = comercial vendedor del proyecto",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:49; d3_schema_a1_3_roles.md:154",
+          "punto0_ref": "logica_de_negocio.md:292 (verificador único = comercial); diamante2_define_eventos.md:75,78 (verificador único designado); d3_schema_consolidado.md:40",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "verificador_rol",
+          "origen": "cache del rol del verificador al momento de la verificación (comercial o gerente)",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:50",
+          "punto0_ref": "no directo en logica_de_negocio (derivado de D3/I-035)",
+          "salto": null,
+          "inconsistencia_archivo": "OLA_6_GATES_SCHEMAS.md:50 define verificador_rol; d3_schema_a1_3_roles.md:149-158 NO lo incluye (solo verificador_id FK a usuarios). Ausente en código propuesto de A1-3."
+        },
+        {
+          "campo": "veredicto",
+          "origen": "E-18: aprobado/rechazado del schema; E-24: aprobado/rechazado de calidad",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:53; d3_schema_a1_3_roles.md:155",
+          "punto0_ref": "logica_de_negocio.md:285 (gate a: validación registrada); diamante2_discover_eventos.md:66 (E-18 veredicto), 83 (E-24 veredicto de calidad)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "fecha_verificacion",
+          "origen": "momento en que el verificador único emite su veredicto (E-18/E-24)",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:54",
+          "punto0_ref": "logica_de_negocio.md:273 (el sistema no deja avanzar sin el check registrado → implica timestamp)",
+          "salto": null,
+          "inconsistencia_archivo": "OLA_6_GATES_SCHEMAS.md:54 usa 'fecha_verificacion'; d3_schema_a1_3_roles.md:157 usa 'creadoEn' (timestamp default now). Naming divergente."
+        },
+        {
+          "campo": "observaciones",
+          "origen": "texto libre del verificador; rama negativa motivo de rechazo → E-54 reproceso",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:55",
+          "punto0_ref": "diamante2_discover_eventos.md:84 (E-54 reproceso por calidad/schema rechazado)",
+          "salto": null,
+          "inconsistencia_archivo": "OLA_6_GATES_SCHEMAS.md:55 usa 'observaciones'; d3_schema_a1_3_roles.md:156 usa 'detalle'. Naming divergente."
+        },
+        {
+          "campo": "schema_id",
+          "origen": "FK a schemas_proyecto, específico para E-18 (solo cuando tipo_gate='schema')",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:58",
+          "punto0_ref": "diamante2_discover_eventos.md:66 (E-18 check de schema pre-compras); d3_schema_consolidado.md:92",
+          "salto": null,
+          "inconsistencia_archivo": "d3_schema_a1_3_roles.md:149-158 NO incluye schema_id. Solo presente en OLA_6."
+        },
+        {
+          "campo": "citacion_calidad_id",
+          "origen": "FK a citaciones_calidad, específico para E-24 (solo cuando tipo_gate='calidad')",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:209-211",
+          "punto0_ref": "diamante2_discover_eventos.md:82-83 (E-23 citación calidad push → E-24 veredicto); d3_schema_consolidado.md:117",
+          "salto": null,
+          "inconsistencia_archivo": "OLA_6_GATES_SCHEMAS.md:209 define ALTER TABLE para añadir citacion_calidad_id; d3_schema_a1_3_roles.md:149-158 NO lo incluye."
+        },
+        {
+          "campo": "creado_en",
+          "origen": "timestamp de creación del registro de veredicto",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:60",
+          "punto0_ref": "no directo (infraestructura); usado en predicado P18: creado_en ≥ fecha_entrada_desarrollo (d3_schema_consolidado.md:211)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        {
+          "decision": "Unificación de nomenclatura de veredictos (DET-04). Las 3 variantes de A1 (veredictos con tipo / verificaciones_schema+veredictos_calidad / verificaciones con tipoGate) convergen en verificaciones con tipo_gate.",
+          "fuente": "d3_schema_a2_2_determinismo.md:134; d3_schema_a2_4_contrato_vivo.md:81 (CC-06); d3_schema_consolidado.md:40"
+        },
+        {
+          "decision": "Verificador único = comercial vendedor (D3/I-035). Sin conflicto de interés porque la comisión del comercial es por ventas, no por producción (I-043).",
+          "fuente": "logica_de_negocio.md:292; diamante2_define_eventos.md:22,153; d3_schema_consolidado.md:40"
+        },
+        {
+          "decision": "Máquina de estados con guard: el sistema es guía + registrador de la realidad (D1). Si la guía no se cumple, avanza y registra, permite el cambio.",
+          "fuente": "diamante2_define_eventos.md:71 (D1); d3_schema_consolidado.md:41 (excepciones_gate: E-20 sin bypass)"
+        }
+      ],
+      "saltos_detectados": [
+        {
+          "salto": "Tabla verificaciones NO existe en lib/db/schema.ts. El grep de 'verificaciones' en lib/ retorna 'No files found'. Es tabla de diseño (documento), no de código implementado.",
+          "gravedad": "esperado: fase de diseño previa a implementación (Ola 7)"
+        }
+      ],
+      "reconciliaciones_propuestas": [
+        {
+          "inconsistencia": "OLA_6_GATES_SCHEMAS.md enum tipo_gate incluye 'recepcion'; d3_schema_consolidado.md solo {schema, calidad}",
+          "propuesta": "RESOLVER en consolidado: decidir si verificaciones cubre E-21 (recepción) o queda en recepciones_material.check_* como define el consolidado (d3_schema_consolidado.md:101). El consolidado ganó esta decisión: verificaciones solo para E-18/E-24."
+        },
+        {
+          "inconsistencia": "OLA_6_GATES_SCHEMAS.md incluye schema_id y citacion_calidad_id como FKs condicionales; d3_schema_a1_3_roles.md no los incluye",
+          "propuesta": "RESOLVER antes de codificar: decidir si verificaciones usa FKs condicionales (nullable schema_id + nullable citacion_calidad_id) o referencias indirectas."
+        }
+      ]
+    },
+    {
+      "tabla": "veredictos_calidad",
+      "origen_punto0": {
+        "hallazgo": "Presente en OLA_6_GATES_SCHEMAS.md y en d3_schema_a1_1_contextos.md como tabla separada para el veredicto de E-24 (calidad pre-despacho). AUSENTE en el consolidado d3_schema_consolidado.md — fue absorbida por verificaciones.tipo_gate='calidad'. No existe en lib/db/schema.ts.",
+        "fuente": "OLA_6_GATES_SCHEMAS.md:186-202; d3_schema_a1_1_contextos.md:185; d3_schema_consolidado.md:40 (absorbida); lib/db/schema.ts (no_encontrada)"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "PK, tabla nueva para E-24",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:189",
+          "punto0_ref": "no directo",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "citacion_calidad_id",
+          "origen": "FK a citaciones_calidad — el veredicto responde a una citación de calidad (E-23 → E-24)",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:190",
+          "punto0_ref": "diamante2_discover_eventos.md:82 (E-23 citación calidad push), 83 (E-24 veredicto pre-despacho)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proyecto_id",
+          "origen": "E-24: veredicto sobre un proyecto en armado",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:191",
+          "punto0_ref": "logica_de_negocio.md:287 (citación de calidad push sobre proyecto); diamante2_discover_eventos.md:83",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "veredicto",
+          "origen": "E-24: resultado de la verificación de calidad pre-despacho; enum {aprobado, rechazado_total, reproceso_parcial}",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:194",
+          "punto0_ref": "diamante2_discover_eventos.md:83 (veredicto de calidad pre-despacho); logica_de_negocio.md:287 (citación de calidad push gate c)",
+          "salto": null,
+          "inconsistencia_archivo": "OLA_6 enum: aprobado/rechazado_total/reproceso_parcial (3 valores). d3_schema_a1_1_contextos.md:185 enum: aprobado/rechazado (2 valores). d3_schema_a1_3_roles.md:155 enum: aprobado/rechazado (2 valores). El valor 'reproceso_parcial' solo existe en OLA_6."
+        },
+        {
+          "campo": "fecha_veredicto",
+          "origen": "momento de emisión del veredicto (comparable con citaciones_calidad.citado_en en predicado P24)",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:195",
+          "punto0_ref": "d3_schema_consolidado.md:213 (P24: creado_en ≥ c.citado_en)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "razon_rechazo",
+          "origen": "texto libre para rama negativa: si rechazado, motivo → E-54 reproceso",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:198",
+          "punto0_ref": "diamante2_discover_eventos.md:84 (E-54 reproceso por calidad/schema rechazado)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "items_a_reprocesar",
+          "origen": "array jsonb de componentes/módulos específicos a reprocesar (C2: granularidad módulo/componente)",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:199",
+          "punto0_ref": "diamante2_define_eventos.md:116 (C2: granularidad módulo/componente específico); d3_schema_consolidado.md:93 (reprocesos: origen, módulo/componente, culpable)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "aprobado_por_id",
+          "origen": "quién aprobó (verificador único = comercial vendedor, D3)",
+          "fuente": "OLA_6_GATES_SCHEMAS.md:201",
+          "punto0_ref": "logica_de_negocio.md:292 (verificador único = comercial vendedor)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        {
+          "decision": "Absorción en verificaciones. La tabla veredictos_calidad del OLA_6 y A1-1 fue absorbida en verificaciones con tipo_gate='calidad' en el consolidado final.",
+          "fuente": "d3_schema_consolidado.md:40,92,117; d3_schema_a2_2_determinismo.md:134 (DET-04 convergencia de naming); d3_schema_a2_4_contrato_vivo.md:81 (CC-06 resolución familias)"
+        }
+      ],
+      "saltos_detectados": [
+        {
+          "salto": "Tabla veredictos_calidad NO existe en d3_schema_consolidado.md (absorbida por verificaciones.tipo_gate='calidad'). Está presente en OLA_6_GATES_SCHEMAS.md:186-202 como tabla independiente y en d3_schema_a1_1_contextos.md:185, pero el consolidado la eliminó como entidad separada.",
+          "gravedad": "inconsistencia documental entre OLA_6 y el consolidado D3"
+        },
+        {
+          "salto": "La tabla NO existe en lib/db/schema.ts (esperado: fase de diseño)."
+        }
+      ],
+      "reconciliaciones_propuestas": [
+        {
+          "inconsistencia": "OLA_6_GATES_SCHEMAS.md define veredictos_calidad COMO TABLA SEPARADA de verificaciones (para E-24). d3_schema_consolidado.md la absorbe en verificaciones.tipo_gate='calidad' y NO la menciona como tabla independiente.",
+          "propuesta": "REVISAR si la absorción en verificaciones es correcta: OLA_6 parece asumir que verificaciones es el registro del gate y veredictos_calidad contiene el detalle del veredicto (razon_rechazo, items_a_reprocesar). Si verificaciones.observaciones cubre ese detalle, la absorción es correcta; si no, hace falta decidir si los campos de veredictos_calidad (razon_rechazo, items_a_reprocesar) migran a verificaciones o si se mantienen en tabla separada."
+        }
+      ]
+    }
+  ],
+  "veredicto_lote": "CON_INCONSISTENCIAS",
+  "resumen": {
+    "n_tablas": 2,
+    "tablas_encontradas_en_fuentes": [
+      "verificaciones (encontrada en fuentes documentales, no en lib/db/schema.ts)",
+      "veredictos_calidad (encontrada en OLA_6 y A1-1, ABSORBIDA por verificaciones en el consolidado D3 — no existe como tabla independiente en el consolidado ni en código)"
+    ],
+    "n_saltos": 3,
+    "saltos": [
+      "verificaciones: no existe en lib/db/schema.ts (esperado: diseño previo a implementación)",
+      "veredictos_calidad: no existe en d3_schema_consolidado.md (absorbida por verificaciones.tipo_gate='calidad') — inconsistencia con OLA_6 que la define como tabla separada",
+      "veredictos_calidad: no existe en lib/db/schema.ts"
+    ],
+    "n_inconsistencias": 6,
+    "inconsistencias": [
+      "1. tipo_gate enum: OLA_6 incluye 'recepcion' (3 valores); consolidado D3 solo {schema, calidad} (2 valores). Fuente: OLA_6_GATES_SCHEMAS.md:46 vs d3_schema_consolidado.md:40",
+      "2. veredicto enum divergencia: OLA_6 veredictos_calidad.veredicto = {aprobado, rechazado_total, reproceso_parcial}; A1-1/A1-3 = {aprobado, rechazado}. 'reproceso_parcial' solo en OLA_6. Fuente: OLA_6_GATES_SCHEMAS.md:194 vs d3_schema_a1_1_contextos.md:185 vs d3_schema_a1_3_roles.md:155",
+      "3. verificaciones vs veredictos_calidad: OLA_6 define AMBAS como tablas separadas (verificaciones para registro del gate + veredictos_calidad para detalle del veredicto E-24). Consolidado D3 solo tiene verificaciones y absorbe veredictos_calidad. Fuente: OLA_6_GATES_SCHEMAS.md:186-202,205-211 vs d3_schema_consolidado.md:40,92,117",
+      "4. Campos condicionales (schema_id, citacion_calidad_id) presentes en OLA_6 pero ausentes en A1-3. Fuente: OLA_6_GATES_SCHEMAS.md:58,209-211 vs d3_schema_a1_3_roles.md:149-158",
+      "5. verificaciones.verificador_rol definido en OLA_6:50 pero ausente en A1-3:149-158",
+      "6. Naming: OLA_6 usa 'fecha_verificacion'/'observaciones'; A1-3 usa 'creadoEn'/'detalle'. Fuente: OLA_6_GATES_SCHEMAS.md:54-55 vs d3_schema_a1_3_roles.md:156-157"
+    ],
+    "master_de_naming": {
+      "descripcion": "Dos mecanismos de gate para calidad en las fuentes documentales. El consolidado D3 resolvió la divergencia unificando en verificaciones con tipo_gate ∈ {schema, calidad}.",
+      "variante_1": "verificaciones (tabla multipropósito con tipo_gate discriminador). Fuente: d3_schema_consolidado.md:40; d3_schema_a1_3_roles.md:149-158",
+      "variante_2": "veredictos_calidad (tabla dedicada solo a E-24, separada de verificaciones). Fuente: OLA_6_GATES_SCHEMAS.md:186-202; d3_schema_a1_1_contextos.md:185",
+      "resolucion_consolidado": "El consolidado D3 (aprobado) unificó en verificaciones con tipo_gate. veredictos_calidad como tabla separada no sobrevivió a la convergencia A2-1.",
+      "riesgo_residual": "OLA_6 (documento de schemas de gates para Ola 7) aún referencia veredictos_calidad como tabla independiente. Si Ola 7 codifica desde OLA_6 sin consultar el consolidado, puede crear una tabla que el consolidado ya resolvió no crear."
+    }
+  }
+}

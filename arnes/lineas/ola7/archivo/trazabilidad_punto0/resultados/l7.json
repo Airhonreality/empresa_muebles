@@ -1,0 +1,186 @@
+{
+  "lote": "L7",
+  "generado_por": "subagente",
+  "fuentes_consultadas": [
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/segunda_ronda_preguntas.md",
+    "arnes/diagnostico/cierre_diamante.md",
+    "arnes/diagnostico/loop2_y_retroalimentacion.md",
+    "arnes/diagnostico/diamante2_discover_eventos.md",
+    "arnes/diagnostico/diamante2_define_eventos.md",
+    "arnes/diagnostico/PROXIMA_FASE_DEFINE.md",
+    "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md",
+    "arnes/diagnostico/OLA_6_SCHEMAS_APROBADOS.md",
+    "arnes/diagnostico/OLA_7_ENTRADA.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_1_normalizacion.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_4_contrato_vivo.md",
+    "arnes/planes/plan_f4.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "cuentas_financieras",
+      "origen_punto0": {
+        "hallazgo": "La caja es la restricción máxima del negocio; el gerente siempre sabe cuánto dinero real tiene disponible y paga por prioridad (materiales→arriendos→nóminas); la 'salud de caja' es una métrica construible con movimientos_financieros + obligaciones_pendientes.",
+        "fuente": "logica_de_negocio.md:170,358; discover_eventos.md:117 (E-43); cierre_diamante.md:22,75"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom, patrón de todas las tablas", "fuente": "schema.ts:215", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "nombre", "origen": "Nombre de la cuenta (caja)", "fuente": "schema.ts:217; OLA_6_GATES_SCHEMAS.md:331-344 (cuenta con tipo_cuenta y persona_id)", "punto0_ref": "logica_de_negocio.md:358", "salto": null, "inconsistencia_archivo": "schema.ts modela cuenta con 'nombre'; OLA_6_GATES_SCHEMAS:335-338 la modela con 'persona_id' + 'tipo_cuenta' (empresa/empleado_comisiones/socio) — dos modelos de la misma caja, sin reconciliar"},
+        {"campo": "tipo", "origen": "Tipo de cuenta (texto libre en schema; OLA_6 lo define como enum tipo_cuenta)", "fuente": "schema.ts:217; OLA_6_GATES_SCHEMAS.md:335-338", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": "Naming divergente: schema 'tipo' vs OLA 'tipo_cuenta'; éste último no está materializado en el schema vivo (R3)"},
+        {"campo": "saldoInicial", "origen": "Saldo inicial de la cuenta (materializado)", "fuente": "schema.ts:218 (default '0')", "punto0_ref": "logica_de_negocio.md:358", "salto": null, "inconsistencia_archivo": "OLA_6_GATES no define 'saldo_inicial' (solo saldo_actual_cop + saldo_acumulado_mes_cop:338-339)"},
+        {"campo": "saldoActual", "origen": "Saldo actual de caja; E-43 lee dinero disponible real (restricción máxima)", "fuente": "schema.ts:219; d3_schema_consolidado.md:137 (S-02/CF-17: saldo_actual conservado como materializado reconciliado); OLA_6_GATES_SCHEMAS.md:338", "punto0_ref": "logica_de_negocio.md:358 (E-43, 'el gerente sabe con cuánto dinero'), discover_eventos.md:117 (E-43, ⚠ dos verdades: derivado vs saldo_actual almacenado)", "salto": null, "inconsistencia_archivo": "Consolidado:137 y OLA_6_GATES:331 comparten 'saldo_actual', pero OLA_6_SCHEMAS_APROBADOS NO lista cuentas_financieras; la tensión derivado-vs-almacenado (P3-12) queda marcada en discover_eventos.md:117"}
+      ],
+      "decisiones_clave": [
+        "Caja derivada y bloqueante: gate E-20 calcula caja_disponible = Σ saldo_actual − Σ por_pagar (pendiente,atrasada) (monto_total − monto_pagado); OLA_6_GATES_SCHEMAS.md:323-325; d3_schema_consolidado.md:215",
+        "saldo_actual conservado como materializado reconciliado (S-02, CF-17) pese a la 'dos verdades' de E-43 (d3_schema_consolidado.md:137; d3_schema_a2_1_normalizacion.md:207)",
+        "Falta FK a persona para rol-vs-persona (OLA_6_GATES:335-336), no materializado en schema — salto a reconciliar"
+      ],
+      "saltos_detectados": [
+        "OLA_6_GATES_SCHEMAS:335-336 exige 'persona_id' en cuentas_financieras (cuenta por socio); schema.ts:214-220 NO la tiene — el modelo de cuenta-por-socio (requisito E-58 y socios-por-comisión) aun no aterriza en código"
+      ],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "movimientos_financieros",
+      "origen_punto0": {
+        "hallazgo": "El movimiento financiero nace en Finanzas como registro transaccional: pago del diseño 3D (E-08, doble nacimiento con la cuenta de cobro del socio), pago a proveedor (E-20), cobro del cliente (E-28), deducción (E-30), gasta (E-57) y lectura por socio (E-58). La 'salud de caja' y la lectura de dinero disponible se derivan de esta tabla.",
+        "fuente": "logica_de_negocio.md:170,382-384; discover_eventos.md:100,102,104,106 (E-28/E-30/E-57/E-58); cierre_diamante.md:58; d3_schema_a2_1_normalizacion.md:208"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom", "fuente": "schema.ts:223", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "fecha", "origen": "Fecha de asiento del movimiento (E-28 pago/cobro)", "fuente": "schema.ts:224 (text); d3_schema_consolidado.md:138 (CF-18: fecha text→timestamp); d3_schema_a4_contrato_vivo.md:239 (Fase 3)", "punto0_ref": "logica_de_negocio.md:170; discover_eventos.md:100 (E-28)", "salto": null, "inconsistencia_archivo": "schema.ts:224 usa 'text'; el canon de Fase 3 (d3_schema_consolidado:138, a2_4:239) ordena text→timestamp — el actual no cumple el canon (R3)"},
+        {"campo": "descripcion", "origen": "Descripción del movimiento (nota contable)", "fuente": "schema.ts:225; OLA_6_GATES_SCHEMAS:388 ('nota')", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": "schema 'descripcion' vs OLA 'nota'; el plan a2_1:208 agrega 'concepto' (enum) — tres nombres para el mismo dato"},
+        {"campo": "tipo", "origen": "Sentido del movimiento", "fuente": "schema.ts:226; OLA_6_GATES_SCHEMAS:373 ('tipo_movimiento' ingreso/egreso); d3_schema_consolidado:138 (concepto)", "punto0_ref": "logica_de_negocio.md:170, E-28", "salto": null, "inconsistencia_archivo": "Fuerte divergencia de naming/semántica: schema 'tipo' (text), OLA_6_GATES 'tipo_movimiento' (ingreso/egreso), consolidado/a2_1 planean 'concepto' (enum diseno_3d/anticipo/hito_cliente/pago_proveedor/arriendo/nomina/comision). Tres visiones del discriminar entrada/salida que deben reconciliarse (R3)"},
+        {"campo": "monto", "origen": "Valor del movimiento (E-08, E-20, E-28, E-57)", "fuente": "schema.ts:227; OLA_6_GATES_SCHEMAS:379 (monto_cop) ", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "estado", "origen": "Estado del registro del movimiento", "fuente": "schema.ts:228 (default 'asentado')", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": "El default 'asentado' NO aparece en ninguno de los enums de OLA_6_GATES/consolidado para movimientos; es un estado libre propietario del código legacy sin rastro en fuentes (sospecha R1)"},
+        {"campo": "cuentaOrigenId / cuentaDestinoId", "origen": "Origen/destino entre cuentas (transferencia caja→socio, etc.)", "fuente": "schema.ts:229-230; OLA_6_GATES_SCHEMAS:376-378", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "obligacionId", "origen": "Vínculo a la obligación de cobro/pago nacida (E-56)", "fuente": "schema.ts:231; OLA_6_GATES_SCHEMAS:382", "punto0_ref": "discover_eventos.md:98 (E-56),100 (E-28)", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "proyectoId / contratoId", "origen": "Contexto del proyecto/contrato del movimiento (pago del diseño 3D ligado al proyecto, deducción E-30)", "fuente": "schema.ts:232-233", "punto0_ref": "discover_eventos.md:102 (E-30), define_eventos.md:120 (frontera E-08)", "salto": null, "inconsistencia_archivo": "OLO_6_GATES movimientos (370-389) NO incluye proyecto_id/contrato_id — divergencia de cobertura"}, 
+        {"campo": "createdAt", "origen": "Timestamp de creación (auditoría)", "fuente": "schema.ts:234", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "movimientos_financieros es el registro transaccional de Finanzas: E-08 (diseno_3d), E-20 (pago proveedor, sustituye pagos_proveedor), E-28 (cobro cliente), E-30 (deducción), E-57 (arriendo), E-58 (lectura por socio) (d3_schema_a2_1_normalizacion:208; consolidado:138)",
+        "Ampliación aditiva pendiente: +socioId, +ordenCompraId, +medioPago, +comprobanteUrl, +prioridadPago, +referencia, +concepto; fecha text→timestamp (CF-18) (consolidado:138; a2_1:208; a2_4:239)",
+        "E-58 = lectura derivada de saldo por socio sobre sociosId + liquidaciones_compensacion (consolidado:201); el socioId aún no está en schema"
+      ],
+      "saltos_detectados": [
+        "El plan (a2_1:208, consolidado:138) exige +socioId/ordenCompraId/medioPago/comprobanteUrl/prioridadPago/concepto — NINGUNO está en schema.ts:222-263 (la tabla vigente es la v0/legacy ile t-017)",
+        "E-58 (cuenta/saldo por socio) y el pago de diseño 3D al diseñador (E-08) requieren socioId; schema no lo tiene aún",
+        "fecha en texto contradice el canon Fase 3 (text→timestamp, OLA 7)" 
+      ],
+      "reconciliaciones_propuestas": [
+        "Solicitar al Supervisor la aplicación de la ampliación aditiva (CF-18) y el cambio de tipo de fecha a ciclista antes de Ola 7 — es ampliación no destructiva bien especificada en a2_1:208"
+      ]
+    },
+    {
+      "tabla": "obligaciones_pendientes",
+      "origen_punto0": {
+        "hallazgo": "La obligación de cobro/pago nace en Finanzas con el contrato por hito (E-56, la doble creación manual en 4 namespaces); se notifica (E-27), se cobra (E-28), se marca atraso con 12 días de holgura (E-29), y se deduce el diseño 3D (E-30). Ciclo completo del dinero cliente∽Finanzas",
+        "fuente": "discover_eventos.md:98,99,100,101,102; d3_schema_a2_1_normalizacion:209; logica_de_negocio.md:429"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom", "fuente": "schema.ts:266", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "descripcion", "origen": "Descripción de la obligación", "fuente": "schema.ts:267", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "tipo", "origen": "Naturaleza de la obligación", "fuente": "schema.ts:268; OLA_6_GATES_SCHEMAS:353 (tipo_obligacion: pago_proveedor/anticipo_cliente/pago_nomina/arriendo); d3_schema_consolidado:139 (origen: contrato_hito/diseno_3d/proveedor/arriendo/nomina)", "punto0_ref": "logica_de_negocio.md:429", "salto": null, "inconsistencia_archivo": "Tres visiones del tipo: schema 'tipo' (text), OLA_6_GATES 'tipo_obligacion' (4 valores), consolidado 'origen' (5 valores contrato_hito/diseno_3d →clave para E-30). Divergencia crítica (R3)"},
+        {"campo": "montoTotal / montoPagado", "origen": "Monto de la obligación y lo pagado (soporta pago parcial, E-28)", "fuente": "schema.ts:269-270", "punto0_ref": "discover_eventos.md:100 (E-28 reconciliación pago parcial)", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "fechaVencimiento", "origen": "Fecha límite de pago", "fuente": "schema.ts:271 (text); d3_schema_consolidado:139 (CF-18: text→date); a2_4:239", "punto0_ref": "logica_de_negocio.md:429,431 (12 días de holgura)", "salto": null, "inconsistencia_archivo": "schema 'text' vs canon Fase 3 'date' (CF-18) — pendiente de migración"},
+        {"campo": "estado", "origen": "Estado de la obligación (pendiente/pagada/atrasada)", "fuente": "schema.ts:272 (default 'pendiente'); OLA_6_GATES:359 (pendiente/parcial/parpada/atrasada); d3_schema_consolidado:139 (+atrasada, enum aditivo)", "punto0_ref": "logica_de_negocio.md:431", "salto": null, "inconsistencia_archivo": "Rango de estados difiere hacia la enum aditiva del canon (scheme no tipa)"},
+        {"campo": "clienteId / proveedorId", "origen": "Contraparte deudora/acreedora de la obligación", "fuente": "schema.ts:289-290,273-274", "punto0_ref": "logica_de_negocio.md:170,358", "salto": null, "inconsistencia_archivo": "OLA_6_GATES_SCHEMAS:363 no modela cliente/proveedor; usa 'cuenta_destino_id' (cuenta); FKs cliente/proveedor del schema vivo no figuran en el plan de polos de Ola — divergencia de conexión"},
+        {"campo": "proyectoId / contratoId", "origen": "Contexto proyecto/contrato", "fuente": "schema.ts:275-276", "punto0_ref": "discover_eventos.md:98 (E-56)", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "createdAt", "origen": "Timestamp de creación", "fuente": "schema.ts:277", "punto0_ref": "logica_de_negocio.md:170", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Obligación nace por hitos del contrato (E-56); consolidado amplía +hitoId→hitos_pago, +origen (5 valores), +deduccionDiseno3d (E-30), +periodicidad, +fechaNotificacion (E-27), +atrasoDias y +notificadoGerente (E-29); estado enum +atrasada (d3_schema_consolidado:139; a2_1:209)",
+        "Gate E-20 lee de obligaciones (tipo='por_pagar', estado en {'pendiente','atrasada'}, monto_total − monto_pagado) para caja_disponible (OLA_6_GATES:325; consolidado:215)",
+        "E-30 deducción del diseño 3D del anticipo — requiere deduccionDiseno3d/origen='diseno_3d'; déficit aún no aterrizado en schema"
+      ],
+      "saltos_detectados": [
+        "+7 campos cemento del canon (hitoId/origen/deduccionDiseno3d/periodicidad/fechaNotificacion/atrasoDias/notificadoGerente) NO están en schema vivo (277); es la misión de la Frase 1 aditiva del plan de migración",
+        "El origen='diseno_3d' (clave para E-30) y la deducción no existen en schema → la deducción del diseño 3D del anticipo (problema de negocio central punto-0) no está materializable en código con el schema actual"
+      ],
+      "reconciliaciones_propuestas": [
+        "Confirmar con Supervisor la ampliación aditiva (a2_1:209, Fase 1 del plan de migración a2_4:233) y el cambio de tipo de fecha y del 'tipo'→'origen' (5 valores) antes de Ola 7"
+      ]
+    },
+    {
+      "tabla": "hitos_pago (relación contrato → financiero, adelanto)",
+      "origen_punto0": {
+        "hallazgo": "El contrato se crea con sus hitos de pago (E-12); la obligación nace desde los hitos del contrato como especificación (E-56), y la notificación de pago (E-27) y el adelanto (-Deducción del anticipo, E-30) se ligan a estos hitos y a hitos_pago.",
+        "fuente": "discover_eventos.md:54 (E-12), 98 (E-56), 99 (E-27), 102 (E-30); logica_de_negocio.md:428-431; d3_schema_a2_1_normalizacion:208 (hitoId→hitos_pago)"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom", "fuente": "schema.ts:122", "punto0_ref": "logica_de_negocio.md:428-431", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "contratoId", "orgin": "FK al contrato propietario de los hitos", "fuente": "schema.ts:123", "punto0_ref": "logica_de_negocio.md:428-431, discover_eventos.md:54 (E-12)", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "orden", "origen": "Secuencia de hitos del contrato", "fuente": "schema.ts:114 (default 0)", "punto0_ref": "logica_de_negocio.md:428", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "tipo", "origen": "Modalidad del hito (percentage/fixed)", "fuente": "schema.ts:115 (tipoHitoPago enum)", "punto0_ref": "logica_de_negocio.md:428 (rutina de pago por hitos)", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "montoOPorcentaje", "origen": "Monto fijo o porcentaje del hito", "fuente": "schema.ts:116", "punto0_ref": "logica_de_negocio.md:428 (adelanto)", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "fechaLimite", "origen": "Fecha límite del hito", "fuente": "schema.ts:118 (text)", "punto0_ref": "logica_de_negocio.md:429,431 (promesa y holgura)", "salto": null, "inconsistencia_archivo": "fecha_Limites como text sin tipar; en el plan la relación con obligaciones_pendientes:hitoId y fecha_vencimiento→date (a2_1:209) sugiere normalizar (R3)"},
+        {"campo": "razon", "origen": "Motivo/pacto del hito", "fuente": "schema.ts:117", "punto0_ref": "logica_de_negocio.md:428", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Contratos y Finanzas comparten los hitos: hitos_pago conservada como especificación de la obligación que nace en Finanzas (E-56) (define_eventos.md:122 P3-02; a2_1:138)",
+        "El descuento del diseño 3D del anticipo (adelanto) se liga al hito vía E-30 y requiere ver la deducción en obligaciones_pendientes (deduccionDiseno3d, a2_1:209)",
+        "Nota (redux de '6/7 contratos sin hitos' → nacimiento de obligación en Finanzas, discover_eventos:54,98)"
+      ],
+      "saltos_detectados": [
+        "La obligación (E-56) debe nacer con hitoId hacia hitos_pago; el schema actual NO tiene obligaciones_pendientes.hito_id (a2_1:209 propone el FK) — el eslabón hago→Obligación (adelanto) no está ligado end código"
+      ],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "comisiones (socios-por-comisión)",
+      "origen_punto0": {
+        "hallazgo": "Modelo de negocio 'socios-por-comisión' (contrato vivo): diseñador $130k + comisión; desarrollador comisión 5% por cumplimiento de cronograma; carpintero 5% por tamaño; auxiliar horas + comisión por módulo. La compensación por rol es E-31 y el cálculo de comisiones por cumplimiento es E-35 (el sistema registra el logro y la causa auditable del desfase). NO existe tabla en schema.ts; el modelo vive en el punto 0 y en los planes.",
+        "hallazgo": "t0: Mapear el esquema de compensación y comisiones a punto 0 (socios-por-comisión, tabla de compensación), donde comisiones_L proyecto y liquidaciones_compensación son las tablas planificadas y NO están en el código, ",
+        "fuente": "logica_de_negocio.md:205-238,219-224,269,43; cierre_diamante.md:17,30-35,58,117 (socios-Por-comisión, cuenta por socio, micro cuentas); discover_eventos.md:103,116 (E-31/E-35); a2_1:210v211, d3_schema_consolidado:140-141; OLA_6_APROBADOS:223-250"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK", "fuente": "a2_1:211 (comisiones_proyecto)", "punto0_ref": "logica_de_negocio.md:219-223", "salto": "tabla_faltante_no_codigo", "inconsistencia_archivo": "comisiones_proyecto planificada en a2_1:211 / consolidado:141 pero AUSENTE en schema.ts (no existe ninguna tabla de comisiones)"},
+        {"campo": "proyectoId", "origen": "Proyecto al que pertenece la comisión", "fuente": "a2_1:211", "punto0_ref": "logica_de_negocio.md:269 (control de cronograma alimenta comisiones)", "salto": "tabla_faltante", "inconsistencia_archivo": null},
+        {"campo": "personaId", "origen": "Socio receptor (FK personas)", "fuente": "a2_1:211", "punto0_ref": "cierre_diamante.md:32 (sistema debe llevar la cuenta del diseñador)", "salto": "tabla_faltante", "inconsistencia_archivo": null},
+        {"campo": "rol", "origen": "Rol por el que se comis (diseñador/desarrollador/carpintero/auxiliar)", "fuente": "a2_1:211", "punto0_ref": "logica_de_negocio.md:219-223", "salto": "tabla_faltante", "inconsistencia_archivo": null},
+        {"campo": "tipoComision", "origen": "Cumplimiento_cronograma/tamano/venta/modulo_instalado/diseno_3d (5 tipos)", "fuente": "a2_1:211; d3_ui_b4:214 (5 tipos)", "punto0_ref": "define_eventos.md:178 (KPI x subsistema); logica_de_negocio.md:269", "salto": "tabla_faltante", "inconsistencia_archivo": null},
+        {"campo": "desfaseId", "origen": "Vínculo auditable al desfase E-33→E-35 (causa interna reduce)", "fuente": "a2_1:211; d3_schema_consolidado:141", "punto0_ref": "define_eventos.md:79,154 (interreír reduce comisiones); logica_de_negocio.md:259,269", "salto": "tabla_faltante", "inconsistencia_archivo": null},
+        {"campo": "liquidacionId", "origen": "Liquidación (nómina compuesta E-31 base + E-35 ajuste)", "fuente": "a2_1:211; a2_1:14 (p2-3-07 nómina compuesta)", "punto0_ref": "logica_de_negocio.md:225,269", "salto": "tabla_faltante", "inconsistencia_archivo": null},
+        {"campo": "monto / baseCalculo / porcentaje", "origen": "Resultado congelado + base + % desde parametros", "fuente": "a2_1:211; a2_5:180 (congelamiento)", "punto0_ref": "logica_de_negocio.md:219-221 metabolismo", "salto": "tabla_faltante", "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Compensación por rol = modelo de negocio (socios-por-comisión) [{lógica LG}, {define_eventos: l., 8 (KPI por subSystem)} — CONTRATO VIVO]",
+        "E-35: la causa del desfase es dato auditable; causa interna reduce la comisión; la del comercial es por ventas, no por producción (sin conflicto de interés I-043)",
+        "Base de comisión: subtotal sin IVA (D-05, PROXIMA_FASE_DEFINE:5-5; por parámetro base_comision_size)",
+        "Pares de diseño normalizados: sobreviven liquidaciones_compensacion + comisiones_proyecto (A1-4, G-7) — cae 'comisiones' de a/pc (a2 diario.re: CF-08)",
+        "Naming divergente con OLA_6_APROBADOS 'configuracion_nomina' (dualidad tiempo/módulo) que NO es comisiones_proyecto — otra familia de tablas para nómina (R3 a reconciliar en Bloque 3)"
+      ],
+      "saltos_detectados": [
+        "Esta es el mayor salto del lote: el modelo de compensación/comisiones está bien tra Zar en punto 0 (lot294-59) y en el plan (a2_1:210-211, consolidado:140-141); LAISON code debugdu = NO hay ninguna tabla (schema.ts no define comisiones_proyecto, liquidaciones_compensacion ni registros_horas) al emitir Ola 7",
+        "Los +2 parámetros definidos para comisiones (comision_desarrollador_pct=5, comision_carpintero_pct=5) viven en parametros (a2_1:223); la recaída soco (E-03/E-35) no tiene tabla donde aterrizar en código"
+      ],
+      "reconciliaciones_propuestas": [
+        "Par (plan indica creación de comisiones_proyecto/liquidaciones_compensacion/registros_horas en la Fase 2 del plan de migración (a2_4:2358 / consolidado:140-142) — anticipar su dEduce con Supervisor antes de Ola 7 para no escribir la compensación por rol con un hito"
+      ]
+    },
+    {
+      "tabla": "cuentas_cobro_proveedor (decisión diferida A a F6)",
+      "origen_punto0": {
+        "hallazgo": "Los documentos de cobro de proveedor (facturas/micro cuentas de cobro de arrendatario y transportistas) se diseñarán junto a P-20/caja (F6). En F4 se registra la decisión aprobada, NO se diseña el esquema. A en F5 doc separado? La difiere es explícitamente documentada y no canonizada poría aún.",
+        "fuente": "plan_f4.md:119-121 (decisión aprobada diferida a F6: no se diseña en F4); 142 (F4-05: 'cuentas_cobro_proveedor no diseñada → decisión aprobada diferida a F6/finanzas'); 155,2 (registro del bucle)"
+      },
+      "campos": [
+        {"campo": "doc.proveedor (factura/micro cuenta cobro)", "origen": "Documento de cobro de proveedor (factura electrónica o micro cuenta de cobro)", "fuente": "plan_f4.md:120; plan_f4.md:69; d3_ui_b3_4_finanzas_compensacion (frontera P-23 cuentas", "punto0_ref": "segunda_ronda_preguntas.md:69 (Q12: mayoría de proveedores pasan factura; micro cuentas del tercero)", "salto": "decisión conforme", "inconsistencia_archivo": null},
+        {"campo": "diseño", "origen": "Todo el diseño de cuentas_cobro_proveedor se difiere a F6/finanzas; NO se modela en F4 ni está en schema", "fuente": "plan_f4.md:120-121,151", "punto0_ref": "segunda_ronda_preguntas.md:69 (Q12 micro cuentas de cobro proveedores)", "salto": "decisión_diferida", "inconsistencia_archivo": "No existe tabla en schema ni en a2_1/consolidado; únicamente documentado en plan_f4"},
+        {"campo": "micro_contra de cobro de SOCIO (E-32, distinto)", "origen": "Distinguir: las micro cuentas de cobro de SOCIOS (autogeneradas con cada registro transaccional, permiso de firma previo) viven en Finanzas/compensación (E-32), NO son la cuentas co cobrad_de_proveedor diferida", "fuente": "discover_eventos:105 (E-32); loop2_y_retroalimentacion:52-54, 160 (A7); logica_de_negocio.md:379-384; E09 (alidiario_compensacion.cuenta_cobro_url, a2_1:210)", "punto0_ref": "segunda_ronda_preguntas.md:69; cierre_diamante.md:117", "para": null, "inconsistencia_archivo": "Confusión de naming entre 'cuentas de cobro de socio (E-32)' y 'cuentas de cobro de proveedor (F6-diferida)' — conceptos distintos que comparten la palabra 'cuenta de cobro', reconciliar en el glosario"}
+      ],
+      "decisiones_clave": [
+        "Diferida explícita a F6/finanzas (plan_f4:119-121,142,151): se documenta la decisión aprobada, NO se diseña",
+        "El esqueGma de micro cuentas de cobro de SOCIOS (E-32) existe como planeada: liquidaciones_compensacion.cuenta_cobro_url (a2_1:210; discover:105) y se implementa en P-22 (d3_ui_b3_4)"
+      ],
+      "saltos_detectados": [
+        "Decisión pendiente de canonización: no pasó de 'decisión aprobada diferida a F6' a un esquema diseñado; por lo tanto NO es una tabla trazable, solo una decisión registrada (conforme R3: se reporta, no se resuelve)"
+      ],
+      "reconciliaciones_propuestas": []
+    }
+  ],
+  "veredicto_lote": "CON_INCONSISTENCIAS"
+}

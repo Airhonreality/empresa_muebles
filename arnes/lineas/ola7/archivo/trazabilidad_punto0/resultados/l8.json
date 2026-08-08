@@ -1,0 +1,233 @@
+{
+  "lote": "L8",
+  "generado_por": "subagente",
+  "fuentes_consultadas": [
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/marco_estrategia_mercado.md",
+    "arnes/diagnostico/segunda_ronda_preguntas.md",
+    "arnes/diagnostico/cierre_diamante.md",
+    "arnes/diagnostico/diamante2_discover_eventos.md",
+    "arnes/diagnostico/diamante2_define_eventos.md",
+    "arnes/diagnostico/diamante2_loop_apertura.md",
+    "arnes/diagnostico/log_insights_fase2.md",
+    "arnes/diagnostico/inventario_legacy.md",
+    "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md",
+    "arnes/diagnostico/OLA_6_SCHEMAS_APROBADOS.md",
+    "arnes/diagnostico/fase2_ronda3_decisiones_respondidas.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_1_contextos.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_2_enforcement.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_5_datos.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_1_normalizacion.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "leads",
+      "origen_punto0": {
+        "hallazgo": "El embudo del negocio arranca en 'Lead llega: web/IG/TikTok/WhatsApp' y demanda capturar canal+contacto y, después, cualificar; la tabla `leads` es la raíz estable de la cadena comercial (E-01..E-04, E-46, E-49, E-50, E-51).",
+        "fuente": "logica_de_negocio.md:34,120-125,412"
+      },
+      "campos": [
+        { "campo": "id", "origen": "PK del registro de lead, raíz de identidad de la cadena", "fuente": "lib/db/schema.ts:42", "punto0_ref": "logica_de_negocio.md:412", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "nombre", "origen": "Dato de contacto capturado en el formulario/WhatsApp (E-01)", "fuente": "lib/db/schema.ts:44", "punto0_ref": "logica_de_negocio.md:35,412", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "telefono_whatsapp", "origen": "Canal real de atención: 'lead llega -> se atiende por WhatsApp' (E-02)", "fuente": "lib/db/schema.ts:45", "punto0_ref": "logica_de_negocio.md:412,414", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "email", "origen": "Dato de contacto capturado (E-01); también insumo de enhanced conversions (E-40)", "fuente": "lib/db/schema.ts:46", "punto0_ref": "marco_estrategia_mercado.md:42", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "utm_source", "origen": "Atribución de canal del formulario web (E-01/E-42 embudo)", "fuente": "lib/db/schema.ts:47", "punto0_ref": "marco_estrategia_mercado.md:42,44", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "utm_medium", "origen": "Atribución de canal del formulario web (E-01/E-42 embudo)", "fuente": "lib/db/schema.ts:48", "punto0_ref": "marco_estrategia_mercado.md:44", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "utm_campaign", "origen": "Atribución de canal del formulario web (E-01/E-42 embudo)", "fuente": "lib/db/schema.ts:49", "punto0_ref": "marco_estrategia_mercado.md:44", "salto": null, "inconsistencia_archivo": null },
+        {
+          "campo": "score_conversion",
+          "origen": "Puntaje 1-10 de cualificación del lead (importación de conversiones offline para Google Ads); es un score de calidad (E-03)",
+          "fuente": "lib/db/schema.ts:50",
+          "punto0_ref": "marco_estrategia_mercado.md:34,40 (H1); log_insights_fase2.md:20,27 (I-005/I-012)",
+          "salto": null,
+          "inconsistencia_archivo": "En el schema existe `default(0)` y en las fuentes se documenta que hoy está 'muerto' (cero lecturas/escrituras); su consumidor (E-03/E-42) está diseñado pero no implementado -> salto hacia adelante, no alucinación."
+        },
+        {
+          "campo": "created_at",
+          "origen": "t0 de captura; el SLA E-50 se mide desde el primer contacto",
+          "fuente": "lib/db/schema.ts:51",
+          "punto0_ref": "logica_de_negocio.md:412; d3_schema_a2_1_normalizacion.md:85 (CF-15)",
+          "salto": null,
+          "inconsistencia_archivo": "Los pases A1-2/A1-5/A2-1 exigen `hora_primer_contacto`/`hora_primera_respuesta` como ancla del SLA (t0). El schema actual solo tiene created_at -> el ancla del SLA no está materializada."
+        },
+        {
+          "campo": "estado (recomendado) | cliente_id (recomendado)",
+          "origen": "Embudo de demanda: nuevo/en_contacto/calificado/descartado/redirigido/no_viable/cliente (E-01..E-04, E-46, E-49, E-51); FK a clientes para identidad evolutiva",
+          "fuente": "d3_schema_consolidado.md:51",
+          "punto0_ref": "diamante2_discover_eventos.md:32-36,38,48; logica_de_negocio.md:121-124 (criterio de calificación)",
+          "salto": "avance_no_codificado: campos/estado y cliente_id definidos en pasadas d3 pero AUN NO en lib/db/schema.ts:42-52",
+          "inconsistencia_archivo": "Los eventos de embudo (E-01..E-04, E-49, E-51) no son modelables con el schema actual => coincide con I-005 (log_insights_fase2.md:20)."
+        },
+        {
+          "campo": "gclid (recomendado)",
+          "origen": "Conversiones offline a Google Ads (E-40); se perdió en la migración del legacy",
+          "fuente": "d3_schema_a1_2_enforcement.md:243 (ENF-09)",
+          "punto0_ref": "marco_estrategia_mercado.md:42 (H2); inventario_legacy.md:52",
+          "salto": "campo_ausente_en_schema_administrado_por_pasada",
+          "inconsistencia_archivo": "No existe en lib/db/schema.ts:42-52; documentado como perdido en la migración (I-005) y planificado en la consolidación (d3_consolidado.md:51)."
+        },
+        {
+          "campo": "destino_redireccion (recomendado)",
+          "origen": "Destino del lead redirigido al marmolero (E-04)",
+          "fuente": "A3-C2 en d3_schema_consolidado.md:187, d3_schema_a3_auditor.md:60",
+          "punto0_ref": "logica_de_negocio.md:123; diamante_diamante2_discover_eventos.md:36",
+          "salto": "campo_no_codificado",
+          "inconsistencia_archivo": "Nombrado como añadido en A3-C2; no está en el schema actual."
+        }
+      ],
+      "decisiones_clave": [
+        "leads capturable sin auth (F-01 anónimo) en la landing; el checkout de tienda exige cuenta obligatoria (fase2_ronda3_decisiones_respondidas.md:108-120)",
+        "Identidad lead->cliente resuelta conservando `leads` + `cliente_id` FK (CF-01, d3_schema_a2_1_normalizacion.md:71-85), descartada la absorción en `clientes`",
+        "score_conversion se revive con consumidor E-03/E-42 (I-012, log_insights_fase2.md:27)",
+        "SLA primera respuesta = 5 min, escalación a IA LLM o segundo comercial (diamante2_define_eventos.md:132,158)"
+      ],
+      "saltos_detectados": [
+        "estado/cliente_id/gclid/hora_primer_contacto/hora_primera_respuesta definidos en pasadas d3 pero NO existentes en el archivo schema.ts -> salto hacia adelante (Ola 7 pendiente), no alucinación."
+      ],
+      "reconciliaciones_propuestas": [
+        "Nada que reconciliar: las columnas de embudo están diseñadas en d3_consolidado y a2_1; deben codificarse en Ola 7. Reportar como gap de implementación, NO resolver nombrado aquí."
+      ]
+    },
+    {
+      "tabla": "pedidos_web",
+      "origen_punto0": {
+        "hallazgo": "Pedido de tienda como línea de negocio: el cliente compra un producto del sity (E-44) que entra al MISMO pipeline de producción; hoy registra el pedido y el pago pero NO dispara orden de producción (gap conocido).",
+        "fuente": "logica_de_negocio.md:157, 119 y 327"
+      },
+      "campos": [
+        { "campo": "id", "origen": "Registro del pedido de tienda", "fuente": "lib/db/schema.ts:342", "punto0_ref": "logica_de_negocio.md:119 (t-015)", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "cliente_id", "origen": "Identidad del cliente en tienda (requiere cuenta, checkout no anónimo)", "fuente": "lib/db/schema.ts:344", "punto0_ref": "fase2_ronda3_decisiones_respondidas.md:108-118; diamante2_discover_eventos.md:147 (P3-11)", "salto": null, "inconsistencia_archivo": "El legacy lo tenía como texto libre sin relación tipada (inventario_legacy.md:57); el schema actual SI lo tipa a clientes." },
+        { "campo": "items_snapshot", "origen": "Líneas del pedido (no hay tabla item_pedido separada; snapshot jsonb)", "fuente": "lib/db/schema.ts:345", "punto0_ref": "inventario_legacy.md:57 (items_snapshot)", "salto": null, "inconsistencia_archivo": "Legacy también items_snapshot jsonb; FLAG4 propone además `pedidos_web.producto_tienda_id` (1:N historial, OLA_6_FLAG4:81)." },
+        { "campo": "subtotal", "origen": "Acumulado sin envío de las líneas", "fuente": "lib/db/schema.ts:346", "punto0_ref": "inventario_legacy.md:57", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "total", "origen": "Total a pagar del pedido web", "fuente": "lib/db/schema.ts:347", "punto0_ref": "inventario_legacy.md:57", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "direccion_entrega", "origen": "Envío/despacho (hoy solo Bogotá; nacional diferido)", "fuente": "lib/db/schema.ts:348", "punto0_ref": "logica_de_negocio.md:163,183", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "estado", "origen": "ciclo del pedido web (pendiente -> pagado) para disparar orden de producción", "fuente": "lib/db/schema.ts:349", "punto0_ref": "diamante2_discover_eventos.md:147 (E-44)", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "enganche_produccion (recomendado)", "origen": "Enganche del pedido de tienda -> orden de producción (E-44)", "fuente": "d3_schema_a1_1_contextos.md:104; d3_schema_consolidado.md:178", "punto0_ref": "logica_de_negocio.md:157,188; diamante2_loop_apertura.md:15-17", "salto": "campo_no_codificado => no existe en lib/db/schema.ts:342-359", "inconsistencia_archivo": "Definido en pasada d3 (engancheProduccion/ordenProduccionId) y marcado DIFERIDO a t-034; el enganche sigue sin existir en código." }
+      ],
+      "decisiones_clave": [
+        "Checkout NO anónimo: cuenta obligatoria; anónimo solo para agendamiento (fase2_ronda3:108-120)",
+        "Tienda comparte el taller (tragedy of the commons, H-05): E-44 entra al mismo pipeline que un proyecto (diamante2_define_eventos.md:35, 150)",
+        "Enganche pedido->producción = DIFERIDO a t-034 (d3_schema_a2-4.md: defin:100; d3_schema_a2_3:179)"
+      ],
+      "saltos_detectados": [
+        "engancheProduccion / ordenProduccionId definidos en d3 pero no en schema.ts",
+        "pedidos_web.producto_tienda_id (FLAG4:81) no existente en schema",
+        "No hay tabla item_pedido / items_pedido (ver bloque item_pedido)"
+      ],
+      "reconciliaciones_propuestas": [
+        "La dualidad checkout-cliente (pedidos_web) vs ERP (t-024 /app/erp/pedidos) es la MISMA tabla; no reporta doble vista del modelado. A reconciliar solo el item_snapshot vs producto_tienda_id (FLAG, no codificado)."
+      ]
+    },
+    {
+      "tabla": "item_pedido / items_pedido",
+      "origen_punto0": {
+        "hallazgo": "No existe tabla de ítems de pedido web ni en schema ni en legacy: el pedido lleva `items_snapshot` (jsonb). FLAG4 propone `pedidos_web.producto_tienda_id` (1:N historial).",
+        "fuente": "inventario_legacy.md:57; OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:81"
+      },
+      "campos": [
+        { "campo": "items_snapshot", "origen": "snapshot de las líneas dentro de pedidos_web en vez de tabla normalizada", "fuente": "lib/db/schema.ts:345; inventario_legacy.md:57", "punto0_ref": "logica_de_negocio.md:119", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "producto_tienda_id (recomendado)", "origen": "historial 1:N compras->producto_tienda", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:81", "punto0_ref": null, "salto": "inexistent: ninguna tabla/dem-laud tiene item_pedido", "inconsistencia_archivo": "El co-contextual nombrado del lote NO existe como tabla en las fuentes; si el diseño requiere ítems normalizados, no está en OLA_6 consolidado." }
+      ],
+      "decisiones_clave": ["El pedido web normaliza sus ítems en un jsonb snapshot, no en tabla item_pedido; FLAG4 lo complementa con un FK historial."],
+      "saltos_detectados": [
+        "item_pedido no es tabla; es un naming del lote sin contraparte real -> reportado, no resuelto."
+      ],
+      "reconciliaciones_propuestas": [
+        "Decidir en Ola 7 si la tienda necesita tabla de ítems tipada (para precios/manutención) o basta el snapshot + producto_tienda_id. NO resuelto en L8."
+      ]
+    },
+    {
+      "tabla": "portfolio_publico (proyectos publicados)",
+      "origen_punto0": {
+        "hallazgo": "Portafolio público de casos de proyecto reales publicados SIN precios; es la palanca de conversión del sitio (prueba social) y su geografía la define el código-I049.",
+        "fuente": "marco_estrategia_mercado.md:52-58; inventario_legacy.md:17,55"
+      },
+      "campos": [
+        { "campo": "id", "origen": "Identidad del caso publicado", "fuente": "lib/db/schema.ts:129", "punto0_ref": "inventario_legacy.md:55", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "proyecto_id", "origen": "El/los caso de un proyecto real (FK a proyectos)", "fuente": "lib/db/schema.ts:131", "punto0_ref": "inventario_legacy.md:55", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "titulo", "origen": "Caso / nombre del proyecto publicado", "fuente": "lib/db/schema.ts:132", "punto0_ref": "inventario_legacy.md:55", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "slug", "origen": "URL pública SEO del caso (/portafolio/[slug])", "fuente": "lib/db/schema.ts:133", "punto0_ref": "marco_estrategia_mercado.md:50 (H6 SEO local)", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "categoria_espacio", "origen": "filtro de portafolio por tipo de espacio", "fuente": "lib/db/schema.ts:134", "punto0_ref": "inventario_legacy.md:17,55", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "barrio", "origen": "filtro geográfico del portafolio (geografía la decide el dato real, I049)", "fuente": "lib/db/schema.ts:135", "punto0_ref": "inventario_legacy.md:17,55; log_insights_fase2.md:63 (I049)", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "publicado", "origen": "Control de publicación (solo `publicado=true`)", "fuente": "lib/db/schema.ts:136", "punto0_ref": "inventario_legacy.md:55", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "created_at", "origen": "timestamps de auditoría", "fuente": "lib/db/schema.ts:137", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null }
+      ],
+      "decisiones_clave": [
+        "Portafolio NO contiene precios (tarea t-007, inventario:17,55); es prueba social (H7)",
+        "Los testimonios post-entrega van a una tabla `testimonios` (no portafolio) y son curados por protocolo I013 (E-06, discover: 92) - ver nota: la tabla testimonios aún no existe en schema."
+      ],
+      "saltos_detectados": [
+        "Nota de naming: el master lo llamó 'portafolio'; en schema es `portfolio_publico` (schema.ts:129), heredado del legacy. naming coexistente 'portfolio' en rutas/erp."
+      ],
+      "reconciliaciones_propuestas": [
+        "Mantener el nombre `portfolio_publico` (legacy y OLA6 consolidado lo conservan); no crear tabla `portafolio` nueva. NO es conflicto resolver, es coincidencia de naming legacy."
+      ]
+    },
+    {
+      "tabla": "colecciones (ruta pública de catálogo)",
+      "origen_punto0": {
+        "hallazgo": "colecciones NO es una tabla: es la ruta pública /colecciones que lista productos publicados (`publicado_web=true`). La tienda pública consume `productos_catalogo` hoy, y el FUTURO tabla_product image `productos_tienda` (FLAG4).",
+        "fuente": "tareas/t-007.json:20 (lista solo publicado_web=true); OLA_6_SCHEMAS_APROBADOS.md:55 (publicado_web)"
+      },
+      "campos": [
+        { "campo": "publicado_web (productos_catalogo)", "origen": "bool de publicación en la tienda pública", "fuente": "lib/db/schema.ts:419", "punto0_ref": "t-007:20; d3_schema_a1_1:104-138", "salto": null, "inconsistencia_archivo": "FLAG4 propone `productos_tienda.visible_en_tienda` y separar el catálogo en rama de tienda (ver bloque productos_tienda)." },
+        { "campo": "slug/categoria de brows", "origen": "filtros de colección por categoría comercial", "fuente": "lib/db/schema.ts:418; d3_schema_consolidado.md (catálogo)", "punto0_ref": "t-007:20-22", "salto": null, "inconsistencia_archivo": null }
+      ],
+      "decisiones_clave": [
+        "C1/C4: precio de tienda es independiente del catálogo (verbloque productos_tienda/valor_tienda)",
+        "El routing público se hace sobre rutas cortas: /colecciones, /categoria/[slug] (plan_arquitetura_destino.md:22,96)"
+      ],
+      "saltos_detectados": [
+        "No hay tabla `coleciones`; el conjunto del lote lo citó como 'tabla' pero es ruta/UI (no una fuente real independiente)."
+      ],
+      "reconciliaciones_propuestas": [
+        "No crear tabla colecciones: la agrupación se resuelve con `categoria_tienda`/`categoria_comercial` (ver decisiones de naming en productos_tienda)."
+      ]
+    },
+    {
+      "tabla": "productos_tienda (vista pública de catálogo) - DESTINO FLAG4",
+      "origen_punto0": {
+        "hallazgo": "Separar la tienda del catálogo de producción: la tabla `producto_tendencia` es la especialización 1:1 de `productos_catalogo` para el storefront, con precio propio (`valor_tienda`), campos de tienda e imagen, margen y control publicado.",
+        "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:16,46-82; d3_estado.md (F-02, C4)"
+      },
+      "campos": [
+        { "campo": "id", "origen": "PK de la extensión de tienda (1:1 con productos_catalogo)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:52", "punto0_ref": null, "salto": null, "inconsistencia_archivo": "NO existe en lib/db/schema.ts (pendiente t-075 Ola 7)." },
+        { "campo": "catalogo_id", "origen": "FK 1:1 a productos_catalogo con CHECK tipo_catalogo='producto_tienda'", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:53,75", "punto0_ref": "logica_de_negocio.md:159 (separacion inclumeno vs producto terminado)", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "descripcion_diseno", "origen": "Narrativa comercial de tienda", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:55", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null },
+        { "campo": "imagen_principal_url", "origen": "imagen de marca del producto en tienda", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:56", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null },
+        { "campo": "categoria_tienda", "origen": "clasificación de tienda (Muebles/Acabados/Textiles/Accesorios) - VARCHAR, no lookup", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:57", "punto0_ref": "estado.md:206 (C4)", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "visible_en_tienda", "origen": "control de publicación (BOOLEAN default true)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:58", "punto0_ref": "OLA_6_SCHEMAS_APROBADOS.md:55 (publicado_web)", "salto": null, "inconsistencia_archivo": "Contraste con una tabla madre: `publicado_web` en `productos_catalogo` (schema.ts:419). FLAG4 lo mueve a la extensión de tienda." },
+        { "campo": "inventario_disponible", "origen": "inventario público tienda", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:62", "punto0_ref": "schema.ts:414 (stock_actual)", "salto": null, "inconsistencia_archivo": null },
+        { "campo": "punto_reorden_unidades", "origen": "trigger de OC operativa", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:63", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null },
+        { "campo": "materiales_insumos_json", "origen": "BOM grafo para costeo", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:66", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null },
+        { "campo": "procesos_produccion_json", "origen": "desglose de mano de obra y costo", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:67", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null },
+        { "campo": "margen_ganancia_pct", "origen": "% sobre costo = valor_tienda - costo_prod", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:68", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null },
+        {
+          "campo": "valor_tienda",
+          "origen": "Precio de venta web fijo/independiente del catálogo; se congela al crear y solo recalcula para NUEVOS productos",
+          "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:69,198,203; trazabilidad/nota_migracion_inteligente_campos.md:23,36",
+          "punto0_ref": "Estado: la separación C4 documentada en estado.md:206 (productos_catalogo.precio_directo + precio_publicada) + valor_tienda independiente",
+          "salto": null,
+          "inconsistencia_archivo": "MASTER NAMING 1: `valor_tienda` (precio web fijo) vs `precio_publico` (catálogo, schema.ts:413). Las fuentes los traen como conceptos separados (C4 y FLAG4) pero el schema actual solo tiene `precio_directo`+`precio_publico` en productos_catalogo; `valor_tienda` NO existe en schema.ts -> diseño destino no codificado (t-075)."
+        },
+        { "campo": "creado_en / actualizado_en", "origen": "auditoría", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:70-72", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null },
+        { "campo": "calificacion_promedio (recomendado)", "origen": "0-5 estrellas consumido por E-55 testimonios (DIFERIDO)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:60", "punto0_ref": "diamante_define_eventos.md:92 (E-55)", "salto": null, "inconsistencia_archivo": null }
+      ],
+      "decisiones_clave": [
+        "FLAG4: base-plana `productos_catalogo` + 3 especializaciones 1:1 (tienda / insumos / herrajes) - axiomado en estado.md (FLAG-4)",
+        "C4: cotizado usa `precio_publico` como default; tienda usa `valor_tienda`; tienda NO toca catálogo (estado_:206)",
+        "`disponibilidad` de tienda es DERIVADO en runtime de inventario + visible, no campo físico (trazabilidad/nota_migracion:36)"
+      ],
+      "saltos_detectados": [
+        "Tabla completa `productos_tienda` sin big en schema.ts (definida solo a nivel FLAG4; t-075 la codifica en Ola 7)",
+        "Tabla `erre` NO tiene fila en d3_schema_consolidado (gap de consolidación documentado A3-C1 / d3_a3_auditor.md:27)"
+      ],
+      "reconciliaciones_propuestas": [
+        "Adopción de naming FLAG4 como destino (valor_tienda/inventario_disponible/visible_en_tienda/categoria_subtienda) confirmada en trazabilidad/chequeo_convergencia_e1.md:51 (E1-7) - migrar productos_catalogo publico-> tienda; NO resolver aquí, solo reportar."
+      ]
+    }
+  ],
+  "veredicto_lote": "CON_SALTOS"
+}

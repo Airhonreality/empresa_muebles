@@ -1,12 +1,14 @@
-# Índice de contexto — Arnes
+﻿# Índice de contexto — Arnés
 
 Este índice se mantiene corto a propósito. Existe para que un agente sepa qué leer al arrancar, sin cargar el proyecto entero a su memoria de trabajo.
 
 **Regla de oro:** borrar lo obsoleto, no acumularlo. Cuando algo deja de ser cierto, se borra. No se marca obsoleto y se deja ahí.
 
+**Estructura del arnés (2026-08-08 — matryoshka por línea de trabajo):** el arnés ya no es una sola línea. `arnes/nucleo/` es la verdad de negocio compartida; `arnes/lineas/` contiene una carpeta por línea de trabajo activa (técnica, demanda, futuras), cada una con su propio progreso, sus propios bucles y su propio archivo histórico. Ver `arnes/lineas/REGISTRO_LINEAS.md` para el índice de líneas.
+
 ## ℹ️ Nota sobre trazabilidad
 
-Para un **mapa completo de todos los archivos** (vigente + histórico + obsoleto), ver `arnes/diagnostico/_INDICE_MAESTRO.md`. Este INDEX es entrada rápida (vigente); el maestro es trazabilidad del viaje completo.
+Para el mapa completo del viaje histórico de la línea técnica (Discover→Define, pasadas P2-P8/C1-C6, trazabilidad punto-0), ver `arnes/lineas/ola7/archivo/`. `arnes/lineas/ola7/archivo/_INDICE_MAESTRO.md` es un mapa previo a la reestructuración — sus rutas están desactualizadas, se conserva solo como referencia de qué archivos existieron, no de dónde están hoy.
 
 ## Contexto activo
 
@@ -15,46 +17,54 @@ Lee en este orden:
 ### 1. AGENTS.md
 Declara las zonas del proyecto, sus dueños, y qué sí/qué no se puede hacer en cada una. Es la ley del arnés.
 
+### 1.b arnes/MODELOS.md
+**Regla canónica de modelos (contrato vivo).** Modelos free verificados, intercalación opencode/zen + OpenRouter.
+
+### 1.c arnes/nucleo/ — la verdad de negocio compartida (contrato vivo, cualquier línea puede proponerle cambios)
+- `REGISTRO_DE_ENTIDADES.md` — **Canon raíz del schema.** ~60+ tablas en una vista, con nombre canónico, función de negocio y relaciones. **Si difiere de cualquier otra fuente, gana este.**
+- `logica_de_negocio.md` — el mapa maestro del negocio (Parte I: negocio, Parte II: implicaciones técnicas), con el mermaid de gates embebido. **Documento 1** para entender el negocio desde cero.
+- `glosario_h07.md` — vocabulario de UI: 36 entidades, ~70 estados, ~73 verbos, mapeo campo-schema→nombre natural. Consumir ANTES de escribir labels en cualquier pantalla.
+
+### 1.d arnes/ESTRUCTURA_OUTPUT_PRE_CODIGO.md
+**Gate de salida a codificación (contrato vivo).** Inventario completo de artefactos pre-código de la línea técnica, checklist de 10 condiciones para salir de F0–F9, proceso de actualización de `nucleo/REGISTRO_DE_ENTIDADES.md`.
+
 ### 2. arnes/estado.md
-Dónde estamos ahora. Mapeo sistémico del negocio (Double Diamond) convergido e integrado; **Fase 2 (diamante de solución: schema/UI/automatizaciones de capa 1) completada**; **Diamante 4 (sistema visual) ABIERTO — primera fase de la V3**.
+Dashboard corto: en qué fase está cada línea activa, ahora mismo. El detalle cronológico de cada línea vive en su propio `estado_<linea>.md` (ver abajo).
 
-### 3. arnes/diagnostico/
-Carpeta destino de los hallazgos del mapeo. **NUEVO: `diamante4_metodologia.md` — el sistema visual de la V3, fase previa a Ola 7.** El sistema visual consolidado es **`pasadas/d4_consolidado_diseño.md`** (tokens canónicos ~143, 38 primitivas, motion formal, numeración CC-DD-01..25 — el out que Ola 7 consume). Orden de lectura para entender el negocio:
-1. `logica_de_negocio.md` — el mapa maestro (Parte I: negocio, Parte II: implicaciones técnicas). **Documento 1.**
-2. `segunda_ronda_preguntas.md` — banco de preguntas + respuestas crudas de Javier (21, todas respondidas).
-3. `cierre_diamante.md` — convergencia del Define (tesis, invariantes, bounded contexts, capacidad).
-4. `loop2_y_retroalimentacion.md` — hallazgos de profundidad + el loop metodológico + su ejecución (PARTE C, trazabilidad 1:1).
-5. `log_insights_fase2.md` — log acumulativo de hallazgos de Fase 2 que retroalimentan el proceso (se integra en el checkpoint de cada módulo).
-6. `diamante2_discover_eventos.md` — **Discover del segundo diamante (Fase 2)**: inventario de **61 eventos** del sistema destilados del mapa (43 originales + 4 del loop de apertura + 14 del ciclo de pasadas). En diverge, previo al Define.
-7. `diamante2_loop_apertura.md` — **loop de apertura del Discover** (segunda pasada de auditoría): 4 adiciones, 6 refuerzos, 6 vacíos de información. Leerlo como complemento del inventario.
-8. `pasadas/diamante2_panorama_consolidado.md` — **ciclo de pasadas sistémicas orquestadas con subagentes (P2-P8)** sobre el inventario: 61 hallazgos únicos (P2-P7) + **12 de la 7ª pasada (P8, lente del fallo)**, agrupados en 10 familias + sección P8. **Aplicado al inventario (47→61 eventos)**; las decisiones estructurales quedaron resueltas (I-034 cronograma doble, I-035/I-043 verificador único sin conflicto). **La metodología aprobó abrir el Define.**
-9. `diamante2_define_eventos.md` — **Define del segundo diamante (Fase 2), convergido y APROBADO por el Supervisor (2026-08-03)**: los **61 eventos** se agrupan en **15 bounded contexts** (12 del cierre + 3 nuevos: Marketing/Demanda, Tienda web, Gobierno/Medición), con dueños de gates decididos (E-18/E-21/E-23/E-33), enforcement como máquina de estados con guard + rama negativa (E-54), modelo rol-vs-persona como precondición, e interfaces entre contextos. **Auditado por el ciclo C1-C6** (`pasadas/diamante2_define_consolidado.md`): convergencia estructuralmente estable (0 PARTIR/MOVER_CONTEXTO, 61/61 eventos con hogar, 0 contradicciones silenciosas), correcciones documentales aplicadas. **Checkpoint del Supervisor APROBADO (2026-08-03)** — todas las decisiones del Bloque C/B2/D + P5-09 respondidas y aplicadas (B2 fila del taller en capa 1; adelanto sancionado; granularidad módulo + rastreo de origen; `recibido_verificado`; gate de caja bloqueante con gerente; verificador único = comercial; KPIs por subsistema; VACÍOs resueltos; P5-09 al mapa). **Loop 2 de diseño (schema/UI) ABIERTO** — los 6 valores numéricos configurables quedaron resueltos el 2026-08-03 (SLA 5min→LLM/segundo comercial, aviso gerente 12 días, lead no viable se pierde, SLA novedad registro+escalación, carpintero 5% por tamaño, neto diseñador parámetro configurable); solo la retención real del diseñador se valida con el contador antes del corte.
-8. `marco_estrategia_mercado.md` — demanda: captación, conversión y sistema de marca (H1-H8, la palanca de código del embudo y del sitio). Ver §5.
-9. `destilacion_docs_veta.md` — **destilación controlada de `DOCS VETA DORADA`** (contexto de sesiones previas del humano: Google Ads real, auditorías, marca, tono, tokens). **Destilación cerrada: los 5 pases completos**, 36 archivos, ~2.700 líneas, 24 insights al log. Contiene el bloqueador de corte a producción (I-011), el NAP real confirmado, y el hallazgo de fondo: **el plan del 2026-07-02 especifica las mismas correcciones que este diagnóstico encontró desde cero — no falta análisis, falta ejecución.**
-10. **`fase2_ronda3_decisiones_respondidas.md` (NUEVO, 2026-08-04)** — sistematización de las **16 decisiones pendientes** del Diamante 3 (Fase B, schema y UI). **9 decisiones cerradas** (roles tipados, comisiones, parámetros, onboarding, documentos). **5 mini-diamantes abiertos** que requieren metodología (determinismo causal, grafos catálogo, derivación de parámetros, logging/KPIs, modularización carpintería). **2 aclaraciones pendientes** (parámetros específicos). Documento de referencia para el Execute.
-11. **`PROXIMA_FASE_DEFINE.md` (NUEVO, 2026-08-04)** — arquitectura de la Ola 7 (Execute): checklist de aprobación, plan de codificación por zona (10 zonas en paralelo), plan de codificación por familia de pantallas (5 familias), migración de datos (4 fases), hardening. Responsable por cada fase, timing, verificación.
-12. `auditoria_neon.md`, `inventario_legacy.md` — hallazgos de la Fase 0 técnica (pre-mapeo).
+### 3. arnes/lineas/ — líneas de trabajo paralelas
 
-### 4. arnes/planes/
-Planes de arquitectura. El plan de la arquitectura destino (`plan_arquitectura_destino.md`) fue aprobado; la Parte II del mapa define qué módulos entran a diseño en Fase 2.
+**Índice:** `arnes/lineas/REGISTRO_LINEAS.md` (1 fila por línea: estado, qué produce, dónde escribe). Para abrir una línea nueva, usar `arnes/lineas/_plantilla/LEEME.md`.
 
-**Glosario de UI: `glosario_h07.md`** — resuelto 2026-08-05. Fuente única de vocabulario de negocio: 36 entidades, ~70 estados, ~73 verbos, ~50 mapeos campo-schema→nombre natural + reglas de gobernanza. Consumir ANTES de escribir labels en cada fase F2+.
+#### 3.a `lineas/ola7/` — Ola 6/7: ERP + sitio (schema, pantallas, hardening, QA)
 
-**M-06 · Capa Técnica Transversal L1: `m06_capa_tecnica_transversal.md`** — 23 patrones de infraestructura identificados del legacy, 14 patrones aprobados para el nuevo schema, contrato de no-rotura (7 áreas). Se aplica al final de F9 como prerequisito de cruce entre todas las F0-F9. No bloquea F2-F10.
+- `estado_ola7.md` — progreso detallado de esta línea (lo que antes era la mayor parte de `estado.md`).
+- `plan_ola7_maestro.md` — contrato maestro F0–F9.
+- `plan_alineacion.md` — doctor de esta línea (diagnóstico de desalineación de referencias).
+- `plan_rediagnostico.md` — propuesta de reestructuración física, DIFERIDA (ver su §0.b).
+- `plan_f4.md`..`plan_f7.md` — hallazgos y decisiones compiladas por fase.
+- `destilacion_f3_publico.md` — fuente activa de F-08 (propuesta pública), no archivar hasta que se construya.
+- **`pantallas/`** — diseños F2–F7 (`PLANTILLA_PANTALLA.md` + todos los `disenio_PXX.md`/`disenio_FXX.md`).
+- **`tecnico/`** — salidas de datos F0/F1/F8/F9, no son pantallas (`plan_t-074.md`, `plan_t-075.md`, `plan_t-080.md`, `PLANTILLA_HARDENING.md`, `PLANTILLA_QA.md`, `m06_capa_tecnica_transversal.md`).
+- **`archivo/`** — histórico: rondas de preguntas a Javier, diamante2 discover/define, pasadas P2-P8/C1-C6, trazabilidad punto-0, metodología OLA_6/7, Tercer input humano (diferido). Se lee para entender cómo se llegó a una decisión, no para decidir.
 
-**Diamante exclusivo — Contradicciones Legacy vs. Diseño Actual: CERRADO (2026-08-05).** 4 decisiones aprobadas y corregidas (C1: tarifas MO derivadas de 5 params físicos en parametros, runtime calculation; C2: items referenciales en items_variante +3 campos, sin tablas nuevas; C3: transiciones a parametros JSON; C4: semántica precios clarificada). Requieren reprocesar schema Ola 6 (schema.ts +3 campos items_variante, +4 params) + migración + seed. **Pendiente: aprobación pantalla cotizador (P-04) → desbloquea F2.**
+Detalle de pantallas por fase (cita rápida, el archivo vive en `pantallas/`):
+- **F5** (Taller/Calidad/Entrega/Garantía): `disenio_P16_fila_taller.md`, `disenio_P17_calidad_gate.md`, `disenio_P18_instalacion.md`, `disenio_P19_acta_entrega.md`, `disenio_P20_garantia.md`
+- **F6** (Finanzas): `disenio_P21_caja.md`, `disenio_P22_obligaciones.md`, `disenio_P23_cuentas_cobro.md`
+- **F7** (Sitio Público/Frontstage): `disenio_F02_tienda_web.md`, `disenio_F03_portafolio_proyectos.md`, `disenio_F07_portal_cliente.md`, `disenio_F08_propuesta_publica.md`
 
-### 5. Línea de demanda — reglas de operación (t-034)
-Línea **paralela** a la Fase 2 técnica, abierta el 2026-08-03. Ataca la restricción #2 del negocio (demanda, ratio 4:1). **Objetivo:** más leads cualificados reales → más ventas → comercial visitando clientes en forma.
+#### 3.b `lineas/demanda/` — captación, conversión, marca (marketing/estrategia, sin código)
 
-- **Estado: v3, sin aprobar.** Nada arranca hasta que el Supervisor apruebe alcance (§8 del marco), entregue la ruta de su carpeta, credenciales de solo lectura, datos NAP y su informe de sector.
-- **Seis ramas paralelas**, no fases: R1 captación · R2 sitio y contenido · R3 lead y cualificación · R4 flujo comercial · R5 sistema de marca y tono · R6 ad management agentivo. **R6 está bloqueada por H1/H2/H3/H5** — sin verdad de terreno, un agente optimizando campañas amplifica el error.
-- **No es investigación de mercado, pero tampoco es solo métrica de embudo** (dos correcciones del Supervisor, registradas en §0 del marco). Es diagnóstico de activos que ya existen: sitio, contenido, flujo comercial, marca.
-- **H1-H8 verificados en código**, destilados al `log_insights_fase2.md` como I-005 a I-010. **H1-H3 y H7 tocan el schema — checkpoint propio obligatorio.**
-- **Líneas de servicio I-014 (restauración de pisos) e I-021 (B2B por m²) asignadas a esta línea** (decisión D7 del Supervisor, 2026-08-03) como log de alcance.
-- La carpeta de contexto previo del Supervisor **ya no está sellada**: entra de primera, ruteada por rama (SEO→R1/R2, marca→R5, negocio→contraste). Regla permanente: **cuando el material previo contradiga al comportamiento medido, gana el comportamiento.**
-- **Ninguna escritura a la cuenta de Google Ads sin checkpoint explícito** — es plata real, mismo criterio que t-015.
+- `estado_demanda.md` — progreso de esta línea.
+- `plan_demanda.md` — fuente única de la línea de demanda (Bloques A-F).
+- `plan_estructura_sitio_publico.md` — entregable que inserta determinantes de pantalla en `lineas/ola7/pantallas/` (F-09..F-13, pendientes de diseñar ahí).
+- `archivo/` — `destilacion_docs_veta.md` ("segundo input": DOCS VETA DORADA — marca/SEO/tono), `marco_estrategia_mercado.md`.
+
+### 4. arnes/roles/
+Contratos de los 5 roles (orquestador, iniciador, código, QA, supervisor). Compartido por todas las líneas — se lee al arranque de cada sesión (`AGENTS.md` paso 4), no es archivo histórico.
+
+### 5. arnes/tareas/
+Ledger compartido entre líneas (`t-001`..`t-101`+). Los IDs son un solo pool secuencial — t-034 es de la línea demanda, t-074+ son de la línea técnica.
 
 ## Archivado
 
-Vacío.
+Vacío como carpeta propia — el histórico vive dentro de `archivo/` de cada línea (`lineas/ola7/archivo/`, `lineas/demanda/archivo/`), no en un archivo global único. `arnes/diagnostico/` quedó como carpeta residual con 2 archivos que no pertenecen a ninguna línea específica: `diagnostico_de_proceso.md` (metodología de proceso, aplica a todas las líneas) y `_INDICE_MAESTRO.md` (mapa pre-reestructuración, desactualizado).

@@ -1,0 +1,30 @@
+{
+  "id": "t-101",
+  "titulo": "F5 — Diseno/Plan P-19 Acta de entrega digital (E-26)",
+  "intencion_negocio": "Cuando la instalacion esta instalada, se genera el acta digital (pdf_url), se envia al cliente para firma y al firmarse el proyecto pasa a 'entregado' (E-26). La holgura operativa es de 12 dias. El subsistema del wizard de firma es DIFERIDO; la firma debe ser accesible por teclado. Bajo estrategia V3, esto NO se codifica: diseno + plan aprobado.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/planes/plan_f5.md (plan global F5)",
+    "arnes/diagnostico/pasadas/d3_ui_b3_3_compras_taller_calidad.md (fuente)"
+  ],
+  "criterios_aceptacion": [
+    "El plan documenta el wizard (generar acta -> enviar al cliente -> firmar -> proyectos.estado->entregado) con guards por paso (instalada/generada/firma).",
+    "El plan fija `holgura_operativa_dias=12` y el enum proyectos.estado extendido (CF-02) para 'entregado'.",
+    "El plan marca el alojador de docs E-41 (pdf_url) como fuera de alcance F5 (validar en F7, hallazgo H-B3-3-04) y el subsistema de firma como DIFERIDO con FirmaWizard compartido con E-13.",
+    "No incluye codigo."
+  ],
+  "plan_ref": "arnes/planes/plan_f5.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

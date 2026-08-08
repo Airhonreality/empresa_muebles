@@ -1,7 +1,7 @@
-# Glosario único de estados, verbos y términos de negocio — H07
+﻿# Glosario único de estados, verbos y términos de negocio — H07
 
 **Estado:** artefacto de documentación · **Resuelve:** hallazgo **H07** (glosario único de estados y verbos de negocio)
-**Fuentes:** `arnes/diagnostico/logica_de_negocio.md` · `segunda_ronda_preguntas.md` · `cierre_diamante.md` · `diamante2_define_eventos.md` · `diamante2_discover_eventos.md` · `pasadas/d3_ui_b2_1_destilacion_inv.md` (reglas) · `pasadas/d3_ui_b1_1_ux_ergonomia.md` (principios) · `pasadas/d3_schema_consolidado.md` (65 tablas) · `pasadas/d3_ui_b3_1..b3_5.md` (labels por pantalla) · `pasadas/d4_a3_tokens_visuales.md` · `OLA_6_FLAG4_PRODUCTOS_CATALOGO.md` · `OLA_6_SCHEMAS_APROBADOS.md` · `lib/db/schema.ts` (columnas vivas)
+**Fuentes:** `arnes/nucleo/logica_de_negocio.md` · `segunda_ronda_preguntas.md` · `cierre_diamante.md` · `diamante2_define_eventos.md` · `diamante2_discover_eventos.md` · `pasadas/d3_ui_b2_1_destilacion_inv.md` (reglas) · `pasadas/d3_ui_b1_1_ux_ergonomia.md` (principios) · `pasadas/d3_schema_consolidado.md` (65 tablas) · `pasadas/d3_ui_b3_1..b3_5.md` (labels por pantalla) · `pasadas/d4_a3_tokens_visuales.md` · `OLA_6_FLAG4_PRODUCTOS_CATALOGO.md` · `OLA_6_SCHEMAS_APROBADOS.md` · `lib/db/schema.ts` (columnas vivas)
 
 ---
 
@@ -34,7 +34,7 @@ Fuente primaria del vocabulario natural: respuestas de Javier (`segunda_ronda_pr
 | Hito de pago | etapa de pago | `hitos_pago` | Fracción del valor (porcentaje o fijo) que el cliente paga; nace obligación (E-56). | `discover:54` (E-12), `discover:98` (E-56) |
 | Esquema (schema) | `schema`, esquema de proyecto | `schemas_proyecto` | El "definidor" del proyecto: programado, verificable, versionable y auditable. | `cierre:11,24`; `b3_2:169` |
 | BOM / Lista de materiales | lista de materiales, BOM, listado de compras | `bom_materiales` | Detalle de materiales que desencadena la compra; linaje desde la cotización. | `logica:466` (E-17); `consolidado:91` |
-| Módulo | módulo de mueble, ítem | `modulos_armado`, `items_variante` | Unidad de obra armable (cajón, gabinete, mesón...); granularidad del reproceso. | `logica:466,484`; `define:116` (C2) |
+| Módulo | módulo de mueble, ítem | `modulos`, `items_variante` | Unidad de obra armable (cajón, gabinete, mesón...); granularidad del reproceso. | `logica:466,484`; `define:116` (C2) |
 | Componente / Ítem | pieza, items | `items_variante`, `catalogo_componentes` | Pieza o ítem que compone un espacio; en el taller, unidad del reproceso. | `logica:466`; OLA6:149 |
 | Cajón | gaveta | (espacio_variantes / items) | Elemento móvil de almacenamiento; término del taller y del cliente. | `logica:450,466`; `b3_1` (término R02) |
 | Mesón | encimera, superficie | (espacio_variantes / items / contratos.especificaciones_mesones) | Superficie superior de trabajo; término del taller y del cliente. | `logica:123,466`; `schema.ts:66` |
@@ -47,7 +47,7 @@ Fuente primaria del vocabulario natural: respuestas de Javier (`segunda_ronda_pr
 | Novedad crítica | incidente, alarma | `novedades_criticas` | Incidente del cronograma con SLA de respuesta 5–24 h. | `logica:258`; `discover:114` (E-34) |
 | Orden de compra | pedido de compra; **NUNCA el acrónimo "OC" en la UI** (ni el Supervisor lo entiende — decisión H07 2026-08-05: desaparece del vocabulario visible, siempre expandido) | `ordenes_compra`, `items_orden_compra` | Pedido a proveedor con 3 mecánicas: anticipo+saldo, único, subcontratación. En el portal del cliente (F-07) no aplica ningún término de compras. | `logica:344-352`; `b3_3:54`; decisión H07 |
 | Recepción verificada | recepción, recibo de material | `recepciones_material` | Material recibido tras la triple verificación (pedido, despacho, material). | `logica:59,286`; `define:76` |
-| Armado | ensamble, ensamblaje, construcción | `ordenes_trabajo`, `modulos_armado` | Construcción de los módulos en el taller. | `logica:444,484`; `define:41` |
+| Armado | ensamble, ensamblaje, construcción | `ordenes_trabajo`, `modulos` | Construcción de los módulos en el taller. | `logica:444,484`; `define:41` |
 | Verificación de calidad | calidad, control de calidad, citación de calidad | `citaciones_calidad`, `verificaciones` | Revisión pre-despacho por quien NO construyó (verificador único = comercial). | `logica:454,287`; `define:78` |
 | Acta de entrega | acta, entrega | `actas_entrega` | Documento digital de entrega firmado; "segundo contrato", momento de verdad mayor. | `logica:476,546`; `discover:91` (E-26) |
 | Instalación | puesta en obra | `instalaciones` | Montaje en sitio del cliente; rango de 5 días en la semana programada. | `logica:254,431`; `b3_3:329` |
@@ -56,8 +56,8 @@ Fuente primaria del vocabulario natural: respuestas de Javier (`segunda_ronda_pr
 | Liquidación de comisión | comisión, nómina, compensación | `liquidaciones_compensacion`, `comisiones_proyecto` | Pago/compensación por rol atada al cumplimiento del cronograma. | `logica:220-222,269`; `define:32-35` |
 | Proyecto | obra | `proyectos` | Trabajo de diseño+fabricación para un cliente; identidad llevada a entrega. | `logica:155`; `define:51` |
 | Caja | caja, dinero disponible | `cuentas_financieras`, `movimientos_financieros` | Dinero real disponible; restricción máxima y gate bloqueante de pagos. | `logica:311,358`; `define:114` |
-| Fila del taller | cola, avance por módulo | `modulos_armado` | Estado de salida de cada módulo; input del check de 15 días. | `define:118` (B2); `b3_3:221` |
-| Check de los 15 días | check 15, log de producción | `check_15_dias` | Revisión a ~15 días con 3 desenlaces (adelanto / novedad / extremo). | `logica:251` (I-025) |
+| Fila del taller | cola, avance por módulo | `modulos` | Estado de salida de cada módulo; input del check de 15 días. | `define:118` (B2); `b3_3:221` |
+| Check de los 15 días | check 15, log de producción | `check_produccion` | Revisión a ~15 días con 3 desenlaces (adelanto / novedad / extremo). | `logica:251` (I-025) |
 | Cuenta de cobro | micro cuenta, cobro del socio | `liquidaciones_compensacion` (E-32) | Documento autogenerado por cada registro transaccional del socio. | `logica:383-384`; `discover:105` (E-32) |
 | Reposición (herramienta) | compra operativa | `herramientas`, `ordenes_compra` (origen=operativa) | Compra de herramienta/consumible no atada a proyecto. | `discover:75` (E-45) |
 
@@ -220,7 +220,7 @@ Convención: **label natural** = el término que se muestra (R02/P02). La column
 | Causa desfase | `cambio_contrato` | Cambio de contrato | Tercer origen del flujo I-027; recalcula cronograma. `b3_2:280`; `define:23` |
 | Línea etapa | `contractual` / `interna` | Línea contractual (inmutable) / Línea interna (movible) | Doble línea del cronograma (I-034). `b3_2:277` |
 
-### B.16 Check de los 15 días (`check_15_dias.desenlace`)
+### B.16 Check de los 15 días (`check_produccion.desenlace`)
 
 | Concepto de negocio | Estado (código interno) | Label natural aprobado | Descripción breve |
 |---|---|---|---|
@@ -236,7 +236,7 @@ Convención: **label natural** = el término que se muestra (R02/P02). La column
 | Novedad | `escalada` | Escalada | Escalada al gerente. `b3_2:332` |
 | Novedad | `resuelta` | Resuelta | Resuelta con `cumplio_sla`. `b3_2:333` |
 
-### B.18 Fila del taller / módulo (`modulos_armado.estado`)
+### B.18 Fila del taller / módulo (`modulos.estado`)
 
 | Concepto de negocio | Estado (código interno) | Label natural aprobado | Descripción breve |
 |---|---|---|---|
@@ -265,6 +265,16 @@ Convención: **label natural** = el término que se muestra (R02/P02). La column
 | Tipo orden | `garantia` | Garantía | Orden de garantía (E-37). `b3_5:137` |
 | Origen orden | `proyecto` / `pedido_web` / `operativa` | Proyecto / Pedido web / Operativa | De dónde salió la orden. `b3_3:259`; `b3_5:90` |
 
+### B.21 Caso de garantía (`casos_garantia.estado`)
+
+| Concepto de negocio | Estado (código interno) | Label natural aprobado | Descripción breve |
+|---|---|---|---|
+| Garantía | `reportado` | Reportado | Cliente reportó el caso (fotos + descripción). `disenio_P20_garantia.md` |
+| Garantía | `diagnosticado` | Diagnosticado | Desarrollador visitó y diagnosticó la causa. `disenio_P20_garantia.md` |
+| Garantía | `en_reparacion` | En reparación | Orden de garantía o reproceso en curso. `disenio_P20_garantia.md` |
+| Garantía | `resuelto` | Resuelto | Reparación completada, solución documentada. `disenio_P20_garantia.md` |
+| Garantía | `cerrado` | Cerrado | Caso cerrado. `disenio_P20_garantia.md` |
+
 ---
 
 ## C. Glosario de VERBOS / acciones
@@ -278,11 +288,11 @@ Regla (P02): un solo verbo por acción; el mismo verbo no significa dos cosas. C
 | Redirigir el lead | Redirigir | P-01/P-02 (E-04) | requiere destino |
 | Marcar presupuesto no viable | Marcar no viable | P-01/P-04 (E-49) | solo registra motivo, no bloquea |
 | Convertir lead en cliente | Crear cliente | P-01/P-02 (E-51) | requiere estado `calificado` |
-| Agendar visita | Agendar | P-03/F-03 (E-06) | franja libre + cliente |
+| Agendar visita | Agendar | P-03/F-12 (E-06) | franja libre + cliente |
 | Registrar visita realizada | Marcar realizada | P-03/P-02 (E-07) | estado `agendada` |
 | Marcar inasistencia | Marcar no asistida | P-03/P-02 (E-46) | límite V-1: si falla 2 veces → descarta |
 | Reagendar cita | Reagendar | P-03/P-02 (E-46) | máximo 1 reagenda |
-| Confirmar cita (cliente) | Confirmar cita | F-03 (E-06) | datos + franja |
+| Confirmar cita (cliente) | Confirmar cita | F-12 (E-06) | datos + franja |
 | Pedir diseño 3D | Pedir diseño 3D | P-04 (E-48) | no duplicar si ya `propuesto` |
 | Pagar diseño 3D | Pagar diseño 3D | F-02 (E-08) | si `propuesto`; dinero nace en Finanzas |
 | Proyectar estimación | Proyectar estimación | P-04 (E-52) | estimación → cronograma |
@@ -430,7 +440,7 @@ Son los campos "duros" que hoy confundirían a un usuario final (R02: un usuario
 | `promesa_semanas` | `parametros` | Promesa contractual | "7 semanas" |
 | `desfase.causa` | `desfases_cronograma` | Causa del desfase | §B.15 |
 | `ventana_sla_horas` | `novedades_criticas` | Ventana de respuesta | "5–24 h" |
-| `desenlace` | `check_15_dias` | Resultado del check | §B.16 |
+| `desenlace` | `check_produccion` | Resultado del check | §B.16 |
 | `duracion_estimada_jornadas` | `estimaciones` | Duración estimada | "4 jornadas" |
 
 ---

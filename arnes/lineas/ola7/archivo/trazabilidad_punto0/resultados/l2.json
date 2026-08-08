@@ -1,0 +1,278 @@
+{
+  "lote": "L2",
+  "generado_por": "subagente trazabilidad punto-0",
+  "fecha": "2026-08-07",
+  "fuentes_consultadas": [
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/OLA_6_SCHEMAS_APROBADOS.md",
+    "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md",
+    "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_1_normalizacion.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_1_contextos.md",
+    "arnes/diagnostico/pasadas/d3_schema_a3_auditor.md",
+    "arnes/diagnostico/estado.md",
+    "arnes/planes/disenio_p01_kanban_comercial.md",
+    "arnes/planes/disenio_p04_cotizador.md",
+    "arnes/planes/disenio_modulo_espacio.md",
+    "arnes/planes/plan_f4.md",
+    "arnes/planes/plan_f5.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "proyectos",
+      "origen_punto0": {
+        "hallazgo": "Proyecto es la unidad central del negocio, nace del flujo lead→visita→cotizacion→contrato→produccion→entrega. Es quien produce el numero de la venta (KPI comercial) y el contexto de control de cronograma.",
+        "fuente": "logica_de_negocio.md:403-414 (linea 405 esqueleto acordado); inventario_legacy.md:27 (definicion proyecto)"
+      },
+      "campos": [
+        {
+          "campo": "estado",
+          "origen": "MULTIPLE — 3 sets distintos (ver master de naming, NOTA 1). E-Job: maquina de estados de E-05/E-09..E-51. C3 fijo SOLO el mecanismo (parametros.transiciones_proyecto) pero NO cual set es canonico.",
+          "fuente": "gates=OLA_6_GATES_SCHEMAS.md:20; consolidado=d3_schema_a2_1_normalizacion.md:126; diseno=disenio_p01_kanban_comercial.md:53-63",
+          "punto0_ref": "logica_de_negocio.md:55,63,251,253,260 (estados de proyecto en maquina de estados)",
+          "salto": null,
+          "inconsistencia_archivo": "Ver NOTA 1 del master de naming."
+        },
+        {
+          "campo": "id",
+          "origen": "PK heredada del legacy (+ schema no se toca estructuralmente). Fuente de identidad del proyecto.",
+          "punto0_ref": "inventario_legacy.md:27",
+          "fuente": "lib/db/schema.ts:441",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "cliente_id",
+          "origen": "E-51 lead→cliente materializa proyecto→cliente. FK al referente de identidad.",
+          "punto0_ref": "logica_de_negocio.md:155 (proyecto es de un cliente)",
+          "fuente": "lib/db/schema.ts:442; d3_schema_a2_1_normalizacion.md:126",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "comercial_id",
+          "origen": "El comercial vendedor es el propietario del proyecto comercial (filtro kanban, solo sus leads). Convergencia F2/F3 portada.",
+          "punto0_ref": "diamante2_define_eventos.md:186; logica_de_negocio.md:292 (comercial vendedor)",
+          "fuente": "lib/db/schema.ts:443",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nombre_proyecto",
+          "origen": "E-05 (registro del proyecto). Nombre visible del comercial y del kanban.",
+          "punto0_ref": "diamante2_discover_eventos.md:32",
+          "fuente": "lib/db/schema.ts:444",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "direccion_obra",
+          "origen": "Dato de obra, guardado en cotizador (P-04) y contrato.",
+          "punto0_ref": "logica_de_negocio.md:156 (direccion)",
+          "fuente": "lib/db/schema.ts:445; disenio_p04_cotizador.md:89",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "tipo_proyecto",
+          "origen": "E-5; distingue personalizado vs producto_fijo (un producto de catalogo puede anidarse en un proyecto).",
+          "punto0_ref": "logica_de_negocio.md:155 (proyecto vs producto modular)",
+          "fuente": "lib/db/schema.ts:458 (default 'personalizado')",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "costosOperativos",
+          "origen": "Costos/imprevistos/descuento/ajuste para el calculo de total (P-04).",
+          "punto0_ref": "procesos_financieros sobre proyectos (caja)",
+          "fuente": "lib/db/schema.ts:447-450",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "C3: transiciones de estado via parametros.transiciones_proyecto, no hardcoded (estado.md:205)",
+        "D-2026-08-07-C: el estado 'unico' de proyecto no representa despacho parcial — el estado real vive en el nodo modulo (disenio_modulo_espacio.md:13,102). Tension con estado unico de proyecto en F5."
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "espacio_variantes",
+      "origen_punto0": {
+        "hallazgo": "El proyecto es una matrioshka capa proyecto→espacio→modulos/items. Cada espacio tiene su detalle (requerimientos, artefactos, medidas, fotos).",
+        "fuente": "segunda_ronda_preguntas.md:16; inventario_legacy.md:28"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "E-05..E-11 — base dimensional del cotizador.",
+          "punto0_ref": "d3_schema_a2_1_normalizacion.md:129 (base dimensional)",
+          "fuente": "lib/db/schema.ts:86",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proyecto_id",
+          "origen": "FK al proyecto dueño del espacio.",
+          "punto0_ref": "d3_schema_a2_1_normalizacion.md:129",
+          "fuente": "lib/db/schema.ts:87",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nombre_espacio",
+          "origen": "E-05..E-11 — dimension del espacio (cocina, closet).",
+          "punto0_ref": "inventario_legacy.md:28 (habitacion/espacio)",
+          "fuente": "lib/db/schema.ts:88",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nombre_variante / activa / visible_pdf / orden / colores / jornadas_*",
+          "origen": "Variantes de diseno alternativas del espacio; una sola activa; jornadas por rol (desarrollo/ensamblaje/instalacion) usadas para MO y condicion calc (P-04).",
+          "punto0_ref": "segunda_ronda_preguntas.md:16; inventario_legacy.md:28",
+          "fuente": "lib/db/schema.ts:89-98; d3_schema_a2_1_normalizacion.md:129 (sch:111-127)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "D-2026-08-07-C: se amplia/sustituye la fila modulo_armado con tabla 'modulos' (arbol recursivo por espacio), reutilizando espacio_variantes como raiz (disenio_modulo_espacio.md:32,103)."
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": [
+        "relacion espacio_variantes -> tabla modulos nueva (D-2026-08-07-C) no esta en el d3 consolidado 65 tablas (2026-08-04) — es una DECISION NUEVA post-consolidado."
+      ]
+    },
+    {
+      "tabla": "clientes",
+      "origen_punto0": {
+        "hallazgo": "El cliente es el referente de identidad de negocio: nace del lead→cliente (E-51), referenciado por proyectos/obligaciones/usuarios/pedidos. Lead y cliente NO se fusionan.",
+        "fuente": "logica_de_negocio.md:155; d3_schema_a2_1_normalizacion.md:122 (CF-01: conservar leads, no absorber)"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "Referente de identidad (E-51).",
+          "punto0_ref": "d3_schema_a2_1_normalizacion.md:122",
+          "fuente": "lib/db/schema.ts:304",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nombre / documento / telefono / email / domicilio",
+          "origen": "Datos maestros del cliente (E-01/E-51).",
+          "punto0_ref": "inventario_legacy.md:26",
+          "fuente": "lib/db/schema.ts:305-309",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "origen",
+          "origen": "Procedencia del lead (manual/web).",
+          "punto0_ref": "d3_schema_a2_1_normalizacion.md:122 (no duplica embudo)",
+          "fuente": "lib/db/schema.ts:310",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "etapa_funnel",
+          "origen": "Snapshot que se escribe en E-51 (lead mayorcliente) para alimentar el embudo historico (E-42). Sin consumidor explícito era sospechoso -> fijo por A3-C3.",
+          "punto0_ref": "d3_schema_a2_1_normalizacion.md:122; d3_schema_consolidado.md:188 (A3-C3)",
+          "fuente": "[propuesto en consolidado; A3-C3] — NO esta en lib/db/schema.ts vivo",
+          "salto": "SI — campo documentado en el consolidado d3 (2026-08-04) pero AUN NO migrado a schema.ts vivo",
+          "inconsistencia_archivo": "Campo documentado en el consolidado (A3-C3) pero AUN NO migrado a lib/db/schema.ts — pendiente de Fase 1 (migracion aditiva)."
+        }
+      ],
+      "decisiones_clave": [
+        "ETAPA_FUNNEL atada a consumidor E-51/E-22 para evitar campo muerto (A3-C3, d3_schema_consolidado.md:188)."
+      ],
+      "saltos_detectados": ["etapa_funnel: documentado en d3 consolidado pero no migrado a schema.ts vivo (salto de codificacion pendiente)"],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "items_variante",
+      "origen_punto0": {
+        "hallazgo": "Los items son la línea de producto dentro de la variante del espacio, lo que se cotiza (E-10/E-11). Es la hoja de la matrioshka proyecto→espacio→modulos/items.",
+        "fuente": "inventario_legacy.md:29; d3_schema_a2_1_normalizacion.md:130"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "PK de la línea de cotizacion.",
+          "punto0_ref": "inicio_eventos E-10/E-11",
+          "fuente": "lib/db/schema.ts:166",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "variante_id",
+          "origen": "FK al espacio/variante.",
+          "punto0_ref": "d3_schema_a2_1_normalizacion.md:130",
+          "fuente": "lib/db/schema.ts:167",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "catalogo_id / nombre_personalizado / cantidad / precio_unitario / total_linea",
+          "origen": "Item de catalogo (referencia a productos_catalogo) o nombrado libre; precio y total para calculo del cotizador (P-04).",
+          "punto0_ref": "inventario_legacy.md:29 (catalogo_id, precio, total)",
+          "fuente": "lib/db/schema.ts:168-172",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "es_referencial",
+          "origen": "C2 (diamante exclusivo, 2026-08-05): marca item como referencial (ex-Obra Civil), no va a contrato, no suma al total.",
+          "punto0_ref": "logica_de_negocio.md:455 (presupuesto adicional / Obra Civil); segunda_ronda_preguntas.md:16 (artefactos dependientes/electrodomesticos)",
+          "fuente": "estado.md:204 (C2)",
+          "salto": "PRUEBA: campo NO esta en d3_schema_consolidado ni en OLA_6_SCHEMAS_APROBADOS (2026-08-04); es decision nueva del 2026-08-05 post-consolidado.",
+          "inconsistencia_archivo": "C2 define 3 campos nuevos sobre items_variante que el consolidado 65 tablas (2026-08-04) no tenia — decision post-consolidado, pendiente de migracion aditiva (estado.md:209-210)."
+        },
+        {
+          "campo": "fuente_referencial",
+          "origen": "C2 — enum 'electrodomestico'|'obra_civil'|'servicio_tercero'|'otro'.",
+          "punto0_ref": "misma fuente base que es_referencial",
+          "fuente": "estado.md:204 (C2); disenio_p04_cotizador.md:206",
+          "salto": "PRUEBA (post-consolidado, 2026-08-05)",
+          "inconsistencia_archivo": "No en consolidado ni schema.ts vivo — pendiente migracion. Opciones: electrodomestico/obra_civil/servicio_tercero/otro (consistente entre estado.md C2 y P-04)."
+        },
+        {
+          "campo": "grupo_referencial",
+          "origen": "C2 — text libre para agrupacion visual (\"Electrodomesticos\", \"Ventanas\").",
+          "punto0_ref": "logica_de_negocio.md:455 (presupuesto adicional)",
+          "fuente": "estado.md:204 (C2); disenio_p04_cotizador.md:207,258",
+          "salto": "PRUEBA (post-consolidado)",
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "C2 resuelve el concepto de Obra Civil referencial sin tabla nueva — 3 campos sobre items_variante (estado.md:204)."
+      ],
+      "saltos_detectados": [
+        "C2 items referenciales: 3 campos definidos por decision del diamante exclusivo (2026-08-05), posteriores al consolidado d3 (2026-08-04) y NO migrados a lib/db/schema.ts — cadena tiene salto: decision → documentada en estado.md/planos, pero no en schema de ejecucion."
+      ],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "items_referenciales",
+      "origen_punto0": {
+        "hallazgo": "NO ES UNA TABLA NUEVA en ninguna fuente. La decision C2 es explícita: 'Sin tablas nuevas', 3 campos sobre items_variante existente. El termino 'Obra Civil' legacy (items_obra_civil) se absorbe asi.",
+        "fuente": "estado.md:204 (decision C2): 'SIN TABLAS NUEVAS. 3 campos en items_variante existente: es_referencial, fuente_referencial, grupo_referencial' ; disenio_p04_cotizador.md:173,213"
+      },
+      "campos": [],
+      "decisiones_clave": [
+        "C2: no existe tabla items_referenciales — se traza como un NODOCUMENTADO (usa items_variante + 3 campos es_referencial/fuente_referencial/grupo_referencial)."
+      ],
+"saltos_detectados": [],
+          "reconciliaciones_propuestas": [
+            "Si aparece items_referenciales como tabla en algun plan posterior, es alucinacion o retroceso de C2 (decision aprobada de no-crear tabla)."
+          ]
+    }
+  ],
+  "veredicto_lote": "CON_INCONSISTENCIAS",
+  "nota_veredicto": "El conflicto dominante es de NAMING (proyectos.estado con 3 sets de valores enfrentados, sin set canonico definido — C3 fijo solo el mecanismo). Ademas hay SALTOS de migracion: C2 (3 campos items_variante) y clientes.etapa_funnel estan aprobados en decision/consolidado (2026-08-04/05) pero AUN NO migrados a lib/db/schema.ts. Ninguno se resuelve aqui; se reportan para decision del Supervisor."
+}

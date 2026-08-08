@@ -1,4 +1,4 @@
-# Esquema de Registro del Ledger de Tareas
+﻿# Esquema de Registro del Ledger de Tareas
 
 ## Introducción: Por qué existe el Ledger
 
@@ -22,7 +22,7 @@ Por eso un registro nunca se borra ni se reescribe para ocultar un error. Si alg
 | `riesgo` | enum | sí | Nivel calculado (nunca declarado por el agente): `bajo`, `alto`, `maximo`. Se deriva de `zona` + `tipo`. |
 | `archivos_afectados` | lista de rutas | sí | Archivos que la tarea modificará. Se declara antes de ejecutar. Permite detectar colisiones entre tareas en paralelo. |
 | `criterios_aceptacion` | lista de textos | sí | Condiciones verificables ejecutando algo. Cada una debe poder responderse corriendo un comando o probando un flujo. |
-| `plan_ref` | ruta a archivo | sí, antes de ejecutar | Referencia al archivo de plan generado por el Iniciador. Ej. `arnes/planes/p-014-costo-real.md`. |
+| `plan_ref` | ruta a archivo | sí, antes de ejecutar | Referencia al archivo de plan generado por el Iniciador, dentro de la carpeta de su línea de trabajo. Ej. `arnes/lineas/ola7/p-014-costo-real.md`. |
 | `ejecutor` | identidad | sí, al ejecutar | Quién ejecutó la tarea. Determina quién puede verificarla: no puede ser el verificador. |
 | `verificador` | identidad | sí, al verificar | Quién verificó que la tarea cumple criterios. Debe ser distinto de `ejecutor`. |
 | `qa` | objeto | sí, al verificar | Contiene: `intentos` (número de intentos de QA), `comandos` (lista de comandos ejecutados en la verificación), `salida_cruda` (texto de la salida), `veredicto` (uno de: `aprobado`, `rechazado`, `no_verificable`). |
@@ -55,7 +55,7 @@ Por eso un registro nunca se borra ni se reescribe para ocultar un error. Si alg
     "Ejecutar `npm run lint` sin errores en archivos modificados",
     "Escribir una venta de prueba con ese mueble y verificar que el margen sugerido (venta/costo) es correcto según la fórmula: margen = (precio_venta - costo_real) / costo_real * 100"
   ],
-  "plan_ref": "arnes/planes/p-042-costo-real.md",
+  "plan_ref": "arnes/lineas/ola7/p-042-costo-real.md",
   "ejecutor": "code-agent-v2",
   "verificador": "qa-agent-v1",
   "qa": {

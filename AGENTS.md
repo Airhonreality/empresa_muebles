@@ -1,14 +1,14 @@
-# Hermanos García González S.A.S (Veta de Oro) — ERP + Sitio Web — V3 "Veta Dorada Real"
+﻿# Hermanos García González S.A.S (Veta de Oro) — ERP + Sitio Web — V3 "Veta Dorada Real"
 
 **Fuente de verdad del arnés agéntico.** Todo agente lee este archivo antes de actuar. Si algo que quieres que haga un agente no está aquí, no va a pasar.
 
-**Regla canónica: Skill @arnes/ARNES_AGENTICO (obligatorio).** Este repo adopta el modelo de arneses agéntico maestro (`@arnes/ARNES_AGENTICO`). Al arrancar cualquier agente OpenCode, usar siempre:
+**Regla canónica: Skill @arnes/proceso/ARNES_AGENTICO (obligatorio).** Este repo adopta el modelo de arneses agéntico (`@arnes/proceso/ARNES_AGENTICO`): 5 roles + rotación obligatoria de modelos (nunca el mismo modelo dos veces seguidas).
 
 ```bash
-opencode run -m opencode/deepseek-v4-flash-free --agent hermes "prompt"
+opencode run --dir "<worktree>" --agent explore|general -m "<model_id de arnes/MODELOS.md>" "<prompt con criterios de aceptación explícitos>"
 ```
 
-Los agentes `hermes` y sus children (`hermes-b2-research`, `hermes-b3-tools`, `hermes-b4-multimedia`, `hermes-b5-b6-adapters`, `hermes-qa`) viven en `.opencode/agents/` y implementan el Diamond Flow (7 fases) + 5 roles + rotación obligatoria de modelos (nunca el mismo modelo dos veces seguidas). Ver `ARNES_AGENTICO.md` del repo `Airhonreality/skills` para el methodology completo.
+> ⚠️ **Corrección de documentación falsa (2026-08-07):** no existen los agentes `hermes`/children en `.opencode/agents/` — la regla canónica anterior era documentación vendedora sin base real. Los subagentes se lanzan con agentes built-in (`explore` para lectura/rastreo, `general` para razonamiento) y el modelo explícito con `-m`. La **intercalación de modelos** (opencode/zen + OpenRouter free, estado desbloqueado) ES `arnes/MODELOS.md` — contrato vivo del stack, gana sobre cualquier otra referencia de modelo.
 
 ## Cómo arrancar (si eres un agente, esto es lo primero)
 
@@ -33,8 +33,8 @@ Si nadie te dijo qué rol asumir, asume **Orquestador** y pregunta antes de actu
 
 ## Ruta de la V3 (el orden importa)
 
-1. **Diamante 4 (diseño visual)** — ABIERTO. Define el sistema visual antes de escribir código: stack técnico del arnés de estilos, diseño conceptual UI (arte, tipografía, librería de iconos premium, bordes/contenedores, efectos y animaciones). Entrada: `arnes/diagnostico/diamante4_metodologia.md`. Produce los design tokens + primitivas que Ola 7 consumirá en cada pantalla.
-2. **Ola 7 (Execute)** — codificación de las 34 pantallas + 65 tablas + 5 gates según `arnes/diagnostico/OLA_7_ENTRADA.md` y el contrato maestro `arnes/planes/plan_ola7_maestro.md` (fases F0-F9). **Ninguna pantalla se codifica con estilo improvisado: consume los tokens del Diamante 4.**
+1. **Diamante 4 (diseño visual)** — CERRADO (PoC 3.1 verificada 2026-08-04). Definió el sistema visual: stack técnico del arnés de estilos, tokens D4 (`app/globals.css`), primitivas (`components/veta/`). Entrada histórica: `arnes/lineas/ola7/archivo/diamante4_metodologia.md`. **Su código (PoC 1/2/3/3.1, t-098/t-099) es prueba de concepto de estética/tokens/interacción únicamente — nunca evidencia de que una pantalla de negocio existe o está aprobada** (ver `Prohibido`).
+2. **Banda F0-F9 (planes primero, código después)** — cada fase produce diseño + plan de código aprobado antes de escribir `lib/`/`app/` (ver `arnes/estado.md` §"ESTRATEGIA GENERAL V3"). F0–F7 con diseño/plan aprobado; F8 (hardening) es la fase abierta. Entrada: `arnes/lineas/ola7/archivo/OLA_7_ENTRADA.md` y el contrato maestro `arnes/lineas/ola7/plan_ola7_maestro.md`. **Ninguna pantalla se diseña con estilo improvisado: consume los tokens del Diamante 4.**
 3. **Checkpoint final del Supervisor** antes de mergear `dev` → `main`.
 
 ## Qué construye este proyecto
@@ -70,11 +70,12 @@ dev                      → rama huérfana (sin historia de main) donde se cons
 - No se debe hacer push ni merge a `main` sin aprobación explícita del Supervisor (checkpoint final de la migración).
 - No se debe modificar ni hacer push a `legacy-agnostic-backup` — es un snapshot congelado.
 - No se debe usar el motor "Agnostic Seed" ni ningún patrón schema-driven genérico equivalente en el código nuevo.
-- No se debe migrar un registro de datos "as-is" sin haberlo revisado en el diagnóstico de Fase 0 (`arnes/diagnostico/`).
+- No se debe migrar un registro de datos "as-is" sin haberlo revisado en el diagnóstico de Fase 0 (`arnes/lineas/ola7/archivo/auditoria_neon.md`, `arnes/lineas/ola7/archivo/inventario_legacy.md`).
 - No se debe modificar el schema de datos (ORM) ni las reglas de este `AGENTS.md` sin pasar por el checkpoint de Supervisor.
 - Credenciales y secretos nunca viven en archivos versionados. Las credenciales reales (Neon, R2, GitHub) ya existen en las variables de entorno de Vercel de este mismo proyecto — no hay que crear ni copiar ninguna.
 - Un agente **nunca** hace `checkout` de `dev` sobre el working tree principal del humano (`c:\Users\javir\Documents\DEVs\empresa_muebles_clone`). Todo trabajo de la V3 ocurre en el worktree `../empresa_muebles_clone_v3`.
 - No se debe reutilizar código del prototipo v2 (`backup/dev-v2-arquitectura-20260804`) — la V3 es código nuevo a propósito. Si un patrón del prototipo resultara necesario, se discute con el Supervisor antes de copiarlo.
+- **El código de las PoC (Diamante 4: PoC 1/2/3/3.1, o cualquier prueba de concepto futura, sea v1/v2/v3) nunca es evidencia de que una pantalla de negocio "existe" o está aprobada.** Es prueba de concepto de estética/tokens/interacción exclusivamente. La única fuente de aprobación de una pantalla es un `disenio_PXX.md`/`disenio_FXX.md` con checkpoint del Supervisor (decisión 2026-08-08, corrige el hallazgo de que `estado.md`/`plan_f7.md` daban F-01 por "existente" citando la PoC).
 
 ## Zonas y dueños
 
@@ -82,16 +83,16 @@ Zonas activas hoy:
 
 | Zona | Qué contiene | Dueño | Riesgo |
 |------|--------------|-------|--------|
-| `arnes/` | Arnés, ledger, roles, planes, diagnóstico | Supervisor | alto |
-| `arnes/diagnostico/` | Hallazgos de Fase 0 (solo lectura sobre datos reales) | Supervisor | bajo |
-| `arnes/diagnostico/diamante4_*` | Entregables del Diamante 4 (diseño visual) | Supervisor | alto |
+| `arnes/` | Arnés: núcleo de negocio, líneas de trabajo, roles, ledger | Supervisor | alto |
+| `arnes/nucleo/` | Verdad de negocio compartida entre líneas (schema, lógica, glosario) — contrato vivo | Supervisor | alto |
+| `arnes/lineas/` | Líneas de trabajo paralelas (técnica, demanda, futuras) — cada una con su propio progreso | Supervisor | medio-alto según línea |
 | `datos` | Cimientos F0: schema Drizzle (`lib/db/`), lógica de identidad/auditoría (`lib/modules/f0/`: roles, parámetros con historial, eventos, audit) — SIN UI | Código | alto |
 
-Las zonas de código de producto (auth, catálogo, cotizador, contratos, producción, finanzas, sitio público, etc.) se declaran cuando el plan de arquitectura (`arnes/planes/plan_arquitectura_destino.md`) sea aprobado por el Supervisor. `datos` (F0) es la primera zona de código declarada, aprobada por el Supervisor el 2026-08-05 junto con el arranque de t-074.
+Las zonas de código de producto (auth, catálogo, cotizador, contratos, producción, finanzas, sitio público, etc.) se declaran cuando el plan de arquitectura (`arnes/lineas/ola7/archivo/plan_arquitectura_destino.md`, histórico — superado por `arnes/lineas/ola7/plan_ola7_maestro.md`) sea aprobado por el Supervisor. `datos` (F0) es la primera zona de código declarada, aprobada por el Supervisor el 2026-08-05 junto con el arranque de t-074.
 
 ## Comandos de verificación
 
-Stack en definición por el **Diamante 4** (`arnes/diagnostico/diamante4_metodologia.md`). Referencia de v2 (prototipo, validada en runtime contra `dev-local`): Next.js + TypeScript + Drizzle ORM + Neon Postgres (misma base de datos de producción, ver modelo de ramas arriba). Los comandos de esta tabla se confirman/ajustan cuando el D4 cierre el stack definitivo.
+Stack en definición por el **Diamante 4** (`arnes/lineas/ola7/archivo/diamante4_metodologia.md`). Referencia de v2 (prototipo, validada en runtime contra `dev-local`): Next.js + TypeScript + Drizzle ORM + Neon Postgres (misma base de datos de producción, ver modelo de ramas arriba). Los comandos de esta tabla se confirman/ajustan cuando el D4 cierre el stack definitivo.
 
 | Qué verifica | Comando | Nota |
 |--------------|---------|------|

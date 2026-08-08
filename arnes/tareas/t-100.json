@@ -1,0 +1,31 @@
+{
+  "id": "t-100",
+  "titulo": "F5 — Diseno/Plan P-18 Instalacion (rango de 5 dias, guard E-24)",
+  "intencion_negocio": "El instalador agenda la instalacion en un rango de maximo 5 dias (R40), la inicia (proyectos.estado->en_instalacion, el unico evento que saca de 'armado'), la marca instalada o reporta fallida (E-54). El boton Iniciar se deshabilita si el veredicto de calidad E-24 no paso. Bajo estrategia V3, esto NO se codifica: diseno + plan aprobado.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/planes/plan_f5.md (plan global F5)",
+    "arnes/diagnostico/pasadas/d3_ui_b3_3_compras_taller_calidad.md (fuente)"
+  ],
+  "criterios_aceptacion": [
+    "El plan documenta el rango de instalacion <=5 dias con datepicker de rango R40 (timezone) y estados programada->en_curso->instalada|fallida.",
+    "El plan fija el guard E-24: Iniciar deshabilitado (R16) si P24 false; Iniciar lleva proyectos.estado->en_instalacion y Marcar instalada -> instalado.",
+    "El plan incluye la rama negativa E-54 (origen='instalacion') con modal R18 y motivo+modulo requeridos.",
+    "El plan registra el adelanto por check_15_dias (E-59) como dato de entrada.",
+    "No incluye codigo."
+  ],
+  "plan_ref": "arnes/planes/plan_f5.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

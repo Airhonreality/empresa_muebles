@@ -1,0 +1,31 @@
+{
+  "id": "t-084",
+  "titulo": "F4 — Diseno/Plan P-13 Compras (ordenes de compra, 3 mecanicas, frontera E-20)",
+  "intencion_negocio": "El equipo de compras y el gerente necesitan crear, aprobar y pagar ordenes de compra a proveedores con tres mecanicas de pago (anticipo+saldo, unico, subcontratacion), sin poder comprar de un proyecto que no tenga el schema aprobado (E-18). Cuando se paga, la pantalla lleva el monto a la caja (gate E-20, frontera). Bajo la estrategia V3, esto NO se codifica: se produce diseno + plan de codigo aprobado.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/planes/plan_t-084.md",
+    "arnes/diagnostico/pasadas/d3_ui_b3_3_compras_taller_calidad.md (fuente)"
+  ],
+  "criterios_aceptacion": [
+    "El plan documenta el diseno P-13 (lista + detalle, 3 mecanicas) con Vocabulario H07 (nunca el acronimo 'OC').",
+    "El plan incorpora los 5 patrones L1 aplicables (MoneyInput, useDebounce, SmartSearch, Parallel loading, Loading+Suspense).",
+    "El plan define la frontera del gate E-20 (datos de entrada monto_total/anticipo_monto hacia P-20/F6), sin construirla.",
+    "El plan fija las recomendaciones de usabilidad aprobadas (flujo Pagar con contexto, toast, guard E-18 visible).",
+    "No incluye codigo."
+  ],
+  "plan_ref": "arnes/planes/plan_f4.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-07T00:00:00Z",
+  "cerrada_en": null
+}

@@ -1,0 +1,45 @@
+{
+  "id": "t-102",
+  "titulo": "Reestructuración matryoshka del arnés por línea de trabajo (nucleo/ + lineas/ola7 + lineas/demanda + proceso/)",
+  "intencion_negocio": "El arnés tenía 256 archivos sin estructura por rol epistémico, con referencias falsas (F-01 'existente' citando código de PoC que nunca fue pantalla de negocio) y sin lugar para que una línea de trabajo no técnica (demanda/marca) tuviera su propio progreso. El Supervisor pidió reorganizar por línea de trabajo (no por antigüedad de carpeta como proponía plan_rediagnostico.md), separando la verdad de negocio compartida (nucleo/) de cada línea (lineas/ola7/, lineas/demanda/) y del proceso transversal (proceso/).",
+  "zona": "arnes/",
+  "tipo": "mutacion_arnes",
+  "riesgo": "maximo",
+  "archivos_afectados": [
+    "arnes/** (creación de nucleo/, lineas/, proceso/; disolución de diagnostico/ y planes/; ~160 archivos movidos)",
+    "AGENTS.md (zonas, prohibido, ruta V3)",
+    "arnes/estado.md (reescrito como dashboard corto)",
+    "arnes/INDEX.md (reescrito completo)",
+    "arnes/ESTRUCTURA_OUTPUT_PRE_CODIGO.md (árbol §2 reescrito)",
+    "arnes/roles/iniciador.md, arnes/tareas/ESQUEMA_TAREA.md (referencias de path genéricas actualizadas)"
+  ],
+  "criterios_aceptacion": [
+    "git status --porcelain muestra cambios únicamente dentro de arnes/ y AGENTS.md (sin tocar lib/, app/, components/)",
+    "grep de rutas viejas ('arnes/diagnostico/', 'arnes/planes/', 'lineas/tecnica/') = 0 ocurrencias reales en zona LIVE (fuera de archivo/, excluyendo auto-referencias y ejemplos ilustrativos ya documentados)",
+    "arnes/ raíz contiene exactamente 4 archivos (estado.md, INDEX.md, MODELOS.md, ESTRUCTURA_OUTPUT_PRE_CODIGO.md)",
+    "arnes/lineas/REGISTRO_LINEAS.md lista ola7 y demanda con estado, qué produce y dónde escribe",
+    "cada línea tiene su propio estado_<linea>.md sin contenido de la otra línea (verificado: 0 menciones de la sección 'Línea de demanda' dentro de estado_ola7.md)"
+  ],
+  "plan_ref": null,
+  "ejecutor": "claude (sesión interactiva)",
+  "verificador": "claude (misma sesión) + Javier (Supervisor, aprobó cada punto de decisión en vivo vía preguntas explícitas, no re-ejecutó comandos de forma independiente)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "git status --porcelain",
+      "PowerShell: barrido de rutas viejas con -replace sobre *.md en zona LIVE",
+      "find/grep: conteo de archivos por carpeta, verificación de residuales"
+    ],
+    "salida_cruda": "Ver transcripción de la sesión 2026-08-08: barridos sucesivos hasta 'LIMPIO — cero rutas viejas reales en zona LIVE' en dos rondas (tecnica→ola7 y diagnostico/→proceso/).",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-08-08"
+  },
+  "estado": "cerrada",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "cerrada_en": "2026-08-08T00:00:00Z",
+  "nota_auditoria": "Gap reconocido contra arnes/proceso/ARNES_AGENTICO.md §8: no hubo dry-run explícito antes de ejecutar los movimientos, no hubo backup automático (tag/commit) inmediatamente previo a la mutación, y ejecutor≠verificador no se cumplió con identidades separadas de agente (sí hubo checkpoint humano real en cada punto de diseño, vía AskUserQuestion). Este ticket se crea retroactivamente junto con un commit de checkpoint, precisamente para cerrar el gap de ledger detectado en la auto-auditoría de la misma sesión."
+}

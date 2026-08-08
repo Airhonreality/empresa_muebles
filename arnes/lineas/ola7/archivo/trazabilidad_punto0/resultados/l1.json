@@ -1,0 +1,242 @@
+{
+  "lote": "L1",
+  "generado_por": "subagente",
+  "fuentes_consultadas": [
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/segunda_ronda_preguntas.md",
+    "arnes/diagnostico/cierre_diamante.md",
+    "arnes/diagnostico/loop2_y_retroalimentacion.md",
+    "arnes/diagnostico/diamante2_discover_eventos.md",
+    "arnes/diagnostico/diamante2_define_eventos.md",
+    "arnes/diagnostico/OLA_6_SCHEMAS_APROBADOS.md",
+    "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md",
+    "arnes/diagnostico/OLA_6_METODOLOGIA_GRAFOS.md",
+    "arnes/diagnostico/OLA_6_GATES_SCHEMAS.md",
+    "arnes/diagnostico/OLA_6_SUBSISTEMA_LOGS.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_1_contextos.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_1_normalizacion.md",
+    "arnes/diagnostico/pasadas/d3_schema_a3_auditor.md",
+    "arnes/diagnostico/inventario_legacy.md",
+    "arnes/diagnostico/auditoria_neon.md",
+    "arnes/diagnostico/fase2_ronda3_decisiones_respondidas.md",
+    "arnes/diagnostico/PROXIMA_FASE_DEFINE.md",
+    "arnes/planes/disenio_modulo_espacio.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "productos_catalogo",
+      "origen_punto0": {
+        "hallazgo": "Catalogo maestro que mezcla insumos internos (bisagras, melamina) con productos terminados vendibles; un producto (productos_catalogo) puede vivir suelto en la tienda o anidarse como item dentro del proyecto de un cliente (t-023 prefabricados).",
+        "fuente": "arnes/diagnostico/logica_de_negocio.md:155,159"
+      },
+      "campos": [
+        {"campo": "id", "origen": "Clave primaria base del catalogo", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:31", "punto0_ref": "logica_de_negocio.md:155", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "nombre", "origen": "Nombre comercial del item del catalogo", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:32", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": "schema.ts actual usa 'descripcion' (text NOT NULL, schema.ts:409) y NO tiene 'nombre'; FLAG-4 aprobado define 'nombre'. Divergencia entre codigo y contrato OLA7 (DP-05)."},
+        {"campo": "descripcion_breve", "origen": "Resumen tecnico del producto", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:33", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": "schema.ts usa 'descripcion' (schema.ts:409), no 'descripcion_breve'."},
+        {"campo": "valor_unitario", "origen": "Precio de adquisicion/referencia (un solo precio; los publicos van en extensiones)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:34", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": "schema.ts actual distingue 'precio_directo' y 'precio_publico' (schema.ts:412-413); FLAG4 colapsa a 'valor_unitario' (costo se deriva, no se almacena fijo)."},
+        {"campo": "unidad_medida", "origen": "Unidad base (metro, pieza, kg...)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:35", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": "schema.ts 'unidad_medida' default 'ud' (schema.ts:411); compatible en concepto."},
+        {"campo": "proveedor_id", "origen": "FK a proveedores", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:36", "punto0_ref": "logica_de_negocio.md:581", "salto": null, "inconsistencia_archivo": "schema.ts 'proveedor_id' (schema.ts:412) FK existente."},
+        {"campo": "activo", "origen": "Control de ciclo de vida", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:27", "punto0_ref": null, "salto": "campo sin pasada c3 ni punto 0 explicito (solo definido en contrato OLA6)", "inconsistencia_archivo": "schema.ts no tiene 'activo'."},
+        {"campo": "tipo_catalogo", "origen": "Enum producto_tienda/material_insumo/herramienta en CHECK (resuelve mezcla insumo/producto)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:37,38,42", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": "schema.ts resuelve la mezcla con 'tipo' text nullable (schema.ts:410) + 'publicado_web' (schema.ts:419); FLAG4 lo reemplaza por 'tipo_catalogo' CHECK + especializaciones. Schema.ts NO actualizado a FLAG4: inconsistencia critica (R4)."},
+        {"campo": "creado_en", "origen": "Auditoria (timestamp)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:39", "punto0_ref": null, "salto": null, "inconsistencia_archivo": "schema.ts 'created_at' (schema.ts:420); renombrado vs 'creado_en'."},
+        {"campo": "actualizado_en", "origen": "Auditoria (timestamp)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:40", "punto0_ref": null, "salto": null, "inconsistencia_archivo": "schema.ts 'updated_at' (schema.ts:421); renombrado."},
+        {"campo": "publicadoWeb", "origen": "Legacy: booleano de publicacion a tienda (modelo plano superado por FLAG4)", "fuente": "lib/db/schema.ts:419", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": "Contradice FLAG4: en el modelo aprobado el booleano de publicacion vive en productos_productos_tienda.visible_en_tienda, no en la base; publicar una bisagra la expone como producto publico."},
+        {"campo": "categoria_comercial", "origen": "Taxonomia legacy de segmento", "fuente": "lib/db/schema.ts:418", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": "Doble taxonomia: categoria_comercial (schema.ts:418) vs segmento_comercial (OLA_SCHEMAS:54) vs categoria_tienda (FLAG4:57). Sin reconciliar (master de taxonomia L1 #2)."}
+      ],
+      "decisiones_clave": [
+        "FLAG-4 (2026-08-04, APROBADO): productos_catalogo pasa a tabla base compartida con especializaciones 1:1, NO columna tipo enum.",
+        "D-08 (fase2_ronda3:180-200) previa: columna tipo en {insumo, producto_terminado} + tablas catalogo_herrajes/productos_acabados/insumos_producto (DP-05). Coexiste como propuesta de grafo.",
+        "OLA_6_SCHEMAS_APROBADOS usa naming 'catalogo_*' (catalogo_herrajes/catalogo_insumos) divergente de FLAG4 (productos_/materiales_).",
+        "d3_schema_consolidado:61 conserva productos_catalogo plana y marca DP-05 DECISION_PENDIENTE; NO refleja la resolucion FLAG4.",
+        "Items_variante.catalogoId, pedidos_web y bom_materiales se enganchan al catalogo."
+      ],
+      "saltos_detectados": [
+        "Campo 'activo' no tiene pasada d3 ni punto 0 (solo contrato OLA6).",
+        "1 campo del schema actual (proyectoOrigenId) no lo trace en FLAG4 (fuera de contrato nuevo); se omitio como campo canonico del lote."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3: decidir si schema.ts (plano actual) migra al modelo FLAG4 (especializacion) antes de llenar OLA7 - divergencia critica reportada, no resuelta por este lote.",
+        "R3: consolidar categoria_comercial / segmento_comercial / categoria_tienda en el master de taxonomia L1."
+      ]
+    },
+    {
+      "tabla": "productos_tienda",
+      "origen_punto0": {
+        "hallazgo": "Linea de negocio tienda = productos fabricados vendibles directo; pasan por el MISMO pipeline de produccion que un proyecto. Gap real: pedidos_web no dispara orden de produccion.",
+        "fuente": "arnes/diagnostico/logica_de_negocio.md:157"
+      },
+      "campos": [
+        {"campo": "id", "origen": "PK extension tienda", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:47", "punto0_ref": "logica_de_negocio.md:157", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "catalogo_id", "origen": "FK 1:1 a productos_catalogo (relacion de especializacion)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:48,53,75", "punto0_ref": "logica_de_negocio.md:157", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "descripcion_diseno", "origen": "Narrativa de concepto", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:55", "punto0_ref": null, "salto": "solo en contrato OLA6, sin evento/pasada c3", "inconsistencia_archivo": null},
+        {"campo": "imagen_principal_url", "origen": "Imagen de storefront (R2)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:56", "punto0_ref": null, "salto": "DIFERIDO t-034; sin ref en pasada c3", "inconsistencia_archivo": null},
+        {"campo": "categoria_tienda", "origen": "Taxonomia de storefront (Muebles/Acabados/Textiles/Accesorios)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:57", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": "no resuelta vs categoria_comercial / segmento_comercial (master L1#2)."},
+        {"campo": "visible_en_tienda", "origen": "Bool de publicacion (sucede a publicado_web legacy)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:58", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "frecuencia_compra_historial", "origen": "Analisis de demanda (embudo E-42)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:59,82", "punto0_ref": null, "salto": "consumidor E-42 (diamante2_discover_eventos.md:118)", "inconsistencia_archivo": null},
+        {"campo": "calificacion_promedio", "origen": "0-5 estrellas", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:60,77", "punto0_ref": null, "salto": "CHECK 0-5 (FLAG4:77)", "inconsistencia_archivo": null},
+        {"campo": "inventario_disponible", "origen": "Stock de storefront", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:62,78", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "punto_reorden_unidades", "origen": "Trigger para OC operativa", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:63", "punto0_ref": null, "salto": "parametrizado via parametros.punto_reorden_unidades_default (FLAG4:270)", "inconsistencia_archivo": null},
+        {"campo": "tiempo_reposicion_dias", "origen": "SLA de entrega a tienda", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:64", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "materiales_insumos_json", "origen": "Grafo BOM para costeo", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:66", "punto0_ref": "logica_de_negocio.md:157", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "procesos_produccion_json", "origen": "Desglose de costo por proceso", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:67", "punto0_ref": "logica_de_negocio.md:157", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "margen_ganancia_pct", "origen": "Porcentaje sobre costo (parametrico congelado)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:68,269", "punto0_ref": null, "salto": "parametro margen_ganancia_pct_default congelado al crear (FLAG4:269)", "inconsistencia_archivo": null},
+        {"campo": "valor_tienda", "origen": "Precio publico calculado al crear (congelado)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:69,198", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "creado_en", "origen": "Auditoria", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:71", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "actualizado_en", "origen": "Auditoria", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:72", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "productos_tienda es extension 1:1 CLASE con CHECK tipo_catalogo='producto_tienda' (FLAG4:75).",
+        "pedidos_web.producto_tienda_id (1-N, historial de compras, FLAG4:81); gap real: pedidos_web no dispara produccion (logica:157).",
+        "Consumidor de E-42 (embudo) y E-55 (testimonios, DIFERIDO) (FLAG4:82).",
+        "d3_schema_consolidado NO incluye esta tabla (solo cita productos_catalogo); su modelado vive solo en OLA6.",
+        "Es la CLASE del principio clase-mostraci?no del modulo (disenio_modulo_espacio.md:59)."
+      ],
+      "saltos_detectados": [
+        "Tabla completa productos_tienda NO tiene fila en d3_schema_consolidado (gap de consolidacion) - cadena sin pasada c3.",
+        "Algunos campos (descripcion_diseno, imagen_principal_url) solo en contrato FLAG4, sin punto 0 ni pasada previa."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3: el consolidado c3 debe incorporar la extension productos_tienda FLAG4 (hoy solo conserva la base plana).",
+        "R3: reconciliar publicado_web / visible_en_tienda como un solo master de publicacion de tienda."
+      ]
+    },
+    {
+      "tabla": "materiales_insumos",
+      "origen_punto0": {
+        "hallazgo": "Los insumos internos (bisagras, mesones, melamina) se configuran aparte para construir cotizaciones, nunca publicados en web. Materias primas y componentes de compra/almacen.",
+        "fuente": "arnes/diagnostico/logica_de_negocio.md:159,581"
+      },
+      "campos": [
+        {"campo": "id", "origen": "PK extension insumos", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:92", "punto0_ref": "logica_de_negocio.md:159,581", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "catalogo_id", "origen": "FK 1:1 a productos_catalogo (CHECK tipo_catalogo='material_insumo')", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:93,113", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "codigo_interno", "origen": "SKU del sistema legacy", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:95", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "lote_minimo", "origen": "Cantidad minima por OC", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:96,115", "punto0_ref": "logica_de_negocio.md:342,345", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "lote_multiplo", "origen": "OC debe ser multiplo", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:97", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "tiempo_entrega_dias", "origen": "SLA de proveedor (campo trazado por este lote; master de decision = L4)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:98,217", "punto0_ref": null, "salto": null, "inconsistencia_archivo": "SLA en 3 sitios: materiales.tiempo_entrega_dias (FLAG4:98) vs proveedores.dias_entrega_default vs catalogo_proveedor.sla_dias (reporte_bloque1:36) - NO resuelto por L1."},
+        {"campo": "descuento_volumen_json", "origen": "Negociacion por volumen", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:99", "punto0_ref": "logica_de_negocio.md:253 (mecanicas de compra)", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "punto_reorden_unidades", "origen": "Trigger OC automatizada", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:100,116,270", "punto0_ref": null, "salto": "parametrizado punto_reorden_unidades_default (FLAG4:270)", "inconsistencia_archivo": null},
+        {"campo": "especificacion_tecnica", "origen": "Normas ISO, densidad", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:102", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "fecha_vencimiento_dias", "origen": "Vida util (NULL=indefinido)", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:103", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "almacenamiento_instrucciones", "origen": "Condiciones de conservacion", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:104", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "es_componente_terminado_json", "origen": "Si es componente de producto tienda", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:106", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "procesos_entrada_json", "origen": "Flujos que lo consumen", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:107", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "creado_en", "origen": "Auditoria", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:109", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "actualizado_en", "origen": "Auditoria", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:110", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "El insumo es clase en el principio CLASE-mostra (ARNES_SC:62).",
+        "bom_materiales.material_insumo_id N-1 (FLAG4:119); items_orden_compra.material_insumo_id N-1 (FLAG4:120).",
+        "Consumidor de E-19 (orden de compra) y E-20 (gate de caja) (FLAG4:121).",
+        "d3_schema_consolidado solo nombra bom_materiales e items_orden_compra sin nombrar la extension materiales_insumos (gap de consolidado)."
+      ],
+      "saltos_detectados": [
+        "Materiales_insumos no tiene fila en las pasadas d3 (solo en FLAG4); el consolidado la referencia indirectamente via bom_materiales.",
+        "Varios campos (descuento_volumen, es_componente_terminado_json) solo en contrato FLAG4 sin pasada/punto0."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3: incluir extension materiales_insumos en consolidado d3 (esta en FLAG4 pero no en pasadas/consolidado)."
+      ]
+    },
+    {
+      "tabla": "taxonomia_familias_categorias",
+      "origen_punto0": {
+        "hallazgo": "La taxonomia de catalogo esta duplicada sin tabla maestra: categoria_comercial (schema.ts, flat) y categoria_tienda (FLAG4, productos_tienda); no existe tabla de familias/categorias en ninguna fuente.",
+        "fuente": "lib/db/schema.ts:418; OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:57; OLA_6_SCHEMAS_APROBADOS.md:54"
+      },
+      "campos": [
+        {"campo": "categoria_comercial", "origen": "Taxonomia legacy en productos_catalogo", "fuente": "lib/db/schema.ts:418", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "segmento_comercial", "origen": "Enum (consolas/cocinas/closets...) en catalogo_herrajes de OLA_6_SCHEMAS_APROBADOS", "fuente": "OLA_6_SCHEMAS_APROBADOS.md:54", "punto0_ref": "logica_de_negocio.md:159", "salto": "no existe en schema.ts (solo en doc OLA6)", "inconsistencia_archivo": null},
+        {"campo": "categoria_tienda", "origen": "Muebles/Acabados/Textiles/Accesorios en productos_tienda", "fuente": "OLA_6_FLAG4_PRODUCTOS_CATALOGO.md:57", "punto0_ref": "logica_de_negocio.md:159", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "No hay tabla familias/categorias en NINGUNA fuente; la taxonomia vive como columna en 3 sitios. Master de naming L1 #2 para decidir columna vs tabla dedicada.",
+        "Es un SALTO: no existe un identificador de familia/categoria normalizado."
+      ],
+      "saltos_detectados": [
+        "No existe tabla dedicada de familias/categorias en ninguna fuente (solo columnas dispersas).",
+        "Duplicacion de taxonomia entre schema.ts y FLAG4 sin master y sin reconciliar."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3: NO resuelto por este lote. Requiere decision de master de taxonomia (L4/L1#2) - columna vs tabla dedicada."
+      ]
+    },
+    {
+      "tabla": "catalogo_acabados",
+      "origen_punto0": {
+        "hallazgo": "Grafo de acabados: vocabulario CLASE compartido por nodo (instancia) y catalogo (clase); familia pintura/laminado/enchapado/melamina/textura, precio diferencial y codigo de proveedor.",
+        "fuente": "arnes/planes/disenio_modulo_espacio.md:91-104; arnes/diagnostico/OLA_6_METODOLOGIA_GRAFOS.md:118-127"
+      },
+      "campos": [
+        {"campo": "id", "origen": "PK vocabulario acabados", "fuente": "disenio_modulo_espacio.md:93", "punto0_ref": null, "salto": "no hay evento en los 61; nace de la metodologia de grafos (D-08) + D-2026-08-07-C", "inconsistencia_archivo": "Naming: OLA_6_METODOLOGIA_GRAFOS GRAFO M-02 lo llama 'catalogo_acabados' (M:119); decision previa D-08 (fase2_ronda_3:200) lo llamaba 'productos_acabados'. D-2026-C reconcilia a 'catalogo_acabados' pero el consolidacion d3 NO lo cita. INCONSISTENCIA naming (master #1) no resuelta."},
+        {"campo": "familia", "origen": "pintura/laminado/enchapado/melamina/textura", "fuente": "disenio_modulo_espacio.md:91; OLA_6_METODOLOGIA_GRAFOS.md:120,121", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "tipo_acabado", "origen": "enum color/textura/acabado/material/estilo/estilema", "fuente": "disenio_modulo_espacio.md:95", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "nombre", "origen": "Valor del acabado (ej Melamina Blanca, Brillante)", "fuente": "disenio_modulo_espacio.md:97", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "color_hex", "origen": "para color/pigmento", "fuente": "disenio_modulo_espacio.md:98", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "imagen_textura_url", "origen": "para textura/material", "fuente": "disenio_modulo_espacio.md:99", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "codigo_proveedor", "origen": "codigo referencial del proveedor", "fuente": "disenio_modulo_espacio.md:100; OLA_F_METODOLOGIA_GRAFOS.md:99", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "precio_diferencial", "origen": "+X% sobre material base", "fuente": "disenio_modulo_espacio.md:101", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "parametros_extra", "origen": "jsonb solo variacion no homogenea", "fuente": "disenio_modulo_espacio.md:102", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Nombre canonico 'catalogo_acabados' reconciliado por D-2026-08-07-C (disenio_modulo_espacio.md:91) - evita colision con la tabla 'acabados'.",
+        "Extiende al grafo M-02 (OLA_6_METODOLOGIA_GRAFOS.md:118-127): VOCABULARIO, familia en M:121, codigo proveedor en M:122, precio diferencial en M:122.",
+        "Una sola entidad (clase), dos vinculos: modulos_acabados (instancia) y catalogo_producto_acabados (clase) - D-2026:114-127."
+      ],
+      "saltos_detectados": [
+        "Toda la familia de acabados nace sin evento en los 61 eventos ni pasada c3/consolidacion - cadena rota respecto a 'cada campo traza a un evento'. Origen en grafos + D-2026.",
+        "Naming 'catalogo_acabados' vs 'productos_acabados' sin resolver - INCONSISTENCIA (R3, master #1)."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3/master #1: validar que D-2026-08-07C concilia a catalogo_acabados + acabados_muestras + vinculos, coincidiendo con OLA6 grafos; pero el consolidado d3 NO lo refleja.",
+        "R3: resolver designacion canonica entre D-08 (productos_acabados) y D-2026 (catalogo_acabados) fuera de este lote."
+      ]
+    },
+    {
+      "tabla": "acabados_muestras",
+      "origen_punto0": {
+        "hallazgo": "Muestras visuales de cada acabado (imagen de muestra, publicacion web, compatibilidad con insumo: tablero A + acabado X).",
+        "fuente": "arnes/planes/disenio_modulo_espacio.md:105-112; OLA_6_METODOLOGIA_GRAFOS.md:124-127"
+      },
+      "campos": [
+        {"campo": "acabado_id", "origen": "FK a catalogo_acabados", "fuente": "disenio_modulo_espacio.md:107; OLA_6_METODOLOGIA_FRAFO:124", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "imagen_muestra_url", "origen": "imagen web", "fuente": "disenio_modulo_espacio.md:108", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "disponible_web", "origen": "publicacion en tienda", "fuente": "disenio_modulo_espacio.md:109", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "compatibilidad_insumo", "origen": "[{insumo_aplicable, valido}] - tablero A + acabado X", "fuente": "disenio_modulo_espacio.md:110", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Extraido del grafo M-02 (OLA_6_METODOLOGIA_GRAFOS.md:118-127), ampliado con compatibilidad_insumo (D-2026:110).",
+        "Es parte del master unico de acabados (D-2026:129) - NO paralelo."
+      ],
+      "saltos_detectados": [
+        "Sin evento en los 61 ni pasada c3; presente solo en OLA grafos + decision D-2026."
+      ],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "catalogo_producto_acabados",
+      "origen_punto0": {
+        "hallazgo": "Puente CLASE: acabados posibles del estandar (producto de tienda). Cada fila vincula un producto_catalogo a un acabado de vocabulario.",
+        "fuente": "disenio_modulo_espacio.md:121-128"
+      },
+      "campos": [
+        {"campo": "producto_catalogo_id", "origen": "FK a productos_catalogo", "fuente": "disenio_modulo_espacio.md:122", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "acabado_id", "origen": "FK a catalogo_acabados (vocabulario)", "fuente": "disenio_modulo_espacio.md:123", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "disponibilidad_web", "origen": "si este acabado se ofrece en tienda", "fuente": "disenio_modulo_espacio.md:124", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null},
+        {"campo": "es_default", "origen": "acabado por defecto de la clase", "fuente": "disenio_modulo_espacio.md:125", "punto0_ref": null, "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Puente CLASE (la instancia lo hace via modulos_acabados, D-2026:112-117).",
+        "Este puente aparece SOLO en D-2026-08-07-C; no esta en OLA_6 grafos ni en consolidado - es la decision mas reciente de reconciliacion.",
+        "Vive en el esquema de catalogos (FLAG-4) junto a catalogo_acabados/acabados_muestras - regla anti-paralelismo D-2026:129."
+      ],
+      "saltos_detectados": [
+        "Tabla no existe en OLA_6_SCHEMAS_APROBADOS ni en d3_schema_consolidado; unica fuente D-2026-08-07-C.",
+        "No cumple cadena origen->evento->pasada->consolidado; su origen es la decision del modulo espacio."
+      ],
+      "reconciliaciones_propuestas": []
+    }
+  ],
+  "veredicto_lote": "CON_INCONSISTENCIAS"
+}

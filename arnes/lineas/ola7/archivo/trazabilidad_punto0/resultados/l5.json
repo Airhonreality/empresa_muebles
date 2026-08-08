@@ -1,0 +1,431 @@
+{
+  "lote": "L5",
+  "generado_por": "subagente_codigo_qa_documental",
+  "rol": "Código/QA documental - Produccion / Taller (modulo jerarquico, F5)",
+  "fecha": "2026-08-07",
+  "metodologia": "CADENA: origen -> evento/E-job -> pasada d3 -> fuente OLA_6 -> logica_de_negocio (punto 0)",
+  "fuentes_consultadas": [
+    "arnes/planes/disenio_modulo_espacio.md",
+    "arnes/planes/plan_f5.md",
+    "arnes/estado.md",
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/diamante2_discover_eventos.md",
+    "arnes/diagnostico/diamante2_define_eventos.md",
+    "arnes/diagnostico/diamante2_loop_apertura.md",
+    "arnes/diagnostico/cierre_diamante.md",
+    "arnes/diagnostico/loop2_y_retroalimentacion.md",
+    "arnes/diagnostico/segunda_ronda_preguntas.md",
+    "arnes/diagnostico/inventario_legacy.md",
+    "arnes/diagnostico/auditoria_neon.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_1_contextos.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_2_enforcement.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_3_roles.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_1_normalizacion.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_3_trazabilidad.md",
+    "arnes/diagnostico/pasadas/d3_schema_a3_auditor.md",
+    "arnes/diagnostico/pasadas/d3_ui_b3_2_cronograma_gates.md",
+    "arnes/diagnostico/pasadas/d3_ui_b3_3_compras_taller_calidad.md",
+    "arnes/diagnostico/OLA_6_SCHEMAS_APROBADOS.md",
+    "arnes/diagnostico/OLA_6_METODOLOGIA_GRAFOS.md",
+    "arnes/diagnostico/OLA_6_FLAG4_PRODUCTOS_CATALOGO.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "modulos",
+      "origen_punto0": {
+        "hallazgo": "El 'modulo' no es una fila de taller: es la unidad de trazabilidad del proyecto entero, que nace en el cotizador (espacio -> modulos -> sub-modulos anidables recursivamente). identificador de vida completa que sobrevive diseno->contrato->desarrollo->compras->armado->verificacion->despacho->instalacion->garantias. Evaluar gates POR PROYECTO rompe el despacho parcial (un proyecto no siempre se despacha completo: ej 3 de 6 espacios).",
+        "fuente": "arnes/planes/disenio_modulo_espacio.md:9-47"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "uuid PK - identificador de vida completa del nodo (D-2026-08-07-C)",
+          "fuente": "disenio_modulo_espacio.md:36",
+          "punto0_ref": "disenio_modulo_espacio.md:11-13 (unidad de trazabilidad del proyecto entero)",
+          "salto": "no campo: la entidad como tal nace sin evento directo en los 61 eventos; el evento dueño del armado por modulo es E-22 pero D-2026 redefine el concepto",
+          "inconsistencia_archivo": "el id hereda el patron de modulos_armado.id (a2_1:179) pero re-encuadrado como llave de vida completa"
+        },
+        {
+          "campo": "espacio_variante_id",
+          "origen": "FK->espacio_variantes; espacio del cotizador (nullable si modulo suelto/prefabricado)",
+          "fuente": "disenio_modulo_espacio.md:37",
+          "punto0_ref": "disenio_modulo_espacio.md:17 (un espacio se compone de modulos y sub-modulos anidables recursivamente)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proyecto_id",
+          "origen": "FK->proyectos",
+          "fuente": "disenio_modulo_espacio.md:38",
+          "punto0_ref": "disenio_modulo_espacio.md:11 (unidad de trazabilidad del proyecto entero)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "padre_id",
+          "origen": "FK->modulos (self), recursion; null = raiz del espacio",
+          "fuente": "disenio_modulo_espacio.md:39",
+          "punto0_ref": "disenio_modulo_espacio.md:17-29 (modulos y sub-modulos anidables recursivamente, arbol 1--N)",
+          "salto": "salto estructural: la recursion padre_id NO tiene pasada previa ni punto 0 propio; la tabla plana del consolidado (modulos_armado) no tiene recursion",
+          "inconsistencia_archivo": "la recursividad (padre_id) NO existe en la fila de modulos_armado del consolidado (a2_1:179) - SALTOS de granularidad vs modulos_armado"
+        },
+        {
+          "campo": "nombre_modulo",
+          "origen": "\"Cajon correderas\", \"Bajo cocina\"",
+          "fuente": "disenio_modulo_espacio.md:40",
+          "punto0_ref": "disenio_modulo_espacio.md:28-29 (modulos basicos y compuestos por nombre)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "tipo_modulo",
+          "origen": "enum base / compuesto / consumible / herraje / pieza_tercero",
+          "fuente": "disenio_modulo_espacio.md:41",
+          "punto0_ref": "disenio_modulo_espacio.md:28-29 (basico vs compuesto); :54 (tipo_pieza_tercero)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "cantidad",
+          "origen": "unidades del mismo nodo",
+          "fuente": "disenio_modulo_espacio.md:42",
+          "punto0_ref": "disenio_modulo_espacio.md:22 (cantidad x3 como sub-nodo basico); clase<->instancia D-2026:63 (cantidad es la eleccion de la instancia)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "estado",
+          "origen": "text/enum - ciclo completo del modulo",
+          "fuente": "disenio_modulo_espacio.md:43",
+          "punto0_ref": "plan_f5.md:102-103 (proyectos.estado unico no representa despacho parcial, el estado vive en el nodo)",
+          "salto": null,
+          "inconsistencia_archivo": "estado 'ciclo completo por nodo' (D-2026) vs estados planos por_armar->en_instalacion de modulos_armado (a2_1:179). Diferentes conjuntos de estados, no reconciliados"
+        },
+        {
+          "campo": "jornadas_desarrollo / ensamblaje / instalacion",
+          "origen": "hereda del espacio, ponderado por nodo",
+          "fuente": "disenio_modulo_espacio.md:44",
+          "punto0_ref": "espacio_variantes.jornadasDesarrolloTecnico/jornadasEnsamblajeTaller/jornadasInstalacionObra (schema.ts:111-127; d3_schema_a1_1_contextos.md:84)",
+          "salto": null,
+          "inconsistencia_archivo": "naming gris: consolidado d3 no lista estas columnas en modulos para codigo; se remite a heredar la dimensionalidad del espacio. Naming jornadas_* (snake) vs jornadasDesarrolloTecnico (camel del schema.ts) sin correlacion en D-2026"
+        },
+        {
+          "campo": "horas_estimadas",
+          "origen": "numeric - horas estimadas del nodo",
+          "fuente": "disenio_modulo_espacio.md:45",
+          "punto0_ref": "tamano = valor + cantidad de items/modulos (logica_de_negocio.md:149; a2_3 E-52)",
+          "salto": null,
+          "inconsistencia_archivo": "duplica el concepto horasEstimadas de modulos_armado (a2_1:179)"
+        },
+        {
+          "campo": "origen_modulo",
+          "origen": "enum proyectado / adicional / prefabricado / garantia",
+          "fuente": "disenio_modulo_espacio.md:46",
+          "punto0_ref": "I-027 adicional = modulo con especificacion y tiempo propio (diamante2_discover_eventos.md:64); prefabricados t-023 (logica_de_negocio.md:155); garantia E-37",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "padre_linaje",
+          "origen": "uuid - rastreo de origen del reproceso",
+          "fuente": "disenio_modulo_espacio.md:47",
+          "punto0_ref": "rastreo de origen D2 (diamante2_define_eventos.md:76; log_insights_fase2.md:67); granularidad modulo/componente C2",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "D-2026-08-07-C (aprobada): el 'modulo' deja de ser fila de taller y pasa a ser unidad de trazabilidad jerarquica por espacio (disenio_modulo_espacio.md:9-47).",
+        "Gates Desarrollo(E-18)/Compras(E-21)/Verificacion(E-24)/Despacho/Instalacion(E-25)/Garantia(E-36) se evaluan por modulos.id - NO por proyecto (disenio:51).",
+        "Despacho parcial = los nodos con E-24 aprobado y E-21 recibido pasan; tercero pendiente no bloquea a los demas (disenio:53-54).",
+        "Clase<->instancia resuelto: el nodo `modulos` NO duplica el catalogo, lo referencia por FK (disenio:58-65).",
+        "Condicionante: plan_f5.md:99-103 - citaciones_calidad.modulos_ids (jsonb) acepta subconjunto; proyectos.estado NO representa el despacho parcial, el estado vive en el nodo."
+      ],
+      "saltos_detectados": [
+        "SALTO ESTRUCTURAL: `modulos` no existe en las pasadas d3 ni en el consolidado (65 tablas) ni en OLA_6; es propuesta exclusiva de D-2026-08-07-C. La huella E-22 del consolidado apunta a `modulos_armado` (a2_1:179; consolidado:109; a3:78) y NO a `modulos`.",
+        "SALTO JERARQUICO: la recursion padre_id NO tiene pasada previa; la tabla plana modulos_armado (a2_1:179) no la contempla."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3/master #1: al cerrar la salvedad del catalogo (disenio seccion 5), decidir si `modulos` REEMPLAZA a `modulos_armado` o coexiste. a2_1 resolvio `modulos_taller` -> `modulos_armado` (G-5, a2_1:45,81; a2_3:141) sin conocer la propuesta jerarquica posterior.",
+        "R3: formalizar jornadas_* y 'estado ciclo completo' en el schema antes de codificar Ola 7 (hoy solo viven en D-2026, sin pasada d3).",
+        "R3: definir como convive la recursion padre_id con el BOM real (bom_materiales, D-2026:30) que aterriza las hojas del arbol."
+      ]
+    },
+    {
+      "tabla": "modulos_artefactos",
+      "origen_punto0": {
+        "hallazgo": "Assets formales de produccion por nodo (imagen, plano de armado, orden de armado, modelo 3D). Correccion del Supervisor: el modulo debe tener imagen/plano/3D sin violar el axioma clase<->instancia. Se modela como tabla auxiliar 1-N por nodo, NO como columnas duplicadas en `modulos`.",
+        "fuente": "disenio_modulo_espacio.md:67-85"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "uuid PK",
+          "fuente": "disenio_modulo_espacio.md:76",
+          "punto0_ref": "E-41 (documentacion por etapa, alojador R2/Drive, logica_de_negocio.md:370-377)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nodo_id",
+          "origen": "FK->modulos (asset del nodo)",
+          "fuente": "disenio_modulo_espacio.md:77",
+          "punto0_ref": "disenio_modulo_espacio.md:71 (tabla auxiliar 1-N por nodo)",
+          "salto": null,
+          "inconsistencia_archivo": "depende de la tabla `modulos` que aun no existe en schema real -> FK a tabla pendiente"
+        },
+        {
+          "campo": "tipo",
+          "origen": "enum imagen / plano_armado / orden_armado / modelo_3d",
+          "fuente": "disenio_modulo_espacio.md:78",
+          "punto0_ref": "E-41 fotos por etapa + E-38/E-39 (modelo 3D, modelos_3d a2_1:225) / integracion del plano",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "fuente",
+          "origen": "enum heredado_catalogo (reutiliza 3D/plano de la CLASE) / dedicado_proyecto (3D especifico del proyecto)",
+          "fuente": "disenio_modulo_espacio.md:79",
+          "punto0_ref": "clase<->instancia D-2026-08-07-C ref.2 (disenio:67-69); coexiste con productos_tienda.imagen_principal_url (disenio:85)",
+          "salto": null,
+          "inconsistencia_archivo": "sin pasada d3 que la liste; nace directamente de D-2026 (refinamiento 2)"
+        },
+        {
+          "campo": "url / referencia",
+          "origen": "asset en alojador (R2/Drive, E-41)",
+          "fuente": "disenio_modulo_espacio.md:80",
+          "punto0_ref": "E-41 documentos_proyecto.alojador {drive_veta_erp, r2} - R2 DIFERIDO (consolidado a2_1:219)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "revision",
+          "origen": "int (versionado del asset)",
+          "fuente": "disenio_modulo_espacio.md:81",
+          "punto0_ref": "versionado de schema exigido por tesis (E-17, discover:65); versionado de modelos_3d",
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "No duplicar imagen/plano/3D como columnas de `modulos`; usar tabla auxiliar 1-N (refinamiento 2, disenio:69-85).",
+        "fuente=heredado_catalogo -> referencia la CLASE sin duplicar el binario; fuente=dedicado_proyecto -> asset del caso concreto (disenio:83-85)."
+      ],
+      "saltos_detectados": [
+        "SALTO: tabla no existe en el consolidado d3 (65 tablas) ni en OLA_6 schemas - es propuesta exclusiva de D-2026-08-07-C (refinamiento 2).",
+        "sin pasada previa: los assets derivan de E-41/E-38 pero las tablas de la pasada a2_1 son `documentos_proyecto`/`modelos_3d`, no `modulos_artefactos`."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3: definir si `modulos_artefactos` convive con `documentos_proyecto` (E-41) y `modelos_3d` (E-38) o es overlay de esas - duplicacion transversal potencial."
+      ]
+    },
+    {
+      "tabla": "modulos_acabados (instancia)",
+      "origen_punto0": {
+        "hallazgo": "Puente INSTANCIA: acabado aplicado al nodo de proyecto. El vocabulario de acabados es COMPARTIDO por nodo (instancia) y catalogo (clase). Reutiliza el grafo M-02 (catalogo_acabados + acabados_muestras).",
+        "fuente": "disenio_modulo_espacio.md:87-119"
+      },
+      "campos": [
+        {
+          "campo": "nodo_id",
+          "origen": "FK->modulos (acabado aplicado al nodo del proyecto)",
+          "fuente": "disenio_modulo_espacio.md:117",
+          "punto0_ref": "instancia del nodo del proyecto (disenio:63)",
+          "salto": null,
+          "inconsistencia_archivo": "depende de `modulos` (en propuesta)"
+        },
+        {
+          "campo": "acabado_id",
+          "origen": "FK -> catalogo_acabados (vocabulario CLASE)",
+          "fuente": "disenio_modulo_espacio.md:118; OLA_6_METODOLOGIA_GRAFOS.md:119",
+          "punto0_ref": "grafo M-02 OLA_6_METODOLOGIA_GRAFOS.md:119-122 (familia, codigo_proveedor, precio_diferencial)",
+          "salto": "no evento en los 61 que cree el puente acabado->nodo; el master de acabados nace de grafos (M-02) + D-2026",
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "zona",
+          "origen": "text - zonas del acabado aplicado (superficies / apliques / manetas / bordes ...)",
+          "fuente": "disenio_modulo_espacio.md:119",
+          "punto0_ref": "acabados puntuales por zona del schema (segunda_ronda_preguntas.md:16,19)",
+          "salto": null,
+          "inconsistencia_archivo": "zona es un vocabulario abierto sin enums listados"
+        }
+      ],
+      "decisiones_clave": [
+        "Clase<->instancia doble puente: modulos_acabados (instancia) + catalogo_producto_acabados (clase) apuntan al mismo master (disenio:112-127).",
+        "Regla anti-paralelismo: un solo master de acabados, sin duplicacion binaria (disenio:129).",
+        "El vocabulario vive en el esquema de catalogos (grafo M-02 / FLAG-4), no se implementa en produccion (disenio:129)."
+      ],
+      "saltos_detectados": [
+        "SALTO: puente instancia sin huella en los 61 eventos ni en las pasadas d3 (a2_1/consolidado). Toda la familia de acabados nace de grafos M-02 + D-2026 (ver tambien l1.json).",
+        "SALTO: no hay fila de la tabla en OLA_6_SCHEMAS_APROBADOS.md (7 schemas core sin acabados) - solo el grafo y D-2026."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3/master #1 (ya reportado en l1.json): completar la desambiguacion NAMING catalogo_acabados vs productos_acabados (D-08 fase2_ronda3:200) fuera de este lote.",
+        "R3: vincular modulos_acabados con acabados_muestras y con variacion_no_homogenea (parametros_extra de catalogo_acabados, disenio:104)."
+      ]
+    },
+    {
+      "tabla": "producciones",
+      "origen_punto0": {
+        "hallazgo": "NO EXISTE ninguna tabla `producciones` en las fuentes levantadas (logica_de_negocio.md, 61 eventos, pasada d3, OLA_6, estado.md, schema.ts). El contexto del lote se cubre con ordenes_trabajo + tareas_produccion + (propuesta) modulos. El plan F5 se titula 'Taller + Calidad + Entrega' sin tabla `producciones`.",
+        "fuente": "grep 'producciones' en todo el repo: 0 resultados (sin_linea_confirmada - sin coincidencias); auditoria_neon.md:17-18 (lista ordenes_trabajo y tareas_produccion, no producciones); inventario_legacy.md:9 (modulo 'Produccion / Taller' implementado con ordenes_trabajo + tareas_produccion)"
+      },
+      "campos": [
+        {
+          "campo": "(tabla inexistente)",
+          "origen": "No hay campos que rastrear - reporte de ausencia, no ingenieria de schema",
+          "fuente": "grep 'producciones' en C:\\Users\\javir\\Documents\\DEVs\\empresa_muebles_clone_v3 -> sin_linea_confirmada (0 coincidencias)",
+          "punto0_ref": null,
+          "salto": "SALTO: la tabla NO esta en las fuentes; cualquier uso posterior de `producciones` seria un artefacto sin origen (R1)",
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [],
+      "saltos_detectados": [
+        "SALTO DE CADENA: la tabla `producciones` no existe en inventario_legacy, ni en el consolidado d3 (65 tablas), ni en OLA_6, ni en schema.ts. Si aparece en codigo de O7 sera un artefacto sin trazabilidad.",
+        "El contexto 'Produccion/Taller' se implementa con ordenes_trabajo + tareas_produccion (schema.ts:323-381) y podria ampliarse con la propuesta `modulos` (D-2026)."
+      ],
+      "reconciliaciones_propuestas": [
+        "Si se necesita una entidad `producciones`, debe derivarse en una pasada documental antes de codificar (o renombrarla a `ordenes_trabajo`, que es el diario del taller). No agregar `producciones` unilateralmente."
+      ]
+    },
+    {
+      "tabla": "tareas_produccion",
+      "origen_punto0": {
+        "hallazgo": "Tabla LEGACY conservada: tarea operativa dentro de una orden de trabajo del taller (ej 'cortar tablero X'). Detalle interno del taller marcado capa 2 / DIFERIDO (no se construye en capa 1).",
+        "fuente": "inventario_legacy.md:36; d3_schema_consolidado.md:110; logica_de_negocio.md:264,294"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "uuid PK auto",
+          "fuente": "lib/db/schema.ts:362",
+          "punto0_ref": "inventario_legacy.md:36 (tarea dentro de una orden de trabajo)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "orden_id",
+          "origen": "FK -> ordenes_trabajo.id",
+          "fuente": "lib/db/schema.ts:363 (FK en 370-373)",
+          "punto0_ref": "inventario_legacy.md:36 (referenciado por tareas_produccion -> ordenes_trabajo)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "nombre_tarea",
+          "origen": "nombre de la tarea operativa",
+          "fuente": "lib/db/schema.ts:364",
+          "punto0_ref": "inventario_legacy.md:36 (nombre_tarea)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "estado",
+          "origen": "texto default 'pendiente' - NO se tipa (S-03)",
+          "fuente": "lib/db/schema.ts:365; d3_schema_a3_auditor.md:160; d3_schema_consolidado.md:110 (estado NO se tipa, S-03)",
+          "punto0_ref": "auditoria_neon.md:18 (0 filas)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "operario_id",
+          "origen": "FK -> usuarios.id (operario)",
+          "fuente": "lib/db/schema.ts:366 (FK en 375-378)",
+          "punto0_ref": "inventario_legacy.md:36 (operario_id)",
+          "salto": null,
+          "inconsistencia_archivo": "dual-identidad personas vs usuarios CC-08: tareas_produccion.operario_id -> USUARIOS (schema.ts:225/a3_1), mientras las tablas nuevas de negocio FK -> personas (a2_1:20; CF-19)"
+        },
+        {
+          "campo": "created_at",
+          "origen": "timestamp default now",
+          "fuente": "lib/db/schema.ts:367",
+          "punto0_ref": null,
+          "salto": null,
+          "inconsistencia_archivo": null
+        }
+      ],
+      "decisiones_clave": [
+        "DIFERIDO capa 2: detalle interno del taller (tareas por modulo, manual ISO, pantallas de carpinteros) NO se construye en capa 1 (a2_1:180; define:173; plan_f5:35).",
+        "estado NO se tipa (S-03) para no limitar la capa 2 futura (a3:160)."
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": [
+        "Trans-lote: operario_id deberia migrar de `usuarios` a `personas` en la Fase 0 de identidad (CC-08). Lo dejo reportado, no resuelto."
+      ]
+    },
+    {
+      "tabla": "modulos_armado (comparacion / taller legacy)",
+      "origen_punto0": {
+        "hallazgo": "Fila de salida del taller: tabla por modulo del proyecto (1-N desde ordenes_trabajo/proyectos). SOLO la fila de salida es capa 1 (decision B2); el detalle interno queda en capa 2. Nombre canonizado tras normalizacion: a2_1 resuelve `modulos_armado` sobre el alternativo `modulos_taller` (CF-11 / G-5).",
+        "fuente": "d3_schema_a2_1_normalizacion.md:81 (CF-11); :45,143; d3_schema_a2_3_trazabilidad.md:141 (G-5); d3_schema_a1_1_contextos.md:175"
+      },
+      "campos": [
+        {
+          "campo": "id",
+          "origen": "uuid PK",
+          "fuente": "d3_schema_a1_1_contextos.md:175",
+          "punto0_ref": "fila del taller dentro de la capa 1 (diamante2_define_eventos.md:118,170)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "proyecto_id",
+          "origen": "FK -> proyectos.id",
+          "fuente": "d3_schema_a1_1_contextos.md:175",
+          "punto0_ref": "fila por modulo del proyecto del cliente",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "orden_trabajo_id",
+          "origen": "FK -> ordenes_trabajo.id",
+          "fuente": "d3_schema_a1_1_contextos.md:175",
+          "punto0_ref": "orden de armado (E-22, discover:81)",
+          "salto": null,
+          "inconsistencia_archivo": "D-2026-08-07-C redefine el modulo sin orden de armado (sustituye la fila taller); el vinculo orden_trabajo desaparece a favor de gates por nodo en el arbol espacio/proyecto"
+        },
+        {
+          "campo": "modulo",
+          "origen": "text - nombre del modulo del proyecto",
+          "fuente": "d3_schema_a1_1_contextos.md:175; a2_1:179",
+          "punto0_ref": "tamano por cantidad de modulos (loop2:64)",
+          "salto": null,
+          "inconsistencia_archivo": null
+        },
+        {
+          "campo": "estado",
+          "origen": "enum por_armar / en_armado / armado / en_calidad / aprobado / en_instalacion",
+          "fuente": "d3_schema_a1_1_contextos.md:175; a2_1:179",
+          "punto0_ref": "fila del taller input de E-59/E-34 (B2, define:118)",
+          "salto": null,
+          "inconsistencia_archivo": "estado set DIFERENTE al 'ciclo completo' de modulos (disenio:43). RIESGO de dos vocabularios de estado para el mismo concepto (master naming #1, gate parcial #3)"
+        },
+        {
+          "campo": "horas_estimadas",
+          "origen": "numeric nullable",
+          "fuente": "d3_schema_a1_1_contextos.md:175",
+          "punto0_ref": "estimacion f(valor, cantidad de items/modulos) (loop2:64)",
+          "salto": null,
+          "inconsistencia_archivo": "duplicado con modulos.horas_estimadas - ambos estiman horas del modulo (fusion pendiente)"
+        }
+      ],
+      "decisiones_clave": [
+        "a2_1 resolvio el nombre: se hereda del pase que define el concepto (a2_1:45,143-145) => `modulos_armado` por encima de `modulos_taller` (CF-11, G-5).",
+        "Es la fila de salida del taller (capa 1 B2), input de E-59/E-34 - NO el detalle de tareas (eso es tareas_produccion, capa 2).",
+        "Huella E-22 del consolidado: 'modulos_armado (fila de salida; input E-59/E-34) B2' (consolidado:109)."
+      ],
+      "saltos_detectados": [
+        "SALTO: NO existe en schema_actual (schema.ts no la declara) aunque la pasada la presenta como [nueva] en a2_1:179 - cadena punto 0/a2_1 sin implementar aun."
+      ],
+      "reconciliaciones_propuestas": [
+        "R3/master #1 (CRITICO): `modulos_armado` (consolidado d3, canon) vs `modulos` (D-2026-08-C, propuesta jerarquica que la reemplaza) vs `modulos_taller` (descartado por CF-11). Tres vistas del mismo objeto. RESOLVER con el Supervisor antes de O7. NO resuelto en este lote.",
+        "R3 despacho parcial (gates #3): unificar el criterio 'gates por nodo modulos.estado' (D-2026) con el predicado P24 a nivel proyecto de las pasadas d3 (citaciones_calidad + verificaciones tipo_gate='calidad', consolidado:213) y con citaciones_calidad.modulos_ids jsonb de plan_f5:99."
+      ]
+    }
+  ],
+  "veredicto_lote": "CON_INCONSISTENCIAS_Y_SALTOS"
+}

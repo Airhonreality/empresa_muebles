@@ -1,6 +1,6 @@
 # Plan de demanda — convergencia única
 
-> **Este documento reemplaza a dos.** Sustituye `arnes/diagnostico/marco_estrategia_mercado.md` (las 6 ramas) y absorbe el mapa de 11 fases de `Fase paralela de mercados 1.txt`. Ambos pasan a **registro histórico**: se leen para entender cómo se llegó acá, no para decidir. **Desde ahora la línea de demanda tiene una sola fuente de verdad, y es esta.**
+> **Este documento reemplaza a dos.** Sustituye `arnes/lineas/demanda/archivo/marco_estrategia_mercado.md` (las 6 ramas) y absorbe el mapa de 11 fases de `Fase paralela de mercados 1.txt`. Ambos pasan a **registro histórico**: se leen para entender cómo se llegó acá, no para decidir. **Desde ahora la línea de demanda tiene una sola fuente de verdad, y es esta.**
 
 **Objetivo:** más leads cualificados reales → más ventas → el departamento de diseño comercial visitando clientes en forma.
 

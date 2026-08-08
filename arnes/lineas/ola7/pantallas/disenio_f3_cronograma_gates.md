@@ -28,7 +28,7 @@ F3 = **Cronograma + gates E-18/E-33** (B3-2: P-06..P-12).
 | `cronograma_etapas` | `cronograma_id`, `linea (contractual/interna)`, `etapa`, `fecha_ideal`, `fecha_real`, `estado` | E-33 (recálculo) |
 | `desfases_cronograma` | `proyecto_id`, `dias_desfase`, `aplicado`, `causa (interna/externa/cambio_contrato)`, `composicion_causal (jsonb)`, `motivo`, `decision_manual`, `autorizado_por`, `resultado_recalculo` | **E-33** |
 | `cambios_contrato` | `proyecto_id`, `tipo_cambio`, `descripcion`, `dispara_desfase` | E-16→E-33 |
-| `check_15_dias` | `proyecto_id`, `fecha_check`, `desenlace (todo_bien/novedad/extremo)`, `insumos_en_taller`, `comisiones_reducidas` | E-59 (P-11) |
+| `check_produccion` | `proyecto_id`, `fecha_check`, `desenlace (todo_bien/novedad/extremo)`, `insumos_en_taller`, `comisiones_reducidas` | E-59 (P-11) |
 | `novedades_criticas` | `proyecto_id`, `descripcion`, `fase`, `ventana_sla_horas (5-24)`, `estado`, `escalado_a` | E-34 (P-10) |
 
 ### Tablas AMPLIADAS (F2→F3):
@@ -79,7 +79,7 @@ F3 = **Cronograma + gates E-18/E-33** (B3-2: P-06..P-12).
 ### P-11 — Check de los 15 Días
 - **Ruta:** `/app/erp/proyectos/[id]/check-15-dias`
 - **Evento:** E-59
-- **Contenido:** Estado producción (lee `modulos_armado`). **3 desenlaces:** Todo bien → E-60 adelanto; Novedad → decisión + acción; Extremo → escalar + comisiones reducidas (E-35). `[Confirmar check]` → log + alimenta E-25/E-35/E-60.
+- **Contenido:** Estado producción (lee `modulos`). **3 desenlaces:** Todo bien → E-60 adelanto; Novedad → decisión + acción; Extremo → escalar + comisiones reducidas (E-35). `[Confirmar check]` → log + alimenta E-25/E-35/E-60.
 
 ### P-12 — Equipo / Verificador
 - **Ruta:** `/app/erp/equipo` (extensión existente)

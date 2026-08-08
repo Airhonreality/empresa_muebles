@@ -1,0 +1,205 @@
+{
+  "lote": "L0",
+  "generado_por": "subagente",
+  "fuentes_consultadas": [
+    "arnes/diagnostico/logica_de_negocio.md",
+    "arnes/diagnostico/pasadas/d3_schema_consolidado.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_3_roles.md",
+    "arnes/diagnostico/pasadas/d3_schema_a1_5_datos.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_1_normalizacion.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_3_trazabilidad.md",
+    "arnes/diagnostico/pasadas/d3_schema_a2_5_parametros.md",
+    "arnes/diagnostico/pasadas/d3_schema_a3_auditor.md",
+    "arnes/diagnostico/OLA_6_SUBSISTEMA_LOGS.md",
+    "arnes/diagnostico/OLA_6_SCHEMAS_APROBADOS.md",
+    "lib/db/schema.ts"
+  ],
+  "tablas": [
+    {
+      "tabla": "roles",
+      "origen_punto0": {
+        "hallazgo": "El mapa define roles-no-personas: el sistema modela ROLES tipados, no personas específicas; y anticipa que `usuarios.rol_empleado` (admin|comercial|taller|finanzas) se queda corto.",
+        "fuente": "logica_de_negocio.md:340,397,438"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom, patrón de todas las tablas", "fuente": "schema.ts:15; a2_1:57; c5:57", "punto0_ref": "schema.ts:64", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "codigo", "origen": "Rol tipado: codigo único (8 roles del Define + contador; sin 'verificador' ni 'compras')", "fuente": "a1_3:68,83,119-130; a2_1:105", "punto0_ref": "logica_de_negocio.md:397 (8+ roles que hoy faltan)", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "nombre", "origen": "Nombre legible del rol", "fuente": "a1_3:119-130; a2_1:105", "punto0_ref": "logica_de_negocio.md:438", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "descripcion", "origen": "Descripción opcional del rol", "fuente": "a1_3:129; a2_1:105", "punto0_ref": "logica_de_negocio.md:438", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "roles como tabla (no enum) para permitir N roles por persona (a1_3:83; a2_1:105,252 N-02)",
+        "Fase 0: backfill desde usuarios.rolEmpleado; roActivada se conserva como fuente temporal (CC-05) (a2_1:233)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "personas",
+      "origen_punto0": {
+        "hallazgo": "Roles/personas separados: el modelo y el dinero real pagan 'por rol y no por persona'; personas es la identidad de negocio.",
+        "fuente": "logica_de_negocio.md:340,438"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK, patrón estándar", "fuente": "schema.ts:25", "punto0_ref": "logica_de_negocio.md:340", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "nombre", "origen": "Identidad de negocio: nombre de la persona", "fuente": "a2_1:106; a1_3:136", "punto0_ref": "logica_de_negocio.md:340", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "documento", "origen": "Documento de identidad (puente humano)", "fuente": "a2_1:106; a1_4:322 (DECISION_PENDIENTE)", "punto0_ref": "logica_de_negocio.md:340", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "telefono", "origen": "Contacto telefónico", "fuente": "a2_1:106", "punto0_ref": "logica_de_negocio.md:340", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "activo", "origen": "Estado activo de la persona", "fuente": "a2_1:106", "punto0_ref": "logica_de_negocio.md:340", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "personas = identidad de negocio; usuarios = identidad de login con puente usuarios.persona_id (CF-19, a2_1:89)",
+        "Destino de todos los FKs de dinero/roles (CF-19) (a2_1:106; a2_1:253 N-03)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "personas_roles",
+      "origen_punto0": {
+        "hallazgo": "Una persona puede ocupar varios roles; la asignación persona→rol es explícita y los guards evalúan contra el rol, no la persona.",
+        "fuente": "logica_de_negocio.md:340,438,290; define_eventos:55-61"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom", "fuente": "schema.ts:33", "punto0_ref": "logica_de_negocio.md:290", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "personaId", "origen": "FK persona", "fuente": "a2_1:107; a1_3:138", "punto0_ref": "logica_de_negocio.md:290", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "rolId", "origen": "FK rol", "fuente": "a2_1:107; a1_3:139", "punto0_ref": "logica_de_negocio.md:290", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "activo", "origen": "Estado de la asignación", "fuente": "a2_1:107; a1_3:139-140", "punto0_ref": "logica_de_negocio.md:290", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "desde", "origen": "Inicio de la asignación", "fuente": "a2_1:107", "punto0_ref": "logica_de_negocio.md:290", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "N:N en vez de rol único (N-02, CC-05) (a2_1:252)",
+        "Sustituye rol único de `usuarios.rolEmpleado`, que se depreca en F4 (a1_3:85; a2_1:241)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "parametros",
+      "origen_punto0": {
+        "hallazgo": "El neto del diseñador = parámetro configurable; retención/IVA a validar con el contador antes del corte (lógica de negocio). Compensación y santos por rol dados como contrato vivo.",
+        "fuente": "logica_de_negocio.md:225,207"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom", "fuente": "schema.ts:477", "punto0_ref": "schema.ts:476", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "clave", "origen": "Clave única del parámetro (26 core + 6 marca)", "fuente": "a2_5:130; a2_1:114", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "grupo", "origen": "Nuevo: convergencia parametros_compensacion → columna `grupo` (P-03)", "fuente": "a2_5:123; a2_1:114", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "tipo", "origen": "numerico/texto/booleano", "fuente": "a2_5:128,133", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "valorNumeric", "origen": "valor numérico", "fuente": "a2_5:135", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "valorTexto", "origen": "valor texto", "fuente": "a2_5:136", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "valorBooleano", "origen": "valor booleano", "fuente": "a2_5:137", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "unidad", "origen": "unidad (porcentaje/pesos/días/horas/minutos/semanas/veces/texto)", "fuente": "a2_5:138", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "descripcion", "origen": "Descripción", "fuente": "a2_5:139", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "vigenteDesde", "origen": "Transición programada del parámetro", "fuente": "a2_5:140; a2_5:183", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "updatedAt", "origen": "materializado de lectura (P-10), no fuente de verdad", "fuente": "a2_5:141,175", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": "a2_5:42 (P-10) y a2_1:114 lo declaran solo materializado; véase historial como fuente de verdad"},
+        {"campo": "check(unique)", "origen": "CHECK de exclusión de un solo valor (a2_5:143) + clave unique", "fuente": "a2_5:143; schema.ts:490-495", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Unificación parametros + parametros_compensacion en UNA tabla con grupo (P-03, CF-09) (a2_5:40,123; a2_1:79)",
+        "varios paramteros DECISION_PENDIENTE con valor vacío (a2_5:28,66,229)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "parametros_historial",
+      "origen_punto0": {
+        "hallazgo": "Los valores que el negocio ajusta (SLA, comisiones, retención) deben ser auditable — ver quien cambió qué cuándo (append-only).",
+        "fuente": "logica_de_negocio.md:225,258; a2_5:173"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom", "fuente": "schema.ts:500", "punto0_ref": "schema.ts:499", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "parametroId", "origen": "FK parametro", "fuente": "a2_5:164", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "claveSnapshot", "origen": "sobrevive a renombres", "fuente": "a2_5:150", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "valorNumericAnterior/Nuevo", "origen": "valor anterior/nuevo", "fuente": "a2_5:151-152", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "valorTextoAnterior/Nuevo", "origen": "valor texto anterior/nuevo", "fuente": "a2_5:153-154", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "valorBooleanoAnterior/Nuevo", "origen": "valor booleano anterior/nuevo", "fuente": "a2_5:155-156", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "actorId", "origen": "quien actuó (NULL = sistema)", "fuente": "a2_5:157", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "actorRol", "origen": "rol denormalizado al escribir (a1_5:30)", "fuente": "a2_5:158", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "motivo", "origen": "justificación del cambio", "fuente": "a2_5:159", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "vigenteDesde", "origen": "cuándo toma efecto", "fuente": "a2_5:160", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "createdAt", "origen": "marca de creación", "fuente": "a2_5:161", "punto0_ref": "logica_de_negocio.md:225", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Append-only, sin UPDATE/DELETE de aplicación (P-04, P-10) (a2_5:163,175)",
+        "No se usa `eventos` para loguear cambios de parámetro (P-11, enum 61 cerrado) (a2_5:45)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "eventos",
+      "origen_punto0": {
+        "hallazgo": "El sistema es guía + registrador de la realidad; el cronograma es dinámico y cada cambio se registra. Auditoría append-only del dominio.",
+        "fuente": "logica_de_negocio.md:262; fundamento en parte 1 (log de producción) "
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom", "fuente": "schema.ts:519; a1_5:57", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "ocurrenciaId", "origen": "una ocurrencia de negocio toca N entidades", "fuente": "a1_5:58,66; descubrir:48,57", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "tipoEvento", "origen": "enum cerrado de 61 (E-01..E-61)", "fuente": "a1_5:59; a2_1:112; ", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "entidad", "origen": "vocabulario cerrado en código", "fuente": "a1_5:60", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": "schema.ts:522 usa text() para tipoEvento, mientras a1_5:59 propone pgEnum tipo_evento;roCosmético, ver auditor"},
+        {"campo": "entidadId", "origen": "PK de la entidad afectada", "fuente": "a1_5:61", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "estadoAntes", "origen": "snapshot previo en texto (semántica de registro)", "fuente": "a1_5:62; a1_5:29", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "estadoDespues", "origen": "snapshot posterior en texto", "fuente": "a1_5:63", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "actorId", "origen": "quien actuó (NULL=sistema) FK usuarios", "fuente": "a1_5:64", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "actorRol", "origen": "rol denormalizado (rol-vs-persona, separación ejecutor-verificador)", "fuente": "a1_5:65", "punto0_ref": "logica_de_negocio.md:290", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "eventoReferenciaId", "origen": "vínculo causal entre eventos (self-FK)", "fuente": "a1_5:66; a2_1:206 (E-54→gate)", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "leadId/clienteId/proyectoId/contratoId", "origen": "contexto de negocio = FKs de cadena (no jsonb)", "fuente": "a1_5:67-70; a1_5:28 (2c)", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "payload", "origen": "evidencia del evento / de gates", "fuente": "a1_5:71", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "createdAt", "origen": "marca de creación", "fuente": "a1_5:72", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": null}
+      ],
+      "decisiones_clave": [
+        "Auditoría única: colapsa eventos_negocio y registro_actividad (H03/H04, CF-10) (a2_1:80; a2_1:269 R-04)",
+        "Append-only, atomicidad evento+mutación en el mismo tx via registrarEvento (a1_5:33,45,96; a1_5:214)",
+        "Gates con evidencia completa en payload (E-18/E-20/E-21/E-24/E-33/E-59/E-61) (a1_5:204-214)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "procedencia",
+      "origen_punto0": {
+        "hallazgo": "Rastreo de origen del reproceso (D2) y linaje del dato 'al nacer el dato' (anti-memoria humana) — escrito en la misma transacción.",
+        "fuente": "logica_de_negocio.md:263; a1_5:46"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom", "fuente": "schema.ts:548", "punto0_ref": "logica_de_negocio.md:263", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "hijoEntidad/hijoId", "origen": "entidad nacida + su PK", "fuente": "a1_5:85-86", "punto0_ref": "logica_de_negocio.md:263", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "padreEntidad/padreId", "origen": "entidad origen + su PK", "fuente": "a1_5:87-88", "punto0_ref": "logica_de_negocio.md:263", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "tipoEvento", "origen": "el E-XX que nace el dato", "fuente": "a1_5:89", "punto0_ref": "logica_de_negocio.md:263", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "tipoRelacion", "origen": "nacimiento/seguridad/refleja", "fuente": "a1_5:90", "punto0_ref": "logica_de_negocio.md:263", "salto": null, "inconsistencia_archivo": null},
+        {"campo": "createdAt", "origen": "marca de creación", "fuente": "a1_5:91", "punto0_ref": "logica_de_negocio.md:263", "salto": null, "inconsistencia_archivo": "UNIQUE(hijoEntidad,hijoId) declarado en a1_5:92 no se materializa en schema.ts:547-556"}
+      ],
+      "decisiones_clave": [
+        "Lineage 'al nacer el dato', escrito en la misma transacción (a1_5:200)",
+        "Cadena lead→cliente→proyecto y BOM→OC→recepción (a1_5:165-169; a2_3:163-169 H09)"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": []
+    },
+    {
+      "tabla": "audit_logs",
+      "origen_punto0": {
+        "hallazgo": "INCONSISTENCIA DE NAMING (R3). En código existe `audit_logs` (schema.ts:560) con actor/accion/entidad/gate/decision/cambios_json — el canon F0 (D3) decidió `eventos` + `procedencia` como auditoría única (CF-10, R-04). NO se decide aquí: se reporta.",
+        "fuente": "schema.ts:560-573 vs a2_1:112-113,1270 (R-04); OLA8:28-55 y OLA8_SCHEMAS:257-287 (definen audit_logs)"
+      },
+      "campos": [
+        {"campo": "id", "origen": "uuid PK defaultRandom — coincide con esquema de audit_logs en OLA8 (capa 1)", "fuente": "schema.ts:561; OLA8:29", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": "audit_logs es tabla propia en código/OLA_6, pero el canon F0 (a2_1:79,113,269) colapsa la auditoría en `eventos`+`procedencia` y NO menciona audit_logs — naming divergente"},
+        {"campo": "accion", "origen": "En OLA8 enum de acciones (crear/editar/aprobar/etc)", "fuente": "OLA8:36-37,39", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": "Ver R3"},
+        {"campo": "entidadTipo/entidadId", "origen": "sobre qué entidad", "fuente": "OLA8:40-41", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": "Ver R3"},
+        {"campo": "gateEvaluado/decision", "origen": "gate evaluado + decisión de gates (E-18/E-20/E-21/E-24/E-33)", "fuente": "OLA8:47-50", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": "Ver R3"},
+        {"campo": "cambiosJson", "origen": "anterior/nuevo/justificacion", "fuente": "OLA8:44", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": "Ver R3"},
+        {"campo": "ipOrigen", "origen": "contexto de red", "fuente": "OLA8:53", "punto0_ref": "logica_de_negocio.md:262", "salto": null, "inconsistencia_archivo": "Ver R3"}
+      ],
+      "decisiones_clave": [
+        "Existe audit_logs en schema.ts (F0/legacy) y en OLA 6 (subsistema de logs robusto) con estructuras ligeramente distintas entre sí (OLA8_SUBSISTEMA:28-38 vs OLA8_SCHEMAS:257-266) — inconsistencia interna de fuentes, reportar",
+        "El canon D3 no contiene audit_logs; reporta R3 y NO resolver unilateralmente"
+      ],
+      "saltos_detectados": [],
+      "reconciliaciones_propuestas": [
+        "Reconciliar si la auditoría única es `eventos`+`procedencia` (decisión D3/F0, a2_1:79) o `audit_logs` (OLA 6/código); requirer decisión de Supervisor — NO resuelto aquí"
+      ]
+    }
+  ],
+  "veredicto_lote": "OK"
+}

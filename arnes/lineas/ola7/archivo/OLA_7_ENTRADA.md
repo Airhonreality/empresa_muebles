@@ -1,4 +1,4 @@
-# Ola 7 — Execute (Entrada única)
+﻿# Ola 7 — Execute (Entrada única)
 
 **Supervisor:** Javier  
 **Fecha:** 2026-08-04  
@@ -24,7 +24,7 @@ Fase de **codificación y ejecución** de:
 
 1. **`arnes/AGENTS.md`** — Ley del arnés (roles, zonas, prohibiciones)
 2. **`arnes/estado.md`** — Dónde estamos (último checkpoint)
-3. **`arnes/diagnostico/_INDICE_MAESTRO.md`** — Mapa de todo lo que pasó (trazabilidad)
+3. **`arnes/lineas/ola7/archivo/_INDICE_MAESTRO.md`** — Mapa de todo lo que pasó (trazabilidad)
 4. **Este archivo** (`OLA_7_ENTRADA.md`) — Punto de partida
 
 **No leas más.** Todos los demás documentos están referenciados desde estos cuatro.
