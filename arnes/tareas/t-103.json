@@ -1,0 +1,32 @@
+{
+  "id": "t-103",
+  "titulo": "Desactivar el pre-commit hook de Agnostic Seed en el worktree V3 (sin tocar el worktree principal)",
+  "intencion_negocio": "Cada commit en este worktree (_v3) dispara el pre-commit hook compartido (core.hooksPath -> ../empresa_muebles_clone/.githooks), que corre validate-storage.mjs/validate-text-encoding.mjs/guard-engine-edits.mjs del motor legacy 'Agnostic Seed'. V3 no usa ese motor por diseño (AGENTS.md: 'No se debe usar el motor Agnostic Seed ni ningún patrón schema-driven genérico equivalente en el código nuevo') y no tiene esos scripts/, así que el hook crashea (MODULE_NOT_FOUND) en cada commit. El commit t-102 (matryoshka del arnés) tuvo que hacerse con --no-verify. Esto se repetirá en cada commit futuro desde _v3 hasta que se corrija.",
+  "zona": "arnes/ (config de git, no código de aplicación)",
+  "tipo": "andamiaje",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "c:/Users/javir/Documents/DEVs/empresa_muebles_clone_v3/.git/config (worktree admin dir, vía git config --worktree)"
+  ],
+  "criterios_aceptacion": [
+    "git commit sin --no-verify no dispara validate-storage.mjs en este worktree",
+    "git status / commits desde el worktree principal (empresa_muebles_clone) siguen disparando el hook de Agnostic Seed normalmente — cero regresión ahí",
+    "ningún archivo de ../empresa_muebles_clone/.githooks/ fue modificado"
+  ],
+  "plan_ref": null,
+  "investigacion_previa": {
+    "causa_raiz": "core.hooksPath está seteado en el config común del repo (compartido entre worktrees vía .git/worktrees/), apuntando a un hook escrito para el motor Agnostic Seed del worktree principal.",
+    "opcion_recomendada": "extensions.worktreeConfig permite config por-worktree desde git 2.20+ (este repo usa git 2.51.0, confirmado). Comandos: 'git config extensions.worktreeConfig true' (una vez, afecta la capacidad del repo, no el comportamiento existente) + 'git config --worktree core.hooksPath \"\"' (ejecutado DENTRO de este worktree, solo lo afecta a él). El worktree principal sigue leyendo el hooksPath común sin cambios.",
+    "opciones_descartadas": [
+      "Modificar ../empresa_muebles_clone/.githooks/pre-commit para que sea tolerante a scripts/ faltantes: descartado por ahora — toca un archivo del worktree principal, que AGENTS.md marca como 'working tree principal del humano, con su propio trabajo en curso'; no es zona de este proyecto sin permiso explícito adicional.",
+      "Crear scripts/validate-storage.mjs etc. como stubs no-op en V3: descartado — sería fingir que V3 usa un contrato (storage/) que no tiene, y quedaría como deuda confusa para el próximo agente que lea scripts/."
+    ]
+  },
+  "ejecutor": null,
+  "verificador": null,
+  "qa": { "intentos": 0, "comandos": [], "salida_cruda": "", "veredicto": "no_verificable" },
+  "checkpoint": { "requerido": false, "veredicto_humano": "pendiente", "fecha": null },
+  "estado": "creada",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "cerrada_en": null
+}

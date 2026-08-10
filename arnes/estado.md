@@ -8,9 +8,17 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 
 ## Línea técnica (Ola 6/7: ERP + Sitio)
 
-**Estado:** F0–F7 con diseño/plan aprobado. **F8 (Hardening/Integraciones) es la fase abierta** — sin plan todavía. F9 (QA + corte) pendiente.
+**Banda F0–F9 CERRADA** (2026-08-08, checkpoint Supervisor). Todos los planes de diseño aprobados; QA documental pasó 10/10 condiciones; 17 pantallas alineadas a PLANTILLA_PANTALLA; 5 gates con predicados; glosario H07 completo.
 
-**Próxima acción permitida:** abrir el bucle de diseño F8 (hardening): enums aditivos + backfill de datos existentes, deprecación `rolEmpleado`→`personas_roles`, integraciones diferidas (Viewer 3D). Usa `arnes/lineas/ola7/tecnico/PLANTILLA_HARDENING.md`.
+**F10 — Prototipo con mocks (ABIERTA).** Plan aprobado: prototipado real de las pantallas con subsistema de datos mock controlado, antes de migraciones. Feedback de uso → hallazgos → cambios de diseño/gates/schema → migraciones reales al final.
+
+**B1 (Kanban Comercial + Cotizador) — CERRADO (2026-08-09).** 3 pasadas de auditoría completadas: POC-15 (duplicar variante, presupuesto adicional, ImagePicker), POC-16 (jerarquía espacio→variante, ojo visibleEnPropuestaPublica, punto referencial, detalles con miniatura, ImagePicker generalizado), 3ª pasada (limpieza schema `descripcionAlternativa`, activación en header, kanban compacto, responsive móvil, patrón A.10 en M-06). Verificación mecánica: `tsc --noEmit` 0, `eslint .` 0, 29/29 tests mock-store. Checklist: `arnes/lineas/ola7/tecnico/checklist_requisitos_b1_cierre.md` (30/34 cumplidos).
+
+**B2 Lotes A/B (F3 cronograma/gates) — CERRADO (2026-08-09, POC-17).** 7 pantallas (P-06..P-12), navegación conectada. Lote C (kanban P-01 rediseño) diferido a revisión de Javier.
+
+**Lote F5/F6/F-02/F-03/F-07 — CERRADO (2026-08-09, POC-18).** 11 pantallas más (taller/calidad/instalación/entrega/garantía/finanzas P-16..P-23, catálogo P-27, tienda F-02, portafolio F-03) + F-07 portal cliente con auth real (`iron-session`, no mock) + P-03/F-08 (solo-lectura cotizador/propuesta pública). Desde este lote los sub-agentes usan `opencode run` + modelos Zen free en vez del Agent tool de Claude (conservar rate limit). Verificación: tsc/eslint 0 errores, 78/78 tests, build 27/27 rutas. Detalle: `arnes/lineas/ola7/tecnico/registro_hallazgos_poc4.md` POC-18. Nada commiteado. **Pendiente: revisión de Javier sobre el prototipo; Lote C de B2 (kanban P-01) sigue diferido.**
+
+**Próxima acción permitida:** ninguna de código hasta que Javier revise el prototipo actual (B1+B2+este lote) en vivo. Si aprueba, siguiente foco es Lote C (kanban P-01) o el resto de pantallas F10 aún sin capa de datos.
 
 **Detalle completo:** `arnes/lineas/ola7/estado_ola7.md`.
 
@@ -18,9 +26,9 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 
 ## Línea de demanda (captación, conversión, marca)
 
-**Estado:** v3 del marco, sin aprobar. Bloqueada esperando al Supervisor — falta aprobar alcance, credenciales de solo lectura (Ads/GA4/Search Console), informe de sector y checkpoint del schema para el Bloque A.
+**Estado:** v3 del marco, sin aprobar. D2-D5 cerradas (2026-08-08, ver `plan_demanda.md` §1). Bloqueada esperando al Supervisor — falta aprobar alcance, credenciales de solo lectura (Ads/GA4/Search Console, ver t-110 [SOLO_HUMANO]), informe de sector, checkpoint del schema para el Bloque A (ver t-111), y decisión de eslogan D1 (ver t-112).
 
-**Próxima acción permitida:** ninguna hasta que el Supervisor apruebe el alcance (`plan_demanda.md` §5). En paralelo, `plan_estructura_sitio_publico.md` ya dejó determinantes listos para cuando el bucle F7 de la línea técnica llegue a F-09..F-13.
+**Próxima acción permitida:** ninguna hasta que el Supervisor apruebe el alcance (`plan_demanda.md` §5). En paralelo, `plan_estructura_sitio_publico.md` ya dejó determinantes listos para cuando el bucle F7 de la línea técnica llegue a F-09..F-13. D2/D3/D5 ya no bloquean esas pantallas.
 
 **Detalle completo:** `arnes/lineas/demanda/estado_demanda.md`.
 

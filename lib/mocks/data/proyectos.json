@@ -1,0 +1,38 @@
+[
+  {
+    "id": "proj_001",
+    "nombre_proyecto": "Cocina en El Poblado",
+    "descripcion": "Cocina integral para apartamento en El Poblado, Medellín.",
+    "publicado": true,
+    "fotos_espacio": ["https://via.placeholder.com/800x600"],
+    "fotos_disenio": ["https://via.placeholder.com/800x600"],
+    "categoria_comercial": "cocinas-integrales-bogota"
+  },
+  {
+    "id": "proj_002",
+    "nombre_proyecto": "Closet en Rosales",
+    "descripcion": "Closet walk-in para casa en Rosales, Bogotá.",
+    "publicado": true,
+    "fotos_espacio": ["https://via.placeholder.com/800x600"],
+    "fotos_disenio": ["https://via.placeholder.com/800x600"],
+    "categoria_comercial": "closets-vestidores-bogota"
+  },
+  {
+    "id": "proj_003",
+    "nombre_proyecto": "Bar en Chicó",
+    "descripcion": "Bar integrado para apartamento en Chicó, Bogotá.",
+    "publicado": true,
+    "fotos_espacio": ["https://via.placeholder.com/800x600"],
+    "fotos_disenio": ["https://via.placeholder.com/800x600"],
+    "categoria_comercial": "cavas-y-bares"
+  },
+  {
+    "id": "proj_004",
+    "nombre_proyecto": "Home Office en Cedritos",
+    "descripcion": "Estudio para home office en Cedritos, Bogotá.",
+    "publicado": true,
+    "fotos_espacio": ["https://via.placeholder.com/800x600"],
+    "fotos_disenio": ["https://via.placeholder.com/800x600"],
+    "categoria_comercial": "estudios-home-office"
+  }
+]

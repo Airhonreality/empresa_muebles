@@ -85,7 +85,8 @@ E-18 (schema aprobado, F3/P-08) ─→ E-20/E-21 (compras, F4/P-13/P-14) ─→ 
 
 ## 4. Cuidados y condiciones
 
-- **A-01 (contador) — no bloquea F0-F7, OBLIGATORIO antes de F8:** `neto_diseno_3d_pct`, `iva_diseno_3d_pct`, `recargo_hora_extra_pct`, `umbral_novedad_check15`. Los valores v1 estimados ya viven como parámetros; la confirmación cambia números, no schema. Si no está resuelto al llegar a F8, F8 espera.
+- **A-01 (contador) — no bloquea F0-F7, OBLIGATORIO antes de F8:** `neto_diseno_3d_pct`, `iva_diseno_3d_pct`, `recargo_hora_extra_pct`. Los valores v1 estimados ya viven como parámetros; la confirmación cambia números, no schema. Si no está resuelto al llegar a F8, F8 espera.
+- **A-02 (Supervisor) — rediseño de `check_produccion` (2026-08-08):** `umbral_todo_bien_pct`, `umbral_extremo_pct`, `reduccion_comision_novedad_pct`, `reduccion_comision_extremo_pct` reemplazan a `umbral_novedad_check15` (deprecado). Valores v1 (0.95/0.70/50%/100%) estimados, ver `nucleo/mini_diamante_check_produccion.md` — misma condición que A-01, no bloquea F0-F7, sí antes de F8.
 - **Decisiones cerradas no se re-discuten** (regla de OLA_7_ENTRADA). Cambio → escalar al Supervisor, nunca reabrir Ola 6.
 - **Nunca tocar `main`/`legacy-agnostic-backup`; ninguna escritura contra producción.** Todo contra `dev-local`.
 - **Frontera DIFERIDO (no se construye en Ola 7):** tienda F-04/F-05/F-06, KPIs P-32, testimonios P-33, facturación DIAN, `tareas_produccion` capa 2, firma digital.

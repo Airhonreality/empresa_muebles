@@ -1,0 +1,31 @@
+{
+  "id": "t-112",
+  "titulo": "Eslogan D1 — investigacion de metodologia (decision de Supervisor, no codigo)",
+  "intencion_negocio": "D1 (Eslogan) es la unica decision de marca abierta de la linea de demanda. Los tres candidatos ('Habita en el bienestar' / 'Disena tu espacio. Habita el bienestar' / 'Disenar con intencion. Vivir con diseno.') sugieren metodologias de investigacion distintas (bienestar/serenidad vs. diseno ejecutado vs. intencionalidad + vivencia), cada una con sus propios falsadores. Javier define que metodo quiere antes de elegir (semiotica, JTBD, mapping conceptual, etc.). No es un parametro operativo — es la palanca de marca. Va al registro de bloqueadores, no al plan de codigo.",
+  "zona": "arnes/lineas/demanda",
+  "tipo": "mutacion_arnes",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/lineas/demanda/plan_demanda.md (D1 en §2 Decisiones abiertas)",
+    "arnes/lineas/demanda/plan_estructura_sitio_publico.md (D1 bloquea F-01 hero)",
+    "arnes/tareas/t-112.json (este registro)"
+  ],
+  "criterios_aceptacion": [
+    "Javier define el metodo de investigacion que quiere (semiotica, JTBD, mapping conceptual, etc.)",
+    "El metodo elegido tiene falsadores declarados contra los 3 candidatos de eslogan",
+    "D1 no bloquea el arranque del Bloque A (medicion): el eslogan se necesita en Bloque C (corte del sitio) y F-01 (hero), no antes"
+  ],
+  "plan_ref": "arnes/lineas/demanda/plan_demanda.md D1",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "D1 es decision de marca del Supervisor, no tarea de codigo. Esta entrada del ledger existe para trazabilidad — registra que la decision esta pendiente y que metodologia la precede. No es bloqueante del Bloque A (medicion), si del Bloque C (corte del sitio)."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "cerrada_en": null
+}

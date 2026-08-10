@@ -6,8 +6,12 @@ import { NavItem } from '@/components/veta/nav-item';
 const navigation = [
   { href: '/', label: 'Inicio', desc: 'Hub PoC' },
   { href: '/landing', label: 'Landing', desc: 'Público / marca' },
-  { href: '/cotizador', label: 'Cotizador', desc: 'ERP comercial' },
-  { href: '/cronograma', label: 'Cronograma', desc: 'ERP operativo' },
+  { href: '/cotizador', label: 'Cotizador', desc: 'PoC D4' },
+  { href: '/cronograma', label: 'Cronograma', desc: 'PoC D4' },
+  { href: '/erp/comercial', label: 'ERP →', desc: 'Prototipo B1' },
+  { href: '/colecciones', label: 'Colecciones', desc: 'Tienda' },
+  { href: '/portafolio', label: 'Portafolio', desc: 'Proyectos' },
+  { href: '/cuenta', label: 'Mi cuenta', desc: 'Portal cliente' },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {

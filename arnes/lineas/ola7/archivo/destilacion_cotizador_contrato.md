@@ -1,5 +1,7 @@
 # Destilación del Cotizador Legacy (P-04) y Contrato Legacy (P-05)
 
+> **Este archivo es registro histórico** (`archivo/`). El kanban comercial fue rediseñado en POC-01 (2026-08-08): +columna Negociación, +columna Archivo (agrega perdida+cancelada), −columnas Entregado/Perdida/Cancelada. El diseño vigente está en `arnes/lineas/ola7/pantallas/disenio_p01_kanban_comercial.md`. Los hallazgos están en `arnes/lineas/ola7/tecnico/registro_hallazgos_poc4.md`.
+
 > Extraído de `C:\Users\javir\Documents\DEVs\empresa_muebles_clone\src\components\specialized\cotizador\` y kanban relacionado.
 > Mapeado contra nuevo schema: `lib/db/schema.ts` (26 tablas) + `lib/db/relations.ts`.
 

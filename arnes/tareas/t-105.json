@@ -1,0 +1,27 @@
+{
+  "id": "t-105",
+  "titulo": "F8: Schema hardening (deprecar rolEmpleado + 6 enums + fecha→timestamp)",
+  "intencion_negocio": "Eliminar el enum y columna rolEmpleado de schema V3 para que ningún código futuro pueda usarlo por error. La única ruta de identidad de negocio es persona_id → personas_roles. Añadir 6 enums de estado (estado_orden, estado_obligacion, estado_movimiento, estado_tarea, estado_pedido) en reemplazo de columnas text. Migrar movimientos_financieros.fecha de text a timestamp.",
+  "zona": "datos",
+  "tipo": "mutacion_arnes",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/db/schema.ts (eliminar enum rolEmpleado + columna usuarios.rolEmpleado; usuarios.persona_id NOT NULL; 6 enums nuevos; fecha→timestamp)",
+    "drizzle/ (migración generada por drizzle-kit)"
+  ],
+  "criterios_aceptacion": [
+    "npx tsc --noEmit → 0 errores",
+    "npx eslint . → 0 errores",
+    "npm run db:migrate contra dev-local sin errores",
+    "information_schema.columns en dev-local: sin columna rol_empleado en usuarios, persona_id IS NOT NULL, fecha tipo timestamp, 6 columnas estado con tipo USER-DEFINED",
+    "npm run db:generate → output vacío (sin drift)",
+    "grep -r 'rolEmpleado\\|rol_empleado' lib/ app/ scripts/ → 0 resultados"
+  ],
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_f8.md",
+  "estado": "creada",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "checkpoint": {
+    "requerido": false,
+    "nota": "Ejecución mecánica sin decisión de negocio. El diseño ya fue aprobado por el Supervisor en plan_f8.md."
+  }
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "test_001",
+    "proyecto_id": "proj_001",
+    "contenido": "Excelente trabajo. La cocina quedó exactamente como la imaginamos. El equipo de Veta de Oro fue muy profesional y atento en todo el proceso.",
+    "autor": "María González",
+    "publicado": true
+  },
+  {
+    "id": "test_002",
+    "proyecto_id": "proj_002",
+    "contenido": "El closet superó nuestras expectativas. La calidad de los materiales y el diseño son impecables. ¡Totalmente recomendados!",
+    "autor": "Carlos Pérez",
+    "publicado": true
+  },
+  {
+    "id": "test_003",
+    "proyecto_id": "proj_003",
+    "contenido": "El bar quedó increíble. El proceso fue transparente y el resultado final es espectacular. ¡Gracias por hacer realidad nuestro proyecto!",
+    "autor": "Laura Martínez",
+    "publicado": true
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "id": "t-109",
+  "titulo": "F9: QA documental — checklist de corte de la banda F0–F9",
+  "intencion_negocio": "Verificar que el paquete completo de diseño pre-código esté alineado y sin contradicciones. QA documental (no runtime): las 10 condiciones del gate de salida de ESTRUCTURA_OUTPUT_PRE_CODIGO.md §4, cruce REGISTRO↔schema.ts de las 27 tablas existentes, cobertura del glosario H07, completitud de artefactos de diseño. La QA de runtime (gates E2E, tests, trazabilidad, build completo) se difiere a F10 post-codificación.",
+  "zona": "arnes/",
+  "tipo": "verificacion",
+  "riesgo": "medio",
+  "archivos_afectados": [
+    "arnes/lineas/ola7/tecnico/plan_f9.md (este plan)",
+    "arnes/lineas/ola7/estado_ola7.md (registro de cierre F9)",
+    "arnes/estado.md (dashboard actualizado)",
+    "arnes/ESTRUCTURA_OUTPUT_PRE_CODIGO.md (registro de F10 diferido)"
+  ],
+  "criterios_aceptacion": [
+    "10/10 condiciones del checklist verificadas con evidencia mecánica (grep, ls, wc)",
+    "27/27 tablas existentes en schema.ts alineadas con REGISTRO_DE_ENTIDADES.md",
+    "47 tablas diferidas listadas explícitamente (sin sorpresas)",
+    "5/5 gates con predicado SQL documentado y referencia a artefacto",
+    "Glosario H07 cubre ≥36 entidades, ≥4 secciones de estado, ≥20 verbos, ≥7 params",
+    "tsc 0, eslint 0",
+    "Todos los artefactos de diseño listados en §3 existen en disco",
+    "17/18 pantallas con PLANTILLA_PANTALLA canónica (1 es decisión estructural D-2026-08-07-C)"
+  ],
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_f9.md",
+  "estado": "completada",
+  "completada_en": "2026-08-08T00:00:00Z",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "checkpoint": {
+    "requerido": true,
+    "nota": "Condición #10 aprobada por el Supervisor el 2026-08-08. Banda F0–F9 cerrada. F10 arranca.",
+    "veredicto": "APROBADO"
+  }
+}

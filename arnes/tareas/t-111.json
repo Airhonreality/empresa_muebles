@@ -1,0 +1,36 @@
+{
+  "id": "t-111",
+  "titulo": "Schema de leads para Bloque A (gclid, etapa, fecha_primer_contacto, FK a proyectos)",
+  "intencion_negocio": "Traducir H1-H3 en cambios explícitos de tabla en schema.ts. Agregaciones necesarias a leads: (1) gclid (Google Click ID) — vincula click de Ads a lead, el legacy lo tenia (inventario_legacy.md:52); (2) etapa (enum: contacto/visita_coordinada/visita_completada/propuesta/cierre/no_viable) — permite responder 'de 100 leads, cuantos llegaron a visita'; (3) fecha_primer_contacto (timestamp) — base de calculos de embudo; (4) FK a proyectos — linkea lead→venta cuando el lead cierra. Ademas: definir criterio de quien y cuando llena score_conversion (campo ya existe con default(0), nunca se toca — I-012 tiene el score 1-10 disenado). Verificacion: H1-H3 tocan datos reales. Requiere checkpoint explicito del Supervisor.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "maximo",
+  "archivos_afectados": [
+    "lib/db/schema.ts (tabla leads: +gclid, +etapa, +fecha_primer_contacto, +FK proyectos)",
+    "lib/modules/comercial/ (queries de lectura/escritura de leads con nuevos campos)",
+    "arnes/nucleo/REGISTRO_DE_ENTIDADES.md (actualizar fila leads)",
+    "arnes/lineas/demanda/plan_demanda.md (Bloque A items)"
+  ],
+  "criterios_aceptacion": [
+    "gclid existe en schema.ts como campo texto en tabla leads",
+    "etapa es un enum con los 6 valores declarados (contacto/visita_coordinada/visita_completada/propuesta/cierre/no_viable)",
+    "fecha_primer_contacto es timestamp en tabla leads",
+    "FK leads→proyectos existe (nullable, se llena al cerrar lead)",
+    "score_conversion tiene criterio documentado de quien lo llena, cuando y como (score 1-10 de I-012)",
+    "tsc 0, eslint 0 tras los cambios de schema",
+    "drizzle-kit generate produce migracion limpia (sin warnings)"
+  ],
+  "plan_ref": "arnes/lineas/demanda/plan_demanda.md §3 Bloque A",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "H1-H3 y H7 tocan el schema de datos, que AGENTS.md prohibe modificar sin checkpoint. Esta tarea requiere aprobacion explicita del Supervisor antes de ejecutar codigo. El diseno tecnico de gclid ya esta en d3_ui_b3_1_embudo_comercial.md:116 y el score 1-10 en I-012. Los campos adicionales no rompen el schema existente (son aditivos a leads)."
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "cerrada_en": null
+}

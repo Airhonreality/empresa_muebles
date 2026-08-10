@@ -30,6 +30,10 @@ Sigue `arnes/ARNES_AGENTICO.md` §2.C + Double Diamond (Design Council, 2005): D
 
 ### Flujo completo del negocio (líneas rojas = reprocesos/gaps reales, no hipotéticos)
 
+**Contrato vivo** (`proceso/ARNES_AGENTICO.md` §2.C) — si una decisión de esta sección cambia el flujo (nuevo gate, estado, reproceso), este diagrama se actualiza en el MISMO commit. Última sincronización: 2026-08-08 (incorpora I-034, I-025 rediseñado, D1, D3 — ver `nucleo/mini_diamante_check_produccion.md`).
+
+**Alcance (auditoría de calidad 2026-08-08, `nucleo/auditoria_calidad_mermaid.md`):** este mapa es *backstage* (qué pasa internamente) — no incluye la capa *frontstage*/cliente (qué ve y siente el cliente en cada paso, Service Blueprint, línea 566). Detalle técnico exacto de gates complejos (ratios, umbrales) vive en su propio mini-diamante, no acá — este diagrama prioriza velocidad de lectura sobre precisión exhaustiva (Axioma 1: son FRs distintas, no caben en el mismo DP).
+
 ```mermaid
 flowchart TD
     A[Lead llega: web/IG/TikTok/WhatsApp] --> B{¿Manda fotos y pide<br/>presupuesto ya?}
@@ -49,16 +53,25 @@ flowchart TD
     K --> L[Cotización formal]
     L --> M{Firma del contrato}
     M -.->|"⚠ no existe mecanismo<br/>de firma virtual hoy"| RED2[["GAP: firma sigue siendo<br/>manual/informal"]]
-    M --> N[Retoma de medidas<br/>comercial + desarrollador]
+    M --> M2[Se pregunta al cliente:<br/>¿viajes o situaciones externas? — I-024]
+    M2 --> N[Retoma de medidas<br/>comercial + desarrollador]
     N -.->|si hay anomalía| N2[Cambio de contrato<br/>flow organizado (I-027):<br/>adicional, cambio con impacto<br/>medible o costo al cliente]
     N --> O[Desarrollo técnico<br/>el más bloqueante]
-    O --> P{Check de schema<br/>pre-compras<br/>— no es reunión}
+    O --> P{Check de schema<br/>pre-compras — no es reunión<br/>mismo actor puede ejecutar+verificar}
     P -->|registrado en sistema| Q[Compras<br/>pago por prioridad:<br/>materiales → arriendos → nóminas]
-    Q -.->|"⚠ timing depende<br/>de flujo de caja"| RED3[["RIESGO: retraso en ventas<br/>retrasa TODO el proyecto"]]
-    Q --> Q2{Triple verificación<br/>de recepción:<br/>pedido+despacho+material}
+    Q --> Q1{¿Hay caja<br/>suficiente?}
+    Q1 -->|No — BLOQUEANTE| RED5[["GATE DE CAJA (D1):<br/>única variable EXTERNA real<br/>del flujo — gerente decide,<br/>mueve cronograma"]]
+    Q1 -->|Sí| Q2{Triple verificación<br/>de recepción:<br/>pedido+despacho+material}
     Q2 -->|1. compras hizo bien el pedido<br/>2. proveedor bien el despacho<br/>3. material verificado| R[Armado en taller]
-    R --> S[Citación de calidad<br/>push hacia Comercial<br/>otra persona, no quien construyó]
-    S --> T{Entrega + acta}
+    R --> R1{Check de producción ~15 días<br/>3 ratios vs. tamaño — detalle en<br/>mini_diamante_check_produccion.md}
+    R1 -->|Todo bien| R2[Adelanto — línea CONTRACTUAL avanza]
+    R1 -->|Novedad| R3[Pospone línea INTERNA I-034,<br/>comisión reducida]
+    R1 -->|Extremo| R4[["Máximo estrés —<br/>negociar con el cliente"]]
+    R2 --> S
+    R3 --> S
+    R4 --> S
+    S[Citación de calidad<br/>verificador único: el comercial<br/>vendedor del proyecto (D3)]
+    S --> T{"Entrega + acta — segundo contrato,<br/>momento de verdad"}
     T -.->|"⚠ el acta existe en el<br/>contrato pero nunca se hace"| RED4[["GAP: 100% informal hoy,<br/>se quiere 100% digital"]]
     T --> U[Cobro]
     U -.->|atraso| U2[Recordatorio manual<br/>+ 12 días de holgura]
@@ -66,8 +79,15 @@ flowchart TD
 
     classDef reproceso fill:#ffdddd,stroke:#cc0000,stroke-width:2px,color:#660000
     classDef gap fill:#fff3cd,stroke:#cc8800,stroke-width:2px,color:#664400
-    class RED1,RED2,RED3,RED4 reproceso
-    class Z1 gap
+    classDef positivo fill:#ddffdd,stroke:#009900,stroke-width:2px,color:#004400
+    classDef hito fill:#e0e7ff,stroke:#4338ca,stroke-width:2px,color:#312e81
+    class RED1,RED2,RED4,RED5 reproceso
+    class Z1,R4 gap
+    class R2 positivo
+    class T hito
+```
+
+**Rastreo de origen (D2, 2026-08-07):** cada reproceso marcado en rojo tiene un culpable causante que lo asume — proveedor, desarrollador o comercial según el origen, nunca se cruzan fronteras entre roles. No es un nodo aparte porque aplica transversalmente a RED1-5, no es un paso en la secuencia.
 ```
 
 ### Árbol de problemas — pago de diseño 3D no descontado
@@ -248,7 +268,7 @@ Javier propuso (a partir del punto 3): pagar diseñadores/comerciales como una a
 
 - **La promesa contractual de entrega es de 7 semanas, entregable antes** (I-024). El cliente firma sabiendo que espera 7 semanas; el colchón (7 > 6.5) cubre el estrés de producción. **Al cerrar el contrato se le pregunta al cliente si tiene viajes o situaciones externas** que puedan afectar el cronograma — se anticipan cambios del flow, incluso por parte del cliente.
 - **El cronograma es DOBLE (I-034):** la **línea interna de producción** (fila del taller) puede moverse sin avisar al cliente mientras la entrega caiga dentro de las 7 semanas; la **línea contractual al cliente** es fija e inmutable. El único cambio visible al cliente es el **positivo** (entrega antes); los deslizamientos internos nunca llegan al cliente dentro de la promesa.
-- **Check de los 15 días (I-025):** a los ~15 días se genera un **log real de producción** — (a) insumos en taller, (b) comprados o pagados, (c) proyectos en fila en el taller. Decisión con ese log: si el proyecto pasó el flow exitosamente y el taller no tiene novedades → **se insinúa al cliente posible instalación en los siguientes 15 días** (cambio predefinido y positivo, entrega antes de las 7 semanas); si no → el proyecto **pospone cronograma interno**, **las comisiones se reducen**, el cliente NO ve cambios, producción entra en estrés y entrega **3 semanas tarde — dentro de la promesa**; escenario extremo (máximo estrés sin entrega) → **negociar con el cliente**. *Si el cambio positivo no se hace internamente, es un mal indicador de producción.*
+- **Check de los 15 días (I-025) — rediseñado axiomáticamente el 2026-08-08, ver `nucleo/mini_diamante_check_produccion.md`:** a los ~15 días se miden **3 brechas independientes** — (a) insumos en taller (`bom_materiales` vs. `recepciones_material`), (b) pagos realizados (`ordenes_compra` esperadas vs. pagadas), (c) fila de producción (`modulos` esperados vs. armados) — y el desenlace se **deriva** del mínimo de las 3, ajustado por el tamaño del proyecto (no un umbral fijo en días). Si el mínimo ≥ 95% → **`todo_bien`**: se insinúa al cliente posible instalación en los siguientes 15 días (cambio predefinido y positivo, entrega antes de las 7 semanas), sin reducción de comisión. Si cae entre 70% y 95% → **`novedad`**: el proyecto pospone cronograma interno, comisión reducida 50%, el cliente NO ve cambios, entrega hasta 3 semanas tarde — dentro de la promesa. Si cae bajo 70% → **`extremo`**: máximo estrés, comisión reducida 100%, se negocia con el cliente. El verificador único puede anular la sugerencia con justificación registrada. *Si el cambio positivo no se hace internamente, es un mal indicador de producción.*
 
 El **cronograma nace en el contrato** con las fechas de cada etapa — **corregido por el Define (P5-09, aprobado 2026-08-03): aprobación (check de schema) → compras → ensamblaje → instalación** (el check de schema E-18 precede a las compras, no al revés). Base promedio por etapa: ~1 semana de desarrollo, ~1 semana de compras, ~1 semana de ensamblaje, ~1 semana de instalación.
 - Al cliente se le da un **rango de fecha de instalación de 5 días** en la semana programada.
@@ -267,6 +287,42 @@ El **cronograma nace en el contrato** con las fechas de cada etapa — **corregi
 **Estructura temporal de referencia:** el proyecto promedio = **2 ciclos de 15 días** (desarrollo+compras / ensamblaje+instalación) → 30 días ≈ **4 semanas ideal**. Hoy tarda 6.5 semanas.
 
 **Implicación de diseño (Parte II):** el sistema necesita un reloj de eventos por proyecto que (a) fije el cronograma en el contrato, (b) registre cada cambio como "interno vs. externo", (c) recalcule fechas automáticamente, (d) alimente el cálculo de comisiones. Es un motor pequeño, explícito, y es la capa 1 que sí se construye.
+
+### Reflexión CLASE vs INSTANCIA (Mini-Diamante Ficha Técnica, [POC/2026-08-09])
+
+> **CONTRATO VIVO** — esta reflexión aclara el desdoblamiento entre **ficha técnica de catálogo (CLASE)** y **artefactos de espacio (INSTANCIA)**, y cómo se integran sin acoplamiento.
+
+El negocio opera en **dos planos paralelos pero independientes:**
+
+1. **Plano CLASE (Catálogo):**
+   - **Qué es:** La **ficha técnica** de productos vendibles (bisagras, correderas, tableros, electrodomésticos referenciales). Define **lo posible**: dimensiones, peso, material, ficha del proveedor, campos dinámicos por tipo (ej: voltage para electrodomésticos).
+   - **Dueño:** `productos_atributos` (tabla 1:1 con `productos_catalogo`) + `marcas` + `campos_tecnicos_definicion`.
+   - **Comportamiento:** **Reutilizable**. Un mismo producto (ej: bisagra Blum 110°) puede usarse en N proyectos, con la misma ficha técnica.
+   - **Ejemplo:** "Tablero MDF 18mm" tiene `espesor=18`, `densidad=640 kg/m³`, `ficha_proveedor_url` de SivalTriplex.
+
+2. **Plano INSTANCIA (Espacio):**
+   - **Qué es:** Los **artefactos concretos** del espacio del cliente (impresora del cliente, cortina bloque, electrodoméstico existente). Captura **lo real**: medidas en sitio, ubicación, foto, validación.
+   - **Dueño:** `espacios_artefactos` (tabla vinculada a `espacio_variantes`).
+   - **Comportamiento:** **Único por proyecto**. Cada artefacto es específico de un espacio concreto (ej: la impresora del cliente en la cocina #123).
+   - **Ejemplo:** "Impresora HP del cliente" en proyecto #123, con `dimensiones_mm={ancho:400, alto:300, profundo:250}`, `ubicacion="encimera derecha"`, `foto_url`.
+
+**Regla de acoplamiento (Axioma Suh):**
+- **No duplicación:** La ficha técnica **NO se repite** en `espacios_artefactos`. Si un artefacto de espacio **es** un producto de catálogo (ej: el cliente ya tiene una bisagra Blum 110°), se referencia vía **FK NULLABLE** (`espacios_artefactos.artefacto_id` → `productos_catalogo.id`).
+- **Independencia económica:** El comportamiento del ítem de **CLASE** (precio, margen, stock) es **independiente** del de **INSTANCIA** (medidas, validación, impacto en diseño).
+- **Conexión opcional:** El FK nullable permite:
+  - **Casos con referencia:** Artefactos que son productos conocidos (ej: electrodoméstico de catálogo).
+  - **Casos sin referencia:** Artefactos únicos (ej: cortina bloque personalizada del cliente).
+
+**Impacto en el flujo:**
+- **Cotizador (P-04):** Usa `productos_atributos` (CLASE) para mostrar fichas técnicas de productos seleccionables.
+- **Retoma (P-07):** Usa `espacios_artefactos` (INSTANCIA) para registrar objetos bloqueantes del espacio.
+- **BOM (P-08):** Hereda dimensiones/peso de `productos_atributos` (CLASE) para cálculos de transporte o instalación.
+- **3D (F-08):** Parametriza modelos con dimensiones de `productos_atributos` (CLASE) o medidas de `espacios_artefactos` (INSTANCIA).
+
+**Decisión canónica [POC/2026-08-09]:**
+- **CLASE** y **INSTANCIA** son **dos conceptos distintos**, cada uno con su tabla dueña.
+- **No hay fusión:** No se intenta unificar en una sola tabla (violaría el axioma de independencia).
+- **Traza:** Ver `disenio_ficha_catalogo.md` y `REGISTRO_DE_ENTIDADES.md:50-53`.
 
 ### Capa 1 = control entre subsistemas (gates concretos, alcance mínimo del MVP)
 

@@ -10,4 +10,6 @@ Una línea nueva (ej. medición de Ads, RRHH, expansión) se abre así:
 6. **Si la línea necesita tocar `arnes/nucleo/`** (schema, lógica de negocio, vocabulario), lo propone ahí explícitamente — nunca duplica la entidad dentro de su propia carpeta.
 7. **Si la línea necesita insertar pantallas**, las entrega como determinantes (qué pantalla, por qué, qué requisitos) y cita `lineas/ola7/pantallas/` como destino — el diseño completo (`PLANTILLA_PANTALLA.md`, 7 secciones) lo escribe la línea técnica cuando le llegue el turno, no la línea que lo pide.
 
+**Los puntos 6 y 7 son condicionales, no obligatorios.** Existen porque `ola7` y `demanda` producen software o insumos para software — no es una propiedad de toda línea. Una línea de finanzas, legal, RRHH u operaciones puede cerrar su ciclo entero (estado + plan + decisión) sin tocar `nucleo/` ni pedir una pantalla nunca. Si tu línea no encaja en 6/7, simplemente no los uses — no fuerces un cambio de schema o una pantalla para que "cuente" como progreso.
+
 **No hace falta más ceremonia que esta.** Una línea no necesita su propio `roles/` ni su propio ledger — esos son compartidos (`arnes/roles/`, `arnes/tareas/`).

@@ -29,17 +29,17 @@ Salen de [`diagnostico_de_proceso.md`](../diagnostico/diagnostico_de_proceso.md)
 | **Arquetipo y tono** | El Creador Experto. Directo, elegante, sin jerga pretenciosa. Anti-posicionamiento: *no* estudio esnob, *no* muebles baratos, *no* CNC industrial masivo → **híbrido artesanal**. |
 | **Geografía** | **La decide el portafolio real, no una apuesta a priori.** Nada de páginas locales artificiales: se gana Chicó habiendo hecho una cocina en Chicó. Mientras tanto la pauta cubre lo que el portafolio todavía no. |
 | **Medición primero** | Prioridad cero, por convergencia independiente de dos análisis. |
+| **Precio del diseño 3D (D3)** | **$130.000 + DIAN por 2 espacios.** Descontable/deducible del anticipo vía sistema (E-30). Decisión 2026-08-08. |
+| **Capacidad real (D4)** | **Parámetro operativo en rango 1.25–2.5 proyectos/mes.** No es bloqueante de código ni corrige el mapa (el mapa usa 1.25 por estabilidad del ratio 4:1). Decisión 2026-08-08. |
+| **Audiencia (D2)** | **Híbrida — arquetipo "El Creador Experto".** No se elige una audiencia única; las tres escritas (familias / estratos premium norte / arquitectos y diseñadores) se sirven por pieza del embudo con el tono del arquetipo. Decisión 2026-08-08. |
+| **Geografía (D5)** | **Bogotá + servicios a municipios de sabana norte (Chía, Cajicá, Cota) con costo de viáticos adicional.** Decisión 2026-08-08. |
 | **Escrituras a Google Ads** | Ninguna (pujas, presupuestos, pausar) sin checkpoint explícito. Es plata real. |
 
 ## 2. Decisiones abiertas (bloquean solo lo que se indica)
 
 | # | Decisión | Bloquea |
 |---|---|---|
-| D1 | **Eslogan**: ¿"Habita en el bienestar" · "Diseña tu espacio. Habita el bienestar" · "Diseñar con intención. Vivir con diseño."? | Bloque C |
-| D2 | **Audiencia**: ¿familias/amas de casa · estratos premium del norte · arquitectos y diseñadores? Las tres están escritas. | Bloques D y E |
-| D3 | **Precio del diseño 3D** y por cuántos espacios ($100k/2 espacios · $130k+DIAN · $100k del contenido) | Bloque C |
-| D4 | **Capacidad real**: ¿1.25 o 2.3 proyectos/mes? El ratio 4:1 depende de esto | Nada de este plan; corrige el mapa (Parte I) |
-| D5 | **¿Solo Bogotá?** La pieza de Cajicá plantea servicio remoto como capacidad | Bloque D |
+| D1 | **Eslogan**: ~~¿"Habita en el bienestar" · "Diseña tu espacio. Habita el bienestar" · "Diseñar con intención. Vivir con diseño."?~~ **RESUELTA 2026-08-09.** "Diseña tu espacio. Habita el bienestar." (versión completa del `Tono de voz de marca.md`). | ~~Bloque C~~ Cerrada |
 
 ---
 
@@ -67,7 +67,7 @@ Salen de [`diagnostico_de_proceso.md`](../diagnostico/diagnostico_de_proceso.md)
 | Item | Ref |
 |---|---|
 | Conectar WhatsApp (`https://wa.me/57…`) | I-024 |
-| Llenar áreas de servicio (hoy vacías) | I-024, D5 |
+| Llenar áreas de servicio (Bogotá + Chía/Cajicá/Cota con viáticos, D5 resuelta) | I-024 |
 | Corregir categoría principal → fabricante, no "diseñador de interiores" | I-025 |
 | Reescribir descripción con copy aprobado · `Fecha de apertura` = **2014** | I-019, I-044 |
 | Cargar los 7 servicios (incluida restauración de pisos) | I-014 |
@@ -94,7 +94,7 @@ Salen de [`diagnostico_de_proceso.md`](../diagnostico/diagnostico_de_proceso.md)
 | Tokens Luz & Biofilia + reglas de UX/responsive | I-037, I-038 |
 | Mapa de 301 desde el Wix actual | I-015 |
 
-**Depende de:** A (para verificar que la conversión no se rompió) y D1/D3.
+**Depende de:** A (para verificar que la conversión no se rompió) y D1.
 **Después:** esperar **4-8 semanas de métricas estables** antes de mover el dominio. Secuenciar, no combinar.
 
 ---
@@ -109,7 +109,7 @@ Salen de [`diagnostico_de_proceso.md`](../diagnostico/diagnostico_de_proceso.md)
 
 Es el motor que resuelve cuatro cosas con un solo esfuerzo: **SEO local real, prueba social, contenido y portafolio.** Y es lo que convierte la geografía en consecuencia en vez de apuesta.
 
-**Depende de:** C · D2 · D5. **Regla:** el segundo proyecto no se publica hasta que el primero esté completo.
+**Depende de:** C. **Regla:** el segundo proyecto no se publica hasta que el primero esté completo.
 
 ---
 
@@ -155,5 +155,5 @@ Su Define ya aparcó tres bounded contexts esperando esta línea: **Marketing/De
 
 - **Creado:** 2026-08-03. Convergencia de `marco_estrategia_mercado.md` + `Fase paralela de mercados` + 52 insights del log.
 - **Bloque activo:** ninguno todavía — **arranca A (y B en paralelo) cuando el Supervisor apruebe.**
-- **Pendiente del Supervisor:** D1-D5, credenciales de solo lectura (Ads/GA4/Search Console), y checkpoint del schema para el Bloque A.
+- **Pendiente del Supervisor:** D1 (eslogan, ver t-112), credenciales de solo lectura de Ads/GA4/Search Console (ver instructivo t-110 [SOLO_HUMANO]), informe de sector, y checkpoint del schema para el Bloque A (ver t-111). D2-D5 cerradas 2026-08-08.
 - **Registro histórico** (no se decide desde ahí): `marco_estrategia_mercado.md`, `destilacion_docs_veta.md`, `Fase paralela de mercados 1.txt`.

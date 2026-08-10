@@ -1,0 +1,31 @@
+{
+  "id": "t-110",
+  "titulo": "Instructivo: Configurar Google Ads CLI [SOLO_HUMANO]",
+  "intencion_negocio": "Paso formal que Javier ejecuta (no agentes): (1) asociar cuenta admin a Google Ads, (2) cumplir protocolo Google para desbloquear 'Ads CLI control total', (3) generar token de desarrollador + OAuth, (4) compartir credenciales de solo lectura en archivo seguro (nunca versionado). Condicional: no se toca la cuenta de Ads hasta que Javier confirme — escribir pujas/pausar campañas es dinero real, mismo criterio que t-015. Resultado esperado: credenciales listas para que el agente pueda auditar estado real del embudo (Bloque A) y optimizar (Bloque F).",
+  "zona": "arnes/lineas/demanda",
+  "tipo": "integracion_externa",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "archivo seguro de credenciales Ads (nunca versionado, fuera del repo)",
+    "arnes/tareas/t-110.json (este registro)"
+  ],
+  "criterios_aceptacion": [
+    "Cuenta admin asociada a Google Ads verificable desde la consola de Google Ads",
+    "Token de desarrollador generado y activo (nivel acceso: solo lectura)",
+    "Credenciales OAuth funcionales y compartidas en archivo seguro fuera del repo",
+    "Condicional: NO se ejecuta ninguna escritura a la cuenta de Ads (pujas, presupuestos, pausar) sin confirmación explícita de Javier"
+  ],
+  "plan_ref": "arnes/lineas/demanda/plan_demanda.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null,
+    "nota": "[SOLO_HUMANO] — esta tarea la ejecuta Javier personalmente, no un agente. Las credenciales de solo lectura de Ads/GA4/Search Console desbloquean el Bloque A (medición) y el Bloque F (ad manager agentivo). Sin ellas el diagnóstico de embudo no puede arrancar."
+  },
+  "estado": "esperando_humano",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "cerrada_en": null
+}

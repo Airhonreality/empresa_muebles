@@ -100,7 +100,27 @@
 | **Equivalente en repo nuevo** | No |
 | **Recomendación** | **Preservar (adaptar)** — Es un patrón de UX de infraestructura de interfaz que aplica a cualquier campo monetario. Crear como primitiva en `components/veta/` o en `lib/` del repo nuevo. |
 
-### A.10 useSyncPulse (Polling-based Data Sync)
+### A.10 Detalles del Espacio — Patrón de Edición Inline (Transversal)
+
+| Campo | Detalle |
+|-------|---------|
+| **Nombre** | Espacio Details Inline Edit Pattern |
+| **Descripción** | Patrón UX para edición de campos "obvios" de una entidad (nombre, descripción, imágenes, colores, jornadas) directamente en el nivel superior del componente (header/card), sin requerir abrir un sub-formulario o modal. El control de edición es visible y descubrible: miniatura + specs + ícono lápiz en estado colapsado; formulario completo inline al expandir. Texto de ayuda persistente (no hover) en campos críticos. |
+| **Ubicación actual** | `app/erp/cotizador/[proyectoId]/page.tsx` → `VarianteContenido` (botón con miniatura + specs + ícono lápiz, líneas 760-820) y `FormDetallesEspacio` (formulario inline expandido, líneas 1280-1385) |
+| **Equivalente en repo nuevo** | Sí — implementado en B1 (POC-15/POC-16) |
+| **Recomendación** | **Preservar y generalizar** — Este patrón DEBE aplicarse a todas las pantallas F10 (B2 en adelante): Cronograma, Compras, Taller, Calidad, Entrega, Finanzas, Sitio Público. `checklist_progreso_pantallas.md` §3 puntos 8-9 exige que el diseño lo diga antes de codificar. Regla: todo campo "obvio" (nombre, estado, cantidad, descripción) se edita inline en header/card, sin excavar. |
+
+### A.11 ImagePicker Canónico (Transversal)
+
+| Campo | Detalle |
+|-------|---------|
+| **Nombre** | ImagePicker — Selector de Imagen Unificado |
+| **Descripción** | Primitiva `components/veta/image-picker.tsx` que soporta: miniaturas, drag & drop, paste desde portapapeles, URL, `multiple={true/false}`. 0 dependencias nuevas. Reemplaza cualquier `<input type="text" placeholder="https://...">` para imágenes. |
+| **Ubicación actual** | `components/veta/image-picker.tsx` — usado en `FormDetallesEspacio` (3 instancias), `FormArtefacto`, `FormArtefactoEdicion` |
+| **Equivalente en repo nuevo** | Sí — implementado en B1 (POC-15/POC-16) |
+| **Recomendación** | **Obligatorio** — `checklist_progreso_pantallas.md` §3 punto 11: "Todo input de imagen usa `components/veta/image-picker.tsx`". Nunca un input de URL crudo nuevo. |
+
+### A.12 useSyncPulse (Polling-based Data Sync)
 
 | Campo | Detalle |
 |-------|---------|
@@ -207,11 +227,13 @@
 | 7 | **MoneyInput Pattern** | `components/veta/` o `lib/` | Usar en cualquier campo de entrada monetaria. Mostrar formato COP en blur, valor numérico en focus. |
 | 8 | **Design Token System** | `app/globals.css` (`@theme`) | No modificar sin aprobación del Supervisor. Todos los componentes de UI deben usar tokens, no literales. |
 | 9 | **Component Primitives (veta/)** | `components/veta/` | Añadir nuevas primitivas siguiendo el mismo patrón: tokens de diseño, variantes controladas, accesibilidad. |
-| 10 | **Drizzle Schema** | `lib/db/schema.ts` | No modificar sin aprobación del Supervisor. Todas las tablas usan UUID PK, `foreignKey`, `unique`, `check`. |
-| 11 | **Drizzle Relations** | `lib/db/relations.ts` | No modificar sin aprobación del Supervisor. Cada FK tiene su relación con nombre explícito. |
-| 12 | **App Router Client Pages** | `app/*/page.tsx` con `"use client"` | Usar `"use client"` solo para páginas interactivas. Páginas de solo lectura usar server components. |
-| 13 | **Suspense Boundaries** | `app/*/page.tsx` | Usar `<Suspense>` alrededor de componentes que usen `useSearchParams()` o que consulten datos. Requerido para prerenderización estática. |
-| 14 | **Loading State Pattern** | En cada componente que cargue datos | Usar `loading` booleano + estado de error. Combinar con Suspense para server components. |
+| 10 | **Detalles del Espacio — Edición Inline** | `components/veta/` o patrón en cada pantalla | **Transversal (F10 B2+):** Todo campo "obvio" (nombre, descripción, imágenes, colores, jornadas) se edita inline en header/card. Miniatura + specs + ícono lápiz en colapsado; formulario inline al expandir. Ayuda persistente. `checklist_progreso_pantallas.md` §3 pts 8-9. |
+| 11 | **ImagePicker Canónico** | `components/veta/image-picker.tsx` | **Obligatorio (F10 B1+):** Todo input de imagen usa este primitivo. Soporta `multiple`, miniaturas, drag/paste/URL. `checklist_progreso_pantallas.md` §3 pt 11. |
+| 12 | **Drizzle Schema** | `lib/db/schema.ts` | No modificar sin aprobación del Supervisor. Todas las tablas usan UUID PK, `foreignKey`, `unique`, `check`. |
+| 13 | **Drizzle Relations** | `lib/db/relations.ts` | No modificar sin aprobación del Supervisor. Cada FK tiene su relación con nombre explícito. |
+| 14 | **App Router Client Pages** | `app/*/page.tsx` con `"use client"` | Usar `"use client"` solo para páginas interactivas. Páginas de solo lectura usar server components. |
+| 15 | **Suspense Boundaries** | `app/*/page.tsx` | Usar `<Suspense>` alrededor de componentes que usen `useSearchParams()` o que consulten datos. Requerido para prerenderización estática. |
+| 16 | **Loading State Pattern** | En cada componente que cargue datos | Usar `loading` booleano + estado de error. Combinar con Suspense para server components. |
 
 ### B.2 Dependencias entre Patrones
 

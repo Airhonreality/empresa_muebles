@@ -1,0 +1,42 @@
+{
+  "id": "t-104",
+  "titulo": "Rediseño axiomático de check_produccion (schema + 3 documentos madre)",
+  "intencion_negocio": "Al auditar el mermaid de logica_de_negocio.md se encontró que REGISTRO_DE_ENTIDADES.md decía que el desenlace 'extremo' del check de los 15 días reducía comisiones, mientras que logica_de_negocio.md y glosario_h07.md decían que era 'novedad'. El Supervisor, aplicando Axiomatic Design (Suh), diagnosticó la causa raíz: check_produccion viola el Axioma de Independencia (3 dimensiones evaluadas — insumos/pagos/fila de producción — colapsadas en 1 umbral, y solo 1 de las 3 tiene campo propio en el schema) y el Axioma de Información (umbral en días absolutos, no ajustado por tamaño del proyecto, pese a que el sistema ya calcula un factor de tamaño en otro lado). La inconsistencia entre documentos era síntoma, no la enfermedad. Se rediseñó el gate completo: 3 ratios medidos independientemente desde tablas ya existentes (bom_materiales/recepciones_material, ordenes_compra, modulos/cronograma_etapas) + una función de clasificación ajustada por estimaciones.factor_crecimiento + decisión humana con override auditable.",
+  "zona": "arnes/nucleo/ + arnes/lineas/ola7/pantallas/",
+  "tipo": "mutacion_arnes",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/nucleo/mini_diamante_check_produccion.md (nuevo, el diseño completo FR-DP)",
+    "arnes/nucleo/plan_actualizacion_diagrama.md (marcado SUPERADO, regla de sucesión)",
+    "arnes/nucleo/REGISTRO_DE_ENTIDADES.md (§5, tabla check_produccion + 4 parámetros nuevos)",
+    "arnes/nucleo/glosario_h07.md (B.16, regla derivada en vez de 2 afirmaciones sueltas)",
+    "arnes/lineas/ola7/pantallas/disenio_f3_cronograma_gates.md (P-11, 3 medidores + override)",
+    "arnes/nucleo/logica_de_negocio.md (prosa del check de 15 días + diagrama mermaid: clasificación contrato vivo, nodos Q1/RED5 gate de caja, R1/R2/R3/R4 check de producción, relabel de S)"
+  ],
+  "criterios_aceptacion": [
+    "grep 'novedad' y grep 'extremo' en REGISTRO_DE_ENTIDADES.md, glosario_h07.md y logica_de_negocio.md devuelven la MISMA regla de reducción de comisión (novedad -50%, extremo -100%) en los 3 archivos",
+    "el diagrama mermaid tiene el bloque de clasificación 'Contrato vivo' visible arriba, con fecha de última sincronización",
+    "las 3 dimensiones (insumos, pagos, fila de producción) tienen mención explícita como ratios independientes en REGISTRO_DE_ENTIDADES.md, no colapsadas en 1 campo",
+    "no queda ninguna mención de 'umbral_novedad_check15'/'umbral_novedad_check' como el mecanismo de clasificación vigente (queda solo como referencia histórica del rename)"
+  ],
+  "plan_ref": "arnes/nucleo/mini_diamante_check_produccion.md",
+  "ejecutor": "claude (sesión interactiva)",
+  "verificador": "claude (misma sesión, grep cruzado de los 3 documentos) + Javier (Supervisor: propuso el diagnóstico axiomático, aprobó explícitamente 'rediseñar de verdad ahora' antes de ejecutar)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "grep -n 'novedad\\|extremo\\|comision' sobre los 3 documentos madre, comparación manual de coherencia"
+    ],
+    "salida_cruda": "novedad -50%: 3/3 archivos coinciden (glosario_h07.md:230, logica_de_negocio.md:65 y :266). extremo -100%: 3/3 archivos coinciden (glosario_h07.md:231, logica_de_negocio.md:66 y :266). umbral_novedad_check15: 0 apariciones como mecanismo vigente en zona LIVE fuera de referencias históricas (estado_ola7.md narrativa pasada) y de la nota de deprecación explícita en mini_diamante_check_produccion.md. Hallazgo adicional durante la verificación: plan_ola7_maestro.md §4 (A-01) todavía listaba el parámetro deprecado como pendiente de confirmación del contador — corregido en el mismo pase (A-02 nueva, separa los 4 parámetros nuevos del check).",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-08-08"
+  },
+  "estado": "cerrada",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "cerrada_en": "2026-08-08T00:00:00Z",
+  "nota": "Los 2 umbrales de clasificación (0.95/0.70) y los 2 porcentajes de reducción de comisión (-50%/-100%) son estimados v1, mismo criterio que el resto de parametros del sistema (comisión 5%, tarifa carpintero 15k, etc.) — quedan explícitamente marcados como pendientes de confirmación de magnitud exacta por el Supervisor, no como decisión de negocio cerrada. La arquitectura (3 DPs independientes + función ajustada por tamaño) sí es la decisión cerrada."
+}

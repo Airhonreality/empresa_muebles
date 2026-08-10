@@ -41,7 +41,7 @@ El modelo no se instala — ya viene con la herramienta de IA que uses. Lo que s
 
 ### 2.C Mapeo de dominio antes de un módulo nuevo (Event Storming)
 
-**Antes de que el Iniciador escriba un plan de schema o UI para un módulo/contexto que no existía, se mapea el flujo real de negocio primero.** Auditar un módulo que ya existe hereda los supuestos con los que se construyó — si esos supuestos estaban mal, el schema derivado hereda el error (ver el caso real de prefabricados-vs-catálogo mezclados sin claridad, resuelto recién cuando se entendió que un prefabricado ES un proyecto). Partir de la lógica de negocio, no del código existente, es lo que evita ese arrastre.
+**Antes de que el Iniciador escriba un plan de schema o UI para un módulo/contexto que no existía, se mapea el flujo real de negocio primero.** Auditar un módulo que ya existe hereda los supuestos con los que se construyó — si esos supuestos estaban mal, el schema derivado hereda el error (patrón real observado: dos conceptos que el negocio trataba como entidades separadas resultaron ser el mismo concepto visto en dos momentos de su ciclo de vida, y el schema solo lo reflejó bien cuando se entendió el negocio primero, no antes). Partir de la lógica de negocio, no del código existente, es lo que evita ese arrastre.
 
 **Método: Domain-Driven Design (Eric Evans, 2003) vía Event Storming (Alberto Brandolini, 2013).** En una empresa real esto se hace en un taller con quienes hacen el trabajo día a día, no solo con el dueño. Sin esa disponibilidad, se adapta como conversación guiada con el experto de dominio disponible (el humano), evento por evento, hasta reconstruir el flujo completo:
 

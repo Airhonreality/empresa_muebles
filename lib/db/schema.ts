@@ -2,7 +2,7 @@ import { pgTable, uuid, text, integer, timestamp, foreignKey, unique, numeric, b
 import { sql } from "drizzle-orm"
 
 export const estadoContrato = pgEnum("estado_contrato", ['borrador', 'firmado'])
-export const estadoProyecto = pgEnum("estado_proyecto", ['activa', 'enviada', 'en_contrato', 'pre_produccion', 'produccion', 'entregado', 'perdida', 'cancelada'])
+export const estadoProyecto = pgEnum("estado_proyecto", ['activa', 'enviada', 'en_contrato', 'pre_produccion', 'produccion', 'entregado', 'perdida', 'cancelada', 'retoma'])
 export const rolEmpleado = pgEnum("rol_empleado", ['admin', 'comercial', 'desarrollador', 'compras', 'taller', 'finanzas', 'supervisora_qa'])
 export const tipoHitoPago = pgEnum("tipo_hito_pago", ['percentage', 'fixed'])
 export const tipoProyecto = pgEnum("tipo_proyecto", ['personalizado', 'producto_fijo'])
@@ -88,7 +88,6 @@ export const espacioVariantes = pgTable("espacio_variantes", {
 	nombreEspacio: text("nombre_espacio").notNull(),
 	nombreVariante: text("nombre_variante").default('Inicial'),
 	descripcion: text(),
-	descripcionAlternativa: text("descripcion_alternativa"),
 	activa: boolean().default(false).notNull(),
 	visiblePdf: boolean("visible_pdf").default(true).notNull(),
 	orden: integer().default(0),
@@ -96,6 +95,9 @@ export const espacioVariantes = pgTable("espacio_variantes", {
 	jornadasEnsamblajeTaller: numeric("jornadas_ensamblaje_taller", { precision: 8, scale:  2 }).default('0'),
 	jornadasInstalacionObra: numeric("jornadas_instalacion_obra", { precision: 8, scale:  2 }).default('0'),
 	colores: jsonb().default([]),
+	fotosEspacio: jsonb().default([]),
+	fotosDisenio: jsonb().default([]),
+	fotosReferencia: jsonb().default([]),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {
@@ -467,6 +469,29 @@ export const proyectos = pgTable("proyectos", {
 			columns: [table.comercialId],
 			foreignColumns: [personas.id],
 			name: "proyectos_comercial_id_personas_id_fk"
+		}),
+	}
+});
+
+export const proyectosEstadosHistorial = pgTable("proyectos_estados_historial", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	proyectoId: uuid("proyecto_id").references(() => proyectos.id).notNull(),
+	estadoAnterior: estadoProyecto().notNull(),
+	estadoNuevo: estadoProyecto().notNull(),
+	cambiadoPor: uuid("cambiado_por").references(() => personas.id),
+	razon: text("razon"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		proyectosEstadosHistorialProyectoIdFk: foreignKey({
+			columns: [table.proyectoId],
+			foreignColumns: [proyectos.id],
+			name: "proyectos_estados_historial_proyecto_id_fk"
+		}),
+		proyectosEstadosHistorialCambiadoPorFk: foreignKey({
+			columns: [table.cambiadoPor],
+			foreignColumns: [personas.id],
+			name: "proyectos_estados_historial_cambiado_por_fk"
 		}),
 	}
 });

@@ -1,299 +1,152 @@
-# Diseño de Pantalla P-02 — Nueva Cotización / Proyecto (Veta de Oro)
+# P-02 — Nueva Cotización / Proyecto
 
-**Fecha:** 2026-08-05
-**Estado:** Propuesta para aprobación del Supervisor
-**Dependencias:** P-01 aprobado, decisiones C1-C4, M-06 L1
-**Artefactos base:** `disenio_p01_kanban_comercial.md`, `destilacion_cotizador_contrato.md`, `glosario_h07.md`
+**Fecha:** 2026-08-05 · **Estado:** propuesta · **Fase:** F2 · **Ruta:** `/app/erp/comercial/nuevo` · **Roles:** `admin`, `comercial`
 
 ---
 
-## 1. Visión General
+## 1. Entidades que consume
 
-P-02 es el **modal de creación de proyecto** que se abre desde:
-- Botón `[Nuevo +]` en header del Kanban (P-01)
-- Botón `[+ Añadir Lead]` en columna `activa` del Kanban
+*Cita del REGISTRO DE ENTIDADES (`arnes/nucleo/REGISTRO_DE_ENTIDADES.md`). No redefinas schemas aquí.*
 
-Crea un proyecto en estado `activa` (draft) y redirige al cotizador (P-04) para continuar editando.
-
-**Estructura:** Modal centrado, responsive, `"use client"`.
-
-**Patrones técnicos (M-06 L1):**
-- `useSmartSearch` (HybridClientSelector — búsqueda clientes + crear on-the-fly)
-- `useDebounce` (búsqueda cliente, 300ms)
-- `COP` formatter + `MoneyInput` (si se añaden costos iniciales)
-- Design tokens + primitivas `components/veta/` (Modal, Input, Select, Button, Combobox)
-
----
-
-## 2. Layout del Modal
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  Nueva Cotización / Proyecto                            [×]   │
-├────────────────────────────────────────────────────────────────┤
-│                                                                │
-│  ┌─ DATOS BÁSICOS ──────────────────────────────────────────┐ │
-│  │                                                          │ │
-│  │  Nombre del proyecto *                                   │ │
-│  │  [________________________________________________]      │ │
-│  │  💡 Ej: "Cocina Integral Casa López"                     │ │
-│  │                                                          │ │
-│  │  Cliente *                                               │ │
-│  │  [HybridClientSelector ▼]                    [+ Nuevo]  │ │
-│  │     ┌─ Buscar cliente...                                 │ │
-│  │     │ 👤 María López (310 555 0123)  ← reciente         │ │
-│  │     │ 👤 Carlos Ruiz (320 444 1122)  ← frecuente        │ │
-│  │     │ 👤 Ana Torres (300 777 8899)                       │ │
-│  │     │ ────────────────────────                          │ │
-│  │     │ [Crear nuevo cliente]                              │ │
-│  │     └────────────────────────                            │ │
-│  │                                                          │ │
-│  │  Tipo de proyecto *                                      │ │
-│  │  [▼ proyecto_a_medida ▼]                                 │ │
-│  │     proyecto_a_medida   — Cocinas, closets, muebles a medida │
-│  │     producto_fijo       — Prefabricados catálogo (tipo producto) │
-│  │     servicio_tecnico    — Visita, medición, diseño 3D sin fabricación │
-│  │                                                          │ │
-│  └──────────────────────────────────────────────────────────┘ │
-│                                                                │
-│  ┌─ UBICACIÓN Y ENTREGA ────────────────────────────────────┐ │
-│  │                                                          │ │
-│  │  Dirección de obra *                                     │ │
-│  │  [________________________________________________]      │ │
-│  │  💡 Calle, número, barrio, ciudad, referencia           │ │
-│  │                                                          │ │
-│  │  Fecha estimada de entrega                               │ │
-│  │  [DatePicker ____________________]  (opcional)          │ │
-│  │                                                          │ │
-│  └──────────────────────────────────────────────────────────┘ │
-│                                                                │
-│  ┌─ CONFIGURACIÓN INICIAL (opcional) ───────────────────────┐ │
-│  │  ☑ Aplicar plantilla de costos estándar                   │ │
-│  │     Costos operativos: [MoneyInput $500.000]              │ │
-│  │     Imprevistos instalación: [MoneyInput $0]              │ │
-│  │     Descuento comercial: [MoneyInput $0]                  │ │
-│  │     Ajuste arbitrario: [MoneyInput $0]                    │ │
-│  │     IVA: [☑] 19%                                          │ │
-│  │     Garantía: [2] años                                    │ │
-│  │                                                          │ │
-│  │  ℹ Se pueden ajustar luego en el cotizador (P-04)        │ │
-│  └──────────────────────────────────────────────────────────┘ │
-│                                                                │
-│  ──────────────────────────────────────────────────────────── │
-│                                                                │
-│  Estado inicial:  🟡 Activa  (fijo si viene de columna Kanban) │
-│  Comercial asignado:  [Usuario actual]  (auto, editable admin)│
-│                                                                │
-│  ──────────────────────────────────────────────────────────── │
-│                                                                │
-│  [Cancelar]                                    [Crear y abrir] │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 3. Componentes Detallados
-
-### 3.1 HybridClientSelector (Reutilizable — M-06 L1)
-
-**Comportamiento idéntico al legacy `HybridClientSelector` + `useSmartSearch`:**
-
-```
-┌─────────────────────────────────────────┐
-│  [Buscar cliente...              ▼]     │
-├─────────────────────────────────────────┤
-│  👤 María López (310 555 0123)          │  ← Recientes (localStorage)
-│  👤 Carlos Ruiz (320 444 1122)          │  ← Frecuentes (localStorage)
-│  👤 Ana Torres (300 777 8899)           │  ← Matches fuzzy (Levenshtein)
-│  ─────────────────────────────────────  │
-│  [+ Crear nuevo cliente]                │  ← Abre CrearClienteModal
-└─────────────────────────────────────────┘
-```
-
-**Crear nuevo cliente (modal anidado):**
-```
-┌─────────────────────────────────────────┐
-│  Nuevo Cliente                      [×] │
-├─────────────────────────────────────────┤
-│  Nombre *          [________________]   │
-│  Documento         [________________]   │
-│  Teléfono *        [________________]   │
-│  Email             [________________]   │
-│  Dirección         [________________]   │
-│  Barrio            [________________]   │
-│  Ciudad            [Bogotá ▼]           │
-│  ─────────────────────────────────────  │
-│  [Cancelar]            [Guardar]        │
-└─────────────────────────────────────────┘
-```
-- `POST /api/erp/clientes` → retorna cliente creado → auto-selecciona en selector padre.
-
----
-
-### 3.2 Select Tipo Proyecto
-
-| Value | Label | Descripción | Comportamiento |
+| Entidad | § del REGISTRO | Columnas usadas | Uso en esta pantalla |
 |---|---|---|---|
-| `proyecto_a_medida` | **Proyecto a medida** | Cocinas, closets, muebles a medida | Crea espacios/variantes vacíos en P-04 |
-| `producto_fijo` | **Producto fijo (prefabricado)** | Ítem de catálogo publicado | Crea 1 espacio = producto, vínculo `proyecto_origen_id` |
-| `servicio_tecnico` | **Servicio técnico** | Visita, medición, diseño 3D sin fabricación | No crea espacios, solo visita + diseño |
+| `proyectos` | §3 Comercial | id, estado, nombre_proyecto, cliente_id, direccion_obra, tipo_proyecto, fecha_entrega_estimada, costos_operativos, imprevistos_instalacion, descuento_comercial, ajuste_arbitrario, aplica_iva, porcentaje_iva, garantia_anios, comercial_id | POST: creación de proyecto con estado inicial `activa` |
+| `clientes` | §3 Comercial | id, nombre, documento, telefono, email, direccion, barrio, ciudad | HybridClientSelector (búsqueda fuzzy + crear on-the-fly) |
+| `personas` | §1 Cimientos F0 | id, nombre | Asignación de `comercial_id` (usuario actual o admin override) |
+| `eventos` | §1 Cimientos F0 | tipo_evento, contexto, actor_id, proyecto_id | Registro `proyecto_creado` (E-XX) al crear proyecto |
+| `espacio_variantes` | §3 Comercial | nombre_espacio, activa, visible_pdf, proyecto_origen_id | Auto-creación 1 espacio si `tipo_proyecto = 'servicio_tecnico'` es de P-27 (no se crea desde el flujo comercial) |
+| `citas` | §3 Comercial | tipo, proyecto_id | Auto-creación 1 cita `visita_tecnica` si `tipo_proyecto = 'servicio_tecnico'` |
+
+> **POC-12:** el tipo `producto_fijo` NO se ofrece en esta pantalla. Crear un producto fijo es responsabilidad del área diseño-desarrollo en **P-27 Catálogo** (`disenio_p27_catalogo_diseno_desarrollo.md`). El comercial crea proyectos `personalizado` / `servicio_tecnico` y consume el catálogo existente.
 
 ---
 
-### 3.3 Configuración Inicial (Opcional — Checkbox)
+## 2. Estados que transiciona
 
-**Por defecto:** Checkbox **desmarcado** → crea proyecto con ceros en costos, IVA=19%, garantía=2 años.
+*Cita los estados del REGISTRO DE ENTIDADES y del glosario H07.*
 
-**Si marcado:** Muestra campos editables (todos `useAutoSave` NO — solo valores iniciales para el `POST`):
+| Estado origen | Acción del usuario | Estado destino | Gate / evento | Validación |
+|---|---|---|---|---|
+| — (creación) | "Crear y abrir" | `activa` | E-XX `proyecto_creado` | `nombre_proyecto` requerido, `cliente_id` existe, `comercial_id` válido |
 
-| Campo | Tipo | Default | Validación |
+---
+
+## 3. Vocabulario H07 (labels visibles)
+
+*Cita del `glosario_h07.md`. Todo label de UI sale de aquí.*
+
+| Label natural | Código interno | Entidad.campo |
+|---|---|---|
+| "Activa" | `activa` | `proyectos.estado` |
+| "Proyecto a medida" | `proyecto_a_medida` | `proyectos.tipo_proyecto` |
+| "Servicio técnico" | `servicio_tecnico` | `proyectos.tipo_proyecto` |
+| "Nueva Cotización / Proyecto" | — | — (título del modal) |
+| "Nombre del proyecto" | `nombre_proyecto` | `proyectos.nombre_proyecto` |
+| "Cliente" | `cliente_id` | `proyectos.cliente_id` → `clientes` |
+| "Tipo de proyecto" | `tipo_proyecto` | `proyectos.tipo_proyecto` |
+| "Dirección de obra" | `direccion_obra` | `proyectos.direccion_obra` |
+| "Fecha estimada de entrega" | `fecha_entrega_estimada` | `proyectos.fecha_entrega_estimada` |
+| "Costos operativos" | `costos_operativos` | `proyectos.costos_operativos` |
+| "Imprevistos instalación" | `imprevistos_instalacion` | `proyectos.imprevistos_instalacion` |
+| "Descuento comercial" | `descuento_comercial` | `proyectos.descuento_comercial` |
+| "Ajuste arbitrario" | `ajuste_arbitrario` | `proyectos.ajuste_arbitrario` |
+| "IVA" | `aplica_iva` / `porcentaje_iva` | `proyectos.aplica_iva`, `proyectos.porcentaje_iva` |
+| "Garantía" | `garantia_anios` | `proyectos.garantia_anios` |
+| "Crear y abrir" | — | — (botón submit) |
+| "Cancelar" | — | — (botón cierre) |
+| "Nuevo Cliente" | — | — (título modal anidado) |
+
+---
+
+## 4. Reglas de negocio
+
+| # | Regla | Validación | Verificación mecánica |
 |---|---|---|---|
-| Costos operativos | MoneyInput | 500.000 | ≥ 0 |
-| Imprevistos instalación | MoneyInput | 0 | ≥ 0 |
-| Descuento comercial | MoneyInput | 0 | ≥ 0 |
-| Ajuste arbitrario | MoneyInput | 0 | (negativo permitido) |
-| IVA aplica | Checkbox | true | — |
-| % IVA | Number | 19 | 0-100 |
-| Garantía años | Number | 2 | 1-10 |
-
-**Rationale:** El comercial puede pre-cargar costos típicos si ya los conoce, pero no es obligatorio. P-04 permite editar todo después.
+| R1 | `nombre_proyecto` requerido | Client + Server | Test: POST sin `nombre_proyecto` → 400 "El nombre del proyecto es obligatorio" |
+| R2 | `cliente_id` requerido y debe existir en `clientes` | Client + Server | Test: POST con `cliente_id` inexistente → 400 "Cliente no encontrado" |
+| R3 | `direccion_obra` requerida | Client + Server | Test: POST sin `direccion_obra` → 400 "La dirección de obra es obligatoria" |
+| R4 | `comercial_id` debe ser usuario actual o admin | Server | Test: POST con `comercial_id` de otro usuario sin rol admin → 403 |
+| R5 | `tipo_proyecto` debe ser valor válido del enum de creación comercial (`proyecto_a_medida`, `servicio_tecnico`). `producto_fijo` NO se ofrece aquí (POC-12) | Server (enum) | Test: POST con `tipo_proyecto='invalido'` → 400 "Tipo de proyecto inválido" |
+| R6 | Costos (`costos_operativos`, `imprevistos_instalacion`, `descuento_comercial`) ≥ 0 | Client (MoneyInput min=0) + Server | Test: MoneyInput rechaza valor negativo; POST con valor negativo → 400 |
+| R7 | `ajuste_arbitrario` permite negativo | — | Test: POST con ajuste negativo → OK |
+| R8 | `porcentaje_iva` entre 0 y 100 | Client + Server | Test: POST con `porcentaje_iva=101` → 400 "Porcentaje IVA inválido" |
+| R9 | `garantia_anios` entre 1 y 10 | Client + Server | Test: POST con `garantia_anios=0` → 400 "Garantía inválida" |
+| R10 | Si `tipo_proyecto = 'servicio_tecnico'`, auto-crear 1 `cita` tipo `visita_tecnica` | Server, en misma transacción | Test: crear proyecto `servicio_tecnico` → 1 row en `citas` con FK correcta |
+| R11 | Si `tipo_proyecto = 'proyecto_a_medida'`, no crear espacios ni citas (se crean en P-04) | Server | Test: crear proyecto `proyecto_a_medida` → 0 rows en `espacio_variantes`, 0 en `citas` |
+| R12 | Configuración inicial es opcional: checkbox desmarcado por defecto → valores default (costos=0, IVA=19%, garantía=2) | Client | Test: formulario sin marcar checkbox → POST con defaults |
+| R13 | Registrar `eventos` con `tipo_evento='proyecto_creado'`, `contexto='proyectos'`, `actor_id=currentUser` al crear | Server, en misma transacción | Test: POST exitoso → 1 row en `eventos` con tipo correcto |
 
 ---
 
-### 3.4 Estado Inicial + Comercial Asignado
+## 5. Componentes UI
 
-| Campo | Valor | Editable |
+| Componente | Tipo | Props | Entidad asociada | Tokens D4 |
+|---|---|---|---|---|
+| `NuevoProyectoModal` | Client (`"use client"`) | `onClose: () => void, estadoPreSeleccionado?: string` | `proyectos`, `clientes` | Modal (`--color-primary`, `Fraunces`), centrado, responsive (max-w-md mobile, max-w-lg desktop) |
+| `HybridClientSelector` | Client (reutilizable M-06 L1) | `onSelect: (cliente) => void, onCreateNew: () => void` | `clientes` | Combobox (`--radius-md`), `--focus-ring`, `Fraunces` |
+| `CrearClienteModal` | Client (anidado en modal padre) | `onCreated: (cliente) => void, onClose: () => void` | `clientes` | Modal anidado, `--color-primary`, `Fraunces` |
+| `SelectTipoProyecto` | Client | `value: TipoProyecto, onChange: (v) => void` | `proyectos.tipo_proyecto` | Select primitiva (`--radius-md`), `--focus-ring` |
+| `DatePicker` | Client | `value: Date \| null, onChange: (d) => void` | `proyectos.fecha_entrega_estimada` | Input primitiva, `--radius-md` |
+| `MoneyInput` | Client (M-06 L1) | `value: number, onChange: (n) => void, min?: number` | `proyectos.costos_operativos`, etc. | `--color-primary`, `Fraunces`, `inputmode="decimal"` |
+| `ConfigInicialCheckbox` | Client | `checked: boolean, onChange: (b) => void` | `proyectos` (grupo costos/IVA/garantía) | Checkbox + Collapse, `--radius-md` |
+| `EstadoInicialBadge` | Display | `estado: string` | `proyectos.estado` | Badge (`--color-warning` para `activa`) |
+| `ComercialAsignado` | Display / Select (si admin) | `usuario: User, editable: boolean` | `personas` | Label / Select, `Fraunces` |
+
+**Patrones M-06 L1 usados:** `useSmartSearch` (HybridClientSelector), `useDebounce` (búsqueda cliente, 300ms), `COP` formatter + `MoneyInput`, Suspense, primitivas `components/veta/` (Modal, Input, Select, Button, Combobox)
+
+---
+
+## 6. Comportamiento
+
+| # | Evento | Gatillo | Acción | Side effect | Trace E-XX |
+|---|---|---|---|---|---|
+| 1 | Abrir modal | Click `[Nuevo +]` en P-01 header o `[+ Añadir Lead]` en columna Kanban | Render `NuevoProyectoModal`, foco en `HybridClientSelector` | Si viene de columna Kanban, `estadoPreSeleccionado` fijado | — |
+| 2 | Buscar cliente | Usuario escribe en `HybridClientSelector` | `useDebounce` 300ms → fuzzy search (Levenshtein) + recientes (localStorage) + frecuentes (localStorage) | Dropdown con matches ordenados por relevancia | — |
+| 3 | Crear nuevo cliente | Click `[+ Crear nuevo cliente]` en dropdown | Abre `CrearClienteModal` anidado | — | — |
+| 4 | Guardar nuevo cliente | Click `[Guardar]` en `CrearClienteModal` | `POST /api/erp/clientes` → retorna cliente creado → auto-selecciona en `HybridClientSelector` padre | — | — |
+| 5 | Marcar checkbox configuración inicial | Toggle `☑ Aplicar plantilla de costos estándar` | Muestra / oculta campos de costos, IVA, garantía editables | Valores default si desmarcado: costos=0, IVA=19%, garantía=2 | — |
+| 6 | Submit "Crear y abrir" | Click `[Crear y abrir]` | POST `/api/erp/proyectos` con todos los campos del formulario | Server valida (R1-R13), inserta en `proyectos`, auto-crea `espacio_variantes`/`citas` según `tipo_proyecto`, registra `eventos` | E-XX `proyecto_creado` |
+| 7 | Éxito | POST 200 → `{id, ...proyecto}` | Toast "Proyecto creado" + `router.push('/erp/cotizador/' + newId)` → abre P-04 con proyecto draft | — | — |
+| 8 | Error | POST 4xx/5xx | Toast error + formulario habilitado (no cierra el modal) | — | — |
+| 9 | Cancelar | Click `[Cancelar]` o tecla Escape | Cierra modal sin guardar | — | — |
+| 10 | Estados de pantalla (UI) | — | Inicial: formulario vacío, cliente selector enfocado. Buscando cliente: spinner en selector. Creando cliente: modal anidado. Enviando: botón "Creando..." disabled + spinner. Éxito: Toast + redirect. Error: Toast + formulario habilitado | — | — |
+
+---
+
+## 7. Criterios de aceptación (verificables mecánicamente)
+
+| # | Criterio | Comando / verificación |
 |---|---|---|
-| **Estado** | `activa` (fijo) | No — viene de columna Kanban o default |
-| **Comercial** | Usuario actual (`currentUser.id`) | Solo `admin` puede cambiar |
+| CA-1 | `npx tsc --noEmit` = 0 errores | `tsc --noEmit` |
+| CA-2 | `npx eslint .` = 0 errores en archivos de esta pantalla | `eslint app/erp/comercial/nuevo/` |
+| CA-3 | POST `/api/erp/proyectos` con datos válidos → 200 + redirect a P-04 | `curl -X POST /api/erp/proyectos -d '{...}'` → 200 |
+| CA-4 | POST sin `nombre_proyecto` → 400 "El nombre del proyecto es obligatorio" | Test: POST sin campo requerido |
+| CA-5 | POST sin `cliente_id` → 400 "Seleccione o cree un cliente" | Test: POST sin cliente |
+| CA-6 | POST con `cliente_id` inexistente → 400 "Cliente no encontrado" | Test: cliente_id = UUID falso |
+| CA-7 | Verificación servidor R1-R13: todos los errores documentados en §4 | `npx tsx __tests__/comercial/nuevo-proyecto.test.ts` → PASS |
+| CA-8 | Modal centrado, responsive (max-w-md mobile, max-w-lg desktop) | Inspección visual + test de viewport |
+| CA-9 | HybridClientSelector: fuzzy search + recientes + frecuentes + `[+ Crear nuevo]` | Test E2E: escribir "Mar" → ver matches |
+| CA-10 | CrearClienteModal anidado: campos completos, POST `/api/erp/clientes` → auto-selecciona en padre | Test E2E: crear cliente desde modal |
+| CA-11 | Tipo proyecto: solo opciones de creación comercial; `producto_fijo` ausente (POC-12, se crea en P-27) | `grep -c "producto_fijo" app/erp/cotizador/new/` = 0 |
+| CA-12 | Configuración inicial: checkbox opcional → muestra/oculta campos costos/IVA/garantía | Test: toggle checkbox → campos visibles |
+| CA-13 | Estado inicial fijo `activa`, comercial asignado = usuario actual | Test: `grep "activa"` en payload POST |
+| CA-14 | Integración P-01: se abre desde `[Nuevo +]` y `[+ Añadir Lead]` (estado pre-seleccionado) | Test E2E: navegar P-01 → abrir modal |
+| CA-15 | Accesibilidad: `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, focus trap, Escape cierra | `grep -c "aria-"` ≥ 5 en componente modal |
+| CA-16 | HybridClientSelector: `role="combobox"`, `aria-autocomplete="list"`, navegación teclado (↑↓ Enter) | `grep "combobox\|aria-autocomplete"` en HybridClientSelector |
+| CA-17 | Inputs: `aria-required`, `aria-describedby` para hints, `inputmode="decimal"` en MoneyInput | `grep "aria-required\|inputmode"` ≥ 3 |
+| CA-18 | Focus visible: tokens `--focus-ring` en todos los interactivos | `grep "focus-ring"` en componentes de esta pantalla |
+| CA-19 | Reduced-motion: desactiva animaciones modal | `grep "prefers-reduced-motion"` en CSS/componente |
 
 ---
 
-## 4. Flujo de Datos y Acciones
+## 8. Verificación de integridad (pre-entrega)
 
-### 4.1 Submit: "Crear y abrir"
+Antes de marcar el diseño como "aprobado", el Iniciador verifica:
 
-```typescript
-// Client
-const handleSubmit = async (data) => {
-  const res = await fetch('/api/erp/proyectos', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      nombre_proyecto: data.nombre,
-      cliente_id: data.clienteId,
-      tipo_proyecto: data.tipoProyecto,
-      estado: 'activa',
-      direccion_obra: data.direccionObra,
-      fecha_entrega_estimada: data.fechaEntrega || null,
-      costos_operativos: data.costosOperativos || 0,
-      imprevistos_instalacion: data.imprevistos || 0,
-      descuento_comercial: data.descuento || 0,
-      ajuste_arbitrario: data.ajuste || 0,
-      aplica_iva: data.aplicaIva !== false,
-      porcentaje_iva: data.pctIva || 19,
-      garantia_anios: data.garantia || 2,
-      comercial_id: data.comercialId, // currentUser o admin override
-    })
-  })
-  const proyecto = await res.json()
-  router.push(`/erp/cotizador/${proyecto.id}`)
-}
-```
-
-### 4.2 Server: `POST /api/erp/proyectos`
-
-1. Valida: `nombre_proyecto` requerido, `cliente_id` existe, `comercial_id` es usuario actual o admin.
-2. Inserta en `proyectos` (UUID, timestamps auto).
-3. **Si `tipo_proyecto = 'producto_fijo'`:** Crea 1 `espacio_variantes` con `nombre_espacio = nombre_proyecto`, `activa=true`, `visible_pdf=true`, vincula `proyecto_origen_id` en catálogo (lógica F1).
-4. **Si `tipo_proyecto = 'servicio_tecnico'`:** No crea espacios. Crea `cita` tipo `visita_tecnica` (F1).
-5. Registra evento en `eventos` (`tipo_evento='proyecto_creado'`, `contexto='proyectos'`, `actor_id=currentUser`).
-6. Retorna `{id, ...proyecto}`.
-
----
-
-## 5. Validaciones
-
-| Regla | Dónde | Error |
-|---|---|---|
-| Nombre proyecto requerido | Client + Server | "El nombre del proyecto es obligatorio" |
-| Cliente requerido | Client + Server | "Seleccione o cree un cliente" |
-| Dirección obra requerida | Client + Server | "La dirección de obra es obligatoria" |
-| Cliente existe | Server | "Cliente no encontrado" |
-| Comercial válido | Server | "Usuario no autorizado" |
-| Tipo proyecto válido | Server (enum) | "Tipo de proyecto inválido" |
-| Costos ≥ 0 | Client (MoneyInput) + Server | "Valor inválido" |
-| % IVA 0-100 | Client + Server | "Porcentaje IVA inválido" |
-| Garantía 1-10 años | Client + Server | "Garantía inválida" |
-
----
-
-## 6. Estados de Pantalla
-
-| Estado | Qué muestra |
-|---|---|
-| **Inicial** | Formulario vacío, cliente selector enfocado |
-| **Buscando cliente** | Spinner en selector, resultados fuzzy |
-| **Creando cliente** | Modal anidado "Nuevo Cliente" |
-| **Enviando** | Botón "Creando..." disabled, spinner |
-| **Éxito** | Toast "Proyecto creado" + redirect a P-04 |
-| **Error** | Toast error + formulario habilitado |
-
----
-
-## 7. Accesibilidad (a11y)
-
-- **Modal:** `role="dialog"`, `aria-modal="true"`, `aria-labelledby="modal-title"`, focus trap, Escape cierra.
-- **HybridClientSelector:** `role="combobox"`, `aria-autocomplete="list"`, `aria-controls`, navegación teclado (↑↓ Enter).
-- **Inputs:** `aria-required`, `aria-describedby` para hints, `inputmode="decimal"` en MoneyInput.
-- **Focus visible:** tokens `--focus-ring` en todos los interactivos.
-- **Reduced-motion:** desactiva animaciones modal.
-
----
-
-## 8. Checklist de Aprobación (Supervisor)
-
-- [ ] Modal centrado, responsive (max-w-md en mobile, max-w-lg en desktop)
-- [ ] Sección Datos Básicos: Nombre*, HybridClientSelector, Tipo proyecto*
-- [ ] HybridClientSelector: fuzzy search + recientes + frecuentes + [+ Crear nuevo]
-- [ ] Crear cliente modal anidado (campos completos, POST /api/erp/clientes)
-- [ ] Tipo proyecto: 3 opciones con descripciones claras
-- [ ] Sección Ubicación: Dirección obra*, Fecha entrega opcional
-- [ ] Sección Configuración Inicial: checkbox opcional → campos costos/IVA/garantía
-- [ ] Estado inicial fijo `activa`, comercial asignado = usuario actual
-- [ ] Botones: Cancelar (cierra sin guardar), Crear y abrir (POST + redirect)
-- [ ] Validaciones client + server (tabla §5)
-- [ ] Accesibilidad: focus trap, ARIA, teclado, reduced-motion
-- [ ] Integración P-01: se abre desde `[Nuevo +]` y `[+ Añadir Lead]` (estado pre-seleccionado)
-
----
-
-## 9. Próximos Pasos (tras aprobación)
-
-1. **Iniciador** escribe `plan_t-079-P02.md` (detalle implementación P-02)
-2. **Agente Código** implementa:
-   - `HybridClientSelector` (componente reutilizable M-06 L1)
-   - `CrearClienteModal` (anidado)
-   - `NuevoProyectoModal` (P-02)
-   - API `POST /api/erp/proyectos` + `POST /api/erp/clientes`
-   - Tests: crear proyecto 3 tipos, crear cliente, validaciones
-3. **QA** verifica: `tsc`, `eslint`, `next build`, tests, E2E contra `dev-local`
-
----
-
-## 10. Relación con P-01 / P-03 / P-04
-
-| Flujo | Qué pasa |
-|---|---|
-| **P-01 → P-02** | Click `[Nuevo +]` o `[+ Añadir Lead]` → abre P-02. Si desde columna, `estado` pre-seleccionado. |
-| **P-02 → P-04** | Submit exitoso → `router.push('/erp/cotizador/' + newId)` → abre cotizador con proyecto draft. |
-| **P-03 (Solo Lectura)** | No usa P-02. Acceso directo por URL con `?readonly=true`. |
-
----
-
-**¿Apruebas este diseño P-02 (Nueva Cotización / Proyecto)?**
-Si sí → Iniciador escribe `plan_t-079-P02.md`.
-Si ajustes → indícalos y re-itero.
-
-Luego pasamos a **P-03 (Detalle Solo Lectura)** para completar el core comercial F2.
+- [ ] Toda entidad en §1 existe en el `REGISTRO_DE_ENTIDADES.md`
+- [ ] Todo estado en §2 existe en el `REGISTRO_DE_ENTIDADES.md` y en `glosario_h07.md`
+- [ ] Todo label en §3 existe en `glosario_h07.md`
+- [ ] Toda regla en §4 tiene verificación mecánica (no "se ve bien")
+- [ ] Todo componente en §5 usa tokens D4 y patrones M-06 L1
+- [ ] Todo comportamiento en §6 traza a un evento E-XX del `diamante2_define_eventos.md`
+- [ ] Los criterios de aceptación en §7 son ejecutables (no opinables)

@@ -1,0 +1,94 @@
+{
+  "id": "t-113",
+  "nombre": "Procesar testimonio Jose Talero (audio + transcripción)",
+  "descripcion": "Procesar el recurso de video del proyecto Jose Talero para extraer audio y transcripción, como semilla prioritaria para la tabla `testimonios` (E-55) y el contenido de F-13/F-01. Este flujo no bloquea el corte y se ejecuta en paralelo.",
+  "objetivo": "Obtener el texto real del testimonio de Jose Talero para integrarlo en `contenido_F13_testimonios.md` y desbloquear la sección de testimonios en F-01.",
+  "prioridad": "Alta",
+  "estado": "Pendiente",
+  "dependencias": [
+    "DC-1 resuelta (testimonios ACTIVA)",
+    "D1 eslogan cerrado",
+    "Recurso de video proporcionado por el Supervisor"
+  ],
+  "entregables": [
+    {
+      "nombre": "Audio extraído",
+      "formato": "MP3",
+      "ubicacion": "datos/media/testimonios/jose_talero/audio.mp3",
+      "herramienta": "ffmpeg (comando: `ffmpeg -i input.mp4 -vn -acodec libmp3lame -q:a 2 output.mp3`)"
+    },
+    {
+      "nombre": "Transcripción",
+      "formato": "TXT",
+      "ubicacion": "arnes/lineas/demanda/contenido/testimonios/jose_talero_transcripcion.txt",
+      "herramienta": "Whisper (recomendada: `whisper audio.mp3 --model tiny --language spanish --output_format txt`) o Word (manual)",
+      "nota": "Si se usa Whisper, validar que el texto coincida con el audio. Si se usa Word, el usuario debe confirmar la transcripción."
+    },
+    {
+      "nombre": "Archivo de respaldo",
+      "ubicacion": "datos/media/testimonios/jose_talero/",
+      "contenido": "Video original + audio + transcripción"
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Recibir recurso",
+      "detalle": "El Supervisor proporciona el video del proyecto Jose Talero (ej: `jose_talero.mp4`).",
+      "responsable": "Supervisor"
+    },
+    {
+      "numero": 2,
+      "accion": "Extraer audio",
+      "detalle": "Usar ffmpeg para extraer el audio del video en formato MP3 liviano. Comando: `ffmpeg -i jose_talero.mp4 -vn -acodec libmp3lame -q:a 2 jose_talero.mp3`.",
+      "herramienta": "ffmpeg",
+      "responsable": "Código"
+    },
+    {
+      "numero": 3,
+      "accion": "Transcribir audio",
+      "detalle": "Usar Whisper para transcribir el audio a texto en español. Comando: `whisper jose_talero.mp3 --model tiny --language spanish --output_format txt`. Si el usuario prefiere, puede transcribir manualmente con Word.",
+      "herramienta": "Whisper (preferida) o Word (manual)",
+      "responsable": "Código o Supervisor"
+    },
+    {
+      "numero": 4,
+      "accion": "Validar transcripción",
+      "detalle": "Comparar el texto transcrito con el audio para asegurar que no hay errores. Si se usó Word, el Supervisor debe confirmar la exactitud.",
+      "responsable": "Supervisor"
+    },
+    {
+      "numero": 5,
+      "accion": "Archivar",
+      "detalle": "Guardar el audio y la transcripción en las ubicaciones designadas (`datos/media/` y `arnes/lineas/demanda/contenido/testimonios/`).",
+      "responsable": "Código"
+    },
+    {
+      "numero": 6,
+      "accion": "Integrar en contenido",
+      "detalle": "Usar la transcripción para completar el testimonio de Jose Talero en `contenido_F13_testimonios.md` y `contenido_F01_home.md` §5.",
+      "responsable": "Código"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "El audio extraído tiene un tamaño razonable (ej: <10MB).",
+    "La transcripción es textual y fiel al audio (sin editar el sentido).",
+    "El texto del testimonio está listo para integrarse en `contenido_F13_testimonios.md`.",
+    "Los archivos están archivados en las ubicaciones designadas."
+  ],
+  "notas": [
+    "Este flujo es independiente del corte. Puede ejecutarse en paralelo con otras tareas.",
+    "Si el usuario prefiere transcribir manualmente, el paso 3 se salta y el Supervisor proporciona el texto directamente.",
+    "El testimonio de Jose Talero es la semilla prioritaria para la tabla `testimonios` (E-55).",
+    "El texto final debe incluir: nombre del cliente, barrio (si aplica), tipo de proyecto, y el testimonio exacto."
+  ],
+  "relacionado": [
+    "I-050 (Jose Talero con testimonio y proceso documentados)",
+    "E-55 (Testimonio/reseña post-entrega)",
+    "DC-1 (testimonios ACTIVA)",
+    "F-13 (Testimonios)",
+    "F-01 (Sección de testimonios)"
+  ],
+  "fecha_creacion": "2026-08-09",
+  "fecha_limite": "2026-08-12"
+}

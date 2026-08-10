@@ -42,8 +42,19 @@ D-2026-08-07* (decisiones nuevas del Supervisor) > FLAG4 / OLA_6 (catálogos) > 
 | `catalogo_acabados` | Vocabulario de acabados | **Nombre canónico** (singular). CLASE compartida por nodo (instancia) y catálogo (clase). Familia, tipo, color, textura, precio diferencial. | 1—N `acabados_muestras`, `catalogo_producto_acabados`, `modulos_acabados` |
 | `acabados_muestras` | Muestras visuales de acabado | Imagen web, disponibilidad, compatibilidad con insumo (tablero A + acabado X). | FK→`catalogo_acabados` |
 | `catalogo_producto_acabados` | Acabados posibles de un producto | Puente CLASE: qué acabados aplican a este producto de catálogo. `es_default`. | FK→`productos_catalogo`, FK→`catalogo_acabados` |
+| `marcas` | Marca del producto | Representa la marca de un producto/insumo. Codependiente de proveedores. **NUEVA [POC/2026-08-09]**. | FK→`proveedores`; 1—N `productos_atributos` |
+| `productos_atributos` | Ficha técnica del catálogo | Extensión 1:1 de `productos_catalogo` para atributos físicos y dinámicos. **Dueña de la ficha de CLASE. NUEVA [POC/2026-08-09]**. | FK 1:1→`productos_catalogo`, FK→`marcas`; 1—N `campos_tecnicos_definicion` (vía `campos_personalizados_json`) |
+| `campos_tecnicos_definicion` | Definición de campos dinámicos | Catálogo de campos personalizados por tipo de producto (ej: voltage para electrodomésticos). **NUEVA [POC/2026-08-09]**. | 1—N `productos_atributos` (vía `tipo_item`) |
 
 **Naming resuelto:** `catalogo_acabados` (singular, no `catalogos_acabados` ni `productos_acabados`).
+**Nota de coexistencia CLASE vs INSTANCIA [POC/2026-08-09]:**
+- `productos_atributos` (CLASE) es la **única dueña** de la ficha técnica de productos vendibles (dimensiones, peso, material, ficha proveedor, campos dinámicos).
+- `espacios_artefactos` (INSTANCIA, ver §8) es la **única dueña** de la captura física de objetos concretos del espacio (medidas en sitio, ubicación, foto, validación).
+- **Conexión opcional:** FK NULLABLE desde `espacios_artefactos.artefacto_id` → `productos_catalogo.id` para no repetir especificación. **No hay acoplamiento: el comportamiento económico del ítem de CLASE es independiente del de INSTANCIA**.
+
+**Nota de terminología + dueño del catálogo [POC/2026-08-09, POC-12]:**
+- `productos_catalogo` es la **CLASE** y su dueño de escritura es el área **diseño-desarrollo** (pantalla P-27). El flujo comercial (P-01/P-02/P-04) solo lo **consume** — no crea productos inline.
+- Divergencia pendiente de migración: el schema real (`tipo_proyecto` enum) usa `personalizado` mientras el diseño P-02 usa `proyecto_a_medida`; alinear en F10-E sin DDL durante el prototipo.
 
 ---
 
@@ -56,11 +67,12 @@ D-2026-08-07* (decisiones nuevas del Supervisor) > FLAG4 / OLA_6 (catálogos) > 
 | `conversaciones` | Historial de contacto | Canal, mensajes, hora de primera respuesta. | FK→`clientes` / `leads` |
 | `citas` | Agenda de visitas | Franja, tipo (`visita`), reagenda (máx 1). | FK→`clientes` |
 | `visitas` | Registro de visita | Observaciones, medidas, fotos. | FK→`citas`, FK→`proyectos` |
-| `proyectos` | Proyecto / cotización | **Unidad central del negocio.** Estados canónicos: `borrador → en_revision → cotizado → desarrollo → aprobado_compras → armado → verificado → instalado → entregado / perdida / cancelada`. `verificado` y `aprobado_compras` son internos (no visibles al cliente). | FK→`clientes`; FK→`personas` (comercial, verificador); 1—N `espacio_variantes`, `contratos`, `modulos` |
+| `proyectos` | Proyecto / cotización | **Unidad central del negocio.** Estados canónicos: `borrador → en_revision → cotizado → desarrollo → aprobado_compras → armado → verificado → instalado → entregado / perdida / cancelada`. `verificado` y `aprobado_compras` son internos (no visibles al cliente). **[POC-01] Kanban comercial:** estado `negociacion` (En Negociación) propuesto como estado pre-contrato — acumulado para decisión en F10-E. | FK→`clientes`; FK→`personas` (comercial, verificador); 1—N `espacio_variantes`, `contratos`, `modulos` |
 | `cotizaciones` | Snapshot de cotización | Versión congelada del proyecto al momento de cotizar. | FK→`proyectos` |
 | `disenos3d` | Diseño 3D | Estado (`propuesto/pagado/descontado`), precio (configurable vía `parametros.bruto_diseno_3d`). | FK→`proyectos` |
-| `espacio_variantes` | Espacio del proyecto | Cocina, closet, estudio. Variantes alternativas (una activa). | FK→`proyectos`; 1—N `items_variante`, `modulos` |
+| `espacio_variantes` | Espacio del proyecto | Cocina, closet, estudio. Variantes alternativas (una activa). | FK→`proyectos`; 1—N `items_variante`, `modulos`, `espacios_artefactos` |
 | `items_variante` | Ítem de cotización | Línea de producto dentro de la variante. `es_referencial` + `fuente_referencial` + `grupo_referencial` (C2). | FK→`espacio_variantes`, FK→`productos_catalogo` |
+| `espacios_artefactos` | Artefacto del espacio (INSTANCIA) | Objeto concreto en el espacio del cliente que condiciona el diseño. Capturado en visita pre-contrato y verificado/reajustado en retoma (E-15). Categorías: `determinante` (impresora que define el diseño), `electrodomestico`, `bloqueante` (cortina, ventana), `obra_civil`, `servicio_tercero`. Medidas en mm, ubicación, foto. `requiere_verificacion` toggle + `validado_por`/`validado_en` en retoma. **No duplica la ficha técnica del catálogo (CLASE, `productos_atributos`, pendiente mini-diamante).** | FK→`espacio_variantes`; procedencia vía `eventos` (E-15) |
 
 ---
 
@@ -85,7 +97,7 @@ D-2026-08-07* (decisiones nuevas del Supervisor) > FLAG4 / OLA_6 (catálogos) > 
 | `cronograma_etapas` | Etapas del cronograma | Línea (`contractual/interna`), etapa (`aprobacion/compras/ensamblaje/instalacion`), fechas, jornadas. | FK→`cronogramas` |
 | `desfases_cronograma` | Desfases | Causa (`interna/externa/cambio_contrato`), motivo, composición causal, nuevas fechas. Disparado por E-33. | FK→`proyectos`, FK→`cronograma_etapas` |
 | `novedades_criticas` | Novedades / incidentes | SLA 5-24h, estado (`abierta/en_atencion/resuelta/escalada`). | FK→`proyectos`, FK→`personas` (escaladoA) |
-| `check_produccion` | Check de producción por proyecto | Gate de control disparado por el cronograma del proyecto (no calendario fijo). Evalúa: insumos en taller, pagos realizados, fila de producción. 3 desenlaces: `todo_bien` (adelanta E-25), `novedad` (acción correctiva), `extremo` (comisiones reducidas E-35). El umbral de novedad vive en `parametros.umbral_novedad_check`. **Renombrado desde `check_15_dias` por corrección axiomática (2026-08-07).** | FK→`proyectos` |
+| `check_produccion` | Check de producción por proyecto | Gate de control disparado por el cronograma del proyecto (no calendario fijo). **Rediseño axiomático (2026-08-08, ver `mini_diamante_check_produccion.md`):** 3 brechas medidas independientemente al momento del check — `ratio_insumos` (bom_materiales vs. recepciones_material), `ratio_pagos` (ordenes_compra esperadas vs. pagada+), `ratio_produccion` (modulos esperados vs. armado+) — más `factor_tamano_aplicado` (snapshot de `estimaciones.factor_crecimiento`). `desenlace_sugerido` se **deriva** de `MIN(ratio_insumos, ratio_pagos, ratio_produccion)` contra `parametros.umbral_todo_bien_pct`/`umbral_extremo_pct`, nunca se asienta a mano. `desenlace_final` = sugerido salvo override del verificador con `override_justificacion` obligatoria. `comisiones_reducidas_pct` se deriva del desenlace final vía `parametros.reduccion_comision_novedad_pct` (novedad) / `reduccion_comision_extremo_pct` (extremo) — **ambos desenlaces reducen comisión, extremo más que novedad; ya no es "solo uno de los dos" como decían versiones previas de este documento**. `verificador_id` = comercial vendedor (D3). **Renombrado desde `check_15_dias` (2026-08-07); rediseñado desde umbral único en días a 3 DPs independientes en % (2026-08-08).** | FK→`proyectos`, FK→`personas` (verificador) |
 | `comunicaciones_progreso` | Comunicación al cliente | Progreso / adelanto de instalación. Visible al cliente. | FK→`proyectos` |
 
 ---
@@ -168,7 +180,7 @@ D-2026-08-07* (decisiones nuevas del Supervisor) > FLAG4 / OLA_6 (catálogos) > 
 | `item_pedido` | Ítem del pedido | Cantidad, precio unitario (servidor, no cliente). | FK→`pedidos_web`, FK→`productos_tienda` |
 | `colecciones` | Colecciones públicas | Agrupación de productos para vitrina web. | 1—N `productos_tienda` |
 | `portafolio` | Casos de obra | Proyectos reales publicados, imágenes, sin precios. | FK→`proyectos` |
-| `testimonios` | Reseñas / testimonios | **DIFERIDO** (E-55). Calificación, texto, cliente. | FK→`clientes`, FK→`proyectos` |
+| `testimonios` | Reseñas / testimonios | **ACTIVA** (E-55). Calificación, texto, cliente. Adelantada por decisión DC-1 del Supervisor (2026-08-09) — sin tocar schema. **Especificación [2026-08-09]:** `contenido` (texto real, nunca editado), `rating` (1-5), `curado`, `aprobado`, `publicado`, `createdAt`, `fuente` (GBP/WhatsApp/Notion/video), `barrio` (contexto barrial I-013), `tipo_proyecto`, `url_fuente` (enlace a la fuente original), `fecha_publicacion`. Regla anti-invención: solo se renderiza con datos reales. | FK→`clientes`, FK→`proyectos` |
 
 ---
 
@@ -193,7 +205,7 @@ D-2026-08-07* (decisiones nuevas del Supervisor) > FLAG4 / OLA_6 (catálogos) > 
 
 1. **Un solo dueño por dato:** cada campo tiene exactamente una tabla donde nace. No hay duplicación de verdad entre tablas.
 2. **FKs de identidad apuntan a `personas`, no a `usuarios`:** `usuarios` es login; `personas` es identidad de negocio (CF-19).
-3. **Clase ↔ instancia:** el catálogo define lo posible; el nodo elige. No se duplica ficha técnica en el módulo.
+3. **Clase ↔ instancia:** el catálogo define lo posible; el nodo elige. No se duplica ficha técnica en el módulo. `espacios_artefactos` (instancia) y `productos_atributos` (clase, pendiente) coexisten sin duplicidad.
 4. **Append-only en auditoría:** `eventos`, `parametros_historial` y `procedencia` nunca reciben UPDATE/DELETE de aplicación.
 5. **Gates por nodo, no por proyecto:** despacho parcial es natural — cada `modulo.id` tiene su propio ciclo de gates (E-18, E-21, E-24, E-25, E-36).
 6. **SLA por OC:** el tiempo de entrega real se fija en la `orden_compra` al negociar. Las estimaciones (`materiales_insumos.tiempo_entrega_dias`, `proveedores.dias_entrega_default`) son defaults que la OC puede sobrescribir.

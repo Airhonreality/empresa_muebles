@@ -1,0 +1,62 @@
+[
+  {
+    "id": "prod_001",
+    "nombre": "Cocina Integral Premium",
+    "descripcion": "Cocina diseñada a medida con materiales de alta calidad y acabados premium.",
+    "precio_publico": 15000000,
+    "precio_directo": 14000000,
+    "tipo_catalogo": "cocinas",
+    "unidad_medida": "unidad",
+    "imagen_url": "https://via.placeholder.com/800x600",
+    "publicado_web": true,
+    "categoria_comercial": "cocinas-integrales-bogota"
+  },
+  {
+    "id": "prod_002",
+    "nombre": "Closet Walk-in",
+    "descripcion": "Closet de lujo con sistema de organización personalizado.",
+    "precio_publico": 12000000,
+    "precio_directo": 11000000,
+    "tipo_catalogo": "closets",
+    "unidad_medida": "unidad",
+    "imagen_url": "https://via.placeholder.com/800x600",
+    "publicado_web": true,
+    "categoria_comercial": "closets-vestidores-bogota"
+  },
+  {
+    "id": "prod_003",
+    "nombre": "Bar Home",
+    "descripcion": "Bar integrado para espacios de entretenimiento.",
+    "precio_publico": 8000000,
+    "precio_directo": 7500000,
+    "tipo_catalogo": "entretenimiento",
+    "unidad_medida": "unidad",
+    "imagen_url": "https://via.placeholder.com/800x600",
+    "publicado_web": true,
+    "categoria_comercial": "cavas-y-bares"
+  },
+  {
+    "id": "prod_004",
+    "nombre": "Estudio Home Office",
+    "descripcion": "Espacio de trabajo ergonómico y elegante para home office.",
+    "precio_publico": 9000000,
+    "precio_directo": 8500000,
+    "tipo_catalogo": "oficinas",
+    "unidad_medida": "unidad",
+    "imagen_url": "https://via.placeholder.com/800x600",
+    "publicado_web": true,
+    "categoria_comercial": "estudios-home-office"
+  },
+  {
+    "id": "prod_005",
+    "nombre": "Consola de Recibidor",
+    "descripcion": "Consola minimalista para espacios de entrada.",
+    "precio_publico": 3000000,
+    "precio_directo": 2800000,
+    "tipo_catalogo": "recibidores",
+    "unidad_medida": "unidad",
+    "imagen_url": "https://via.placeholder.com/800x600",
+    "publicado_web": true,
+    "categoria_comercial": "consolas-recibidores"
+  }
+]

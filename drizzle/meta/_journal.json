@@ -15,6 +15,13 @@
       "when": 1785943376253,
       "tag": "0001_illegal_jane_foster",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786292491235,
+      "tag": "0002_small_hitman",
+      "breakpoints": true
     }
   ]
 }

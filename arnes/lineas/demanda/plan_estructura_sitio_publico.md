@@ -119,15 +119,15 @@ Formato adaptado de `PLANTILLA_PANTALLA.md` (estas pantallas no transicionan est
 
 | ID | Decisión | Bloquea | Origen |
 |---|---|---|---|
-| D1 | Eslogan | F-01 (hero) | `plan_demanda.md` D1 |
-| D2 | Audiencia (familias / estratos premium / arquitectos) | F-01, F-09, F-11 (tono/copy) | `plan_demanda.md` D2 |
-| D3 | Precio del diseño 3D y alcance | F-11 (si se menciona en el proceso) | `plan_demanda.md` D3 |
-| D5 | ¿Solo Bogotá o servicio remoto (Cajicá)? | F-09 (áreas de servicio por landing), F-10 | `plan_demanda.md` D5 |
-| **DC-1** | `testimonios` está **DIFERIDO** en el REGISTRO (E-55) pero Bloque C lo pide **antes del corte**. ¿Se adelanta la tabla (cambio de estado en el canon, sin tocar schema — la tabla ya está especificada) o Bloque C lanza sin prueba social estructurada? | F-13 completa, sección de F-01/F-03 | Hallazgo de este documento (§0) |
+| D1 | Eslogan | ~~F-01 (hero)~~ **RESUELTA 2026-08-09.** "Diseña tu espacio. Habita el bienestar." (versión completa del `Tono de voz de marca.md`). | `plan_demanda.md` D1 (cerrada) |
+| D2 | Audiencia | ~~F-01, F-09, F-11~~ **RESUELTA 2026-08-08.** Híbrida — arquetipo El Creador Experto; las tres audiencias se sirven por pieza del embudo, no se elige una única. | `plan_demanda.md` D2 (cerrada) |
+| D3 | Precio del diseño 3D | ~~F-11~~ **RESUELTA 2026-08-08.** $130.000 + DIAN por 2 espacios, deducible del anticipo (E-30). | `plan_demanda.md` D3 (cerrada) |
+| D5 | Cobertura geográfica | ~~F-09, F-10~~ **RESUELTA 2026-08-08.** Bogotá + municipios sabana norte (Chía, Cajicá, Cota) con costo de viáticos adicional. | `plan_demanda.md` D5 (cerrada) |
+| **DC-1** | `testimonios` está **DIFERIDO** en el REGISTRO (E-55) pero Bloque C lo pide **antes del corte**. ~~¿Se adelanta...?~~ **RESUELTA 2026-08-09.** Se adelanta: cambio de estado en el canon (sin tocar schema — la tabla ya está especificada). F-13 y secciones de F-01/F-03 desbloqueadas. | F-13 completa, sección de F-01/F-03 | Hallazgo de este documento (§0), resuelta por el Supervisor |
 | **DC-2** | ~~Numeración F-03 colisiona (Agendar vs. Portafolio)~~ **RESUELTO 2026-08-08.** Se asignó F-12 a "Agendar" (ya reflejado en la tabla §1 de este documento); corregido en `glosario_h07.md` (2 filas) y `estado.md` (D-04). Ver `plan_alineacion.md` §8 (hallazgo G3). | — cerrado | Hallazgo de este documento (§0), resuelto en la sesión de limpieza del mismo día |
-| **DC-3** | El embudo híbrido (modal + WhatsApp) de F-12 — ¿vive solo en `/agendar` o el mismo componente se dispara desde CTAs de F-01/F-09/F-03? Recomendación: componente transversal (F-00), no una pantalla aislada. | F-00, F-12 | Hallazgo de este documento (§1) |
+| **DC-3** | El embudo híbrido (modal + WhatsApp) de F-12 — ¿vive solo en `/agendar` o el mismo componente se dispara desde CTAs de F-01/F-09/F-03? ~~Recomendación...~~ **RESUELTA 2026-08-09.** Componente transversal (F-00, Dialog) que también se renderiza en línea en `/agendar` — página indexable Y modal de baja fricción (I-042). | F-00, F-12 | Hallazgo de este documento (§1), resuelta por el Supervisor |
 
-**Ninguna de estas decisiones la toma este documento** — quedan explícitas y bloqueantes, igual que D1-D5 en `plan_demanda.md`.
+**Ninguna de estas decisiones la toma este documento** — todas están cerradas: D2/D3/D5 (Supervisor 2026-08-08) y D1/DC-1/DC-3 (Supervisor 2026-08-09). Este documento queda como mapa de pantallas para los `disenio_FXX.md`.
 
 ---
 

@@ -1,0 +1,24 @@
+{
+  "id": "t-108",
+  "titulo": "F8: REGISTRO_DE_ENTIDADES + plan_ola7_maestro + estado_ola7 alineados",
+  "intencion_negocio": "Actualizar los documentos madre del arnés para reflejar el cierre del bucle F8: REGISTRO_DE_ENTIDADES.md (fila usuarios sin rolEmpleado, FK persona_id NOT NULL), plan_ola7_maestro.md (A-01 cerrado, A-02 cerrado), estado_ola7.md (F8 plan aprobado, siguiente F9).",
+  "zona": "arnes/nucleo/ + arnes/lineas/ola7/",
+  "tipo": "mutacion_arnes",
+  "riesgo": "medio",
+  "archivos_afectados": [
+    "arnes/nucleo/REGISTRO_DE_ENTIDADES.md (§1, fila usuarios)",
+    "arnes/lineas/ola7/plan_ola7_maestro.md (§4 A-01/A-02, §6 checklist)",
+    "arnes/lineas/ola7/estado_ola7.md (registro cierre bucle F8)"
+  ],
+  "criterios_aceptacion": [
+    "grep 'rolEmpleado\\|rol_empleado' arnes/nucleo/REGISTRO_DE_ENTIDADES.md → 0 resultados en §1",
+    "plan_ola7_maestro.md: A-01 marcado cerrado, A-02 marcado cerrado",
+    "estado_ola7.md: F8 aparece como 'plan aprobado' con referencia a plan_f8.md"
+  ],
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_f8.md",
+  "estado": "creada",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "checkpoint": {
+    "requerido": false
+  }
+}

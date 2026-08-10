@@ -1,12 +1,12 @@
 ﻿# Registro de líneas de trabajo
 
-Índice de las líneas de trabajo activas en el arnés. Una línea es un frente de trabajo con su propio progreso, sus propios bucles/diamantes, y la capacidad de escribir hacia `arnes/nucleo/` (verdad de negocio compartida) o hacia `lineas/ola7/pantallas/` (determinantes de pantalla) sin vivir mezclada con el histórico de otra línea.
+Índice de las líneas de trabajo activas en el arnés. Una línea es un frente de trabajo con su propio progreso y sus propios bucles/diamantes, sin vivir mezclada con el histórico de otra línea. Las dos líneas de hoy (`ola7`, `demanda`) además escriben hacia `arnes/nucleo/` (verdad de negocio compartida) o hacia `lineas/ola7/pantallas/` (determinantes de pantalla) — pero eso es una consecuencia de que ambas producen software o insumos para software, **no un requisito de toda línea.** Una línea de finanzas, legal o RRHH puede no tocar `nucleo/` ni `pantallas/` nunca — su entregable puede ser puramente una decisión o un documento, y eso también cuenta como progreso real.
 
 Para abrir una línea nueva, usar `_plantilla/LEEME.md`.
 
 | Línea | Estado | Qué produce | Escribe hacia | Detalle |
 |---|---|---|---|---|
-| `ola7` | F0–F7 aprobado, F8 abierto | Schema (F0/F1), pantallas (F2-F7), hardening/QA (F8/F9) del ERP + sitio | `nucleo/` (propone cambios de schema/eventos) | `tecnica/estado_ola7.md`, `ola7/plan_ola7_maestro.md` |
+| `ola7` | F0–F7 aprobado, F8 abierto | Schema (F0/F1), pantallas (F2-F7), hardening/QA (F8/F9) del ERP + sitio | `nucleo/` (propone cambios de schema/eventos) | `ola7/estado_ola7.md`, `ola7/plan_ola7_maestro.md` |
 | `demanda` | v3 del marco, sin aprobar — bloqueada esperando Supervisor | Diagnóstico y plan de captación/conversión/marca; determinantes de pantalla para el sitio público | `nucleo/` (ej. schema de `leads`, Bloque A) y `lineas/ola7/pantallas/` (determinantes F-09..F-13) | `demanda/estado_demanda.md`, `demanda/plan_demanda.md` |
 
 ## Regla de convivencia entre líneas

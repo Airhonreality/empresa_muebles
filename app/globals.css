@@ -256,3 +256,46 @@ html:focus-within {
 @utility animate-dot-danger {
   animation: dotPulseDanger 0.9s var(--ease-in-out) infinite;
 }
+
+/* ---- Scrollbars de marca (D4) — escala dorada sutil, sin ruido visual ----
+   Firefox (scrollbar-width) + WebKit (pseudo-elementos). No es decoración:
+   mantiene el thumb visible y de bajo contraste en todas las superficies. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-gold-500) 45%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-gold-500) 35%, transparent);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-gold-500) 55%, transparent);
+}
+
+/* ---- Responsive Kanban: móvil (≤640px) apila columnas verticalmente ----
+   En desktop/laptop: scroll horizontal con snap (6+ columnas visibles).
+   En móvil: flex-col, columnas full-width, sin scroll horizontal forzado. */
+@media (max-width: 640px) {
+  .kanban-board {
+    flex-direction: column !important;
+    overflow-x: visible !important;
+  }
+  .kanban-board > div {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
+  }
+}

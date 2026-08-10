@@ -1,0 +1,22 @@
+{
+  "id": "t-106",
+  "titulo": "F8: Seed A-02 (+4 params, -1 deprecado)",
+  "intencion_negocio": "Actualizar el seed de desarrollo: eliminar umbral_novedad_check15 (deprecado por A-02) y añadir los 4 parámetros del rediseño axiomático de check_produccion — umbral_todo_bien_pct(0.95), umbral_extremo_pct(0.70), reduccion_comision_novedad_pct(0.50), reduccion_comision_extremo_pct(1.00).",
+  "zona": "datos",
+  "tipo": "semilla",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "scripts/seed-dev.ts (PARAMETROS_BASE: eliminar entrada umbral_novedad_check15, añadir 4 entradas A-02)"
+  ],
+  "criterios_aceptacion": [
+    "npm run db:seed contra dev-local sin errores",
+    "SELECT clave, valor_numeric FROM parametros WHERE clave LIKE 'umbral_%' OR clave LIKE 'reduccion_comision_%' → 4 filas (no 5)",
+    "grep 'umbral_novedad_check15' scripts/seed-dev.ts → 0 resultados"
+  ],
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_f8.md",
+  "estado": "creada",
+  "creada_en": "2026-08-08T00:00:00Z",
+  "checkpoint": {
+    "requerido": false
+  }
+}

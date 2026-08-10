@@ -152,6 +152,7 @@ Si durante el diseño de F5–F9 surge un nuevo campo, entidad o naming:
 4. **Se actualiza el REGISTRO_DE_ENTIDADES.md** (la fila afectada) en el MISMO commit que el plan — contrato vivo §2.C
 5. **Si la adición crea colisión de naming**, se traza contra el REGISTRO existente (que ya es el canon, por lo que gana el registro)
 6. **No se reabre el bucle de trazabilidad** — el REGISTRO es la fuente de verdad; solo se verifica que la adición no contradiga decisiones cerradas
+7. **Verificación cruzada de referencias** — tras actualizar cualquier contrato vivo (REGISTRO, glosario, disenio_PXX, plan_fX, estado_ola7), se ejecuta una pasada de grep sobre `arnes/` (excluyendo `archivo/pasadas/`) para detectar menciones al modelo anterior que queden desalineadas. Si hay referencias obsoletas, se corrigen en el mismo commit. **Esta verificación es obligatoria** — ningún agente da por cerrada una actualización de contrato sin esta doble pasada.
 
 ---
 

@@ -43,3 +43,92 @@ Se abrió la línea que atacaba la restricción #2 del negocio (demanda, ratio 4
 
 **Esta línea corre en paralelo a la Fase 2 técnica, no la reemplaza ni la bloquea.**
 
+---
+
+## Actualización 2026-08-08 — D2-D5 cerradas, pendientes acotados
+
+Las decisiones D2 (Audiencia — híbrida, arquetipo El Creador Experto), D3 (Precio diseño 3D — $130.000 + DIAN por 2 espacios), D4 (Capacidad real — parámetro 1.25–2.5, no bloqueante) y D5 (Geografía — Bogotá + Chía/Cajicá/Cota con viáticos) quedan cerradas en `plan_demanda.md` §1.
+
+**Pendientes vigentes del Supervisor (2026-08-08):**
+- **D1 (Eslogan)** — única decisión de marca abierta. Ver t-112 para metodología.
+- **Alcance** — aprobación del marco v3 (Base / Recomendada / Completa).
+- **Credenciales de solo lectura Ads/GA4/Search Console** — ver t-110 [SOLO_HUMANO].
+- **Checkpoint del schema para Bloque A (`leads`)** — ver t-111 (gclid, etapa, FK a proyectos).
+- **Informe de sector** con el guion de `plan_demanda.md` §5.
+
+Las tareas del ledger que trazan estos pendientes: t-110, t-111, t-112 (creadas 2026-08-08).
+
+---
+
+## Sub-línea: diseño de web pública (2026-08-08)
+
+**Objetivo:** estructura, determinantes, requisitos y aproximación de detalle de TODO el sitio público — para que el Supervisor destile manualmente hacia `lineas/ola7/pantallas/` (diseños `disenio_FXX.md`).
+
+**Artefactos creados (v3 — pantallas de confianza y conversión 2026-08-08):**
+- `plan_diseno_web_publica.md` — universo completo F-00..F-19. Continúa/amplía `plan_estructura_sitio_publico.md` (regla de sucesión C3). 
+  - **v2:** jerarquía corregida (F-14 anidado bajo F-10, F-16 anidado bajo F-12), rutas SEO-friendly (`/como-trabajamos`, `/agenda-tu-asesoria`, `/bitacora`), F-15 renombrada "Bitácora de Diseño" (engagement de nicho), F-12 expandida con dos tipos de asesoría.
+  - **v3:** F-17 "Cotiza tu Espacio" (requerimiento bloqueado por parámetros ERP), F-18 "Conócenos" (historia + perfiles Hugo García / Airhon J. García, 3 tiempos 1995→2014→2019), F-19 "Para Arquitectos y Diseñadores" (segmento B2B). DC-4 (línea de tiempo) cerrada. FAQ descartado como página independiente (diseño axiomático Nam P. Suh). Matriz de ponderación exigida para copy de F-18.
+- `plan_seo_2026.md` — subsistema SEO transversal actualizado con F-17..F-19 y línea de tiempo canónica.
+
+**Decisiones aplicadas:** eslogan **"Diseña tu espacio. Habita el bienestar."** (D1 **cerrada 2026-08-09**), D2/D3/D4/D5 cerradas, tokens D4 (Luz & Biofilia). DC-1 **cerrada 2026-08-09** (testimonios ACTIVA), DC-3 **cerrada 2026-08-09** (embudo híbrido: modal + página). DC-4 cerrada: línea de tiempo 1995→2014→2019, `openingDate` = 2014. Precio asesoría 3D ($130.000) debe venir de parámetro ERP (D-parámetro). Copy de F-18 requiere matriz de ponderación (D-matriz). Condiciones B2B para prescriptores pendientes (D-B2B).
+
+**Bloqueado por:** ~~DC-1 (adelantar `testimonios` de DIFERIDO — bloquea F-13 y secciones de prueba social en F-01/F-03/F-14/F-15).~~ F-17 bloqueado por parámetros de costos en ERP (D-parámetro).
+
+**Próxima acción:** el Supervisor evalúa y aprueba los dos planes. Tras aprobación, se destilan manualmente a `lineas/ola7/pantallas/` como determinantes para los `disenio_F00.md`..`disenio_F19.md` (12 pantallas por diseñar + 1 requerimiento bloqueado F-17).
+
+---
+
+## Sub-línea: contenido de web pública (contenido/) — 2026-08-09
+
+**Objetivo:** escribir el copy exacto, la estructura de secciones y la narrativa SEO por pantalla como insumo cerrado para la destilación del bucle F-web de la línea técnica. No es `disenio_FXX.md` — es la fuente de copy y contenido que el Iniciador de la línea técnica toma para completar las secciones §3 (Vocabulario), §5 (Componentes) y §7 (Criterios) de la PLANTILLA_PANTALLA, sin tener que inventar copy ni tono.
+
+**Formato:** un archivo `contenido_FXX.md` por pantalla pública en `arnes/lineas/demanda/contenido/`, en espejo 1:1 con los futuros `disenio_FXX.md` de `ola7/pantallas/`. Cada archivo sigue `PLANTILLA_CONTENIDO.md` (7 bloques: eje de conversión · estructura de secciones · copy exacto · respuestas atómicas · testimonios · imágenes · SEO narrativo).
+
+**Protocolo de destilación (input para el agente de la F-web):** cuando la línea técnica (ola7) abra las pantallas públicas de frontstage, el Iniciador consume este conjunto para cada `disenio_FXX.md`:
+1. `contenido/contenido_FXX.md` — copy exacto y estructura de secciones de ESA pantalla
+2. `plan_diseno_web_publica.md` — determinantes y aproximación de detalle
+3. `plan_seo_2026.md` — JSON-LD, imágenes 5 niveles, checklist
+4. `PLANTILLA_PANTALLA.md` (en `ola7/pantallas/`) — 7 secciones obligatorias
+
+**Reglas duras:**
+- Cada bloque de copy lleva `estado` (provisional / verificado) + `fuente` (Tono de voz de marca / inventario legacy / I-XXX / matriz F-18).
+- Nunca inventar copy sin traza. Nunca escribir componentes ni tokens D4 — eso es territorio de la línea técnica.
+- No se escribe `contenido_F17.md` (bloqueado por parámetros ERP).
+- Testimonios: solo texto real (gate de publicación en `archivo/flags_testimonios_seo.md` §1) — D1 (eslogan) y DC-1 (testimonios ACTIVA) resueltas 2026-08-09.
+- Copy de F-18 opera bajo la matriz de ponderación (D-matriz) pendiente.
+
+**Orden de producción (WIP=1):** F-00 → F-01 → F-09 → F-10 → F-11 → F-12(+F-16) → F-13 → F-14 → F-15 → F-18 → F-19. Una pantalla se escribe completa, se verifica el checkpoint y se continúa con la siguiente.
+
+**Artefactos creados (2026-08-09):**
+- `PLANTILLA_CONTENIDO.md` — template de 7 bloques para contenido_FXX.md.
+- `contenido_F00_shell.md` — piloto: header, nav, footer, WhatsApp flotante, modal transversal (DC-3), JSON-LD transversal. ✅ **Aprobado por Supervisor.**
+- `contenido_F01_home.md` — completo. Hero (H1 aprobado: "Carpintería arquitectónica. Diseñamos, fabricamos, instalamos." + eslogan D1 "Diseña tu espacio. Habita el bienestar." — 2026-08-09), Validación Técnica (3 cards, tercera rellenada con copy del sistema de tono), Conocemos Bogotá (copy textual aprobado), 7 categorías de espacios, 4 pasos del proceso, teaser 3 proyectos, Conócenos teaser, 2 Respuestas Atómicas indexables, CTA dual final. ✅ **Aprobado por Supervisor.** Testimonios desbloqueados (DC-1).
+- `contenido_F09_landings.md` — 6 landings SEO con `<title>` corregidos (sin "Premium"), copy textual del legacy, bloques compartidos de F-01, Respuestas Atómicas provisionales. ✅ **Aprobado por Supervisor.**
+- `contenido_F10_espacios.md` — índice de espacios `/espacios`: grid editorial de 7 categorías (6 F-09 + F-14 pisos), sin precios, `ItemList` + breadcrumb. ✅ **Aprobado por Supervisor.**
+- `contenido_F11_proceso.md` — "Cómo Trabajamos" `/como-trabajamos`: 4 pasos del proceso real, nota de acabados en físico (v3), garantía, 3 Respuestas Atómicas, JSON-LD `Service` + `HowTo`. ✅ **Aprobado por Supervisor.**
+- `contenido_F12_agendar.md` — "Agenda tu Asesoría" `/agenda-tu-asesoria`: dos types de asesoría (tabla comparativa, $130K desde parámetro ERP), cobertura geográfica F-16 anidada (D5), embudo híbrido modal+página (DC-3), 4 Respuestas Atómicas. ✅ **Aprobado por Supervisor.**
+- `contenido_F14_pisos.md` — "Pisos de Madera" `/espacios/pisos-de-madera`: restauración (diagnóstico → pulido → reparación → sellado), materiales bajo VOC, galería antes/después, CTA "Solicitar diagnóstico gratuito", 2 Respuestas Atómicas. ✅ **Aprobado por Supervisor.**
+- `contenido_F15_bitacora.md` — "Bitácora de Diseño" `/bitacora`, `/bitacora/[slug]`: portada con grid indexable + 4 categorías, entradas (caso Jose Talero, "Tipos de materiales", primer caso Bloque D), JSON-LD `Blog`/`Article`. ✅ **Aprobado por Supervisor.**
+- `contenido_F18_conocenos.md` — "Conócenos" `/conocenos`: historia 3 generaciones (1995→2014→2019), perfiles Hugo/Airhon, identidad legal (I-039). Copy sujeto a **D-matriz**: las 6 afirmaciones por verificar quedan marcadas como provisionales, no inventadas. ✅ **Aprobado por Supervisor (pendiente completar matriz).**
+- `contenido_F19_arquitectos.md` — "Para Arquitectos y Diseñadores" `/para-arquitectos`: canal de prescripción (I-021), flujo planos → cotización 3-5 días hábiles, formulario con adjunto, JSON-LD `ProfessionalService`. Condiciones comerciales marcadas **por definir** (D-B2B, sin inventar). ✅ **Aprobado por Supervisor (pendiente D-B2B).**
+- **Serie completa de contenido** `contenido_F00..F-19` (11 archivos) — única excepción documentada: F-17 (bloqueado por parámetros ERP). ✅
+- `contenido_F13_testimonios.md` — semilla de testimonios reales: Jose Talero (pendiente texto) + 4 reseñas reales de GBP (Daniela Barón Esparza, Glenda Danuro, Juan Spiro, Madeline Attara). ✅ **Aprobado por Supervisor.**
+- `archivo/flags_testimonios_seo.md` — flags de código: gate de publicación, `aggregateRating` solo real, `Review` por testimonio, contexto barrial (protocolo I-013), seed de datos disponibles.
+- `arnes/tareas/t-113.json` — mini-flow de Jose Talero (video → audio → transcripción), postergado hasta el checklist de tareas pendientes del Supervisor.
+- Pendientes: [ninguno — serie completa].
+
+**Decisiones tomadas en contenido (2026-08-09):**
+- **H1 F-01:** "Carpintería arquitectónica. Diseñamos, fabricamos, instalamos." — elegido entre 3 alternativas Creador Experto. Reemplaza el "alta precisión" del plan de julio por copy sin adjetivos impostados ni palabras IA. Eco natural del "sin intermediarios" del descriptor.
+- **D1 (eslogan):** "Diseña tu espacio. Habita el bienestar." — versión completa del `Tono de voz de marca.md`. Aplicado en F-01 (hero) y F-00 (footer).
+- **DC-1 (testimonios):** ACTIVA en `REGISTRO_DE_ENTIDADES.md` §10 — sin tocar schema (aprobación Supervisor 2026-08-09).
+- **DC-3 (embudo híbrido):** modal transversal (F-00) + página `/agenda-tu-asesoria` (SEO). Confirmado.
+- **`<title>` de F-09:** se elimina "Premium" de las 6 landings — adjetivo impostado sin valor de búsqueda (I-019, I-023, I-031).
+
+**Pendientes para fase de código (no bloquean contenido):**
+- Recuperar el texto/transcripción de Jose Talero para semilla de testimonios (t-113, postergado por el Supervisor).
+- Seleccionar los 3 proyectos reales del portafolio para la sección teaser de F-01 (Jose Talero I-050 candidato #1).
+- Recuperar las imágenes de los proyectos reales (I-016) para los grids de F-01, F-09 y F-13.
+- Decidir en fase de schema si `testimonios.proyectoId` permite NULL para reseñas genéricas de GBP (`flags_testimonios_seo.md` §6).
+
+**Próxima acción:** verificación de integridad del set de contenido (11 archivos) por parte del Supervisor; luego destilación a `ola7/pantallas/` cuando la línea técnica abra el bucle F-web. Pendientes de recursos: t-113 (Talero), D-B2B, D-matriz, I-016 (imágenes).
+

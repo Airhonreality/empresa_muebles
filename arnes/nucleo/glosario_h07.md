@@ -27,6 +27,10 @@ Fuente primaria del vocabulario natural: respuestas de Javier (`segunda_ronda_pr
 | Cliente | comprador | `clientes` (+`leads.cliente_id`) | Lead convertido (E-51); identidad que tienen los proyectos y los pagos. | `define:51` (identidad compartida) |
 | Visita | cita a domicilio, asesoría en obra | `citas`, `visitas` | Reunión gratis en el sitio cliente–comercial para tomar medidas/contexto del espacio. | `logica:128-133`; `discover:40` |
 | Retoma (de medidas) | retoma, segunda visita de medición | `retomas` | Medición y verificación de detalles técnicos post-firma; bisagra Comercial→Desarrollo. | `logica:462`; `discover:63` |
+| Artefacto del espacio | artefacto, objeto determinante, objeto bloqueante | `espacios_artefactos` | Objeto físico concreto en el espacio del cliente que condiciona el diseño del mueble (electrodoméstico existente, impresora, cortina, obra civil de tercero). Medido en visita/retoma (E-15). CLASE distinta de la ficha técnica del catálogo (`productos_atributos`). | `REGISTRO_DE_ENTIDADES.md` §3; schema.ts:191 |
+| Artefacto determinante | determinante de diseño | `espacios_artefactos` (categoria='determinante') | Objeto cuyas dimensiones DICTAN el diseño del mueble (ej. impresora 4×4 que fija el ancho del mesón). | `REGISTRO_DE_ENTIDADES.md` §3 |
+| Objeto bloqueante | bloqueante, obstáculo | `espacios_artefactos` (categoria='bloqueante') | Elemento del espacio que obstruye o limita la instalación (ej. cortina, ventana, columna) y debe sortearse en el diseño. | `REGISTRO_DE_ENTIDADES.md` §3 |
+| Categoría de artefacto | tipo de artefacto | `espacios_artefactos.categoria` | Clasificación del artefacto: `determinante`, `electrodomestico`, `bloqueante`, `obra_civil`, `servicio_tercero`. | Schema.ts:194 |
 | Propuesta | presupuesto, cotización, `/propuesta/:proyectoId` | `cotizaciones` (+`proyectos`) | Vista pública del proyecto: mismo cotizador evolutivo de preliminar a formal. | `logica:457-458`; `b3_1:258` |
 | Diseño 3D | diseño pagado, render 3D | `diseños3d` | Modelo 3D pagado ($130k, facturado DIAN); se descuenta del anticipo al firmar. | `logica:135-137,460`; `cierre:37-38` |
 | Contrato | contrato de obra | `contratos`, `firmas_contrato` | Documento que fija valor, hitos, cronograma y garantía; pasa de borrador a firmado. | `logica:478`; `discover:54` |
@@ -60,8 +64,7 @@ Fuente primaria del vocabulario natural: respuestas de Javier (`segunda_ronda_pr
 | Check de los 15 días | check 15, log de producción | `check_produccion` | Revisión a ~15 días con 3 desenlaces (adelanto / novedad / extremo). | `logica:251` (I-025) |
 | Cuenta de cobro | micro cuenta, cobro del socio | `liquidaciones_compensacion` (E-32) | Documento autogenerado por cada registro transaccional del socio. | `logica:383-384`; `discover:105` (E-32) |
 | Reposición (herramienta) | compra operativa | `herramientas`, `ordenes_compra` (origen=operativa) | Compra de herramienta/consumible no atada a proyecto. | `discover:75` (E-45) |
-
----
+| **Ficha técnica** | ficha técnica del catálogo, especificación técnica | `productos_atributos`, `marcas`, `campos_tecnicos_definicion` | **NUEVO [POC/2026-08-09]**. Conjunto de atributos físicos y dinámicos de un producto de catálogo (dimensiones, peso, material, ficha proveedor, campos por tipo). **CLASE**. | `disenio_ficha_catalogo.md:3` |
 
 ## B. Glosario de ESTADOS (máquinas de estado por concepto de negocio)
 
@@ -75,6 +78,7 @@ Convención: **label natural** = el término que se muestra (R02/P02). La column
 | Proyecto | `en_revision` | En revisión | Propuesta publicada; el cliente ajusta. `b3_1:297`; `discover:44` |
 | Proyecto | `cotizado` | Cotizado | Cotización formal cerrada. `b3_1:297`; `discover:47` |
 | Proyecto | `en_contrato` (legacy `en_contrato`) | En contrato | Contrato firmado, retoma pendiente. `schema.ts` legacy 8 |
+| Proyecto | `negociacion` | En Negociación | Reuniones y ajustes entre comercial y cliente antes de generar contrato. **Kanban comercial — POC-01.** Provisorio hasta decisión F10-E. | — |
 | Proyecto | `desarrollo` | En desarrollo técnico | Se modela y genera el schema/BOM. `define:75` (E-18); `b3_2:196` |
 | Proyecto | `aprobado_compras` | Aprobado para compras | Check de schema aprobado; habilita pedidos (gate E-18). `define:75`; `consolidado:211` |
 | Proyecto | `armado` | En armado | Materia ensamblándose en el taller. `b3_3:294` ("permanece en `armado`") |
@@ -220,13 +224,17 @@ Convención: **label natural** = el término que se muestra (R02/P02). La column
 | Causa desfase | `cambio_contrato` | Cambio de contrato | Tercer origen del flujo I-027; recalcula cronograma. `b3_2:280`; `define:23` |
 | Línea etapa | `contractual` / `interna` | Línea contractual (inmutable) / Línea interna (movible) | Doble línea del cronograma (I-034). `b3_2:277` |
 
-### B.16 Check de los 15 días (`check_produccion.desenlace`)
+### B.16 Check de los 15 días (`check_produccion.desenlace_final`)
+
+**Rediseño axiomático 2026-08-08** (`nucleo/mini_diamante_check_produccion.md`): el desenlace ya no se afirma a mano — se **deriva** de `MIN(ratio_insumos, ratio_pagos, ratio_produccion)` contra 2 umbrales en `parametros` (`umbral_todo_bien_pct`, `umbral_extremo_pct`). La tabla de abajo describe el resultado de esa función, no un juicio independiente por fila.
 
 | Concepto de negocio | Estado (código interno) | Label natural aprobado | Descripción breve |
 |---|---|---|---|
-| Check 15 | `todo_bien` | Todo listo | Se adelanta la instalación (E-60 positivo). `b3_2:384,394` |
-| Check 15 | `novedad` | Novedad | Incidente; se pospone línea interna, comisiones se reducen. `b3_2:385,395` |
-| Check 15 | `extremo` | Situación extrema | Máximo estrés; se escala y se negocia con el cliente. `b3_2:386,396` |
+| Check 15 | `todo_bien` | Todo listo | severidad ≥ `umbral_todo_bien_pct` (v1: 0.95). Se adelanta la instalación (E-60 positivo), sin reducción de comisión. `b3_2:384,394` |
+| Check 15 | `novedad` | Novedad | `umbral_extremo_pct` ≤ severidad < `umbral_todo_bien_pct`. Se pospone línea interna, comisión reducida `reduccion_comision_novedad_pct` (v1: 50%). `b3_2:385,395` |
+| Check 15 | `extremo` | Situación extrema | severidad < `umbral_extremo_pct` (v1: 0.70). Se escala y se negocia con el cliente, comisión reducida `reduccion_comision_extremo_pct` (v1: 100%). `b3_2:386,396` |
+
+**Nota de corrección:** hasta 2026-08-08 este glosario y `REGISTRO_DE_ENTIDADES.md` se contradecían sobre si `novedad` o `extremo` reducía comisiones — resuelto: **ambos reducen, en magnitud distinta**, ninguna de las dos versiones anteriores estaba completamente equivocada.
 
 ### B.17 Novedad crítica (`novedades_criticas.estado`)
 

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono, Teachers } from "next/font/google";
-import { ShellProvider } from "@/components/veta/shell-provider";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -66,9 +65,7 @@ export default function RootLayout({
           @keyframes fade-out { to { opacity: 0; } }
         `}</style>
       </head>
-      <body className="min-h-full flex flex-col">
-        <ShellProvider>{children}</ShellProvider>
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

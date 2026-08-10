@@ -21,18 +21,64 @@ Progreso detallado de la línea técnica. Se lee al arrancar cualquier sesión d
 
 ---
 
-## PRÓXIMA ACCIÓN (F8 — Hardening / Integraciones)
+## ✅ BANDA F0–F9 CERRADA — CHECKPOINT SUPERVISOR (2026-08-08)
 
-Retomar el **bucle por fase**. Estado actual:
+**Checkpoint #10 cumplido.** QA documental 10/10 condiciones ✅. 17 pantallas con PLANTILLA_PANTALLA. 5 gates con predicados. Glosario H07 completo. La banda de diseño F0–F9 sale.
 
 | Fase | Dominio | Estado |
 |---|---|---|
 | F0–F7 | Cimientos, catálogo, comercial, contratos, compras, taller, calidad, entrega, garantía, finanzas, sitio público | Planes/Diseños aprobados ✅ |
-| **F8** | Hardening / integraciones | **SIGUIENTE** — sin plan |
-| F9 | QA + corte final | Sin plan |
+| F8 | Hardening / integraciones | Plan aprobado ✅ — `tecnico/plan_f8.md` |
+| F9 | QA documental + corte de banda | **QA ejecutada, 10/10 ✅, t-109 completada** |
+| **F10** | Prototipo con mocks (ABIERTA — bloque 1 en curso) | **Plan aprobado** — `tecnico/plan_f10.md` |
 
 **Próxima acción permitida:**
-> Abrir el **bucle de diseño F8 (hardening)**: enums aditivos + backfill de datos existentes, deprecación `rolEmpleado`→`personas_roles`, integraciones diferidas (Viewer 3D). Usa `PLANTILLA_HARDENING.md`. El Orquestador presenta determinantes → Supervisor decide → Iniciador diseña.
+> Crear subsistema `lib/data/` con mocks controlados, prototipo B1 (P-01..P-05: comercial + cotizador). Feedback de uso real → hallazgos → cambios de diseño/gates/schema → migraciones reales al final.
+
+**Antes de arrancar B2 (o cualquier bloque nuevo):** `tecnico/checklist_progreso_pantallas.md` es la Definición de Hecho obligatoria — reactividad de datos, round-trip test por dominio, discoverability de controles de UI, reglas de paralelización de lotes. Nace de POC-14 (~10 vueltas perdidas por no tenerlo). El Iniciador lo cita en los criterios de aceptación de toda tarea de pantalla/datos de F10.
+
+**Nota sobre F10:** redefinido por el Supervisor (2026-08-08). Ya no es "QA de ejecución post-código" sino **prototipado real primero, migraciones después** — las pantallas se prueban con datos mock del negocio antes de tocar el schema. La QA de runtime se difiere a una fase posterior.
+
+**✅ CIERRE DEL LOTE F5/F6/F-02/F-03/F-07 (2026-08-09, POC-18):** 11 pantallas nuevas — P-16..P-23 (taller/calidad/instalación/entrega/garantía/finanzas), P-27 (catálogo), F-02 (tienda), F-03 (portafolio) — más F-07 (portal cliente con auth real vía `iron-session`, decisión explícita del Supervisor de no mockear la sesión) y P-03/F-08 (modo solo-lectura del cotizador + propuesta pública, hechos directo sin sub-agente). Antes de repartir pantallas se construyó una capa de datos previa (15 entidades nuevas, mismo patrón que B2-0) y `lib/modules/f4f5f6/gates.ts` (12 tests). **Cambio de tooling desde este lote:** los sub-agentes se lanzan con `opencode run` + modelos Zen/OpenRouter free (`arnes/MODELOS.md`), no con el Agent tool de Claude — para conservar el rate limit de Claude, que pasa a reservarse para revisar/verificar/corregir. Un lote (`laguna-s-2.1-free`, finanzas) tuvo fricción real pero se recuperó solo y reportó honestamente un gap (`cuentasCobroProveedor.anular()` faltante) en vez de improvisar; otro lote (`north-mini-code-free`, tienda/portafolio) se colgó ~2h40min sin producir output y se relanzó con `nemotron-3-ultra-free`, que cerró limpio. Consolidación propia (Claude) encontró y corrigió: el gap de `anular()` reportado (agregado a `lib/data/` + UI con modal de confirmación R18), 2 labels de nav sin tilde, navegación desconectada otra vez en el hub del proyecto (Calidad/Instalación/Entrega sin tarjeta, mismo síntoma que POC-17), `/cuenta` y `/cuenta/garantia` sin punto de entrada, y un error de tipos preexistente en `app/erp/comercial/page.tsx` (`ProjectCard` sin `store` en props) introducido fuera de este lote. Se confirmó además que `descripcionAlternativa` (que un resumen de sesión anterior había marcado por error como "regresión sin resolver") es en realidad una limpieza deliberada ya aprobada en la 3ª pasada de Auditoría B1 — no requiere acción. Detalle completo: `tecnico/registro_hallazgos_poc4.md` POC-18. Verificado: tsc/eslint limpios (0 errores, solo warnings preexistentes de `<img>`), 78/78 tests (51 mock-store + 15 f3 + 12 f4f5f6), build 27/27 rutas. Nada de esto está commiteado.
+
+**✅ B2 LOTES A/B CERRADOS (2026-08-09, POC-17):** 7 pantallas F3 construidas y conectadas — P-06 (hub `/erp/proyectos/[id]`), P-07 (retoma), P-08 (esquema+veredicto E-18), P-09 (cronograma doble línea + desfase E-33), P-10 (novedades críticas + SLA), P-11 (check de producción + desenlace R9/R10), P-12 (equipo). Ejecutado con 2 sub-agentes Haiku en paralelo sobre archivos disjuntos (B2-0/datos ya estaba completo y no se tocó). Se descartó una propuesta de rutas API reales con Drizzle (violaba F10-mock, `lib/db/client.ts` es conexión real a dev-local) y se corrigió al vuelo que el diseño original (`disenio_f3_cronograma_gates.md` §6) asumía llamadas API reales en vez de métodos del store — mismo tipo de error, corregido antes de ejecutar. Consolidación propia encontró y arregló: `erp-shell.tsx` seguía con `getDataStore()` (fuera del alcance del guante de eslint por vivir en `components/`), navegación desconectada (hub sin link desde el kanban, cronograma sin link desde el hub, sin botón "Volver" en una sub-página). Detalle completo: `tecnico/registro_hallazgos_poc4.md` POC-17. Verificado: tsc/eslint limpios, 44/44 tests (29+15), build 16/16 rutas. **Lote C (kanban P-01 rediseño) queda diferido** — sin diseño de columnas/transiciones todavía, se hace después de que Javier revise A+B. Nada de esto está commiteado.
+
+**✅ AUDITORÍA B1 — 2ª PASADA CERRADA (2026-08-09, POC-16):** 5 hallazgos sobre lo entregado en POC-15, con capturas del prototipo real. (1) La jerarquía espacio→variante no se entendía: variantes se veían como tarjetas hermanas en vez de branches de un mismo espacio — reestructurado en `EspacioGroup` (contenedor + tabs) y `VarianteContenido` (contenido de la tab seleccionada); el total del header siempre refleja la variante activa, no la que se esté mirando. (2) "Visible en PDF" renombrado a `visibleEnPropuestaPublica` (capa mock únicamente — `lib/db/schema.ts` real queda para la migración, protegido por checkpoint) y movido a ícono de ojo en el header. (3) Badge "Referencial" reemplazado por punto minimalista dentro de una zona propia con frontera visual (borde punteado), separada de los ítems cotizados. (4) "Detalles del espacio" ahora muestra miniatura + specs en vez de un "+ Editar" escondido. (5) `ImagePicker` generalizado con `multiple` y adoptado también en artefactos — cosificado como regla obligatoria en `checklist_progreso_pantallas.md` punto 11 para toda pantalla futura. Detalle completo: `tecnico/registro_hallazgos_poc4.md` POC-16. Verificado: tsc/eslint/build limpios, 17/17 tests.
+
+**✅ AUDITORÍA B1 — 3ª PASADA CERRADA (2026-08-09, limpieza fina):** cierre de la limpieza de schema/docs/UX pendientes de la 2ª pasada. (1) `descripcionAlternativa` eliminado por completo de `lib/data/contracts.ts`, `lib/data/mock-store.ts`, `lib/data/fixtures.ts` y `lib/db/schema.ts` — una sola descripción pública por variante. (2) Checkbox `activa` eliminado del formulario; la variante activa se controla desde header/tab del espacio (ojo + punto verde + badge); `activa` se mantiene solo como dato en schema (lo usa `marcarActiva()` internamente). (3) Kanban compactado: título 2 líneas, padding `p-2.5`, gaps `gap-1.5`, columnas `w-64`, botón Cotizador `h-6 text-xs`. (4) Responsive móvil implementado en `app/globals.css` (`@media max-width:640px` apila columnas full-width; desktop/laptop scroll horizontal con snap). (5) Patrón "Detalles del Espacio" cosificado como A.10 en `m06_capa_tecnica_transversal.md`. Verificado: `tsc --noEmit` 0 errores, `eslint .` 0 errores, `next build` 14/14, 29/29 tests mock-store. Checklist completo: `tecnico/checklist_requisitos_b1_cierre.md` (30/34 cumplidos, 3 parciales documentales, 1 pendiente B2).
+
+**✅ AUDITORÍA B1 CERRADA (2026-08-09, POC-15):** 3 hallazgos del Supervisor sobre el formulario de espacio/cotizador — todos gaps de implementación de features ya diseñadas, ninguno requirió decisión de negocio nueva. (1) Duplicar variante de espacio (vacía/clonada) — `disenio_p04_cotizador.md` ya lo especificaba, el legado lo tenía; se agregó `espacios.duplicar`/`espacios.marcarActiva` al store, y se corrigió un bug destapado en el camino: los totales sumaban variantes inactivas sin filtrar. (2) "Presupuesto adicional" (obra civil estimada vs. carpintería contratada) — el precio NO va en `EspacioArtefacto` (violaría el axioma CLASE/INSTANCIA de `logica_de_negocio.md`); la feature real ya estaba diseñada sobre `items_variante` (`es_referencial`/`fuente_referencial`/`grupo_referencial`, Collapse 11/12) y nunca se implementó — ahora sí. Destapó otro bug: `totalLinea` nunca se recalculaba en el store, cualquier ítem nuevo/editado quedaba en $0 en los Grand Totals. (3) Selector de imágenes + helpers de campos confusos — nuevo primitivo D4 `components/veta/image-picker.tsx` (miniaturas, drag/paste/URL, 0 deps nuevas) y texto de ayuda persistente (no hover) en campos críticos. Detalle completo con cita archivo:línea: `tecnico/registro_hallazgos_poc4.md` POC-15. Verificado: tsc/eslint/build limpios, 17/17 tests. **Veredicto de paralelización: con esto cerrado, ya es seguro lanzar sub-agentes para B2 en paralelo** (contrato de `lib/data/` estable, B2 no comparte superficie con `items_variante`/`espacios`).
+
+**✅ M-07 MATERIALIZADO — Contrato de reactividad (2026-08-09, POC-14):** `registro_hallazgos_poc4.md` (POC-10#2/#4) había decidido que el data layer mock debía ser reactivo, pero la regla quedó en prosa (M-07 nunca se creó como archivo) — cada pantalla reinventaba su propio `trigger`/`onRefresh` manual, y el síntoma ("mutar y no se refleja") se replicó hasta consumir ~10 vueltas de debugging sobre el renombrado de un espacio, sin que nadie tuviera un chequeo mecánico para distinguir store roto de UI no refrescada. Cerrado ahora: `useDataStore()` (hook con `useSyncExternalStore`) reemplaza `getDataStore()` en las 6 pantallas de B1; cada mutación del store notifica automáticamente a todos los suscriptores (elimina la clase entera de bug, no solo el síntoma puntual); guante de eslint bloquea reintroducir `getDataStore()` en `app/`; `lib/data/mock-store.test.ts` (nuevo, 12 pruebas) prueba el contrato de round-trip que `arnes/roles/qa.md` exige para tareas de tipo `datos`. Detalle completo: `tecnico/m07_capa_reactividad.md`. Regla para B2 en adelante: ningún dominio nuevo se da por "hecho" sin su propio caso en el test de round-trip.
+
+**HALLAZGO [POC-09] — Artefacto del espacio + Ficha de catálogo (2026-08-09):**
+- `espacios_artefactos` (INSTANCIA) ya existe en `schema.ts:191` desde E2 (2026-08-06) y ahora está implementado en el prototipo mock: interfaz `EspacioArtefacto` en `lib/data/contracts.ts`, fixtures (impresora determinante, cortina bloqueante, lavavajillas existente en proj01/esp01), mock-store + drizzle-stub, y Collapse "Artefactos del espacio" en cotizador `[proyectoId]/page.tsx` con crear/editar.
+- `REGISTRO_DE_ENTIDADES.md` (§3) y `glosario_h07.md` (§A) actualizados con los 5 nuevos términos (Artefacto del espacio, Artefacto determinante, Objeto bloqueante, Categoría de artefacto). `disenio_p04_cotizador.md` actualizado (12 CollapseStrips, entidad consumida §1, label H07 §3).
+- **Ficha técnica del catálogo (CLASE):** `productos_atributos` fue decidida en `plan_t-075.md` (#2: ficha dinámica por tipo de producto, 1:1 con `productos_catalogo`) pero NUNCA materializada en schema, REGISTRO §2, ni contratos TS. Queda delegada a un mini-diámetro propio (diseño axiomático FR/DP, campos dinámicos según tipo, alineación con REGISTRO §2). Sin duplicidad con `espacios_artefactos` (instancia ≠ clase).
+
+---
+
+## ✅ BUCLE F9 COMPLETADO — PLAN APROBADO (2026-08-08) + REAJUSTE DE ALCANCE
+
+**Cierre del bucle F9 (QA + corte):**
+- `arnes/lineas/ola7/tecnico/plan_f9.md` — plan completo siguiendo `PLANTILLA_QA.md` (adaptado a banda de solo-diseño).
+- **Decisión del Supervisor:** F9 es **QA documental** únicamente — verifica las 10 condiciones del checklist de corte. La QA de runtime (gates E2E, tests, trazabilidad, build completo, migración de 65 tablas) se difiere a **F10 — QA de ejecución**, post-codificación.
+- **Alcance de F9:** cruce REGISTRO↔schema.ts (27 tablas existentes), completitud de artefactos (9 planes + 19 pantallas), 5 gates con predicado documentado, cobertura glosario H07, tsc/eslint/build.
+- **Tarea registrada:** t-109 (checkpoint requerido — condición #10 es el Supervisor).
+
+---
+
+## ✅ BUCLE F8 COMPLETADO — PLAN APROBADO (2026-08-08)
+
+**Cierre del bucle F8 (hardening / integraciones):**
+- `arnes/lineas/ola7/tecnico/plan_f8.md` — plan completo siguiendo `PLANTILLA_HARDENING.md`.
+- **Decisiones del Supervisor (4/4):** (1) deprecar `rolEmpleado` del schema V3; (2) añadir 4 params A-02 al seed + eliminar el deprecado; (3) helpers de params documentados en md, no codificados; (4) enums de estado + `fecha` text→timestamp en schema.
+- **A-01 cerrado** (parámetros no bloquean, son paramétricos por naturaleza). **A-02 cerrado** (rediseño axiomático de `check_produccion` con 4 params nuevos, ver `nucleo/mini_diamante_check_produccion.md`).
+- **Hallazgo crítico de V3:** no existe `lib/auth/`, `lib/erp-nav.ts`, `lib/modules/`, `app/api/` — el hardening de código que la plantilla asume no aplica. En su lugar, se documentan 6 restricciones de diseño (R-01..R-06) que el futuro código DEBE cumplir.
+- **Diseño de helpers de params:** `lib/modules/f0/parametros.ts` documentado con firmas, reglas (transacción atómica, cache 60s, append-only) e inventario completo P-01..P-36. Se codifica en t-074 (F0) al salir de la banda.
+- **Tareas registradas:** t-105 (schema hardening), t-106 (seed A-02), t-107 (glosario h07 params), t-108 (REGISTRO + plan_ola7 + estado alineados).
+
+**Próxima fase:** F9 (QA + corte final).
 
 ---
 
@@ -219,7 +265,7 @@ aprobación → diseño → plan de código aprobado → (SIGUIENTE FASE, repeti
 - **Inventario completo** de 9 namespaces legacy mapeados a 26 tablas del nuevo schema
 - **8 flujos de negocio** documentados: carga paralela, selección cliente/proyecto, configuración espacios/variantes/items, cálculo precios (materiales + 3 tarifas MO + costos operativos + IVA), auto-save race-safe, búsqueda fuzzy con historial localStorage, generación contrato via zap, propuesta pública con snapshot
 - **Lógica de cálculo core:** precios por ítem (precio_publico default editable), mano de obra via 3 SKUs catálogo (SERV-DEV/ASSEMBLY/INSTALL), costos operativos/imprevistos/descuento/ajuste, IVA condicional
-- **Patrones UI:** Kanban 8 estados (activa→entregado/perdida), EspacioCard con 11 collapse strips, ItemRow con Popover fuzzy search + MoneyInput, ContratoModal 5 secciones + PaymentScheduleCalculator 100% controlado
+- **Patrones UI:** Kanban comercial (activa→enviada→negociacion→en_contrato→pre_produccion→produccion→Archivo [perdida+cancelada]), EspacioCard con 11 collapse strips, ItemRow con Popover fuzzy search + MoneyInput, ContratoModal 5 secciones + PaymentScheduleCalculator 100% controlado
 - **Contrato Legacy (P-05):** Estructura completa, hitos en tabla separada, especificaciones compiladas dinámicamente por tipo de catálogo
 - **Mapeo detallado** legacy→nuevo schema con campos que cambian/eliminan/nuevos por tabla
 
@@ -239,7 +285,7 @@ aprobación → diseño → plan de código aprobado → (SIGUIENTE FASE, repeti
 **Consecuencias técnicas (requieren reprocesar Ola 6):**
 1. **Schema Drizzle (`lib/db/schema.ts`):** Añadir 3 campos en `items_variante` (`es_referencial`, `fuente_referencial`, `grupo_referencial`). Añadir 4 filas en `parametros` (`arriendo_mensual_taller`, `horas_mes_taller`, `pct_mantenimiento_maquinas`, `factor_logistica_install`, `transiciones_proyecto` — `costo_hora_operario_base` ya existe).
 2. **Migración DB:** Nueva migración aditiva contra `dev-local` (3 campos + 4 params).
-3. **Seed:** Valores por defecto para 4 params físicos + matriz de transiciones (8→8 legacy + nuevos estados F3).
+3. **Seed:** Valores por defecto para 4 params físicos + matriz de transiciones (incluye `negociacion` POC-01 + legacy + nuevos F3).
 4. **Cotizador (P-04):** Pantalla modificada — leer base tarifas de `parametros`, cálculo runtime, nueva UI referencial en ItemRow, semántica precios clarificada.
 
 ---
@@ -264,16 +310,16 @@ aprobación → diseño → plan de código aprobado → (SIGUIENTE FASE, repeti
 
 ---
 
-## ✅ DISEÑO P-01 KANBAN COMERCIAL — APROBADO (2026-08-05)
+## ✅ DISEÑO P-01 KANBAN COMERCIAL — APROBADO-PROTOTIPO (v2 POC-01, 2026-08-08)
 
 **Artefacto:** `arnes/lineas/ola7/pantallas/disenio_p01_kanban_comercial.md`
 
-**Componentes aprobados:**
+**Componentes aprobados (v2):**
 - Header: Título, SmartSearch (fuzzy + historial + uso frecuente), [Nuevo +], Filtros colapsables
-- 8 Columnas: Estados legacy (activa→entregado/perdida/cancelada) + colores + contadores
-- Transiciones: Drag-drop + menú "Cambiar estado →" validados contra `parametros.transiciones_proyecto` — **C3**
+- 7 Columnas: activa, enviada, **negociacion** (POC-01), en_contrato, pre_produccion, produccion (solo lectura), **Archivo** (solo lectura, agrega perdida+cancelada). entregado sin columna kanban.
+- Transiciones: Botones "→" validados contra `parametros.transiciones_proyecto` — **C3**. Solo columnas editables muestran transiciones.
 - ComercialCard: Nombre, cliente, espacios, items, **total estimado server-side** (mat+MO+costos), fechas, días en estado — **C1, C2, C4**
-- Columnas solo-lectura: `produccion`, `entregado`, `perdida`, `cancelada` (sin drag, sin +Añadir)
+- Columnas solo-lectura: `produccion`, `Archivo` (sin transiciones visibles, sin drag, sin +Añadir)
 - Filtros: Comercial, Tipo proyecto, Fecha, Solo mis leads (persistidos localStorage)
 - Nuevo Proyecto Modal (P-02 preview): Nombre, HybridClientSelector, Tipo, Estado (fijo si viene de columna), Dirección
 - Acciones tarjeta: Abrir → P-04, Duplicar, Cambiar estado (solo válidos), Historial, Eliminar
@@ -287,7 +333,7 @@ aprobación → diseño → plan de código aprobado → (SIGUIENTE FASE, repeti
 
 | Código | Pantalla | Descripción | Estado |
 |---|---|---|---|
-| **P-01** | **Kanban Comercial** | Embudo leads→cotizaciones→contratos (8 estados legacy + nuevos F3). SmartSearch, transiciones desde `parametros`. | ✅ **APROBADA** |
+| **P-01** | **Kanban Comercial** | Embudo leads→cotizaciones→contratos (7 columnas POC-01 + negociacion + Archivo). SmartSearch, transiciones desde `parametros`. | ✅ **APROBADA-PROTOTIPO** |
 | **P-02** | **Nueva Cotización / Proyecto** | Crear proyecto draft (`activa`), HybridClientSelector, tipo proyecto, datos iniciales. | 🔄 **SIGUIENTE: DISEÑAR** |
 | **P-03** | **Detalle Cotización (Solo Lectura)** | Vista read-only para taller/finanzas. Header + espacios + items + totales. | 🔄 Pendiente |
 | **P-04** | **Cotizador (Editor Completo)** | **✅ APROBADA** — `disenio_p04_cotizador.md` | ✅ |
