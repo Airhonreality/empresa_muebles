@@ -215,6 +215,18 @@ export default function ProyectoHubPage() {
             </Button>
           </Link>
         </div>
+
+        <div className="rounded-lg border border-border-subtle bg-bg-raised p-6">
+          <h3 className="font-semibold text-text-heading mb-3">Documentos</h3>
+          <p className="text-sm text-text-muted mb-4">
+            Fotos y documentos del proyecto por etapa.
+          </p>
+          <Link href={`/erp/proyectos/${proyectoId}/documentos`}>
+            <Button variant="primary" size="md" className="w-full">
+              Ir a Documentos
+            </Button>
+          </Link>
+        </div>
       </section>
 
       {/* Schema Info */}

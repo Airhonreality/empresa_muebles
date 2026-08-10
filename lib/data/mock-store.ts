@@ -6,6 +6,8 @@ import type {
   CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, OrigenObligacion, EstadoObligacion, Proveedor, OrdenCompra, EstadoOrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
+  ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
+  DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
 } from './contracts'
 import { derivarDesenlace, derivarReduccionComision, P18, P33 } from '../modules/f3/gates'
 import {
@@ -23,6 +25,7 @@ import {
   PROVEEDORES, ORDENES_COMPRA, REGISTROS_GATE_CAJA, CUENTAS_COBRO_PROVEEDOR,
   CATEGORIAS, PRODUCTOS_TIENDA, CATALOGO_ACABADOS, CATALOGO_PRODUCTO_ACABADOS, ACABADOS_MUESTRAS,
   PORTAFOLIO, MODULOS_ARTEFACTOS,
+  ITEMS_ORDEN_COMPRA, RECEPCIONES_MATERIAL, HERRAMIENTAS, DOCUMENTOS_PROYECTO,
 } from './fixtures'
 
 function deepClone<T>(obj: T): T {
@@ -93,6 +96,14 @@ export function createMockStore(): DataStore {
   // F-03 dominio (portafolio de proyectos)
   const portafolio: Portafolio[] = deepClone(PORTAFOLIO)
   const modulosArtefactos: ModuloArtefacto[] = deepClone(MODULOS_ARTEFACTOS)
+
+  // F4 dominios (compras: recepción, herramientas — P-13/P-14/P-15)
+  const itemsOrdenCompra: ItemOrdenCompra[] = deepClone(ITEMS_ORDEN_COMPRA)
+  const recepcionesMaterial: RecepcionMaterial[] = deepClone(RECEPCIONES_MATERIAL)
+  const herramientas: Herramienta[] = deepClone(HERRAMIENTAS)
+
+  // F7 dominio (documentación del proyecto — P-26)
+  const documentosProyecto: DocumentoProyecto[] = deepClone(DOCUMENTOS_PROYECTO)
 
   function parametroNumero(clave: string, fallback: number): number {
     const p = parametros.find(x => x.clave === clave)
@@ -1036,6 +1047,9 @@ export function createMockStore(): DataStore {
     },
 
     pedidosWeb: {
+      listar(): PedidoWeb[] {
+        return pedidosWeb
+      },
       porCliente(clienteId: string): PedidoWeb[] {
         return pedidosWeb.filter(p => p.clienteId === clienteId)
       },
@@ -1043,13 +1057,39 @@ export function createMockStore(): DataStore {
         const nuevo: PedidoWeb = {
           id: generateId('pw'),
           clienteId: data.clienteId,
-          estado: 'creado',
+          proyectoId: null,
+          estado: 'nuevo',
           totalPedido: data.totalPedido,
           createdAt: new Date().toISOString(),
         }
         pedidosWeb.push(nuevo)
         notify()
         return nuevo
+      },
+      actualizarEstado(id: string, estado: string): PedidoWeb | null {
+        const idx = pedidosWeb.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        pedidosWeb[idx] = { ...pedidosWeb[idx], estado }
+        notify()
+        return pedidosWeb[idx]
+      },
+      enganchar(id: string, proyectoId: string): PedidoWeb | null {
+        if (!proyectoId) return null
+        const idx = pedidosWeb.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        // R2: reintentar sobre uno ya enganchado no duplica la orden de trabajo.
+        if (pedidosWeb[idx].estado === 'enganchado') return pedidosWeb[idx]
+        pedidosWeb[idx] = { ...pedidosWeb[idx], estado: 'enganchado', proyectoId }
+        ordenesTrabajo.push({
+          id: generateId('ot'),
+          proyectoId,
+          pedidoWebId: id,
+          tipo: 'produccion',
+          estado: 'abierta',
+          createdAt: new Date().toISOString(),
+        })
+        notify()
+        return pedidosWeb[idx]
       },
     },
 
@@ -1540,6 +1580,156 @@ export function createMockStore(): DataStore {
         proveedores.push(nuevo)
         notify()
         return nuevo
+      },
+    },
+
+    itemsOrdenCompra: {
+      porOrdenCompra(ordenCompraId: string): ItemOrdenCompra[] {
+        return itemsOrdenCompra.filter(i => i.ordenCompraId === ordenCompraId)
+      },
+      crear(data: { ordenCompraId: string; productoCatalogoId: string; cantidadEsperada: number }): ItemOrdenCompra {
+        const nuevo: ItemOrdenCompra = {
+          id: generateId('ioc'),
+          ordenCompraId: data.ordenCompraId,
+          productoCatalogoId: data.productoCatalogoId,
+          cantidadEsperada: data.cantidadEsperada,
+          recibidoCantidad: 0,
+          sinDefectos: false,
+        }
+        itemsOrdenCompra.push(nuevo)
+        notify()
+        return nuevo
+      },
+    },
+
+    recepcionesMaterial: {
+      porOrdenCompra(ordenCompraId: string): RecepcionMaterial[] {
+        return recepcionesMaterial.filter(r => r.ordenCompraId === ordenCompraId)
+      },
+      crear(data: { ordenCompraId: string; proyectoId?: string | null }): RecepcionMaterial {
+        const nuevo: RecepcionMaterial = {
+          id: generateId('recm'),
+          ordenCompraId: data.ordenCompraId,
+          proyectoId: data.proyectoId ?? null,
+          checkPedidoBien: false,
+          checkDespachoBien: false,
+          checkMaterial: false,
+          estado: 'pendiente',
+          descripcionDefecto: null,
+          createdAt: new Date().toISOString(),
+        }
+        recepcionesMaterial.push(nuevo)
+        notify()
+        return nuevo
+      },
+      actualizarChecks(id: string, data: { checkPedidoBien: boolean; checkDespachoBien: boolean; checkMaterial: boolean; descripcionDefecto?: string | null }): RecepcionMaterial | null {
+        const idx = recepcionesMaterial.findIndex(r => r.id === id)
+        if (idx === -1) return null
+        const completa = data.checkPedidoBien && data.checkDespachoBien && data.checkMaterial
+        // R3: si algún check falla, exige descripción del defecto no vacía.
+        if (!completa && (!data.descripcionDefecto || data.descripcionDefecto.trim().length === 0)) return null
+        const estado: EstadoRecepcionMaterial = completa ? 'recibido_verificado' : 'recibido_defectuoso'
+        recepcionesMaterial[idx] = {
+          ...recepcionesMaterial[idx],
+          checkPedidoBien: data.checkPedidoBien,
+          checkDespachoBien: data.checkDespachoBien,
+          checkMaterial: data.checkMaterial,
+          descripcionDefecto: data.descripcionDefecto ?? null,
+          estado,
+        }
+        // E-21: 3/3 checks → la OC pasa a recibida_verificada, misma operación.
+        if (completa) {
+          const ocIdx = ordenesCompra.findIndex(o => o.id === recepcionesMaterial[idx].ordenCompraId)
+          if (ocIdx !== -1) {
+            ordenesCompra[ocIdx] = { ...ordenesCompra[ocIdx], estado: 'recibida_verificada', updatedAt: new Date().toISOString() }
+          }
+        }
+        notify()
+        return recepcionesMaterial[idx]
+      },
+    },
+
+    herramientas: {
+      listar(): Herramienta[] {
+        return herramientas
+      },
+      crear(data: { nombre: string; valor: string; fotoUrl?: string | null; proveedorId?: string | null }): Herramienta {
+        const nuevo: Herramienta = {
+          id: generateId('herr'),
+          nombre: data.nombre,
+          estadoOperativo: 'operativa',
+          valor: data.valor,
+          fotoUrl: data.fotoUrl ?? null,
+          proveedorId: data.proveedorId ?? null,
+          ordenCompraReposicionId: null,
+          createdAt: new Date().toISOString(),
+        }
+        herramientas.push(nuevo)
+        notify()
+        return nuevo
+      },
+      actualizarEstado(id: string, estado: EstadoOperativoHerramienta): Herramienta | null {
+        const idx = herramientas.findIndex(h => h.id === id)
+        if (idx === -1) return null
+        herramientas[idx] = { ...herramientas[idx], estadoOperativo: estado }
+        notify()
+        return herramientas[idx]
+      },
+      reponer(id: string): { herramienta: Herramienta; ordenCompra: OrdenCompra } | null {
+        const idx = herramientas.findIndex(h => h.id === id)
+        if (idx === -1) return null
+        // R2: no duplica si ya hay una OC de reposición abierta para esta herramienta.
+        const existente = herramientas[idx].ordenCompraReposicionId
+          ? ordenesCompra.find(o => o.id === herramientas[idx].ordenCompraReposicionId && o.estado !== 'cancelada' && o.estado !== 'rechazada' && o.estado !== 'pagada')
+          : undefined
+        if (existente) return { herramienta: herramientas[idx], ordenCompra: existente }
+        const now = new Date().toISOString()
+        const nuevaOC: OrdenCompra = {
+          id: generateId('oc'),
+          codigoOrden: `OC-${Date.now()}`,
+          proyectoId: null,
+          proveedorId: herramientas[idx].proveedorId ?? '',
+          montoTotal: herramientas[idx].valor,
+          anticipoMonto: null,
+          estado: 'solicitada',
+          mecanicaPago: 'unico',
+          fechaRecepcionEsperada: null,
+          tiempoEntregaDias: null,
+          createdAt: now,
+          updatedAt: now,
+        }
+        ordenesCompra.push(nuevaOC)
+        herramientas[idx] = { ...herramientas[idx], estadoOperativo: 'necesita_reposicion', ordenCompraReposicionId: nuevaOC.id }
+        notify()
+        return { herramienta: herramientas[idx], ordenCompra: nuevaOC }
+      },
+    },
+
+    documentosProyecto: {
+      porProyecto(proyectoId: string): DocumentoProyecto[] {
+        return documentosProyecto.filter(d => d.proyectoId === proyectoId)
+      },
+      crear(data: { proyectoId: string; etapa: MacroFaseProyecto; alojador: AlojadorDocumento; url: string; nombre: string }): DocumentoProyecto | null {
+        if (!data.url || data.url.trim().length === 0) return null
+        const nuevo: DocumentoProyecto = {
+          id: generateId('doc'),
+          proyectoId: data.proyectoId,
+          etapa: data.etapa,
+          alojador: data.alojador,
+          url: data.url,
+          nombre: data.nombre,
+          createdAt: new Date().toISOString(),
+        }
+        documentosProyecto.push(nuevo)
+        notify()
+        return nuevo
+      },
+      eliminar(id: string): boolean {
+        const idx = documentosProyecto.findIndex(d => d.id === id)
+        if (idx === -1) return false
+        documentosProyecto.splice(idx, 1)
+        notify()
+        return true
       },
     },
 

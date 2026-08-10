@@ -15,6 +15,15 @@ const PARAM_KEYS = {
   arriendoTallerPorDia: "arriendo_taller_por_dia",
   diasHabilesPorMes: "dias_habiles_por_mes",
   tipoCostoDefault: "tipo_costo_default",
+  // A-01: compensación diseño 3D / hora extra (plan_ola7_maestro.md §4)
+  netoDiseno3dPct: "neto_diseno_3d_pct",
+  ivaDiseno3dPct: "iva_diseno_3d_pct",
+  recargoHoraExtraPct: "recargo_hora_extra_pct",
+  // A-02: umbrales de check_produccion / comisión (nucleo/mini_diamante_check_produccion.md)
+  umbralTodoBienPct: "umbral_todo_bien_pct",
+  umbralExtremoPct: "umbral_extremo_pct",
+  reduccionComisionNovedadPct: "reduccion_comision_novedad_pct",
+  reduccionComisionExtremoPct: "reduccion_comision_extremo_pct",
 } as const;
 
 export default function FinanzasParametrosPage() {
@@ -44,6 +53,25 @@ export default function FinanzasParametrosPage() {
         diasHabilesPorMes: parseInt(getParam(PARAM_KEYS.diasHabilesPorMes) ?? String(PARAMETROS_DEFAULT.jornadas.diasHabilesPorMes)),
       },
       modulos: PARAMETROS_DEFAULT.modulos,
+    };
+  });
+
+  // A-01/A-02: parámetros de compensación y umbrales de producción, pendientes de
+  // confirmación (Supervisor/contador) — plan_ola7_maestro.md §4. Editables acá para
+  // que la confirmación sea una edición en UI, no una decisión puntual fuera de código.
+  const [gates, setGates] = useState(() => {
+    const getParam = (key: string, fallback: string) => {
+      const param = parametros.find(p => p.clave === key);
+      return param?.valorNumeric ?? param?.valorTexto ?? fallback;
+    };
+    return {
+      netoDiseno3dPct: getParam(PARAM_KEYS.netoDiseno3dPct, "97.50"),
+      ivaDiseno3dPct: getParam(PARAM_KEYS.ivaDiseno3dPct, "19"),
+      recargoHoraExtraPct: getParam(PARAM_KEYS.recargoHoraExtraPct, "25"),
+      umbralTodoBienPct: getParam(PARAM_KEYS.umbralTodoBienPct, "0.95"),
+      umbralExtremoPct: getParam(PARAM_KEYS.umbralExtremoPct, "0.70"),
+      reduccionComisionNovedadPct: getParam(PARAM_KEYS.reduccionComisionNovedadPct, "0.50"),
+      reduccionComisionExtremoPct: getParam(PARAM_KEYS.reduccionComisionExtremoPct, "1.00"),
     };
   });
 
@@ -91,6 +119,13 @@ export default function FinanzasParametrosPage() {
         { clave: PARAM_KEYS.arriendoTallerPorDia, valorTexto: form.jornadas.arriendoTallerPorDia },
         { clave: PARAM_KEYS.diasHabilesPorMes, valorNumeric: String(form.jornadas.diasHabilesPorMes) },
         { clave: PARAM_KEYS.tipoCostoDefault, valorTexto: form.tipoCostoDefault },
+        { clave: PARAM_KEYS.netoDiseno3dPct, valorNumeric: gates.netoDiseno3dPct },
+        { clave: PARAM_KEYS.ivaDiseno3dPct, valorNumeric: gates.ivaDiseno3dPct },
+        { clave: PARAM_KEYS.recargoHoraExtraPct, valorNumeric: gates.recargoHoraExtraPct },
+        { clave: PARAM_KEYS.umbralTodoBienPct, valorNumeric: gates.umbralTodoBienPct },
+        { clave: PARAM_KEYS.umbralExtremoPct, valorNumeric: gates.umbralExtremoPct },
+        { clave: PARAM_KEYS.reduccionComisionNovedadPct, valorNumeric: gates.reduccionComisionNovedadPct },
+        { clave: PARAM_KEYS.reduccionComisionExtremoPct, valorNumeric: gates.reduccionComisionExtremoPct },
       ];
       
       updates.forEach(update => {
@@ -103,10 +138,19 @@ export default function FinanzasParametrosPage() {
     } finally {
       setGuardando(false);
     }
-  }, [form, store]);
+  }, [form, gates, store]);
 
   const handleReset = useCallback(() => {
     setForm(PARAMETROS_DEFAULT);
+    setGates({
+      netoDiseno3dPct: "97.50",
+      ivaDiseno3dPct: "19",
+      recargoHoraExtraPct: "25",
+      umbralTodoBienPct: "0.95",
+      umbralExtremoPct: "0.70",
+      reduccionComisionNovedadPct: "0.50",
+      reduccionComisionExtremoPct: "1.00",
+    });
     setMensaje({ tipo: "exito", texto: "Parámetros restablecidos a valores por defecto" });
   }, []);
 
@@ -229,6 +273,132 @@ export default function FinanzasParametrosPage() {
               label=""
               min={1}
               max={31}
+              className="w-full"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="border border-border-subtle rounded-lg bg-bg-alt/60 p-6 mb-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-semibold text-text-heading">
+            Comisiones y Diseño 3D
+          </h2>
+        </div>
+        <p className="text-xs text-text-muted mb-4">
+          A-01: valores estimados v1, pendientes de confirmación del contador (plan_ola7_maestro.md §4).
+        </p>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">
+              Neto diseñador diseño 3D (%)
+            </label>
+            <NumberInput
+              value={gates.netoDiseno3dPct}
+              onChange={(v) => setGates({ ...gates, netoDiseno3dPct: v })}
+              step={0.01}
+              min={0}
+              max={100}
+              label=""
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">
+              IVA diseño 3D (%)
+            </label>
+            <NumberInput
+              value={gates.ivaDiseno3dPct}
+              onChange={(v) => setGates({ ...gates, ivaDiseno3dPct: v })}
+              step={0.01}
+              min={0}
+              max={100}
+              label=""
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">
+              Recargo hora extra diurna (%)
+            </label>
+            <NumberInput
+              value={gates.recargoHoraExtraPct}
+              onChange={(v) => setGates({ ...gates, recargoHoraExtraPct: v })}
+              step={0.01}
+              min={0}
+              max={100}
+              label=""
+              className="w-full"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="border border-border-subtle rounded-lg bg-bg-alt/60 p-6 mb-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-semibold text-text-heading">
+            Umbrales de Check de Producción (15 días)
+          </h2>
+        </div>
+        <p className="text-xs text-text-muted mb-4">
+          A-02: valores estimados v1, pendientes de confirmación del Supervisor (nucleo/mini_diamante_check_produccion.md).
+        </p>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">
+              Umbral &quot;todo bien&quot; (ratio 0–1)
+            </label>
+            <NumberInput
+              value={gates.umbralTodoBienPct}
+              onChange={(v) => setGates({ ...gates, umbralTodoBienPct: v })}
+              step={0.01}
+              min={0}
+              max={1}
+              label=""
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">
+              Umbral &quot;extremo&quot; (ratio 0–1)
+            </label>
+            <NumberInput
+              value={gates.umbralExtremoPct}
+              onChange={(v) => setGates({ ...gates, umbralExtremoPct: v })}
+              step={0.01}
+              min={0}
+              max={1}
+              label=""
+              className="w-full"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">
+              Reducción comisión en novedad (%)
+            </label>
+            <NumberInput
+              value={gates.reduccionComisionNovedadPct}
+              onChange={(v) => setGates({ ...gates, reduccionComisionNovedadPct: v })}
+              step={0.01}
+              min={0}
+              max={1}
+              label=""
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">
+              Reducción comisión en extremo (%)
+            </label>
+            <NumberInput
+              value={gates.reduccionComisionExtremoPct}
+              onChange={(v) => setGates({ ...gates, reduccionComisionExtremoPct: v })}
+              step={0.01}
+              min={0}
+              max={1}
+              label=""
               className="w-full"
             />
           </div>

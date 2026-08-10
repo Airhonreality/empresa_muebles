@@ -36,4 +36,6 @@ export type {
   Proveedor, OrdenCompra, EstadoOrdenCompra, MecanicaPagoOC, RegistroGateCaja, CuentaCobroProveedor, EstadoCuentaCobro,
   Categoria, ProductoTienda, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
+  ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
+  DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
 } from './contracts'

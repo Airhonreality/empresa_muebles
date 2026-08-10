@@ -611,4 +611,71 @@ test('f3-portafolio: modulosArtefactos round-trip por módulo', () => {
   assert.equal(store.modulosArtefactos.porModulo('mock-mod102').some(m => m.id === art.id), true)
 })
 
+// --- F4: Compras (P-13/P-14/P-15) ---
+
+test('f4 pedidosWeb.enganchar: crea ordenes_trabajo(tipo=produccion, pedidoWebId) y no duplica en reintento (R1/R2/E-44)', () => {
+  const store = createMockStore()
+  const pedido = store.pedidosWeb.crear({ clienteId: 'mock-c01', totalPedido: '500000' })
+  assert.equal(store.pedidosWeb.listar().some(p => p.id === pedido.id), true)
+
+  const otAntes = store.ordenesTrabajo.porProyecto('mock-proj10').length
+  const enganchado = store.pedidosWeb.enganchar(pedido.id, 'mock-proj10')
+  assert.equal(enganchado!.estado, 'enganchado')
+  assert.equal(enganchado!.proyectoId, 'mock-proj10')
+  assert.equal(store.ordenesTrabajo.porProyecto('mock-proj10').length, otAntes + 1)
+
+  // Reintento: no crea una segunda orden de trabajo.
+  store.pedidosWeb.enganchar(pedido.id, 'mock-proj10')
+  assert.equal(store.ordenesTrabajo.porProyecto('mock-proj10').length, otAntes + 1)
+})
+
+test('f4 itemsOrdenCompra + recepcionesMaterial: 3/3 checks marca recibido_verificado y transiciona la OC (E-21)', () => {
+  const store = createMockStore()
+  const item = store.itemsOrdenCompra.crear({ ordenCompraId: 'mock-oc02', productoCatalogoId: 'mock-p01', cantidadEsperada: 10 })
+  assert.equal(store.itemsOrdenCompra.porOrdenCompra('mock-oc02').some(i => i.id === item.id), true)
+
+  const recepcion = store.recepcionesMaterial.crear({ ordenCompraId: 'mock-oc02', proyectoId: 'mock-proj11' })
+  assert.equal(recepcion.estado, 'pendiente')
+
+  const parcial = store.recepcionesMaterial.actualizarChecks(recepcion.id, { checkPedidoBien: true, checkDespachoBien: true, checkMaterial: false })
+  assert.equal(parcial, null, 'checks incompletos sin descripción de defecto deben rechazarse')
+
+  const defectuosa = store.recepcionesMaterial.actualizarChecks(recepcion.id, { checkPedidoBien: true, checkDespachoBien: true, checkMaterial: false, descripcionDefecto: 'Tablero rayado' })
+  assert.equal(defectuosa!.estado, 'recibido_defectuoso')
+
+  const completa = store.recepcionesMaterial.actualizarChecks(recepcion.id, { checkPedidoBien: true, checkDespachoBien: true, checkMaterial: true })
+  assert.equal(completa!.estado, 'recibido_verificado')
+  assert.equal(store.ordenesCompra.listar().find(o => o.id === 'mock-oc02')?.estado, 'recibida_verificada')
+})
+
+test('f4 herramientas.reponer: crea OC operativa (proyectoId=null) y no duplica si ya hay una abierta (R1/R2/E-45)', () => {
+  const store = createMockStore()
+  const herramienta = store.herramientas.crear({ nombre: 'Taladro', valor: '400000', proveedorId: 'mock-prov02' })
+  assert.equal(store.herramientas.listar().some(h => h.id === herramienta.id), true)
+
+  const primera = store.herramientas.reponer(herramienta.id)!
+  assert.equal(primera.ordenCompra.proyectoId, null)
+  assert.equal(primera.herramienta.estadoOperativo, 'necesita_reposicion')
+
+  const segunda = store.herramientas.reponer(herramienta.id)!
+  assert.equal(segunda.ordenCompra.id, primera.ordenCompra.id, 'no debe crear una segunda OC mientras la primera sigue abierta')
+})
+
+// --- F7: Documentación del proyecto (P-26) ---
+
+test('f7 documentosProyecto: crear (R2 alojador drive_veta_erp sin subida real) + eliminar round-trip', () => {
+  const store = createMockStore()
+  const antes = store.documentosProyecto.porProyecto('mock-proj10').length
+
+  const rechazado = store.documentosProyecto.crear({ proyectoId: 'mock-proj10', etapa: 'produccion', alojador: 'r2', url: '', nombre: 'Sin url' })
+  assert.equal(rechazado, null)
+
+  const drive = store.documentosProyecto.crear({ proyectoId: 'mock-proj10', etapa: 'cotizacion', alojador: 'drive_veta_erp', url: 'https://drive.google.com/mock/nuevo', nombre: 'Render SDK' })
+  assert.equal(drive!.alojador, 'drive_veta_erp')
+  assert.equal(store.documentosProyecto.porProyecto('mock-proj10').length, antes + 1)
+
+  assert.equal(store.documentosProyecto.eliminar(drive!.id), true)
+  assert.equal(store.documentosProyecto.porProyecto('mock-proj10').length, antes)
+})
+
 console.log(`\n${pasadas} pruebas OK.`)

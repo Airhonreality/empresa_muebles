@@ -17,6 +17,9 @@ const ERP_NAV = [
   { href: '/erp/taller', label: 'Taller' },
   { href: '/erp/garantia', label: 'Garantía' },
   { href: '/erp/catalogo', label: 'Catálogo' },
+  { href: '/erp/compras', label: 'Compras' },
+  { href: '/erp/herramientas', label: 'Herramientas' },
+  { href: '/erp/pedidos-web', label: 'Pedidos web' },
 ] as const
 
 export function ErpShell({ children }: { children: React.ReactNode }) {

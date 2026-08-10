@@ -389,6 +389,8 @@ export interface OrdenTrabajo {
 export interface PedidoWeb {
   id: string
   clienteId: string
+  /** null hasta que P-24 lo engancha a producción (E-44); ver disenio_P24_pedidos_web.md. */
+  proyectoId: string | null
   estado: string
   totalPedido: string
   createdAt: string
@@ -406,8 +408,10 @@ export interface CitacionCalidad {
 }
 
 /** REGISTRO §6 dice schema/calidad/instalacion; P-20 (garantía) también dispara reprocesos —
- * 'garantia' agregado por consistencia entre pantallas (decisión a revisar por Supervisor). */
-export type OrigenReproceso = 'schema' | 'calidad' | 'instalacion' | 'garantia'
+ * 'garantia' agregado por consistencia entre pantallas (decisión a revisar por Supervisor).
+ * 'recepcion' agregado en P-14 (disenio_P14_recepcion_material.md): recepción de material
+ * defectuosa dispara reproceso igual que calidad/instalación/garantía. */
+export type OrigenReproceso = 'schema' | 'calidad' | 'instalacion' | 'garantia' | 'recepcion'
 
 export interface Reproceso {
   id: string
@@ -604,6 +608,65 @@ export interface CuentaCobroProveedor {
   urlDocumento: string | null
   fechaEmision: string
   fechaVencimiento: string | null
+  createdAt: string
+}
+
+// --- F4: Compras (P-13/P-14/P-15, disenio_P13/P14/P15) ---
+
+export interface ItemOrdenCompra {
+  id: string
+  ordenCompraId: string
+  productoCatalogoId: string
+  cantidadEsperada: number
+  recibidoCantidad: number
+  sinDefectos: boolean
+}
+
+export type EstadoRecepcionMaterial = 'pendiente' | 'recibido_verificado' | 'recibido_defectuoso'
+
+export interface RecepcionMaterial {
+  id: string
+  ordenCompraId: string
+  /** REGISTRO §7: nullable — OC operativa no cuelga de proyecto. */
+  proyectoId: string | null
+  checkPedidoBien: boolean
+  checkDespachoBien: boolean
+  checkMaterial: boolean
+  estado: EstadoRecepcionMaterial
+  descripcionDefecto: string | null
+  createdAt: string
+}
+
+export type EstadoOperativoHerramienta = 'operativa' | 'mantenimiento' | 'reparacion' | 'fuera_servicio' | 'necesita_reposicion'
+
+export interface Herramienta {
+  id: string
+  nombre: string
+  estadoOperativo: EstadoOperativoHerramienta
+  valor: string
+  fotoUrl: string | null
+  proveedorId: string | null
+  /** Orden de compra operativa disparada por E-45 mientras está en 'necesita_reposicion'. */
+  ordenCompraReposicionId: string | null
+  createdAt: string
+}
+
+// --- F7: Documentación del proyecto (P-26, disenio_P26_documentacion_proyecto.md) ---
+// Entidad materializada acá: existía solo en pases históricos de diseño (d3_schema_consolidado.md),
+// nunca en REGISTRO_DE_ENTIDADES.md ni en lib/db/schema.ts. Se promueve al REGISTRO al abrir código.
+
+export type AlojadorDocumento = 'r2' | 'drive_veta_erp'
+
+/** Macro-fase, mismo vocabulario que proyectos.estado agrupado en P-01 (app/erp/comercial/page.tsx). */
+export type MacroFaseProyecto = 'pre_venta' | 'cotizacion' | 'produccion' | 'instalacion' | 'post_venta'
+
+export interface DocumentoProyecto {
+  id: string
+  proyectoId: string
+  etapa: MacroFaseProyecto
+  alojador: AlojadorDocumento
+  url: string
+  nombre: string
   createdAt: string
 }
 
@@ -864,8 +927,12 @@ export interface DataStore {
     crear(data: { proyectoId: string; tipo: TipoOrdenTrabajo; pedidoWebId?: string | null }): OrdenTrabajo
   }
   pedidosWeb: {
+    listar(): PedidoWeb[]
     porCliente(clienteId: string): PedidoWeb[]
     crear(data: { clienteId: string; totalPedido: string }): PedidoWeb
+    actualizarEstado(id: string, estado: string): PedidoWeb | null
+    /** P-24 R1/R2/E-44: crea ordenes_trabajo(tipo='produccion', pedidoWebId). Reintentar sobre uno ya enganchado no duplica. */
+    enganchar(id: string, proyectoId: string): PedidoWeb | null
   }
   citacionesCalidad: {
     porProyecto(proyectoId: string): CitacionCalidad[]
@@ -949,6 +1016,34 @@ export interface DataStore {
     listar(): Proveedor[]
     crear(data: Partial<Proveedor> & { nombre: string }): Proveedor
   }
+
+  // --- F4: Compras (P-13/P-14/P-15) ---
+  itemsOrdenCompra: {
+    porOrdenCompra(ordenCompraId: string): ItemOrdenCompra[]
+    crear(data: { ordenCompraId: string; productoCatalogoId: string; cantidadEsperada: number }): ItemOrdenCompra
+  }
+  recepcionesMaterial: {
+    porOrdenCompra(ordenCompraId: string): RecepcionMaterial[]
+    crear(data: { ordenCompraId: string; proyectoId?: string | null }): RecepcionMaterial
+    /** P-14 R2/R3/E-21: 3/3 checks → recibido_verificado + OC pasa a recibida_verificada (misma operación).
+     * Algún check en false exige descripcionDefecto no vacía → recibido_defectuoso. */
+    actualizarChecks(id: string, data: { checkPedidoBien: boolean; checkDespachoBien: boolean; checkMaterial: boolean; descripcionDefecto?: string | null }): RecepcionMaterial | null
+  }
+  herramientas: {
+    listar(): Herramienta[]
+    crear(data: { nombre: string; valor: string; fotoUrl?: string | null; proveedorId?: string | null }): Herramienta
+    actualizarEstado(id: string, estado: EstadoOperativoHerramienta): Herramienta | null
+    /** P-15 R1/R2/E-45: crea ordenes_compra operativa (proyectoId=null). No duplica si ya hay una OC de reposición abierta. */
+    reponer(id: string): { herramienta: Herramienta; ordenCompra: OrdenCompra } | null
+  }
+
+  // --- F7: Documentación del proyecto (P-26) ---
+  documentosProyecto: {
+    porProyecto(proyectoId: string): DocumentoProyecto[]
+    crear(data: { proyectoId: string; etapa: MacroFaseProyecto; alojador: AlojadorDocumento; url: string; nombre: string }): DocumentoProyecto | null
+    eliminar(id: string): boolean
+  }
+
   cuentasCobroProveedor: {
     listar(): CuentaCobroProveedor[]
     porProveedor(proveedorId: string): CuentaCobroProveedor[]

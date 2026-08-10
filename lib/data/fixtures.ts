@@ -6,6 +6,7 @@ import type {
   CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto,
+  ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto,
 } from './contracts'
 
 const UUID = (suffix: string) => `mock-${suffix}`
@@ -292,7 +293,7 @@ export const ORDENES_TRABAJO: OrdenTrabajo[] = [
 ]
 
 export const PEDIDOS_WEB: PedidoWeb[] = [
-  { id: UUID('pw01'), clienteId: UUID('c02'), estado: 'pagado', totalPedido: '950000', createdAt: '2026-08-05T09:00:00Z' },
+  { id: UUID('pw01'), clienteId: UUID('c02'), proyectoId: null, estado: 'nuevo', totalPedido: '950000', createdAt: '2026-08-05T09:00:00Z' },
 ]
 
 // Citación de calidad ya activa para proj12 (estado 'armado' — precondición de P24/P-18).
@@ -393,5 +394,25 @@ export const PORTAFOLIO: Portafolio[] = [
 export const MODULOS_ARTEFACTOS: ModuloArtefacto[] = [
   { id: UUID('ma01'), moduloId: UUID('mod101'), tipo: 'imagen', fuente: 'dedicado_proyecto', url: 'https://r2.mock/modulos/mod101-foto1.jpg', createdAt: '2026-07-01T10:00:00Z' },
   { id: UUID('ma02'), moduloId: UUID('mod101'), tipo: 'plano_armado', fuente: 'dedicado_proyecto', url: 'https://r2.mock/modulos/mod101-plano.pdf', createdAt: '2026-07-01T10:00:00Z' },
+]
+
+// --- F4: Compras (P-13/P-14/P-15, disenio_P13/P14/P15) ---
+
+export const ITEMS_ORDEN_COMPRA: ItemOrdenCompra[] = [
+  { id: UUID('ioc01'), ordenCompraId: UUID('oc01'), productoCatalogoId: UUID('p01'), cantidadEsperada: 20, recibidoCantidad: 0, sinDefectos: false },
+]
+
+export const RECEPCIONES_MATERIAL: RecepcionMaterial[] = []
+
+export const HERRAMIENTAS: Herramienta[] = [
+  { id: UUID('herr01'), nombre: 'Sierra circular Makita 7 1/4"', estadoOperativo: 'operativa', valor: '850000', fotoUrl: null, proveedorId: UUID('prov02'), ordenCompraReposicionId: null, createdAt: '2026-01-15T09:00:00Z' },
+  { id: UUID('herr02'), nombre: 'Router de banco Bosch', estadoOperativo: 'mantenimiento', valor: '1200000', fotoUrl: null, proveedorId: UUID('prov02'), ordenCompraReposicionId: null, createdAt: '2026-01-15T09:00:00Z' },
+]
+
+// --- F7: Documentación del proyecto (P-26) ---
+
+export const DOCUMENTOS_PROYECTO: DocumentoProyecto[] = [
+  { id: UUID('doc01'), proyectoId: UUID('proj10'), etapa: 'produccion', alojador: 'r2', url: 'https://r2.mock/proyectos/proj10-avance1.jpg', nombre: 'Avance de armado — cocina', createdAt: '2026-08-06T09:00:00Z' },
+  { id: UUID('doc02'), proyectoId: UUID('proj10'), etapa: 'cotizacion', alojador: 'drive_veta_erp', url: 'https://drive.google.com/mock/proj10-diseno-skp', nombre: 'Modelo SketchUp — versión 2', createdAt: '2026-08-02T09:00:00Z' },
 ]
 

@@ -130,8 +130,11 @@ export function createDrizzleStore(): DataStore {
       crear: notImplemented,
     },
     pedidosWeb: {
+      listar: notImplemented,
       porCliente: notImplemented,
       crear: notImplemented,
+      actualizarEstado: notImplemented,
+      enganchar: notImplemented,
     },
     citacionesCalidad: {
       porProyecto: notImplemented,
@@ -199,6 +202,26 @@ export function createDrizzleStore(): DataStore {
     proveedores: {
       listar: notImplemented,
       crear: notImplemented,
+    },
+    itemsOrdenCompra: {
+      porOrdenCompra: notImplemented,
+      crear: notImplemented,
+    },
+    recepcionesMaterial: {
+      porOrdenCompra: notImplemented,
+      crear: notImplemented,
+      actualizarChecks: notImplemented,
+    },
+    herramientas: {
+      listar: notImplemented,
+      crear: notImplemented,
+      actualizarEstado: notImplemented,
+      reponer: notImplemented,
+    },
+    documentosProyecto: {
+      porProyecto: notImplemented,
+      crear: notImplemented,
+      eliminar: notImplemented,
     },
     cuentasCobroProveedor: {
       listar: notImplemented,
