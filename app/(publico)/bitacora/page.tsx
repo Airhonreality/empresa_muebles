@@ -3,6 +3,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { SITE_URL } from '@/lib/seo/jsonld'
 
+// force-dynamic (bug real en Vercel, 2026-08-16, mismo motivo que app/sitemap.ts): sin esto,
+// Next prerenderiza esta página en build time con el DATA_IMPL del entorno de build — en Vercel
+// no está seteada (cae a 'mock'), y getDataStore() rechaza mock bajo VERCEL=1, tumbando el build.
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Bitácora de Diseño — Veta Dorada',
   description: 'Casos de estudio reales, materiales y técnica de carpintería arquitectónica a la medida en Bogotá. El cuaderno de obra de Veta Dorada.',

@@ -8,6 +8,14 @@ import { listarBitacoraAction } from '@/lib/data/actions/portafolio'
 // vía las mismas Server Actions escopadas que ya usan esas páginas — sin duplicar lógica de
 // filtrado (publicado/visible). /propuesta, /cuenta y /erp quedan fuera a propósito (no son
 // contenido de marketing indexable).
+//
+// force-dynamic (bug real encontrado en Vercel, 2026-08-16): sin esto, Next intenta prerenderizar
+// este archivo en build time, lo que ejecuta las Server Actions con el DATA_IMPL del entorno de
+// build. En Vercel DATA_IMPL no está seteada (cae a 'mock'), y getDataStore() rechaza mock a
+// propósito cuando VERCEL=1 sin ALLOW_MOCK_PREVIEW=1 (lib/data/store.ts) — tumbaba el build
+// entero. Mismo motivo por el que /colecciones y /portafolio ya lo tenían.
+export const dynamic = 'force-dynamic'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [portafolio, productos, articulos] = await Promise.all([
     listarPortafolioPublicadosAction(),

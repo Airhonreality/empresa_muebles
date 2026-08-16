@@ -4,6 +4,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/seo/jsonld'
 
+// force-dynamic (bug real en Vercel, 2026-08-16, mismo motivo que app/sitemap.ts): sin esto,
+// Next prerenderiza esta página en build time con el DATA_IMPL del entorno de build — en Vercel
+// no está seteada (cae a 'mock'), y getDataStore() rechaza mock bajo VERCEL=1, tumbando el build.
+export const dynamic = 'force-dynamic'
+
 type RouteParams = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: RouteParams) {
