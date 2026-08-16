@@ -20,6 +20,16 @@
 // el bienestar." (plan_demanda.md línea 42, D1 RESUELTA 2026-08-09).
 export const SITE_URL = 'https://www.vetadeoro.co'
 
+// Redes sociales reales (2026-08-16, pasadas por Javier). Facebook incluido acá (identidad de
+// entidad para Google/IA) aunque no se muestre como ícono clickeable en el footer — está
+// inactiva y no se quiere mandar visitantes reales a una página sin actividad.
+const SAME_AS = [
+  'https://share.google/iNlxzNKge0icFtPwx',
+  'https://www.instagram.com/veta_dorada/',
+  'https://www.tiktok.com/@veta_dorada.co',
+  'https://www.facebook.com/profile.php?id=61567800401365',
+]
+
 export interface TestimonioJsonLd {
   nombre: string
   texto: string
@@ -49,6 +59,7 @@ export function getHomeJsonLd(testimonios: TestimonioJsonLd[]) {
           addressRegion: 'Bogotá',
           addressLocality: 'Bogotá',
         },
+        sameAs: SAME_AS,
         areaServed: 'Bogotá',
         priceRange: 'Consultar',
         knowsLanguage: 'es-CO',
@@ -82,10 +93,7 @@ export function getHomeJsonLd(testimonios: TestimonioJsonLd[]) {
         legalName: 'Hermanos Garcia Gonzalez SAS',
         taxID: '901421357-9',
         url: SITE_URL,
-        // TODO: falta un sameAs con place_id verificado de Google Business Profile — ese perfil
-        // todavía no se renombró a "Veta Dorada" a propósito (plan_demanda.md línea 27/151: el
-        // renombre es una tarea aparte, deliberadamente después del corte, medida antes/después).
-        // No se inventa el link mientras el perfil siga con el nombre legacy.
+        sameAs: SAME_AS,
         logo: `${SITE_URL}/logo-veta-positive.svg`,
         description:
           'Somos un estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera — todo a la medida, con diseño contemporáneo y manufactura en taller propio. Tres generaciones de oficio en la construcción, desde 1995.',
