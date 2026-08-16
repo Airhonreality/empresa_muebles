@@ -1,0 +1,66 @@
+{
+  "id": "t-118",
+  "nombre": "F10: Preview Vercel y aprobación del Supervisor",
+  "descripcion": "Push a la rama dev → Vercel genera URL de preview con datos reales de dev-local; Javier valida pantallas auditadas (D-01 a D-17) con clientes, proyectos y catálogo reales. Checkpoint final de aprobación.",
+  "objetivo": "Obtener aprobación explícita del Supervisor del preview con datos reales (CA-5).",
+  "prioridad": "Alta",
+  "estado": "Pendiente",
+  "dependencias": [
+    "t-117 verificación post-migración aprobada",
+    "Adaptador Drizzle (F10-E) implementado para que la app lea datos reales",
+    "tsc/eslint/build limpios"
+  ],
+  "entregables": [
+    {
+      "nombre": "URL de preview Vercel",
+      "formato": "URL",
+      "detalle": "Generada automáticamente por Git Integration al hacer push a dev."
+    },
+    {
+      "nombre": "Aprobación del Supervisor",
+      "formato": "Checkpoint",
+      "detalle": "Javier valida datos reales y aprueba o rechaza."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Verificar build local",
+      "detalle": "npx next build (páginas que consultan dev-local deben compilar con datos reales).",
+      "responsable": "Código"
+    },
+    {
+      "numero": 2,
+      "accion": "Commit y push a dev",
+      "detalle": "git add/commit/push origin dev.",
+      "responsable": "Código"
+    },
+    {
+      "numero": 3,
+      "accion": "Validar preview",
+      "detalle": "Javier revisa la URL de preview con datos reales (clientes, proyectos, catálogo).",
+      "responsable": "Supervisor"
+    },
+    {
+      "numero": 4,
+      "accion": "Checkpoint de aprobación",
+      "detalle": "Javier aprueba o rechaza; si rechaza, corregir y repetir.",
+      "responsable": "Supervisor"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "URL de preview generada sin errores 500",
+    "Datos reales visibles (clientes, proyectos, catálogo completo para cotizar)",
+    "Aprobación explícita del Supervisor",
+    "NUNCA setear ALLOW_MOCK_PREVIEW=1 en Production (solo Preview si se usa)"
+  ],
+  "notas": [
+    "El corte final (merge dev→main) es un paso posterior aparte, no parte de esta tarea.",
+    "Requiere que las variables de entorno Vercel (DATABASE_URL=dev-local) estén en el entorno Preview."
+  ],
+  "relacionado": [
+    "plan_f10_migracion.md §3.4, §8, CA-5",
+    "estado.md (bloqueo Vercel resuelto con F10-E)"
+  ],
+  "fecha_creacion": "2026-08-12"
+}

@@ -51,7 +51,7 @@ export default function InstalacionPage() {
 
   const gateAprobado = P24(proyecto, citaciones, verificaciones)
 
-  const handleProgramar = () => {
+  const handleProgramar = async () => {
     setFormError(null)
     if (!fechaInicio || !fechaFin) {
       setFormError('Seleccioná una fecha de inicio y una de fin para programar la instalación.')
@@ -61,7 +61,7 @@ export default function InstalacionPage() {
       setFormError('El rango de instalación no puede superar 5 días (R40).')
       return
     }
-    const resultado = store.instalaciones.programar({ proyectoId, rangoFechaInicio: fechaInicio, rangoFechaFin: fechaFin })
+    const resultado = await store.instalaciones.programar({ proyectoId, rangoFechaInicio: fechaInicio, rangoFechaFin: fechaFin })
     if (!resultado) {
       setFormError('No se pudo programar la instalación. Verificá el rango de fechas.')
       return
@@ -70,17 +70,17 @@ export default function InstalacionPage() {
     setFechaFin('')
   }
 
-  const handleIniciar = (instalacion: Instalacion) => {
-    const resultado = store.instalaciones.iniciar(instalacion.id)
+  const handleIniciar = async (instalacion: Instalacion) => {
+    const resultado = await store.instalaciones.iniciar(instalacion.id)
     if (!resultado) {
       setFormError('No se pudo iniciar la instalación: el gate de calidad (E-24) debe estar aprobado para este proyecto.')
     }
   }
 
-  const handleMarcarFallida = (instalacion: Instalacion) => {
+  const handleMarcarFallida = async (instalacion: Instalacion) => {
     const motivo = (fallidaMotivos[instalacion.id] ?? '').trim()
     if (!motivo) return
-    store.instalaciones.marcarFallida(instalacion.id, motivo)
+    await store.instalaciones.marcarFallida(instalacion.id, motivo)
     setFallidaMotivos(prev => ({ ...prev, [instalacion.id]: '' }))
   }
 
@@ -187,7 +187,7 @@ export default function InstalacionPage() {
                 {instalacion.estado === 'en_curso' && (
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <Button variant="primary" size="md" onClick={() => store.instalaciones.marcarInstalada(instalacion.id)}>
+                      <Button variant="primary" size="md" onClick={async () => await store.instalaciones.marcarInstalada(instalacion.id)}>
                         Marcar instalada
                       </Button>
                     </div>

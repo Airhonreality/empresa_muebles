@@ -1,0 +1,69 @@
+{
+  "id": "t-115",
+  "nombre": "F10: Migración de datos maestros (Fase 2)",
+  "descripcion": "Migrar datos maestros desde Neon main (tabla public.agnostic_records, sistema Agnostic Seed) a las tablas físicas V3 en dev-local: productos_catalogo, clientes, proveedores, personas/usuarios/roles, leads y configuracion_comercial→parametros.",
+  "objetivo": "Poblar dev-local con datos maestros reales de producción (catálogo completo para cotizar, clientes, proveedores y equipo) mediante scripts idempotentes y transaccionales.",
+  "prioridad": "Alta",
+  "estado": "Pendiente",
+  "dependencias": [
+    "t-114 Fase 0 completada (checkpoint CA-1 aprobado)",
+    "mapeo_campos.md aprobado (fuente de transformaciones)",
+    "Decisiones A/B/C resueltas: A=implementar drizzle-impl, B=21 tablas físicas, C=enmascarar PII",
+    "DATABASE_URL_LEGACY (connection string de Neon main)"
+  ],
+  "entregables": [
+    {
+      "nombre": "scripts/migrate-maestros.ts",
+      "formato": "TypeScript",
+      "ubicacion": "scripts/migrate-maestros.ts",
+      "detalle": "Script idempotente que lee agnostic_records de Neon main y escribe en dev-local vía Drizzle."
+    },
+    {
+      "nombre": "Datos maestros en dev-local",
+      "detalle": "Tablas pobladas: productos_catalogo, clientes, proveedores, personas, usuarios, personas_roles, leads, parametros."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Crear script de lectura legacy",
+      "detalle": "Leer agnostic_records filtrando por namespace (productos_catalogo, clientes, proveedores, usuarios_equipo, leads, configuracion_comercial).",
+      "responsable": "Código"
+    },
+    {
+      "numero": 2,
+      "accion": "Mapear y transformar",
+      "detalle": "Aplicar transformaciones de mapeo_campos.md y enmascarar PII (decisión C): email, telefono, documento, domicilio.",
+      "responsable": "Código"
+    },
+    {
+      "numero": 3,
+      "accion": "Insertar en dev-local",
+      "detalle": "Insert con onConflictDoNothing/onConflictDoUpdate (idempotente), respetando orden de FKs (personas antes que clientes/proveedores).",
+      "responsable": "Código"
+    },
+    {
+      "numero": 4,
+      "accion": "Verificar conteos",
+      "detalle": "Contar registros por tabla en legacy vs dev-local.",
+      "responsable": "QA"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "productos_catalogo migrado (conteo legacy = conteo V3)",
+    "clientes migrados con PII enmascarada",
+    "proveedores y personas/usuarios/roles migrados sin FKs huérfanas",
+    "Re-ejecución sin duplicados (idempotencia)"
+  ],
+  "notas": [
+    "La fuente legacy es la tabla única public.agnostic_records (Agnostic Seed), no tablas relacionales por namespace.",
+    "El catálogo completo es prerequisito para el preview de cotización.",
+    "Orden de inserción: personas → clientes/proveedores → productos_catalogo (FKs)."
+  ],
+  "relacionado": [
+    "plan_f10_migracion.md §3.2, §8",
+    "mapeo_campos.md",
+    "lib/db/schema.ts"
+  ],
+  "fecha_creacion": "2026-08-12"
+}

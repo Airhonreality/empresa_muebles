@@ -44,7 +44,7 @@ export default function LandingPage() {
             <Link href="/cotizador" aria-label="Cotizar un proyecto">
               <Button>Cotizar un proyecto</Button>
             </Link>
-            <Link href="/badge-mockups" aria-label="Ver portafolio">
+            <Link href="/portafolio" aria-label="Ver portafolio">
               <Button variant="secondary">Ver portafolio</Button>
             </Link>
           </div>

@@ -66,7 +66,7 @@ espacio_variantes (1)
 
 ### Refinamiento 2 — assets formales de producción SÍ en el módulo (sin violar el axioma)
 
-> Corrección del Supervisor: "el módulo debería tener imagen, orden de armado/plano, diseño 3D (heredado del árbol del objeto del proyecto específico, o un 3D dedicado y reutilizable del módulo estándar)."
+> Corrección del Supervisor: "el módulo debería tener imagen, plano de armado, diseño 3D (heredado del árbol del objeto del proyecto específico, o un 3D dedicado y reutilizable del módulo estándar)."
 
 Esto NO contradice el axioma si no se duplica por columna. En vez de meter `imagen/plano/3d` como columnas en `modulos` (que duplicaría forma por cada nodo), se modela con una **tabla auxiliar de artefactos formales** (1—N por nodo, sin columnas duplicadas):
 
@@ -75,13 +75,15 @@ Esto NO contradice el axioma si no se duplica por columna. En vez de meter `imag
 |-------|------|------|
 | id | uuid PK | |
 | nodo_id | FK→modulos | |
-| tipo | enum | imagen / plano_armado / orden_armado / modelo_3d |
+| tipo | enum | imagen / plano_armado / modelo_3d |
 | fuente | enum | `heredado_catalogo` (reutiliza el 3D/plano de la CLASE) / `dedicado_proyecto` (3D específico del objeto del proyecto) |
 | url / referencia | text | asset en alojador (R2/Drive, ver E-41) |
 | revision | int | |
 
 - `fuente='heredado_catalogo'` → el plano/3D viene del estándar (clase), sin duplicar el binario; el nodo solo lo referencia.
 - `fuente='dedicado_proyecto'` → artefacto del caso concreto (apoyado del árbol 3D del proyecto específico).
+
+> **Nota de consolidación (2026-08-12):** El tipo `orden_armado` fue eliminado del enum. El concepto de "orden de armado" se unifica con `plano_armado` (el documento/plano real), que ya cubre la necesidad de definir el flujo de trabajo en el taller.
 - Convivive con `productos_tienda.imagen_principal_url` (imagen de storefront) sin conflicto: una es imagen comercial (clase), la otra es asset de producción (nodo).
 
 ### Refinamiento 3 — acabados formales (color, textura, acabado, material, estilo, estilema) — RESUELTO (Opción A, aprobada)

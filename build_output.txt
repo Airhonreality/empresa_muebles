@@ -1,0 +1,59 @@
+﻿   ▲ Next.js 15.5.22
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 44s
+   Linting and checking validity of types ...
+node.exe : 
+En C:\Program Files\nodejs\npx.ps1: 29 Carácter: 3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Failed to compile.
+
+./app/(publico)/colecciones/page.tsx
+27:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from 
+`next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/(publico)/colecciones/[id]/page.tsx
+77:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from 
+`next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+100:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from 
+`next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/(publico)/portafolio/[slug]/page.tsx
+64:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from 
+`next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/(publico)/propuesta/[proyectoId]/page.tsx
+40:9  Warning: The 'espaciosBase' conditional could make the dependencies of useMemo Hook (at line 75) change on every 
+render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'espaciosBase' in its own 
+useMemo() Hook.  react-hooks/exhaustive-deps
+67:18  Error: React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in 
+every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+77:27  Error: React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in 
+every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+89:34  Error: React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in 
+every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+96:26  Error: React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in 
+every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+206:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from 
+`next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+225:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from 
+`next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/erp/herramientas/page.tsx
+277:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from 
+`next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: 
+https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

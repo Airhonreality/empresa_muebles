@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
@@ -8,6 +8,8 @@ import { MoneyInput } from '@/components/veta/money-input'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
+import { ItemMiniatura } from '@/components/veta/item-miniatura'
+import { ItemDescriptorModal } from '@/components/veta/item-descriptor-modal'
 import { ContratoModal } from '../ContratoModal'
 import { useDataStore, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
@@ -151,11 +153,12 @@ export default function CotizadorPage() {
       setJornadasMap((prev) => {
         const current = prev[espacioId] ?? { dev: '0', ens: '0', inst: '0' }
         const nuevo = { ...current, [campo]: valor }
+        // El updater de setState debe ser síncrono; la escritura real corre aparte.
         store.espacios.actualizarJornadas(espacioId, {
           jornadasDesarrolloTecnico: nuevo.dev,
           jornadasEnsamblajeTaller: nuevo.ens,
           jornadasInstalacionObra: nuevo.inst,
-        })
+        }).catch((err) => console.error('No se pudo guardar jornadas', err))
         return { ...prev, [espacioId]: nuevo }
       })
     },
@@ -225,51 +228,101 @@ export default function CotizadorPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-6">
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-text-heading">
+    <div className="mx-auto max-w-5xl">
+      {/* Header — Ultra Compacto, sticky (disenio_p04_cotizador.md §5.1) */}
+      <header className="sticky top-0 z-10 bg-bg-raised px-4 py-2 border-b border-border-subtle">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          {/* Proyecto + cliente + estado */}
+          <div className="min-w-0 flex flex-1 items-baseline gap-2">
+            <h1 className="font-display text-base font-semibold text-text-heading truncate" title={proyecto.nombreProyecto}>
               {proyecto.nombreProyecto}
             </h1>
             {cliente && (
-              <p className="text-sm text-text-muted mt-1">
-                {cliente.nombre} · {proyecto.tipoProyecto === 'producto_fijo' ? 'Producto fijo' : 'Proyecto personalizado'}
-              </p>
+              <span className="hidden sm:inline text-xs text-text-muted truncate">· {cliente.nombre}</span>
             )}
-            {proyecto.direccionObra && (
-              <p className="text-xs text-text-muted">{proyecto.direccionObra}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
             <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
               {proyecto.estado}
             </Badge>
-            {proyecto.aplicaIva && <Badge tone="neutral">+IVA {proyecto.porcentajeIva}%</Badge>}
-            {proyecto.garantiaAnios > 0 && <Badge tone="neutral">{proyecto.garantiaAnios}a garantía</Badge>}
+          </div>
+
+          {/* Garantía — parámetro editable (D-11/D-12: ya no es badge) */}
+          <label className="flex items-center gap-1.5 shrink-0">
+            <span className="text-xs text-text-muted">Garantía</span>
+            <input
+              type="number"
+              min={0}
+              max={20}
+              value={proyecto.garantiaAnios}
+              onChange={async (e) => {
+                const n = Number(e.target.value)
+                await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { garantiaAnios: Number.isFinite(n) ? n : 0 })
+              }}
+              className="w-12 rounded border border-border-subtle bg-bg-paper px-1.5 py-1 text-xs font-mono focus:border-gold-400 focus:outline-none"
+              aria-label="Años de garantía"
+            />
+            <span className="text-xs text-text-muted">años</span>
+          </label>
+
+          {/* IVA — compacto */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <label className="flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={proyecto.aplicaIva}
+                onChange={async (e) => {
+                  await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { aplicaIva: e.target.checked })
+                }}
+                className="rounded border border-border-subtle cursor-pointer"
+                aria-label="Aplicar IVA"
+              />
+              <span className="text-xs font-medium text-text-heading">IVA</span>
+            </label>
+            {proyecto.aplicaIva && (
+              <label className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={proyecto.porcentajeIva}
+                  onChange={async (e) => {
+                    await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { porcentajeIva: e.target.value })
+                  }}
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  className="w-12 rounded border border-border-subtle bg-bg-paper px-1.5 py-1 text-xs font-mono focus:border-gold-400 focus:outline-none"
+                  aria-label="Porcentaje IVA"
+                />
+                <span className="text-xs text-text-muted">%</span>
+              </label>
+            )}
+          </div>
+
+          {/* Acciones */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>
+              Propuesta pública
+            </Button>
+            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/erp/cotizador/${proyecto.id}?readonly=true`, '_blank')}>
+              Solo lectura
+            </Button>
+            <Button variant="primary" size="md" className="h-7 px-3 text-xs" onClick={() => setMostrarContratoModal(true)}>
+              Generar Contrato
+            </Button>
           </div>
         </div>
-
-        {proyecto.descripcionSemantica && (
-          <p className="mt-3 text-sm text-text-muted italic border-l-2 border-gold-300 pl-3">
-            {proyecto.descripcionSemantica}
-          </p>
-        )}
       </header>
 
-      {/* Botones Generar Contrato / Ver propuesta pública */}
-      <div className="flex justify-end gap-2 mb-4">
-        <Button variant="ghost" size="md" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>
-          Ver propuesta pública
-        </Button>
-        <Button variant="ghost" size="md" onClick={() => window.open(`/erp/cotizador/${proyecto.id}?readonly=true`, '_blank')}>
-          Ver detalle (solo lectura)
-        </Button>
-        <Button variant="primary" size="md" onClick={() => setMostrarContratoModal(true)}>
-          Generar Contrato
-        </Button>
-      </div>
+      {/* Contenido scrolleable */}
+      <div className="px-6 py-6">
+        {(proyecto.direccionObra || proyecto.descripcionSemantica) && (
+          <div className="mb-4 space-y-1">
+            {proyecto.direccionObra && <p className="text-xs text-text-muted">{proyecto.direccionObra}</p>}
+            {proyecto.descripcionSemantica && (
+              <p className="text-sm text-text-muted italic border-l-2 border-gold-300 pl-3">
+                {proyecto.descripcionSemantica}
+              </p>
+            )}
+          </div>
+        )}
 
       {/* Espacios */}
       <section className="space-y-4">
@@ -280,11 +333,11 @@ export default function CotizadorPage() {
               type="text"
               value={nuevoEspacioNombre}
               onChange={(e) => setNuevoEspacioNombre(e.target.value)}
-              onKeyDown={(e) => {
+              onKeyDown={async (e) => {
                 if (e.key === 'Enter' && nuevoEspacioNombre.trim()) {
                   e.preventDefault()
                   const nombreFinal = nuevoEspacioNombre.trim()
-                  const nuevoEspacio = store.espacios.crear({
+                  const nuevoEspacio = await store.espacios.crear({
                     proyectoId,
                     nombreEspacio: nombreFinal || `Espacio ${gruposPorNombre.size + 1}`,
                     nombreVariante: 'Inicial',
@@ -307,10 +360,10 @@ export default function CotizadorPage() {
               variant="ghost"
               size="md"
               className="h-8 text-xs"
-              onClick={() => {
+              onClick={async () => {
                 if (nuevoEspacioNombre.trim()) {
                   const nombreFinal = nuevoEspacioNombre.trim()
-                  const nuevoEspacio = store.espacios.crear({
+                  const nuevoEspacio = await store.espacios.crear({
                     proyectoId,
                     nombreEspacio: nombreFinal || `Espacio ${gruposPorNombre.size + 1}`,
                     nombreVariante: 'Inicial',
@@ -342,6 +395,7 @@ export default function CotizadorPage() {
             jornadasMap={jornadasMap}
             onUpdateJornadas={actualizarJornadas}
             tarifas={{ tarifaDev, tarifaAssembly, tarifaInstall }}
+            proyectoId={proyecto.id}
           />
         ))}
       </section>
@@ -476,6 +530,7 @@ export default function CotizadorPage() {
           />
         )}
       </div>
+      </div>
     )
 }
 
@@ -581,12 +636,12 @@ function VistaSoloLectura({
                 </div>
               ))}
               {referenciales.length > 0 && (
-                <div className="mt-2 border-t border-dashed border-amber-300 pt-2">
-                  <p className="text-[11px] font-semibold uppercase text-amber-700 mb-1">Presupuesto adicional (referencial)</p>
+                <div className="mt-2 border-t border-dashed border-gold-300 pt-2">
+                  <p className="text-[11px] font-semibold uppercase text-gold-700 mb-1">Presupuesto adicional (referencial)</p>
                   {referenciales.map((item) => (
                     <div key={item.id} className="flex items-center justify-between text-xs text-text-muted py-0.5">
                       <span className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gold-500" />
                         {item.nombrePersonalizado ?? 'Ítem'}
                       </span>
                       <span className="font-mono">{formatCOP(parseNum(item.totalLinea))}</span>
@@ -640,9 +695,23 @@ function VistaSoloLectura({
                 ))}
               </div>
             )}
+            {contrato.estado === 'firmado' && (
+              <div className="mt-4">
+                <Button variant="ghost" size="md" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>
+                  Ver PDF
+                </Button>
+              </div>
+            )}
           </>
         ) : (
-          <p className="text-sm text-text-muted italic">Sin contrato generado</p>
+          <div className="space-y-3">
+            <p className="text-sm text-text-muted italic">Sin contrato generado</p>
+            {puedeEditar && (
+              <Button variant="primary" size="md" onClick={() => router.push(`/erp/cotizador/${proyecto.id}`)}>
+                Generar Contrato
+              </Button>
+            )}
+          </div>
         )}
       </section>
 
@@ -683,6 +752,7 @@ function EspacioGroup({
   jornadasMap,
   onUpdateJornadas,
   tarifas,
+  proyectoId,
 }: {
   nombreEspacio: string
   variantes: EspacioVariante[]
@@ -692,6 +762,7 @@ function EspacioGroup({
   jornadasMap: Record<string, { dev: string; ens: string; inst: string }>
   onUpdateJornadas: (espacioId: string, campo: 'dev' | 'ens' | 'inst', valor: string) => void
   tarifas: { tarifaDev: number; tarifaAssembly: number; tarifaInstall: number }
+  proyectoId: string
 }) {
   const store = useDataStore()
   const varianteActiva = variantes.find((v) => v.activa) ?? variantes[0]
@@ -710,20 +781,22 @@ function EspacioGroup({
     .filter((it) => !it.esReferencial)
     .reduce((s, it) => s + parseNum(it.totalLinea), 0)
 
-  const guardarNombreGrupo = () => {
+  const guardarNombreGrupo = async () => {
     const valor = nombreTemp.trim()
     if (valor && valor !== nombreEspacio) {
-      variantes.forEach((v) => store.espacios.actualizar(v.id, { nombreEspacio: valor }))
+      await Promise.all(variantes.map((v) => store.espacios.actualizar(v.id, { nombreEspacio: valor })))
     }
     setEditandoNombre(false)
   }
 
   return (
     <div className={`rounded-lg border ${varianteActiva.activa ? 'border-border-subtle' : 'border-border-subtle/50'} bg-bg-raised overflow-hidden`}>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-alt transition-colors duration-fast"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() } }}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-alt transition-colors duration-fast cursor-pointer"
       >
         <div className="flex items-center gap-2">
           {editandoNombre ? (
@@ -758,7 +831,7 @@ function EspacioGroup({
           )}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); store.espacios.actualizar(variante.id, { visibleEnPropuestaPublica: !variante.visibleEnPropuestaPublica }) }}
+            onClick={async (e) => { e.stopPropagation(); await store.espacios.actualizar(variante.id, { visibleEnPropuestaPublica: !variante.visibleEnPropuestaPublica }) }}
             className="p-0.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast"
             aria-label={variante.visibleEnPropuestaPublica ? 'Ocultar de la propuesta pública' : 'Mostrar en la propuesta pública'}
             title={variante.visibleEnPropuestaPublica ? 'Visible en la propuesta pública (PDF + pantalla pública) — clic para ocultar' : 'Oculto de la propuesta pública — clic para mostrar'}
@@ -794,8 +867,8 @@ function EspacioGroup({
               >
                 <button
                   type="button"
-                  onClick={() => {
-                    const nueva = store.espacios.duplicar(variante.id, { vacio: false })
+                  onClick={async () => {
+                    const nueva = await store.espacios.duplicar(variante.id, { vacio: false })
                     if (nueva) setTabId(nueva.id)
                     setMostrarMenuDuplicar(false)
                   }}
@@ -805,8 +878,8 @@ function EspacioGroup({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    const nueva = store.espacios.duplicar(variante.id, { vacio: true })
+                  onClick={async () => {
+                    const nueva = await store.espacios.duplicar(variante.id, { vacio: true })
                     if (nueva) setTabId(nueva.id)
                     setMostrarMenuDuplicar(false)
                   }}
@@ -822,7 +895,7 @@ function EspacioGroup({
           <span className="font-mono text-sm text-text-heading">{formatCOP(totalGrupo)}</span>
           <span className={`text-sm transition-transform duration-fast ${expandido ? 'rotate-180' : ''}`}>&#9660;</span>
         </div>
-      </button>
+      </div>
 
       {expandido && (
         <>
@@ -847,11 +920,11 @@ function EspacioGroup({
           )}
 
           {!esTabActiva && (
-            <div className="flex items-center justify-between gap-3 bg-amber-50/80 px-4 py-2 text-xs text-amber-800 border-t border-border-subtle">
+            <div className="flex items-center justify-between gap-3 bg-gold-100/80 px-4 py-2 text-xs text-gold-700 border-t border-border-subtle">
               <span>Estás viendo una variante de comparación — no cuenta para el total ni el contrato.</span>
               <button
                 type="button"
-                onClick={() => store.espacios.marcarActiva(variante.id)}
+                onClick={async () => await store.espacios.marcarActiva(variante.id)}
                 className="font-medium underline hover:no-underline flex-shrink-0"
               >
                 Marcar como activa
@@ -865,6 +938,7 @@ function EspacioGroup({
             jornadas={jornadasMap[variante.id] ?? { dev: '0', ens: '0', inst: '0' }}
             onUpdateJornadas={onUpdateJornadas}
             tarifas={tarifas}
+            proyectoId={proyectoId}
           />
         </>
       )}
@@ -882,12 +956,14 @@ function VarianteContenido({
   jornadas,
   onUpdateJornadas,
   tarifas,
+  proyectoId,
 }: {
   espacio: EspacioVariante
   catalogo: ProductoCatalogo[]
   jornadas: { dev: string; ens: string; inst: string }
   onUpdateJornadas: (espacioId: string, campo: 'dev' | 'ens' | 'inst', valor: string) => void
   tarifas: { tarifaDev: number; tarifaAssembly: number; tarifaInstall: number }
+  proyectoId: string
 }) {
   const store = useDataStore()
   const items = store.items.porVariante(espacio.id)
@@ -901,16 +977,19 @@ function VarianteContenido({
   const [editarArtefactoId, setEditarArtefactoId] = useState<string | null>(null)
   const [modoBusquedaItem, setModoBusquedaItem] = useState<'off' | 'normal' | 'referencial'>('off')
   const [mostrarDetalles, setMostrarDetalles] = useState(false)
+  const [modalItemId, setModalItemId] = useState<string | null>(null)
   const artefactosList = store.artefactos.porEspacio(espacio.id)
-  const inputItemRef = useRef<HTMLInputElement>(null)
+
+  const modalItem = modalItemId ? items.find((i) => i.id === modalItemId) : undefined
+  const modalProd = modalItem?.catalogoId ? productMap.get(modalItem.catalogoId) : undefined
 
   const moDev = parseNum(jornadas.dev) * tarifas.tarifaDev
   const moEns = parseNum(jornadas.ens) * tarifas.tarifaAssembly
   const moInst = parseNum(jornadas.inst) * tarifas.tarifaInstall
   const moSubtotal = moDev + moEns + moInst
 
-  const actualizarItem = (id: string, field: keyof Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>, value: string | boolean) => {
-    store.items.actualizar(id, { [field]: value } as Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>)
+  const actualizarItem = async (id: string, field: keyof Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>, value: string | boolean) => {
+    await store.items.actualizar(id, { [field]: value } as Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>)
   }
 
   return (
@@ -923,39 +1002,14 @@ function VarianteContenido({
       <div className="border-t border-border-subtle pt-3">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Ítems</p>
-          <div className="flex items-center gap-2">
-            <input
-              ref={inputItemRef}
-              type="text"
-              placeholder="Añadir ítem..."
-              className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none w-48 transition-all duration-fast"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                  e.preventDefault()
-                  const nombreItem = e.currentTarget.value.trim()
-                  store.items.crear({
-                    varianteId: espacio.id,
-                    catalogoId: null,
-                    cantidad: '1',
-                    precioUnitario: '0',
-                    nombrePersonalizado: nombreItem,
-                  })
-                  e.currentTarget.value = ''
-                  // Enfocar el input nuevamente para crear otro ítem rápidamente
-                  setTimeout(() => inputItemRef.current?.focus(), 0)
-                }
-              }}
-              aria-label="Nombre del nuevo ítem"
-            />
-            <Button
-              variant="ghost"
-              size="md"
-              onClick={() => setModoBusquedaItem('normal')}
-              aria-label="Buscar en catálogo"
-            >
-              + Buscar
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="md"
+            onClick={() => setModoBusquedaItem('normal')}
+            aria-label="Buscar en catálogo"
+          >
+            + Buscar
+          </Button>
         </div>
 
         {itemsContractuales.length === 0 && modoBusquedaItem !== 'normal' && (
@@ -966,8 +1020,8 @@ function VarianteContenido({
           <div className="mb-3">
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-              onSelect={(producto) => {
-                store.items.crear({
+              onSelect={async (producto) => {
+                await store.items.crear({
                   varianteId: espacio.id,
                   catalogoId: producto.id,
                   cantidad: '1',
@@ -976,7 +1030,7 @@ function VarianteContenido({
                 })
                 setModoBusquedaItem('off')
               }}
-              onCreateNew={() => { window.location.href = '/erp/catalogo'; setModoBusquedaItem('off') }}
+              onCreateNew={() => { window.location.href = `/erp/catalogo?source=cotizador&proyectoId=${proyectoId}`; setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
@@ -996,13 +1050,13 @@ function VarianteContenido({
             <div key={item.id} className="flex items-center justify-between text-sm border-b border-border-subtle/50 pb-2 last:pb-0 last:border-0">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
+                  <ItemMiniatura producto={prod} onClick={() => setModalItemId(item.id)} />
                   <span className="text-text-heading">
                     {item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem sin catálogo'}
                   </span>
                   {prod && (
                     <span className="text-xs text-text-muted font-mono">{prod.sku}</span>
                   )}
-                  {item.anulado && <Badge tone="danger">Anulado</Badge>}
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 ml-4">
@@ -1030,7 +1084,7 @@ function VarianteContenido({
                   onClick={() => actualizarItem(item.id, 'esReferencial', true)}
                   aria-label="Mover a Presupuesto Adicional (referencial)"
                   title="Mover a Presupuesto Adicional — inversión estimada, no cotizada"
-                  className="p-1 text-text-muted hover:text-amber-600 transition-colors duration-fast"
+                  className="p-1 text-text-muted hover:text-gold-600 transition-colors duration-fast"
                 >
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M3 1.5v13M3 1.5h9l-2 3.25 2 3.25H3" strokeLinejoin="round" strokeLinecap="round" />
@@ -1039,7 +1093,7 @@ function VarianteContenido({
                 <Button
                   variant="ghost"
                   size="md"
-                  onClick={() => store.items.eliminar(item.id)}
+                  onClick={async () => await store.items.eliminar(item.id)}
                   aria-label="Anular ítem"
                   className="text-text-muted hover:text-red-500"
                 >
@@ -1051,28 +1105,15 @@ function VarianteContenido({
         })}
       </div>
 
-      {/* Subtotal Espacio (Materiales + MO) */}
-      <div className="border-t border-border-subtle pt-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Subtotal Espacio</p>
-        <div className="flex justify-between text-sm">
-          <span className="text-text-muted">Materiales</span>
-          <span className="font-mono text-text-heading">{formatCOP(subtotalItems)}</span>
-        </div>
-        <div className="flex justify-between text-sm mt-1">
-          <span className="text-text-muted">Mano de Obra</span>
-          <span className="font-mono text-text-heading">{formatCOP(moSubtotal)}</span>
-        </div>
-        <div className="flex justify-between text-sm font-semibold mt-1 border-t border-border-subtle pt-2">
-          <span className="text-text-heading">Total Espacio</span>
-          <span className="font-mono text-text-heading">{formatCOP(subtotalItems + moSubtotal)}</span>
-        </div>
-      </div>
-
-      {/* Presupuesto Adicional (Referenciales) — zona propia, frontera visual clara (borde punteado ámbar).
-          Punto minimalista en vez de badge grande: la zona ya dice "referencial", repetirlo por fila estorba. */}
-      <div className="border-t-2 border-dashed border-amber-300 pt-3">
+      {/* Presupuesto Adicional (Referenciales) — D-09b: reubicado justo debajo de Ítems (2026-08-10, decisión
+          Javier) porque leerlo tras el Subtotal se sentía desconectado de la lista. La distancia ya no es la
+          señal de "no cuenta"; el borde punteado ámbar + el subtítulo explícito de abajo cumplen ese rol ahora. */}
+      <div className="border-t-2 border-dashed border-gold-300 pt-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Presupuesto Adicional (Referenciales)</p>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">Presupuesto Adicional (Referenciales)</p>
+            <p className="text-[11px] text-text-muted">No suma al Subtotal Espacio ni al contrato — estimado informativo.</p>
+          </div>
           <Button
             variant="ghost"
             size="md"
@@ -1088,8 +1129,8 @@ function VarianteContenido({
           <div className="mb-3">
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-              onSelect={(producto) => {
-                store.items.crear({
+              onSelect={async (producto) => {
+                await store.items.crear({
                   varianteId: espacio.id,
                   catalogoId: producto.id,
                   cantidad: '1',
@@ -1099,7 +1140,7 @@ function VarianteContenido({
                 })
                 setModoBusquedaItem('off')
               }}
-              onCreateNew={() => { window.location.href = '/erp/catalogo'; setModoBusquedaItem('off') }}
+              onCreateNew={() => { window.location.href = `/erp/catalogo?source=cotizador&proyectoId=${proyectoId}`; setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
@@ -1121,7 +1162,8 @@ function VarianteContenido({
                 <div key={item.id} className="text-sm border-b border-border-subtle/50 pb-2 last:pb-0 last:border-0 pt-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" title="Referencial" />
+                      <ItemMiniatura producto={prod} onClick={() => setModalItemId(item.id)} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold-500 flex-shrink-0" title="Referencial" />
                       <span className="text-text-heading truncate">
                         {item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem sin catálogo'}
                       </span>
@@ -1160,7 +1202,7 @@ function VarianteContenido({
                       <Button
                         variant="ghost"
                         size="md"
-                        onClick={() => store.items.eliminar(item.id)}
+                        onClick={async () => await store.items.eliminar(item.id)}
                         aria-label="Eliminar ítem referencial"
                         className="text-text-muted hover:text-red-500"
                       >
@@ -1194,11 +1236,28 @@ function VarianteContenido({
             })}
             <div className="flex justify-between text-sm font-semibold mt-2 border-t border-border-subtle pt-2">
               <span className="text-text-heading">Total Referencial</span>
-              <span className="font-mono text-amber-600">{formatCOP(totalReferencial)}</span>
+              <span className="font-mono text-gold-600">{formatCOP(totalReferencial)}</span>
             </div>
             <p className="text-[11px] text-text-muted italic mt-1">No incluido en el contrato — inversión estimada informativa para el cliente.</p>
           </>
         )}
+      </div>
+
+      {/* Subtotal Espacio (Materiales + MO) */}
+      <div className="border-t border-border-subtle pt-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Subtotal Espacio</p>
+        <div className="flex justify-between text-sm">
+          <span className="text-text-muted">Materiales</span>
+          <span className="font-mono text-text-heading">{formatCOP(subtotalItems)}</span>
+        </div>
+        <div className="flex justify-between text-sm mt-1">
+          <span className="text-text-muted">Mano de Obra</span>
+          <span className="font-mono text-text-heading">{formatCOP(moSubtotal)}</span>
+        </div>
+        <div className="flex justify-between text-sm font-semibold mt-1 border-t border-border-subtle pt-2">
+          <span className="text-text-heading">Total Espacio</span>
+          <span className="font-mono text-text-heading">{formatCOP(subtotalItems + moSubtotal)}</span>
+        </div>
       </div>
 
       {/* Detalles técnicos del espacio — preview con miniatura + specs no redundantes, editar vía ícono (no un "+ Editar" escondido) */}
@@ -1376,11 +1435,15 @@ function VarianteContenido({
             />
           </label>
         </div>
-        <div className="mt-2 flex justify-between items-center border-t border-border-subtle pt-2">
-          <span className="text-[11px] text-text-muted">Total MO (jornadas × tarifa):</span>
-          <span className="font-mono text-xs font-medium text-brand">{formatCOP(moSubtotal)}</span>
+          <div className="mt-2 flex justify-between items-center border-t border-border-subtle pt-2">
+            <span className="text-[11px] text-text-muted">Total MO (jornadas × tarifa):</span>
+            <span className="font-mono text-xs font-medium text-brand">{formatCOP(moSubtotal)}</span>
+          </div>
         </div>
-      </div>
+
+      {modalProd && (
+        <ItemDescriptorModal producto={modalProd} onClose={() => setModalItemId(null)} />
+      )}
     </div>
   )
 }
@@ -1401,9 +1464,9 @@ function FormArtefacto({
   const [ubicacion, setUbicacion] = useState('')
   const [fotoUrl, setFotoUrl] = useState<string[]>([])
 
-  const handleGuardar = useCallback(() => {
+  const handleGuardar = useCallback(async () => {
     if (!tipo.trim()) return
-    store.artefactos.crear({
+    await store.artefactos.crear({
       espacioVarianteId: espacioId,
       categoria,
       tipoSpecifique: tipo.trim(),
@@ -1498,8 +1561,8 @@ function FormArtefactoEdicion({
   const [ubicacion, setUbicacion] = useState(artefacto.ubicacion ?? '')
   const [fotoUrl, setFotoUrl] = useState<string[]>(artefacto.fotoUrl ? [artefacto.fotoUrl] : [])
 
-  const handleGuardar = useCallback(() => {
-    store.artefactos.actualizar(artefacto.id, {
+  const handleGuardar = useCallback(async () => {
+    await store.artefactos.actualizar(artefacto.id, {
       tipoSpecifique: tipo.trim() || null,
       dimensionesMm: dimensiones.trim() || null,
       ubicacion: ubicacion.trim() || null,
@@ -1580,8 +1643,8 @@ function FormDetallesEspacio({
 
   const dividir = (texto: string): string[] => texto.split(',').map(s => s.trim()).filter(Boolean)
 
-  const handleGuardar = useCallback(() => {
-    store.espacios.actualizar(espacio.id, {
+  const handleGuardar = useCallback(async () => {
+    await store.espacios.actualizar(espacio.id, {
       nombreEspacio: nombreEspacio.trim(),
       nombreVariante: nombreVariante.trim(),
       descripcion: descripcion.trim() || null,

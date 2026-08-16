@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
-import { useDataStore, type CronogramaEtapa, type CausaDesfase, type EstadoNovedadCritica } from '@/lib/data'
+import { useDataStore, type CronogramaEtapa, type CausaDesfase, type EstadoNovedadCritica, type DesenlaceCheck } from '@/lib/data'
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -40,6 +40,9 @@ export default function CronogramaPage() {
   const proyecto = store.proyectos.obtenerPorId(proyectoId)
   const cronograma = proyecto ? store.cronogramas.porProyecto(proyectoId) : undefined
   const etapas = cronograma ? store.cronogramaEtapas.porCronograma(cronograma.id) : []
+  const desfases = proyecto ? store.desfases.porProyecto(proyectoId) : []
+  const desfasesAplicados = desfases.filter(d => d.aplicado)
+  const ultimoDesfaseAplicado = desfasesAplicados.length > 0 ? desfasesAplicados[desfasesAplicados.length - 1] : null
   const checks = proyecto ? store.checks.porProyecto(proyectoId) : []
   const novedades = proyecto ? store.novedades.porProyecto(proyectoId) : []
   const comunicaciones = proyecto ? store.comunicaciones.porProyecto(proyectoId) : []
@@ -82,10 +85,19 @@ export default function CronogramaPage() {
   const [mostrarFormNovedad, setMostrarFormNovedad] = useState(false)
   const [novedadForm, setNovedadForm] = useState({ descripcion: '', fase: 'compras', slaHoras: '24' })
 
+  // --- P-09 Additional State (FIX 1: Decisión manual) ---
+  const [mostrarFormDecisionManual, setMostrarFormDecisionManual] = useState(false)
+  const [decisionManualForm, setDecisionManualForm] = useState({ decision: '', autorizadoPor: '' })
+
+  // --- P-10 Additional State (FIX 2: Escalar con escaladoA) ---
+  const [novedadEnEscalacion, setNovedadEnEscalacion] = useState<string | null>(null)
+  const [escaladoAForm, setEscaladoAForm] = useState('')
+
   // --- P-11 State ---
   const [mostrarFormCheck, setMostrarFormCheck] = useState(false)
   const [checkForm, setCheckForm] = useState({ ratioInsumos: '0.95', ratioPagos: '0.95', ratioProduccion: '0.95' })
   const [anularSugerencia, setAnularSugerencia] = useState(false)
+  const [anulationDesenlace, setAnulationDesenlace] = useState<DesenlaceCheck | null>(null)
   const [overrideJustificacion, setOverrideJustificacion] = useState('')
 
   if (!proyecto) {
@@ -101,7 +113,7 @@ export default function CronogramaPage() {
     return Number.isFinite(n) ? n : 0
   }
 
-  const handleAplicarDesfase = () => {
+  const handleAplicarDesfase = async () => {
     if (!desfaseForm.motivo.trim() || !cronograma) return
 
     const composicion = desfaseForm.composicion
@@ -114,7 +126,7 @@ export default function CronogramaPage() {
 
     if (composicion.length === 0) return
 
-    store.desfases.aplicar(proyectoId, {
+    await store.desfases.aplicar(proyectoId, {
       causa: desfaseForm.causa,
       motivo: desfaseForm.motivo,
       diasDesfase: parseNum(desfaseForm.diasDesfase),
@@ -125,9 +137,9 @@ export default function CronogramaPage() {
     setDesfaseForm({ causa: 'interna', motivo: '', diasDesfase: '0', composicion: '' })
   }
 
-  const handleRegistrarNovedad = () => {
+  const handleRegistrarNovedad = async () => {
     if (!novedadForm.descripcion.trim()) return
-    store.novedades.crear(proyectoId, {
+    await store.novedades.crear(proyectoId, {
       descripcion: novedadForm.descripcion,
       fase: novedadForm.fase,
       ventanaSlaHoras: parseNum(novedadForm.slaHoras),
@@ -136,8 +148,8 @@ export default function CronogramaPage() {
     setNovedadForm({ descripcion: '', fase: 'compras', slaHoras: '24' })
   }
 
-  const handleGenerarCheck = () => {
-    store.checks.crear(proyectoId, {
+  const handleGenerarCheck = async () => {
+    await store.checks.crear(proyectoId, {
       ratioInsumos: parseNum(checkForm.ratioInsumos),
       ratioPagos: parseNum(checkForm.ratioPagos),
       ratioProduccion: parseNum(checkForm.ratioProduccion),
@@ -146,21 +158,36 @@ export default function CronogramaPage() {
     setCheckForm({ ratioInsumos: '0.95', ratioPagos: '0.95', ratioProduccion: '0.95' })
   }
 
-  const handleConfirmarCheck = () => {
+  // FIX 3: Reescribir handleConfirmarCheck con 2 caminos claros (DP3)
+  const handleConfirmarCheck = async () => {
     if (!ultimoCheck) return
-    if (ultimoCheck.desenlaceFinal !== ultimoCheck.desenlaceSugerido && !overrideJustificacion.trim()) return
 
-    store.checks.confirmar(ultimoCheck.id, {
-      desenlaceFinal: anularSugerencia ? (overrideJustificacion.includes('extremo') ? 'extremo' : 'novedad') : ultimoCheck.desenlaceSugerido,
-      overrideJustificacion: overrideJustificacion || undefined,
-    })
-    setAnularSugerencia(false)
-    setOverrideJustificacion('')
+    if (!anularSugerencia) {
+      // Camino A: Confirmar sugerencia tal cual (aceptar sin fricción)
+      await store.checks.confirmar(ultimoCheck.id, {
+        desenlaceFinal: ultimoCheck.desenlaceSugerido,
+        overrideJustificacion: undefined,
+      })
+      setAnularSugerencia(false)
+      setAnulationDesenlace(null)
+      setOverrideJustificacion('')
+    } else {
+      // Camino B: Anular con selección explícita del verificador + justificación obligatoria
+      if (!anulationDesenlace || !overrideJustificacion.trim()) return
+
+      await store.checks.confirmar(ultimoCheck.id, {
+        desenlaceFinal: anulationDesenlace,
+        overrideJustificacion: overrideJustificacion,
+      })
+      setAnularSugerencia(false)
+      setAnulationDesenlace(null)
+      setOverrideJustificacion('')
+    }
   }
 
-  const handleCrearComunicacion = () => {
+  const handleCrearComunicacion = async () => {
     if (!ultimoCheck || ultimoCheck.desenlaceFinal !== 'todo_bien') return
-    store.comunicaciones.crear(proyectoId, {
+    await store.comunicaciones.crear(proyectoId, {
       contenido: 'Tu proyecto avanza según lo previsto. Continuaremos informándote sobre los próximos pasos.',
     })
   }
@@ -315,6 +342,78 @@ export default function CronogramaPage() {
                   </div>
                 )}
 
+                {/* FIX 1: Desfases aplicados + Botón "Decisión manual" */}
+                {ultimoDesfaseAplicado && (
+                  <div className="rounded border border-amber-300 bg-bg-alt/50 p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-text-heading">Desfase aplicado: {ultimoDesfaseAplicado.diasDesfase} días</p>
+                        <p className="text-xs text-text-muted mt-1">Causa: {ultimoDesfaseAplicado.causa === 'interna' ? 'Interna' : ultimoDesfaseAplicado.causa === 'externa' ? 'Externa' : 'Cambio de contrato'}</p>
+                        <p className="text-xs text-text-muted">Motivo: {ultimoDesfaseAplicado.motivo}</p>
+                        {ultimoDesfaseAplicado.decisionManual && (
+                          <p className="text-xs text-text-muted mt-1 italic">Decisión manual: {ultimoDesfaseAplicado.decisionManual}</p>
+                        )}
+                      </div>
+                    </div>
+                    {!mostrarFormDecisionManual ? (
+                      <Button variant="secondary" size="md" onClick={() => setMostrarFormDecisionManual(true)}>
+                        Decisión manual
+                      </Button>
+                    ) : (
+                      <div className="rounded border border-border-subtle bg-bg-paper p-2 space-y-2">
+                        <label className="flex flex-col gap-1">
+                          <span className="text-xs text-text-muted">Decisión (justificación)*</span>
+                          <textarea
+                            value={decisionManualForm.decision}
+                            onChange={(e) => setDecisionManualForm(prev => ({ ...prev, decision: e.target.value }))}
+                            placeholder="Ej. Se acepta el desfase por fuerza mayor"
+                            rows={2}
+                            className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-xs text-text-muted">Autorizado por*</span>
+                          <input
+                            type="text"
+                            value={decisionManualForm.autorizadoPor}
+                            onChange={(e) => setDecisionManualForm(prev => ({ ...prev, autorizadoPor: e.target.value }))}
+                            placeholder="Ej. Javier García (Gerente)"
+                            className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+                          />
+                        </label>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (decisionManualForm.decision.trim() && decisionManualForm.autorizadoPor.trim()) {
+                                await store.desfases.decisionManual(ultimoDesfaseAplicado.id, {
+                                  decisionManual: decisionManualForm.decision,
+                                  autorizadoPor: decisionManualForm.autorizadoPor,
+                                })
+                                setMostrarFormDecisionManual(false)
+                                setDecisionManualForm({ decision: '', autorizadoPor: '' })
+                              }
+                            }}
+                            className="rounded bg-gold-500 px-3 py-1 text-xs font-medium text-white hover:bg-gold-600 transition-colors"
+                          >
+                            Guardar decisión
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMostrarFormDecisionManual(false)
+                              setDecisionManualForm({ decision: '', autorizadoPor: '' })
+                            }}
+                            className="rounded border border-border-subtle px-3 py-1 text-xs text-text-muted hover:bg-bg-alt transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Comunicación de adelanto (solo si check = todo_bien) */}
                 {ultimoCheck && ultimoCheck.desenlaceFinal === 'todo_bien' && (
                   <div className="rounded border border-gold-300 bg-bg-alt/50 p-3">
@@ -443,29 +542,71 @@ export default function CronogramaPage() {
                       </span>
                     </div>
 
-                    {/* Acciones */}
+                    {/* FIX 2: Acciones con captura de escaladoA */}
                     {novedad.estado === 'abierta' && (
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => store.novedades.actualizarEstado(novedad.id, 'escalada')}
-                          className="text-xs px-2 py-1 rounded border border-amber-300 text-amber-700 hover:bg-amber-50 transition-colors"
-                        >
-                          Escalar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => store.novedades.actualizarEstado(novedad.id, 'resuelta')}
-                          className="text-xs px-2 py-1 rounded border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-colors"
-                        >
-                          Marcar resuelta
-                        </button>
+                      <div className="space-y-2">
+                        {novedadEnEscalacion !== novedad.id ? (
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setNovedadEnEscalacion(novedad.id)}
+                              className="text-xs px-2 py-1 rounded border border-amber-300 text-amber-700 hover:bg-amber-50 transition-colors"
+                            >
+                              Escalar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => await store.novedades.actualizarEstado(novedad.id, 'resuelta')}
+                              className="text-xs px-2 py-1 rounded border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-colors"
+                            >
+                              Marcar resuelta
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="rounded border border-amber-300 bg-amber-50 p-2 space-y-2">
+                            <label className="flex flex-col gap-1">
+                              <span className="text-xs text-text-muted">Escalado a (persona/rol)*</span>
+                              <input
+                                type="text"
+                                value={escaladoAForm}
+                                onChange={(e) => setEscaladoAForm(e.target.value)}
+                                placeholder="Ej. Gerente de Compras, Javier García"
+                                className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+                              />
+                            </label>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (escaladoAForm.trim()) {
+                                    await store.novedades.actualizarEstado(novedad.id, 'escalada', escaladoAForm)
+                                    setNovedadEnEscalacion(null)
+                                    setEscaladoAForm('')
+                                  }
+                                }}
+                                className="text-xs px-2 py-1 rounded bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+                              >
+                                Confirmar escalada
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNovedadEnEscalacion(null)
+                                  setEscaladoAForm('')
+                                }}
+                                className="text-xs px-2 py-1 rounded border border-border-subtle text-text-muted hover:bg-bg-alt transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     {(novedad.estado === 'escalada' || novedad.estado === 'en_atencion') && (
                       <button
                         type="button"
-                        onClick={() => store.novedades.actualizarEstado(novedad.id, 'resuelta')}
+                        onClick={async () => await store.novedades.actualizarEstado(novedad.id, 'resuelta')}
                         className="text-xs px-2 py-1 rounded border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-colors"
                       >
                         Marcar resuelta
@@ -557,6 +698,26 @@ export default function CronogramaPage() {
                       ) : (
                         <div className="space-y-2 pt-2">
                           <label className="flex flex-col gap-1">
+                            <span className="text-xs text-text-muted">Elegir desenlace*</span>
+                            <div className="flex flex-col gap-1">
+                              {(['todo_bien', 'novedad', 'extremo'] as const).map(desenlace => (
+                                <label key={desenlace} className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="anulation-desenlace"
+                                    value={desenlace}
+                                    checked={anulationDesenlace === desenlace}
+                                    onChange={() => setAnulationDesenlace(desenlace)}
+                                    className="rounded"
+                                  />
+                                  <span className="text-xs text-text-heading">
+                                    {desenlace === 'todo_bien' ? 'Todo listo' : desenlace === 'novedad' ? 'Novedad' : 'Situación extrema'}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </label>
+                          <label className="flex flex-col gap-1">
                             <span className="text-xs text-text-muted">Justificación obligatoria*</span>
                             <textarea
                               value={overrideJustificacion}
@@ -570,7 +731,7 @@ export default function CronogramaPage() {
                             <Button
                               variant="primary"
                               size="md"
-                              disabled={!overrideJustificacion.trim()}
+                              disabled={!anulationDesenlace || !overrideJustificacion.trim()}
                               onClick={handleConfirmarCheck}
                             >
                               Confirmar check
@@ -579,6 +740,7 @@ export default function CronogramaPage() {
                               type="button"
                               onClick={() => {
                                 setAnularSugerencia(false)
+                                setAnulationDesenlace(null)
                                 setOverrideJustificacion('')
                               }}
                               className="text-xs px-2 py-1 rounded border border-border-subtle text-text-muted hover:bg-bg-alt transition-colors"

@@ -1,22 +1,26 @@
 // Punto de entrada del subsistema de datos para componentes React.
-// La fábrica getDataStore() vive en ./store (sin imports de React) para que
+// La fábrica getDataStore() (solo DATA_IMPL=mock) vive en ./store (sin imports de React) para que
 // módulos de servidor plano (ej. lib/auth/session.ts) puedan importarla sin
 // arrastrar el hook useDataStore() de acá abajo — ver comentario en store.ts.
+// Para DATA_IMPL=drizzle, el store real vive en React Context (DataStoreProvider.tsx).
 import { useCallback, useSyncExternalStore } from 'react'
 import type { DataStore } from './contracts'
-import { getDataStore } from './store'
+import { useDataStoreContext } from './DataStoreProvider'
 
 export { getDataStore } from './store'
+export { SHOP_CATEGORIAS } from './contracts'
+export { DataStoreProvider } from './DataStoreProvider'
 
 /**
  * Contrato de reactividad (M-07, ver arnes/lineas/ola7/tecnico/m07_capa_reactividad.md).
- * Único punto de lectura del store para componentes de app/. Se suscribe vía
- * useSyncExternalStore: cualquier mutación (desde cualquier componente) re-renderiza
+ * Único punto de lectura del store para componentes de app/. Lee el store desde
+ * <DataStoreProvider> (Context) y se suscribe vía useSyncExternalStore: cualquier
+ * mutación (desde cualquier componente, o el polling de otro usuario) re-renderiza
  * automáticamente a todos los suscriptores. Reemplaza el patrón manual
  * `useState(0) + setTrigger` que cada pantalla reinventaba por su cuenta.
  */
 export function useDataStore(): DataStore {
-  const dataStore = getDataStore()
+  const dataStore = useDataStoreContext()
   const subscribe = useCallback((onStoreChange: () => void) => dataStore.subscribe(onStoreChange), [dataStore])
   const getSnapshot = useCallback(() => dataStore.getVersion(), [dataStore])
   useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
@@ -38,4 +42,5 @@ export type {
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
+  BitacoraArticulo, BitacoraCategoria, Testimonio,
 } from './contracts'

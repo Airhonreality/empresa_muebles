@@ -1,8 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
+import { Button } from '@/components/veta/button'
+import { ReportarGarantiaModal } from '@/components/veta/reportar-garantia-modal'
 import { useDataStore } from '@/lib/data'
 import type { EstadoCasoGarantia } from '@/lib/data'
 
@@ -54,6 +56,12 @@ export function GarantiaHistorialCliente({ clienteId }: GarantiaHistorialCliente
     return map
   }, [proyectos])
 
+  // Proyectos entregados del cliente (para el modal de reporte)
+  const proyectosEntregados = useMemo(
+    () => proyectos.filter((p) => p.estado === 'entregado'),
+    [proyectos]
+  )
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle pb-6">
@@ -64,6 +72,9 @@ export function GarantiaHistorialCliente({ clienteId }: GarantiaHistorialCliente
           <h1 className="font-display text-3xl font-semibold text-text-heading mt-1">Garantía</h1>
           <p className="text-sm text-text-muted mt-1">Historial de reportes de garantía</p>
         </div>
+        {proyectosEntregados.length > 0 && (
+          <ReportarGarantiaModal clienteId={clienteId} proyectos={proyectosEntregados} />
+        )}
       </header>
 
       {casos.length === 0 ? (
@@ -119,4 +130,9 @@ export function GarantiaHistorialCliente({ clienteId }: GarantiaHistorialCliente
       )}
     </div>
   )
+}
+
+// Export para compatibilidad con el page.tsx
+export function GarantiaHistorialClienteConReportar({ clienteId }: GarantiaHistorialClienteProps) {
+  return <GarantiaHistorialCliente clienteId={clienteId} />
 }

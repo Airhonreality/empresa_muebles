@@ -1,0 +1,14 @@
+Clave Branding	Valor Branding
+NOMBRE_EMPRESA	Hermanos Garcia Gonzalez SAS
+NOMBRE_MARCA	Veta de Oro
+ESLOGAN_EMPRESA	Esteíca y Confort
+NIT_EMPRESA	9014213579
+LOGO_EMPRESA_SVG_URL	https://static.wixstatic.com/shapes/30a82e_97e2c391b22c4aeea4d474560604f59e.svg
+LOGO_EMPRESA_PNG_URL	https://static.wixstatic.com/media/30a82e_dd8842fc4f694fb79b282be71f914ca1~mv2.png
+REPRESENTANTE_LEGAL	Airhon García Rozo
+ID_REPRESENTANTE_LEGAL	1233506023
+FIRMA_PNG_REPRESENTANTE_LEGAL	https://static.wixstatic.com/media/30a82e_72c2337c148941c48a05bb2e964fb496~mv2.png
+TELEFONO_COMERCIAL	302 5922101
+PAGINA_WEB	www.vetadeoro.co
+DIRECCIÓN_EMPRESA	Cra 72a 71a 57
+ENCABEZADO_GENERAL_V1	encabezado_general_veta_oro.html

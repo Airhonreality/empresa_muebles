@@ -1,0 +1,71 @@
+{
+  "id": "t-119",
+  "nombre": "F10-E: Implementar createDrizzleStore() real (adaptador Drizzle)",
+  "descripcion": "Reemplazar el stub de lib/data/drizzle-impl.ts (311 líneas que lanzan 'no implementado') por una implementación real que lea vía Drizzle sobre dev-local, cumpliendo el contrato DataStore de lib/data/contracts.ts. Alcance reducido por la decisión de t-127 (§3.1b/§3.1d): este ticket cubre SOLO lecturas (209 métodos) + la hidratación inicial servida por el layout raíz. Las ~96 escrituras del contrato NO se implementan acá — van en t-130 (Server Actions) porque los 45 consumidores de useDataStore() son 'use client' y el driver `postgres` (postgres.js) no puede correr en el navegador. Es el prerequisito absoluto para que la app lea datos reales en el preview de Vercel (riesgo A resuelto).",
+  "objetivo": "Habilitar DATA_IMPL=drizzle como configuración válida para el preview con datos reales (lecturas + hidratación inicial).",
+  "prioridad": "Alta",
+  "estado": "Completada",
+  "fecha_resolucion": "2026-08-14",
+  "resolucion": "lib/data/drizzle-impl.ts reescrito como createDrizzleStore(snapshot) — store del navegador con caché en memoria para los 55 dominios, lecturas síncronas idénticas al patrón de mock-store.ts, y escrituras que delegan a los Server Actions de t-130 (await real, sin fire-and-forget). Hidratación inicial servida por app/layout.tsx (Server Component async) vía fetchSnapshotAction(), sin loading flicker. Verificado: next build --DATA_IMPL=drizzle exitoso contra dev-local real (47 rutas), E2E manual de escritura+lectura confirmado.",
+  "dependencias": [
+    "lib/db/schema.ts (28 tablas) estable",
+    "lib/data/contracts.ts (interfaz DataStore)",
+    "DATABASE_URL=dev-local en .env.local"
+  ],
+  "entregables": [
+    {
+      "nombre": "lib/data/drizzle-impl.ts",
+      "formato": "TypeScript",
+      "ubicacion": "lib/data/drizzle-impl.ts",
+      "detalle": "Adaptador Drizzle completo cumpliendo DataStore."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Mapear contrato→tablas",
+      "detalle": "Para cada dominio de DataStore, identificar tablas Drizzle y relaciones.",
+      "responsable": "Código"
+    },
+    {
+      "numero": 2,
+      "accion": "Implementar lecturas",
+      "detalle": "listar/obtenerPorId/porProyecto/etc. sobre dev-local.",
+      "responsable": "Código"
+    },
+    {
+      "numero": 3,
+      "accion": "Implementar hidratación inicial",
+      "detalle": "Snapshot completo vía Drizzle servido por el layout raíz (Server Component) al Provider cliente — sin loading flicker. Las escrituras NO van acá, ver t-130.",
+      "responsable": "Código"
+    },
+    {
+      "numero": 4,
+      "accion": "Verificar tsc/eslint/tests",
+      "detalle": "tsc --noEmit, eslint . y tests del módulo.",
+      "responsable": "QA"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "createDrizzleStore() no lanza 'no implementado' para ningún método de lectura usado",
+    "Hidratación inicial sin loading flicker (datos ya presentes en el primer HTML)",
+    "tsc --noEmit exit 0",
+    "La app corre con DATA_IMPL=drizzle sobre dev-local",
+    "Preview de Vercel con datos reales (prerequisito de t-118)"
+  ],
+  "notas": [
+    "Riesgo A resuelto: implementar. Documentado en arnes/RIESGOS_RESUELTOS_Y_MAPEO.md.",
+    "Vercel prohíbe DATA_IMPL=mock (store.ts) si VERCEL=1; la única ruta válida es drizzle.",
+    "Implementar progresivamente: dominios que se ven en preview primero.",
+    "Alcance de escrituras movido a t-130 por decisión t-127 (§3.1b/§3.1d, 2026-08-13): los métodos mutadores del contrato pasan a Promise<T|null> y se implementan como Server Actions, no dentro de este store."
+  ],
+  "relacionado": [
+    "lib/data/contracts.ts",
+    "lib/data/store.ts",
+    "lib/data/mock-store.ts (referencia)",
+    "lib/db/schema.ts",
+    "estado.md (bloqueo Vercel)",
+    "t-130", "t-131"
+  ],
+  "fecha_creacion": "2026-08-12"
+}

@@ -1,9 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
-import { Button } from '@/components/veta/button'
+import { LinkButton } from '@/components/veta/button'
 import { useDataStore, type Verificacion } from '@/lib/data'
 
 export default function GatesPage() {
@@ -154,11 +153,9 @@ export default function GatesPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/erp/proyectos/${proyecto.id}`}>
-                          <Button variant="ghost" size="md">
-                            Ver detalles
-                          </Button>
-                        </Link>
+                        <LinkButton href={`/erp/proyectos/${proyecto.id}`} variant="ghost" size="md">
+                          Ver detalles
+                        </LinkButton>
                       </td>
                     </tr>
                   )

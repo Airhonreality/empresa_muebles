@@ -1,0 +1,67 @@
+{
+  "id": "t-117",
+  "nombre": "F10: Verificación post-migración (Fase 4)",
+  "descripcion": "Verificar mecánicamente la migración: conteo de registros legacy vs V3, FKs válidas, estados en enums, tipos numeric/money y ausencia de drift de schema.",
+  "objetivo": "Garantizar con evidencia que los datos migrados en t-115/t-116 son íntegros antes del preview.",
+  "prioridad": "Alta",
+  "estado": "Pendiente",
+  "dependencias": [
+    "t-115 migración de datos maestros",
+    "t-116 migración de datos transaccionales"
+  ],
+  "entregables": [
+    {
+      "nombre": "Reporte de verificación",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/migracion/verificacion_post_migracion.md",
+      "detalle": "Evidencia de conteos, FKs, enums y tipos."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "V-1 Schema sin drift",
+      "detalle": "npm run db:generate (sin cambios pendientes).",
+      "responsable": "QA"
+    },
+    {
+      "numero": 2,
+      "accion": "V-2 Conteo de registros",
+      "detalle": "SELECT COUNT(*) por tabla: legacy vs dev-local.",
+      "responsable": "QA"
+    },
+    {
+      "numero": 3,
+      "accion": "V-3 FKs válidas",
+      "detalle": "Consultas de FKs huérfanas (clientes, productos→proveedores, proyectos→clientes, etc.).",
+      "responsable": "QA"
+    },
+    {
+      "numero": 4,
+      "accion": "V-4 Estados enums",
+      "detalle": "SELECT DISTINCT estado FROM proyectos/contratos → valores en enum.",
+      "responsable": "QA"
+    },
+    {
+      "numero": 5,
+      "accion": "V-5 Tipos/money",
+      "detalle": "Verificar montos numeric sin pérdida de precisión.",
+      "responsable": "QA"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "tsc --noEmit exit 0",
+    "Conteos legacy = conteos V3 por tabla migrada",
+    "0 FKs huérfanas",
+    "Todos los estados dentro de los enums V3",
+    "Reporte de verificación documentado"
+  ],
+  "notas": [
+    "Nunca aceptar la palabra del ejecutor: evidencia mecánica obligatoria (rol QA)."
+  ],
+  "relacionado": [
+    "plan_f10_migracion.md §5 (V-1..V-5)",
+    "riesgos_migracion.md R-6, R-7, R-8"
+  ],
+  "fecha_creacion": "2026-08-12"
+}

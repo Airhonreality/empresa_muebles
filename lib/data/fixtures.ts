@@ -4,10 +4,12 @@ import type {
   Cliente, ProductoCatalogo, Proyecto, EspacioVariante, ItemVariante, EspacioArtefacto, Parametro, Contrato, HitoPago, UsuarioMock, Cronograma, CronogramaEtapa, DesfaseCronograma, CheckProduccion, NovedadCritica, ComunicacionProgreso, SchemaProyecto, BomMaterial, Verificacion, Retoma, CambioContrato, Persona, PersonaRol, Modulo, Estimacion,
   OrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
   CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
-  Categoria, ProductoTienda, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
+  Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto,
+  BitacoraArticulo, Testimonio,
 } from './contracts'
+import { SHOP_CATEGORIAS } from './contracts'
 
 const UUID = (suffix: string) => `mock-${suffix}`
 
@@ -20,16 +22,16 @@ export const CLIENTES: Cliente[] = [
 const CATALOGO_TS = '2026-06-01T08:00:00Z'
 
 export const CATALOGO: ProductoCatalogo[] = [
-  { id: UUID('p01'), sku: 'TAB-ROB-18', descripcion: 'Tablero Roble 18mm', tipo: 'insumo', unidadMedida: 'm²', precioDirecto: '85000', precioPublico: '110000', stockActual: 40, proveedorId: null, imagenUrl: null, modelo3dUrl: null, categoriaComercial: 'Maderas', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
-  { id: UUID('p02'), sku: 'TAB-NOG-18', descripcion: 'Tablero Nogal 18mm', tipo: 'insumo', unidadMedida: 'm²', precioDirecto: '78000', precioPublico: '102000', stockActual: 25, proveedorId: null, imagenUrl: null, modelo3dUrl: null, categoriaComercial: 'Maderas', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
-  { id: UUID('p03'), sku: 'BIS-BLM-STD', descripcion: 'Bisagra Blum estándar', tipo: 'herraje', unidadMedida: 'ud', precioDirecto: '4200', precioPublico: '6500', stockActual: 200, proveedorId: null, imagenUrl: null, modelo3dUrl: null, categoriaComercial: 'Herrajes', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
-  { id: UUID('p04'), sku: 'COR-FULL-45', descripcion: 'Corredera Full Extension 45cm', tipo: 'herraje', unidadMedida: 'ud', precioDirecto: '18500', precioPublico: '28000', stockActual: 60, proveedorId: null, imagenUrl: null, modelo3dUrl: null, categoriaComercial: 'Herrajes', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
-  { id: UUID('p05'), sku: 'TIR-ACR-128', descripcion: 'Tirador Acero 128mm', tipo: 'herraje', unidadMedida: 'ud', precioDirecto: '9500', precioPublico: '14500', stockActual: 80, proveedorId: null, imagenUrl: null, modelo3dUrl: null, categoriaComercial: 'Herrajes', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
-  { id: UUID('p06'), sku: 'SERV-DEV', descripcion: 'Servicio Diseño y Desarrollo Técnico', tipo: 'servicio', unidadMedida: 'jornada', precioDirecto: null, precioPublico: null, stockActual: 0, proveedorId: null, imagenUrl: null, modelo3dUrl: null, categoriaComercial: 'Mano de Obra', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
-  { id: UUID('p07'), sku: 'SERV-ASM', descripcion: 'Servicio Ensamblaje en Taller', tipo: 'servicio', unidadMedida: 'jornada', precioDirecto: null, precioPublico: null, stockActual: 0, proveedorId: null, imagenUrl: null, modelo3dUrl: null, categoriaComercial: 'Mano de Obra', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
-  { id: UUID('p08'), sku: 'SERV-INS', descripcion: 'Servicio Instalación en Obra', tipo: 'servicio', unidadMedida: 'jornada', precioDirecto: null, precioPublico: null, stockActual: 0, proveedorId: null, imagenUrl: null, modelo3dUrl: null, categoriaComercial: 'Mano de Obra', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p01'), sku: 'TAB-ROB-18', descripcion: 'Tablero Roble 18mm', tipo: 'insumo', unidadMedida: 'm²', precioDirecto: '85000', precioPublico: '110000', stockActual: 40, proveedorId: null, imagenUrl: null, galeriaImagenesUrl: [], modelo3dUrl: null, categoriaComercial: 'Maderas', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p02'), sku: 'TAB-NOG-18', descripcion: 'Tablero Nogal 18mm', tipo: 'insumo', unidadMedida: 'm²', precioDirecto: '78000', precioPublico: '102000', stockActual: 25, proveedorId: null, imagenUrl: null, galeriaImagenesUrl: [], modelo3dUrl: null, categoriaComercial: 'Maderas', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p03'), sku: 'BIS-BLM-STD', descripcion: 'Bisagra Blum estándar', tipo: 'herraje', unidadMedida: 'ud', precioDirecto: '4200', precioPublico: '6500', stockActual: 200, proveedorId: null, imagenUrl: null, galeriaImagenesUrl: [], modelo3dUrl: null, categoriaComercial: 'Herrajes', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p04'), sku: 'COR-FULL-45', descripcion: 'Corredera Full Extension 45cm', tipo: 'herraje', unidadMedida: 'ud', precioDirecto: '18500', precioPublico: '28000', stockActual: 60, proveedorId: null, imagenUrl: null, galeriaImagenesUrl: [], modelo3dUrl: null, categoriaComercial: 'Herrajes', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p05'), sku: 'TIR-ACR-128', descripcion: 'Tirador Acero 128mm', tipo: 'herraje', unidadMedida: 'ud', precioDirecto: '9500', precioPublico: '14500', stockActual: 80, proveedorId: null, imagenUrl: null, galeriaImagenesUrl: [], modelo3dUrl: null, categoriaComercial: 'Herrajes', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p06'), sku: 'SERV-DEV', descripcion: 'Servicio Diseño y Desarrollo Técnico', tipo: 'servicio', unidadMedida: 'jornada', precioDirecto: null, precioPublico: null, stockActual: 0, proveedorId: null, imagenUrl: null, galeriaImagenesUrl: [], modelo3dUrl: null, categoriaComercial: 'Mano de Obra', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p07'), sku: 'SERV-ASM', descripcion: 'Servicio Ensamblaje en Taller', tipo: 'servicio', unidadMedida: 'jornada', precioDirecto: null, precioPublico: null, stockActual: 0, proveedorId: null, imagenUrl: null, galeriaImagenesUrl: [], modelo3dUrl: null, categoriaComercial: 'Mano de Obra', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p08'), sku: 'SERV-INS', descripcion: 'Servicio Instalación en Obra', tipo: 'servicio', unidadMedida: 'jornada', precioDirecto: null, precioPublico: null, stockActual: 0, proveedorId: null, imagenUrl: null, galeriaImagenesUrl: [], modelo3dUrl: null, categoriaComercial: 'Mano de Obra', publicadoWeb: false, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
   // Producto publicado en web (F-02/P-27): satisface R5 (publicadoWeb requiere precioPublico + imagenUrl).
-  { id: UUID('p09'), sku: 'MES-TV-NOG', descripcion: 'Mueble TV flotante Nogal 1.80m', tipo: 'producto_fijo', unidadMedida: 'ud', precioDirecto: '650000', precioPublico: '890000', stockActual: 5, proveedorId: null, imagenUrl: 'https://r2.mock/catalogo/mueble-tv-nogal.jpg', modelo3dUrl: null, categoriaComercial: 'Muebles', publicadoWeb: true, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
+  { id: UUID('p09'), sku: 'MES-TV-NOG', descripcion: 'Mueble TV flotante Nogal 1.80m', tipo: 'producto_fijo', unidadMedida: 'ud', precioDirecto: '650000', precioPublico: '890000', stockActual: 5, proveedorId: null, imagenUrl: 'https://r2.mock/catalogo/mueble-tv-nogal.jpg', galeriaImagenesUrl: ['https://r2.mock/catalogo/mueble-tv-nogal-2.jpg', 'https://r2.mock/catalogo/mueble-tv-nogal-3.jpg'], modelo3dUrl: null, categoriaComercial: 'Muebles', publicadoWeb: true, proyectoOrigenId: null, anulado: false, createdAt: CATALOGO_TS, updatedAt: CATALOGO_TS },
 ]
 
 export const PARAMETROS: Parametro[] = [
@@ -153,13 +155,23 @@ export const USUARIOS: UsuarioMock[] = [
 
 // --- F3: Equipo (REGISTRO §1) ---
 
+const SIN_DATOS_LEGALES = {
+  direccion: null,
+  referencia1Nombre: null,
+  referencia1Relacion: null,
+  referencia1Telefono: null,
+  referencia2Nombre: null,
+  referencia2Relacion: null,
+  referencia2Telefono: null,
+} as const
+
 export const PERSONAS: Persona[] = [
-  { id: UUID('p01'), nombre: 'Javier García', documento: 'CC-77901000', telefono: '3001112233' },
-  { id: UUID('p02'), nombre: 'Laura Comercial', documento: 'CC-102044550', telefono: '3012345678' },
-  { id: UUID('p03'), nombre: 'Hernán García', documento: 'CC-79990011', telefono: '3023456789' },
-  { id: UUID('p04'), nombre: 'Camila Desarrolladora', documento: 'CC-103055661', telefono: '3034567890' },
-  { id: UUID('p05'), nombre: 'Andrés Compras', documento: 'CC-104066772', telefono: '3045678901' },
-  { id: UUID('p06'), nombre: 'Sofía Taller', documento: 'CC-105077883', telefono: '3056789012' },
+  { id: UUID('p01'), nombre: 'Javier García', documento: 'CC-77901000', telefono: '3001112233', fotoUrl: null, email: 'javier@vetadeoro.co', ...SIN_DATOS_LEGALES },
+  { id: UUID('p02'), nombre: 'Laura Comercial', documento: 'CC-102044550', telefono: '3012345678', fotoUrl: null, email: 'laura@vetadeoro.co', ...SIN_DATOS_LEGALES },
+  { id: UUID('p03'), nombre: 'Hernán García', documento: 'CC-79990011', telefono: '3023456789', fotoUrl: null, email: 'hernan@vetadeoro.co', ...SIN_DATOS_LEGALES },
+  { id: UUID('p04'), nombre: 'Camila Desarrolladora', documento: 'CC-103055661', telefono: '3034567890', fotoUrl: null, email: 'camila@vetadeoro.co', ...SIN_DATOS_LEGALES },
+  { id: UUID('p05'), nombre: 'Andrés Compras', documento: 'CC-104066772', telefono: '3045678901', fotoUrl: null, email: 'andres@vetadeoro.co', ...SIN_DATOS_LEGALES },
+  { id: UUID('p06'), nombre: 'Sofía Taller', documento: 'CC-105077883', telefono: '3056789012', fotoUrl: null, email: 'sofia@vetadeoro.co', ...SIN_DATOS_LEGALES },
 ]
 
 export const PERSONAS_ROLES: PersonaRol[] = [
@@ -229,7 +241,7 @@ export const NOVEDADES: NovedadCritica[] = [
 ]
 
 export const COMUNICACIONES: ComunicacionProgreso[] = [
-  { id: UUID('com01'), proyectoId: UUID('proj12'), tipo: 'adelanto', contenido: 'Tu proyecto avanza bien: el ensamblaje va según lo previsto, posible instalación en los próximos 15 días.', createdAt: '2026-07-16T09:00:00Z' },
+  { id: UUID('com01'), proyectoId: UUID('proj12'), tipo: 'adelanto', contenido: 'Tu proyecto avanza bien: el ensamblaje va según lo previsto, posible instalación en los próximos 15 días.', visibleAlCliente: true, createdAt: '2026-07-16T09:00:00Z' },
 ]
 
 // --- F3: Desarrollo y schema (REGISTRO §6) ---
@@ -272,14 +284,14 @@ export const CAMBIOS_CONTRATO: CambioContrato[] = [
 // --- F3: Producción (mínimo para gates) ---
 
 export const MODULOS: Modulo[] = [
-  { id: UUID('mod101'), proyectoId: UUID('proj12'), espacioVarianteId: null, nombre: 'Módulo bajo horno', estado: 'armado', padreId: null, tipoModulo: 'mueble_bajo', cantidad: 1, horasEstimadas: '6', createdAt: '2026-06-25T08:00:00Z' },
-  { id: UUID('mod102'), proyectoId: UUID('proj12'), espacioVarianteId: null, nombre: 'Módulo lavaplatos', estado: 'armado', padreId: null, tipoModulo: 'mueble_bajo', cantidad: 1, horasEstimadas: '5', createdAt: '2026-06-25T08:00:00Z' },
-  { id: UUID('mod103'), proyectoId: UUID('proj12'), espacioVarianteId: null, nombre: 'Mueble alto', estado: 'armado', padreId: null, tipoModulo: 'mueble_alto', cantidad: 2, horasEstimadas: '8', createdAt: '2026-06-25T08:00:00Z' },
-  { id: UUID('mod104'), proyectoId: UUID('proj12'), espacioVarianteId: null, nombre: 'Isla central', estado: 'compras', padreId: null, tipoModulo: 'isla', cantidad: 1, horasEstimadas: '10', createdAt: '2026-06-25T08:00:00Z' },
+  { id: UUID('mod101'), proyectoId: UUID('proj12'), espacioVarianteId: null, nombre: 'Módulo bajo horno', estado: 'armado', padreId: null, padreLinaje: [], tipoModulo: 'mueble_bajo', cantidad: 1, horasEstimadas: '6', createdAt: '2026-06-25T08:00:00Z' },
+  { id: UUID('mod102'), proyectoId: UUID('proj12'), espacioVarianteId: null, nombre: 'Módulo lavaplatos', estado: 'armado', padreId: null, padreLinaje: [], tipoModulo: 'mueble_bajo', cantidad: 1, horasEstimadas: '5', createdAt: '2026-06-25T08:00:00Z' },
+  { id: UUID('mod103'), proyectoId: UUID('proj12'), espacioVarianteId: null, nombre: 'Mueble alto', estado: 'armado', padreId: null, padreLinaje: [], tipoModulo: 'mueble_alto', cantidad: 2, horasEstimadas: '8', createdAt: '2026-06-25T08:00:00Z' },
+  { id: UUID('mod104'), proyectoId: UUID('proj12'), espacioVarianteId: null, nombre: 'Isla central', estado: 'compras', padreId: null, padreLinaje: [], tipoModulo: 'isla', cantidad: 1, horasEstimadas: '10', createdAt: '2026-06-25T08:00:00Z' },
   // Módulos canónicos de la fila del taller (P-16/P-17/P-18): proj13 en estados de flujo B3-0.
-  { id: UUID('mod201'), proyectoId: UUID('proj13'), espacioVarianteId: null, nombre: 'Escritorio ejecutivo 1', estado: 'por_armar', padreId: null, tipoModulo: 'escritorio', cantidad: 1, horasEstimadas: '4', createdAt: '2026-08-01T08:00:00Z' },
-  { id: UUID('mod202'), proyectoId: UUID('proj13'), espacioVarianteId: null, nombre: 'Escritorio ejecutivo 2', estado: 'en_armado', padreId: null, tipoModulo: 'escritorio', cantidad: 1, horasEstimadas: '4', createdAt: '2026-08-01T08:00:00Z' },
-  { id: UUID('mod203'), proyectoId: UUID('proj13'), espacioVarianteId: null, nombre: 'Set de cajones', estado: 'en_calidad', padreId: UUID('mod202'), tipoModulo: 'cajonera', cantidad: 3, horasEstimadas: '2', createdAt: '2026-08-01T08:00:00Z' },
+  { id: UUID('mod201'), proyectoId: UUID('proj13'), espacioVarianteId: null, nombre: 'Escritorio ejecutivo 1', estado: 'por_armar', padreId: null, padreLinaje: [], tipoModulo: 'escritorio', cantidad: 1, horasEstimadas: '4', createdAt: '2026-08-01T08:00:00Z' },
+  { id: UUID('mod202'), proyectoId: UUID('proj13'), espacioVarianteId: null, nombre: 'Escritorio ejecutivo 2', estado: 'en_armado', padreId: null, padreLinaje: [], tipoModulo: 'escritorio', cantidad: 1, horasEstimadas: '4', createdAt: '2026-08-01T08:00:00Z' },
+  { id: UUID('mod203'), proyectoId: UUID('proj13'), espacioVarianteId: null, nombre: 'Set de cajones', estado: 'en_calidad', padreId: UUID('mod202'), padreLinaje: [UUID('mod202')], tipoModulo: 'cajonera', cantidad: 3, horasEstimadas: '2', createdAt: '2026-08-01T08:00:00Z' },
 ]
 
 export const ESTIMACIONES: Estimacion[] = [
@@ -349,12 +361,18 @@ export const ORDENES_COMPRA: OrdenCompra[] = [
 export const REGISTROS_GATE_CAJA: RegistroGateCaja[] = []
 
 export const OBLIGACIONES_PENDIENTES: ObligacionPendiente[] = [
-  { id: UUID('obl01'), descripcion: 'Anticipo contrato Cocina Márquez — Integral', origen: 'contrato_hito', montoTotal: '720000', montoPagado: '720000', fechaVencimiento: '2026-07-05', estado: 'pagado', personaId: null, clienteId: UUID('c03'), proveedorId: null, proyectoId: UUID('proj01'), contratoId: UUID('ctr01'), hitoId: UUID('h01'), baseCalculo: null, porcentaje: null, tipoComision: null, cantidadModulos: null, desfaseId: null, periodicidad: null, deduccionDiseno3d: false, createdAt: '2026-07-01T10:00:00Z' },
-  { id: UUID('obl02'), descripcion: 'Comisión Laura Comercial — Closet Suite Monte', origen: 'comision', montoTotal: '450000', montoPagado: '0', fechaVencimiento: '2026-08-20', estado: 'pendiente', personaId: UUID('p02'), clienteId: null, proveedorId: null, proyectoId: UUID('proj11'), contratoId: null, hitoId: null, baseCalculo: '9000000', porcentaje: '5', tipoComision: 'venta', cantidadModulos: null, desfaseId: null, periodicidad: null, deduccionDiseno3d: false, createdAt: '2026-08-03T09:00:00Z' },
+  { id: UUID('obl01'), descripcion: 'Anticipo contrato Cocina Márquez — Integral', origen: 'contrato_hito', montoTotal: '720000', montoPagado: '720000', fechaVencimiento: '2026-07-05', estado: 'pagado', personaId: null, clienteId: UUID('c03'), proveedorId: null, proyectoId: UUID('proj01'), contratoId: UUID('ctr01'), hitoId: UUID('h01'), ordenCompraId: null, baseCalculo: null, porcentaje: null, tipoComision: null, cantidadModulos: null, desfaseId: null, periodicidad: null, deduccionDiseno3d: false, createdAt: '2026-07-01T10:00:00Z' },
+  { id: UUID('obl02'), descripcion: 'Comisión Laura Comercial — Closet Suite Monte', origen: 'comision', montoTotal: '450000', montoPagado: '0', fechaVencimiento: '2026-08-20', estado: 'pendiente', personaId: UUID('p02'), clienteId: null, proveedorId: null, proyectoId: UUID('proj11'), contratoId: null, hitoId: null, ordenCompraId: null, baseCalculo: '9000000', porcentaje: '5', tipoComision: 'venta', cantidadModulos: null, desfaseId: null, periodicidad: null, deduccionDiseno3d: false, createdAt: '2026-08-03T09:00:00Z' },
+  // C-01 (auditoría 2026-08-10): obligaciones que faltaban para las OC ya existentes en fixture
+  // (oc01/oc02 se crearon directo acá, no vía store.ordenesCompra.crear(), que ahora sí las genera).
+  // P-21 Fix: agregar ordenCompraId para vincular cada obligación a su OC de origen.
+  { id: UUID('obl03'), descripcion: 'Orden de compra: OC-2026-0011', origen: 'proveedor', montoTotal: '3200000', montoPagado: '0', fechaVencimiento: '2026-08-15', estado: 'pendiente', personaId: null, clienteId: null, proveedorId: UUID('prov01'), proyectoId: UUID('proj10'), contratoId: null, hitoId: null, ordenCompraId: UUID('oc01'), baseCalculo: null, porcentaje: null, tipoComision: null, cantidadModulos: null, desfaseId: null, periodicidad: null, deduccionDiseno3d: false, createdAt: '2026-08-05T09:00:00Z' },
+  { id: UUID('obl04'), descripcion: 'Orden de compra: OC-2026-0012', origen: 'proveedor', montoTotal: '1200000', montoPagado: '0', fechaVencimiento: '2026-08-11', estado: 'pendiente', personaId: null, clienteId: null, proveedorId: UUID('prov02'), proyectoId: UUID('proj11'), contratoId: null, hitoId: null, ordenCompraId: UUID('oc02'), baseCalculo: null, porcentaje: null, tipoComision: null, cantidadModulos: null, desfaseId: null, periodicidad: null, deduccionDiseno3d: false, createdAt: '2026-08-04T09:00:00Z' },
 ]
 
 export const CUENTAS_COBRO_PROVEEDOR: CuentaCobroProveedor[] = [
-  { id: UUID('ccp01'), proveedorId: UUID('prov01'), ordenCompraId: UUID('oc01'), concepto: 'Tableros roble y nogal — pedido agosto', valor: '3200000', estado: 'vinculada', firmaDigital: 'firma-prov01-2026-08-05', urlDocumento: null, fechaEmision: '2026-08-05', fechaVencimiento: '2026-08-20', createdAt: '2026-08-05T09:30:00Z' },
+  // P-23 Fix: agregar obligacionId para vincular cada cuenta a su obligación específica.
+  { id: UUID('ccp01'), proveedorId: UUID('prov01'), ordenCompraId: UUID('oc01'), obligacionId: null, concepto: 'Tableros roble y nogal — pedido agosto', valor: '3200000', estado: 'vinculada', firmaDigital: 'firma-prov01-2026-08-05', urlDocumento: null, fechaEmision: '2026-08-05', fechaVencimiento: '2026-08-20', createdAt: '2026-08-05T09:30:00Z' },
 ]
 
 // --- F-02: Tienda web (REGISTRO §2/§10) ---
@@ -362,11 +380,19 @@ export const CUENTAS_COBRO_PROVEEDOR: CuentaCobroProveedor[] = [
 export const CATEGORIAS: Categoria[] = [
   { id: UUID('catg01'), nombre: 'Muebles', tipo: 'tienda', padreId: null, activo: true },
   { id: UUID('catg02'), nombre: 'Mesas de centro', tipo: 'tienda', padreId: UUID('catg01'), activo: true },
-  { id: UUID('catg03'), nombre: 'Cocinas', tipo: 'portafolio', padreId: null, activo: true },
+  { id: UUID('catg03'), nombre: 'Cocinas', tipo: 'tienda', padreId: null, activo: true },
 ]
 
 export const PRODUCTOS_TIENDA: ProductoTienda[] = [
-  { id: UUID('pt01'), catalogoId: UUID('p09'), descripcionDiseno: 'Mueble TV flotante en nogal macizo con luz LED integrada', imagenPrincipalUrl: 'https://r2.mock/tienda/mueble-tv-nogal.jpg', categoriaId: UUID('catg01'), visibleEnTienda: true, valorTienda: '950000', inventarioDisponible: 3, calificacionPromedio: 4.8, createdAt: '2026-07-01T09:00:00Z', updatedAt: '2026-07-01T09:00:00Z' },
+  { id: UUID('pt01'), catalogoId: UUID('p09'), descripcionDiseno: 'Mueble TV flotante en nogal macizo con luz LED integrada', imagenPrincipalUrl: 'https://r2.mock/tienda/mueble-tv-nogal.jpg', categoria: SHOP_CATEGORIAS.COCINAS, visibleEnTienda: true, valorTienda: '950000', inventarioDisponible: 3, calificacionPromedio: 4.8, createdAt: '2026-07-01T09:00:00Z', updatedAt: '2026-07-01T09:00:00Z' },
+]
+
+// Composición real del diseño consolidado pt01 (disenio_p27 §6.2, 2026-08-11):
+// un producto de tienda es N componentes del catálogo, no un solo ítem.
+export const PRODUCTOS_TIENDA_COMPONENTES: ProductoTiendaComponente[] = [
+  { id: UUID('ptc01'), productoTiendaId: UUID('pt01'), catalogoId: UUID('p02'), cantidad: '1.8', createdAt: '2026-07-01T09:00:00Z', updatedAt: '2026-07-01T09:00:00Z' },
+  { id: UUID('ptc02'), productoTiendaId: UUID('pt01'), catalogoId: UUID('p05'), cantidad: '4', createdAt: '2026-07-01T09:00:00Z', updatedAt: '2026-07-01T09:00:00Z' },
+  { id: UUID('ptc03'), productoTiendaId: UUID('pt01'), catalogoId: UUID('p03'), cantidad: '2', createdAt: '2026-07-01T09:00:00Z', updatedAt: '2026-07-01T09:00:00Z' },
 ]
 
 export const CATALOGO_ACABADOS: CatalogoAcabado[] = [
@@ -385,28 +411,103 @@ export const ACABADOS_MUESTRAS: AcabadoMuestra[] = [
 ]
 
 // --- F-03: Portafolio de proyectos (REGISTRO §10) ---
+// Decisión T-03 (2026-08-12): campos `barrio` y `tipoProyecto` agregados para ubicación real (I-049).
 
 export const PORTAFOLIO: Portafolio[] = [
-  { id: UUID('port01'), proyectoId: UUID('proj06'), titulo: 'Cocina compacta en cedro — Díaz', descripcionComercial: 'Cocina pequeña con electrodomésticos integrados y aprovechamiento total del espacio.', categoriaEspacio: 'cocina', materialesDestacados: ['Cedro', 'Granito'], precioReferencial: 'desde $8.000.000 COP', publicado: true, destacado: true, orden: 0, slug: 'cocina-compacta-diaz', createdAt: '2026-06-05T09:00:00Z', updatedAt: '2026-06-05T09:00:00Z' },
-  { id: UUID('port02'), proyectoId: UUID('proj12'), titulo: 'Cocina gourmet en nogal — Bosque', descripcionComercial: 'Isla doble y acabados premium para cocina gourmet.', categoriaEspacio: 'cocina', materialesDestacados: ['Nogal', 'Acero inoxidable'], precioReferencial: '$15.000.000 - $20.000.000 COP', publicado: false, destacado: false, orden: 1, slug: 'cocina-gourmet-bosque', createdAt: '2026-08-05T09:00:00Z', updatedAt: '2026-08-05T09:00:00Z' },
+  { id: UUID('port01'), proyectoId: UUID('proj06'), titulo: 'Cocina compacta en cedro — Díaz', descripcionComercial: 'Cocina pequeña con electrodomésticos integrados y aprovechamiento total del espacio.', categoriaEspacio: 'cocina', materialesDestacados: ['Cedro', 'Granito'], precioReferencial: 'desde $8.000.000 COP', imagenPortafolioUrl: null, galeriaPortafolioUrl: [], barrio: 'Chicó', tipoProyecto: 'Residencial', publicado: true, destacado: true, orden: 0, slug: 'cocina-compacta-diaz', createdAt: '2026-06-05T09:00:00Z', updatedAt: '2026-06-05T09:00:00Z' },
+  { id: UUID('port02'), proyectoId: UUID('proj12'), titulo: 'Cocina gourmet en nogal — Bosque', descripcionComercial: 'Isla doble y acabados premium para cocina gourmet.', categoriaEspacio: 'cocina', materialesDestacados: ['Nogal', 'Acero inoxidable'], precioReferencial: '$15.000.000 - $20.000.000 COP', imagenPortafolioUrl: null, galeriaPortafolioUrl: [], barrio: 'Rosales', tipoProyecto: 'Residencial', publicado: false, destacado: false, orden: 1, slug: 'cocina-gourmet-bosque', createdAt: '2026-08-05T09:00:00Z', updatedAt: '2026-08-05T09:00:00Z' },
 ]
+
+// --- Testimonios (REGISTRO §10, DC-1 ACTIVA 2026-08-09) ---
+// Campos: contenido, rating, curado, aprobado, publicado, fuente, barrio, tipoProyecto, urlFuente, fechaPublicacion, clienteId, proyectoId.
+export const TESTIMONIOS: Testimonio[] = [
+  { id: UUID('test01'), contenido: 'Cumplieron muy buen trabajo.', rating: 5, curado: true, aprobado: true, publicado: true, fuente: 'GBP', barrio: 'Chicó', tipoProyecto: 'Residencial', urlFuente: 'https://www.google.com/maps/place/Veta+Dorada', fechaPublicacion: '2026-07-01T00:00:00Z', clienteId: UUID('c01'), proyectoId: UUID('proj06'), createdAt: '2026-07-01T10:00:00Z', updatedAt: '2026-07-01T10:00:00Z' },
+  { id: UUID('test02'), contenido: 'Muy cumplidos y dedicados. El modelo de mi cocina quedó tal cual como lo pedí. La calidad de su trabajo es excelente.', rating: 5, curado: true, aprobado: true, publicado: true, fuente: 'GBP', barrio: 'Rosales', tipoProyecto: 'Residencial', urlFuente: 'https://www.google.com/maps/place/Veta+Dorada', fechaPublicacion: '2026-07-15T00:00:00Z', clienteId: UUID('c02'), proyectoId: UUID('proj12'), createdAt: '2026-07-15T10:00:00Z', updatedAt: '2026-07-15T10:00:00Z' },
+  { id: UUID('test03'), contenido: 'Excelente trabajo muy recomendados', rating: 5, curado: true, aprobado: true, publicado: true, fuente: 'GBP', barrio: 'Chapinero', tipoProyecto: 'Residencial', urlFuente: 'https://www.google.com/maps/place/Veta+Dorada', fechaPublicacion: '2026-08-01T00:00:00Z', clienteId: UUID('c03'), proyectoId: UUID('proj01'), createdAt: '2026-08-01T10:00:00Z', updatedAt: '2026-08-01T10:00:00Z' },
+  { id: UUID('test04'), contenido: 'Agradecida con los trabajos obtenidos. Muy buen servicio pre y post venta. Super recomendado.', rating: 5, curado: true, aprobado: true, publicado: true, fuente: 'GBP', barrio: 'Usaquén', tipoProyecto: 'Residencial', urlFuente: 'https://www.google.com/maps/place/Veta+Dorada', fechaPublicacion: '2026-08-10T00:00:00Z', clienteId: UUID('c01'), proyectoId: UUID('proj03'), createdAt: '2026-08-10T10:00:00Z', updatedAt: '2026-08-10T10:00:00Z' },
+]
+
+// --- F-09: Landings SEO (categorías de espacios) ---
 
 export const MODULOS_ARTEFACTOS: ModuloArtefacto[] = [
   { id: UUID('ma01'), moduloId: UUID('mod101'), tipo: 'imagen', fuente: 'dedicado_proyecto', url: 'https://r2.mock/modulos/mod101-foto1.jpg', createdAt: '2026-07-01T10:00:00Z' },
   { id: UUID('ma02'), moduloId: UUID('mod101'), tipo: 'plano_armado', fuente: 'dedicado_proyecto', url: 'https://r2.mock/modulos/mod101-plano.pdf', createdAt: '2026-07-01T10:00:00Z' },
 ]
 
+// --- F-15: Bitácora de Diseño ---
+
+export const BITACORA_ARTICULOS: BitacoraArticulo[] = [
+  {
+    id: UUID('bit01'),
+    slug: 'tipos-de-materiales',
+    titulo: 'Tipos de materiales para muebles a la medida en Bogotá',
+    extracto: 'Roble, cedro, melamina RH, barnices al agua, lacas, herrajes Blum: la guía técnica para elegir materiales que duren en el clima de Bogotá. Con respuesta atómica indexable.',
+    contenidoLargo: `## ¿Qué madera es mejor para un mueble a la medida en Bogotá?
+
+Depende del uso: roble y cedro para piezas de alto tráfico y acabados nobles, melamina RH para cocinas y closets por su durabilidad a la humedad. El acabado (barniz al agua o laca) protege la madera y define el resultado final. En la asesoría te guiamos según tu espacio.
+
+---
+
+### Maderas macizas: roble y cedro
+
+El roble europeo y el roble americano son la referencia para muebles que reciben uso diario intenso: mesones, islas de cocina, escritorios de trabajo. Su dureza (Janka ~6000 N) resiste golpes, rayones y el desgaste de años. El cedro, más blando (Janka ~3500 N), brilla en frentes, puertas y piezas decorativas donde la veta y el aroma natural aportan carácter. Ambas maderas envejecen bien: el roble se dora, el cedro oscurece con elegancia.
+
+**Clave en Bogotá**: la humedad relativa promedio (65–80 %) hace que la madera maciza "trabaje" — se expande y contrae. En taller secamos a 8–10 % de humedad antes de mecanizar, y diseñamos uniones que absorben el movimiento (espiga y caja, lengüeta y ranura, herrajes con holgura calculada). Un mueble mal secado se abre o agrieta en la primera estación de lluvias.
+
+### Melamina RH (resistente a la humedad): el estándar de cocinas y closets
+
+No es madera maciza, pero para cajas de cocina, interiores de closets y estanterías es la opción técnica correcta. El tablero de partículas con resina melamínica RH soporta ciclos de humedad sin hincharse como la melamina estándar. Sus caras vienen preacabadas (blanco, gris, texturas madera), así que no requieren barnizado posterior — ahorra jornadas de taller y reduce polvo en obra.
+
+**Cuándo usarla**: estructuras internas, frentes de closet (con canto ABS 1 mm), módulos de cocina bajos y altos. **Cuándo no**: mesones, superficies de trabajo, piezas expuestas a golpes directos o calor (arriba de hornos, parrillas).
+
+### Acabados: barniz al agua vs. laca
+
+| Acabado | Protección | Estética | Mantenimiento | Uso recomendado |
+|---------|------------|----------|---------------|-----------------|
+| Barniz al agua (2K) | Alta (película 80–100 µm) | Natural, veta visible | Reaplicar cada 3–5 años en alto tráfico | Roble, cedro, piezas de uso diario |
+| Laca poliuretano (2K) | Muy alta (película 100–150 µm) | Uniforme, "piano" | Difícil de retocar localizado | Frentes de cocina, piezas de alto brillo |
+| Aceite-cera | Media (penetra, no forma película) | Muy natural, tacto madera | Reaplicar cada 6–12 meses | Piezas decorativas, bajo tráfico |
+
+El barniz al agua 2K (dos componentes) es nuestro default para muebles a la medida: cero COV, secado en 2 h, resistencia química y mecánica probada. La laca la reservamos para cocinas donde el cliente pide "efecto laca" y acepta que un rayón profundo requiere repintar el frente completo.
+
+### Herrajes: la mecánica que no se ve pero se siente
+
+Bisagras Blum con amortiguación (BLUMOTION) — estándar en todos nuestros muebles. Correderas TANDEMBOX o MOVENTO para cajones: apertura total, 30–40 kg de carga, regulación tridimensional. Sistemas de apertura push-to-open para frentes sin tirador. Herrajes de calidad no son "lujo": evitan reposiciones en garantía y el cliente los usa 20 veces al día durante 15 años.
+
+### Resumen de decisión rápida
+
+| Espacio | Estructura | Frentes/Superficies | Acabado |
+|---------|------------|---------------------|---------|
+| Cocina integral | Melamina RH | Roble / Cedro / Laca | Barniz 2K o laca |
+| Closet / Vestier | Melamina RH | Roble / Cedro / Melamina RH | Barniz 2K |
+| Centro de entretenimiento | Roble / Cedro | Roble / Cedro | Barniz 2K |
+| Escritorio / Home office | Roble | Roble / Cedro | Barniz 2K |
+| Barra / Cava | Roble / Cedro | Roble / Cedro | Barniz 2K + cera alimentaria en zonas de contacto |
+
+¿Tienes dudas sobre qué material va en tu proyecto? **Agenda la visita**: medimos tu espacio, te mostramos muestras físicas en taller y cotizamos sin compromiso.`,
+
+    categoria: 'materiales_tecnica',
+    imagenPortada: 'https://r2.mock/bitacora/tipos-materiales-portada.jpg',
+    fechaPublicacion: '2026-08-10T08:00:00Z',
+    autorId: null,
+    proyectoRelacionadoId: null,
+    publicado: true,
+    createdAt: '2026-08-10T08:00:00Z',
+    updatedAt: '2026-08-10T08:00:00Z',
+  },
+]
+
 // --- F4: Compras (P-13/P-14/P-15, disenio_P13/P14/P15) ---
 
 export const ITEMS_ORDEN_COMPRA: ItemOrdenCompra[] = [
-  { id: UUID('ioc01'), ordenCompraId: UUID('oc01'), productoCatalogoId: UUID('p01'), cantidadEsperada: 20, recibidoCantidad: 0, sinDefectos: false },
+  { id: UUID('ioc01'), ordenCompraId: UUID('oc01'), productoCatalogoId: UUID('p01'), especificacion: null, cantidadEsperada: 20, recibidoCantidad: 0, sinDefectos: false },
 ]
 
 export const RECEPCIONES_MATERIAL: RecepcionMaterial[] = []
 
 export const HERRAMIENTAS: Herramienta[] = [
   { id: UUID('herr01'), nombre: 'Sierra circular Makita 7 1/4"', estadoOperativo: 'operativa', valor: '850000', fotoUrl: null, proveedorId: UUID('prov02'), ordenCompraReposicionId: null, createdAt: '2026-01-15T09:00:00Z' },
-  { id: UUID('herr02'), nombre: 'Router de banco Bosch', estadoOperativo: 'mantenimiento', valor: '1200000', fotoUrl: null, proveedorId: UUID('prov02'), ordenCompraReposicionId: null, createdAt: '2026-01-15T09:00:00Z' },
+  { id: UUID('herr02'), nombre: 'Router de banco Bosch', estadoOperativo: 'reparacion', valor: '1200000', fotoUrl: null, proveedorId: UUID('prov02'), ordenCompraReposicionId: null, createdAt: '2026-01-15T09:00:00Z' },
 ]
 
 // --- F7: Documentación del proyecto (P-26) ---

@@ -125,7 +125,7 @@ Namespace F-XX (frontstage). F-02/03/07/08 se conservan tal cual.
 
 ### 2.1 — F-14 Pisos de Madera (anidado bajo F-10 Índice de Espacios)
 
-**Jerarquía corregida (v2):** F-14 no tiene entrada propia en el menú principal — excede su jerarquía. Se accede desde F-10 (`/espacios`) como una categoría más del índice de espacios. Ruta: `/espacios/pisos-de-madera`. Esto mantiene la cohesión del sistema de espacios y evita saturar la navegación principal con un servicio de nicho (casonas).
+**Jerarquía corregida (v3 - Actualización 2026-08-15):** F-14 se incluye dentro del menú desplegable transversal (mega-menú) bajo "Espacios", al igual que las 6 landings SEO (F-09). Esta actualización reemplaza la directiva anterior de "evitar saturar la navegación", priorizando en su lugar la transferencia de PageRank (SEO) desde el Header hacia las páginas transaccionales y reduciendo la fricción (UX) a un solo click. La ruta se mantiene como `/espacios/pisos-de-madera`.
 
 | Determinantes | Origen |
 |---|---|

@@ -93,9 +93,13 @@ Salen de [`diagnostico_de_proceso.md`](../diagnostico/diagnostico_de_proceso.md)
 | Unificar nombre a Veta Dorada en el repo | I-017 |
 | Tokens Luz & Biofilia + reglas de UX/responsive | I-037, I-038 |
 | Mapa de 301 desde el Wix actual | I-015 |
+| **F-06 Tienda (Checkout)** — login/registro obligatorio, sin guest checkout | t-113, I-024 |
+| **F-08 Propuesta Pública** — `/propuesta/{slug}`, snapshot inmutable + MO derivada, viewer 3D diferido | destilacion_f3_publico.md §3 |
 
 **Depende de:** A (para verificar que la conversión no se rompió) y D1.
 **Después:** esperar **4-8 semanas de métricas estables** antes de mover el dominio. Secuenciar, no combinar.
+
+> **✅ DESBLOQUEADAS para migración ERP:** F-06 y F-08 ya no bloquean la migración de datos maestros (productos, clientes, catálogos). Pueden seguirse a su propio ritmo.
 
 ---
 
@@ -109,7 +113,14 @@ Salen de [`diagnostico_de_proceso.md`](../diagnostico/diagnostico_de_proceso.md)
 
 Es el motor que resuelve cuatro cosas con un solo esfuerzo: **SEO local real, prueba social, contenido y portafolio.** Y es lo que convierte la geografía en consecuencia en vez de apuesta.
 
+| Item | Ref |
+|---|---|
+| **F-07 Portal Cliente** — `/cuenta`, proyectos, pagos, progreso E-60, acta, garantía | disenio_F07_portal_cliente.md |
+| **F-09 Landings SEO por categoría (×6)** — `/espacios/[categoria]`, contenido único, breadcrumb JSON-LD | plan_estructura_sitio_publico.md §2.2 |
+
 **Depende de:** C. **Regla:** el segundo proyecto no se publica hasta que el primero esté completo.
+
+> **✅ DESBLOQUEADAS para migración ERP:** F-07 y F-09 ya no bloquean la migración de datos maestros (productos, clientes, catálogos). Pueden seguirse a su propio ritmo.
 
 ---
 
@@ -157,3 +168,20 @@ Su Define ya aparcó tres bounded contexts esperando esta línea: **Marketing/De
 - **Bloque activo:** ninguno todavía — **arranca A (y B en paralelo) cuando el Supervisor apruebe.**
 - **Pendiente del Supervisor:** D1 (eslogan, ver t-112), credenciales de solo lectura de Ads/GA4/Search Console (ver instructivo t-110 [SOLO_HUMANO]), informe de sector, y checkpoint del schema para el Bloque A (ver t-111). D2-D5 cerradas 2026-08-08.
 - **Registro histórico** (no se decide desde ahí): `marco_estrategia_mercado.md`, `destilacion_docs_veta.md`, `Fase paralela de mercados 1.txt`.
+
+---
+
+## 6. Desbloqueo de migración ERP (2026-08-12)
+
+**Decisión:** Las pantallas **F-06 (Tienda/Checkout)**, **F-07 (Portal Cliente)**, **F-08 (Propuesta Pública)**, y **F-09 (Landings SEO)** se mudan formalmente de la estructura técnica (`ola7/plan_ola7_maestro.md`) a este plan de demanda bajo los bloques C-D-E.
+
+**Efecto:** Estas tareas **ya no son bloqueantes** para la fase de migración de datos maestros del ERP (productos, clientes, catálogos). Cada una puede seguirse a su propio ritmo sin retrasar la migración.
+
+| Pantalla | Bloque | Ruta | Ref |
+|---|---|---|---|
+| F-06 Tienda (Checkout) | C | `/tienda` | t-113, I-024 |
+| F-07 Portal Cliente | D | `/cuenta` | disenio_F07_portal_cliente.md |
+| F-08 Propuesta Pública | C | `/propuesta/{slug}` | destilacion_f3_publico.md §3 |
+| F-09 Landings SEO (×6) | D | `/espacios/[categoria]` | plan_estructura_sitio_publico.md §2.2 |
+
+**Validación:** Pendiente de checkpoint con Supervisor.

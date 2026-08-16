@@ -1,0 +1,58 @@
+{
+  "id": "t-126",
+  "nombre": "F10: Reordenar plan (build-first / clone-last) y documentar",
+  "descripcion": "El Supervisor corrigió el orden del plan F10: el orden original (diagnóstico → migrar → preview) estaba invertido. Se reescribe plan_f10_migracion.md para construir y probar el schema V3 con Drizzle PRIMERO (Fase 0, sin datos legacy), desplegar preview Vercel con schema limpio (Fase 1), y SOLO AL FINAL clonar legacy → V3 campo-a-campo (Fase 2). También se documenta el diagnóstico real desde producción LIVE (t-125) y se actualiza estado.md.",
+  "objetivo": "Plan F10 con orden correcto y documentación coherente en el arnés antes de ejecutar cualquier mutación.",
+  "prioridad": "Baja",
+  "estado": "Completado",
+  "dependencias": [
+    "t-125 (mapeo LIVE documentado)",
+    "arnes/lineas/ola7/tecnico/plan_f10_migracion.md"
+  ],
+  "entregables": [
+    {
+      "nombre": "plan_f10_migracion.md reescrito",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/tecnico/plan_f10_migracion.md",
+      "detalle": "Orden: Fase 0 build/test → Fase 1 preview → Fase 2 clone → Fase 3 verify."
+    },
+    {
+      "nombre": "estado.md actualizado",
+      "formato": "Markdown",
+      "ubicacion": "arnes/estado.md",
+      "detalle": "Entrada 2026-08-13 REORDEN DE PLAN F10 + próxima acción con orden corregido."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Reescribir plan_f10_migracion.md",
+      "detalle": "Fases reordenadas; modelo legacy (JSON) vs V3 (relacional) documentado; conteos LIVE incluidos.",
+      "responsable": "Iniciador",
+      "estado": "Completado"
+    },
+    {
+      "numero": 2,
+      "accion": "Actualizar estado.md",
+      "detalle": "Entrada REORDEN + próxima acción permitida con orden corregido.",
+      "responsable": "Iniciador",
+      "estado": "Completado"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "plan_f10_migracion.md refleja orden build-first / clone-last",
+    "estado.md menciona el reorden y la próxima acción corregida",
+    "Sin ninguna mutación a BD ni a código (solo documentación)"
+  ],
+  "notas": [
+    "Complementa t-125 (mapeo LIVE).",
+    "Fase 0 NO incluye datos legacy: schema vacío o fixtures."
+  ],
+  "relacionado": [
+    "arnes/lineas/ola7/tecnico/plan_f10_migracion.md",
+    "arnes/estado.md",
+    "arnes/tareas/t-125.json",
+    "arnes/tareas/t-119.json"
+  ],
+  "fecha_creacion": "2026-08-13"
+}

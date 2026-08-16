@@ -38,9 +38,9 @@ export default function DesarrolloPage() {
     )
   }
 
-  const handleCrearSchema = () => {
-    const nuevoSchema = store.schemas.crear(proyectoId)
-    store.bom.crear({
+  const handleCrearSchema = async () => {
+    const nuevoSchema = await store.schemas.crear(proyectoId)
+    await store.bom.crear({
       schemaId: nuevoSchema.id,
       productoId: null,
       cantidad: '1',
@@ -50,17 +50,17 @@ export default function DesarrolloPage() {
     })
   }
 
-  const handleAprobar = () => {
+  const handleAprobar = async () => {
     if (!schemaActual || !puedeAprobar) return
     setProcesando(true)
     try {
-      store.verificaciones.emitirVeredicto({
+      await store.verificaciones.emitirVeredicto({
         proyectoId,
         tipoGate: 'schema',
         veredicto: 'aprobado',
         verificadorId: usuario.id,
       })
-      store.schemas.actualizarEstado(schemaActual.id, 'aprobado_compras')
+      await store.schemas.actualizarEstado(schemaActual.id, 'aprobado_compras')
       setTimeout(() => setProcesando(false), 500)
     } catch (err) {
       console.error('Error aprobando schema:', err)
@@ -68,17 +68,29 @@ export default function DesarrolloPage() {
     }
   }
 
-  const handleRechazar = () => {
+  const handleMarcarParaRevision = async () => {
+    if (!schemaActual) return
+    setProcesando(true)
+    try {
+      await store.schemas.actualizarEstado(schemaActual.id, 'para_revision')
+      setTimeout(() => setProcesando(false), 500)
+    } catch (err) {
+      console.error('Error marcando schema para revisión:', err)
+      setProcesando(false)
+    }
+  }
+
+  const handleRechazar = async () => {
     if (!schemaActual || !rechazoDiagnostico.trim()) return
     setProcesando(true)
     try {
-      store.verificaciones.emitirVeredicto({
+      await store.verificaciones.emitirVeredicto({
         proyectoId,
         tipoGate: 'schema',
         veredicto: 'rechazado',
         verificadorId: usuario.id,
       })
-      store.schemas.actualizarEstado(schemaActual.id, 'en_reproceso')
+      await store.schemas.actualizarEstado(schemaActual.id, 'en_reproceso')
       setRechazoDiagnostico('')
       setTimeout(() => setProcesando(false), 500)
     } catch (err) {
@@ -162,6 +174,26 @@ export default function DesarrolloPage() {
             onClick={handleCrearSchema}
           >
             + Crear esquema
+          </Button>
+        </div>
+      )}
+
+      {/* Marcar para revisión (E-17) */}
+      {schemaActual && schemaActual.estado === 'borrador' && (
+        <div className="rounded-lg border border-border-subtle bg-bg-raised p-6 mb-6">
+          <h3 className="font-semibold text-text-heading mb-4">
+            Preparar Esquema para Revisión
+          </h3>
+          <p className="text-sm text-text-muted mb-4">
+            El esquema está en borrador. Una vez marcado para revisión, el verificador podrá emitir su veredicto.
+          </p>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleMarcarParaRevision}
+            disabled={procesando}
+          >
+            {procesando ? 'Marcando...' : 'Marcar para revisión'}
           </Button>
         </div>
       )}

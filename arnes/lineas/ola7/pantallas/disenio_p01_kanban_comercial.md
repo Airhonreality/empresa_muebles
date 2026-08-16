@@ -1,6 +1,6 @@
 # P-01 — Kanban Comercial (Veta de Oro)
 
-**Fecha:** 2026-08-05 · **Estado:** APROBADO-PROTOTIPO (v2) — validado por el Supervisor en revisión live del prototipo F10-B1 (2026-08-08). Rediseñado con hallazgos POC-01: +columna Negociación, +columna Archivo (agrega perdida+cancelada), −columnas Entregado/Perdida/Cancelada, −IDs en UI. · **Fase:** F2 · **Ruta:** `/erp/comercial` · **Roles:** admin, comercial
+**Fecha:** 2026-08-05 · **Estado:** APROBADO-PROTOTIPO (v2) — validado por el Supervisor en revisión live del prototipo F10-B1 (2026-08-08). Rediseñado con hallazgos POC-01: +columna Negociación, +columna Archivo (agrega perdida+cancelada), −columnas Entregado/Perdida/Cancelada, −IDs en UI. · **Fase:** F2 · **Ruta:** `/erp/comercial` · **Roles:** admin, comercial · **Estado v3:** v3 propuesta — pendiente checkpoint Supervisor (2026-08-15, t-136, input directo de Javier)
 
 **Dependencias:** Decisiones diamante exclusivo C1-C4, M-06 L1 (patrones técnicos), P-04 aprobado
 **Artefactos base:** `destilacion_cotizador_contrato.md` (Kanban legacy), `m06_capa_tecnica_transversal.md`, `glosario_h07.md`
@@ -152,6 +152,27 @@
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+**Diagrama de card — revisión v3 (2026-08-15, t-136):**
+
+```
+┌────────────────────────────────────────────────────────┐
+│ ● Lead                     [→] [←]             [⋮]      │
+│ María Fernanda López                                   │
+│ Closet principal · A medida                            │
+│ Cra 12 #34-56, Bogotá                                  │
+│ ────────────────────────────────────────────────────── │
+│ 3 espacios · Items: 12 · Variantes 2/3 · 5d en estado  │
+└────────────────────────────────────────────────────────┘
+```
+
+- **Título:** `clientes.nombre` (María Fernanda López) + `clientes.telefono` secundario.
+- **Subtítulo:** `proyectos.nombre_proyecto` · `proyectos.tipo_proyecto` (Closet principal · A medida).
+- **Detalle:** `proyectos.direccion_obra` (Cra 12 #34-56, Bogotá).
+- **Meta compacta:** COUNT `espacio_variantes` activas · COUNT `items_variante` · derivado `now − proyectos.updated_at`.
+- **Badge (v3.2):** punto pulsante con irradiación blur + label mini Light, sin borde.
+- **Controles (v3.3):** [→] Avanzar / [←] Retornar, solo si el destino está en la matriz — junto al menú ⋮.
+- **Sin precio:** `total_estimado` ya no se renderiza en la card v3.
+
 ### 5.2 Tabla de componentes
 
 | Componente | Tipo | Props | Entidad asociada | Tokens D4 |
@@ -196,6 +217,73 @@
 > **Principio POC-01 (no mostrar IDs):** los IDs internos de base de datos no aparecen en ninguna UI visible al humano. El panel expandido de la card NO muestra `proyecto.id`. Esta regla aplica a todas las pantallas del ERP.
 
 > **Principio POC-12 (el comercial no crea catálogo):** el kanban comercial consume el catálogo existente (`productos_catalogo`), nunca lo crea. Los proyectos con `tipo_proyecto = 'producto_fijo'` provienen de la pantalla **P-27 Catálogo (D-Desarrollo)** (`disenio_p27_catalogo_diseno_desarrollo.md`). Si se muestra "Producto fijo" como badge, es solo lectura del tipo heredado — el comercial no lo ofrece como opción de creación.
+
+> **Revisión v3 (2026-08-15, t-136):** la jerarquía de campos, el badge y los controles de estado de esta sección se rediseñan en la sección «Revisión v3» inmediatamente abajo. La jerarquía v3 manda sobre la tabla de §5.3 una vez aprobada por el Supervisor; el historial POC-01/POC-13 no se elimina.
+
+## Revisión v3 (2026-08-15, input directo de Javier) — Jerarquía de card + badges minimalistas + controles in-card
+
+**Origen:** `input_diseno_javier_20260815.md` §1 (tarea t-136). **Estado:** **v3 propuesta — pendiente checkpoint Supervisor**. Donde esta revisión contradice una especificación previa, la v3 manda una vez que Javier la confirme. Nada se inventa: columnas citadas de `REGISTRO_DE_ENTIDADES.md` §3, labels citados de `glosario_h07.md` (o declarados como propuestos) y transiciones citadas de `parametros.transiciones_proyecto`.
+
+### v3.1 Nueva jerarquía de contenido de ComercialCard
+
+| Orden | Elemento | Columna real (REGISTRO_DE_ENTIDADES.md §3) | Formato |
+|---|---|---|---|
+| 1 — Título | Nombre del cliente | `clientes.nombre` (+ `clientes.telefono` secundario opcional) | Texto, mayor peso/tamaño de la card |
+| 2 — Subtítulo | Nombre del proyecto + tipo | `proyectos.nombre_proyecto` + `proyectos.tipo_proyecto` | "Nombre proyecto · Tipo" |
+| 3 — Detalle | Dirección de obra | `proyectos.direccion_obra` | Texto |
+| Meta compacta (al pie) | Espacios · Items · Variantes · Días en estado | COUNT `espacio_variantes` (activa=true) · COUNT `items_variante` · derivado `now − proyectos.updated_at` | "3 espacios · Items: 12 · Variantes 2/3 · 5 días en estado" |
+
+**Ajuste de precio:** la card v3 **no renderiza precio**. Se eliminan de ComercialCard el "Total estimado" y el "Desglose rápido" (materiales/MO/costos) de la tabla de §5.3. El cálculo `total_estimado` sigue viviendo server-side en `GET /api/erp/proyectos` (otras pantallas/exports lo consumen), pero la card no lo muestra.
+
+> **Traza — "tipo de espacio":** Javier pide "nombre del proyecto / tipo de espacio". La columna del nombre/tipo de espacio de `espacio_variantes` **no está listada en REGISTRO_DE_ENTIDADES.md §3** (solo `id, proyecto_id, activa`). Por tanto el tag del subtítulo usa `proyectos.tipo_proyecto` (columna real). El nombre del espacio activo (ej. "Cocina") queda como **dependencia declarada**: se agrega cuando se confirme la columna en el REGISTRO. Labels de `tipo_proyecto`: "Producto fijo" ya citado (POC-12); **"Proyecto a medida" y "Servicio técnico" son labels nuevos propuestos, pendientes de agregar a `glosario_h07.md`** (nota: `REGISTRO_DE_ENTIDADES.md` §2 ya registra la divergencia `personalizado` vs `proyecto_a_medida` a alinear en F10-E).
+
+### v3.2 Badge de estado minimalista (estilo + tokens D4 propuestos)
+
+| Aspecto | Especificación |
+|---|---|
+| Tamaño | Super diminuto (mini, ≈ 11px de label) |
+| Tipografía | Fuente Light (peso 300) |
+| Borde | **Ninguno** — se elimina la caja/relleno del badge actual (§5.3) |
+| Marca visual | Solo un **punto** sólido del color del estado + label mini a su lado |
+| Punto | **Pulsante con irradiación blur** (halo difuminado que se expande y desvanece en fase con el pulso) |
+
+**Tokens D4 propuestos** (no existen en `app/globals.css` hoy — se declaran aquí para incorporarlos al arnés de estilos cuando el Supervisor los apruebe):
+
+| Token propuesto | Valor propuesto | Comportamiento (en palabras, no código) |
+|---|---|---|
+| `--badge-dot-size` | ≈ 6px | Diámetro del punto; círculo sólido del color del estado (§2: amber/blue/orange/violet/green/muted). Sin borde ni fondo de caja. |
+| `--badge-dot-pulse-duration` | ≈ 2s | Ciclo del pulso: escala y opacidad del punto oscilan en bucle (latido suave, no parpadeo). |
+| `--badge-dot-glow` | ≈ 8–12px | Radio de irradiación: halo desenfocado (blur) del color del estado que se expande y se desvanece siguiendo el pulso (eco/radar). |
+| `--badge-label-size` | ≈ 11px | Tamaño del label; muy reducido frente al cuerpo de la card. |
+| `--badge-label-weight` | 300 (Light) | Peso tipográfico del label. |
+
+Reglas:
+- El pulso y la irradiación **se desactivan con `prefers-reduced-motion: reduce`** (punto estático, solo label) — extiende la regla a11y de §5.6.
+- En columnas solo-lectura (Producción, Archivo) el punto se renderiza **sin animación** (sin pulso), señalando que no hay acción disponible.
+
+### v3.3 Controles de cambio de estado rápidos in-card (avanzar / retornar)
+
+**No se inventa ninguna máquina de estados.** La fuente única de transiciones sigue siendo `parametros.transiciones_proyecto` (la misma que ya validan drag-drop, menú ⋮ y el guard del server en `PATCH /api/erp/proyectos/:id` — regla R1). Los controles rápidos son dos accesos directos a destinos **canónicos** por estado:
+
+| Estado actual | "Avanzar →" (destino canónico) | "Retornar ←" (destino canónico) | ¿Ambos en `parametros.transiciones_proyecto`? |
+|---|---|---|---|
+| `activa` | `enviada` | — (sin reversa; botón oculto) | `activa→enviada` ✓ |
+| `enviada` | `negociacion` | — (`enviada→activa` NO está en matriz; botón oculto) | `enviada→negociacion` ✓ |
+| `negociacion` | `en_contrato` | `enviada` | ✓ `negociacion→en_contrato`, `negociacion→enviada` |
+| `en_contrato` | `retoma` | — (sin reversa directa en matriz; botón oculto) | `en_contrato→retoma` ✓ |
+| `retoma` | `pre_produccion` | `en_contrato` | ✓ `retoma→pre_produccion`, `retoma→en_contrato` |
+| `pre_produccion` | `produccion` | `retoma` | ✓ `pre_produccion→produccion`, `pre_produccion→retoma` |
+| `produccion` | — | — | Columna solo lectura: sin controles (§2) |
+| `perdida`/`cancelada` (Archivo) | — | — | Columna solo lectura: sin controles (§2) |
+
+**Convivencia con el menú ⋮ y el drag-drop:**
+- Los controles rápidos **no reemplazan** el menú ⋮ ni el drag-drop. Los tres caminos ejecutan la misma acción `moveProyecto(proyectoId, nuevoEstado)` → `PATCH /api/erp/proyectos/:id {estado}` con el mismo optimistic UI + revert de §6.2.
+- El menú ⋮ → "Cambiar estado →" sigue listando **todos** los destinos válidos de la matriz para el estado actual (no solo el canónico): es la alternativa completa; el control rápido es el atajo del flujo natural.
+- Cada botón (→ / ←) se renderiza **solo si su destino existe en `transicionesValidas`** derivada de la matriz; si no, se **oculta**.
+- Columnas solo-lectura: sin controles rápidos, sin drag handle, sin `[+ Añadir]` (consistente con CA-10).
+- **a11y:** botones con `aria-label` "Avanzar a {label destino}" / "Retornar a {label destino}"; operables por teclado (Tab + Enter/Space).
+
+**Criterios de aceptación de esta revisión:** §7 CA-19..CA-29.
 
 ### 5.4 Detalle de NuevoProyectoModal (P-02 preview)
 
@@ -335,12 +423,23 @@ Client Component (KanbanClient)
 | CA-16 | Regla R2: rol no autorizado recibe 403 | Test: `GET /erp/comercial` con rol `taller` → 403 |
 | CA-17 | Regla R4: nombre proyecto requerido | POST sin `nombre_proyecto` → 422 |
 | CA-18 | Regla R5: cliente requerido | POST sin `cliente_id` → 422 |
+| CA-19 | Jerarquía v3 de ComercialCard: primer elemento = `clientes.nombre`, segundo = `proyectos.nombre_proyecto` + tag `tipo_proyecto`, tercero = `proyectos.direccion_obra` | Test: `document.querySelector('.tarjeta-proyecto').children[0].textContent` contiene el nombre del cliente; `children[1]` el nombre del proyecto; `children[2]` la dirección de obra |
+| CA-20 | La card v3 no renderiza precio | Test: `document.querySelector('.tarjeta-proyecto').textContent` NO matchea `/^\$\s?[0-9]/` (COP formateado); `rg -c "total_estimado" app/erp/comercial/components/ComercialCard.tsx` = 0 |
+| CA-21 | Badge mini sin borde, sin caja, fuente Light | Test: `getComputedStyle(badge).borderWidth === '0px'` y `getComputedStyle(badge).fontWeight === '300'` (o el valor de `--badge-label-weight`) |
+| CA-22 | Dot pulsante con irradiación blur + tokens propuestos declarados | Test: `document.querySelector('[data-testid="badge-dot"]')` existe; `rg "badge-dot-size\|badge-dot-pulse-duration\|badge-dot-glow\|badge-label-size\|badge-label-weight" app/globals.css` ≥ 5 ocurrencias |
+| CA-23 | `prefers-reduced-motion: reduce` desactiva pulso/irradiación | Test: emular media query reduce → `getComputedStyle('[data-testid="badge-dot"]').animationName === 'none'` (o clase equivalente) |
+| CA-24 | Control "Avanzar" presente solo si su destino canónico está en la matriz | Test: card en `activa` → existe `[aria-label="Avanzar a Propuesta"]`; card en `produccion` → `document.querySelector('[aria-label^="Avanzar"]')` = null |
+| CA-25 | Control "Retornar" presente solo si la reversa está en la matriz | Test: card en `negociacion` → existe `[aria-label="Retornar a Propuesta"]`; card en `activa` → `document.querySelector('[aria-label^="Retornar"]')` = null |
+| CA-26 | Controles rápidos usan `PATCH /api/erp/proyectos/:id` y el server valida contra la matriz (R1) | Test: click [→] en `activa` → PATCH `{estado:"enviada"}` → 200; forzar `activa→produccion` → 422 "Transición no permitida: activa → produccion" |
+| CA-27 | Menú ⋮ "Cambiar estado →" sigue listando TODOS los destinos de la matriz (no solo el canónico) | Test: card en `negociacion` → menú muestra 3 destinos (`en_contrato, enviada, perdida`) y controles rápidos solo 2 botones |
+| CA-28 | Labels de estado y controles provienen de H07/§3; los labels nuevos propuestos NO entran a código hasta agregarse al glosario | Test: `rg -l "Proyecto a medida\|Servicio técnico" app/erp/comercial/` = 0; labels de estado → `rg -r "'Lead\|'Propuesta\|'En Negociación\|'En contrato\|'Retoma de Medidas\|'Pre-producción\|'Producción\|'Archivo" app/erp/comercial/` provienen de §3 |
+| CA-29 | Controles rápidos accesibles por teclado con `aria-label` de destino | Test: `document.querySelector('[aria-label^="Avanzar a"]')` y `document.querySelector('[aria-label^="Retornar a"]')` existen en columnas no solo-lectura; activables con Enter/Space |
 
 ---
 
 ## 8. Verificación de integridad (pre-entrega)
 
-> **Nota POC-01 (2026-08-08):** este diseño fue validado contra el prototipo funcional en revisión live del Supervisor. La banda F0–F9 está cerrada; la validación de prototipo es el nuevo mecanismo de aprobación (plan_f10.md §4). Los criterios de aceptación en §7 se verificaron mecánicamente (tsc=0, eslint=0, build=11 rutas).
+> **Nota POC-01 (2026-08-08):** este diseño fue validado contra el prototipo funcional en revisión live del Supervisor. La banda F0–F9 está cerrada; la validación de prototipo es el nuevo mecanismo de aprobación (plan_f10_migracion.md §4). Los criterios de aceptación en §7 se verificaron mecánicamente (tsc=0, eslint=0, build=11 rutas).
 
 Antes de congelar el bloque B1, el Orquestador verifica:
 

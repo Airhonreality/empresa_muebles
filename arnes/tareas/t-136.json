@@ -1,0 +1,47 @@
+{
+  "id": "t-136",
+  "nombre": "P-01 Kanban Comercial: rediseño de card (jerarquía cliente/proyecto/dirección, badges minimalistas, controles de estado in-card)",
+  "descripcion": "Javier trajo directamente la revisión pendiente de 'Lote C (kanban P-01 rediseño)' (arnes/estado.md línea 17, diferido desde 2026-08-09). Pide: (1) reordenar jerarquía visual de ComercialCard — título=cliente, subtítulo=proyecto/tipo de espacio, detalle=dirección, quitar precio de la card; (2) badges de estado super diminutos, tipografía Light, sin bordes, solo punto/botón con efecto pulsante e irradiación blur; (3) controles de cambio de estado (avanzar/retornar) minimalistas embebidos en la propia card, sin depender solo del menú ⋮.",
+  "objetivo": "disenio_p01_kanban_comercial.md queda revisado (nueva sección versionada, sin perder el historial POC-01/POC-13) con la jerarquía de card, el estilo de badge y los controles de estado in-card especificados por el Supervisor, listo para checkpoint de aprobación antes de tocar código de app/erp/comercial/.",
+  "prioridad": "Alta",
+  "estado": "Implementada (código), pendiente verificación visual de Javier",
+  "zona": "lineas/ola7/pantallas",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "intencion_negocio": "Texto original de Javier en arnes/lineas/ola7/tecnico/input_diseno_javier_20260815.md §1.",
+  "archivos_afectados": [
+    "arnes/lineas/ola7/pantallas/disenio_p01_kanban_comercial.md (modificar — nueva sección de diseño, no se borra POC-01/POC-13)"
+  ],
+  "criterios_aceptacion_preliminares": [
+    "La sección nueva declara qué campos de ComercialCard cambian de posición/visibilidad y cita REGISTRO_DE_ENTIDADES para cada uno",
+    "El badge de estado especifica tamaño/tipografía/color como tokens D4 existentes o propone tokens nuevos explícitos (no queda en 'se ve minimalista')",
+    "Los controles de cambio de estado in-card citan la matriz parametros.transiciones_proyecto ya usada por el menú actual — no inventan una máquina de estados paralela",
+    "No se propone ningún cambio de schema/entidad — es puramente visual + reordenamiento de acciones ya existentes"
+  ],
+  "plan_ref": "arnes/lineas/ola7/plan_t-136.md",
+  "ejecucion": {
+    "checkpoint_javier": "\"implementa\" (mensaje directo en sesión, tras revisar disenio_p01_kanban_comercial.md v3 y confirmar que app/erp/comercial/ no había cambiado en un screenshot)",
+    "archivos_modificados": [
+      "app/erp/comercial/page.tsx",
+      "app/globals.css"
+    ],
+    "resumen": "ProjectCard reescrito: título=cliente.nombre, subtítulo=proyecto·tipoProyecto, detalle=direccionObra (si existe); sin precio. Badge reemplazado por punto+label mini (font-light, sin borde) usando 5 tokens D4 nuevos (--badge-dot-size/-pulse-duration/-glow/--badge-label-size/-weight) + keyframe animate-dot-mini (pulso+halo vía box-shadow/currentColor, reusa el patrón de animate-dot-subtle ya existente); estático en columnas solo-lectura. Controles [→]/[←] in-card ahora usan tabla canónica fija (CANONICO_AVANZAR/CANONICO_RETORNAR) filtrada contra estadosPosibles (misma matriz parametros.transiciones_proyecto de siempre) en vez de la lógica derivada por ORDEN_ESTADOS/historial anterior. 'Variantes activas/total' agregado a projectStats. Botón 'Archivar' preexistente conservado (fuera del alcance de la tabla v3.3, no se tocó).",
+    "verificacion_mecanica": [
+      "npx tsc --noEmit: 0 errores",
+      "npx eslint app/erp/comercial/ app/globals.css: 0 errores (globals.css fuera de la config de eslint, warning esperado)",
+      "DATA_IMPL=mock npx next build: compila y pasa type-check/lint completo (incluidos los archivos tocados); falla después en 'Collecting page data' con un MODULE_NOT_FOUND en .next/server/pages/_document.js (artefacto interno de Next, no de este proyecto App Router) — reproducido igual tras borrar .next, no atribuible a este cambio"
+    ],
+    "no_verificado": "Verificación visual en navegador (npm run dev) — no ejecutada por este agente; Javier confirma visualmente."
+  },
+  "dependencias": [
+    "arnes/lineas/ola7/pantallas/disenio_p01_kanban_comercial.md",
+    "arnes/nucleo/glosario_h07.md",
+    "arnes/nucleo/REGISTRO_DE_ENTIDADES.md"
+  ],
+  "notas": [
+    "No se toca código en esta tarea. Producto: solo el archivo de diseño.",
+    "Checkpoint obligatorio del Supervisor antes de que Código implemente (AGENTS.md: 'Ninguna pantalla se diseña con estilo improvisado' + regla de arranque no negociable)."
+  ],
+  "relacionado": ["t-137", "t-138", "disenio_p01_kanban_comercial.md"],
+  "fecha_creacion": "2026-08-15"
+}

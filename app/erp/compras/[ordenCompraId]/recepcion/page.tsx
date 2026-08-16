@@ -72,14 +72,14 @@ export default function RecepcionMaterialPage() {
     }
   }, [recepcion])
 
-  const handleRegistrarRecepcion = useCallback(() => {
+  const handleRegistrarRecepcion = useCallback(async () => {
     if (!orden) return
-    store.recepcionesMaterial.crear({ ordenCompraId: orden.id, proyectoId: orden.proyectoId })
+    await store.recepcionesMaterial.crear({ ordenCompraId: orden.id, proyectoId: orden.proyectoId })
   }, [orden, store])
 
   const algunCheckFallido = !checks.pedido || !checks.despacho || !checks.material
 
-  const handleEnviarChecks = useCallback(() => {
+  const handleEnviarChecks = useCallback(async () => {
     if (!recepcion) return
     const completo = checks.pedido && checks.despacho && checks.material
     if (!completo && !descripcionDefecto.trim()) {
@@ -87,7 +87,7 @@ export default function RecepcionMaterialPage() {
       return
     }
     setErrorDefecto(null)
-    store.recepcionesMaterial.actualizarChecks(recepcion.id, {
+    await store.recepcionesMaterial.actualizarChecks(recepcion.id, {
       checkPedidoBien: checks.pedido,
       checkDespachoBien: checks.despacho,
       checkMaterial: checks.material,
@@ -95,9 +95,9 @@ export default function RecepcionMaterialPage() {
     })
   }, [recepcion, checks, descripcionDefecto, store])
 
-  const handleCrearReproceso = useCallback(() => {
+  const handleCrearReproceso = useCallback(async () => {
     if (!orden || !orden.proyectoId) return
-    store.reprocesos.crear({
+    await store.reprocesos.crear({
       proyectoId: orden.proyectoId,
       origen: 'recepcion',
       descripcion: descripcionDefecto.trim() || (recepcion?.descripcionDefecto ?? 'Defecto detectado en recepción de material'),
@@ -290,13 +290,16 @@ export default function RecepcionMaterialPage() {
               </thead>
               <tbody>
                 {items.map((item: ItemOrdenCompra) => {
-                  const prod = productoMap.get(item.productoCatalogoId)
+                  const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
                   return (
                     <tr key={item.id} className="border-b border-border-subtle/50">
                       <td className="px-3 py-2">
-                        <span className="text-text-heading">{prod?.descripcion ?? item.productoCatalogoId}</span>
+                        <span className="text-text-heading">{prod?.descripcion ?? item.especificacion ?? item.productoCatalogoId}</span>
                         {prod && (
                           <span className="block text-xs text-text-muted">{prod.sku} · {prod.unidadMedida}</span>
+                        )}
+                        {!prod && item.especificacion && (
+                          <span className="block text-xs text-text-muted">A pedido</span>
                         )}
                       </td>
                       <td className="px-3 py-2 text-center font-mono">{item.cantidadEsperada}</td>

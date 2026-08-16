@@ -1,0 +1,84 @@
+{
+  "id": "t-114",
+  "nombre": "F10: Diagnóstico pre-mapeo (Fase 0) de migración legacy→V3",
+  "descripcion": "Levantar el esquema legacy (Neon main / Agnostic Seed) normalizado y el mapeo campo a campo contra el esquema V3 (lib/db/schema.ts + REGISTRO_DE_ENTIDADES), documentando riesgos de PII, tipos, FKs huérfanas y gaps físicos antes de cualquier mutación de datos.",
+  "objetivo": "Producir schema_legacy.json, mapeo_campos.md y riesgos_migracion.md en arnes/lineas/ola7/migracion/, y obtener el checkpoint de aprobación del Supervisor (CA-1).",
+  "prioridad": "Alta",
+  "estado": "Completado (checkpoint CA-1 aprobado por Supervisor 2026-08-12)",
+  "dependencias": [
+    "Paso 0 de arnés: borrar plan raíz, renumerar t-113..t-118, crear carpeta migracion",
+    "Fuente lógica legacy: legacy-agnostic-backup:storage/db/schema_definitions.json (39 namespaces)",
+    "Fuente física legacy: introspección [SOLO_HUMANO] de Neon main (Javier)"
+  ],
+  "entregables": [
+    {
+      "nombre": "schema_legacy.json",
+      "formato": "JSON",
+      "ubicacion": "arnes/lineas/ola7/migracion/schema_legacy.json",
+      "detalle": "Esquema legacy normalizado: namespaces, campos, tipos, relaciones y muestras de datos poblados."
+    },
+    {
+      "nombre": "mapeo_campos.md",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/migracion/mapeo_campos.md",
+      "detalle": "Tabla por namespace legacy → V3, con transformación, riesgo y clasificación físico/canon-only/motor."
+    },
+    {
+      "nombre": "riesgos_migracion.md",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/migracion/riesgos_migracion.md",
+      "detalle": "PII, JSONB→relacional, FKs huérfanas, enums, gaps de tablas canónicas sin tabla física, y el stub drizzle-impl.ts."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "[SOLO_HUMANO] Introspect Neon main",
+      "detalle": "Javier corre `DATABASE_URL=<url prod> npx drizzle-kit introspect --dialect postgresql --out arnes/lineas/ola7/migracion/_introspect` y commitea el snapshot.",
+      "responsable": "Supervisor"
+    },
+    {
+      "numero": 2,
+      "accion": "Esquema lógico legacy",
+      "detalle": "Normalizar legacy-agnostic-backup:storage/db/schema_definitions.json + muestras de datos reales en arnes/lineas/ola7/migracion/schema_legacy.json.",
+      "responsable": "Código"
+    },
+    {
+      "numero": 3,
+      "accion": "mapeo_campos.md",
+      "detalle": "Mapear cada namespace legacy relevante contra lib/db/schema.ts y REGISTRO_DE_ENTIDADES.",
+      "responsable": "Código"
+    },
+    {
+      "numero": 4,
+      "accion": "riesgos_migracion.md",
+      "detalle": "Documentar PII, transformaciones JSONB→relacional, FKs y gaps físicos.",
+      "responsable": "Código"
+    },
+    {
+      "numero": 5,
+      "accion": "Checkpoint",
+      "detalle": "Javier revisa mapeo_campos.md y riesgos_migracion.md y aprueba (CA-1).",
+      "responsable": "Supervisor"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "schema_legacy.json cubre los 39 namespaces (o marca explícitamente los de motor).",
+    "mapeo_campos.md cubre clientes, proyectos, productos_catalogo, espacio_variantes, items_variante, contratos, ordenes_trabajo, tareas_produccion, compras_materiales, proveedores, cuentas_financieras, movimientos_financieros, obligaciones_pendientes, usuarios_equipo, leads, testimonios, portfolio_publico y pedidos_web.",
+    "riesgos_migracion.md registra PII, gaps de tablas canónicas sin tabla física, y el stub drizzle-impl.ts.",
+    "Checkpoint de aprobación del Supervisor (CA-1) superado."
+  ],
+  "notas": [
+    "El legacy almacena datos de negocio como JSONB genérico ({id, context, data, updated_at}); el field-level real vive en schema_definitions.json, no en la introspección física.",
+    "El esquema físico V3 (28 tablas) cubre ~mitad del negocio; muchos namespaces canónicos no tienen tabla Drizzle aún.",
+    "drizzle-impl.ts es stub; el preview con datos reales requiere decidir su implementación (riesgo A).",
+    "Checkpoint CA-1 aprobado por Supervisor 2026-08-12. Introspección live read-only de Neon main (connection string aportada por el Supervisor, 2026-08-12): el main solo contiene 9 tablas de infraestructura de auth de Neon (schema neon_auth.*) y public vacío. NO existe schema de negocio relacional alguno. Conclusión: el legacy (Agnostic Seed) NO es relacional en Neon; los datos viven en git storage/db/*.json (branch congelado legacy-agnostic-backup). Por tanto schema_legacy.json, construido desde schema_definitions.json + muestras del backup, es la fuente autoritativa y completa; el drift git↔Neon relacional no aplica. Los scripts de migración (t-115/116) deben leer el JSON fuente, no una base relacional."
+  ],
+  "relacionado": [
+    "plan_f10_migracion.md (fuente única F10)",
+    "REGISTRO_DE_ENTIDADES.md",
+    "lib/db/schema.ts",
+    "lib/data/drizzle-impl.ts"
+  ],
+  "fecha_creacion": "2026-08-12"
+}

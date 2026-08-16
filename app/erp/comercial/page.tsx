@@ -3,7 +3,6 @@
 import { useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/veta/button'
-import { Badge } from '@/components/veta/badge'
 import { useDataStore, type Proyecto, type Cliente, type TransicionesProyecto } from '@/lib/data'
 
 // Macro-fases del proyecto
@@ -43,9 +42,6 @@ const ACCIONES_POR_ESTADO: Record<EstadoProyecto, { transiciones: string[]; pued
 // Orden de macro-fases para validar adyacencia
 const ORDEN_MACRO_FASES: MacroFase[] = ['pre_venta', 'cotizacion', 'produccion', 'instalacion', 'post_venta'];
 
-// Orden lineal de estados para derivar "1 avanzar" / "1 retroceder" en la card
-const ORDEN_ESTADOS: EstadoProyecto[] = ['activa', 'enviada', 'negociacion', 'en_contrato', 'retoma', 'pre_produccion', 'produccion', 'entregado', 'perdida', 'cancelada'];
-
 // Verifica si dos macro-fases son adyacentes (diferencia de 1 en el orden)
 const sonMacrosAdyacentes = (a: MacroFase, b: MacroFase): boolean => {
   const idxA = ORDEN_MACRO_FASES.indexOf(a)
@@ -74,6 +70,7 @@ const COLUMNAS_KANBAN: ColumnaKanban[] = [
   { key: 'retoma', label: 'Retoma de Medidas', color: 'sky', editable: true },
   { key: 'pre_produccion', label: 'Pre-Producción', color: 'amber', editable: true },
   { key: 'produccion', label: 'Producción', color: 'red', editable: false },
+  { key: 'entregado', label: 'Entregado', color: 'gray', editable: false },
   { keys: ['perdida', 'cancelada'], label: 'Archivo', color: 'gray', editable: false },
 ]
 
@@ -90,17 +87,47 @@ const ESTADO_LABELS: Record<string, string> = {
   cancelada: 'Cancelada',
 }
 
-const ESTADO_TONE: Record<string, 'info' | 'warning' | 'neutral' | 'danger'> = {
-  activa: 'info',
-  enviada: 'warning',
-  negociacion: 'warning',
-  en_contrato: 'warning',
-  retoma: 'warning',
-  pre_produccion: 'neutral',
-  produccion: 'danger',
-  entregado: 'neutral',
-  perdida: 'neutral',
-  cancelada: 'neutral',
+// Label natural de tipoProyecto (H07 + POC-12). "Proyecto a medida"/"Servicio técnico" son
+// labels nuevos propuestos por disenio_p01 §v3.1, pendientes de agregar a glosario_h07.md.
+const TIPO_PROYECTO_LABEL: Record<string, string> = {
+  producto_fijo: 'Producto fijo',
+  proyecto_a_medida: 'Proyecto a medida',
+  personalizado: 'Proyecto a medida',
+  servicio_tecnico: 'Servicio técnico',
+}
+
+// Color del punto de estado (badge minimalista v3.2) — reusa el mapeo ya vigente por
+// columna en COLUMNAS_KANBAN, no la paleta amber/blue/orange/violet/green/muted del §2
+// histórico del diseño (nunca implementada en código real).
+const ESTADO_DOT_COLOR: Record<string, string> = {
+  activa: 'text-stone-500',
+  enviada: 'text-sky-600',
+  negociacion: 'text-amber-600',
+  en_contrato: 'text-emerald-600',
+  retoma: 'text-sky-600',
+  pre_produccion: 'text-amber-600',
+  produccion: 'text-red-600',
+  entregado: 'text-stone-400',
+  perdida: 'text-stone-400',
+  cancelada: 'text-stone-400',
+}
+
+// Destinos canónicos de los controles rápidos in-card (disenio_p01 §v3.3). No es una
+// máquina de estados nueva: el botón solo se muestra si el destino sigue estando en
+// estadosPosibles (derivado de parametros.transiciones_proyecto).
+const CANONICO_AVANZAR: Partial<Record<EstadoProyecto, EstadoProyecto>> = {
+  activa: 'enviada',
+  enviada: 'negociacion',
+  negociacion: 'en_contrato',
+  en_contrato: 'retoma',
+  retoma: 'pre_produccion',
+  pre_produccion: 'produccion',
+}
+
+const CANONICO_RETORNAR: Partial<Record<EstadoProyecto, EstadoProyecto>> = {
+  negociacion: 'enviada',
+  retoma: 'en_contrato',
+  pre_produccion: 'retoma',
 }
 
 function ProjectCard({
@@ -108,46 +135,27 @@ function ProjectCard({
   cliente,
   totalItems,
   espaciosCount,
+  espaciosActivos,
   transiciones,
   columnEditable,
   onTransition,
-  espaciosTodos,
-  itemsTodos,
-  store,
 }: {
   proyecto: Proyecto
   cliente: Cliente | undefined
   totalItems: number
   espaciosCount: number
+  espaciosActivos: number
   transiciones: TransicionesProyecto
   columnEditable: boolean
   onTransition: (id: string, nuevoEstado: EstadoProyecto) => void
-  espaciosTodos: ReturnType<typeof useDataStore>['espacios']
-  itemsTodos: ReturnType<typeof useDataStore>['items']
-  store: ReturnType<typeof useDataStore>
 }) {
   const router = useRouter()
   const [menuAbierto, setMenuAbierto] = useState(false)
-  
-  // Calcular valor total cotizado
-  const valorTotalCotizado = useMemo(() => {
-    const espacios = espaciosTodos.porProyecto(proyecto.id)
-    const totalItems = espacios.reduce((sum, espacio) => {
-      const items = itemsTodos.porVariante(espacio.id)
-      return sum + items.reduce((itemSum, item) => 
-        itemSum + (parseFloat(item.totalLinea ?? '0') || 0), 0)
-      }, 0)
-    return totalItems
-  }, [proyecto.id, espaciosTodos, itemsTodos])
-
-  // Obtener historial de estados para este proyecto
-  const historial = store.proyectos.historialEstado(proyecto.id)
-  const ultimoHistorial = historial.length > 0 ? historial[historial.length - 1] : null
 
   // Obtener acciones permitidas para este estado
   const estadoActual = proyecto.estado as EstadoProyecto;
   const acciones = ACCIONES_POR_ESTADO[estadoActual] ?? { transiciones: [], puedeRetoma: false };
-  
+
   // Filtrar transiciones permitidas (intersección entre transiciones del store y ACCIONES_POR_ESTADO + validación macro-fase)
   const estadosPosibles = (transiciones[estadoActual] ?? []).filter(destino =>
     (acciones.transiciones.includes(destino) || (destino === 'retoma' && acciones.puedeRetoma)) &&
@@ -158,26 +166,21 @@ function ProjectCard({
     router.push(`/erp/proyectos/${proyecto.id}`);
   }, [router, proyecto.id]);
 
-  // Botones limitados: 1 avanzar (siguiente estado válido hacia adelante),
-  // 1 retroceder (historial o transición válida hacia atrás) y Archivar (perdida/cancelada).
-  const esArchivo = (destino: string) => destino === 'perdida' || destino === 'cancelada';
-  const indiceEstado = (estado: string) => ORDEN_ESTADOS.indexOf(estado as EstadoProyecto);
-  const avanzables = estadosPosibles
-    .filter(d => !esArchivo(d) && indiceEstado(d) > indiceEstado(estadoActual))
-    .sort((a, b) => indiceEstado(a) - indiceEstado(b));
-  const destinoAvanzar = avanzables[avanzables.length - 1] as EstadoProyecto | undefined;
-  const retrocedentes = estadosPosibles
-    .filter(d => indiceEstado(d) < indiceEstado(estadoActual))
-    .sort((a, b) => indiceEstado(a) - indiceEstado(b));
-  const destinoRetroceder =
-    ultimoHistorial && estadosPosibles.includes(ultimoHistorial.estadoAnterior)
-      ? ultimoHistorial.estadoAnterior
-      : (retrocedentes[retrocedentes.length - 1] as EstadoProyecto | undefined);
+  // Controles rápidos (disenio_p01 §v3.3): solo destinos canónicos, solo si válidos hoy.
+  const destinoAvanzar = CANONICO_AVANZAR[estadoActual];
+  const puedeAvanzar = Boolean(destinoAvanzar && estadosPosibles.includes(destinoAvanzar));
+  const destinoRetroceder = CANONICO_RETORNAR[estadoActual];
+  const puedeRetroceder = Boolean(destinoRetroceder && estadosPosibles.includes(destinoRetroceder));
   const archivar = estadosPosibles.includes('perdida')
     ? 'perdida'
     : estadosPosibles.includes('cancelada')
       ? 'cancelada'
       : null;
+
+  const diasEnEstado = Math.max(0, Math.floor((Date.now() - new Date(proyecto.updatedAt).getTime()) / 86400000));
+  const tipoLabel = TIPO_PROYECTO_LABEL[proyecto.tipoProyecto] ?? proyecto.tipoProyecto;
+  const dotColor = ESTADO_DOT_COLOR[proyecto.estado] ?? 'text-stone-400';
+  const estadoLabel = ESTADO_LABELS[proyecto.estado] ?? proyecto.estado;
 
   return (
     <div
@@ -186,85 +189,96 @@ function ProjectCard({
       tabIndex={0}
       onClick={handleCardClick}
     >
-       <div className="flex items-start justify-between gap-1.5">
-         <p
-           className="min-w-0 flex-1 truncate text-xs font-semibold leading-tight text-text-heading group-hover:text-brand transition-colors"
-           title={proyecto.nombreProyecto}
-         >
-           {proyecto.nombreProyecto}
-         </p>
-         <div className="flex items-center gap-1 shrink-0">
-           <button
-             type="button"
-             className="p-1 rounded text-text-muted hover:text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-             onClick={(e) => { e.stopPropagation(); setMenuAbierto(!menuAbierto) }}
-             aria-label="Ver descripción del proyecto"
-           >
-             <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor">
-               <circle cx="3" cy="7" r="1.5" /><circle cx="7" cy="7" r="1.5" /><circle cx="11" cy="7" r="1.5" />
-             </svg>
-           </button>
-          <span className="text-xs font-medium text-text-muted">
-            ${valorTotalCotizado.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      <div className="flex items-center justify-between gap-1.5">
+        <span className="inline-flex min-w-0 items-center gap-1" aria-label={`Estado: ${estadoLabel}`}>
+          <span
+            aria-hidden
+            className={`inline-block shrink-0 rounded-full ${dotColor} ${columnEditable ? 'animate-dot-mini' : ''}`}
+            style={{ width: 'var(--badge-dot-size)', height: 'var(--badge-dot-size)', backgroundColor: 'currentColor' }}
+          />
+          <span
+            className="truncate text-text-muted"
+            style={{ fontSize: 'var(--badge-label-size)', fontWeight: 'var(--badge-label-weight)' }}
+          >
+            {estadoLabel}
           </span>
-          <Badge tone={ESTADO_TONE[proyecto.estado] ?? 'neutral'}>
-            {ESTADO_LABELS[proyecto.estado] ?? proyecto.estado}
-          </Badge>
+        </span>
+
+        <div className="flex items-center gap-0.5 shrink-0">
+          {columnEditable && puedeAvanzar && destinoAvanzar && (
+            <button
+              type="button"
+              className="rounded p-0.5 text-text-muted hover:bg-bg-alt hover:text-brand transition-colors duration-fast"
+              onClick={(e) => { e.stopPropagation(); onTransition(proyecto.id, destinoAvanzar); }}
+              aria-label={`Avanzar a ${ESTADO_LABELS[destinoAvanzar] ?? destinoAvanzar}`}
+              title={`Avanzar a ${ESTADO_LABELS[destinoAvanzar] ?? destinoAvanzar}`}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 8h8M8 4l4 4-4 4" />
+              </svg>
+            </button>
+          )}
+          {columnEditable && puedeRetroceder && destinoRetroceder && (
+            <button
+              type="button"
+              className="rounded p-0.5 text-text-muted hover:bg-bg-alt hover:text-amber-600 transition-colors duration-fast"
+              onClick={(e) => { e.stopPropagation(); onTransition(proyecto.id, destinoRetroceder); }}
+              aria-label={`Retornar a ${ESTADO_LABELS[destinoRetroceder] ?? destinoRetroceder}`}
+              title={`Retornar a ${ESTADO_LABELS[destinoRetroceder] ?? destinoRetroceder}`}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 8H4M8 4L4 8l4 4" />
+              </svg>
+            </button>
+          )}
+          <button
+            type="button"
+            className="p-1 rounded text-text-muted hover:text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+            onClick={(e) => { e.stopPropagation(); setMenuAbierto(!menuAbierto) }}
+            aria-label="Más acciones del proyecto"
+          >
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor">
+              <circle cx="3" cy="7" r="1.5" /><circle cx="7" cy="7" r="1.5" /><circle cx="11" cy="7" r="1.5" />
+            </svg>
+          </button>
         </div>
       </div>
 
-      {cliente && (
-        <p className="mt-0.5 truncate text-[11px] text-text-muted">{cliente.nombre}</p>
+      <p
+        className="mt-1 truncate text-xs font-semibold leading-tight text-text-heading group-hover:text-brand transition-colors"
+        title={cliente?.nombre}
+      >
+        {cliente?.nombre ?? 'Sin cliente'}
+      </p>
+
+      <p className="mt-0.5 truncate text-[11px] text-text-muted" title={`${proyecto.nombreProyecto} · ${tipoLabel}`}>
+        {proyecto.nombreProyecto} · {tipoLabel}
+      </p>
+
+      {proyecto.direccionObra && (
+        <p className="mt-0.5 truncate text-[11px] text-text-muted" title={proyecto.direccionObra}>
+          {proyecto.direccionObra}
+        </p>
       )}
 
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-text-muted">
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 border-t border-border-subtle/50 pt-1 text-[10px] text-text-muted">
         <span>{espaciosCount} esp.</span>
-        <span>{totalItems} items</span>
-        {proyecto.tipoProyecto === 'producto_fijo' && (
-          <span className="text-brand font-medium">Fijo</span>
-        )}
-        {proyecto.diasEntregaEstimados && (
-          <span>&#9201; {proyecto.diasEntregaEstimados}d</span>
-        )}
+        <span>Items: {totalItems}</span>
+        <span>Variantes {espaciosActivos}/{espaciosCount}</span>
+        <span>{diasEnEstado}d en estado</span>
       </div>
 
-      {columnEditable && estadosPosibles.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1 pt-1 border-t border-border-subtle/50">
-          {destinoAvanzar && (
-            <Button
-              variant="ghost"
-              size="md"
-              className="h-5 px-1 text-[10px] leading-none"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTransition(proyecto.id, destinoAvanzar);
-              }}
-            >
-              &rarr; {ESTADO_LABELS[destinoAvanzar] ?? destinoAvanzar}
-            </Button>
-          )}
-          {destinoRetroceder && (
-            <Button
-              variant="ghost"
-              size="md"
-              className="h-5 px-1 text-[10px] leading-none text-amber-600"
-              onClick={(e) => { e.stopPropagation(); onTransition(proyecto.id, destinoRetroceder as EstadoProyecto); }}
-              title={`Regresar a ${ESTADO_LABELS[destinoRetroceder] ?? destinoRetroceder}`}
-            >
-              &#8630; {ESTADO_LABELS[destinoRetroceder] ?? destinoRetroceder}
-            </Button>
-          )}
-          {archivar && (
-            <Button
-              variant="ghost"
-              size="md"
-              className="h-5 px-1 text-[10px] leading-none text-red-500 hover:text-red-600"
-              onClick={(e) => { e.stopPropagation(); onTransition(proyecto.id, archivar); }}
-              title={`Archivar (${archivar})`}
-            >
-              &#10005; Archivar
-            </Button>
-          )}
+      {archivar && columnEditable && (
+        <div className="mt-1 flex justify-end">
+          <Button
+            variant="ghost"
+            size="md"
+            className="h-5 px-1 text-[10px] leading-none text-red-500 hover:text-red-600"
+            onClick={(e) => { e.stopPropagation(); onTransition(proyecto.id, archivar); }}
+            title={`Archivar (${archivar})`}
+          >
+            &#10005; Archivar
+          </Button>
         </div>
       )}
 
@@ -273,7 +287,8 @@ function ProjectCard({
           {proyecto.descripcionSemantica && (
             <p className="italic">&ldquo;{proyecto.descripcionSemantica}&rdquo;</p>
           )}
-          <div className="mt-1 flex gap-2">
+          {cliente?.telefono && <p className="mt-0.5">{cliente.telefono}</p>}
+          <div className="mt-1 flex flex-wrap gap-2">
             <button
               type="button"
               className="text-brand hover:underline font-medium"
@@ -281,6 +296,21 @@ function ProjectCard({
             >
               Abrir Cotizador
             </button>
+            {estadoActual !== 'perdida' && estadoActual !== 'cancelada' && (
+              <button
+                type="button"
+                className="text-red-500 hover:text-red-600 hover:underline font-medium"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm(`¿Eliminar la cotización "${proyecto.nombreProyecto}"? Pasa a Archivo, no se borra el historial.`)) {
+                    onTransition(proyecto.id, 'cancelada');
+                    setMenuAbierto(false);
+                  }
+                }}
+              >
+                Eliminar
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -306,11 +336,12 @@ export default function KanbanComercialPage() {
   }, [clientes])
 
   const projectStats = useMemo(() => {
-    const stats = new Map<string, { items: number; espacios: number }>()
+    const stats = new Map<string, { items: number; espacios: number; espaciosActivos: number }>()
     proyectos.forEach((p) => {
       const esp = espaciosTodos.porProyecto(p.id)
       const itCnt = esp.reduce((sum, e) => sum + itemsTodos.porVariante(e.id).length, 0)
-      stats.set(p.id, { items: itCnt, espacios: esp.length })
+      const activos = esp.filter((e) => e.activa).length
+      stats.set(p.id, { items: itCnt, espacios: esp.length, espaciosActivos: activos })
     })
     return stats
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -330,8 +361,8 @@ export default function KanbanComercialPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proyectos, version])
 
-  const handleTransition = (proyectoId: string, nuevoEstado: EstadoProyecto) => {
-    store.proyectos.actualizarEstado(proyectoId, nuevoEstado)
+  const handleTransition = async (proyectoId: string, nuevoEstado: EstadoProyecto) => {
+    await store.proyectos.actualizarEstado(proyectoId, nuevoEstado)
   }
 
   return (
@@ -381,7 +412,7 @@ export default function KanbanComercialPage() {
                   </p>
                 )}
                 {cards.map((proj) => {
-                  const stats = projectStats.get(proj.id) ?? { items: 0, espacios: 0 }
+                  const stats = projectStats.get(proj.id) ?? { items: 0, espacios: 0, espaciosActivos: 0 }
                   return (
                     <ProjectCard
                       key={proj.id}
@@ -389,12 +420,10 @@ export default function KanbanComercialPage() {
                       cliente={clienteMap.get(proj.clienteId ?? '')}
                       totalItems={stats.items}
                       espaciosCount={stats.espacios}
+                      espaciosActivos={stats.espaciosActivos}
                       transiciones={transiciones}
                       columnEditable={col.editable}
                       onTransition={handleTransition}
-                      espaciosTodos={store.espacios}
-                      itemsTodos={store.items}
-                      store={store}
                     />
                   )
                 })}

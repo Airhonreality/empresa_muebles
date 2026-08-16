@@ -1,0 +1,34 @@
+{
+  "id": "t-140",
+  "nombre": "Fix en vivo: datos faltantes bloqueaban toda transición de estado en el kanban + botón Eliminar cotización",
+  "descripcion": "Javier reportó en vivo (npm run dev contra dev-local real) que no veía los botones [→]/[←] de t-136. Diagnóstico: parametros.transiciones_proyecto NO existía como fila en la tabla parametros de dev-local (solo vivía en fixtures.ts, nunca se sembró en la DB real) — drizzle-impl.transicionesProyecto() devuelve {} cuando la fila falta, así que estadosPosibles quedaba vacío para TODOS los proyectos, bloqueando drag-drop, menú, el botón Archivar preexistente y los botones nuevos de t-136 por igual. Efecto colateral encontrado en el mismo diagnóstico: de 113 proyectos reales, 62 en estado='entregado' y 13 en estado='borrador' no tenían columna en el kanban (COLUMNAS_KANBAN nunca incluyó 'entregado'; 'borrador' era el default de la migración de datos NULL sin resolver, ver plan_f10_migracion.md B-2) — 75/113 proyectos (66%) eran invisibles en el tablero. Javier pidió arreglarlo y agregar un botón para eliminar cotización, que tampoco existía.",
+  "objetivo": "El kanban comercial funciona de punta a punta contra la DB real: todo proyecto tiene una columna donde aterrizar, las transiciones de estado (drag-drop, menú, botones rápidos) funcionan, y existe una acción Eliminar por cotización.",
+  "prioridad": "Alta",
+  "estado": "Cerrada — verificado tsc/eslint limpio, cambios de datos verificados por consulta directa post-escritura",
+  "zona": "app/erp/comercial/ (código) + dev-local (datos)",
+  "tipo": "mixto: datos_contrato (fila de parámetro + remapeo de estado, riesgo alto por tabla de clasificación) + ui (columna nueva + botón)",
+  "riesgo": "alto (escritura directa a la base de datos real dev-local)",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "evidencia": "Javier pidió explícitamente 'arreglemos eso corrijamos los datos... joder, ademas no hay boton par aelminar cotizaicon' tras ver el diagnóstico de causa raíz presentado por el agente — autorización en vivo, misma sesión."
+  },
+  "cambios_de_datos": [
+    "INSERT en parametros: fila clave='transiciones_proyecto' (la misma matriz JSON que ya vivía en fixtures.ts, sin inventar valores nuevos) — 0 filas antes, 1 fila después.",
+    "UPDATE proyectos SET estado='activa' WHERE estado='borrador' — 13 filas afectadas (eran el default temporal de estado NULL de la migración legacy, pendientes de 'transición manual posterior' según B-2; se resolvieron a Lead)."
+  ],
+  "archivos_afectados": [
+    "app/erp/comercial/page.tsx (modificar — columna 'Entregado' agregada a COLUMNAS_KANBAN; botón 'Eliminar' agregado al menú ⋮, transiciona a estado=cancelada vía el mismo onTransition ya existente)"
+  ],
+  "criterios_aceptacion": [
+    "parametros.transiciones_proyecto existe en dev-local con la matriz correcta — verificado por consulta directa post-escritura",
+    "0 proyectos en estado='borrador' tras el remapeo — verificado por consulta directa",
+    "Columna 'Entregado' aparece en COLUMNAS_KANBAN (solo lectura, sin drag/[+ Añadir], mismo patrón que Producción/Archivo)",
+    "Botón 'Eliminar' en el menú ⋮ pide confirmación y transiciona el proyecto a 'cancelada' (Archivo) — no hace un DELETE real, reusa el patrón soft-delete ya documentado en disenio_p01 §5.3",
+    "npx tsc --noEmit = 0 errores",
+    "npx eslint app/erp/comercial/ = 0 errores"
+  ],
+  "no_verificado": "Verificación visual en navegador de que los botones ahora aparecen y funcionan — pendiente de que Javier confirme con npm run dev.",
+  "relacionado": ["t-136"],
+  "fecha_creacion": "2026-08-15"
+}

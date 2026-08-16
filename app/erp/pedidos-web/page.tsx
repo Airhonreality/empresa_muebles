@@ -84,17 +84,17 @@ export default function PedidosWebPage() {
     setNuevoProyectoNombre('')
   }
 
-  const handleEnganchar = () => {
+  const handleEnganchar = async () => {
     if (!modalEnganchar) return
 
     if (proyectoSeleccionado) {
-      store.pedidosWeb.enganchar(modalEnganchar.id, proyectoSeleccionado.id)
+      await store.pedidosWeb.enganchar(modalEnganchar.id, proyectoSeleccionado.id)
     } else if (crearNuevoProyecto && nuevoProyectoNombre.trim()) {
-      const nuevo = store.proyectos.crear({
+      const nuevo = await store.proyectos.crear({
         nombreProyecto: nuevoProyectoNombre.trim(),
         clienteId: modalEnganchar.clienteId,
       })
-      store.pedidosWeb.enganchar(modalEnganchar.id, nuevo.id)
+      await store.pedidosWeb.enganchar(modalEnganchar.id, nuevo.id)
     }
 
     resetModalEnganchar()
@@ -109,9 +109,9 @@ export default function PedidosWebPage() {
     setMotivoCancelacion('')
   }
 
-  const handleCancelar = () => {
+  const handleCancelar = async () => {
     if (!modalCancelar || !motivoCancelacion.trim()) return
-    store.pedidosWeb.actualizarEstado(modalCancelar.id, 'cancelado')
+    await store.pedidosWeb.actualizarEstado(modalCancelar.id, 'cancelado')
     resetModalCancelar()
   }
 

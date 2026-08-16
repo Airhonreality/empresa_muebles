@@ -178,11 +178,12 @@
         },
         {
           "campo": "tipo",
-          "origen": "enum imagen / plano_armado / orden_armado / modelo_3d",
+          "origen": "enum imagen / plano_armado / modelo_3d",
           "fuente": "disenio_modulo_espacio.md:78",
           "punto0_ref": "E-41 fotos por etapa + E-38/E-39 (modelo 3D, modelos_3d a2_1:225) / integracion del plano",
           "salto": null,
-          "inconsistencia_archivo": null
+          "inconsistencia_archivo": null,
+          "nota": "Consolidación 2026-08-12: 'orden_armado' unificado en 'plano_armado' (documento/plano real)."
         },
         {
           "campo": "fuente",

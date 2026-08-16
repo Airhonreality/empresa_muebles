@@ -1,0 +1,75 @@
+{
+  "id": "t-116",
+  "nombre": "F10: Migración de datos transaccionales (Fase 3)",
+  "descripcion": "Migrar datos transaccionales desde Neon main a dev-local: proyectos (+historial de estados), contratos (+hitos_pago split), espacio_variantes (+items_variante, espacios_artefactos), ordenes_trabajo, tareas_produccion, cuentas_financieras, movimientos_financieros, obligaciones_pendientes, pedidos_web, portfolio_publico e imagenes_portfolio.",
+  "objetivo": "Poblar dev-local con datos transaccionales reales de producción para el preview completo (proyectos reales, contratos, finanzas, producción y sitio público).",
+  "prioridad": "Alta",
+  "estado": "Pendiente",
+  "dependencias": [
+    "t-115 migración de datos maestros completada",
+    "mapeo_campos.md (transformaciones JSONB→relacional)",
+    "Enums V3 y estados recalculados (R-6)"
+  ],
+  "entregables": [
+    {
+      "nombre": "scripts/migrate-transaccionales.ts",
+      "formato": "TypeScript",
+      "ubicacion": "scripts/migrate-transaccionales.ts",
+      "detalle": "Script idempotente para tablas transaccionales con transformaciones JSONB→relacional."
+    },
+    {
+      "nombre": "Datos transaccionales en dev-local",
+      "detalle": "proyectos, contratos, hitos_pago, espacio_variantes, items_variante, espacios_artefactos, ordenes_trabajo, tareas_produccion, finanzas, pedidos_web, portfolio."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Migrar proyectos",
+      "detalle": "proyectos + proyectos_estados_historial, recalcular estado con enum estado_proyecto (R-6).",
+      "responsable": "Código"
+    },
+    {
+      "numero": 2,
+      "accion": "Migrar contratos y hitos",
+      "detalle": "contratos + split de hitos_pago (array JSONB → tabla hitos_pago 1:N).",
+      "responsable": "Código"
+    },
+    {
+      "numero": 3,
+      "accion": "Migrar espacios e items",
+      "detalle": "espacio_variantes + items_variante + espacios_artefactos (separación por lineages).",
+      "responsable": "Código"
+    },
+    {
+      "numero": 4,
+      "accion": "Migrar producción y finanzas",
+      "detalle": "ordenes_trabajo, tareas_produccion, cuentas_financieras, movimientos_financieros, obligaciones_pendientes (money: number→numeric).",
+      "responsable": "Código"
+    },
+    {
+      "numero": 5,
+      "accion": "Migrar sitio público",
+      "detalle": "pedidos_web, portfolio_publico, imagenes_portfolio.",
+      "responsable": "Código"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "proyectos migrados con estados en enum válido",
+    "contratos con hitos_pago normalizados (0 JSONB residuales)",
+    "Finanzas con montos numeric correctos (sin pérdida de precisión)",
+    "FKs entre proyectos→clientes, contratos→proyectos, items→espacios resueltas (mapa legacyId→v3Id)"
+  ],
+  "notas": [
+    "Usar mapa legacyId→v3Id generado en t-115 para reenlazar FKs.",
+    "validar enums estado_proyecto y estado_contrato al transformar.",
+    "money legacy number → numeric(14,2) V3."
+  ],
+  "relacionado": [
+    "plan_f10_migracion.md §3.3, §8",
+    "mapeo_campos.md",
+    "lib/db/schema.ts",
+    "riesgos_migracion.md R-5, R-6, R-7, R-8"
+  ],
+  "fecha_creacion": "2026-08-12"
+}

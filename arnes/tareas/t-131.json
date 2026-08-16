@@ -1,0 +1,49 @@
+{
+  "id": "t-131",
+  "nombre": "F10-G: Provider de hidratación SSR + polling corto para reactividad multi-usuario sin recarga",
+  "descripcion": "Requisito no negociable del Supervisor (2026-08-13, decisión t-127): ningún empleado debe recargar la página para ver cambios hechos por otro. Este ticket implementa la pieza que faltaba en el mecanismo de reactividad M-07 existente (subscribe()/getVersion() en lib/data/index.ts, ya usado por las 43 pantallas vía useDataStore()): un Provider raíz que (1) recibe el snapshot inicial hidratado por el layout server-side (t-119) sin loading flicker, y (2) hace polling cada 2-4s contra un Server Action de verificación liviano (ej. SELECT MAX(updated_at) o contador monotónico); si cambió, trae el snapshot completo, hace merge en la caché en memoria del store y dispara la notificación M-07 ya existente — todas las pantallas suscritas se re-renderizan solas.",
+  "objetivo": "Que una escritura de un empleado sea visible para todos los demás en ≤4s, sin recargar y sin infraestructura nueva (websockets/pub-sub descartados en t-127).",
+  "prioridad": "Crítica",
+  "estado": "Completada (código) — falta verificación manual en navegador",
+  "fecha_resolucion": "2026-08-14",
+  "resolucion": "Implementado DataStoreProvider (lib/data/DataStoreProvider.tsx): recibe snapshot inicial hidratado por app/layout.tsx (Server Component, sin loading flicker) y hace polling cada 3s contra fetchVersionTokenAction() (query barata); si cambió, trae fetchSnapshotAction() completo y lo aplica vía applySnapshot() + notify(), reusando el mecanismo M-07 existente sin tocar las 43 pantallas. useDataStore() (index.ts) migrado de singleton a Context. Verificado con tsc/eslint/next build (mock y drizzle) y E2E de escritura+lectura contra dev-local real. NO verificado todavía con dos pestañas de navegador reales simultáneas (V-5b end-to-end) — requiere `npm run dev` con DATA_IMPL=drizzle y una sesión manual del Supervisor o un test automatizado tipo Playwright, no ejecutable en este entorno headless.",
+  "dependencias": [
+    "t-119 (hidratación inicial servida por el layout raíz)",
+    "t-130 (Server Actions de escritura, cuyas confirmaciones deben notificar igual que el polling)",
+    "lib/data/index.ts (mecanismo M-07 subscribe()/getVersion() ya existente)",
+    "plan_f10_migracion.md §3.1d"
+  ],
+  "entregables": [
+    {
+      "nombre": "Server Action de verificación liviana",
+      "formato": "TypeScript ('use server')",
+      "ubicacion": "lib/data/actions/version.ts (o similar)",
+      "detalle": "Query barata que devuelve un valor comparable (MAX(updated_at) o contador) sin traer el dataset completo."
+    },
+    {
+      "nombre": "Provider de polling",
+      "formato": "TypeScript ('use client')",
+      "ubicacion": "lib/data/ (extiende el Provider de hidratación de t-119)",
+      "detalle": "setInterval de 2-4s que llama a la verificación liviana; si cambió, trae snapshot completo, hace merge y notifica vía el subscribe()/getVersion() existente. Un solo punto — no se toca ninguna de las 43 pantallas."
+    }
+  ],
+  "pasos": [
+    { "numero": 1, "accion": "Implementar el endpoint de verificación liviana", "detalle": "Una query mínima que sirva como 'hubo cambios desde la última vez que pregunté'.", "responsable": "Código" },
+    { "numero": 2, "accion": "Implementar el polling en el Provider raíz", "detalle": "Intervalo 2-4s; en caso de cambio, fetch de snapshot completo + merge en la caché en memoria del store + notify() del mecanismo M-07.", "responsable": "Código" },
+    { "numero": 3, "accion": "Reconciliar con escrituras propias en vuelo", "detalle": "Evitar que un poll sobrescriba una escritura optimista propia todavía no confirmada por el Server Action de t-130 (usar el mismo contador de versión para descartar snapshots más viejos que el estado local).", "responsable": "Código" },
+    { "numero": 4, "accion": "Verificar V-5b end-to-end", "detalle": "Dos pestañas/usuarios reales contra v3-preview: escribir en una, confirmar que aparece en la otra en ≤4s sin recargar.", "responsable": "QA" }
+  ],
+  "criterios_de_aceptacion": [
+    "V-5b del plan (§5): escritura en pestaña A visible en pestaña B en ≤4s sin acción manual",
+    "Sin recarga de página en ningún punto del flujo",
+    "El poll de verificación no descarga el dataset completo cuando no hubo cambios",
+    "Ninguna de las 43 pantallas de lectura requiere cambios de código para beneficiarse del polling (pasa por el Provider raíz único)"
+  ],
+  "notas": [
+    "Decisión explícita del Supervisor en t-127: WebSockets/SSE/pub-sub de terceros quedan fuera de alcance — requerirían infraestructura nueva y checkpoint propio para una ganancia marginal (sub-segundo vs ≤4s) que no es necesaria para uso interno de equipo.",
+    "Si el volumen de datos crece mucho (hoy son cientos de filas, no millones), revisar si el snapshot completo post-cambio debe volverse incremental — no es necesario para el volumen actual.",
+    "SUPERADO (2026-08-14): el mecanismo de reactividad de este ticket (setInterval de 3s, sin pausa por visibilidad) agotaba la cuota de 100.000 invocaciones/mes de Vercel Hobby con el equipo real (~5 usuarios) en aproximadamente un día. Reemplazado por long-polling acotado + `LISTEN`/`NOTIFY` de Postgres — decisión y razonamiento completo en arnes/lineas/ola7/tecnico/m07b_reactividad_multiusuario.md, código implementado y verificado en t-132 (mismo día). lib/data/DataStoreProvider.tsx ya no usa setInterval."
+  ],
+  "relacionado": ["lib/data/index.ts", "lib/data/store.ts", "t-119", "t-127", "t-130", "t-132"],
+  "fecha_creacion": "2026-08-13"
+}

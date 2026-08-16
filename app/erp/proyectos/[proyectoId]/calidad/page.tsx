@@ -74,9 +74,9 @@ export default function CalidadPage() {
     return null
   }
 
-  const emitirVeredicto = (veredicto: 'aprobado' | 'rechazado') => {
+  const emitirVeredicto = async (veredicto: 'aprobado' | 'rechazado') => {
     setVeredictoError(null)
-    const resultado = store.verificaciones.emitirVeredicto({
+    const resultado = await store.verificaciones.emitirVeredicto({
       proyectoId,
       tipoGate: 'calidad',
       veredicto,

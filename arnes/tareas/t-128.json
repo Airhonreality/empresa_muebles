@@ -1,0 +1,54 @@
+{
+  "id": "t-128",
+  "nombre": "F10: Aclarar proyecto Neon de Vercel + plan de rollback",
+  "descripcion": "Producción main es east-1 (ep-round-queen-at3nzf87); dev-local es sa-east-1 (ep-silent-field-ac8slpbc) — proyectos Neon distintos. Hay que confirmar a cuál apunta Vercel hoy y crear la rama v3-preview en el proyecto correcto. Además, apuntar al equipo al preview como producción es un cutover único sobre datos reales; se requiere plan de rollback explícito y considerar corrida en paralelo old+new.",
+  "objetivo": "Eliminar la ambigüedad de infraestructura y definir el rollback antes del despliegue/carga de datos.",
+  "prioridad": "Crítica",
+  "estado": "Pendiente",
+  "dependencias": ["NEON_API_KEY", "Acceso a config de Vercel"],
+  "entregables": [
+    {
+      "nombre": "Proyecto Neon confirmado + rama v3-preview creada",
+      "formato": "Config",
+      "ubicacion": "Vercel env / Neon",
+      "detalle": "Definir si Vercel usa east-1 o sa-east-1 y crear v3-preview ahí."
+    },
+    {
+      "nombre": "Plan de rollback documentado",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/migracion/plan_rollback.md",
+      "detalle": "Cómo volver tráfico a legacy y (opcional) paralelo old+new."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Confirmar proyecto Neon de Vercel",
+      "detalle": "Revisar env de Vercel (¿usa DATABASE_URL de producción east-1 o dev-local sa-east-1?).",
+      "responsable": "Supervisor",
+      "estado": "Pendiente"
+    },
+    {
+      "numero": 2,
+      "accion": "Crear rama v3-preview en el proyecto correcto",
+      "detalle": "neonctl con NEON_API_KEY.",
+      "responsable": "Código",
+      "estado": "Pendiente"
+    },
+    {
+      "numero": 3,
+      "accion": "Aprobar plan de rollback",
+      "detalle": "Rollback a legacy + considerar paralelo old+new.",
+      "responsable": "Supervisor",
+      "estado": "Pendiente"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "Proyecto Neon de Vercel confirmado por escrito",
+    "rama v3-preview creada en el proyecto correcto",
+    "plan_rollback.md existe y es aprobado"
+  ],
+  "notas": ["Bloqueo B-3/B-4: debe resolverse antes de Fase 1 (despliegue) y Fase 2 (carga de datos)."],
+  "relacionado": ["plan_f10_migracion.md §3.5", "estado.md"],
+  "fecha_creacion": "2026-08-13"
+}

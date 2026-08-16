@@ -26,13 +26,16 @@ Regla de oro: ninguna fase rompe un módulo que ya corre. Cada fase cierra con v
 |---|---|---|---|---|---|
 | **F0** | Cimientos — identidad y auditoría | `roles`, `personas`, `personas_roles`, `parametros`, `parametros_historial`, `eventos`, `audit_logs`, `procedencia` (F0+F2) | — (rol tipado `erp-nav.ts`; precondición de todo guard) | t-074, t-076 (base) | `db:migrate`+`db:seed` limpios en dev-local; `eventos` append-only OK |
 | **F1** | Catálogos + embudo ampliado | catálogos FLAG-4 (herrajes, insumos, procesos, componentes, espacios); `leads`/`clientes`/`proyectos` ampliadas (F1) | — | t-075, t-077 (seed real) | 65 tablas creadas; seed real cargado |
-| **F2** | Comercial + cotizador | `cotizaciones`, `diseños3d`, `citas`, `visitas`, `conversaciones` | B3-1: P-01..P-05 + F-01/F-02/F-03/F-08 | t-078 (P-04), t-079 (P-01) | Matemática en servidor (R05) testeada; embudo kanban con datos reales |
+| **F2** | Comercial + cotizador | `cotizaciones`, `diseños3d`, `citas`, `visitas`, `conversaciones` | B3-1: P-01..P-05 + F-01/F-02/F-03 | t-078 (P-04), t-079 (P-01) | Matemática en servidor (R05) testeada; embudo kanban con datos reales |
 | **F3** | Cronograma + gates E-18/E-33 | `cronogramas`, `cronograma_etapas`, `desfases_cronograma`, `check_produccion`, `novedades_criticas`, `schemas_proyecto`, `bom_materiales`, `retomas`, `reprocesos` (F2) | B3-2: P-06..P-12, **E-18**, **E-33** | t-080 (E-33), t-081 (P-09), t-082 (logs+alertas) | Test de gate E-18/E-33 contra datos reales; recálculo solo `linea='interna'` |
 | **F4** | Compras + gates E-20/E-21 | `ordenes_compra`, `items_orden_compra`, `recepciones_material`, `herramientas` (F2) | B3-3a: **P-13 (E-20 dispara)**, **P-14 (E-21)**, P-15 | t-083 (E-20), t-084 (E-21), t-085 (P-13) | P21 triple verificación OK; caja bloqueante en servidor |
 | **F5** | Taller + Calidad + Entrega | `modulos`, `citaciones_calidad`, `instalaciones`, `actas_entrega`, `citas_garantia` (F2) | B3-3b: P-16, **P-17 (E-24)**, P-18, P-19 | — (heredadas de F4) | Gate E-24 E2E; rango 5 días |
 | **F6** | Finanzas + Compensación | `liquidaciones_compensacion`, `comisiones_proyecto`, `registros_horas` (F2) | B3-4: **P-20 (E-20)**, P-21, P-22, P-23 | t-086 (P-22), t-087 (config nómina) | Dualidad tiempo/módulo funcional; caja derivada con `SUM` real |
-| **F7** | Cliente/docs + frontstage | `documentos_proyecto` (F2) | B3-5: P-24, P-25, P-26, F-07 | — | Aislamiento `clienteId` (R26) |
-| **F8** | Hardening / integraciones | enums aditivos + backfill (`proyectos.estado`, `ordenes_trabajo.estado`, `obligaciones_pendientes.estado`, `fecha`→timestamp) (F3); deprecación `rolEmpleado`→`personas_roles` (F4); integraciones diferidas (Viewer 3D SketchUp→CVC, ver `disenio_F08_propuesta_publica.md` §8) — usa `PLANTILLA_HARDENING.md` | — (toca datos existentes, ÚLTIMO) | — | Backfill 1:1 8 valores legacy; `session.ts`/`erp-nav.ts` en `personas_roles`; tests re-corridos |
+|> **Nota:** F-06 (Tienda/Checkout) movida a `demanda/plan_demanda.md` Bloque C (2026-08-12).
+| **F7** | Cliente/docs + frontstage | `documentos_proyecto` (F2) | B3-5: P-24, P-25, P-26 | — | Aislamiento `clienteId` (R26) |
+|> **Nota:** F-07 (Portal Cliente) y F-08 (Propuesta Pública) movidas a `demanda/plan_demanda.md` Bloques D y C respectivamente (2026-08-12).
+| **F8** | Hardening / integraciones | enums aditivos + backfill (`proyectos.estado`, `ordenes_trabajo.estado`, `obligaciones_pendientes.estado`, `fecha`→timestamp) (F3); deprecación `rolEmpleado`→`personas_roles` (F4); integraciones diferidas (Viewer 3D SketchUp→CVC) — usa `PLANTILLA_HARDENING.md` | — (toca datos existentes, ÚLTIMO) | — | Backfill 1:1 8 valores legacy; `session.ts`/`erp-nav.ts` en `personas_roles`; tests re-corridos |
+|> **Nota:** Referencia a F-08 actualizada: diseño en `demanda/plan_demanda.md` Bloque C (2026-08-12).
 | **F9** | QA + corte | — | Todos los gates | t-088 (E2E gates), t-089 (trazabilidad `audit_logs`), t-090 (checkpoint) | 5/5 gates E2E; 61/61 eventos trazables; checkpoint aprobado |
 
 ---
@@ -89,7 +92,8 @@ E-18 (schema aprobado, F3/P-08) ─→ E-20/E-21 (compras, F4/P-13/P-14) ─→ 
 - **A-02 (Supervisor) — rediseño de `check_produccion` (2026-08-08):** `umbral_todo_bien_pct`, `umbral_extremo_pct`, `reduccion_comision_novedad_pct`, `reduccion_comision_extremo_pct` reemplazan a `umbral_novedad_check15` (deprecado). Valores v1 (0.95/0.70/50%/100%) estimados, ver `nucleo/mini_diamante_check_produccion.md` — misma condición que A-01, no bloquea F0-F7, sí antes de F8.
 - **Decisiones cerradas no se re-discuten** (regla de OLA_7_ENTRADA). Cambio → escalar al Supervisor, nunca reabrir Ola 6.
 - **Nunca tocar `main`/`legacy-agnostic-backup`; ninguna escritura contra producción.** Todo contra `dev-local`.
-- **Frontera DIFERIDO (no se construye en Ola 7):** tienda F-04/F-05/F-06, KPIs P-32, testimonios P-33, facturación DIAN, `tareas_produccion` capa 2, firma digital.
+- **Frontera DIFERIDO (no se construye en Ola 7):** tienda F-04/F-05, KPIs P-32, testimonios P-33, facturación DIAN, `tareas_produccion` capa 2, firma digital.
+  > **Nota (2026-08-12):** F-06 (Tienda/Checkout), F-07 (Portal Cliente), F-08 (Propuesta Pública), y F-09 (Landings SEO) movidas a `demanda/plan_demanda.md` Bloques C-D-E. Ya no son parte de la frontera DIFERIDO de Ola 7 ni bloquean la migración de datos ERP.
 - **Mini-diamantes y decisiones del Supervisor se registran en el ledger antes de que cada fase abra.**
 
 ---

@@ -1,9 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Badge } from '@/components/veta/badge'
+import { ArrowDown, Building2, Expand, LayoutGrid, MapPin } from 'lucide-react'
 import { Button } from '@/components/veta/button'
-import { useDataStore, type EspacioVariante, type ItemVariante } from '@/lib/data'
+import { MetaItem } from '@/components/veta/meta-item'
+import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
+import { GalleryRail } from '@/components/veta/gallery-rail'
+import { useDataStore, type EspacioVariante, type ItemVariante, type ProductoCatalogo } from '@/lib/data'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 
 // F-08 Propuesta pública (disenio_F08_propuesta_publica.md). Ruta simplificada
@@ -11,6 +15,12 @@ import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finan
 // campo slug todavía en F10 (gap anotado, no bloqueante: agregar slug es
 // trabajo de la migración real, no cambia nada del diseño de esta pantalla).
 // R1: snapshot de solo lectura, sin mutaciones. R5: sin botones de pago.
+//
+// Refinamiento visual 2026-08-11 (ver disenio_F08 §9.4 nota): los ítems de
+// "Qué incluye" se muestran siempre visibles con imagen (paridad con la
+// referencia premium desplegada en empresa_muebles_clone) en vez de ir
+// dentro del accordion cerrado por defecto. El accordion se conserva solo
+// para mano de obra / referenciales / notas — detalle técnico secundario.
 
 const HORAS_POR_JORNADA = 8
 
@@ -23,29 +33,191 @@ function formatCOP(amount: number): string {
   }).format(amount)
 }
 
+function formatQty(s: string | null | undefined): string {
+  const n = Number(s)
+  return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(Number.isFinite(n) ? n : 0)
+}
+
 function parseNum(s: string | null | undefined): number {
   const n = Number(s)
   return Number.isFinite(n) ? n : 0
+}
+
+type GalleryImage = { url: string; alt: string; id: string }
+
+function toGalleryImages(fotos: string[], alt: string): GalleryImage[] {
+  return fotos.filter(Boolean).map((url, i) => ({ url, alt: `${alt} ${i + 1}`, id: `${url}-${i}` }))
+}
+
+interface ItemCardProps {
+  item: ItemVariante
+  producto: ProductoCatalogo | undefined
+  onZoom: (imagenes: GalleryImage[], index: number) => void
+}
+
+function ItemCard({ item, producto, onZoom }: ItemCardProps) {
+  const nombre = item.nombrePersonalizado ?? producto?.descripcion ?? 'Ítem'
+  const unidad = producto?.unidadMedida || 'unidad'
+  const precioUnitario = parseNum(item.precioUnitario)
+  const total = parseNum(item.totalLinea)
+  const galeria = [producto?.imagenUrl, ...(producto?.galeriaImagenesUrl ?? [])].filter(Boolean) as string[]
+  const imagen = galeria[0] ?? null
+  const zoomable = galeria.length > 0
+
+  return (
+    <div
+      role={zoomable ? 'button' : undefined}
+      tabIndex={zoomable ? 0 : undefined}
+      onClick={zoomable ? () => onZoom(toGalleryImages(galeria, nombre), 0) : undefined}
+      onKeyDown={
+        zoomable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onZoom(toGalleryImages(galeria, nombre), 0)
+              }
+            }
+          : undefined
+      }
+      className={`group flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-raised p-3 shadow-xs transition-colors duration-fast ${
+        zoomable ? 'cursor-zoom-in hover:border-border-brand' : ''
+      }`}
+    >
+      <div className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-sm bg-bg-alt">
+        {imagen ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob temporales */}
+            <img src={imagen} alt="" className="h-full w-full object-cover" />
+            <span className="absolute inset-0 grid place-items-center bg-black/0 text-white opacity-0 transition-opacity duration-base group-hover:bg-black/30 group-hover:opacity-100">
+              <Expand size={13} />
+            </span>
+          </>
+        ) : (
+          <span className="text-[10px] text-text-muted">{producto?.sku?.charAt(0) ?? '·'}</span>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium leading-5 text-text-heading">{nombre}</p>
+        <p className="mt-0.5 text-xs text-text-muted">
+          {formatQty(item.cantidad)} {unidad}
+          {precioUnitario > 0 ? <> · {formatCOP(precioUnitario)} c/u</> : null}
+        </p>
+      </div>
+      {total > 0 && (
+        <div className="shrink-0 self-center text-right">
+          <span className="block text-[9px] uppercase tracking-[0.12em] text-text-muted">Total</span>
+          <strong className="font-display text-sm tabular-nums text-text-heading">{formatCOP(total)}</strong>
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface DetalleTecnicoProps {
+  referenciales: ItemVariante[]
+  jornadasDev: string
+  jornadasEns: string
+  jornadasInst: string
+  tarifaDev: number
+  tarifaAssembly: number
+  tarifaInstall: number
+}
+
+function DetalleTecnico({
+  referenciales,
+  jornadasDev,
+  jornadasEns,
+  jornadasInst,
+  tarifaDev,
+  tarifaAssembly,
+  tarifaInstall,
+}: DetalleTecnicoProps) {
+  const [abierto, setAbierto] = useState(false)
+
+  const moDev = parseNum(jornadasDev) * tarifaDev
+  const moEns = parseNum(jornadasEns) * tarifaAssembly
+  const moInst = parseNum(jornadasInst) * tarifaInstall
+  const moTotal = moDev + moEns + moInst
+
+  if (moTotal === 0 && referenciales.length === 0) return null
+
+  return (
+    <div className="rounded-lg border border-border-subtle">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-alt/60 transition-colors duration-fast"
+      >
+        <span className="text-sm font-medium text-text-heading">Ver desglose técnico</span>
+        <svg
+          className={`w-4 h-4 text-text-muted transition-transform duration-base ${abierto ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {abierto && (
+        <div className="border-t border-border-subtle px-4 py-3 space-y-3">
+          {moTotal > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-1">Mano de obra</p>
+              {moDev > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">· Desarrollo técnico</span><span className="font-mono">{formatCOP(moDev)}</span></div>}
+              {moEns > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
+              {moInst > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
+              <div className="flex justify-between text-sm pt-2 border-t border-border-subtle/50 mt-2">
+                <span className="text-text-muted font-medium">Subtotal MO</span>
+                <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
+              </div>
+            </div>
+          )}
+
+          {referenciales.length > 0 && (
+            <div className="pt-2 border-t border-dashed border-border-subtle">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Ref. con terceros</p>
+              {Object.entries(
+                referenciales.reduce<Record<string, ItemVariante[]>>((acc, it) => {
+                  const key = it.grupoReferencial?.trim() || 'Otros'
+                  acc[key] = acc[key] ?? []
+                  acc[key].push(it)
+                  return acc
+                }, {})
+              ).map(([grupo, items]) => (
+                <div key={grupo} className="mb-1.5 last:mb-0">
+                  <p className="text-xs font-medium text-text-muted">{grupo}</p>
+                  {items.map((it) => (
+                    <div key={it.id} className="flex justify-between text-xs text-text-muted pl-3 py-0.5">
+                      <span>{it.nombrePersonalizado ?? 'Ítem'}</span>
+                      <span className="font-mono">{formatCOP(parseNum(it.totalLinea))}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <p className="text-xs text-text-muted italic mt-1">No incluida en el total.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function PropuestaPublicaPage() {
   const params = useParams()
   const proyectoId = params.proyectoId as string
   const store = useDataStore()
+  const [espacioActivoId, setEspacioActivoId] = useState<string | null>(null)
+  const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState<string | null>(null)
+  const [zoom, setZoom] = useState<{ imagenes: GalleryImage[]; index: number } | null>(null)
 
+  // Obtener datos del proyecto
   const proyecto = store.proyectos.obtenerPorId(proyectoId)
+
   const espaciosBase = proyecto ? store.espacios.porProyecto(proyecto.id) : []
   const contrato = proyecto ? store.contratos.porProyecto(proyecto.id) : undefined
   const hitosList = contrato ? store.hitos.porContrato(contrato.id) : []
 
-  if (!proyecto) {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-24 text-center">
-        <p className="text-text-muted">Propuesta no encontrada.</p>
-      </div>
-    )
-  }
-
+  // TODOS LOS HOOKS DEBEN ESTAR AQUÍ, ANTES DEL EARLY RETURN
   // R2: proyección de campos públicos únicamente — sin id interno, costo,
   // margen ni proveedor_id en ningún dato que se renderiza abajo.
   // R3: MO calculada en runtime desde parametros, nunca guardada en snapshot.
@@ -67,8 +239,36 @@ export default function PropuestaPublicaPage() {
     arr.push(e)
     grupos.set(e.nombreEspacio, arr)
   })
+
   const espaciosActivos = Array.from(grupos.values()).map((variantes) => variantes.find((v) => v.activa) ?? variantes[0])
 
+  // Inicializa espacioActivoId si está vacío
+  const espacioIdActual = espacioActivoId ?? espaciosActivos[0]?.id ?? null
+  if (espacioActivoId === null && espaciosActivos.length > 0) {
+    setEspacioActivoId(espaciosActivos[0].id)
+  }
+
+  // Obtener todas las variantes del espacio actual (para selector de variantes)
+  const espacioActual = espaciosActivos.find((e) => e.id === espacioIdActual)
+  const espacioActualVariantes = espacioActual ? Array.from(grupos.get(espacioActual.nombreEspacio) ?? []) : []
+
+  // Variante a mostrar: si está seleccionada, usarla; si no, la activa; si ninguna, la primera
+  const varianteActual =
+    espacioActualVariantes.find((v) => v.id === varianteSeleccionadaId) ??
+    espacioActualVariantes.find((v) => v.activa) ??
+    espacioActualVariantes[0] ??
+    null
+
+  // Early return si no hay proyecto
+  if (!proyecto) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-24 text-center">
+        <p className="text-text-muted">Propuesta no encontrada.</p>
+      </div>
+    )
+  }
+
+  // Calcular totales de TODOS los espacios activos (para resumen financiero general)
   let materialesTotal = 0
   let moDev = 0
   let moEns = 0
@@ -94,120 +294,304 @@ export default function PropuestaPublicaPage() {
   const iva = proyecto.aplicaIva ? Math.round(subtotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
   const total = subtotal + iva
 
+  // Datos de la variante actual para mostrar en la sección del espacio
+  const itemsVarianteActual = varianteActual ? store.items.porVariante(varianteActual.id) : []
+  const contractualesActuales = itemsVarianteActual.filter((it) => !it.esReferencial)
+  const referencialesActuales = itemsVarianteActual.filter((it) => it.esReferencial)
+
+  const scrollToContenido = () => {
+    document.getElementById('contenido-propuesta')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
-      {/* HeaderPropuesta */}
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle pb-6">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-text-muted">Propuesta</p>
-          <h1 className="font-display text-3xl font-semibold text-text-heading mt-1">{proyecto.nombreProyecto}</h1>
-          {proyecto.direccionObra && <p className="text-sm text-text-muted mt-1">{proyecto.direccionObra}</p>}
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_var(--color-bg-alt)_0%,_var(--color-bg-paper)_40%,_var(--color-bg-paper)_100%)]">
+      {/* HeaderPropuesta — sticky (top-16: se acopla debajo del header de AppShell, h-16) */}
+      <header className="sticky top-16 z-header bg-bg-paper/90 backdrop-blur-xl border-b border-border-subtle print:static print:bg-transparent">
+        <div className="mx-auto max-w-7xl px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-500">Propuesta</p>
+            <h1 className="font-display text-2xl font-semibold text-text-heading mt-0.5">{proyecto.nombreProyecto}</h1>
+          </div>
+          <Button variant="primary" size="md" onClick={() => window.print()}>
+            Guardar como PDF
+          </Button>
         </div>
-        <Button variant="primary" size="md" onClick={() => window.print()}>
-          Guardar como PDF
-        </Button>
       </header>
 
       {/* Viewer 3D — DIFERIDO hasta integración SketchUp/OpenCutList → CVC */}
       {/* <Viewer3DModal proyectoId={proyecto.id} /> */}
 
-      {/* NavegacionAmbientes + ListaItems + ItemsReferenciales por espacio */}
-      <section className="mb-8 space-y-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Ambientes</h2>
-        {espaciosActivos.map((esp) => {
-          const { contractuales, referenciales } = itemsPorEspacio.get(esp.id) ?? { contractuales: [], referenciales: [] }
-          const colores = (esp.colores as string[]).filter(Boolean)
-          return (
-            <div key={esp.id} className="rounded-lg border border-border-subtle bg-bg-raised p-5">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-display text-lg font-medium text-text-heading">{esp.nombreEspacio}</h3>
-                <Badge tone="neutral">{esp.nombreVariante}</Badge>
+      {/* Hero editorial */}
+      <section className="mx-auto max-w-7xl px-6 pt-12 pb-8 lg:pt-20 lg:pb-12">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">Propuesta comercial</p>
+          <h2 className="font-display mt-5 text-[clamp(2.25rem,1.6rem+2.6vw,4.25rem)] leading-[0.96] tracking-[-0.03em] text-text-heading">
+            {proyecto.nombreProyecto}
+          </h2>
+          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+            {proyecto.direccionObra && <MetaItem icon={MapPin}>{proyecto.direccionObra}</MetaItem>}
+            <MetaItem icon={Building2}>{proyecto.tipoProyecto}</MetaItem>
+            <MetaItem icon={LayoutGrid}>
+              {espaciosActivos.length} {espaciosActivos.length === 1 ? 'ambiente incluido' : 'ambientes incluidos'}
+            </MetaItem>
+          </div>
+          <p className="mt-8 max-w-2xl text-base leading-7 text-text-muted">
+            Revisa el alcance por ambiente, las alternativas seleccionadas y las referencias visuales.
+            Los detalles técnicos se presentan solo cuando ayudan a tomar una decisión.
+          </p>
+          {espaciosActivos.length > 0 && (
+            <button
+              type="button"
+              onClick={scrollToContenido}
+              className="mt-9 inline-flex min-h-12 items-center gap-2.5 rounded-full border-2 border-gold-400 px-6 text-sm font-semibold text-gold-700 transition-colors duration-base hover:bg-gold-400 hover:text-white"
+            >
+              Ver propuesta <ArrowDown size={18} />
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* NavegacionAmbientes — tabs sticky bajo el header */}
+      {espaciosActivos.length > 0 && (
+        <nav className="sticky top-[144px] z-nav bg-bg-paper/90 backdrop-blur-xl border-y border-border-subtle">
+          <div className="mx-auto max-w-7xl px-6 py-3 flex flex-wrap gap-2">
+            {espaciosActivos.map((esp, index) => (
+              <button
+                key={esp.id}
+                type="button"
+                onClick={() => {
+                  setEspacioActivoId(esp.id)
+                  setVarianteSeleccionadaId(null)
+                }}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-fast ${
+                  espacioIdActual === esp.id
+                    ? 'bg-gold-500 text-white'
+                    : 'bg-bg-raised border border-border-subtle text-text-heading hover:border-border-brand'
+                }`}
+              >
+                <span className="mr-1.5 opacity-70 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
+                {esp.nombreEspacio}
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
+
+      {/* Layout principal: narrativa + sidebar */}
+      <div id="contenido-propuesta" className="scroll-mt-24 mx-auto max-w-7xl px-6 py-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
+        {/* Columna narrativa */}
+        <div className="space-y-10 min-w-0">
+          {varianteActual && (
+            <>
+              {/* Encabezado del espacio */}
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-500">
+                    Ambiente {String(espaciosActivos.findIndex((e) => e.id === espacioIdActual) + 1).padStart(2, '0')}
+                  </p>
+                  <h2 className="font-display text-display-publico font-semibold text-text-heading mt-1">{varianteActual.nombreEspacio}</h2>
+                  <p className="text-xs uppercase tracking-wide text-text-muted mt-1">{varianteActual.nombreVariante}</p>
+                </div>
+                {(() => {
+                  const espTotal = itemsPorEspacio.get(varianteActual.id)?.contractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0) ?? 0
+                  const espMo =
+                    parseNum(varianteActual.jornadasDesarrolloTecnico) * tarifaDev +
+                    parseNum(varianteActual.jornadasEnsamblajeTaller) * tarifaAssembly +
+                    parseNum(varianteActual.jornadasInstalacionObra) * tarifaInstall
+                  const espSubtotal = espTotal + espMo
+                  return espSubtotal > 0 ? (
+                    <p className="text-right">
+                      <span className="block text-[10px] uppercase tracking-[0.14em] text-text-muted">Inversión del ambiente</span>
+                      <strong className="font-display block text-xl text-text-heading">{formatCOP(espSubtotal)}</strong>
+                    </p>
+                  ) : null
+                })()}
               </div>
-              {esp.descripcion && <p className="text-sm text-text-muted mb-3">{esp.descripcion}</p>}
-              {colores.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {colores.map((c) => (
-                    <span key={c} className="rounded-full border border-border-subtle bg-bg-paper px-2 py-0.5 text-xs text-text-muted">{c}</span>
-                  ))}
+
+              {varianteActual.descripcion && (
+                <p className="-mt-6 max-w-prose text-sm leading-6 text-text-muted">{varianteActual.descripcion}</p>
+              )}
+
+              {/* Colores */}
+              {(varianteActual.colores as string[]).filter(Boolean).length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Materiales y acabados</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(varianteActual.colores as string[]).filter(Boolean).map((c) => (
+                      <span key={c} className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-bg-raised px-3 py-1 text-xs text-text-muted">
+                        <span className="h-2 w-2 rounded-full bg-gold-400" />
+                        {c}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Ítems incluidos */}
+              {/* Dos carriles visuales: Diseño (60%) + Referencia (40%) */}
+              {((varianteActual.fotosDisenio as string[]).filter(Boolean).length > 0 ||
+                (varianteActual.fotosReferencia as string[]).filter(Boolean).length > 0) && (
+                <div className="grid grid-cols-1 sm:grid-cols-[60%_40%] gap-4">
+                  <GalleryRail
+                    fotos={toGalleryImages(varianteActual.fotosDisenio, varianteActual.nombreEspacio)}
+                    etiqueta="Diseño"
+                    onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
+                  />
+                  <GalleryRail
+                    fotos={toGalleryImages(varianteActual.fotosReferencia, varianteActual.nombreEspacio)}
+                    etiqueta="Referencia"
+                    onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
+                  />
+                </div>
+              )}
+
+              {/* SelectorVariantes */}
+              {espacioActualVariantes.length > 1 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Variantes</p>
+                  <div className="flex flex-wrap gap-2">
+                    {espacioActualVariantes.map((var_) => (
+                      <button
+                        key={var_.id}
+                        type="button"
+                        onClick={() => setVarianteSeleccionadaId(var_.id)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors duration-fast ${
+                          varianteSeleccionadaId === var_.id || (varianteSeleccionadaId === null && var_.activa)
+                            ? 'bg-gold-500 text-white'
+                            : 'bg-bg-raised border border-border-subtle text-text-heading hover:border-border-brand'
+                        }`}
+                      >
+                        {var_.nombreVariante}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Qué incluye — ítems siempre visibles con imagen (ver nota de refinamiento arriba) */}
+              <section>
+                <div className="flex items-baseline justify-between gap-4">
+                  <h3 className="font-display text-xl text-text-heading">Qué incluye</h3>
+                  <span className="text-xs text-text-muted">{contractualesActuales.length} items</span>
+                </div>
+                {contractualesActuales.length > 0 ? (
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {contractualesActuales.map((item) => (
+                      <ItemCard
+                        key={item.id}
+                        item={item}
+                        producto={item.catalogoId ? store.catalogo.obtenerPorId(item.catalogoId) : undefined}
+                        onZoom={(imagenes, index) => setZoom({ imagenes, index })}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-text-muted">El alcance detallado se confirmará con el equipo comercial.</p>
+                )}
+              </section>
+
+              {/* Desglose financiero técnico (MO + referenciales) — accordion cerrado por defecto */}
+              <DetalleTecnico
+                referenciales={referencialesActuales}
+                jornadasDev={varianteActual.jornadasDesarrolloTecnico}
+                jornadasEns={varianteActual.jornadasEnsamblajeTaller}
+                jornadasInst={varianteActual.jornadasInstalacionObra}
+                tarifaDev={tarifaDev}
+                tarifaAssembly={tarifaAssembly}
+                tarifaInstall={tarifaInstall}
+              />
+            </>
+          )}
+
+          {/* ResumenFinanciero — versión mobile (aparece en flujo, no sticky) */}
+          <section id="resumen-movil" className="lg:hidden scroll-mt-24 rounded-lg border border-border-subtle bg-bg-raised p-6 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-4">Inversión total</h2>
+            <div className="space-y-1.5 text-sm">
+              <div className="flex justify-between"><span className="text-text-muted">Materiales</span><span className="font-mono">{formatCOP(materialesTotal)}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">Mano de obra</span><span className="font-mono">{formatCOP(moTotal)}</span></div>
+              {moDev > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Desarrollo técnico</span><span className="font-mono">{formatCOP(moDev)}</span></div>}
+              {moEns > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
+              {moInst > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
+              {costosOperativos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos operativos</span><span className="font-mono">{formatCOP(costosOperativos)}</span></div>}
+              {imprevistos > 0 && <div className="flex justify-between"><span className="text-text-muted">Imprevistos</span><span className="font-mono">{formatCOP(imprevistos)}</span></div>}
+              {descuento > 0 && <div className="flex justify-between"><span className="text-text-muted">Descuento</span><span className="font-mono text-red-600">−{formatCOP(descuento)}</span></div>}
+              {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{ajuste > 0 ? '+' : '−'}{formatCOP(Math.abs(ajuste))}</span></div>}
+              {iva > 0 && <hr className="border-border-subtle my-2" />}
+              {iva > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">Subtotal</span><span className="font-mono">{formatCOP(subtotal)}</span></div>}
+              {iva > 0 && <div className="flex justify-between"><span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span><span className="font-mono">{formatCOP(iva)}</span></div>}
+              <hr className="border-border-subtle my-2" />
+              <div className="flex justify-between items-baseline border-l-2 border-gold-400 pl-3">
+                <span className="text-sm font-medium text-text-heading">Inversión total</span>
+                <span className="font-display text-xl text-text-heading">{formatCOP(total)}</span>
+              </div>
+            </div>
+          </section>
+
+          {/* PlanPagos — solo si hay contrato (R7/CA-7/CA-8) */}
+          {contrato && hitosList.length > 0 && (
+            <section className="rounded-lg border border-border-subtle bg-bg-raised p-6 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-3">Plan de pagos</h2>
               <div className="space-y-1">
-                {contractuales.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm border-b border-border-subtle/50 py-1.5 last:border-0">
-                    <span className="text-text-heading">{item.nombrePersonalizado ?? 'Ítem'} <span className="text-text-muted">× {item.cantidad}</span></span>
-                    <span className="font-mono text-text-heading">{formatCOP(parseNum(item.totalLinea))}</span>
+                {hitosList.map((h) => (
+                  <div key={h.id} className="flex justify-between text-sm border-b border-border-subtle/50 py-1.5 last:border-0">
+                    <span>{h.orden}. {h.razon}</span>
+                    <span className="font-mono">{h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCOP(parseNum(h.montoOPorcentaje))}</span>
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-text-muted mt-3">Garantía: {contrato.garantiaAnios} años · Plazo: {contrato.plazoEjecucionTexto}</p>
+            </section>
+          )}
+        </div>
 
-              {/* Estimado referencial — fuera del total */}
-              {referenciales.length > 0 && (
-                <div className="mt-3 border-t border-dashed border-amber-300 pt-3">
-                  <p className="text-[11px] font-semibold uppercase text-amber-700 mb-1.5">Estimado referencial</p>
-                  {Object.entries(
-                    referenciales.reduce<Record<string, ItemVariante[]>>((acc, it) => {
-                      const key = it.grupoReferencial?.trim() || 'Otros'
-                      acc[key] = acc[key] ?? []
-                      acc[key].push(it)
-                      return acc
-                    }, {})
-                  ).map(([grupo, items]) => (
-                    <div key={grupo} className="mb-1.5 last:mb-0">
-                      <p className="text-xs font-medium text-text-muted">{grupo}</p>
-                      {items.map((it) => (
-                        <div key={it.id} className="flex justify-between text-xs text-text-muted pl-2">
-                          <span>{it.nombrePersonalizado ?? 'Ítem'}</span>
-                          <span className="font-mono">{formatCOP(parseNum(it.totalLinea))}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                  <p className="text-[11px] text-text-muted italic mt-1">Inversión estimada con terceros — no incluida en el total.</p>
+        {/* Sidebar financiero — desktop únicamente, sticky */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-[212px] space-y-6">
+            <section className="rounded-lg border border-border-subtle bg-bg-raised p-5 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-4">Inversión total</h2>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-text-muted">Materiales</span><span className="font-mono">{formatCOP(materialesTotal)}</span></div>
+                <div className="flex justify-between"><span className="text-text-muted">Mano de obra</span><span className="font-mono">{formatCOP(moTotal)}</span></div>
+                {moDev > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Desarrollo técnico</span><span className="font-mono">{formatCOP(moDev)}</span></div>}
+                {moEns > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
+                {moInst > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
+                {costosOperativos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos operativos</span><span className="font-mono">{formatCOP(costosOperativos)}</span></div>}
+                {imprevistos > 0 && <div className="flex justify-between"><span className="text-text-muted">Imprevistos</span><span className="font-mono">{formatCOP(imprevistos)}</span></div>}
+                {descuento > 0 && <div className="flex justify-between"><span className="text-text-muted">Descuento</span><span className="font-mono text-red-600">−{formatCOP(descuento)}</span></div>}
+                {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{ajuste > 0 ? '+' : '−'}{formatCOP(Math.abs(ajuste))}</span></div>}
+                {iva > 0 && <hr className="border-border-subtle my-2" />}
+                {iva > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">Subtotal</span><span className="font-mono">{formatCOP(subtotal)}</span></div>}
+                {iva > 0 && <div className="flex justify-between"><span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span><span className="font-mono">{formatCOP(iva)}</span></div>}
+                <hr className="border-border-subtle my-2" />
+                <div className="border-l-2 border-gold-400 pl-3">
+                  <span className="block text-xs font-medium text-text-muted">Inversión total</span>
+                  <span className="font-display text-2xl text-text-heading">{formatCOP(total)}</span>
                 </div>
-              )}
-            </div>
-          )
-        })}
-      </section>
-
-      {/* DesgloseMO */}
-      <section className="mb-8 rounded-lg border border-border-subtle bg-bg-raised p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-3">Mano de obra</h2>
-        <div className="grid gap-2 text-sm sm:grid-cols-3">
-          <p className="text-text-muted">Desarrollo técnico <span className="block font-mono text-text-heading">{formatCOP(moDev)}</span></p>
-          <p className="text-text-muted">Ensamblaje <span className="block font-mono text-text-heading">{formatCOP(moEns)}</span></p>
-          <p className="text-text-muted">Instalación <span className="block font-mono text-text-heading">{formatCOP(moInst)}</span></p>
-        </div>
-      </section>
-
-      {/* ResumenFinanciero */}
-      <section className="mb-8 rounded-lg border border-border-subtle bg-bg-paper p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-4">Inversión total</h2>
-        <div className="space-y-1.5 text-sm">
-          <div className="flex justify-between"><span className="text-text-muted">Materiales</span><span className="font-mono">{formatCOP(materialesTotal)}</span></div>
-          <div className="flex justify-between"><span className="text-text-muted">Mano de obra</span><span className="font-mono">{formatCOP(moTotal)}</span></div>
-          {iva > 0 && <div className="flex justify-between"><span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span><span className="font-mono">{formatCOP(iva)}</span></div>}
-          <hr className="border-border-subtle my-2" />
-          <div className="flex justify-between text-lg font-semibold"><span>Inversión total</span><span className="font-mono text-brand">{formatCOP(total)}</span></div>
-        </div>
-      </section>
-
-      {/* PlanPagos — solo si hay contrato (R7/CA-7/CA-8) */}
-      {contrato && hitosList.length > 0 && (
-        <section className="rounded-lg border border-border-subtle bg-bg-raised p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-3">Plan de pagos</h2>
-          <div className="space-y-1">
-            {hitosList.map((h) => (
-              <div key={h.id} className="flex justify-between text-sm border-b border-border-subtle/50 py-1.5 last:border-0">
-                <span>{h.orden}. {h.razon}</span>
-                <span className="font-mono">{h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCOP(parseNum(h.montoOPorcentaje))}</span>
               </div>
-            ))}
+            </section>
           </div>
-          <p className="text-xs text-text-muted mt-3">Garantía: {contrato.garantiaAnios} años · Plazo: {contrato.plazoEjecucionTexto}</p>
-        </section>
+        </aside>
+      </div>
+
+      {/* Barra flotante móvil con acceso al resumen */}
+      {total > 0 && (
+        <a
+          href="#resumen-movil"
+          className="fixed inset-x-3 bottom-3 z-header flex min-h-14 items-center justify-between rounded-2xl border border-gold-400 bg-gold-700 px-4 text-white shadow-lg sm:hidden"
+        >
+          <span>
+            <span className="block text-[10px] uppercase tracking-[0.14em] text-white/70">Inversión total</span>
+            <strong className="text-sm">{formatCOP(total)}</strong>
+          </span>
+          <span className="text-sm font-medium">Ver resumen</span>
+        </a>
+      )}
+
+      {zoom && (
+        <GalleryOverlay
+          imagenes={zoom.imagenes}
+          initialIndex={zoom.index}
+          onClose={() => setZoom(null)}
+        />
       )}
     </div>
   )

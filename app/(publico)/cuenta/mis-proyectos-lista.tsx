@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
-import { Button } from '@/components/veta/button'
+import { LinkButton, buttonClassName } from '@/components/veta/button'
 import { LogoutButton } from '@/components/veta/logout-button'
 import { useDataStore } from '@/lib/data'
 import type { EstadoProyecto } from '@/lib/data'
@@ -98,11 +98,9 @@ export function MisProyectosLista({ clienteId }: MisProyectosListaProps) {
           {cliente && <p className="text-sm text-text-muted mt-1">{cliente.nombre}</p>}
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/cuenta/garantia">
-            <Button variant="ghost" size="md">
-              Garantía
-            </Button>
-          </Link>
+          <LinkButton href="/cuenta/garantia" variant="ghost" size="md">
+            Garantía
+          </LinkButton>
           <LogoutButton />
         </div>
       </header>
@@ -140,9 +138,13 @@ export function MisProyectosLista({ clienteId }: MisProyectosListaProps) {
                       <p className="text-sm text-text-muted">{proyecto.direccionObra}</p>
                     )}
                   </div>
-                  <Button variant="ghost" size="md">
+                  {/* D-02/D-03 (re-auditoría 2026-08-10): antes era un <Button> (=<button>) real acá
+                      adentro -- pero toda la card ya es el <Link>, así que era un botón interactivo
+                      sin onClick propio, anidado en otro elemento interactivo. Es una etiqueta visual,
+                      no un segundo control: span no interactivo con el mismo look de Button. */}
+                  <span className={buttonClassName('ghost', 'md')} aria-hidden>
                     Ver detalle
-                  </Button>
+                  </span>
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-4 text-sm text-text-muted">

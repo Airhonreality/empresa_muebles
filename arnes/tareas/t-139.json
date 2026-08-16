@@ -1,0 +1,37 @@
+{
+  "id": "t-139",
+  "nombre": "P-27 Catálogo: formulario responsive a dos columnas (edición + slider de imágenes/ficha de producto) + galeriaImagenesUrl",
+  "descripcion": "Punto 3 del mensaje de Javier (omitido en el mensaje original, que saltó de '2.' a '4.' — agregado por Javier directamente en input_diseno_javier_20260815.md el 2026-08-15). Pide reestructurar el formulario de creación/edición del catálogo (P-27) a dos columnas en desktop/tablet: col.1 formulario, col.2 slider de imágenes + datos básicos, reutilizable también como ficha de presentación cliente-final. Javier ya tomó 3 decisiones por escrito en el archivo de input (no las tomó este agente): (1) agregar galeriaImagenesUrl: string[] a productos_catalogo, mismo patrón que galeriaPortafolioUrl/fotosEspacio — MUTACIÓN DE SCHEMA; (2) la vista de dos columnas es un panel a pantalla completa dentro de /erp/catalogo, preserva el deep-link ?source=cotizador&proyectoId= (R9); (3) la columna derecha es un componente standalone ProductoFicha + preview en vivo, reutilizable, y F-08 (propuesta pública) lo adopta al final reemplazando su GaleriaCarril local por la primitiva gallery-rail compartida.",
+  "objetivo": "disenio_p27_catalogo_diseno_desarrollo.md queda actualizado con la especificación del panel de dos columnas, ProductoFicha standalone, el campo galeriaImagenesUrl y la adopción futura en F-08 — siguiendo el proceso que Javier pidió explícitamente: revisar el disenio actual → revisar backlog_auditoria_pantallas.md + checklist_progreso_pantallas.md → solo entonces queda listo para que el Iniciador planifique código.",
+  "prioridad": "Alta",
+  "estado": "Cerrada — checkpoint del Supervisor confirmado en vivo (2026-08-15: \"pero si ya veo que todo el catalogo esta completo? cierra ya esas tareas\"), verificado contra la DB real: columna galeria_imagenes_url existe en dev-local (jsonb, default []), 8/8 migraciones aplicadas (drizzle.__drizzle_migrations), sin drift.",
+  "zona": "lineas/ola7/pantallas",
+  "tipo": "ui",
+  "riesgo": "alto",
+  "riesgo_nota": "La UI en sí es riesgo bajo, pero la tarea incluye una mutación de schema (galeriaImagenesUrl en productos_catalogo) que por tabla de clasificación (AGENTS.md/roles) es tipo datos_contrato, riesgo alto, checkpoint obligatorio. Se sube la clasificación de toda la tarea a 'alto' por esa pieza, no se fragmenta el riesgo dentro del mismo documento de diseño.",
+  "intencion_negocio": "Texto original de Javier en arnes/lineas/ola7/tecnico/input_diseno_javier_20260815.md, sección 'Punto 3' (agregada 2026-08-15).",
+  "archivos_afectados": [
+    "arnes/lineas/ola7/pantallas/disenio_p27_catalogo_diseno_desarrollo.md (modificar — solo diseño, sin código)"
+  ],
+  "criterios_aceptacion_preliminares": [
+    "Cita disenio_p27_catalogo_diseno_desarrollo.md actual antes de proponer cambios (no reescribe desde cero)",
+    "Revisa backlog_auditoria_pantallas.md y checklist_progreso_pantallas.md y deja constancia explícita de qué encontró ahí relevante a P-27, tal como Javier pidió",
+    "galeriaImagenesUrl se declara explícitamente como mutación de schema pendiente de checkpoint del Supervisor antes de tocar lib/db/schema.ts o lib/data/contracts.ts — no se asume aprobada solo porque está en el input",
+    "El deep-link ?source=cotizador&proyectoId= (R9) se preserva explícitamente en la nueva estructura de panel",
+    "ProductoFicha se especifica como componente standalone reusable, con su contrato de props, y se declara el punto de adopción futura en F-08 (disenio_F08_propuesta_publica.md) como fuera de alcance de esta tarea (solo se anota la intención)"
+  ],
+  "plan_ref": "pendiente — Iniciador escribe plan_t-139.md solo después de que el diseño quede aprobado por el Supervisor Y el checkpoint de schema esté explícito",
+  "dependencias": [
+    "arnes/lineas/ola7/pantallas/disenio_p27_catalogo_diseno_desarrollo.md",
+    "arnes/lineas/ola7/tecnico/backlog_auditoria_pantallas.md",
+    "arnes/lineas/ola7/tecnico/checklist_progreso_pantallas.md",
+    "arnes/lineas/ola7/pantallas/disenio_F08_propuesta_publica.md (referencia de adopción futura, no se modifica en esta tarea)",
+    "arnes/nucleo/REGISTRO_DE_ENTIDADES.md (entidad productos_catalogo)"
+  ],
+  "notas": [
+    "No se toca código ni schema en esta tarea. Producto: solo el archivo de diseño actualizado.",
+    "Javier ya decidió por escrito el patrón de galeriaImagenesUrl (mismo que ARCH-012/galeriaPortafolioUrl) — el diseño lo documenta, pero el checkpoint formal de mutación de schema (AGENTS.md: 'No se debe modificar el schema de datos sin pasar por el checkpoint de Supervisor') se deja explícito como paso separado antes de que Código toque lib/db/schema.ts."
+  ],
+  "relacionado": ["t-136", "t-137", "t-138", "disenio_p27_catalogo_diseno_desarrollo.md", "disenio_F08_propuesta_publica.md"],
+  "fecha_creacion": "2026-08-15"
+}

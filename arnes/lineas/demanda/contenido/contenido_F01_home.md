@@ -102,7 +102,7 @@
 | Elemento | Copy | Estado | Fuente |
 |---|---|---|---|
 | H2 de la sección | Proyectos que hablan por nosotros | Verificado | Tono Creador Experto: los proyectos hablan, no la publicidad |
-| Proyecto 1 | Primer caso documentado de portafolio. Si Jose Talero (I-050) tiene documentación completa (antes/después + testimonio), va primero. Si no, el proyecto canónico de `plan_f10.md` (Cocina Márquez). | Pendiente de selección | I-050, `plan_f10.md`, F-03 |
+| Proyecto 1 | Primer caso documentado de portafolio. Si Jose Talero (I-050) tiene documentación completa (antes/después + testimonio), va primero. Si no, el proyecto canónico de `plan_f10_migracion.md` (Cocina Márquez). | Pendiente de selección | I-050, `plan_f10_migracion.md`, F-03 |
 | Proyecto 2 | Segundo proyecto documentado. | Pendiente | F-03 |
 | Proyecto 3 | Tercer proyecto documentado. | Pendiente | F-03 |
 | CTA debajo de los 3 proyectos | Ver portafolio completo | Verificado | → F-03 |

@@ -95,11 +95,13 @@ export default function CuentasCobroPage() {
   })
 
   const tieneObligacionPagada = useCallback((cuenta: CuentaCobroProveedor): boolean => {
-    return obligaciones.some(o => o.proveedorId === cuenta.proveedorId && o.estado === 'pagado')
+    // P-23 Fix: usar obligacionId específica en vez de matchear cualquier obligación del proveedor.
+    if (!cuenta.obligacionId) return false
+    return obligaciones.some(o => o.id === cuenta.obligacionId && o.estado === 'pagado')
   }, [obligaciones])
 
-  const handleCrearCuenta = useCallback(() => {
-    const result = store.cuentasCobroProveedor.crear({
+  const handleCrearCuenta = useCallback(async () => {
+    const result = await store.cuentasCobroProveedor.crear({
       proveedorId: formCrear.proveedorId,
       concepto: formCrear.concepto,
       valor: formCrear.valor,
@@ -121,25 +123,25 @@ export default function CuentasCobroPage() {
     }
   }, [formCrear, store])
 
-  const handleVincularOC = useCallback((cuentaId: string, ocId: string) => {
-    store.cuentasCobroProveedor.vincularOC(cuentaId, ocId)
+  const handleVincularOC = useCallback(async (cuentaId: string, ocId: string) => {
+    await store.cuentasCobroProveedor.vincularOC(cuentaId, ocId)
     setCuentaAVincular(null)
   }, [store])
 
-  const handleAdjuntarFactura = useCallback(() => {
+  const handleAdjuntarFactura = useCallback(async () => {
     if (!cuentaAFactura || !urlFactura.trim()) return
-    store.cuentasCobroProveedor.adjuntarFactura(cuentaAFactura.id, urlFactura.trim())
+    await store.cuentasCobroProveedor.adjuntarFactura(cuentaAFactura.id, urlFactura.trim())
     setCuentaAFactura(null)
     setUrlFactura('')
   }, [cuentaAFactura, urlFactura, store])
 
-  const handleMarcarPagada = useCallback((id: string) => {
-    store.cuentasCobroProveedor.marcarPagada(id)
+  const handleMarcarPagada = useCallback(async (id: string) => {
+    await store.cuentasCobroProveedor.marcarPagada(id)
   }, [store])
 
-  const handleAnular = useCallback(() => {
+  const handleAnular = useCallback(async () => {
     if (!cuentaAAnular) return
-    store.cuentasCobroProveedor.anular(cuentaAAnular.id)
+    await store.cuentasCobroProveedor.anular(cuentaAAnular.id)
     setCuentaAAnular(null)
   }, [cuentaAAnular, store])
 

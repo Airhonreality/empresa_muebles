@@ -1,0 +1,56 @@
+{
+  "id": "t-134",
+  "nombre": "F-03 Portafolio: SEO/OG real en el detalle público (Server Component + generateMetadata)",
+  "descripcion": "app/(publico)/portafolio/[slug]/page.tsx era 'use client', así que Next.js no podía exportar generateMetadata() ahí — los bots de redes sociales (WhatsApp, Facebook, LinkedIn, etc.) nunca veían título/descripción/imagen dinámicos al compartir un enlace de proyecto, solo los meta tags genéricos del sitio. Bug real confirmado de la Auditoría 2026-08-15 (a diferencia de otros hallazgos de esa misma auditoría que sobreestimaban la severidad general del subsistema, ver t-133).",
+  "objetivo": "El detalle público de un proyecto de portafolio genera metadata SEO/OpenGraph real (title, description, og:image) en servidor, sin cambiar el comportamiento visual/interactivo existente (hero, filmstrip, lightbox, JSON-LD).",
+  "prioridad": "Alta",
+  "estado": "Completada (código)",
+  "fecha_resolucion": "2026-08-15",
+  "resolucion": "Split en 3 archivos: (1) app/(publico)/portafolio/[slug]/page.tsx reescrito como Server Component async con generateMetadata() + export const dynamic = 'force-dynamic' (evita que next build intente resolver datos reales en tiempo de build). (2) app/(publico)/portafolio/[slug]/PortafolioDetalleClient.tsx nuevo: Client Component con todo el JSX/estado interactivo anterior (hero, filmstrip, GalleryOverlay con navegación por teclado, JSON-LD), recibe proyecto ya resuelto como prop. (3) lib/data/actions/portafolio.ts: agrega obtenerPortafolioPorSlugAction(slug), lectura dual DATA_IMPL (drizzle consulta directa vía Drizzle; mock usa getDataStore() server-only) replicando 1:1 el patrón ya establecido en lib/auth/session.ts:77-89 — único precedente en el repo de lectura dual mock/drizzle fuera de React.",
+  "hallazgo_no_previsto": "Al mover el efecto de teclado (Escape/flechas) del lightbox al nuevo archivo, un primer borrador lo escribió como useState() en vez de useEffect() (copy-paste apurado) — se habría roto el listener silenciosamente (nunca se registra, tsc no lo detecta porque useState también acepta una función inicializadora). Corregido antes de correr verificación: import correcto de useEffect y arreglo de dependencias [onClose, onPrev, onNext] igual al original.",
+  "verificacion_mecanica": [
+    "npx tsc --noEmit: 0 errores",
+    "npx eslint \"app/(publico)/portafolio/**/*.tsx\" \"lib/data/actions/portafolio.ts\": 0 errores, 4 warnings preexistentes (no-img-element)",
+    "DATA_IMPL=mock npx next build: 31/31 rutas OK; /portafolio/[slug] aparece como ƒ (Dynamic), no estática — confirma que force-dynamic tomó efecto"
+  ],
+  "no_verificado": "No se pudo levantar npm run dev de forma estable en este sandbox (el proceso backgroundeado no queda accesible por curl tras dos intentos) para un smoke test de navegador real, ni hay entorno con Neon real en esta sesión para ejercer la rama DATA_IMPL=drizzle de obtenerPortafolioPorSlugAction en vivo. Pendiente que el Supervisor confirme visualmente con npm run dev o el preview de Vercel una vez cortado DATA_IMPL=drizzle — mismo tipo de límite que quedó documentado en t-132 (no_verificado, dos pestañas de navegador reales).",
+  "dependencias": [
+    "lib/auth/session.ts (patrón de lectura dual DATA_IMPL replicado)",
+    "lib/db/schema.ts (tabla portafolio, sin cambios)",
+    "lib/data/contracts.ts (interfaz Portafolio, sin cambios)"
+  ],
+  "entregables": [
+    {
+      "nombre": "app/(publico)/portafolio/[slug]/page.tsx",
+      "formato": "TypeScript/TSX",
+      "ubicacion": "app/(publico)/portafolio/[slug]/page.tsx",
+      "detalle": "Server Component con generateMetadata() real."
+    },
+    {
+      "nombre": "app/(publico)/portafolio/[slug]/PortafolioDetalleClient.tsx",
+      "formato": "TypeScript/TSX",
+      "ubicacion": "app/(publico)/portafolio/[slug]/PortafolioDetalleClient.tsx",
+      "detalle": "Client Component con la interactividad de galería/lightbox, sin cambios de comportamiento."
+    },
+    {
+      "nombre": "obtenerPortafolioPorSlugAction",
+      "formato": "TypeScript (Server Action)",
+      "ubicacion": "lib/data/actions/portafolio.ts",
+      "detalle": "Lectura server-only dual DATA_IMPL, reutilizable desde cualquier Server Component."
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "generateMetadata() devuelve title/description/openGraph.images reales para un slug existente — CUMPLIDO (verificado por código)",
+    "Un slug inexistente devuelve metadata de fallback y renderiza el estado 'no encontrado' sin error — CUMPLIDO (verificado por código, mismo comportamiento que antes)",
+    "Comportamiento visual/interactivo idéntico al original (hero, filmstrip, lightbox con teclado, JSON-LD) — CUMPLIDO, mismo JSX movido sin cambios funcionales (salvo la corrección del hallazgo useState→useEffect)",
+    "npx tsc --noEmit sale sin errores — CUMPLIDO",
+    "DATA_IMPL=mock npx next build compila las 31 rutas, /portafolio/[slug] queda dinámica — CUMPLIDO"
+  ],
+  "notas": [
+    "Autorizado y ejecutado en la misma sesión que t-133 por instrucción explícita del Supervisor (2026-08-15) — no quedó como trabajo futuro, mismo criterio que t-132.",
+    "Sienta un patrón reutilizable (Server Component + Client Component hijo + Server Action de lectura dual DATA_IMPL) para el mismo problema de SEO en otras páginas públicas de detalle (colecciones/[id], bitacora/[slug]) — quedan fuera de alcance de esta tarea.",
+    "plan_ref: arnes/lineas/ola7/plan_t-134.md"
+  ],
+  "relacionado": ["t-133", "t-119", "t-132", "disenio_F03_portafolio_proyectos.md"],
+  "fecha_creacion": "2026-08-15"
+}

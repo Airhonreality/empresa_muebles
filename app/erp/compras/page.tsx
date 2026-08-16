@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { Modal } from '@/components/veta/modal'
@@ -53,7 +54,7 @@ function getEstadoBadgeTone(estado: EstadoOrdenCompra): 'neutral' | 'warning' | 
   }
 }
 
-const ROLES_FLUJO_APROBACION = ['admin', 'finanzas', 'gerente']
+const ROLES_FLUJO_APROBACION = ['admin', 'finanzas']
 
 interface FormNuevaOrden {
   proyectoId: string
@@ -154,9 +155,9 @@ export default function ComprasPage() {
     guardCrearOk &&
     anticipoValido
 
-  const handleCrearOrden = useCallback(() => {
+  const handleCrearOrden = useCallback(async () => {
     if (!puedeCrear) return
-    const result = store.ordenesCompra.crear({
+    const result = await store.ordenesCompra.crear({
       proveedorId: formNueva.proveedorId,
       proyectoId: formNueva.proyectoId || null,
       montoTotal: formNueva.montoTotal,
@@ -170,9 +171,9 @@ export default function ComprasPage() {
     }
   }, [formNueva, puedeCrear, store])
 
-  const handleCrearProveedor = useCallback(() => {
+  const handleCrearProveedor = useCallback(async () => {
     if (!formProveedor.nombre.trim()) return
-    const nuevo = store.proveedores.crear({
+    const nuevo = await store.proveedores.crear({
       nombre: formProveedor.nombre.trim(),
       nit: formProveedor.nit.trim() || null,
       telefonoComercial: formProveedor.telefono.trim() || null,
@@ -185,24 +186,24 @@ export default function ComprasPage() {
     }
   }, [formProveedor, store])
 
-  const handleAprobar = useCallback((orden: OrdenCompra) => {
-    store.ordenesCompra.actualizarEstado(orden.id, 'aprobada')
+  const handleAprobar = useCallback(async (orden: OrdenCompra) => {
+    await store.ordenesCompra.actualizarEstado(orden.id, 'aprobada')
   }, [store])
 
-  const handleEnviarAPago = useCallback((orden: OrdenCompra) => {
-    store.ordenesCompra.actualizarEstado(orden.id, 'en_pago')
+  const handleEnviarAPago = useCallback(async (orden: OrdenCompra) => {
+    await store.ordenesCompra.actualizarEstado(orden.id, 'en_pago')
   }, [store])
 
-  const handleRechazar = useCallback(() => {
+  const handleRechazar = useCallback(async () => {
     if (!ordenARechazar || !motivoRechazo.trim()) return
-    store.ordenesCompra.actualizarEstado(ordenARechazar.id, 'rechazada')
+    await store.ordenesCompra.actualizarEstado(ordenARechazar.id, 'rechazada')
     setOrdenARechazar(null)
     setMotivoRechazo('')
   }, [ordenARechazar, motivoRechazo, store])
 
-  const handleCancelar = useCallback(() => {
+  const handleCancelar = useCallback(async () => {
     if (!ordenACancelar) return
-    store.ordenesCompra.actualizarEstado(ordenACancelar.id, 'cancelada')
+    await store.ordenesCompra.actualizarEstado(ordenACancelar.id, 'cancelada')
     setOrdenACancelar(null)
   }, [ordenACancelar, store])
 
@@ -288,7 +289,13 @@ export default function ComprasPage() {
                   return (
                     <tr key={orden.id} className="border-b border-border-subtle/50">
                       <td className="px-2 py-2 font-mono text-xs text-text-muted">{orden.codigoOrden}</td>
-                      <td className="px-2 py-2">{prov ? prov.nombre : orden.proveedorId}</td>
+                      <td className="px-2 py-2">
+                        {prov ? (
+                          <Link href={`/erp/compras/proveedores/${prov.id}`} className="text-brand hover:underline">
+                            {prov.nombre}
+                          </Link>
+                        ) : orden.proveedorId}
+                      </td>
                       <td className="px-2 py-2">
                         {proy ? proy.nombreProyecto : <span className="text-text-muted">Operativa</span>}
                       </td>
@@ -348,6 +355,9 @@ export default function ComprasPage() {
                               {orden.estado === 'pagada' ? 'Registrar recepción' : 'Ver recepción'}
                             </Button>
                           )}
+                          <Button variant="ghost" size="md" className="text-xs" onClick={() => router.push(`/erp/compras/${orden.id}`)}>
+                            Ver detalle
+                          </Button>
                         </div>
                       </td>
                     </tr>

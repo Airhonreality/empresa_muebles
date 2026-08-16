@@ -1,0 +1,37 @@
+{
+  "id": "t-127",
+  "nombre": "F10: Decisión de persistencia de escrituras + reactividad total (write-behind vs síncrono)",
+  "descripcion": "El contrato DataStore es síncrono. Análisis inicial subestimó el alcance: contó 23 archivos/44 escrituras en '2-3 pantallas del cotizador' cuando la cifra real es 43 archivos/305 lecturas y 96 escrituras (todos los verbos mutadores del contrato, no solo crear/actualizar/eliminar) repartidas en 25 archivos por todo el ERP. Además, los 45 consumidores de useDataStore() son TODOS 'use client' — el store corre en el navegador, y el driver `postgres` (postgres.js) no puede ejecutar ahí ni exponer credenciales de Neon al cliente. Eso descarta cualquier createDrizzleStore() llamado directo desde el cliente, con o sin await: hace falta un salto de red (Server Actions) sin importar la política elegida. El Supervisor exigió además reactividad total: cero recarga manual, cero pasos intermedios, para todo el equipo trabajando simultáneo — no negociable.",
+  "objetivo": "Decidir el mecanismo de persistencia de escrituras + reactividad multi-usuario para el adapter Drizzle.",
+  "prioridad": "Crítica",
+  "estado": "Resuelta",
+  "dependencias": ["lib/data/contracts.ts (DataStore síncrono)", "plan_f10_migracion.md §3.1b/§3.1d"],
+  "entregables": [
+    {
+      "nombre": "Decisión documentada",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/tecnico/plan_f10_migracion.md §3.1b (decisión) y §3.1d (arquitectura)",
+      "detalle": "Server Actions (escrituras confirmadas, sin fire-and-forget) + hidratación SSR inicial (sin loading flicker) + polling corto 2-4s con verificación liviana (reactividad multi-usuario sin websockets). Descarta (A) write-behind puro y (B) refactor async de las 305 lecturas por innecesario."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Supervisor decide arquitectura de persistencia + reactividad",
+      "detalle": "Elegido: Server Actions + hidratación SSR + polling corto (2-4s). Rechazadas explícitamente: recargar manualmente para ver cambios de otros, y websockets/pub-sub de terceros (infraestructura nueva no aprobada, requeriría checkpoint propio).",
+      "responsable": "Supervisor",
+      "estado": "Completado"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "Decisión registrada en plan_f10_migracion.md §3.1b/§3.1d — CUMPLIDO 2026-08-13",
+    "t-119, t-130, t-131 implementan según la decisión"
+  ],
+  "notas": [
+    "Bloqueo B-1: RESUELTO 2026-08-13. Ya no bloquea Fase 0.",
+    "Cifras corregidas quedan documentadas en §3.1b como referencia para no repetir la subestimación original."
+  ],
+  "relacionado": ["lib/data/contracts.ts", "lib/data/drizzle-impl.ts", "t-119", "t-130", "t-131"],
+  "fecha_creacion": "2026-08-13",
+  "fecha_resolucion": "2026-08-13"
+}

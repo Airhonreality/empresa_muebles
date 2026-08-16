@@ -128,9 +128,7 @@ export default function FinanzasParametrosPage() {
         { clave: PARAM_KEYS.reduccionComisionExtremoPct, valorNumeric: gates.reduccionComisionExtremoPct },
       ];
       
-      updates.forEach(update => {
-        store.parametros.actualizar(update.clave, update);
-      });
+      await Promise.all(updates.map(update => store.parametros.actualizar(update.clave, update)));
       
       setMensaje({ tipo: "exito", texto: "Parámetros guardados correctamente" });
      } catch {

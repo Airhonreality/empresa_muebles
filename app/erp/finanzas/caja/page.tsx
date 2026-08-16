@@ -91,9 +91,9 @@ export default function CajaPage() {
   // --- Autorizar pago ---
   const [autorizandoOc, setAutorizandoOc] = useState<string | null>(null)
 
-  const handleAutorizarPago = useCallback((ocId: string, cuentaId: string) => {
+  const handleAutorizarPago = useCallback(async (ocId: string, cuentaId: string) => {
     setAutorizandoOc(ocId)
-    const movimiento = store.caja.autorizarPago({ ordenCompraId: ocId, cuentaId, medioPago: 'transferencia' })
+    const movimiento = await store.caja.autorizarPago({ ordenCompraId: ocId, cuentaId, medioPago: 'transferencia' })
     if (movimiento) {
       setAutorizandoOc(null)
     } else {

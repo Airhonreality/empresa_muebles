@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useRef, useState, type DragEvent, type ClipboardEvent } from "react";
+import { uploadFileToR2 } from "@/lib/r2/upload";
 
 export interface ImagePickerProps {
   label: string;
@@ -9,19 +10,32 @@ export interface ImagePickerProps {
   className?: string;
   /** false = una sola imagen (reemplaza en vez de acumular). Default true. */
   multiple?: boolean;
+  /** Habilitar subida automática a Cloudflare R2. Default: false (solo previsualización local). */
+  uploadToR2?: boolean;
+  /** Prefijo para la clave en R2 (ej: 'portafolio/', 'cotizador/'). Default: 'portafolio'. */
+  r2Prefix?: string;
 }
 
 /* Primitiva ImagePicker (D4) — ÚNICO input de imagen del proyecto, por
    consistencia (pantallas privadas y públicas). Grid de miniaturas +
-   arrastrar/pegar/URL en un solo control. Sin backend de storage real (F10
-   mock): los archivos se previsualizan vía URL.createObjectURL, igual que el
-   resto de los datos mock, se resetean con el servidor. Tokens de
-   border-border-subtle/focus:shadow-ring-focus, mismo patrón que
+   arrastrar/pegar/URL en un solo control.
+   - Si uploadToR2=true: sube automáticamente a Cloudflare R2 y usa URLs permanentes.
+   - Si uploadToR2=false: usa URL.createObjectURL para previsualización local (mock).
+   Tokens de border-border-subtle/focus:shadow-ring-focus, mismo patrón que
    input-field.tsx. */
-export function ImagePicker({ label, value, onChange, className = "", multiple = true }: ImagePickerProps) {
+export function ImagePicker({
+  label,
+  value,
+  onChange,
+  className = "",
+  multiple = true,
+  uploadToR2 = false,
+  r2Prefix = "portafolio",
+}: ImagePickerProps) {
   const id = useId();
   const [urlDraft, setUrlDraft] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const agregar = useCallback((url: string) => {
@@ -32,10 +46,26 @@ export function ImagePicker({ label, value, onChange, className = "", multiple =
     onChange([...value, limpio]);
   }, [value, onChange, multiple]);
 
-  const agregarArchivo = useCallback((file: File) => {
+  const agregarArchivo = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    agregar(URL.createObjectURL(file));
-  }, [agregar]);
+    
+    if (uploadToR2) {
+      try {
+        setIsUploading(true);
+        const url = await uploadFileToR2(file, r2Prefix);
+        agregar(url);
+      } catch (error) {
+        console.error("Error al subir a R2:", error);
+        // Fallback a previsualización local si falla la subida
+        agregar(URL.createObjectURL(file));
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      // Previsualización local (comportamiento original)
+      agregar(URL.createObjectURL(file));
+    }
+  }, [agregar, uploadToR2, r2Prefix]);
 
   const quitar = (url: string) => onChange(value.filter((v) => v !== url));
 
@@ -93,41 +123,45 @@ export function ImagePicker({ label, value, onChange, className = "", multiple =
           </p>
         )}
       </div>
-      <div className="flex gap-2">
-        <input
-          id={id}
-          type="text"
-          value={urlDraft}
-          onChange={(e) => setUrlDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); agregar(urlDraft); setUrlDraft(""); }
-          }}
-          placeholder="https://..."
-          className="min-h-[36px] flex-1 rounded-sm border border-border-subtle bg-bg-paper px-2 text-xs text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-        />
-        <button
-          type="button"
-          onClick={() => { agregar(urlDraft); setUrlDraft(""); }}
-          className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt"
-        >
-          + URL
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          multiple={multiple}
-          className="hidden"
-          onChange={(e) => { Array.from(e.target.files ?? []).forEach(agregarArchivo); e.target.value = ""; }}
-        />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt"
-        >
-          Examinar
-        </button>
-      </div>
+       <div className="flex gap-2">
+         <input
+           id={id}
+           type="text"
+           value={urlDraft}
+           onChange={(e) => setUrlDraft(e.target.value)}
+           onKeyDown={(e) => {
+             if (e.key === "Enter") { e.preventDefault(); agregar(urlDraft); setUrlDraft(""); }
+           }}
+           placeholder="https://..."
+           className="min-h-[36px] flex-1 rounded-sm border border-border-subtle bg-bg-paper px-2 text-xs text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+           disabled={isUploading}
+         />
+         <button
+           type="button"
+           onClick={() => { agregar(urlDraft); setUrlDraft(""); }}
+           className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt disabled:opacity-50"
+           disabled={isUploading}
+         >
+           + URL
+         </button>
+         <input
+           ref={inputRef}
+           type="file"
+           accept="image/*"
+           multiple={multiple}
+           className="hidden"
+           onChange={(e) => { Array.from(e.target.files ?? []).forEach(agregarArchivo); e.target.value = ""; }}
+           disabled={isUploading}
+         />
+         <button
+           type="button"
+           onClick={() => inputRef.current?.click()}
+           className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt disabled:opacity-50"
+           disabled={isUploading}
+         >
+           {isUploading ? "Subiendo..." : "Examinar"}
+         </button>
+       </div>
     </div>
   );
 }

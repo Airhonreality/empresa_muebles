@@ -1,0 +1,2839 @@
+[
+  {
+    "namespace": "abonos_contrato",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 0,
+    "schemaFieldCount": 6,
+    "schemaFields": [
+      {
+        "key": "contrato_id",
+        "type": "relation",
+        "label": "Contrato",
+        "required": true,
+        "relation": "contratos"
+      },
+      {
+        "key": "numero_abono",
+        "type": "select",
+        "label": "Número de Abono",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "valor_abono",
+        "type": "number",
+        "label": "Valor Recibido ($)",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "fecha_recibido",
+        "type": "date",
+        "label": "Fecha de Recepción",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "observaciones",
+        "type": "text",
+        "label": "Observaciones",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "verificado",
+        "type": "boolean",
+        "label": "Verificado",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "ai_config",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 9,
+    "schemaFieldCount": 0,
+    "schemaFields": [],
+    "dataKeysSample": [
+      "active",
+      "api_key",
+      "custom_rules",
+      "manifest",
+      "model",
+      "provider"
+    ]
+  },
+  {
+    "namespace": "apoyo_tecnico",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 1,
+    "schemaFieldCount": 6,
+    "schemaFields": [
+      {
+        "key": "tipo_recurso",
+        "type": "select",
+        "label": "Tipo",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "imagen_url",
+        "type": "image",
+        "label": "Imagen",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "fecha_visita",
+        "type": "date",
+        "label": "Fecha_de_Visita",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas",
+        "type": "textarea",
+        "label": "Notas",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "lista_requisitos",
+        "type": "markdown",
+        "label": "Lista_de_Requisitos",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto",
+        "required": true,
+        "relation": "proyectos"
+      }
+    ],
+    "dataKeysSample": [
+      "fecha_visita",
+      "lista_requisitos",
+      "notas",
+      "proyecto_id",
+      "tipo_recurso"
+    ]
+  },
+  {
+    "namespace": "app_navbars",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 6,
+    "schemaFieldCount": 0,
+    "schemaFields": [],
+    "dataKeysSample": [
+      "brand",
+      "links",
+      "name"
+    ]
+  },
+  {
+    "namespace": "categorias_financieras",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 14,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "nombre",
+        "type": "text",
+        "label": "Nombre Categoría",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "tipo_flujo",
+        "type": "select",
+        "label": "Tipo de Flujo",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "subtipo",
+        "type": "select",
+        "label": "Subtipo",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Propósito Semántico",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "clientes",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 15,
+    "schemaFieldCount": 6,
+    "schemaFields": [
+      {
+        "key": "nombre",
+        "type": "text",
+        "label": "Nombre",
+        "required": true,
+        "relation": ""
+      },
+      {
+        "key": "documento",
+        "type": "text",
+        "label": "Documento",
+        "required": false,
+        "relation": ""
+      },
+      {
+        "key": "telefono",
+        "type": "text",
+        "label": "Teléfono",
+        "required": false,
+        "relation": ""
+      },
+      {
+        "key": "email",
+        "type": "text",
+        "label": "Email",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "domicilio",
+        "type": "text",
+        "label": "Domicilio / Dirección",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Descripcion Semantica",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "documento",
+      "domicilio",
+      "email",
+      "id",
+      "nombre",
+      "telefono"
+    ]
+  },
+  {
+    "namespace": "compras_materiales",
+    "classification": "business",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 10,
+    "schemaFields": [
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Descripcion",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "material_id",
+        "type": "relation",
+        "label": "Material Id",
+        "required": false,
+        "relation": "productos_catalogo"
+      },
+      {
+        "key": "cantidad",
+        "type": "number",
+        "label": "Cantidad",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "unidad_medida",
+        "type": "text",
+        "label": "Unidad Medida",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "costo_real_compra",
+        "type": "number",
+        "label": "Costo Real Compra",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "proveedor_id",
+        "type": "relation",
+        "label": "Proveedor Id",
+        "required": false,
+        "relation": "proveedores"
+      },
+      {
+        "key": "fecha_compra",
+        "type": "date",
+        "label": "Fecha Compra",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas",
+        "type": "text",
+        "label": "Notas",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "origen_proyecto",
+        "type": "relation",
+        "label": "Proyecto de Origen",
+        "required": false,
+        "relation": "proyectos"
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "comprobantes_financieros",
+    "classification": "business",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "numero_referencia",
+        "type": "text",
+        "label": "Ref / Factura",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "tipo",
+        "type": "select",
+        "label": "Tipo Comprobante",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "archivo_soporte",
+        "type": "file",
+        "label": "Archivo Soporte URL",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Notas",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "configuracion_comercial",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 23,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "llave",
+        "type": "text",
+        "label": "Clave única",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "valor",
+        "type": "textarea",
+        "label": "Valor",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "grupo",
+        "type": "select",
+        "label": "Grupo de Ajustes",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "etiqueta",
+        "type": "text",
+        "label": "Etiqueta Descriptiva",
+        "required": true,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "etiqueta",
+      "fuente",
+      "grupo",
+      "llave",
+      "valor"
+    ]
+  },
+  {
+    "namespace": "contratos",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 1,
+    "schemaFieldCount": 18,
+    "schemaFields": [
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto Origen",
+        "required": true,
+        "relation": "proyectos"
+      },
+      {
+        "key": "codigo_contrato",
+        "type": "text",
+        "label": "Código de Contrato",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "fecha_contrato",
+        "type": "date",
+        "label": "Fecha del Contrato",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "contratante_domicilio",
+        "type": "text",
+        "label": "Domicilio del Contratante",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "plazo_ejecucion_texto",
+        "type": "text",
+        "label": "Plazo de Ejecución (descripción)",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "holgura_dias",
+        "type": "number",
+        "label": "Holgura Operativa (días hábiles)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "garantia_anios",
+        "type": "number",
+        "label": "Garantía (años)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "objeto_items",
+        "type": "markdown",
+        "label": "Objeto del Contrato (lista de muebles)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "especificaciones_estructura",
+        "type": "text",
+        "label": "Estructura (materiales principales)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "especificaciones_herrajes",
+        "type": "text",
+        "label": "Herrajes y Accesorios",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "especificaciones_mesones",
+        "type": "text",
+        "label": "Mesones (si aplica)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "condiciones_desmonte",
+        "type": "text",
+        "label": "Desmonte y Disposición",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "valor_total",
+        "type": "number",
+        "label": "Valor Total del Contrato ($)",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado del Contrato",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "email_asunto",
+        "type": "text",
+        "label": "Asunto del Correo",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "email_cuerpo",
+        "type": "markdown",
+        "label": "Cuerpo del Correo",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Descripcion Semantica",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "hitos_pago",
+        "type": "json",
+        "label": "Hitos de Pago Personalizados",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "codigo_contrato",
+      "condiciones_desmonte",
+      "contratante_domicilio",
+      "email_asunto",
+      "email_cuerpo",
+      "especificaciones_estructura",
+      "especificaciones_herrajes",
+      "especificaciones_mesones",
+      "estado",
+      "fecha_contrato",
+      "garantia_anios",
+      "holgura_dias",
+      "objeto_items",
+      "plazo_ejecucion_texto",
+      "proyecto_id",
+      "valor_total"
+    ]
+  },
+  {
+    "namespace": "cuentas_financieras",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 6,
+    "schemaFieldCount": 6,
+    "schemaFields": [
+      {
+        "key": "nombre",
+        "type": "text",
+        "label": "Nombre de Cuenta",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "tipo",
+        "type": "select",
+        "label": "Tipo",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "saldo_inicial",
+        "type": "number",
+        "label": "Saldo Inicial",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "saldo_actual",
+        "type": "number",
+        "label": "Saldo Actual",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Descripción Semántica",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "descripcion_semantica",
+      "estado",
+      "nombre",
+      "saldo_actual",
+      "saldo_inicial",
+      "tipo"
+    ]
+  },
+  {
+    "namespace": "espacio_variantes",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 9,
+    "schemaFieldCount": 13,
+    "schemaFields": [
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto Perteneciente",
+        "required": true,
+        "relation": "proyectos"
+      },
+      {
+        "key": "nombre_espacio",
+        "type": "text",
+        "label": "Nombre del Espacio (e.g. Cocina)",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "nombre_variante",
+        "type": "text",
+        "label": "Nombre de la Variante / Alternativa",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "activa",
+        "type": "boolean",
+        "label": "Variante Seleccionada para Proyecto",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "jornadas_desarrollo_tecnico",
+        "type": "number",
+        "label": "Jornadas de Desarrollo Tecnico (Dias)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "jornadas_ensamblaje_taller",
+        "type": "number",
+        "label": "Jornadas de Ensamblaje en Taller (Dias)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "jornadas_instalacion_obra",
+        "type": "number",
+        "label": "Jornadas de Instalacion en Obra (Dias)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas_markdown",
+        "type": "markdown",
+        "label": "Notas en Markdown",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "imagenes",
+        "type": "text",
+        "label": "Diseños / Planos del Proyecto",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "colores",
+        "type": "text",
+        "label": "Colores",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Descripción del Espacio",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_alternativa",
+        "type": "text",
+        "label": "Descripción de Alternativa",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "visible_pdf",
+        "type": "boolean",
+        "label": "Visible en el PDF de Cotización",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "activa",
+      "colores",
+      "descripcion",
+      "descripcion_alternativa",
+      "imagenes",
+      "jornadas_desarrollo_tecnico",
+      "jornadas_ensamblaje_taller",
+      "jornadas_instalacion_obra",
+      "nombre_espacio",
+      "nombre_variante",
+      "notas_markdown",
+      "orden",
+      "orden_espacio",
+      "proyecto_id",
+      "visible_pdf"
+    ]
+  },
+  {
+    "namespace": "imagenes_espacio",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 24,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "espacio_variante_id",
+        "type": "relation",
+        "label": "Espacio Perteneciente",
+        "required": true,
+        "relation": "espacio_variantes"
+      },
+      {
+        "key": "imagen_url",
+        "type": "image",
+        "label": "Imagen de Diseño / Referente (URL)",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Descripción",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "orden",
+        "type": "number",
+        "label": "Orden",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "descripcion",
+      "espacio_variante_id",
+      "imagen_url",
+      "jornadas_ensamblaje_taller",
+      "jornadas_instalacion_obra",
+      "nombre_espacio",
+      "nombre_variante",
+      "orden"
+    ]
+  },
+  {
+    "namespace": "imagenes_portfolio",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 9,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "portfolio_id",
+        "type": "relation",
+        "label": "Portfolio",
+        "required": false,
+        "relation": "portfolio_publico"
+      },
+      {
+        "key": "imagen_url",
+        "type": "image",
+        "label": "Imagen",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Descripción",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "orden",
+        "type": "number",
+        "label": "Orden",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "descripcion",
+      "imagen_url",
+      "orden",
+      "portfolio_id"
+    ]
+  },
+  {
+    "namespace": "imagenes_prefabricado",
+    "classification": "business",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "prefabricado_id",
+        "type": "relation",
+        "label": "Prefabricado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "imagen_url",
+        "type": "image",
+        "label": "URL de Imagen",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Descripción",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "orden",
+        "type": "number",
+        "label": "Orden",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "items_obra_civil",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 12,
+    "schemaFieldCount": 9,
+    "schemaFields": [
+      {
+        "key": "variante_id",
+        "type": "relation",
+        "label": "Espacio/Variante Perteneciente",
+        "required": true,
+        "relation": "espacio_variantes"
+      },
+      {
+        "key": "categoria",
+        "type": "select",
+        "label": "Categoría",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "catalogo_id",
+        "type": "relation",
+        "label": "Seleccionar del Catálogo (opcional)",
+        "required": false,
+        "relation": "productos_catalogo"
+      },
+      {
+        "key": "descripcion_manual",
+        "type": "text",
+        "label": "Descripción Manual (si no hay ítem de catálogo)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "unidad_medida",
+        "type": "text",
+        "label": "Unidad de Medida",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "cantidad",
+        "type": "number",
+        "label": "Cantidad",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "precio_unitario",
+        "type": "number",
+        "label": "Precio Unitario ($)",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "total_linea",
+        "type": "number",
+        "label": "Total Línea ($)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas",
+        "type": "text",
+        "label": "Notas",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "cantidad",
+      "catalogo_id",
+      "categoria",
+      "descripcion_manual",
+      "notas",
+      "precio_unitario",
+      "total_linea",
+      "unidad_medida",
+      "variante_id"
+    ]
+  },
+  {
+    "namespace": "items_variante",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 156,
+    "schemaFieldCount": 11,
+    "schemaFields": [
+      {
+        "key": "variante_id",
+        "type": "relation",
+        "label": "Variante Perteneciente",
+        "required": true,
+        "relation": "espacio_variantes"
+      },
+      {
+        "key": "catalogo_id",
+        "type": "relation",
+        "label": "Seleccionar del Catalogo de Insumos",
+        "required": true,
+        "relation": "productos_catalogo"
+      },
+      {
+        "key": "unidad_medida",
+        "type": "text",
+        "label": "Unidad de Medida",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "cantidad",
+        "type": "number",
+        "label": "Cantidad / Medida",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "precio_unitario",
+        "type": "number",
+        "label": "Precio Unitario ($)",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "total_linea",
+        "type": "number",
+        "label": "Total Material ($)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "origen_prefabricado_id",
+        "type": "relation",
+        "label": "Origen Prefabricado",
+        "required": false,
+        "relation": "prefabricados"
+      },
+      {
+        "key": "imagen_url",
+        "type": "image",
+        "label": "URL de Imagen del Ítem",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas_compra",
+        "type": "text",
+        "label": "Notas de Compra (Taller)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "anulado",
+        "type": "boolean",
+        "label": "Anulado por Taller",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "compra_generada",
+        "type": "boolean",
+        "label": "Compra Generada",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "cantidad",
+      "catalogo_id",
+      "imagen_url",
+      "precio_unitario",
+      "total_linea",
+      "unidad_medida",
+      "variante_id"
+    ]
+  },
+  {
+    "namespace": "leads",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 3,
+    "schemaFieldCount": 12,
+    "schemaFields": [
+      {
+        "key": "nombre_completo",
+        "type": "text",
+        "label": "Nombre Completo",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "telefono_whatsapp",
+        "type": "text",
+        "label": "Telefono Whatsapp",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "email",
+        "type": "text",
+        "label": "Email",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "barrio_zona",
+        "type": "text",
+        "label": "Barrio Zona",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "tipo_espacio",
+        "type": "select",
+        "label": "Tipo de Espacio",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "mensaje",
+        "type": "textarea",
+        "label": "Mensaje",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "gclid",
+        "type": "text",
+        "label": "\"Google",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado_proyecto",
+        "type": "select",
+        "label": "\"Estado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "score_conversion",
+        "type": "number",
+        "label": "\"Score",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "utm_source",
+        "type": "text",
+        "label": "\"UTM",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "utm_medium",
+        "type": "text",
+        "label": "\"UTM",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "utm_campaign",
+        "type": "text",
+        "label": "\"UTM",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "barrio_zona",
+      "email",
+      "mensaje",
+      "nombre_completo",
+      "telefono_whatsapp",
+      "tipo_espacio"
+    ]
+  },
+  {
+    "namespace": "movimientos_financieros",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 0,
+    "schemaFieldCount": 11,
+    "schemaFields": [
+      {
+        "key": "fecha",
+        "type": "date",
+        "label": "Fecha Asentado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Descripción del Movimiento",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "tipo",
+        "type": "select",
+        "label": "Tipo",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "monto",
+        "type": "number",
+        "label": "Monto Real ($)",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado Ledger",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "cuenta_origen_id",
+        "type": "relation",
+        "label": "Cuenta Origen",
+        "required": false,
+        "relation": "cuentas_financieras"
+      },
+      {
+        "key": "cuenta_destino_id",
+        "type": "relation",
+        "label": "Cuenta Destino (Solo Traslado)",
+        "required": false,
+        "relation": "cuentas_financieras"
+      },
+      {
+        "key": "categoria_id",
+        "type": "relation",
+        "label": "Categoría",
+        "required": false,
+        "relation": "categorias_financieras"
+      },
+      {
+        "key": "obligacion_id",
+        "type": "relation",
+        "label": "Obligación Saldada",
+        "required": false,
+        "relation": "obligaciones_pendientes"
+      },
+      {
+        "key": "comprobante_ref",
+        "type": "text",
+        "label": "Enlace Comprobante",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Auditoría",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "nav_links",
+    "classification": "motor",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 5,
+    "schemaFields": [
+      {
+        "key": "label",
+        "type": "text",
+        "label": "Etiqueta",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "path",
+        "type": "text",
+        "label": "Path",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "icon",
+        "type": "text",
+        "label": "Icono",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "orden",
+        "type": "number",
+        "label": "Orden",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "grupo",
+        "type": "text",
+        "label": "Grupo",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "obligaciones_pendientes",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 0,
+    "schemaFieldCount": 12,
+    "schemaFields": [
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Obligación / Concepto",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "tipo",
+        "type": "select",
+        "label": "Naturaleza",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "monto_total",
+        "type": "number",
+        "label": "Monto Total Estimado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "monto_pagado",
+        "type": "number",
+        "label": "Monto Pagado Real",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "fecha_vencimiento",
+        "type": "date",
+        "label": "Fecha Vencimiento",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "proveedor_id",
+        "type": "relation",
+        "label": "Proveedor",
+        "required": false,
+        "relation": "proveedores"
+      },
+      {
+        "key": "cliente_id",
+        "type": "relation",
+        "label": "Cliente",
+        "required": false,
+        "relation": "clientes"
+      },
+      {
+        "key": "usuario_id",
+        "type": "relation",
+        "label": "Miembro Equipo",
+        "required": false,
+        "relation": "usuarios_equipo"
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Soporte Semántico",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto",
+        "required": false,
+        "relation": "proyectos"
+      },
+      {
+        "key": "contrato_id",
+        "type": "relation",
+        "label": "Contrato",
+        "required": false,
+        "relation": "contratos"
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "ordenes_trabajo",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 1,
+    "schemaFieldCount": 5,
+    "schemaFields": [
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto Origen",
+        "required": true,
+        "relation": "proyectos"
+      },
+      {
+        "key": "codigo_orden",
+        "type": "text",
+        "label": "Código de Orden",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "fecha_entrega",
+        "type": "date",
+        "label": "Fecha de Entrega",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas",
+        "type": "text",
+        "label": "Notas",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "codigo_orden",
+      "estado",
+      "fecha_entrega",
+      "notas",
+      "proyecto_id"
+    ]
+  },
+  {
+    "namespace": "page_routes",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 20,
+    "schemaFieldCount": 0,
+    "schemaFields": [],
+    "dataKeysSample": [
+      "allowed_lists",
+      "blocks",
+      "isPrivate",
+      "layout",
+      "layout_mode",
+      "order",
+      "path",
+      "title"
+    ]
+  },
+  {
+    "namespace": "pedidos_web",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 2,
+    "schemaFieldCount": 16,
+    "schemaFields": [
+      {
+        "key": "numero",
+        "type": "text",
+        "label": "Numero",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "user_id",
+        "type": "text",
+        "label": "User Id",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "cliente_id",
+        "type": "text",
+        "label": "Cliente Id",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "nombre",
+        "type": "text",
+        "label": "Nombre",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "email",
+        "type": "text",
+        "label": "Email",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "telefono",
+        "type": "text",
+        "label": "Telefono",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "direccion_entrega",
+        "type": "text",
+        "label": "Direccion Entrega",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "barrio",
+        "type": "text",
+        "label": "Barrio",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "items_snapshot",
+        "type": "textarea",
+        "label": "Items Snapshot",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "subtotal",
+        "type": "number",
+        "label": "Subtotal",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "total",
+        "type": "number",
+        "label": "Total",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "wompi_reference",
+        "type": "text",
+        "label": "Wompi Reference",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "wompi_transaction_id",
+        "type": "text",
+        "label": "Wompi Transaction Id",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "metodo_pago",
+        "type": "text",
+        "label": "Metodo Pago",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas",
+        "type": "textarea",
+        "label": "Notas",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado",
+        "required": true,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "barrio",
+      "cliente_id",
+      "direccion_entrega",
+      "email",
+      "estado",
+      "items_snapshot",
+      "metodo_pago",
+      "nombre",
+      "notas",
+      "numero",
+      "subtotal",
+      "telefono",
+      "total",
+      "user_id",
+      "wompi_reference",
+      "wompi_transaction_id"
+    ]
+  },
+  {
+    "namespace": "plantillas_tareas",
+    "classification": "motor",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "fase_kanban_trigger",
+        "type": "text",
+        "label": "Fase Disparadora",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "titulo_tarea",
+        "type": "text",
+        "label": "Título de Tarea a Generar",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "departamento",
+        "type": "list",
+        "label": "Departamento Responsable",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "dias_offset",
+        "type": "number",
+        "label": "Días para vencer",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "portfolio_publico",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 5,
+    "schemaFieldCount": 12,
+    "schemaFields": [
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto",
+        "required": false,
+        "relation": "proyectos"
+      },
+      {
+        "key": "titulo",
+        "type": "text",
+        "label": "Título",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "slug",
+        "type": "text",
+        "label": "Slug",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "descripcion_comercial",
+        "type": "markdown",
+        "label": "Descripción_Comercial",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "cliente_iniciales",
+        "type": "text",
+        "label": "Iniciales_Cliente",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "barrio",
+        "type": "text",
+        "label": "Barrio",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "categoria_espacio",
+        "type": "select",
+        "label": "Categoría_Espacio",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "materiales_destacados",
+        "type": "textarea",
+        "label": "Materiales_Destacados",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "publicado",
+        "type": "boolean",
+        "label": "Publicado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "destacado",
+        "type": "boolean",
+        "label": "Destacado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "orden",
+        "type": "number",
+        "label": "Orden",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "fecha_publicacion",
+        "type": "date",
+        "label": "Fecha_Publicación",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "barrio",
+      "categoria_espacio",
+      "descripcion_comercial",
+      "destacado",
+      "materiales_destacados",
+      "orden",
+      "publicado",
+      "slug",
+      "titulo",
+      "zona"
+    ]
+  },
+  {
+    "namespace": "prefabricados",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 3,
+    "schemaFieldCount": 11,
+    "schemaFields": [
+      {
+        "key": "nombre",
+        "type": "text",
+        "label": "Nombre del Prefabricado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Descripción",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "catalogo_id",
+        "type": "relation",
+        "label": "Producto Maestro del Catálogo",
+        "required": true,
+        "relation": "productos_catalogo"
+      },
+      {
+        "key": "imagen_url",
+        "type": "image",
+        "label": "URL de Imagen",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_comercial",
+        "type": "text",
+        "label": "Descripción Comercial",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "categoria_comercial",
+        "type": "text",
+        "label": "Categoría Comercial",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "precio_publico",
+        "type": "number",
+        "label": "Precio Público",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "precio_costo_calculado",
+        "type": "number",
+        "label": "Precio Costo Calculado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "publicado_web",
+        "type": "boolean",
+        "label": "Publicado en Web",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "reutilizable_catalogo",
+        "type": "boolean",
+        "label": "Reutilizable en Catálogo",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "slug",
+        "type": "text",
+        "label": "Slug",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "catalogo_id",
+      "categoria_comercial",
+      "descripcion",
+      "descripcion_comercial",
+      "imagen_url",
+      "nombre",
+      "precio_publico",
+      "publicado_web",
+      "reutilizable_catalogo",
+      "slug"
+    ]
+  },
+  {
+    "namespace": "prefabricados_items",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 8,
+    "schemaFieldCount": 5,
+    "schemaFields": [
+      {
+        "key": "prefabricado_id",
+        "type": "relation",
+        "label": "Prefabricado Asociado",
+        "required": true,
+        "relation": "prefabricados"
+      },
+      {
+        "key": "catalogo_id",
+        "type": "relation",
+        "label": "Producto del Catálogo",
+        "required": true,
+        "relation": "productos_catalogo"
+      },
+      {
+        "key": "cantidad",
+        "type": "number",
+        "label": "Cantidad",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "unidad_medida",
+        "type": "text",
+        "label": "Unidad de Medida",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "precio_unitario_snapshot",
+        "type": "number",
+        "label": "Precio Unitario Snapshot",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "cantidad",
+      "catalogo_id",
+      "precio_unitario_snapshot",
+      "prefabricado_id",
+      "unidad_medida"
+    ]
+  },
+  {
+    "namespace": "productos_catalogo",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 254,
+    "schemaFieldCount": 18,
+    "schemaFields": [
+      {
+        "key": "sku",
+        "type": "text",
+        "label": "SKU",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "tipo",
+        "type": "select",
+        "label": "Tipo",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Descripción",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "unidad_medida",
+        "type": "select",
+        "label": "Unidad de Medida (Um)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "ancho",
+        "type": "text",
+        "label": "Ancho",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "alto",
+        "type": "text",
+        "label": "Alto",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "profundo",
+        "type": "text",
+        "label": "Profundo",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "stock_actual",
+        "type": "number",
+        "label": "Stock Actual",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "precio_directo",
+        "type": "number",
+        "label": "Precio Directo",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "precio_publico",
+        "type": "number",
+        "label": "Precio Público",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "imagen",
+        "type": "image",
+        "label": "Imagen",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "imagen_url",
+        "type": "image",
+        "label": "Imagen (legacy URL)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "modelo_3d",
+        "type": "text",
+        "label": "Modelo 3D (.glb / .obj)",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "url_referencia",
+        "type": "text",
+        "label": "URL de Referencia / Ficha",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "proveedor",
+        "type": "select",
+        "label": "Proveedor",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "categoria_comercial",
+        "type": "select",
+        "label": "Categoría Comercial Web",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "proveedor_id",
+        "type": "relation",
+        "label": "Proveedor (Relación)",
+        "required": false,
+        "relation": "proveedores"
+      },
+      {
+        "key": "publicado_web",
+        "type": "boolean",
+        "label": "Publicado en Web",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "alto",
+      "ancho",
+      "descripcion",
+      "imagen",
+      "imagen_url",
+      "modelo_3d",
+      "precio_directo",
+      "precio_publico",
+      "profundo",
+      "proveedor",
+      "sku",
+      "stock_actual",
+      "tipo",
+      "unidad_medida",
+      "url_referencia"
+    ]
+  },
+  {
+    "namespace": "project_tasks",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 0,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "variante_id",
+        "type": "relation",
+        "label": "Espacio/Variante",
+        "required": true,
+        "relation": "espacio_variantes"
+      },
+      {
+        "key": "descripcion",
+        "type": "text",
+        "label": "Ítem / Tarea",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "creado_por",
+        "type": "text",
+        "label": "Añadido por",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "propuestas_publicas",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 1,
+    "schemaFieldCount": 6,
+    "schemaFields": [
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "public_slug",
+        "type": "text",
+        "label": "Slug_publico",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "snapshot_json",
+        "type": "markdown",
+        "label": "Snapshot_aprobado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "emitida_en",
+        "type": "date",
+        "label": "Emitida_en",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "revocado_en",
+        "type": "date",
+        "label": "Revocado_en",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "emitida_en",
+      "estado",
+      "proyecto_id",
+      "public_slug",
+      "snapshot_json"
+    ]
+  },
+  {
+    "namespace": "proveedores",
+    "classification": "business",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 6,
+    "schemaFields": [
+      {
+        "key": "nombre",
+        "type": "text",
+        "label": "Nombre",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "nit",
+        "type": "text",
+        "label": "Nit",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "telefono",
+        "type": "text",
+        "label": "Telefono",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "direccion",
+        "type": "text",
+        "label": "Direccion",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "categoria",
+        "type": "select",
+        "label": "Categoria",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Descripcion Semantica",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "proyectos",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 4,
+    "schemaFieldCount": 14,
+    "schemaFields": [
+      {
+        "key": "cliente_id",
+        "type": "relation",
+        "label": "Cliente",
+        "required": false,
+        "relation": "clientes"
+      },
+      {
+        "key": "nombre_proyecto",
+        "type": "text",
+        "label": "Nombre del Proyecto",
+        "required": true,
+        "relation": ""
+      },
+      {
+        "key": "direccion_obra",
+        "type": "text",
+        "label": "Dirección de la Obra",
+        "required": false,
+        "relation": ""
+      },
+      {
+        "key": "dias_entrega_estimados",
+        "type": "number",
+        "label": "Días de Entrega Estimados",
+        "required": false,
+        "relation": ""
+      },
+      {
+        "key": "garantia_anios",
+        "type": "number",
+        "label": "Garantía (años)",
+        "required": false,
+        "relation": ""
+      },
+      {
+        "key": "costos_operativos",
+        "type": "number",
+        "label": "Costos Operativos",
+        "required": false,
+        "relation": ""
+      },
+      {
+        "key": "imprevistos_instalacion",
+        "type": "number",
+        "label": "Imprevistos de Instalación",
+        "required": false,
+        "relation": ""
+      },
+      {
+        "key": "descuento_comercial",
+        "type": "number",
+        "label": "Descuento Comercial",
+        "required": false,
+        "relation": ""
+      },
+      {
+        "key": "ajuste_arbitrario",
+        "type": "number",
+        "label": "Ajuste Técnico",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado del Proyecto",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Descripcion Semantica",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "barrio",
+        "type": "text",
+        "label": "Barrio",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "aplica_iva",
+        "type": "boolean",
+        "label": "Aplica IVA",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "porcentaje_iva",
+        "type": "number",
+        "label": "Porcentaje de IVA",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "ajuste_arbitrario",
+      "aplica_iva",
+      "barrio",
+      "cliente_id",
+      "costos_operativos",
+      "descripcion_semantica",
+      "descuento_comercial",
+      "dias_entrega_estimados",
+      "direccion_obra",
+      "estado",
+      "garantia_anios",
+      "imprevistos_instalacion",
+      "nombre_proyecto",
+      "porcentaje_iva"
+    ]
+  },
+  {
+    "namespace": "registro_horas",
+    "classification": "business",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 7,
+    "schemaFields": [
+      {
+        "key": "fecha",
+        "type": "date",
+        "label": "Fecha",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "usuario_id",
+        "type": "relation",
+        "label": "Usuario Id",
+        "required": false,
+        "relation": "usuarios_equipo"
+      },
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto Id",
+        "required": false,
+        "relation": "proyectos"
+      },
+      {
+        "key": "horas_ordinarias",
+        "type": "number",
+        "label": "Horas Ordinarias",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "horas_extras",
+        "type": "number",
+        "label": "Horas Extras",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Descripcion Semantica",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado_pago",
+        "type": "select",
+        "label": "Estado Pago",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "registro_logistica",
+    "classification": "business",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 6,
+    "schemaFields": [
+      {
+        "key": "nombre_flete",
+        "type": "text",
+        "label": "Nombre Flete",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "direccion_destino",
+        "type": "text",
+        "label": "Direccion Destino",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "estado_flete",
+        "type": "select",
+        "label": "Estado Flete",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "viaje_programado",
+        "type": "boolean",
+        "label": "Viaje Programado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "fecha_viaje",
+        "type": "date",
+        "label": "Fecha Viaje",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas",
+        "type": "text",
+        "label": "Notas",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "registros_tecnicos",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 0,
+    "schemaFieldCount": 5,
+    "schemaFields": [
+      {
+        "key": "variante_id",
+        "type": "relation",
+        "label": "Espacio/Variante",
+        "required": true,
+        "relation": "espacio_variantes"
+      },
+      {
+        "key": "etiqueta_evento",
+        "type": "text",
+        "label": "Etiqueta de Levantamiento",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "responsable",
+        "type": "text",
+        "label": "Registrado por",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "archivos_multimedia",
+        "type": "image",
+        "label": "Fotos y Diagramas",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas",
+        "type": "textarea",
+        "label": "Notas Adicionales",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "scripts",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 31,
+    "schemaFieldCount": 0,
+    "schemaFields": [],
+    "dataKeysSample": [
+      "body",
+      "code",
+      "description",
+      "name",
+      "order",
+      "trigger"
+    ]
+  },
+  {
+    "namespace": "seed_registros",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 37,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "namespace",
+        "type": "text",
+        "label": "Namespace",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "record_id",
+        "type": "text",
+        "label": "Record Id",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "lote",
+        "type": "text",
+        "label": "Lote",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "nota",
+        "type": "text",
+        "label": "Nota",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "lote",
+      "namespace",
+      "nota",
+      "record_id"
+    ]
+  },
+  {
+    "namespace": "system_groups",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 0,
+    "schemaFieldCount": 4,
+    "schemaFields": [
+      {
+        "key": "name",
+        "type": "text",
+        "label": "Nombre Interno",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "label",
+        "type": "text",
+        "label": "Etiqueta Visible",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "kind",
+        "type": "text",
+        "label": "Tipo",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "description",
+        "type": "markdown",
+        "label": "Descripción",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "tareas_operativas",
+    "classification": "business",
+    "hasDataFile": false,
+    "recordCount": 0,
+    "schemaFieldCount": 7,
+    "schemaFields": [
+      {
+        "key": "proyecto_id",
+        "type": "relation",
+        "label": "Proyecto",
+        "required": true,
+        "relation": "proyectos"
+      },
+      {
+        "key": "titulo",
+        "type": "text",
+        "label": "Título de la Tarea",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "departamento",
+        "type": "list",
+        "label": "Departamento",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "list",
+        "label": "Estado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "fase_kanban",
+        "type": "text",
+        "label": "Fase Kanban Asociada",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "fecha_limite",
+        "type": "date",
+        "label": "Fecha Límite",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "asignado_a",
+        "type": "relation",
+        "label": "Asignado a",
+        "required": false,
+        "relation": "usuarios_equipo"
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "tareas_produccion",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 0,
+    "schemaFieldCount": 6,
+    "schemaFields": [
+      {
+        "key": "orden_trabajo_id",
+        "type": "relation",
+        "label": "Orden de Trabajo",
+        "required": true,
+        "relation": "ordenes_trabajo"
+      },
+      {
+        "key": "nombre_tarea",
+        "type": "text",
+        "label": "Nombre de la Tarea",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "select",
+        "label": "Estado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "operario_id",
+        "type": "text",
+        "label": "Operario Asignado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "notas",
+        "type": "text",
+        "label": "Notas",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "espacio_variante_id",
+        "type": "relation",
+        "label": "Espacio Asociado",
+        "required": false,
+        "relation": "espacio_variantes"
+      }
+    ],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "templates",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 1,
+    "schemaFieldCount": 0,
+    "schemaFields": [],
+    "dataKeysSample": [
+      "html",
+      "name"
+    ]
+  },
+  {
+    "namespace": "testimonios",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 3,
+    "schemaFieldCount": 7,
+    "schemaFields": [
+      {
+        "key": "nombre_cliente",
+        "type": "text",
+        "label": "\"Nombre",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "barrio",
+        "type": "text",
+        "label": "\"Barrio",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "texto_resena",
+        "type": "textarea",
+        "label": "\"Texto",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "calificacion",
+        "type": "number",
+        "label": "\"Calificación",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "proyecto_relacionado",
+        "type": "text",
+        "label": "\"Proyecto",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "destacado",
+        "type": "boolean",
+        "label": "\"Destacado",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "fecha_resena",
+        "type": "date",
+        "label": "\"Fecha",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": [
+      "barrio",
+      "calificacion",
+      "destacado",
+      "fecha_resena",
+      "nombre_cliente",
+      "proyecto_relacionado",
+      "texto_resena"
+    ]
+  },
+  {
+    "namespace": "user_list_members",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 0,
+    "schemaFieldCount": 0,
+    "schemaFields": [],
+    "dataKeysSample": []
+  },
+  {
+    "namespace": "user_lists",
+    "classification": "motor",
+    "hasDataFile": true,
+    "recordCount": 3,
+    "schemaFieldCount": 0,
+    "schemaFields": [],
+    "dataKeysSample": [
+      "is_permanent",
+      "name"
+    ]
+  },
+  {
+    "namespace": "users",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 4,
+    "schemaFieldCount": 0,
+    "schemaFields": [],
+    "dataKeysSample": [
+      "cliente_id",
+      "email",
+      "name",
+      "password_algo",
+      "password_hash",
+      "password_updated_at",
+      "type"
+    ]
+  },
+  {
+    "namespace": "usuarios_equipo",
+    "classification": "business",
+    "hasDataFile": true,
+    "recordCount": 5,
+    "schemaFieldCount": 9,
+    "schemaFields": [
+      {
+        "key": "nombre",
+        "type": "text",
+        "label": "Nombre Completo",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "email",
+        "type": "text",
+        "label": "Correo Electrónico",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "rol",
+        "type": "list",
+        "label": "Rol del Sistema",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "estado",
+        "type": "list",
+        "label": "Estado",
+        "required": true,
+        "relation": null
+      },
+      {
+        "key": "descripcion_semantica",
+        "type": "markdown",
+        "label": "Descripcion Semantica",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "costo_hora",
+        "type": "number",
+        "label": "Costo Hora",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "horas_estimadas_mes",
+        "type": "number",
+        "label": "Horas Estimadas Mes",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "telefono",
+        "type": "text",
+        "label": "Teléfono / Celular",
+        "required": false,
+        "relation": null
+      },
+      {
+        "key": "firma_url",
+        "type": "image",
+        "label": "Firma Digital (URL Imagen)",
+        "required": false,
+        "relation": null
+      }
+    ],
+    "dataKeysSample": []
+  }
+]

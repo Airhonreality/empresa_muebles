@@ -36,7 +36,7 @@ export default function RetomaPage() {
     if (!proyecto) return
     setGuardando(true)
     try {
-      store.retomas.guardar(proyectoId, {
+      await store.retomas.guardar(proyectoId, {
         medidas: Object.keys(medidas).length > 0 ? medidas : undefined,
         fotos,
         anomaliaDetectada,
@@ -48,6 +48,24 @@ export default function RetomaPage() {
       setGuardando(false)
     }
   }, [proyectoId, store, proyecto, medidas, fotos, anomaliaDetectada])
+
+  // Auto-save con debounce de 2 segundos
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!proyecto) return
+      try {
+        await store.retomas.guardar(proyectoId, {
+          medidas: Object.keys(medidas).length > 0 ? medidas : undefined,
+          fotos,
+          anomaliaDetectada,
+        })
+      } catch (err) {
+        console.error('Error en auto-save de retoma:', err)
+      }
+    }, 2000)
+
+    return () => clearTimeout(timer)
+  }, [medidas, fotos, anomaliaDetectada, proyecto, proyectoId, store])
 
   if (!proyecto) {
     return (

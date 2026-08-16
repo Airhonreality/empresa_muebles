@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type InputHTMLAttributes } from "react";
+import { useState, useEffect, useId, type InputHTMLAttributes } from "react";
 
 export interface MoneyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
   value: string;
@@ -11,7 +11,7 @@ export interface MoneyInputProps extends Omit<InputHTMLAttributes<HTMLInputEleme
 
 /* Primitiva MoneyInput (C4). Formateo COP, inputmode="decimal", aria-label. */
 export function MoneyInput({ value, onChange, label, error, className = "", ...props }: MoneyInputProps) {
-  const id = useRef(`money-${Math.random().toString(36).slice(2)}`).current;
+  const id = useId();
   const [displayValue, setDisplayValue] = useState<string>(formatCOPInput(value));
 
   // Sync display when external value changes

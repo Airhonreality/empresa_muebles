@@ -60,6 +60,7 @@
   --color-border-default: #8A8479;
   --color-border-strong: #3E2A21;
   --color-border-brand: #8B6914;
+  --border-nav-underline-gradient: linear-gradient(to right, transparent, var(--color-border-brand), transparent);
   --color-status-draft-bg: #F3EFE9;
   --color-status-draft-label: #5F5D57;
   --color-skeleton-bg: #ECE7DE;
@@ -115,6 +116,9 @@
   --shadow-lg: 0 10px 15px -3px rgba(43, 43, 43, 0.12), 0 4px 6px rgba(43, 43, 43, 0.08);
   --shadow-xl: 0 20px 25px -5px rgba(43, 43, 43, 0.18), 0 8px 10px rgba(43, 43, 43, 0.12);
   --shadow-glass: 0 4px 24px rgba(43, 43, 43, 0.08);
+  --shadow-nav-elevated: 0 1px 3px rgba(43, 43, 43, 0.06), 0 1px 2px rgba(43, 43, 43, 0.03);
+  --shadow-nav-hover: 0 4px 12px rgba(139, 105, 20, 0.18);
+  --transition-nav-smooth: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --shadow-ring-focus: 0 0 0 2px #FFFFFF, 0 0 0 4px #1D5FD0;
 
   /* ---- Z-index per layer ---- */
@@ -151,6 +155,14 @@
   --ease-in-out: cubic-bezier(0.40, 0.00, 0.20, 1.00);
   --ease-emphasized: cubic-bezier(0.16, 1.00, 0.30, 1.00);
   --ease-linear: linear;
+
+  /* ---- Badge minimalista de estado (t-136, revisión v3 P-01, 2026-08-15) ----
+     Punto + label, sin caja/borde. Tokens propuestos en disenio_p01_kanban_comercial.md §v3.2. */
+  --badge-dot-size: 6px;
+  --badge-dot-pulse-duration: 2s;
+  --badge-dot-glow: 10px;
+  --badge-label-size: 11px;
+  --badge-label-weight: 300;
 }
 
 body {
@@ -255,6 +267,23 @@ html:focus-within {
 
 @utility animate-dot-danger {
   animation: dotPulseDanger 0.9s var(--ease-in-out) infinite;
+}
+
+/* Pulso + halo difuminado para el badge-punto minimalista (t-136, P-01 v3).
+   currentColor toma el color del estado desde la clase text-* del punto. */
+@keyframes dotPulseMini {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 var(--badge-dot-glow) 0 currentColor;
+  }
+}
+
+@utility animate-dot-mini {
+  animation: dotPulseMini var(--badge-dot-pulse-duration) var(--ease-out) infinite;
 }
 
 /* ---- Scrollbars de marca (D4) — escala dorada sutil, sin ruido visual ----

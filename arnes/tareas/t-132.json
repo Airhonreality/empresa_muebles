@@ -1,0 +1,61 @@
+{
+  "id": "t-132",
+  "nombre": "F10-H: Revisión de reactividad multi-usuario — long-polling + LISTEN/NOTIFY reemplaza el polling corto fijo de t-131",
+  "descripcion": "El polling de t-131 (setInterval 3s, sin pausa por visibilidad) agota la cuota de 100.000 invocaciones/mes de Vercel Hobby con el equipo real (~5 usuarios) en aproximadamente un día de uso (5 usuarios x 8h x 3600/3s ≈ 1.000.000 invocaciones/mes). Llegó una recomendación externa (arnes/plan cambio f10 reactividad por eventos) para resolverlo con BroadcastChannel + revalidación al foco + polling pasivo de 30s; auditada, se rechazó: BroadcastChannel no cruza máquinas (es same-origin/same-browser), así que no resuelve el requisito cross-usuario que es la razón de ser de t-127/t-131, y su respaldo (30s + solo-al-foco) degradaba en silencio el SLA de ≤4s ya aprobado (CA-10/V-5b) sin pasar por checkpoint. Ese plan queda archivado como MAL_PLAN (arnes/lineas/ola7/archivo/MAL_PLAN_reactividad_broadcastchannel_DEPRECADO.md). En su lugar se decidió long-polling HTTP acotado a la duración máxima de función de Vercel, resuelto internamente con LISTEN/NOTIFY de Postgres (el driver postgres.js que ya usa el proyecto lo soporta nativamente, sin dependencias nuevas) + BroadcastChannel reubicado en su rol correcto (fan-out entre pestañas propias de un mismo usuario, vía pestaña líder con navigator.locks) + pausa real por inactividad (no polling pasivo ciego). Decisión completa, opciones descartadas y regla técnica normativa en arnes/lineas/ola7/tecnico/m07b_reactividad_multiusuario.md.",
+  "objetivo": "Reemplazar el polling corto fijo de t-131 por long-polling + LISTEN/NOTIFY, manteniendo el SLA de reactividad cross-usuario (≤4s, sin recarga) con una fracción de las invocaciones de Vercel.",
+  "prioridad": "Alta",
+  "estado": "Completada (código)",
+  "fecha_resolucion": "2026-08-14",
+  "resolucion": "Implementado end-to-end contra dev-local real. (1) drizzle/v3/0004_veta_notify_trigger.sql: función notify_veta_change() + trigger AFTER INSERT/UPDATE/DELETE en las 64 tablas de negocio de schema.ts, cada una emite pg_notify('veta_changes', tabla:operación); aplicada con drizzle-kit migrate (64/64 triggers confirmados por query directa a pg_trigger). (2) lib/data/actions/longpoll.ts: longPollVersionAction(clientVersion) usa client.listen('veta_changes', ...) de postgres.js (ya en package.json, sin dependencias nuevas), acotado a 20s (maxDuration=25 en app/layout.tsx, ya que un archivo 'use server' no puede exportar valores no-función). Devuelve {changed, version} — changed=true solo si hubo NOTIFY real, nunca se infiere comparando version strings. (3) lib/data/DataStoreProvider.tsx reescrito: setInterval(3s) reemplazado por el ciclo de long-poll; pestaña líder vía navigator.locks (solo la líder abre el long-poll; al cerrarse esa pestaña el lock se libera solo y otra lo toma, sin heartbeat custom); BroadcastChannel('veta_erp_reactividad') reparte snapshots Y señales de actividad entre pestañas hermanas; pausa real por inactividad (12 min sin actividad en NINGUNA pestaña del navegador) que corta el long-poll sin dejar timers de red corriendo, y catch-up incondicional al reanudar.",
+  "hallazgo_no_previsto": "Al verificar con un script real (INSERT+DELETE en `parametros`, tabla fuera de las 12 que cubre fetchVersionTokenAction() en hydrate.ts) se detectó que comparar version-strings como señal de 'hubo cambio' tiene un punto ciego real: fetchVersionTokenAction() es una aproximación barata que NO cubre las 64 tablas (solo proyectos + 11 tablas de alto volumen, ver su propio comentario). Se corrigió el diseño para que 'changed' venga siempre de un NOTIFY real (el trigger sí cubre las 64 tablas) y nunca de comparar version-strings, y se hizo catchUp() incondicional (siempre trae snapshot fresco, no lo condiciona a la fórmula incompleta) para los dos puntos donde no hay un NOTIFY que lo dispare (arranque del líder, reanudar de una pausa). Con esto el punto ciego pre-existente de t-131 queda resuelto para el camino de long-poll en vivo; fetchVersionTokenAction() en sí sigue sin cubrir las 64 tablas (no se tocó — sería un cambio de alcance distinto, documentado como pendiente en m07b_reactividad_multiusuario.md).",
+  "verificacion_mecanica": [
+    "npx tsc --noEmit: 0 errores",
+    "npx eslint .: 0 errores, 23 warnings preexistentes sin cambios (0 nuevos)",
+    "DATA_IMPL=mock npx next build: 31/31 rutas OK",
+    "DATA_IMPL=drizzle npx next build contra dev-local real: 31/31 rutas OK",
+    "Query directa a pg_trigger: 64/64 triggers 'veta_notify_trigger' instalados",
+    "Smoke test E2E #1 (script tsx efímero, borrado): escritura real en tabla parametros -> longPollVersionAction resolvió en 2.4s con changed=true (no esperó el timeout de 20s)",
+    "Smoke test E2E #2 (script tsx efímero, borrado): sin ninguna escritura -> longPollVersionAction resolvió en 20.1s con changed=false (timeout limpio, sin NOTIFY espurio)"
+  ],
+  "no_verificado": "V-5b (dos pestañas/usuarios reales del navegador simultáneas) sigue sin poder probarse en este entorno headless — igual que quedó pendiente en t-131. Requiere sesión manual del Supervisor con npm run dev y DATA_IMPL=drizzle, verificando además el caso de elección de líder (cerrar la pestaña líder y confirmar que otra toma el long-poll) y la pausa por inactividad (esperar 12 min sin tocar nada y confirmar en DevTools que no salen peticiones).",
+  "dependencias": [
+    "t-131 (código actual a reemplazar: lib/data/DataStoreProvider.tsx, lib/data/actions/hydrate.ts)",
+    "t-130 (Server Actions de escritura, deben emitir NOTIFY al confirmar)",
+    "lib/data/index.ts (mecanismo M-07 subscribe()/getVersion(), no cambia)",
+    "m07b_reactividad_multiusuario.md (decisión completa)"
+  ],
+  "entregables": [
+    {
+      "nombre": "Decisión documentada",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/tecnico/m07b_reactividad_multiusuario.md",
+      "detalle": "Contexto, opciones descartadas (BroadcastChannel-como-primario, WebSocket, SSE con re-polling interno, Web Push, disparo por actividad de mouse), decisión de 3 capas (long-poll+LISTEN/NOTIFY, BroadcastChannel entre pestañas propias, pausa por inactividad real), regla técnica normativa."
+    },
+    {
+      "nombre": "Plan externo deprecado y marcado",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/archivo/MAL_PLAN_reactividad_broadcastchannel_DEPRECADO.md",
+      "detalle": "Archivo original movido de la raíz de arnes/ al archivo histórico de la línea, con cabecera de deprecación explicando el error de arquitectura, preservando el contenido original para trazabilidad."
+    }
+  ],
+  "pasos": [
+    { "numero": 1, "accion": "Documentar la decisión y deprecar el plan externo", "detalle": "Completado 2026-08-14.", "responsable": "Orquestador", "estado": "Completado" },
+    { "numero": 2, "accion": "Implementar endpoint de long-polling con LISTEN/NOTIFY", "detalle": "lib/data/actions/longpoll.ts (Server Action) usa client.listen() de postgres.js sobre el canal 'veta_changes', emitido por un trigger SQL genérico (drizzle/v3/0004_veta_notify_trigger.sql) en las 64 tablas de negocio — no se tocaron los ~99 Server Actions de t-130 uno por uno.", "responsable": "Código", "estado": "Completado 2026-08-14" },
+    { "numero": 3, "accion": "Reemplazar el setInterval de DataStoreProvider.tsx por el ciclo de long-poll", "detalle": "Hecho. Espera → si changed=true trae snapshot y aplica → reabre inmediatamente.", "responsable": "Código", "estado": "Completado 2026-08-14" },
+    { "numero": 4, "accion": "Pestaña líder + BroadcastChannel entre pestañas propias", "detalle": "Hecho. navigator.locks('veta-erp-longpoll-leader') elige líder; BroadcastChannel('veta_erp_reactividad') reparte snapshots y señales de actividad a las pestañas hermanas.", "responsable": "Código", "estado": "Completado 2026-08-14" },
+    { "numero": 5, "accion": "Pausa por inactividad real", "detalle": "Hecho. lastActivityAt (propio + recibido por broadcast) con throttle de emisión; IDLE_TIMEOUT_MS=12min sin actividad en ninguna pestaña corta el long-poll (waitForActivity() usa solo timers locales, cero red); al reanudar, catchUp() incondicional antes de reabrir.", "responsable": "Código", "estado": "Completado 2026-08-14" },
+    { "numero": 6, "accion": "Verificar", "detalle": "tsc --noEmit (0 errores), eslint . (0 errores, 0 warnings nuevos), next build mock y drizzle (31/31 rutas c/u), 64/64 triggers confirmados en pg_trigger, y 2 smoke tests E2E contra dev-local real (ver verificacion_mecanica). V-5b (dos pestañas de navegador reales) queda pendiente — ver no_verificado.", "responsable": "QA", "estado": "Completado salvo V-5b manual" }
+  ],
+  "criterios_de_aceptacion": [
+    "Se mantiene V-5b del plan (§5, plan_f10_migracion.md): escritura en pestaña/usuario A visible en pestaña/usuario B en ≤4s sin acción manual — verificado mecánicamente vía script (2.4s), NO verificado todavía con dos pestañas de navegador reales (ver no_verificado)",
+    "El conteo de invocaciones de Vercel para el equipo real (~5 usuarios, jornada completa) queda muy por debajo de la cuota de Hobby (100.000/mes) — long-poll acotado a 20s + pausa a los 12 min de inactividad reduce el volumen en un orden de magnitud frente al poll fijo de 3s; no medido en producción real todavía",
+    "Ninguna de las 43 pantallas de lectura requiere cambios de código (pasa por el Provider raíz único, igual que t-131) — CUMPLIDO, cero cambios fuera de lib/data/DataStoreProvider.tsx, lib/data/actions/longpoll.ts, app/layout.tsx y la migración SQL",
+    "Una pestaña abierta sin actividad humana durante el umbral de inactividad no genera peticiones de red hasta que la actividad se reanuda — CUMPLIDO por diseño (waitForActivity() no hace fetch/Server Action alguno mientras espera), no verificado con navegador real corriendo 12 min"
+  ],
+  "notas": [
+    "Autorizado y ejecutado en secuencia por instrucción explícita del Supervisor (2026-08-14, misma sesión que la decisión de arquitectura) — no quedó como trabajo futuro.",
+    "El código de t-131 (poll fijo de 3s) queda reemplazado, no archivado aparte: lib/data/DataStoreProvider.tsx y lib/data/actions/hydrate.ts son los mismos archivos, editados in situ."
+  ],
+  "relacionado": ["t-127", "t-130", "t-131", "m07b_reactividad_multiusuario.md", "m07_capa_reactividad.md"],
+  "fecha_creacion": "2026-08-14"
+}

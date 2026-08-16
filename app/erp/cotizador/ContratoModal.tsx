@@ -53,10 +53,10 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     holguraDias: '8',
     garantiaAnios: proyecto.garantiaAnios ?? 2,
     objetoItems: compilarObjetoItems(espacios, itemsPorEspacio, productMap),
-    especificacionesEstructura: compilarEspecificaciones(espacios, itemsPorEspacio, productMap, 'Estructura'),
-    especificacionesHerrajes: compilarEspecificaciones(espacios, itemsPorEspacio, productMap, 'Herrajes'),
-    especificacionesMesones: compilarEspecificaciones(espacios, itemsPorEspacio, productMap, 'Mesones'),
-    especificacionesDesmonte: compilarEspecificaciones(espacios, itemsPorEspacio, productMap, 'Desmonte'),
+    especificacionesEstructura: tieneItemsDeLaCategoria('Estructura') ? compilarEspecificaciones(espacios, itemsPorEspacio, productMap, 'Estructura') : '',
+    especificacionesHerrajes: tieneItemsDeLaCategoria('Herrajes') ? compilarEspecificaciones(espacios, itemsPorEspacio, productMap, 'Herrajes') : '',
+    especificacionesMesones: tieneItemsDeLaCategoria('Mesones') ? compilarEspecificaciones(espacios, itemsPorEspacio, productMap, 'Mesones') : '',
+    especificacionesDesmonte: tieneItemsDeLaCategoria('Desmonte') ? compilarEspecificaciones(espacios, itemsPorEspacio, productMap, 'Desmonte') : '',
   });
 
   // Hitos (default: 50/25/25)
@@ -142,23 +142,30 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     return lines.join('\n');
   }
 
-  // Compilar especificaciones por tipo
-  function compilarEspecificaciones(espacios: EspacioVariante[], itemsPorEspacio: Map<string, ItemVariante[]>, productMap: Map<string, ProductoCatalogo>, tipo: string): string {
-    const tipoMap: Record<string, string[]> = {
-      Estructura: ['Tablero', 'MDF', 'Melamina', 'Roble', 'Nogal', 'Cedro', 'Pino'],
-      Herrajes: ['Bisagra', 'Corredera', 'Tirador', 'Herraje'],
-      Mesones: ['Granito', 'Cuarzo', 'Mármol', 'Mesón'],
-      Desmonte: ['Desmonte', 'Retiro', 'Limpieza'],
+  // Mapear categorias comerciales reales a las 4 secciones del contrato.
+  // Solo Maderas→Estructura y Herrajes→Herrajes tienen una categoría real hoy en el catálogo.
+  // "Mesones" (piedra/granito) y "Desmonte" (retiro de mobiliario existente) no tienen
+  // categoriaComercial equivalente todavía — sus secciones quedan legítimamente vacías/ocultas
+  // hasta que el catálogo tenga productos con esa categoría; NO se fuerza un mapeo falso
+  // (ej. "Muebles"→Mesones o "Mano de Obra"→Desmonte serían semánticamente incorrectos).
+  function mapearCategoriaASeccion(categoriaComercial: string | null): string | null {
+    if (!categoriaComercial) return null;
+    const mapa: Record<string, string> = {
+      'Maderas': 'Estructura',
+      'Herrajes': 'Herrajes',
     };
+    return mapa[categoriaComercial] || null;
+  }
 
-    const keywords = tipoMap[tipo] ?? [];
+  // Compilar especificaciones por tipo — solo incluye items si la categoría real del producto mapea a ese tipo
+  function compilarEspecificaciones(espacios: EspacioVariante[], itemsPorEspacio: Map<string, ItemVariante[]>, productMap: Map<string, ProductoCatalogo>, tipo: string): string {
     const lines: string[] = [];
 
     espacios.forEach((esp) => {
       const items = itemsPorEspacio.get(esp.id) ?? [];
       items.forEach((item) => {
         const prod = item.catalogoId ? productMap.get(item.catalogoId) : undefined;
-        if (prod && keywords.some((kw) => prod.descripcion.includes(kw) || prod.sku.includes(kw) || (prod.tipo ?? '').includes(kw))) {
+        if (prod && mapearCategoriaASeccion(prod.categoriaComercial) === tipo) {
           const desc = item.nombrePersonalizado ?? prod.descripcion;
           const cant = item.cantidad;
           lines.push(`- ${desc}: ${cant} ${prod.unidadMedida ?? 'ud'}`);
@@ -166,7 +173,21 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
       });
     });
 
-    return lines.length > 0 ? lines.join('\n') : `Especificaciones de ${tipo} según diseño.`;
+    return lines.join('\n');
+  }
+
+  // Verificar si hay items de una categoría específica en las variantes activas/visibles
+  function tieneItemsDeLaCategoria(tipo: string): boolean {
+    for (const esp of espacios) {
+      const items = itemsPorEspacio.get(esp.id) ?? [];
+      for (const item of items) {
+        const prod = item.catalogoId ? productMap.get(item.catalogoId) : undefined;
+        if (prod && mapearCategoriaASeccion(prod.categoriaComercial) === tipo) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   // Calcular valor total desde espacios e items
@@ -188,7 +209,7 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
   }
 
   // Guardar contrato
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     // Crear hitos
     const hitosData: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[] = hitos.map((h) => ({
       tipo: h.tipo,
@@ -197,7 +218,7 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     }));
 
     // Guardar en store
-    const contratoCreado = store.contratos.crear({
+    const contratoCreado = await store.contratos.crear({
       proyectoId: proyecto.id,
       codigoContrato: form.codigoContrato,
       valorTotal: form.valorTotal,
@@ -256,46 +277,54 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
             </div>
           </section>
 
-          {/* Sección 3: Especificaciones */}
+          {/* Sección 3: Especificaciones — solo mostrar secciones con items cotizados */}
           <section className="border-b border-border-subtle pb-4">
             <h3 className="text-sm font-semibold text-text-heading mb-3">3. Especificaciones Técnicas</h3>
             <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-text-muted mb-1 block">Estructura</label>
-                <textarea
-                  value={form.especificacionesEstructura}
-                  onChange={(e) => setForm({ ...form, especificacionesEstructura: e.target.value })}
-                  className="w-full min-h-[80px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-                  placeholder="Ej: Estructura en roble macizo 18mm, uniones con espiga..."
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-text-muted mb-1 block">Herrajes</label>
-                <textarea
-                  value={form.especificacionesHerrajes}
-                  onChange={(e) => setForm({ ...form, especificacionesHerrajes: e.target.value })}
-                  className="w-full min-h-[80px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-                  placeholder="Ej: Bisagras Blum de cierre suave..."
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-text-muted mb-1 block">Mesones</label>
-                <textarea
-                  value={form.especificacionesMesones}
-                  onChange={(e) => setForm({ ...form, especificacionesMesones: e.target.value })}
-                  className="w-full min-h-[80px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-                  placeholder="Ej: Mesón en granito negro absoluto..."
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-text-muted mb-1 block">Desmonte</label>
-                <textarea
-                  value={form.especificacionesDesmonte}
-                  onChange={(e) => setForm({ ...form, especificacionesDesmonte: e.target.value })}
-                  className="w-full min-h-[80px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-                  placeholder="Condiciones de desmonte si aplica"
-                />
-              </div>
+              {tieneItemsDeLaCategoria('Estructura') && (
+                <div>
+                  <label className="text-sm font-medium text-text-muted mb-1 block">Estructura</label>
+                  <textarea
+                    value={form.especificacionesEstructura}
+                    onChange={(e) => setForm({ ...form, especificacionesEstructura: e.target.value })}
+                    className="w-full min-h-[80px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+                    placeholder="Ej: Estructura en roble macizo 18mm, uniones con espiga..."
+                  />
+                </div>
+              )}
+              {tieneItemsDeLaCategoria('Herrajes') && (
+                <div>
+                  <label className="text-sm font-medium text-text-muted mb-1 block">Herrajes</label>
+                  <textarea
+                    value={form.especificacionesHerrajes}
+                    onChange={(e) => setForm({ ...form, especificacionesHerrajes: e.target.value })}
+                    className="w-full min-h-[80px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+                    placeholder="Ej: Bisagras Blum de cierre suave..."
+                  />
+                </div>
+              )}
+              {tieneItemsDeLaCategoria('Mesones') && (
+                <div>
+                  <label className="text-sm font-medium text-text-muted mb-1 block">Mesones</label>
+                  <textarea
+                    value={form.especificacionesMesones}
+                    onChange={(e) => setForm({ ...form, especificacionesMesones: e.target.value })}
+                    className="w-full min-h-[80px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+                    placeholder="Ej: Mesón en granito negro absoluto..."
+                  />
+                </div>
+              )}
+              {tieneItemsDeLaCategoria('Desmonte') && (
+                <div>
+                  <label className="text-sm font-medium text-text-muted mb-1 block">Desmonte</label>
+                  <textarea
+                    value={form.especificacionesDesmonte}
+                    onChange={(e) => setForm({ ...form, especificacionesDesmonte: e.target.value })}
+                    className="w-full min-h-[80px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+                    placeholder="Condiciones de desmonte si aplica"
+                  />
+                </div>
+              )}
             </div>
           </section>
 

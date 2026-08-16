@@ -86,7 +86,7 @@ export default function GarantiaPage() {
     return map
   }, [casos])
 
-  const reportarCaso = () => {
+  const reportarCaso = async () => {
     setReporteError(null)
     if (!reporteProyectoId) {
       setReporteError('Seleccioná un proyecto entregado para reportar la garantía.')
@@ -100,7 +100,7 @@ export default function GarantiaPage() {
       setReporteError('Máximo 5 fotos por caso (R4).')
       return
     }
-    const resultado = store.casosGarantia.reportar({
+    const resultado = await store.casosGarantia.reportar({
       proyectoId: reporteProyectoId,
       moduloId: reporteModuloId || null,
       clienteId: proyectoReporte?.clienteId ?? null,
@@ -295,7 +295,7 @@ export default function GarantiaPage() {
                                     variant="secondary"
                                     size="md"
                                     disabled={!((visitaFechas[caso.id] ?? '').trim())}
-                                    onClick={() => store.citasGarantia.agendar({
+                                    onClick={async () => await store.citasGarantia.agendar({
                                       casoId: caso.id,
                                       proyectoId: caso.proyectoId,
                                       fecha: new Date(`${visitaFechas[caso.id]}T09:00:00`).toISOString(),
@@ -317,8 +317,8 @@ export default function GarantiaPage() {
                                   variant="primary"
                                   size="md"
                                   disabled={!((diagnosticoDrafts[caso.id] ?? '').trim())}
-                                  onClick={() => {
-                                    store.casosGarantia.diagnosticar(caso.id, (diagnosticoDrafts[caso.id] ?? '').trim())
+                                  onClick={async () => {
+                                    await store.casosGarantia.diagnosticar(caso.id, (diagnosticoDrafts[caso.id] ?? '').trim())
                                     setDiagnosticoDrafts(prev => ({ ...prev, [caso.id]: '' }))
                                   }}
                                 >
@@ -330,7 +330,7 @@ export default function GarantiaPage() {
 
                           {caso.estado === 'diagnosticado' && (
                             <div className="space-y-2 pt-1 border-t border-border-subtle">
-                              <Button variant="primary" size="md" onClick={() => store.casosGarantia.crearOrdenReparacion(caso.id)}>
+                              <Button variant="primary" size="md" onClick={async () => await store.casosGarantia.crearOrdenReparacion(caso.id)}>
                                 Crear orden de reparación
                               </Button>
                               {!caso.dentroGarantiaContractual && (
@@ -343,7 +343,7 @@ export default function GarantiaPage() {
                                 size="md"
                                 disabled={!caso.dentroGarantiaContractual}
                                 title={!caso.dentroGarantiaContractual ? 'Fuera de garantía contractual' : undefined}
-                                onClick={() => store.casosGarantia.dispararReproceso(caso.id)}
+                                onClick={async () => await store.casosGarantia.dispararReproceso(caso.id)}
                               >
                                 Disparar reproceso
                               </Button>
@@ -363,8 +363,8 @@ export default function GarantiaPage() {
                                 variant="primary"
                                 size="md"
                                 disabled={!((solucionDrafts[caso.id] ?? '').trim())}
-                                onClick={() => {
-                                  store.casosGarantia.resolver(caso.id, (solucionDrafts[caso.id] ?? '').trim())
+                                onClick={async () => {
+                                  await store.casosGarantia.resolver(caso.id, (solucionDrafts[caso.id] ?? '').trim())
                                   setSolucionDrafts(prev => ({ ...prev, [caso.id]: '' }))
                                 }}
                               >
@@ -375,7 +375,7 @@ export default function GarantiaPage() {
 
                           {caso.estado === 'resuelto' && (
                             <div className="pt-1 border-t border-border-subtle">
-                              <Button variant="secondary" size="md" onClick={() => store.casosGarantia.cerrar(caso.id)}>
+                              <Button variant="secondary" size="md" onClick={async () => await store.casosGarantia.cerrar(caso.id)}>
                                 Cerrar caso
                               </Button>
                             </div>

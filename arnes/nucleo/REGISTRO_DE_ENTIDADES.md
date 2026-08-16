@@ -179,7 +179,7 @@ D-2026-08-07* (decisiones nuevas del Supervisor) > FLAG4 / OLA_6 (catálogos) > 
 | `pedidos_web` | Pedido de tienda | Carrito → checkout. `clienteId` siempre de sesión. Precio releído fresco del catálogo (no del cliente). Gap: no dispara producción automáticamente. | FK→`clientes`, FK→`productos_tienda`; 1—N `item_pedido` |
 | `item_pedido` | Ítem del pedido | Cantidad, precio unitario (servidor, no cliente). | FK→`pedidos_web`, FK→`productos_tienda` |
 | `colecciones` | Colecciones públicas | Agrupación de productos para vitrina web. | 1—N `productos_tienda` |
-| `portafolio` | Casos de obra | Proyectos reales publicados, imágenes, sin precios. | FK→`proyectos` |
+| `portafolio` | Casos de obra | Proyectos reales publicados, imágenes, sin precios. **Campos de imagen (decisión ARCH-012, 2026-08-12):** `imagen_portafolio_url` (hero opcional) y `galeria_portafolio_url` (jsonb/array de URLs de R2, **máx. 10**, orden del array = orden de galería). **NO usa `EspacioVariante.fotosEspacio`** — el portafolio público está desacoplado de la capa de cotización. | FK→`proyectos` |
 | `testimonios` | Reseñas / testimonios | **ACTIVA** (E-55). Calificación, texto, cliente. Adelantada por decisión DC-1 del Supervisor (2026-08-09) — sin tocar schema. **Especificación [2026-08-09]:** `contenido` (texto real, nunca editado), `rating` (1-5), `curado`, `aprobado`, `publicado`, `createdAt`, `fuente` (GBP/WhatsApp/Notion/video), `barrio` (contexto barrial I-013), `tipo_proyecto`, `url_fuente` (enlace a la fuente original), `fecha_publicacion`. Regla anti-invención: solo se renderiza con datos reales. | FK→`clientes`, FK→`proyectos` |
 
 ---

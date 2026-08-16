@@ -1,0 +1,49 @@
+{
+  "id": "t-135",
+  "nombre": "P-27: gestión central de portafolio (/erp/portafolio)",
+  "descripcion": "Cierra el 'Obstáculo 2' de la Auditoría 2026-08-15 (t-133/t-134): no existía ninguna pantalla que listara todas las entradas de portafolio de todos los proyectos en un solo lugar — solo la pantalla por-proyecto (app/erp/proyectos/[proyectoId]/portafolio/page.tsx, ya existente y funcional). Implementación del diseño disenio_P27_gestion_portafolio.md, aprobado por el Supervisor el 2026-08-15 sin cambios de alcance.",
+  "objetivo": "El equipo comercial/admin puede ver, publicar/despublicar, destacar y reordenar todas las entradas de portafolio (publicadas y sin publicar) desde una sola pantalla, sin navegar proyecto por proyecto. No crea ni edita contenido (título/fotos/descripción) — eso sigue en la pantalla por-proyecto. No requiere cambios de schema: proyecto_id sigue NOT NULL.",
+  "prioridad": "Media",
+  "estado": "Completada (código)",
+  "fecha_resolucion": "2026-08-15",
+  "resolucion": "app/erp/portafolio/page.tsx (nuevo): tabla con filtros por categoría y estado de publicación, thumbnail (imagenPortafolioUrl || galeriaPortafolioUrl[0], fallback 'Sin foto'), toggles publicar/despublicar y destacar/quitar destacado, input de orden (commit on blur), link 'Editar contenido' a /erp/proyectos/[proyectoId]/portafolio. Usa exclusivamente métodos ya existentes del store (store.portafolio.listar/publicar/despublicar/actualizar) — sin paso de datos nuevo, tal como preveía el diseño. components/veta/erp-sidebar.tsx: agrega el ítem 'Portafolio' (icono Images de lucide-react) a la sección 'Catálogo y tienda' del nav.",
+  "verificacion_mecanica": [
+    "npx tsc --noEmit: 0 errores",
+    "npx eslint \"app/erp/portafolio/**/*.tsx\" \"components/veta/erp-sidebar.tsx\": 0 errores, 0 warnings",
+    "rm -rf .next && DATA_IMPL=mock npx next build: 32/32 rutas OK (31 previas + /erp/portafolio nueva, estática). Nota: un intento de build anterior falló con 'Cannot find module ./5611.js' (webpack-runtime) por caché .next corrupta de procesos next dev colgados de una verificación anterior en esta misma sesión — no relacionado con el código; se resolvió limpiando .next y reconstruyendo."
+  ],
+  "no_verificado": "No hay smoke test de navegador real en este sandbox (mismo límite que t-133/t-134): no se confirmó visualmente el comportamiento de los toggles ni el input de orden con click real. Verificado por lectura de código y por el build exitoso. Pendiente que el Supervisor lo pruebe con npm run dev.",
+  "dependencias": [
+    "disenio_P27_gestion_portafolio.md (diseño aprobado)",
+    "lib/data/contracts.ts (store.portafolio: listar/publicar/despublicar/actualizar, sin cambios)",
+    "app/erp/proyectos/[proyectoId]/portafolio/page.tsx (destino del link 'Editar contenido', sin cambios)"
+  ],
+  "entregables": [
+    {
+      "nombre": "app/erp/portafolio/page.tsx",
+      "formato": "TypeScript/TSX",
+      "ubicacion": "app/erp/portafolio/page.tsx",
+      "detalle": "Pantalla de gestión central de portafolio."
+    },
+    {
+      "nombre": "components/veta/erp-sidebar.tsx",
+      "formato": "TypeScript/TSX",
+      "ubicacion": "components/veta/erp-sidebar.tsx",
+      "detalle": "Ítem de nav agregado (CA-5 del diseño)."
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "La tabla muestra entradas publicadas y sin publicar (CA-3) — CUMPLIDO, sin filtro de publicado en store.portafolio.listar()",
+    "Publicar/despublicar/destacar actualiza el store vía M-07 (CA-4) — CUMPLIDO por diseño (mismos métodos que ya usa la pantalla por-proyecto), no verificado con click real en navegador",
+    "/erp/portafolio alcanzable desde ERP_NAV (CA-5) — CUMPLIDO, ítem agregado a la sección 'Catálogo y tienda'",
+    "Ningún control permite crear una entrada sin proyectoId (CA-6/R4) — CUMPLIDO, no hay <form> de creación ni llamada a store.portafolio.crear() en el archivo",
+    "npx tsc --noEmit = 0 (CA-1) — CUMPLIDO",
+    "npx eslint . = 0 errores nuevos en app/erp/portafolio/ (CA-2) — CUMPLIDO"
+  ],
+  "notas": [
+    "Autorizado y ejecutado en la misma sesión por instrucción explícita del Supervisor (aprobación del diseño P-27, 2026-08-15) — mismo criterio que t-132/t-133/t-134.",
+    "plan_ref: arnes/lineas/ola7/pantallas/disenio_P27_gestion_portafolio.md"
+  ],
+  "relacionado": ["t-133", "t-134", "t-119", "t-132", "disenio_F03_portafolio_proyectos.md", "disenio_P27_gestion_portafolio.md"],
+  "fecha_creacion": "2026-08-15"
+}

@@ -123,12 +123,77 @@
 
 ---
 
+## 5.1 Arquitectura visual: Comparación Diseño Actual ↔ Ultra Compacto
+
+**Estado actual (D-11, sticky header probado):**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ HEADER STICKY (top-0 z-10)                                                  │
+│ [Logo]  Cotizador  |  SmartSearch(proyectos)  |  [Nuevo]  [Usuario]        │
+├──────────────────┬────────────────────────────────────────────┬─────────────┤
+│  SIDEBAR (280px) │  ÁREA CENTRAL (flex-1)                     │ PANEL DER   │
+│                  │                                            │  (320px)    │
+│  [Nombre]        │  ┌─ EspacioCard 1                         │  ┌────────┐  │
+│  [Cliente]       │  │  [11 Collapses]                       │  │ RESUMEN│  │
+│  [Estado]        │  │  ...                                   │  │ Sticky │  │
+│  [Tipo]          │  │  ┌─ EspacioCard N                     │  └────────┘  │
+│  [Dir.Obra]      │  │  [11 Collapses]                       │              │
+│  [Config]        │  │  [Footer: Guardar][Generar Contrato]  │              │
+│  [Taller ⚙]     │  └─                                        │              │
+│  [IVA + %]       │                                            │              │
+│  [Garantía 2a]   │  ← Scroll dentro de área central          │              │
+│  [Transic. 🔗]   │                                            │              │
+└──────────────────┴────────────────────────────────────────────┴─────────────┘
+```
+**Observación:** Ya es sticky (D-11). El header no desaparece al scroll — solo el kanban de espacios desplaza abajo.
+
+---
+
+**Propuesta Ultra Compacto (alternativa para liberar espacio):**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ HEADER ULTRA COMPACTO (sticky, 48px)                                        │
+│ [Logo] [Proyecto ▼] | [IVA toggle] [Garantía: 2a ▼] | [Usuario]           │
+├──────────────────┬────────────────────────────────────────────┬─────────────┤
+│  SIDEBAR MINI    │  ÁREA CENTRAL (flex-1)                     │ PANEL DER   │
+│  (180px)         │  [EspacioCard 1][EspacioCard 2]... scroll │ (300px)     │
+│                  │  [Footer: Guardar][Generar Contrato]      │ RESUMEN     │
+└──────────────────┴────────────────────────────────────────────┴─────────────┘
+```
+**Ventaja:** Gana ~100px verticales al collapsed sidebar, 20px de header. Acciones críticas (IVA, Garantía) flotan en header, más accesibles.
+**Desventaja:** El header crece más denso. Los campos de proyecto (Cliente, Estado) necesitan un modal/popover para editarse.
+
+---
+
+**DECISIÓN DE DISEÑO (revisada 2026-08-11 — Javier: "SI implementar header ULTRA COMPACTO"):** Ejecutado. El header pasa de un bloque apilado de ~4 filas (título/cliente/dirección, badges, descripción, IVA, botones) a **una sola fila** (`sticky`, `px-4 py-2`): nombre de proyecto (truncado) + cliente + badge de estado + **Garantía como input numérico editable** (ya no badge — ver `garantiaAnios` abajo) + IVA compacto (checkbox + % inline) + acciones (Propuesta pública / Solo lectura / Generar Contrato, botones `h-7` texto `xs`). Dirección de obra y descripción semántica bajan al primer bloque del contenido scrolleable (ya no compiten por espacio sticky — son contexto de lectura, no controles de acción). Implementado en `app/erp/cotizador/[proyectoId]/page.tsx`.
+
+**Garantía — de badge a parámetro (§5.2, ejecutado junto con el header):** `store.proyectos.actualizarParametrosFinancieros` ahora acepta `garantiaAnios` (antes solo `aplicaIva`/`porcentajeIva`) — mismo método, mismo patrón que IVA. El campo ya existía en `Proyecto.garantiaAnios` (schema), solo faltaba la UI de edición; no se creó parámetro nuevo.
+
+---
+
+## 5.2 Parámetro Garantía como Editable por Proyecto
+
+**Estado actual:** `proyectos.garantia_anios` es un campo de número entero, default desde parámetro global P-24 (`garantia_anios = 2` años, línea del glosario h07).
+
+**Regla de negocio:** La garantía es EDITABLE por proyecto en el Cotizador, pero puede ser globalmente revisada vía parámetros P-24. Nunca crear un parámetro nuevo — reusar P-24 como default.
+
+**Cómo aparece en UI (Sidebar Izq, debajo de "Ajuste arbitrario"):**
+- Label: "Garantía (años)"
+- Input: Number, min=0, max=20 (razonable)
+- Comportamiento: `useAutoSave` → `proyectos.garantia_anios` (igual que `descuento_comercial`, `ajuste_arbitrario`)
+- Inicialización: Leer P-24 (`parametros.leerParametroNumerico('garantia_anios')`) al crear proyecto nuevo. Proyectos existentes conservan su valor local.
+
+**NO aparece:**
+- Badge/alert de "2 años incluida" o similar — es un parámetro técnico, no un claim de marketing. El contrato dirá cuál es la garantía final.
+
+---
+
 ## 5. Componentes UI
 
 **Layout Principal:**
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ HEADER (sticky)                                                             │
+│ HEADER (sticky, D-11 verificado)                                            │
 │ [Logo]  Cotizador  |  SmartSearch(proyectos)  |  [Nuevo]  [Usuario]        │
 ├──────────────────┬────────────────────────────────────────────┬─────────────┤
 │                  │                                            │             │
@@ -171,6 +236,55 @@
 | `ResumenPanel` | Client (sticky, 320px) | `gt: GrandTotals, acciones: ActionProps[]` | — | Display COP, destacado size-lg el TOTAL |
 | `ContratoModal` | Client (modal) | `proyectoId, cliente, espacios, onClose` | `contratos`, `hitos_pago` | 5 secciones, PaymentScheduleCalculator |
 | `PaymentScheduleCalculator` | Client | `milestones, valor_total, onChange` | `hitos_pago` | Barra progreso, add/remove hitos, validación suma exacta |
+| `ItemMiniatura` | Client | `item: ItemVariante, catalogo: ProductoCatalogo` | `items_variante`, `productos_catalogo` | Miniatura clicable: `imagenUrl` del catálogo o placeholder |
+| `ItemDescriptorModal` | Client (modal) | `producto: ProductoCatalogo, item: ItemVariante, onClose` | `productos_catalogo`, `items_variante` | Imagen HD + specs: SKU, categoría, descripción, precio directo/público |
+
+---
+
+### Patrón: Herencia Visual Ítem Cotizado (ItemVariante → ProductoCatalogo)
+
+**Concepto:** Un ítem cotizado (`ItemVariante`) NO es dueño de imágenes ni ficha técnica — hereda del `ProductoCatalogo` por FK `catalogoId`. La UI muestra una **miniatura clicable** (imagen pequeña del catálogo) que abre un **modal descriptivo** (imagen HD + specs técnicas del producto).
+
+**Componentes:**
+
+#### `ItemMiniatura`
+- **Entrada:** `item: ItemVariante` + `producto: ProductoCatalogo` (precargado)
+- **Render:** 
+  - Si `producto.imagenUrl` existe: imagen 64×64px, `border-radius` `--radius-md`, sombra sutil
+  - Si no existe: placeholder con inicial de categoría o icono genérico, fondo `--color-bg-alt`
+- **Interacción:** Click abre `ItemDescriptorModal`
+- **No renderiza:** campos técnicos (SKU, precio, categoría) — eso va en el modal
+
+#### `ItemDescriptorModal`
+- **Gatillo:** Click en miniatura
+- **Contenido (2 columnas, 50/50):**
+  - **Izq:** Imagen HD (`producto.imagenUrl`, aspect-ratio 4:3 o portrait según disponibilidad), sin zoom (no fancybox)
+  - **Der:** Specs
+    - `sku` (gris pequeño)
+    - `descripcion` (negrita, tamaño normal)
+    - `categoria_comercial` (badge) si existe
+    - Línea separadora
+    - Tabla mini:
+      | Campo | Valor |
+      |-------|-------|
+      | Precio directo (interno) | `precio_directo` o "—" |
+      | Precio público | `precio_publico` o "—" |
+      | Unidad | `unidad_medida` |
+    - Botón "Cerrar" (esquina sup-der)
+- **No muestra:** `stock_actual`, `proveedor_id`, `modelo_3d_url` (interno del catálogo)
+
+**Regla de Mapeo:** NO inventar campos. Reusamos EXACTAMENTE lo que existe en `ProductoCatalogo`:
+- `imagenUrl` (singular) → miniatura + modal
+- `descripcion`, `sku`, `categoria_comercial`, `precio_directo`, `precio_publico`, `unidad_medida` → specs del modal
+- `modelo_3d_url` comentado (futuro, F8)
+
+**Aplicación en el Cotizador:** Cada `ItemRow` de una tabla de ítems muestra:
+```
+[Miniatura] | Nombre | Cant. | Precio Unit. | Total | [✎] [✕]
+```
+El Nombre es texto editable. La Miniatura es link a modal. El ✎ permite cambiar cantidad/precio. El ✕ soft-delete.
+
+---
 
 **Especificaciones completas de cada componente:**
 

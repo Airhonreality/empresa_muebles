@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { ArbolProyectoSelector } from '@/components/veta/arbol-proyecto-selector'
+import { ReportarGarantiaModal } from '@/components/veta/reportar-garantia-modal'
 import { useDataStore } from '@/lib/data'
 import type { EstadoProyecto } from '@/lib/data'
 
@@ -79,8 +81,6 @@ interface ProyectoDetalleClienteProps {
 
 export function ProyectoDetalleCliente({ proyectoId, clienteId }: ProyectoDetalleClienteProps) {
   const store = useDataStore()
-  const [garantiaModuloId, setGarantiaModuloId] = useState<string | null>(null)
-  const [garantiaDesc, setGarantiaDesc] = useState('')
   const [garantiaEnviado, setGarantiaEnviado] = useState(false)
 
   const proyecto = useMemo(
@@ -113,8 +113,8 @@ export function ProyectoDetalleCliente({ proyectoId, clienteId }: ProyectoDetall
     [store.getVersion(), proyectoId]
   )
 
-  const comunicaciones = useMemo(
-    () => store.comunicaciones.porProyecto(proyectoId),
+  const comunicacionesVisibles = useMemo(
+    () => store.comunicaciones.visiblesAlCliente(proyectoId),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [store.getVersion(), proyectoId]
   )
@@ -166,28 +166,6 @@ export function ProyectoDetalleCliente({ proyectoId, clienteId }: ProyectoDetall
   const modulosGarantia = modulos.filter(
     (m) => m.estado === 'en_instalacion' || m.estado === 'aprobado'
   )
-
-  // Comunicaciones visibles al cliente (R4)
-  const comunicacionesVisibles = comunicaciones
-
-  // Árbol de módulos para garantía
-  const rootModules = modulosGarantia.filter((m) => m.padreId === null)
-  const childModules = modulosGarantia.filter((m) => m.padreId !== null)
-
-  function handleReportarGarantia() {
-    if (!garantiaModuloId || !garantiaDesc.trim()) return
-    const result = store.casosGarantia.reportar({
-      proyectoId,
-      moduloId: garantiaModuloId,
-      clienteId,
-      descripcion: garantiaDesc.trim(),
-    })
-    if (result) {
-      setGarantiaEnviado(true)
-      setGarantiaModuloId(null)
-      setGarantiaDesc('')
-    }
-  }
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
@@ -363,41 +341,14 @@ export function ProyectoDetalleCliente({ proyectoId, clienteId }: ProyectoDetall
           <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-3">Garantía</h2>
 
           {/* Reportar garantía */}
-          {modulosGarantia.length > 0 && !garantiaEnviado && (
-            <div className="mb-4 rounded border border-amber-200 bg-amber-50/50 p-4">
-              <p className="text-sm font-medium text-text-heading mb-2">Reportar garantía</p>
-              <select
-                value={garantiaModuloId ?? ''}
-                onChange={(e) => setGarantiaModuloId(e.target.value || null)}
-                className="mb-2 w-full rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm"
-              >
-                <option value="">Seleccionar módulo...</option>
-                {rootModules.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.nombre}
-                  </option>
-                ))}
-                {childModules.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {'  └ '}{m.nombre}
-                  </option>
-                ))}
-              </select>
-              <textarea
-                value={garantiaDesc}
-                onChange={(e) => setGarantiaDesc(e.target.value)}
-                placeholder="Describí el problema..."
-                className="mb-2 w-full rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm"
-                rows={3}
+          {modulosGarantia.length > 0 && (
+            <div className="mb-4">
+              <ReportarGarantiaModal
+                clienteId={clienteId}
+                proyectoId={proyectoId}
+                modulos={modulos}
+                onSuccess={() => setGarantiaEnviado(true)}
               />
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleReportarGarantia}
-                disabled={!garantiaModuloId || !garantiaDesc.trim()}
-              >
-                Enviar reporte
-              </Button>
             </div>
           )}
           {garantiaEnviado && (

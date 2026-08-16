@@ -52,7 +52,7 @@ export default function EntregaPage() {
     return Number.isFinite(n) ? n : 0
   }
 
-  const handleGenerar = () => {
+  const handleGenerar = async () => {
     setError(null)
     if (!instalada) {
       setError('No se puede generar el acta: la instalación no está marcada como "Instalada" (R1).')
@@ -63,7 +63,7 @@ export default function EntregaPage() {
       setError('La holgura operativa debe ser un número mayor a 0 días.')
       return
     }
-    const resultado = store.actasEntrega.generar(proyectoId, {
+    const resultado = await store.actasEntrega.generar(proyectoId, {
       holguraOperativaDias: holguraDias,
       fotos,
       observaciones: observaciones.trim() || null,
@@ -195,7 +195,7 @@ export default function EntregaPage() {
 
             {acta.estado === 'generada' && (
               <div className="pt-1">
-                <Button variant="primary" size="md" onClick={() => store.actasEntrega.enviar(acta.id)}>
+                <Button variant="primary" size="md" onClick={async () => await store.actasEntrega.enviar(acta.id)}>
                   Enviar al cliente
                 </Button>
               </div>
@@ -206,7 +206,7 @@ export default function EntregaPage() {
                 <p className="text-xs text-text-muted">
                   Firma digital diferida (compartida con E-13): por ahora se registra manualmente.
                 </p>
-                <Button variant="primary" size="md" onClick={() => store.actasEntrega.firmar(acta.id)}>
+                <Button variant="primary" size="md" onClick={async () => await store.actasEntrega.firmar(acta.id)}>
                   Registrar como firmada
                 </Button>
               </div>

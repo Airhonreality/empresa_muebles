@@ -1,0 +1,45 @@
+{
+  "id": "t-130",
+  "nombre": "F10-F: Capa de Server Actions para las ~96 escrituras del contrato DataStore",
+  "descripcion": "Decisión t-127 (§3.1b/§3.1d, 2026-08-13): los 45 consumidores de useDataStore() son 'use client' — el driver `postgres` (postgres.js) no puede ejecutar en el navegador ni exponer credenciales de Neon al cliente. Toda escritura real requiere un salto de red server-side. Este ticket crea un Server Action ('use server') por cada uno de los ~96 métodos mutadores del contrato DataStore (crear/actualizar*/eliminar/emitirVeredicto/registrarPago/firmar/marcarActiva/etc., repartidos en 25 archivos de app/), cada uno corriendo Drizzle contra Neon y confirmando (transaccional donde el contrato ya lo exige, ej. registrarPago, actualizarChecks) antes de retornar. Reemplaza tanto write-behind (A, descartado por riesgo de pérdida) como un refactor async de las 305 lecturas (B, descartado por innecesario).",
+  "objetivo": "Que cada escritura del ERP se confirme en Neon antes de que la UI la dé por guardada, sin tocar los métodos de lectura.",
+  "prioridad": "Crítica",
+  "estado": "Completada",
+  "fecha_resolucion": "2026-08-14",
+  "resolucion": "Implementadas ~99 Server Actions reales en lib/data/actions/{core,f3,f4,f5,f6,f7-tienda,portafolio}.ts, cada una con Drizzle real contra dev-local (transaccional donde aplica), reusando los validadores puros de lib/modules/f3/gates.ts y f4f5f6/gates.ts. Verificado con E2E manual real (crear cliente/proyecto, transición de estado rechazada correctamente por regla de negocio, snapshot de vuelta correcto) y con next build --DATA_IMPL=drizzle exitoso contra Neon real.",
+  "dependencias": [
+    "lib/data/contracts.ts (firmas de los métodos mutadores deben pasar a Promise<T|null>)",
+    "lib/db/schema.ts (28 tablas) estable",
+    "t-119 (createDrizzleStore lecturas, en paralelo)",
+    "plan_f10_migracion.md §3.1d"
+  ],
+  "entregables": [
+    {
+      "nombre": "lib/data/actions/*.ts",
+      "formato": "TypeScript ('use server')",
+      "ubicacion": "lib/data/actions/",
+      "detalle": "Un módulo de Server Actions por dominio del contrato (proyectos, espacios, items, catalogo, contratos, cronogramas, checks, novedades, schemas, verificaciones, modulos, ordenesTrabajo, pedidosWeb, instalaciones, actasEntrega, casosGarantia, cuentasFinancieras, obligacionesPendientes, ordenesCompra, caja, cuentasCobroProveedor, portafolio, testimonios, herramientas, documentosProyecto, etc.) — cada método mutador implementado como Server Action transaccional."
+    }
+  ],
+  "pasos": [
+    { "numero": 1, "accion": "Auditar los ~96 call sites reales", "detalle": "Grep de todos los verbos mutadores del contrato (no solo crear/actualizar/eliminar) contra app/ para confirmar el mapa completo de 25 archivos antes de tocar contracts.ts.", "responsable": "Código" },
+    { "numero": 2, "accion": "Cambiar firmas en contracts.ts", "detalle": "Los ~96 métodos mutadores pasan de (...) => T|null a (...) => Promise<T|null>. Los 209 métodos de lectura NO cambian.", "responsable": "Código" },
+    { "numero": 3, "accion": "Envolver mock-store.ts", "detalle": "Las escrituras ya-síncronas del mock se envuelven en Promise.resolve(...) para seguir cumpliendo el contrato sin cambiar su lógica interna — dev sigue funcionando sin Neon.", "responsable": "Código" },
+    { "numero": 4, "accion": "Implementar Server Actions reales", "detalle": "Cada acción corre Drizzle contra Neon, transaccional donde el contrato ya lo exige, y confirma antes de retornar.", "responsable": "Código" },
+    { "numero": 5, "accion": "Actualizar los 25 archivos de app/", "detalle": "Cada call site de escritura pasa a `await` el Server Action correspondiente; al confirmar, actualiza la caché local del store y notifica vía subscribe() (M-07) para que la pestaña propia refleje el cambio al instante.", "responsable": "Código" },
+    { "numero": 6, "accion": "Verificar tsc/eslint/tests", "detalle": "tsc --noEmit, eslint ., tests de mock-store con las nuevas firmas async.", "responsable": "QA" }
+  ],
+  "criterios_de_aceptacion": [
+    "Los ~96 métodos mutadores de DataStore retornan Promise y confirman en Neon antes de resolver",
+    "Ningún método de lectura cambia de firma",
+    "tsc --noEmit exit 0, eslint . 0 errores",
+    "Escribir en una pestaña se refleja en esa misma pestaña sin esperar al polling (t-131)",
+    "V-5b del plan (§5): cambio visible en una segunda pestaña/usuario en ≤4s"
+  ],
+  "notas": [
+    "No incluye websockets/SSE/pub-sub de terceros — descartado explícitamente por el Supervisor en t-127 (infraestructura nueva, checkpoint propio, no necesaria para el requisito de ≤4s).",
+    "El conteo de 96/25 (no 44/2-3 pantallas) está documentado en plan_f10_migracion.md §3.1b como corrección de un análisis previo que solo contó los verbos genéricos crear/actualizar/eliminar/guardar/publicar/despublicar/anular."
+  ],
+  "relacionado": ["lib/data/contracts.ts", "lib/data/mock-store.ts", "lib/data/drizzle-impl.ts", "t-119", "t-127", "t-131"],
+  "fecha_creacion": "2026-08-13"
+}

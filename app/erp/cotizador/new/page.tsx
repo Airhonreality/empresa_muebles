@@ -9,17 +9,30 @@ import { useDataStore, type Proyecto, type Cliente } from "@/lib/data";
 export default function NuevoProyectoPage() {
   const router = useRouter();
   const store = useDataStore();
-  
+
   const [nombreProyecto, setNombreProyecto] = useState("");
   const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
   const [direccionObra, setDireccionObra] = useState("");
   const [descripcionSemantica, setDescripcionSemantica] = useState("");
+  const [errores, setErrores] = useState<{
+    nombreProyecto?: string;
+  }>({});
 
   const clientes = store.clientes.listar();
 
-  const handleSubmit = useCallback(() => {
-    if (!nombreProyecto.trim()) return;
-    
+  const handleSubmit = useCallback(async () => {
+    const nuevosErrores: typeof errores = {};
+
+    // Validar nombre proyecto (R1) — único campo obligatorio (2026-08-11, Javier: cliente/dirección se completan después)
+    if (!nombreProyecto.trim()) {
+      nuevosErrores.nombreProyecto = "El nombre del proyecto es obligatorio";
+    }
+
+    setErrores(nuevosErrores);
+
+    // Detener si hay errores
+    if (Object.keys(nuevosErrores).length > 0) return;
+
     const nuevoProyecto: Partial<Proyecto> & { nombreProyecto: string } = {
       nombreProyecto: nombreProyecto.trim(),
       clienteId: clienteSeleccionado?.id ?? null,
@@ -36,8 +49,8 @@ export default function NuevoProyectoPage() {
       garantiaAnios: 2,
       diasEntregaEstimados: null,
     };
-    
-    const proyectoCreado = store.proyectos.crear(nuevoProyecto);
+
+    const proyectoCreado = await store.proyectos.crear(nuevoProyecto);
     if (proyectoCreado) {
       router.push(`/erp/cotizador/${proyectoCreado.id}`);
     }
@@ -55,13 +68,23 @@ export default function NuevoProyectoPage() {
       </header>
 
       <div className="space-y-4">
-        <InputField
-          label="Nombre del Proyecto *"
-          value={nombreProyecto}
-          onChange={(e) => setNombreProyecto(e.target.value)}
-          placeholder="Ej: Cocina Integral Roble"
-          required
-        />
+        <div>
+          <InputField
+            label="Nombre del Proyecto *"
+            value={nombreProyecto}
+            onChange={(e) => {
+              setNombreProyecto(e.target.value);
+              if (errores.nombreProyecto) {
+                setErrores((prev) => ({ ...prev, nombreProyecto: undefined }));
+              }
+            }}
+            placeholder="Ej: Cocina Integral Roble"
+            required
+          />
+          {errores.nombreProyecto && (
+            <p className="mt-1 text-sm text-error">{errores.nombreProyecto}</p>
+          )}
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-text-muted mb-1">
@@ -74,12 +97,14 @@ export default function NuevoProyectoPage() {
           />
         </div>
 
-        <InputField
-          label="Dirección de Obra"
-          value={direccionObra}
-          onChange={(e) => setDireccionObra(e.target.value)}
-          placeholder="Ej: Cra 15 #123-45, Bogotá"
-        />
+        <div>
+          <InputField
+            label="Dirección de Obra"
+            value={direccionObra}
+            onChange={(e) => setDireccionObra(e.target.value)}
+            placeholder="Ej: Cra 15 #123-45, Bogotá"
+          />
+        </div>
 
         <InputField
           label="Descripción Semántica"
@@ -134,10 +159,10 @@ function HybridClientSelector({
     query.trim().length > 0 &&
     !filtrados.some(c => c.nombre.toLowerCase() === query.trim().toLowerCase())
 
-  const crearNuevo = useCallback(() => {
+  const crearNuevo = useCallback(async () => {
     const nombre = query.trim()
     if (!nombre) return
-    const nuevo = store.clientes.crear({ nombre })
+    const nuevo = await store.clientes.crear({ nombre })
     onSelect(nuevo)
     setAbierto(false)
   }, [query, store, onSelect])

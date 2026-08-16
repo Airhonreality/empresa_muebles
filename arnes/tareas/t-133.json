@@ -1,0 +1,40 @@
+{
+  "id": "t-133",
+  "nombre": "F-03 Portafolio: imagen real en la grilla pública (bug real de la Auditoría 2026-08-15)",
+  "descripcion": "PortafolioCard en app/(publico)/portafolio/page.tsx nunca leía imagenPortafolioUrl/galeriaPortafolioUrl — la grilla pública mostraba siempre un placeholder con la inicial del título, sin importar si el proyecto tenía fotos cargadas. El detalle (/portafolio/[slug]) sí las renderizaba bien. Corrección de una auditoría externa que mezclaba este bug real con un diagnóstico de severidad exagerado (asumía que el sitio público no estaba wired a Neon/R2 en absoluto, cuando en realidad ambas rutas ya leen del mismo store vía useDataStore()/DATA_IMPL — ver arnes/lineas/ola7/plan_t-133.md §Contexto).",
+  "objetivo": "La grilla pública de portafolio muestra la foto real del proyecto (o el placeholder solo si el proyecto no tiene ninguna foto cargada), para que el corte a DATA_IMPL=drizzle en el preview de Vercel se pueda probar con datos reales sin este defecto visible.",
+  "prioridad": "Alta",
+  "estado": "Completada (código)",
+  "fecha_resolucion": "2026-08-15",
+  "resolucion": "app/(publico)/portafolio/page.tsx: PortafolioCard ahora calcula imagenUrl = proyecto.imagenPortafolioUrl || proyecto.galeriaPortafolioUrl[0] y renderiza <img> cuando existe; el placeholder de inicial queda como fallback exclusivamente para proyectos sin ninguna foto. Mismo patrón visual (<img> plano, object-cover) que ya usa el detalle [slug].",
+  "verificacion_mecanica": [
+    "npx tsc --noEmit: 0 errores",
+    "npx eslint \"app/(publico)/portafolio/**/*.tsx\" \"lib/data/actions/portafolio.ts\": 0 errores, 4 warnings preexistentes (no-img-element, mismo patrón que el resto del sitio)",
+    "DATA_IMPL=mock npx next build: 31/31 rutas OK, sin errores nuevos"
+  ],
+  "no_verificado": "No hay fixture con imagen real en lib/data/fixtures.ts para un smoke visual en modo mock (ambos proyectos de PORTAFOLIO tienen imagenPortafolioUrl: null y galeriaPortafolioUrl: []) — el camino de fallback sí se ejerce, el camino con imagen se verificó por lectura de código, no visualmente en este sandbox.",
+  "dependencias": [
+    "lib/data/contracts.ts (interfaz Portafolio, sin cambios)"
+  ],
+  "entregables": [
+    {
+      "nombre": "app/(publico)/portafolio/page.tsx",
+      "formato": "TypeScript/TSX",
+      "ubicacion": "app/(publico)/portafolio/page.tsx",
+      "detalle": "PortafolioCard renderiza la imagen real del proyecto con fallback al placeholder de inicial."
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "Un proyecto con imagenPortafolioUrl no nulo muestra esa imagen en su tarjeta de /portafolio — CUMPLIDO (verificado por código)",
+    "Un proyecto sin imagenPortafolioUrl pero con galeriaPortafolioUrl no vacío muestra la primera imagen de la galería — CUMPLIDO (verificado por código)",
+    "Un proyecto sin ninguna imagen sigue mostrando el placeholder de inicial — CUMPLIDO, verificado en build (ambos fixtures mock)",
+    "npx tsc --noEmit sale sin errores — CUMPLIDO",
+    "DATA_IMPL=mock npx next build compila las 31 rutas sin error nuevo — CUMPLIDO"
+  ],
+  "notas": [
+    "Autorizado y ejecutado en la misma sesión que t-134 por instrucción explícita del Supervisor (2026-08-15) — no quedó como trabajo futuro, mismo criterio que t-132.",
+    "plan_ref: arnes/lineas/ola7/plan_t-133.md"
+  ],
+  "relacionado": ["t-134", "t-119", "t-132", "disenio_F03_portafolio_proyectos.md"],
+  "fecha_creacion": "2026-08-15"
+}

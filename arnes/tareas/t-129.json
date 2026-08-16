@@ -1,0 +1,52 @@
+{
+  "id": "t-129",
+  "nombre": "F10: Validación de valores reales contra schema V3 (dry-run)",
+  "descripcion": "El diagnóstico t-125 validó la ESTRUCTURA (unión de campos) pero no los VALORES. Antes de Fase 2 (clone) hay que mapear 5-10 registros reales de cada namespace core y validar: enums (todo estado legacy cae en enum V3), nulos donde V3 exige NOT NULL, formatos de fecha, tipos numéricos. Reportar discrepancias en validacion_valores.md.",
+  "objetivo": "Detectar antes del clone que los valores legacy no caben en las columnas V3 (enums, nulos, fechas).",
+  "prioridad": "Alta",
+  "estado": "Resuelta — B-2 aprobado con decisiones del Supervisor",
+  "fecha_resolucion": "2026-08-14",
+  "resolucion": "Dry-run corrido EXHAUSTIVO (100% de los registros, no muestra de 5-10 — el dataset es chico y una primera pasada muestreada escondió el hallazgo más grave, ver nota metodológica en validacion_valores.md) contra agnostic_records en dev-local (copy-on-write de production, no hizo falta DATABASE_URL_LEGACY nueva). 7 hallazgos críticos: productos_catalogo sin sku (219/278, 78.8%), proyectos.estado NULL (13/50), cotizaciones.estado NULL (13/18), proyectos.estado='visita_tecnica' fuera del enum V3 (1/50), items_variante con variante_id roto (97/626), espacio_variantes con proyecto_id roto (2/138), y el más importante: el mapeo documentado propuestas_publicas→portfolioPublico apunta a una tabla muerta (superseditda por ARCH-012, createDrizzleStore() no la usa) — el destino real debería ser portafolio o ninguno, según decida el Supervisor. Detalle completo en validacion_valores.md.",
+  "dependencias": ["lib/db/schema.ts", "arnes/lineas/ola7/migracion/mapeo_campos.md"],
+  "entregables": [
+    {
+      "nombre": "validacion_valores.md",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/migracion/validacion_valores.md",
+      "detalle": "Discrepancias encontradas + remediation pendiente de decisión del Supervisor."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Dry-run de mapeo sobre datos reales",
+      "detalle": "Ampliado de 'muestra de 5-10 reg/namespace' a exhaustivo 100% — la muestra escondía el hallazgo más grave (estado NULL). Corrido contra dev-local (copy-on-write de production, no requirió DATABASE_URL_LEGACY nueva).",
+      "responsable": "Código",
+      "estado": "Completado 2026-08-14"
+    },
+    {
+      "numero": 2,
+      "accion": "Reportar discrepancias",
+      "detalle": "7 hallazgos críticos documentados en validacion_valores.md, con volumen exacto por hallazgo.",
+      "responsable": "QA",
+      "estado": "Completado 2026-08-14"
+    },
+    {
+      "numero": 3,
+      "accion": "Decisión del Supervisor sobre remediation",
+      "detalle": "5/5 decisiones tomadas (2026-08-14): (1) SKU se regenera automáticamente para los 278 productos, nunca se usó operativamente. (2) Huérfanos verificados con detalle: 2 espacio_variantes + 97 items_variante sin cadena a un proyecto real -> descartar (97 confirmados también contra producción en vivo, vienen de 19 espacios fantasma borrados sin cascada); 1 proyecto con nombre vacío pero con hijo real -> conservar. (3) estado='visita_tecnica' -> remapea a 'negociacion'. (4) estado NULL (13 proyectos + 13 cotizaciones) -> default 'borrador', el Supervisor los transiciona manualmente después. (5) propuestas_publicas y portafolio web público NO se migran, se regeneran solos -> el clone real es proyectos+espacios+items+clientes+catalogo.",
+      "responsable": "Supervisor",
+      "estado": "Completado 2026-08-14"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "Dry-run ejecutado sin errores críticos de mapeo sin remediation documentada — CUMPLIDO: 7 hallazgos, los 7 con remediation decidida (ver validacion_valores.md)",
+    "validacion_valores.md revisado por Supervisor (CA-8) — CUMPLIDO 2026-08-14"
+  ],
+  "notas": [
+    "Bloqueo B-2: RESUELTO 2026-08-14. Las 5 decisiones de remediation quedan documentadas en validacion_valores.md — deben aplicarse literalmente en scripts/migrate-core.ts cuando se escriba (Fase 2), no reinterpretarse.",
+    "DATABASE_URL_LEGACY: primero no hizo falta para el dry-run (dev-local ya tenía agnostic_records completo por copy-on-write), pero el Supervisor la proveyó de todas formas para re-verificar el hallazgo de huérfanos contra producción en vivo (confirmó el mismo número, 97) y para que la Fase 2 lea de producción real en vez de la copia con drift. Guardada en .env.local (gitignored), nunca impresa de nuevo en la sesión."
+  ],
+  "relacionado": ["plan_f10_migracion.md §3.1c", "t-125", "t-115"],
+  "fecha_creacion": "2026-08-13"
+}

@@ -1,7 +1,7 @@
 // Test del predicado de gate F4 (disenio_P13_orden_compra.md).
 // Ejecutar: npx tsx lib/modules/f4/gates.test.ts
 import assert from 'node:assert/strict'
-import { puedeCrearOrdenCompra } from './gates'
+import { derivarListaCompraSugerida, puedeCrearOrdenCompra } from './gates'
 import type { Verificacion } from '../../data/contracts'
 
 let pasadas = 0
@@ -33,6 +33,22 @@ test('puedeCrearOrdenCompra: OC de proyecto exige P18 (schema aprobado del verif
 
 test('puedeCrearOrdenCompra: rechaza si el proyecto no está en desarrollo', () => {
   assert.equal(puedeCrearOrdenCompra({ ...proyectoDesarrollo, estado: 'borrador' }, [verif('p-comercial')]), false)
+})
+
+test('derivarListaCompraSugerida: sin schema aprobado_compras, no sugiere nada', () => {
+  assert.deepEqual(derivarListaCompraSugerida(null, [{ id: 'b1', productoId: 'p01', cantidad: '10', unidad: 'm2' }]), [])
+  assert.deepEqual(derivarListaCompraSugerida({ estado: 'para_revision' }, [{ id: 'b1', productoId: 'p01', cantidad: '10', unidad: 'm2' }]), [])
+})
+
+test('derivarListaCompraSugerida: con schema aprobado, sugiere ítems con productoId; excluye null (vía 2) y cantidades inválidas', () => {
+  const sugeridos = derivarListaCompraSugerida({ estado: 'aprobado_compras' }, [
+    { id: 'b1', productoId: 'p01', cantidad: '10', unidad: 'm2' },
+    { id: 'b2', productoId: null, cantidad: '5', unidad: 'ud' },
+    { id: 'b3', productoId: 'p02', cantidad: 'no-numerico', unidad: 'ud' },
+    { id: 'b4', productoId: 'p03', cantidad: '0', unidad: 'ud' },
+  ])
+  assert.equal(sugeridos.length, 1)
+  assert.deepEqual(sugeridos[0], { productoCatalogoId: 'p01', cantidad: 10, unidad: 'm2', bomMaterialId: 'b1' })
 })
 
 console.log(`\n${pasadas} pruebas OK.`)

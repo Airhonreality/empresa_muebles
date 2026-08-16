@@ -34,7 +34,7 @@
 
 - **No se adoptó Zustand/React Query/SWR.** `useSyncExternalStore` es React puro (0 deps), resuelve el síntoma actual completo, y respeta la restricción del Diamante 4 de no añadir librerías sin checkpoint. Si al migrar a `DATA_IMPL=drizzle` el patrón síncrono deja de alcanzar (datos que vienen de una API real, con latencia), se reevalúa entonces — no antes.
 - **No se dividió en hooks por dominio** (`useProyectos()`, `useEspacios()`, etc.). Un solo `useDataStore()` cubre las ~6 pantallas actuales sin la complejidad de mantener 8 hooks separados. Si el árbol de componentes crece lo suficiente para que el re-render global importe por rendimiento, se particiona entonces.
-- **No se tocó `PLANTILLA_PANTALLA.md`/`PLANTILLA_QA.md`.** Esas plantillas gobiernan la banda de diseño F0–F9 (ya cerrada) y las verificaciones de gates a nivel DB — un concern distinto al patrón de código del prototipo mock de F10. La referencia viva para pantallas nuevas de F10 es este archivo + `plan_f10.md` §1.2.
+- **No se tocó `PLANTILLA_PANTALLA.md`/`PLANTILLA_QA.md`.** Esas plantillas gobiernan la banda de diseño F0–F9 (ya cerrada) y las verificaciones de gates a nivel DB — un concern distinto al patrón de código del prototipo mock de F10. La referencia viva para pantallas nuevas de F10 es este archivo + `plan_f10_migracion.md` §1.2.
 
 ## 4. Regla para pantallas nuevas (B2 en adelante)
 

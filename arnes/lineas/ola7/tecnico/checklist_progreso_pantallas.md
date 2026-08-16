@@ -31,7 +31,12 @@
 10. Cualquier hallazgo de "el campo existe pero está escondido" se registra en `registro_hallazgos_poc4.md` con el mismo formato que los demás — es un hallazgo de tipo `solo_ui`, no un descarte.
 11. **Todo input de imagen (pantallas privadas o públicas) usa `components/veta/image-picker.tsx`** (`multiple={false}` para un solo campo, ej. `fotoUrl`; `multiple={true}` — default — para arreglos, ej. `fotosEspacio`). Nunca un `<input type="text" placeholder="https://...">` nuevo — es exactamente el patrón que generó la Auditoría 2, hallazgo 5.
 
-## 4. Paralelización de lotes (B2 en adelante)
+## 4. SSR / hidratación y tokens de estilo
+
+14. Ningún `id`/`key` que se renderiza en el servidor (SSR) se genera con `Math.random()`, `Date.now()` u otro valor no determinista dentro de `useRef`/`useState` de inicialización — el servidor y el cliente calculan valores distintos y React rompe la hidratación en cada carga. Usar `useId()` de React (estable entre servidor y cliente) para IDs de formulario/accesibilidad. Hallazgo real: `components/veta/money-input.tsx` generaba su `id` con `useRef(`money-${Math.random()...}`)`, causando hydration mismatch en toda pantalla que renderiza `MoneyInput` (detectado en vivo por Javier en Cotizador, 2026-08-11).
+15. Toda clase Tailwind que referencia un token de color custom (`bg-*`, `text-*`, `border-*` sobre `--color-*`) se verifica contra las variables realmente definidas en `app/globals.css` antes de usarla — Tailwind descarta en silencio una clase que apunta a un token inexistente (sin error de build), dejando el elemento sin ese estilo. Ya pasó dos veces: `text-text-display-publico` (POC-20) y `bg-bg-base` (header sticky del Cotizador quedaba transparente porque el token `--color-bg-base` no existe — solo existen `bg-surface`/`bg-paper`/`bg-alt`/`bg-raised`; detectado en vivo por Javier, 2026-08-11).
+
+## 5. Paralelización de lotes (B2 en adelante)
 
 11. Dos lotes corren en paralelo **solo si** ninguno de los dos toca `lib/data/{contracts,mock-store,index}.ts` al mismo tiempo que el otro — son archivos compartidos entre todos los dominios; si un lote nuevo necesita tocarlos, se serializa esa porción con cualquier otro lote activo.
 12. Un lote se declara "hecho" solo con: su propio caso de round-trip (punto 5) + los 4 comandos del punto 6 + el chequeo de UX (punto 8) — no antes.
@@ -43,4 +48,4 @@
 
 - [x] Cada punto es verificable mecánicamente o por inspección directa (ninguno dice "que quede prolijo" o "sea eficiente" — mismo estándar que exige `arnes/roles/iniciador.md` para criterios de aceptación).
 - [x] Cubre las dos causas raíz de POC-14 (reactividad sin enforcement, UI sin discoverability) y la pregunta abierta del Supervisor sobre paralelización de lotes.
-- [x] Referenciado desde `arnes/INDEX.md` §3.a, `arnes/lineas/ola7/estado_ola7.md` y `plan_f10.md` — entra en la lectura de arranque de cualquier agente de esta línea, no depende de que el Iniciador lo recuerde.
+- [x] Referenciado desde `arnes/INDEX.md` §3.a, `arnes/lineas/ola7/estado_ola7.md` y `plan_f10_migracion.md` — entra en la lectura de arranque de cualquier agente de esta línea, no depende de que el Iniciador lo recuerde.

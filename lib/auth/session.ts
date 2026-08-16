@@ -12,7 +12,15 @@ import { getIronSession, type SessionOptions } from 'iron-session'
 // también define useDataStore() (hook de React), y Next marca cualquier
 // archivo que lo toque como "necesita 'use client'" apenas se lo importa
 // desde una cadena server-only como esta. Ver comentario en lib/data/store.ts.
+// getDataStore() solo sirve para DATA_IMPL=mock (lanza si es drizzle) — para
+// drizzle, login() consulta clientes directo con Drizzle acá abajo.
 import { getDataStore } from '@/lib/data/store'
+import { eq } from 'drizzle-orm'
+import { randomBytes } from 'crypto'
+// contracts.ts es solo tipos (sin React) — importarlo acá no arrastra el
+// mismo problema de "use client" que lib/data/index.ts.
+import type { RolCanonico } from '@/lib/data/contracts'
+import { hashPassword, verifyPassword } from './hash'
 
 // Sin fallback a propósito (mismo patrón que DATABASE_URL en lib/db/client.ts,
 // ver AGENTS.md): si falta SESSION_SECRET, la app falla fuerte al importar
@@ -69,10 +77,21 @@ export async function login(email: string, documento: string): Promise<LoginResu
     return { ok: false }
   }
 
-  const store = getDataStore()
-  const cliente = store.clientes
-    .listar()
-    .find((c) => c.email?.trim().toLowerCase() === emailNorm && c.documento?.trim() === documentoNorm)
+  let cliente: { id: string } | undefined
+
+  if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
+    // DATA_IMPL=drizzle: consulta directa (login corre server-only, no hay boundary de navegador
+    // que evitar acá) — getDataStore() no sirve para drizzle, ver comentario de arriba.
+    const { db } = await import('@/lib/db/client')
+    const { clientes } = await import('@/lib/db/schema')
+    const candidatos = await db.select().from(clientes).where(eq(clientes.documento, documentoNorm))
+    cliente = candidatos.find((c) => c.email?.trim().toLowerCase() === emailNorm)
+  } else {
+    const store = getDataStore()
+    cliente = store.clientes
+      .listar()
+      .find((c) => c.email?.trim().toLowerCase() === emailNorm && c.documento?.trim() === documentoNorm)
+  }
 
   if (!cliente) {
     return { ok: false }
@@ -103,4 +122,327 @@ export async function logout(): Promise<void> {
 export async function requireSesionCliente(): Promise<string | null> {
   const session = await getSession()
   return session.clienteId
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Login interno del ERP (D-08b, F10 2026-08-15). Cookie separada de la del
+// portal cliente a propósito — dos superficies de acceso externo distintas
+// (empleado vs cliente), mismo principio que diseno_perfil_persona_proveedor_
+// login_interno.md ya señaló para no mezclar identidades en una sola sesión.
+// nombre/email/rol viajan denormalizados en la cookie cifrada: evita una
+// query a `usuarios` en cada hidratación de página (fetchSnapshotAction corre
+// en el layout raíz, para todo el sitio, no solo /erp). Trade-off aceptado:
+// si a alguien le cambian el rol, su sesión queda desactualizada hasta el
+// próximo login — mitigado con maxAge de 7 días en vez de sesión indefinida.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface ErpSessionData {
+  usuarioId: string | null
+  personaId: string | null
+  nombre: string | null
+  email: string | null
+  rol: RolCanonico | null
+}
+
+const ERP_SESSION_MAX_AGE = 60 * 60 * 24 * 7 // 7 días
+
+export const erpSessionOptions: SessionOptions = {
+  cookieName: 'veta_erp_session',
+  password: SESSION_SECRET,
+  cookieOptions: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: ERP_SESSION_MAX_AGE,
+  },
+}
+
+export async function getErpSession() {
+  const cookieStore = await cookies()
+  const session = await getIronSession<ErpSessionData>(cookieStore, erpSessionOptions)
+  if (session.usuarioId === undefined) session.usuarioId = null
+  if (session.personaId === undefined) session.personaId = null
+  if (session.nombre === undefined) session.nombre = null
+  if (session.email === undefined) session.email = null
+  if (session.rol === undefined) session.rol = null
+  return session
+}
+
+/** Forma narrowed de ErpSessionData con la sesión ya confirmada como presente (usuarioId/rol no-null). */
+export interface SesionEmpleado {
+  usuarioId: string
+  personaId: string | null
+  nombre: string
+  email: string
+  rol: RolCanonico
+}
+
+/** Identidad real del empleado logueado, o null. Sin llamada a DB — lee solo la cookie. */
+export async function requireSesionEmpleado(): Promise<SesionEmpleado | null> {
+  const session = await getErpSession()
+  if (!session.usuarioId || !session.rol) return null
+  return {
+    usuarioId: session.usuarioId,
+    personaId: session.personaId,
+    nombre: session.nombre ?? '',
+    email: session.email ?? '',
+    rol: session.rol,
+  }
+}
+
+export interface AuthResult {
+  ok: boolean
+  error?: 'credenciales_invalidas' | 'token_invalido' | 'token_vencido' | 'email_en_uso' | 'password_corta'
+}
+
+interface UsuarioEmpleadoRow {
+  id: string
+  email: string
+  passwordHash: string | null
+  rolEmpleado: RolCanonico | null
+  personaId: string | null
+  nombre: string
+  activo: boolean
+  inviteToken: string | null
+  inviteTokenExpiraEn: string | null
+}
+
+// Store en memoria para DATA_IMPL=mock (dev local sin Neon) — nunca se agrega
+// a mock-store.ts/DataStore a propósito: ese store también vive en el
+// navegador cuando DATA_IMPL=mock, y no debe llevar passwordHash con él. Vive
+// solo server-side acá, igual que login()/clientes ya hace para el mock.
+let mockUsuariosEmpleado: UsuarioEmpleadoRow[] | null = null
+
+/** Credenciales demo para probar el flujo completo sin Neon: admin@dev.local / dev-local */
+async function getMockUsuariosEmpleado(): Promise<UsuarioEmpleadoRow[]> {
+  if (!mockUsuariosEmpleado) {
+    mockUsuariosEmpleado = [
+      {
+        id: 'mock-admin-empleado',
+        email: 'admin@dev.local',
+        passwordHash: await hashPassword('dev-local'),
+        rolEmpleado: 'admin',
+        personaId: null,
+        nombre: 'Javier García (mock)',
+        activo: true,
+        inviteToken: null,
+        inviteTokenExpiraEn: null,
+      },
+    ]
+  }
+  return mockUsuariosEmpleado
+}
+
+/** Login de empleado: email + contraseña contra `usuarios` (tipo='empleado', activo=true). */
+export async function loginEmpleado(email: string, password: string): Promise<AuthResult> {
+  const emailNorm = email.trim().toLowerCase()
+  if (!emailNorm || !password) return { ok: false, error: 'credenciales_invalidas' }
+
+  let usuario: UsuarioEmpleadoRow | undefined
+
+  if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
+    const { db } = await import('@/lib/db/client')
+    const { usuarios } = await import('@/lib/db/schema')
+    const candidatos = await db.select().from(usuarios).where(eq(usuarios.email, emailNorm))
+    usuario = candidatos.find((u) => u.tipo === 'empleado' && u.activo) as UsuarioEmpleadoRow | undefined
+  } else {
+    const lista = await getMockUsuariosEmpleado()
+    usuario = lista.find((u) => u.email.toLowerCase() === emailNorm && u.activo)
+  }
+
+  if (!usuario || !usuario.passwordHash) return { ok: false, error: 'credenciales_invalidas' }
+  const valido = await verifyPassword(password, usuario.passwordHash)
+  if (!valido) return { ok: false, error: 'credenciales_invalidas' }
+
+  const session = await getErpSession()
+  session.usuarioId = usuario.id
+  session.personaId = usuario.personaId
+  session.nombre = usuario.nombre
+  session.email = usuario.email
+  session.rol = usuario.rolEmpleado ?? 'admin'
+  await session.save()
+  return { ok: true }
+}
+
+/** Destruye la sesión de empleado actual. Solo desde Server Action/Route Handler. */
+export async function logoutEmpleado(): Promise<void> {
+  const session = await getErpSession()
+  session.destroy()
+}
+
+export interface InvitacionResult {
+  ok: boolean
+  token?: string
+  error?: 'email_en_uso'
+}
+
+const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 días
+
+/**
+ * Crea (o reemplaza si ya había una pendiente para la misma persona) una
+ * invitación de autoregistro: fila en `usuarios` sin contraseña, activo=false,
+ * con un token de invitación. Devuelve el token — el link completo
+ * (`${origin}/erp/login/activar?token=...`) se arma en el cliente.
+ */
+export async function crearInvitacionEmpleado(input: {
+  personaId: string
+  email: string
+  rol: RolCanonico
+  nombre: string
+}): Promise<InvitacionResult> {
+  const emailNorm = input.email.trim().toLowerCase()
+  const token = randomBytes(24).toString('hex')
+  const expiraEn = new Date(Date.now() + INVITE_TOKEN_TTL_MS).toISOString()
+
+  if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
+    const { db } = await import('@/lib/db/client')
+    const { usuarios } = await import('@/lib/db/schema')
+    const existentes = await db.select().from(usuarios).where(eq(usuarios.email, emailNorm))
+    const existente = existentes[0]
+    if (existente && existente.personaId !== input.personaId) {
+      return { ok: false, error: 'email_en_uso' }
+    }
+    if (existente) {
+      await db
+        .update(usuarios)
+        .set({
+          inviteToken: token,
+          inviteTokenExpiraEn: expiraEn,
+          rolEmpleado: input.rol,
+          nombre: input.nombre,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(usuarios.id, existente.id))
+    } else {
+      await db.insert(usuarios).values({
+        email: emailNorm,
+        passwordHash: null,
+        tipo: 'empleado',
+        rolEmpleado: input.rol,
+        personaId: input.personaId,
+        nombre: input.nombre,
+        activo: false,
+        inviteToken: token,
+        inviteTokenExpiraEn: expiraEn,
+      })
+    }
+  } else {
+    const lista = await getMockUsuariosEmpleado()
+    const existente = lista.find((u) => u.email.toLowerCase() === emailNorm)
+    if (existente && existente.personaId !== input.personaId) {
+      return { ok: false, error: 'email_en_uso' }
+    }
+    if (existente) {
+      existente.inviteToken = token
+      existente.inviteTokenExpiraEn = expiraEn
+      existente.rolEmpleado = input.rol
+      existente.nombre = input.nombre
+    } else {
+      lista.push({
+        id: randomBytes(8).toString('hex'),
+        email: emailNorm,
+        passwordHash: null,
+        rolEmpleado: input.rol,
+        personaId: input.personaId,
+        nombre: input.nombre,
+        activo: false,
+        inviteToken: token,
+        inviteTokenExpiraEn: expiraEn,
+      })
+    }
+  }
+
+  return { ok: true, token }
+}
+
+/** Activa una invitación: valida el token, guarda la contraseña elegida e inicia sesión. */
+export async function activarInvitacion(token: string, password: string): Promise<AuthResult> {
+  const tokenNorm = token.trim()
+  if (!tokenNorm) return { ok: false, error: 'token_invalido' }
+  if (!password || password.length < 8) return { ok: false, error: 'password_corta' }
+
+  const passwordHash = await hashPassword(password)
+
+  if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
+    const { db } = await import('@/lib/db/client')
+    const { usuarios } = await import('@/lib/db/schema')
+    const candidatos = await db.select().from(usuarios).where(eq(usuarios.inviteToken, tokenNorm))
+    const usuario = candidatos[0]
+    if (!usuario) return { ok: false, error: 'token_invalido' }
+    if (!usuario.inviteTokenExpiraEn || new Date(usuario.inviteTokenExpiraEn) < new Date()) {
+      return { ok: false, error: 'token_vencido' }
+    }
+
+    await db
+      .update(usuarios)
+      .set({
+        passwordHash,
+        activo: true,
+        inviteToken: null,
+        inviteTokenExpiraEn: null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(usuarios.id, usuario.id))
+
+    const session = await getErpSession()
+    session.usuarioId = usuario.id
+    session.personaId = usuario.personaId
+    session.nombre = usuario.nombre
+    session.email = usuario.email
+    session.rol = (usuario.rolEmpleado ?? 'admin') as RolCanonico
+    await session.save()
+    return { ok: true }
+  } else {
+    const lista = await getMockUsuariosEmpleado()
+    const usuario = lista.find((u) => u.inviteToken === tokenNorm)
+    if (!usuario) return { ok: false, error: 'token_invalido' }
+    if (!usuario.inviteTokenExpiraEn || new Date(usuario.inviteTokenExpiraEn) < new Date()) {
+      return { ok: false, error: 'token_vencido' }
+    }
+    usuario.passwordHash = passwordHash
+    usuario.activo = true
+    usuario.inviteToken = null
+    usuario.inviteTokenExpiraEn = null
+
+    const session = await getErpSession()
+    session.usuarioId = usuario.id
+    session.personaId = usuario.personaId
+    session.nombre = usuario.nombre
+    session.email = usuario.email
+    session.rol = usuario.rolEmpleado ?? 'admin'
+    await session.save()
+    return { ok: true }
+  }
+}
+
+export interface EstadoCuentaEmpleado {
+  personaId: string
+  email: string
+  activo: boolean
+  inviteTokenExpiraEn: string | null
+}
+
+/** Estado de cuenta por persona, saneado (nunca passwordHash ni el token en crudo). */
+export async function listarEstadoCuentasEmpleado(): Promise<EstadoCuentaEmpleado[]> {
+  if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
+    const { db } = await import('@/lib/db/client')
+    const { usuarios } = await import('@/lib/db/schema')
+    const filas = await db.select().from(usuarios)
+    return filas
+      .filter((u) => u.tipo === 'empleado' && u.personaId)
+      .map((u) => ({
+        personaId: u.personaId as string,
+        email: u.email,
+        activo: u.activo,
+        inviteTokenExpiraEn: u.inviteTokenExpiraEn,
+      }))
+  } else {
+    const lista = await getMockUsuariosEmpleado()
+    return lista
+      .filter((u) => u.personaId)
+      .map((u) => ({
+        personaId: u.personaId as string,
+        email: u.email,
+        activo: u.activo,
+        inviteTokenExpiraEn: u.inviteTokenExpiraEn,
+      }))
+  }
 }

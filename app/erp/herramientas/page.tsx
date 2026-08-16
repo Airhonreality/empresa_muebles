@@ -22,7 +22,6 @@ function formatCOP(amount: string | number): string {
 
 const ESTADO_LABELS: Record<EstadoOperativoHerramienta, string> = {
   operativa: 'Operativa',
-  mantenimiento: 'Mantenimiento',
   reparacion: 'En reparación',
   fuera_servicio: 'Fuera de servicio',
   necesita_reposicion: 'Necesita reposición',
@@ -30,7 +29,6 @@ const ESTADO_LABELS: Record<EstadoOperativoHerramienta, string> = {
 
 const ESTADO_TONES: Record<EstadoOperativoHerramienta, 'neutral' | 'info' | 'warning' | 'danger'> = {
   operativa: 'info',
-  mantenimiento: 'warning',
   reparacion: 'warning',
   fuera_servicio: 'danger',
   necesita_reposicion: 'danger',
@@ -80,21 +78,19 @@ function AccionesHerramienta({
 
   switch (estado) {
     case 'operativa':
+      // D-05: "Enviar a mantenimiento" y "Reportar daño" colapsados — ambos llevaban al mismo
+      // destino (fuera de servicio temporal) sin ninguna regla que distinguiera la información
+      // capturada por uno u otro (violación de Axioma 1, Independencia).
       acciones.push(
-        { label: 'Enviar a mantenimiento', estado: 'mantenimiento', variant: 'secondary' },
-        { label: 'Reportar daño', estado: 'reparacion', variant: 'destructive' },
-        { label: 'Necesita reposición', estado: 'necesita_reposicion', variant: 'ghost' },
-      )
-      break
-    case 'mantenimiento':
-      acciones.push(
-        { label: 'Completar mantenimiento', estado: 'operativa', variant: 'primary' },
-        { label: 'Reportar daño', estado: 'reparacion', variant: 'destructive' },
+        { label: 'Enviar a reparación', estado: 'reparacion', variant: 'secondary' },
         { label: 'Necesita reposición', estado: 'necesita_reposicion', variant: 'ghost' },
       )
       break
     case 'reparacion':
+      // D-05: camino de éxito que faltaba — antes solo existía "Reparación fallida",
+      // una herramienta en reparación nunca podía volver a estar operativa.
       acciones.push(
+        { label: 'Reparación exitosa', estado: 'operativa', variant: 'primary' },
         { label: 'Reparación fallida', estado: 'fuera_servicio', variant: 'destructive' },
         { label: 'Necesita reposición', estado: 'necesita_reposicion', variant: 'ghost' },
       )
@@ -168,7 +164,7 @@ export default function HerramientasPage() {
     return null
   }
 
-  const guardarHerramienta = () => {
+  const guardarHerramienta = async () => {
     const errorValidacion = validarForm()
     if (errorValidacion) {
       setForm((prev) => ({ ...prev, error: errorValidacion }))
@@ -180,7 +176,7 @@ export default function HerramientasPage() {
       fotoUrl: form.fotoUrl[0] ?? null,
       proveedorId: form.proveedorId || null,
     }
-    const resultado = store.herramientas.crear(payload)
+    const resultado = await store.herramientas.crear(payload)
     if (!resultado) {
       setForm((prev) => ({ ...prev, error: 'No se pudo crear la herramienta' }))
       return
@@ -190,19 +186,22 @@ export default function HerramientasPage() {
     setBannerError(null)
   }
 
-  const handleActualizarEstado = (id: string, estado: EstadoOperativoHerramienta) => {
+  const handleActualizarEstado = async (id: string, estado: EstadoOperativoHerramienta) => {
     setBannerError(null)
-    const resultado = store.herramientas.actualizarEstado(id, estado)
+    const resultado = await store.herramientas.actualizarEstado(id, estado)
     if (!resultado) {
       setBannerError(`No se pudo cambiar el estado a "${ESTADO_LABELS[estado]}"`)
     }
   }
 
-  const handleReponer = (id: string) => {
+  const handleReponer = async (id: string) => {
     setBannerError(null)
-    const resultado = store.herramientas.reponer(id)
+    const resultado = await store.herramientas.reponer(id)
     if (!resultado) {
-      setBannerError('No se pudo crear la orden de reposición: ya existe una OC abierta para esta herramienta')
+      // D-05: reponer() ya no crea una OC con proveedor vacío -- si vuelve null, la causa real
+      // (desde esta UI) es que la herramienta no tiene proveedor asignado, no una OC duplicada
+      // (ese caso ya se resuelve devolviendo la OC existente, no null).
+      setBannerError('No se pudo crear la orden de reposición: la herramienta no tiene proveedor asignado')
     }
   }
 
@@ -238,7 +237,6 @@ export default function HerramientasPage() {
         >
           <option value="todos">Todos</option>
           <option value="operativa">Operativa</option>
-          <option value="mantenimiento">Mantenimiento</option>
           <option value="reparacion">En reparación</option>
           <option value="fuera_servicio">Fuera de servicio</option>
           <option value="necesita_reposicion">Necesita reposición</option>

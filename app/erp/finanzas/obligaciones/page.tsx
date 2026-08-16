@@ -121,12 +121,12 @@ export default function ObligacionesPage() {
     setCuentaPago(cuentas[0]?.id ?? '')
   }
 
-  const handleRegistrarPago = useCallback(() => {
+  const handleRegistrarPago = useCallback(async () => {
     if (!obligacionAPagar || !montoPago.trim()) return
     const montoNum = parseMoney(montoPago)
     if (montoNum <= 0) return
 
-    store.obligacionesPendientes.registrarPago(obligacionAPagar.id, {
+    await store.obligacionesPendientes.registrarPago(obligacionAPagar.id, {
       monto: montoPago,
       cuentaId: cuentaPago,
       medioPago: 'transferencia',

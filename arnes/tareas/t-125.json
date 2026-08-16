@@ -1,0 +1,61 @@
+{
+  "id": "t-125",
+  "nombre": "F10-D: Regenerar mapeo de campos desde producción LIVE",
+  "descripcion": "El diagnóstico t-114 (mapeo_campos.md) se generó desde el snapshot congelado legacy-agnostic-backup y es OBSOLETO. Al consultar producción LIVE (ep-round-queen-at3nzf87) se confirmaron conteos y campos reales distintos: clientes=33 (no 15), proyectos=49+cotizaciones=18, productos_catalogo=278, espacio_variantes=124, items_variante=626, contratos=7, propuestas_publicas=23 (NO existe portfolio_publico en live). Esta tarea consolida el mapeo real en mapeo_campos.md (sección LIVE PRODUCTION MAPPING) como fuente de verdad para el script de clone.",
+  "objetivo": "Tener el mapeo field-level correcto (legacy→V3) basado en datos reales de producción antes de escribir scripts/migrate-core.ts.",
+  "prioridad": "Alta",
+  "estado": "En progreso",
+  "dependencias": [
+    "Acceso read-only a producción LIVE (DATABASE_URL_LEGACY)",
+    "arnes/lineas/ola7/migracion/mapeo_campos.md"
+  ],
+  "entregables": [
+    {
+      "nombre": "Sección LIVE PRODUCTION MAPPING en mapeo_campos.md",
+      "formato": "Markdown",
+      "ubicacion": "arnes/lineas/ola7/migracion/mapeo_campos.md",
+      "detalle": "Conteos reales + unión de campos por namespace + mapeo propuesto a tablas V3. YA REGISTRADO (2026-08-13)."
+    }
+  ],
+  "pasos": [
+    {
+      "numero": 1,
+      "accion": "Consultar producción LIVE",
+      "detalle": "COUNT por namespace + unión de campos por namespace vía agnostic_records.",
+      "responsable": "Código",
+      "estado": "Completado"
+    },
+    {
+      "numero": 2,
+      "accion": "Registrar mapeo en mapeo_campos.md",
+      "detalle": "Sección LIVE PRODUCTION MAPPING + marcar secciones stale como OBSOLETO.",
+      "responsable": "Código",
+      "estado": "Completado"
+    },
+    {
+      "numero": 3,
+      "accion": "Verificar contra schema.ts V3",
+      "detalle": "Confirmar que campos legacy tienen columna V3 (cotizaciones→proyectos estado='enviada'; propuestas_publicas→portfolioPublico).",
+      "responsable": "QA",
+      "estado": "Completado"
+    }
+  ],
+  "criterios_de_aceptacion": [
+    "mapeo_campos.md tiene sección LIVE PRODUCTION MAPPING con conteos reales",
+    "Las 7 secciones core (clientes, proyectos, productos_catalogo, espacio_variantes, items_variante, contratos, portfolio_publico) marcadas OBSOLETO",
+    "El script scripts/migrate-core.ts usará SOLO la sección LIVE como fuente"
+  ],
+  "notas": [
+    "Conteos LIVE: clientes=33, proyectos=49, cotizaciones=18, productos_catalogo=278, espacio_variantes=124, items_variante=626, contratos=7, propuestas_publicas=23, imagenes_espacio=2.",
+    "V3 NO tiene tabla cotizaciones: cotizaciones→proyectos (estado='enviada').",
+    "portfolio_publico NO existe en live: usar propuestas_publicas→portfolioPublico.",
+    "Fuente live: postgresql://neondb_owner:npg_HcsUFu6rwZ0M@ep-round-queen-at3nzf87-pooler.c-9.us-east-1.aws.neon.tech/neondb (READ-ONLY para clone)."
+  ],
+  "relacionado": [
+    "arnes/lineas/ola7/migracion/mapeo_campos.md",
+    "arnes/lineas/ola7/migracion/schema_legacy.json",
+    "lib/db/schema.ts",
+    "plan_f10_migracion.md"
+  ],
+  "fecha_creacion": "2026-08-13"
+}

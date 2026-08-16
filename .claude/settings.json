@@ -1,7 +1,27 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(powershell -c \"Get-ChildItem -Path app -Directory -Depth 1\")",
+      "Bash(powershell -c \"Get-ChildItem -Path 'app/\\(publico\\)/portafolio' -Recurse -Name\")",
+      "Bash(DATA_IMPL=mock npx next build)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('arnes/tareas/t-129.json','utf8'\\)\\); console.log\\('OK valid JSON'\\)\")",
+      "Bash(rm scripts/_dryrun-fase05.ts scripts/_dryrun-fase05-full.ts scripts/_dryrun-fase05-exhaustivo.ts)",
+      "Bash(node -e \"const m = require\\('iron-session'\\); console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(DATA_IMPL=drizzle npm run dev)",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code} redirect=%{redirect_url}\\\\n\" http://localhost:3001/erp/catalogo)",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code}\\\\n\" http://localhost:3001/erp/login)",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code}\\\\n\" http://localhost:3001/erp/login/activar)",
+      "Bash(curl -s http://localhost:3001/erp/login)",
+      "Bash(grep -oE '<form[^>]*>|name=\"\\\\$ACTION[^\"]*\"|hidden[^>]*name=\"[^\"]*\"')",
+      "Bash(rm -f scripts/_tmp-test-invite.ts)",
+      "Bash(DOTENV_CONFIG_PATH=.env.local npx tsx -r dotenv/config -e ' *)",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); ['LayoutGrid','Images','NotebookPen','UserCircle','User','FolderOpen','Image','GalleryVerticalEnd','BookOpen'].forEach\\(n => console.log\\(n, typeof l[n]\\)\\)\")",
+      "Bash(node _tmp_check_galeria.mjs)",
+      "Bash(rm _tmp_check_galeria.mjs)",
+      "Bash(node _tmp_fix_datos.mjs)",
+      "Bash(rm _tmp_fix_datos.mjs)"
     ]
   }
 }

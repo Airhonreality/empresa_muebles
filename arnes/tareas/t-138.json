@@ -1,0 +1,33 @@
+{
+  "id": "t-138",
+  "nombre": "CRM — nuevo tablero/base de datos de clientes accesible desde el nav principal del ERP",
+  "descripcion": "Javier pide agregar al menú principal de navegación del ERP el acceso a un Tablero/Base de Datos de Clientes. Hoy la entidad clientes existe en el schema pero no tiene pantalla propia — solo aparece embebida dentro de P-01 (kanban) y modales de selección.",
+  "objetivo": "Existe un disenio_p28_crm_clientes.md nuevo, siguiendo PLANTILLA_PANTALLA.md, que especifica una pantalla de listado/tablero de clientes (búsqueda, filtros, detalle, relación 1-N hacia proyectos/visitas/pedidos_web/obligaciones_pendientes) más la entrada de navegación en el shell del ERP — listo para checkpoint del Supervisor antes de tocar código.",
+  "prioridad": "Media",
+  "estado": "Implementada (código, v1 sin schema), pendiente verificación visual de Javier",
+  "zona": "lineas/ola7/pantallas",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "intencion_negocio": "Texto original de Javier en arnes/lineas/ola7/tecnico/input_diseno_javier_20260815.md §4.",
+  "archivos_afectados": [
+    "arnes/lineas/ola7/pantallas/disenio_p28_crm_clientes.md (crear)"
+  ],
+  "criterios_aceptacion_preliminares": [
+    "Cita la entidad clientes del REGISTRO_DE_ENTIDADES (§3 Comercial) y sus 4 relaciones 1-N reales (proyectos, visitas, pedidos_web, obligaciones_pendientes) — no inventa columnas",
+    "No se propone ningún cambio de schema — es pantalla de lectura/gestión sobre datos ya existentes",
+    "Declara explícitamente la colisión de numeración P-27 (disenio_P27_gestion_portafolio.md vs disenio_p27_catalogo_diseno_desarrollo.md) como hallazgo pre-existente, sin intentar resolverla en esta tarea",
+    "Especifica dónde se agrega el nuevo ítem de navegación (sidebar del ERP, roles con acceso) reutilizando el patrón ya usado por D-02/D-03 (limpieza de nav), no un patrón nuevo"
+  ],
+  "plan_ref": "pendiente — Iniciador escribe plan_t-138.md solo después de que el diseño quede aprobado por el Supervisor",
+  "dependencias": [
+    "arnes/nucleo/REGISTRO_DE_ENTIDADES.md (§3 Comercial, entidad clientes)",
+    "arnes/nucleo/glosario_h07.md",
+    "arnes/lineas/ola7/pantallas/disenio_p01_kanban_comercial.md (referencia de estilo/patrones ya aprobados)"
+  ],
+  "notas": [
+    "No se toca código en esta tarea. Producto: solo el archivo de diseño.",
+    "Pantalla nueva de punta a punta — no reemplaza ni modifica P-01."
+  ],
+  "relacionado": ["t-136", "t-137"],
+  "fecha_creacion": "2026-08-15"
+}

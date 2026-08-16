@@ -56,9 +56,9 @@ export default function DocumentosPage() {
     items: documentos.filter(d => d.etapa === fase),
   })).filter(grupo => grupo.items.length > 0)
 
-  const handleSubmitImagen = () => {
+  const handleSubmitImagen = async () => {
     if (imagenes.length === 0) return
-    store.documentosProyecto.crear({
+    await store.documentosProyecto.crear({
       proyectoId,
       etapa,
       alojador: 'r2',
@@ -69,9 +69,9 @@ export default function DocumentosPage() {
     setModalAbierto(false)
   }
 
-  const handleSubmitDrive = () => {
+  const handleSubmitDrive = async () => {
     if (!urlDrive.trim()) return
-    store.documentosProyecto.crear({
+    await store.documentosProyecto.crear({
       proyectoId,
       etapa,
       alojador: 'drive_veta_erp',
@@ -82,9 +82,9 @@ export default function DocumentosPage() {
     setModalAbierto(false)
   }
 
-  const handleEliminar = () => {
+  const handleEliminar = async () => {
     if (!idAEliminar) return
-    store.documentosProyecto.eliminar(idAEliminar)
+    await store.documentosProyecto.eliminar(idAEliminar)
     setIdAEliminar(null)
   }
 

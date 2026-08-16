@@ -1,0 +1,35 @@
+{
+  "id": "t-137",
+  "nombre": "Dashboard de detalle de proyecto: timeline horizontal de gates con bifurcaciones + vista operativa Nodos→Espacios→Módulos→Ítems + gates inmersivos en overlay",
+  "descripcion": "Javier señala que /erp/proyectos/[proyectoId]/page.tsx (que nunca tuvo su propio disenio_PXX.md) sobre-enfatiza los Gates con cards estáticas/emojis hardcodeados y descuida el flujo operativo diario. Pide 3 cosas: (1) reemplazar la grilla de gates por un timeline horizontal interactivo (origen/actual/siguiente) con soporte de bifurcaciones visuales para reprocesos; (2) integrar navegación modular Nodos→Espacios→Módulos→Ítem/planos→dirección e instalación; (3) que los gates de acción puntual (ej. Retoma de Medidas) se resuelvan en modal/overlay contextual, no en pantalla completa desligada del proyecto.",
+  "objetivo": "Existe un disenio_dashboard_proyecto.md nuevo, siguiendo PLANTILLA_PANTALLA.md, que especifica el timeline de gates con bifurcaciones, la navegación jerárquica operativa y el patrón de overlay para gates puntuales — listo para checkpoint del Supervisor antes de tocar código.",
+  "prioridad": "Alta",
+  "estado": "Implementada (código, Slice 1+2 aprobado por Javier — sin overlays, sin schema), pendiente verificación visual",
+  "zona": "lineas/ola7/pantallas",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "intencion_negocio": "Texto original de Javier en arnes/lineas/ola7/tecnico/input_diseno_javier_20260815.md §2.",
+  "archivos_afectados": [
+    "arnes/lineas/ola7/pantallas/disenio_dashboard_proyecto.md (crear)"
+  ],
+  "criterios_aceptacion_preliminares": [
+    "El timeline de gates cita los 5 gates reales con predicados ya documentados (disenio_f3_cronograma_gates.md, logica_de_negocio.md) — no inventa gates nuevos",
+    "Las 'bifurcaciones visuales' se especifican contra un estado/entidad real (ej. reprocesos, casos_garantia) del REGISTRO_DE_ENTIDADES, no como concepto suelto",
+    "El diseño responde explícitamente al hallazgo diferido de D-11..D-17 sobre gates evaluados por proyecto completo vs. por nodo (backlog_auditoria_pantallas.md) — lo resuelve, lo acota, o lo deja diferido con justificación, pero no lo ignora",
+    "El patrón de overlay para gates puntuales (ej. Retoma de Medidas) especifica qué pantallas existentes pasan de ruta completa a modal, citando sus disenio_PXX.md actuales",
+    "No se propone cambio de schema salvo que sea estrictamente necesario para las bifurcaciones — si lo es, se declara explícito y se marca riesgo alto para la fase de código"
+  ],
+  "plan_ref": "pendiente — Iniciador escribe plan_t-137.md solo después de que el diseño quede aprobado por el Supervisor",
+  "dependencias": [
+    "arnes/lineas/ola7/pantallas/disenio_f3_cronograma_gates.md",
+    "arnes/nucleo/logica_de_negocio.md",
+    "arnes/lineas/ola7/tecnico/backlog_auditoria_pantallas.md (hallazgo módulo/espacio diferido)",
+    "arnes/nucleo/REGISTRO_DE_ENTIDADES.md"
+  ],
+  "notas": [
+    "No se toca código en esta tarea. Producto: solo el archivo de diseño.",
+    "Riesgo de la FASE DE CÓDIGO futura puede subir a alto si el timeline requiere tocar lib/data/ (reprocesos, bifurcaciones) — el Iniciador lo reclasifica cuando planifique esa fase, no se asume acá."
+  ],
+  "relacionado": ["t-136", "t-138", "disenio_f3_cronograma_gates.md"],
+  "fecha_creacion": "2026-08-15"
+}

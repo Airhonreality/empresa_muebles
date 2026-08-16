@@ -35,7 +35,7 @@
 | Logo — texto | Veta Dorada | Verificado | `plan_demanda.md` D2, `plan_seo_2026.md` §2 |
 | Logo — directiva de imagen | Logotipo de Veta Dorada recuperado del material de marca existente (`MANUAL_MARCA_TOKENS.md`, `destilacion_docs_veta.md`). Si no existe versión digital en alta, usar wordmark tipográfico con Fraunces. | Pendiente recuperación | `destilacion_docs_veta.md` |
 | Nav — Inicio | Inicio | Verificado | `plan_estructura_sitio_publico.md` §1 |
-| Nav — Espacios | Espacios | Verificado | `plan_diseno_web_publica.md` §1, F-10 |
+| Nav — Espacios (Desplegable) | Espacios (abre mega-menú con 7 categorías: Cocinas, Closets, etc.) | Verificado | `plan_diseno_web_publica.md` §1, **Decisión actualizada 2026-08-15 (SEO/UX)** |
 | Nav — Colecciones | Colecciones | Verificado | `plan_diseno_web_publica.md` §1, F-02 |
 | Nav — Portafolio | Portafolio | Verificado | `plan_diseno_web_publica.md` §1, F-03 |
 | Nav — Cómo Trabajamos | Cómo Trabajamos | Verificado | `plan_diseno_web_publica.md` §1, F-11 |
@@ -45,7 +45,7 @@
 | CTA del header | Agenda tu Asesoría | Verificado | `plan_diseno_web_publica.md` §2.0, F-12 |
 | Hamburguesa (mobile) | Menú | Verificado | Glosario estándar; tokens D4 ref. |
 
-**Nota sobre jerarquía visible:** en desktop se muestran los 8 items + CTA. En mobile, el menú colapsa en hamburguesa con los mismos items en el mismo orden. "Para Arquitectos" puede aparecer desaturado o en tamaño menor si se prefiere — decisión de diseño visual, no de contenido. El orden respeta el embudo: descubrimiento (Espacios, Colecciones) → interés (Portafolio, Cómo Trabajamos, Conócenos, Bitácora) → prescripción (Para Arquitectos) → acción (Agenda tu Asesoría).
+**Nota sobre jerarquía visible:** en desktop se muestran los 8 items + CTA. El ítem "Espacios" funciona como un desplegable (mega-menú) para dar acceso directo (1 click) a las 6 landings SEO (F-09) y a Pisos de Madera (F-14), mejorando la transferencia de autoridad SEO desde el header y reduciendo la fricción UX. En mobile, el menú colapsa en hamburguesa con un acordeón para Espacios. El orden respeta el embudo: descubrimiento (Espacios, Colecciones) → interés (Portafolio, Cómo Trabajamos, Conócenos, Bitácora) → prescripción (Para Arquitectos) → acción (Agenda tu Asesoría).
 
 ### 3.2 — WhatsApp flotante
 

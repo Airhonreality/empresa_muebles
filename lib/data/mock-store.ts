@@ -4,11 +4,13 @@ import type {
   DataStore, Proyecto, Cliente, EspacioVariante, ItemVariante, ProductoCatalogo, EspacioArtefacto, Parametro, Contrato, HitoPago, TransicionesProyecto, UsuarioMock, ProyectosEstadosHistorial, Cronograma, CronogramaEtapa, DesfaseCronograma, CheckProduccion, NovedadCritica, ComunicacionProgreso, SchemaProyecto, BomMaterial, Verificacion, Retoma, CambioContrato, Persona, PersonaRol, Modulo, Estimacion, LineaCronograma, EtapaCronograma, TipoGate, VeredictoGate, DesenlaceCheck, CausaDesfase, EstadoNovedadCritica, EstadoSchema, RolCanonico, OrigenBom, EstadoProyecto,
   OrdenTrabajo, TipoOrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, OrigenReproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
   CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, OrigenObligacion, EstadoObligacion, Proveedor, OrdenCompra, EstadoOrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
-  Categoria, ProductoTienda, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
+  Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
+  BitacoraArticulo, Testimonio,
 } from './contracts'
+import { SHOP_CATEGORIAS } from './contracts'
 import { derivarDesenlace, derivarReduccionComision, P18, P33 } from '../modules/f3/gates'
 import {
   transicionModuloValida, puedeEmitirVeredictoCalidad, P24, rangoInstalacionValido,
@@ -23,9 +25,10 @@ import {
   ORDENES_TRABAJO, PEDIDOS_WEB, CITACIONES_CALIDAD, REPROCESOS, INSTALACIONES, ACTAS_ENTREGA,
   CASOS_GARANTIA, CITAS_GARANTIA, CUENTAS_FINANCIERAS, MOVIMIENTOS_FINANCIEROS, OBLIGACIONES_PENDIENTES,
   PROVEEDORES, ORDENES_COMPRA, REGISTROS_GATE_CAJA, CUENTAS_COBRO_PROVEEDOR,
-  CATEGORIAS, PRODUCTOS_TIENDA, CATALOGO_ACABADOS, CATALOGO_PRODUCTO_ACABADOS, ACABADOS_MUESTRAS,
+  CATEGORIAS, PRODUCTOS_TIENDA, PRODUCTOS_TIENDA_COMPONENTES, CATALOGO_ACABADOS, CATALOGO_PRODUCTO_ACABADOS, ACABADOS_MUESTRAS,
   PORTAFOLIO, MODULOS_ARTEFACTOS,
   ITEMS_ORDEN_COMPRA, RECEPCIONES_MATERIAL, HERRAMIENTAS, DOCUMENTOS_PROYECTO,
+  BITACORA_ARTICULOS,
 } from './fixtures'
 
 function deepClone<T>(obj: T): T {
@@ -89,6 +92,7 @@ export function createMockStore(): DataStore {
   // F-02 / P-27 dominios (catálogo, tienda web)
   const categorias: Categoria[] = deepClone(CATEGORIAS)
   const productosTienda: ProductoTienda[] = deepClone(PRODUCTOS_TIENDA)
+  const productosTiendaComponentes: ProductoTiendaComponente[] = deepClone(PRODUCTOS_TIENDA_COMPONENTES)
   const catalogoAcabados: CatalogoAcabado[] = deepClone(CATALOGO_ACABADOS)
   const catalogoProductoAcabados: CatalogoProductoAcabado[] = deepClone(CATALOGO_PRODUCTO_ACABADOS)
   const acabadosMuestras: AcabadoMuestra[] = deepClone(ACABADOS_MUESTRAS)
@@ -96,6 +100,12 @@ export function createMockStore(): DataStore {
   // F-03 dominio (portafolio de proyectos)
   const portafolio: Portafolio[] = deepClone(PORTAFOLIO)
   const modulosArtefactos: ModuloArtefacto[] = deepClone(MODULOS_ARTEFACTOS)
+
+  // F-15 dominio (Bitácora de Diseño)
+  const bitacoraArticulos: BitacoraArticulo[] = deepClone(BITACORA_ARTICULOS)
+
+  // Testimonios (DC-1 ACTIVA 2026-08-09)
+  const testimonios: Testimonio[] = []
 
   // F4 dominios (compras: recepción, herramientas — P-13/P-14/P-15)
   const itemsOrdenCompra: ItemOrdenCompra[] = deepClone(ITEMS_ORDEN_COMPRA)
@@ -156,10 +166,24 @@ export function createMockStore(): DataStore {
       obtenerPorId(id: string): Proyecto | undefined {
         return proyectos.find(p => p.id === id)
       },
-      actualizarEstado(id: string, estado: EstadoProyecto): Proyecto | null {
+      async actualizarEstado(id: string, estado: EstadoProyecto): Promise<Proyecto | null> {
         const idx = proyectos.findIndex(p => p.id === id)
         if (idx === -1) return null
         const estadoAnterior = proyectos[idx].estado
+
+        // Validar transición según parámetro transiciones_proyecto
+        const paramTransiciones = parametros.find(p => p.clave === 'transiciones_proyecto')
+        let transiciones: Record<string, string[]> = {}
+        if (paramTransiciones?.valorTexto) {
+          try { transiciones = JSON.parse(paramTransiciones.valorTexto) }
+          catch { /* fall through */ }
+        }
+        const estadosValidos = transiciones[estadoAnterior as keyof typeof transiciones]
+        if (!estadosValidos || !estadosValidos.includes(estado)) {
+          // Transición no válida: rechazar sin mutar ni notificar
+          return null
+        }
+
         proyectos[idx] = { ...proyectos[idx], estado: estado as EstadoProyecto, updatedAt: new Date().toISOString() }
         // Guardar en historial
         proyectosEstadosHistorial.push({
@@ -174,10 +198,30 @@ export function createMockStore(): DataStore {
         notify()
         return proyectos[idx]
       },
+      async actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios'>>): Promise<Proyecto | null> {
+        const idx = proyectos.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        proyectos[idx] = { ...proyectos[idx], ...partial, updatedAt: new Date().toISOString() }
+        notify()
+        return proyectos[idx]
+      },
+      async actualizarVerificador(id: string, verificadorId: string): Promise<Proyecto | null> {
+        const idx = proyectos.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        proyectos[idx] = {
+          ...proyectos[idx],
+          verificadorId,
+          // D3/I-035: verificador único del proyecto = comercial vendedor.
+          comercialVendedorId: verificadorId,
+          updatedAt: new Date().toISOString(),
+        }
+        notify()
+        return proyectos[idx]
+      },
       historialEstado(proyectoId: string): ProyectosEstadosHistorial[] {
         return proyectosEstadosHistorial.filter(h => h.proyectoId === proyectoId)
       },
-      crear(data: Partial<Proyecto> & { nombreProyecto: string }): Proyecto {
+      async crear(data: Partial<Proyecto> & { nombreProyecto: string }): Promise<Proyecto> {
         const nuevo: Proyecto = {
           id: generateId('proj'),
           nombreProyecto: data.nombreProyecto,
@@ -214,7 +258,7 @@ export function createMockStore(): DataStore {
       obtenerPorId(id: string): Cliente | undefined {
         return clientes.find(c => c.id === id)
       },
-      crear(data: Partial<Cliente> & { nombre: string }): Cliente {
+      async crear(data: Partial<Cliente> & { nombre: string }): Promise<Cliente> {
         const nuevo: Cliente = {
           id: generateId('cli'),
           nombre: data.nombre,
@@ -233,7 +277,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): EspacioVariante[] {
         return espacios.filter(e => e.proyectoId === proyectoId)
       },
-      crear(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): EspacioVariante {
+      async crear(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante> {
         const nuevo: EspacioVariante = {
           id: generateId('esp'),
           proyectoId: data.proyectoId,
@@ -255,7 +299,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizarJornadas(id: string, jornadas: { jornadasDesarrolloTecnico: string; jornadasEnsamblajeTaller: string; jornadasInstalacionObra: string }): EspacioVariante | null {
+      async actualizarJornadas(id: string, jornadas: { jornadasDesarrolloTecnico: string; jornadasEnsamblajeTaller: string; jornadasInstalacionObra: string }): Promise<EspacioVariante | null> {
         const idx = espacios.findIndex(e => e.id === id)
         if (idx === -1) return null
         espacios[idx] = {
@@ -267,14 +311,14 @@ export function createMockStore(): DataStore {
         notify()
         return espacios[idx]
       },
-      actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'descripcion' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): EspacioVariante | null {
+      async actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'descripcion' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null> {
         const idx = espacios.findIndex(e => e.id === id)
         if (idx === -1) return null
         espacios[idx] = { ...espacios[idx], ...partial }
         notify()
         return espacios[idx]
       },
-      duplicar(id: string, opciones: { vacio: boolean; nuevoNombreEspacio?: string }): EspacioVariante | null {
+      async duplicar(id: string, opciones: { vacio: boolean; nuevoNombreEspacio?: string }): Promise<EspacioVariante | null> {
         const origen = espacios.find(e => e.id === id)
         if (!origen) return null
 
@@ -341,7 +385,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      marcarActiva(id: string): EspacioVariante | null {
+      async marcarActiva(id: string): Promise<EspacioVariante | null> {
         const objetivo = espacios.find(e => e.id === id)
         if (!objetivo) return null
         espacios.forEach((e, idx) => {
@@ -354,10 +398,13 @@ export function createMockStore(): DataStore {
     },
 
     items: {
+      // D-09c: filtra anulado acá, no en cada pantalla — antes cada consumidor (Cotizador interno,
+      // propuesta pública) leía porVariante() crudo, así que un ítem "eliminado" seguía sumando en
+      // subtotales y, más grave, seguía apareciendo con precio completo en la propuesta que ve el cliente.
       porVariante(varianteId: string): ItemVariante[] {
-        return items.filter(i => i.varianteId === varianteId)
+        return items.filter(i => i.varianteId === varianteId && !i.anulado)
       },
-      crear(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): ItemVariante {
+      async crear(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante> {
         const precioUnitario = data.precioUnitario ?? '0'
         const nuevo: ItemVariante = {
           id: generateId('it'),
@@ -379,7 +426,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>): ItemVariante | null {
+      async actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>): Promise<ItemVariante | null> {
         const idx = items.findIndex(i => i.id === id)
         if (idx === -1) return null
         const actualizado = { ...items[idx], ...partial }
@@ -390,7 +437,7 @@ export function createMockStore(): DataStore {
         notify()
         return items[idx]
       },
-      eliminar(id: string): boolean {
+      async eliminar(id: string): Promise<boolean> {
         const idx = items.findIndex(i => i.id === id)
         if (idx === -1) return false
         items[idx] = { ...items[idx], anulado: true, updatedAt: new Date().toISOString() }
@@ -403,7 +450,7 @@ export function createMockStore(): DataStore {
       porEspacio(espacioVarianteId: string): EspacioArtefacto[] {
         return artefactos.filter(a => a.espacioVarianteId === espacioVarianteId)
       },
-      crear(data: Partial<EspacioArtefacto> & { espacioVarianteId: string; categoria: EspacioArtefacto['categoria'] }): EspacioArtefacto {
+      async crear(data: Partial<EspacioArtefacto> & { espacioVarianteId: string; categoria: EspacioArtefacto['categoria'] }): Promise<EspacioArtefacto> {
         const now = new Date().toISOString()
         const nuevo: EspacioArtefacto = {
           id: generateId('art'),
@@ -423,7 +470,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizar(id: string, partial: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'fotoUrl'>>): EspacioArtefacto | null {
+      async actualizar(id: string, partial: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'fotoUrl'>>): Promise<EspacioArtefacto | null> {
         const idx = artefactos.findIndex(a => a.id === id)
         if (idx === -1) return null
         artefactos[idx] = {
@@ -450,7 +497,7 @@ export function createMockStore(): DataStore {
       obtenerPorId(id: string): ProductoCatalogo | undefined {
         return catalogo.find(c => c.id === id)
       },
-      crear(data: Partial<ProductoCatalogo> & { sku: string; descripcion: string; unidadMedida: string }): ProductoCatalogo | null {
+      async crear(data: Partial<ProductoCatalogo> & { sku: string; descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null> {
         // R1: sku único.
         if (catalogo.some(c => c.sku === data.sku)) return null
         const precioDirecto = data.precioDirecto ?? null
@@ -464,8 +511,9 @@ export function createMockStore(): DataStore {
         if (stockActual < 0) return null
         const publicadoWeb = data.publicadoWeb ?? false
         const imagenUrl = data.imagenUrl ?? null
-        // R5: publicar exige precioPublico + imagenUrl.
-        if (publicadoWeb && (!precioPublico || !imagenUrl)) return null
+        const galeriaImagenesUrl = data.galeriaImagenesUrl ?? []
+        // R5 (t-139): publicar exige precioPublico + (imagenUrl OR galería no vacía).
+        if (publicadoWeb && (!precioPublico || !(imagenUrl || galeriaImagenesUrl.length > 0))) return null
         const now = new Date().toISOString()
         const nuevo: ProductoCatalogo = {
           id: generateId('cat'),
@@ -478,6 +526,7 @@ export function createMockStore(): DataStore {
           stockActual,
           proveedorId: data.proveedorId ?? null,
           imagenUrl,
+          galeriaImagenesUrl,
           modelo3dUrl: data.modelo3dUrl ?? null,
           categoriaComercial: data.categoriaComercial ?? null,
           publicadoWeb,
@@ -490,7 +539,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizar(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'createdAt'>>): ProductoCatalogo | null {
+      async actualizar(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'createdAt'>>): Promise<ProductoCatalogo | null> {
         const idx = catalogo.findIndex(c => c.id === id)
         if (idx === -1) return null
         const actualizado = { ...catalogo[idx], ...partial }
@@ -500,14 +549,14 @@ export function createMockStore(): DataStore {
         if (actualizado.precioPublico !== null && numDe(actualizado.precioPublico) < 0) return null
         if (actualizado.precioDirecto !== null && actualizado.precioPublico !== null && numDe(actualizado.precioDirecto) > numDe(actualizado.precioPublico)) return null
         if (actualizado.stockActual < 0) return null
-        // R5: publicar exige precioPublico + imagenUrl.
-        if (actualizado.publicadoWeb && (!actualizado.precioPublico || !actualizado.imagenUrl)) return null
+        // R5 (t-139): publicar exige precioPublico + (imagenUrl OR galería no vacía).
+        if (actualizado.publicadoWeb && (!actualizado.precioPublico || !(actualizado.imagenUrl || (actualizado.galeriaImagenesUrl?.length ?? 0) > 0))) return null
         actualizado.updatedAt = new Date().toISOString()
         catalogo[idx] = actualizado
         notify()
         return catalogo[idx]
       },
-      eliminar(id: string): boolean {
+      async eliminar(id: string): Promise<boolean> {
         const idx = catalogo.findIndex(c => c.id === id)
         if (idx === -1) return false
         // R8: soft-delete — los items_variante que ya referencian este producto guardan su propio
@@ -533,7 +582,7 @@ export function createMockStore(): DataStore {
           }
           return {}
         },
-        actualizar(clave: string, datos: Partial<Parametro>): void {
+        async actualizar(clave: string, datos: Partial<Parametro>): Promise<void> {
           const index = parametros.findIndex(p => p.clave === clave)
           if (index !== -1) {
             parametros[index] = { ...parametros[index], ...datos }
@@ -559,7 +608,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Contrato | undefined {
         return contratos.find(c => c.proyectoId === proyectoId)
       },
-       crear(data: { proyectoId: string; codigoContrato: string; valorTotal: string; hitos: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[] }): Contrato {
+       async crear(data: { proyectoId: string; codigoContrato: string; valorTotal: string; hitos: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[] }): Promise<Contrato> {
         const id = generateId('ctr')
          const nuevo: Contrato = {
            id,
@@ -612,7 +661,7 @@ export function createMockStore(): DataStore {
       obtenerPorId(id: string): Cronograma | undefined {
         return cronogramas.find(c => c.id === id)
       },
-      crear(data: { proyectoId: string }): Cronograma {
+      async crear(data: { proyectoId: string }): Promise<Cronograma> {
         const baseSemanas = parametroNumero('base_semanas_cronograma', 4)
         const holgura = parametroNumero('holgura_maxima_dias', 12)
         const promesa = parametroNumero('promesa_semanas', 7)
@@ -636,7 +685,7 @@ export function createMockStore(): DataStore {
       porCronograma(cronogramaId: string): CronogramaEtapa[] {
         return cronogramaEtapas.filter(e => e.cronogramaId === cronogramaId)
       },
-      crear(data: { cronogramaId: string; linea: LineaCronograma; etapa: EtapaCronograma; fechaIdeal: string; fechaReal: string; estado: string }): CronogramaEtapa {
+      async crear(data: { cronogramaId: string; linea: LineaCronograma; etapa: EtapaCronograma; fechaIdeal: string; fechaReal: string; estado: string }): Promise<CronogramaEtapa> {
         const nuevo: CronogramaEtapa = {
           id: generateId('cet'),
           cronogramaId: data.cronogramaId,
@@ -656,7 +705,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): DesfaseCronograma[] {
         return desfases.filter(d => d.proyectoId === proyectoId)
       },
-      aplicar(proyectoId: string, data: { causa: CausaDesfase; composicionCausal: { origen: string; aporteDias: number }[]; motivo: string; diasDesfase: number }): DesfaseCronograma | null {
+      async aplicar(proyectoId: string, data: { causa: CausaDesfase; composicionCausal: { origen: string; aporteDias: number }[]; motivo: string; diasDesfase: number }): Promise<DesfaseCronograma | null> {
         // P33: requiere causa válida + motivo + composición causal (R2).
         if (!P33({ causa: data.causa, motivo: data.motivo, composicionCausal: data.composicionCausal })) return null
         const nuevo: DesfaseCronograma = {
@@ -684,7 +733,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      decisionManual(desfaseId: string, data: { decisionManual: string; autorizadoPor: string }): DesfaseCronograma | null {
+      async decisionManual(desfaseId: string, data: { decisionManual: string; autorizadoPor: string }): Promise<DesfaseCronograma | null> {
         const idx = desfases.findIndex(d => d.id === desfaseId)
         if (idx === -1) return null
         if (data.decisionManual.trim().length === 0) return null
@@ -698,7 +747,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): CheckProduccion[] {
         return checks.filter(c => c.proyectoId === proyectoId)
       },
-      crear(proyectoId: string, data: { ratioInsumos: number; ratioPagos: number; ratioProduccion: number }): CheckProduccion {
+      async crear(proyectoId: string, data: { ratioInsumos: number; ratioPagos: number; ratioProduccion: number }): Promise<CheckProduccion> {
         const umbralTodoBien = parametroNumero('umbral_todo_bien_pct', 0.95)
         const umbralExtremo = parametroNumero('umbral_extremo_pct', 0.70)
         // R9: el desenlace se DERIVA del mínimo de los 3 ratios, nunca se asienta a mano.
@@ -722,7 +771,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      confirmar(checkId: string, data: { desenlaceFinal: DesenlaceCheck; overrideJustificacion?: string }): CheckProduccion | null {
+      async confirmar(checkId: string, data: { desenlaceFinal: DesenlaceCheck; overrideJustificacion?: string }): Promise<CheckProduccion | null> {
         const idx = checks.findIndex(c => c.id === checkId)
         if (idx === -1) return null
         const check = checks[idx]
@@ -746,7 +795,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): NovedadCritica[] {
         return novedades.filter(n => n.proyectoId === proyectoId)
       },
-      crear(proyectoId: string, data: { descripcion: string; fase: string; ventanaSlaHoras: number }): NovedadCritica {
+      async crear(proyectoId: string, data: { descripcion: string; fase: string; ventanaSlaHoras: number }): Promise<NovedadCritica> {
         const nuevo: NovedadCritica = {
           id: generateId('nov'),
           proyectoId,
@@ -762,7 +811,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizarEstado(id: string, estado: EstadoNovedadCritica, escaladoA?: string): NovedadCritica | null {
+      async actualizarEstado(id: string, estado: EstadoNovedadCritica, escaladoA?: string): Promise<NovedadCritica | null> {
         const idx = novedades.findIndex(n => n.id === id)
         if (idx === -1) return null
         novedades[idx] = { ...novedades[idx], estado, escaladoA: escaladoA ?? novedades[idx].escaladoA, updatedAt: new Date().toISOString() }
@@ -775,7 +824,10 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): ComunicacionProgreso[] {
         return comunicaciones.filter(c => c.proyectoId === proyectoId)
       },
-      crear(proyectoId: string, data: { contenido: string }): ComunicacionProgreso | null {
+      visiblesAlCliente(proyectoId: string): ComunicacionProgreso[] {
+        return comunicaciones.filter(c => c.proyectoId === proyectoId && c.visibleAlCliente)
+      },
+      async crear(proyectoId: string, data: { contenido: string; visibleAlCliente?: boolean }): Promise<ComunicacionProgreso | null> {
         // R4: solo adelantos positivos (desenlace todo_bien → E-60), nunca atrasos.
         const checkBueno = checks.find(c => c.proyectoId === proyectoId && c.desenlaceFinal === 'todo_bien')
         if (!checkBueno) return null
@@ -784,6 +836,7 @@ export function createMockStore(): DataStore {
           proyectoId,
           tipo: 'adelanto',
           contenido: data.contenido,
+          visibleAlCliente: data.visibleAlCliente ?? true,
           createdAt: new Date().toISOString(),
         }
         comunicaciones.push(nuevo)
@@ -797,7 +850,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): SchemaProyecto[] {
         return schemas.filter(s => s.proyectoId === proyectoId)
       },
-      crear(proyectoId: string): SchemaProyecto {
+      async crear(proyectoId: string): Promise<SchemaProyecto> {
         const existentes = schemas.filter(s => s.proyectoId === proyectoId)
         const version = existentes.length > 0 ? Math.max(...existentes.map(s => s.version)) + 1 : 1
         const nuevo: SchemaProyecto = {
@@ -812,7 +865,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizarEstado(id: string, estado: EstadoSchema): SchemaProyecto | null {
+      async actualizarEstado(id: string, estado: EstadoSchema): Promise<SchemaProyecto | null> {
         const idx = schemas.findIndex(s => s.id === id)
         if (idx === -1) return null
         schemas[idx] = { ...schemas[idx], estado, aprobadoEn: estado === 'aprobado_compras' ? new Date().toISOString() : schemas[idx].aprobadoEn }
@@ -825,7 +878,7 @@ export function createMockStore(): DataStore {
       porSchema(schemaId: string): BomMaterial[] {
         return bom.filter(b => b.schemaId === schemaId)
       },
-      crear(data: { schemaId: string; productoId: string | null; cantidad: string; unidad: string; origen: OrigenBom; homologable: boolean; itemVarianteId?: string | null }): BomMaterial {
+      async crear(data: { schemaId: string; productoId: string | null; cantidad: string; unidad: string; origen: OrigenBom; homologable: boolean; itemVarianteId?: string | null }): Promise<BomMaterial> {
         const nuevo: BomMaterial = {
           id: generateId('bom'),
           schemaId: data.schemaId,
@@ -846,7 +899,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Verificacion[] {
         return verificaciones.filter(v => v.proyectoId === proyectoId)
       },
-      emitirVeredicto(data: { proyectoId: string; tipoGate: TipoGate; veredicto: VeredictoGate; verificadorId: string }): Verificacion | null {
+      async emitirVeredicto(data: { proyectoId: string; tipoGate: TipoGate; veredicto: VeredictoGate; verificadorId: string }): Promise<Verificacion | null> {
         const proyecto = proyectos.find(p => p.id === data.proyectoId)
         if (!proyecto) return null
 
@@ -912,7 +965,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Retoma | undefined {
         return retomas.find(r => r.proyectoId === proyectoId)
       },
-      guardar(proyectoId: string, data: { medidas?: Record<string, unknown>; fotos?: string[]; anomaliaDetectada?: boolean }): Retoma {
+      async guardar(proyectoId: string, data: { medidas?: Record<string, unknown>; fotos?: string[]; anomaliaDetectada?: boolean }): Promise<Retoma> {
         const existente = retomas.find(r => r.proyectoId === proyectoId)
         const anomalia = data.anomaliaDetectada ?? existente?.anomaliaDetectada ?? false
         const ahora = new Date().toISOString()
@@ -945,7 +998,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): CambioContrato[] {
         return cambiosContrato.filter(c => c.proyectoId === proyectoId)
       },
-      crear(data: { proyectoId: string; tipoCambio: CambioContrato['tipoCambio']; descripcion: string; disparaDesfase: boolean }): CambioContrato {
+      async crear(data: { proyectoId: string; tipoCambio: CambioContrato['tipoCambio']; descripcion: string; disparaDesfase: boolean }): Promise<CambioContrato> {
         const nuevo: CambioContrato = {
           id: generateId('cam'),
           proyectoId: data.proyectoId,
@@ -965,16 +1018,35 @@ export function createMockStore(): DataStore {
       listar(): Persona[] {
         return personas
       },
-      crear(data: { nombre: string; documento?: string | null; telefono?: string | null }): Persona {
+      obtenerPorId(id: string): Persona | undefined {
+        return personas.find(p => p.id === id)
+      },
+      async crear(data: Partial<Pick<Persona, 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>> & { nombre: string }): Promise<Persona> {
         const nuevo: Persona = {
           id: generateId('p'),
           nombre: data.nombre,
           documento: data.documento ?? null,
           telefono: data.telefono ?? null,
+          fotoUrl: data.fotoUrl ?? null,
+          email: data.email ?? null,
+          direccion: data.direccion ?? null,
+          referencia1Nombre: data.referencia1Nombre ?? null,
+          referencia1Relacion: data.referencia1Relacion ?? null,
+          referencia1Telefono: data.referencia1Telefono ?? null,
+          referencia2Nombre: data.referencia2Nombre ?? null,
+          referencia2Relacion: data.referencia2Relacion ?? null,
+          referencia2Telefono: data.referencia2Telefono ?? null,
         }
         personas.push(nuevo)
         notify()
         return nuevo
+      },
+      async actualizar(id: string, data: Partial<Pick<Persona, 'nombre' | 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>>): Promise<Persona | null> {
+        const idx = personas.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        personas[idx] = { ...personas[idx], ...data }
+        notify()
+        return personas[idx]
       },
     },
 
@@ -982,7 +1054,7 @@ export function createMockStore(): DataStore {
       activos(): PersonaRol[] {
         return personasRoles.filter(r => r.activo)
       },
-      asignar(personaId: string, rolId: RolCanonico): PersonaRol {
+      async asignar(personaId: string, rolId: RolCanonico): Promise<PersonaRol> {
         const yaExiste = personasRoles.find(r => r.personaId === personaId && r.rolId === rolId)
         if (yaExiste) {
           if (!yaExiste.activo) {
@@ -1010,7 +1082,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Modulo[] {
         return modulos.filter(m => m.proyectoId === proyectoId)
       },
-      actualizarEstado(id: string, estado: string): Modulo | null {
+      async actualizarEstado(id: string, estado: string): Promise<Modulo | null> {
         const idx = modulos.findIndex(m => m.id === id)
         if (idx === -1) return null
         // P-16 R2/CA-3: solo avanza un paso a la vez en por_armar→en_armado→armado→en_calidad.
@@ -1031,7 +1103,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): OrdenTrabajo[] {
         return ordenesTrabajo.filter(o => o.proyectoId === proyectoId)
       },
-      crear(data: { proyectoId: string; tipo: TipoOrdenTrabajo; pedidoWebId?: string | null }): OrdenTrabajo {
+      async crear(data: { proyectoId: string; tipo: TipoOrdenTrabajo; pedidoWebId?: string | null }): Promise<OrdenTrabajo> {
         const nuevo: OrdenTrabajo = {
           id: generateId('ot'),
           proyectoId: data.proyectoId,
@@ -1053,7 +1125,7 @@ export function createMockStore(): DataStore {
       porCliente(clienteId: string): PedidoWeb[] {
         return pedidosWeb.filter(p => p.clienteId === clienteId)
       },
-      crear(data: { clienteId: string; totalPedido: string }): PedidoWeb {
+      async crear(data: { clienteId: string; totalPedido: string }): Promise<PedidoWeb> {
         const nuevo: PedidoWeb = {
           id: generateId('pw'),
           clienteId: data.clienteId,
@@ -1066,14 +1138,14 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizarEstado(id: string, estado: string): PedidoWeb | null {
+      async actualizarEstado(id: string, estado: string): Promise<PedidoWeb | null> {
         const idx = pedidosWeb.findIndex(p => p.id === id)
         if (idx === -1) return null
         pedidosWeb[idx] = { ...pedidosWeb[idx], estado }
         notify()
         return pedidosWeb[idx]
       },
-      enganchar(id: string, proyectoId: string): PedidoWeb | null {
+      async enganchar(id: string, proyectoId: string): Promise<PedidoWeb | null> {
         if (!proyectoId) return null
         const idx = pedidosWeb.findIndex(p => p.id === id)
         if (idx === -1) return null
@@ -1097,7 +1169,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): CitacionCalidad[] {
         return citacionesCalidad.filter(c => c.proyectoId === proyectoId)
       },
-      crear(data: { proyectoId: string; modulosIds: string[]; fecha: string }): CitacionCalidad {
+      async crear(data: { proyectoId: string; modulosIds: string[]; fecha: string }): Promise<CitacionCalidad> {
         const nuevo: CitacionCalidad = {
           id: generateId('cit'),
           proyectoId: data.proyectoId,
@@ -1116,7 +1188,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Reproceso[] {
         return reprocesos.filter(r => r.proyectoId === proyectoId)
       },
-      crear(data: { proyectoId: string; origen: OrigenReproceso; moduloId?: string | null; culpable?: string | null; granularidad?: 'modulo' | 'componente' | null; descripcion?: string | null }): Reproceso {
+      async crear(data: { proyectoId: string; origen: OrigenReproceso; moduloId?: string | null; culpable?: string | null; granularidad?: 'modulo' | 'componente' | null; descripcion?: string | null }): Promise<Reproceso> {
         const nuevo: Reproceso = {
           id: generateId('rep'),
           proyectoId: data.proyectoId,
@@ -1138,7 +1210,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Instalacion[] {
         return instalaciones.filter(i => i.proyectoId === proyectoId)
       },
-      programar(data: { proyectoId: string; rangoFechaInicio: string; rangoFechaFin: string }): Instalacion | null {
+      async programar(data: { proyectoId: string; rangoFechaInicio: string; rangoFechaFin: string }): Promise<Instalacion | null> {
         // P-18 R1/R40/CA-2: rango ≤5 días.
         if (!rangoInstalacionValido(data.rangoFechaInicio, data.rangoFechaFin)) return null
         const now = new Date().toISOString()
@@ -1156,7 +1228,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      iniciar(id: string): Instalacion | null {
+      async iniciar(id: string): Promise<Instalacion | null> {
         const idx = instalaciones.findIndex(i => i.id === id)
         if (idx === -1) return null
         const inst = instalaciones[idx]
@@ -1166,12 +1238,17 @@ export function createMockStore(): DataStore {
         const citaciones = citacionesCalidad.filter(c => c.proyectoId === inst.proyectoId)
         const verifsProyecto = verificaciones.filter(v => v.proyectoId === inst.proyectoId)
         if (!P24(proyecto, citaciones, verifsProyecto)) return null
-        instalaciones[idx] = { ...inst, estado: 'en_curso', updatedAt: new Date().toISOString() }
+        // P-18 R4: asignar adelantadaPor si existe un check con desenlaceFinal='todo_bien' (instalación adelantada por check positivo).
+        const checkAdelanto = checks
+          .filter(c => c.proyectoId === inst.proyectoId && c.desenlaceFinal === 'todo_bien')
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+        const adelantadaPor = checkAdelanto?.id ?? null
+        instalaciones[idx] = { ...inst, estado: 'en_curso', adelantadaPor, updatedAt: new Date().toISOString() }
         setProyectoEstado(inst.proyectoId, 'en_instalacion')
         notify()
         return instalaciones[idx]
       },
-      marcarInstalada(id: string): Instalacion | null {
+      async marcarInstalada(id: string): Promise<Instalacion | null> {
         const idx = instalaciones.findIndex(i => i.id === id)
         if (idx === -1) return null
         instalaciones[idx] = { ...instalaciones[idx], estado: 'instalada', updatedAt: new Date().toISOString() }
@@ -1180,7 +1257,7 @@ export function createMockStore(): DataStore {
         notify()
         return instalaciones[idx]
       },
-      marcarFallida(id: string, motivo: string): Instalacion | null {
+      async marcarFallida(id: string, motivo: string): Promise<Instalacion | null> {
         const idx = instalaciones.findIndex(i => i.id === id)
         if (idx === -1) return null
         instalaciones[idx] = { ...instalaciones[idx], estado: 'fallida', updatedAt: new Date().toISOString() }
@@ -1204,7 +1281,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): ActaEntrega | undefined {
         return actasEntrega.find(a => a.proyectoId === proyectoId)
       },
-      generar(proyectoId: string, data?: { holguraOperativaDias?: number; fotos?: string[]; observaciones?: string | null }): ActaEntrega | null {
+      async generar(proyectoId: string, data?: { holguraOperativaDias?: number; fotos?: string[]; observaciones?: string | null }): Promise<ActaEntrega | null> {
         // R1: solo si hay una instalación 'instalada' para este proyecto.
         const instalada = instalaciones.find(i => i.proyectoId === proyectoId && i.estado === 'instalada')
         if (!instalada) return null
@@ -1224,7 +1301,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      enviar(id: string): ActaEntrega | null {
+      async enviar(id: string): Promise<ActaEntrega | null> {
         const idx = actasEntrega.findIndex(a => a.id === id)
         if (idx === -1) return null
         if (!actasEntrega[idx].pdfUrl) return null
@@ -1232,7 +1309,7 @@ export function createMockStore(): DataStore {
         notify()
         return actasEntrega[idx]
       },
-      firmar(id: string): ActaEntrega | null {
+      async firmar(id: string): Promise<ActaEntrega | null> {
         const idx = actasEntrega.findIndex(a => a.id === id)
         if (idx === -1) return null
         actasEntrega[idx] = { ...actasEntrega[idx], estado: 'firmada', updatedAt: new Date().toISOString() }
@@ -1250,7 +1327,7 @@ export function createMockStore(): DataStore {
       porCliente(clienteId: string): CasoGarantia[] {
         return casosGarantia.filter(c => c.clienteId === clienteId)
       },
-      reportar(data: { proyectoId: string; moduloId?: string | null; clienteId?: string | null; descripcion: string; fotos?: string[] }): CasoGarantia | null {
+      async reportar(data: { proyectoId: string; moduloId?: string | null; clienteId?: string | null; descripcion: string; fotos?: string[] }): Promise<CasoGarantia | null> {
         const proyecto = proyectos.find(p => p.id === data.proyectoId)
         // R1: solo proyectos entregados.
         if (!proyecto || proyecto.estado !== 'entregado') return null
@@ -1282,7 +1359,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      diagnosticar(id: string, diagnostico: string): CasoGarantia | null {
+      async diagnosticar(id: string, diagnostico: string): Promise<CasoGarantia | null> {
         const idx = casosGarantia.findIndex(c => c.id === id)
         if (idx === -1) return null
         if (diagnostico.trim().length === 0) return null
@@ -1290,7 +1367,7 @@ export function createMockStore(): DataStore {
         notify()
         return casosGarantia[idx]
       },
-      crearOrdenReparacion(id: string): CasoGarantia | null {
+      async crearOrdenReparacion(id: string): Promise<CasoGarantia | null> {
         const idx = casosGarantia.findIndex(c => c.id === id)
         if (idx === -1) return null
         const caso = casosGarantia[idx]
@@ -1300,7 +1377,7 @@ export function createMockStore(): DataStore {
         notify()
         return casosGarantia[idx]
       },
-      dispararReproceso(id: string): CasoGarantia | null {
+      async dispararReproceso(id: string): Promise<CasoGarantia | null> {
         const idx = casosGarantia.findIndex(c => c.id === id)
         if (idx === -1) return null
         const caso = casosGarantia[idx]
@@ -1320,7 +1397,7 @@ export function createMockStore(): DataStore {
         notify()
         return casosGarantia[idx]
       },
-      resolver(id: string, solucionAplicada: string): CasoGarantia | null {
+      async resolver(id: string, solucionAplicada: string): Promise<CasoGarantia | null> {
         const idx = casosGarantia.findIndex(c => c.id === id)
         if (idx === -1) return null
         if (solucionAplicada.trim().length === 0) return null
@@ -1328,7 +1405,7 @@ export function createMockStore(): DataStore {
         notify()
         return casosGarantia[idx]
       },
-      cerrar(id: string): CasoGarantia | null {
+      async cerrar(id: string): Promise<CasoGarantia | null> {
         const idx = casosGarantia.findIndex(c => c.id === id)
         if (idx === -1) return null
         casosGarantia[idx] = { ...casosGarantia[idx], estado: 'cerrado', updatedAt: new Date().toISOString() }
@@ -1341,7 +1418,7 @@ export function createMockStore(): DataStore {
       porCaso(casoId: string): CitaGarantia[] {
         return citasGarantia.filter(c => c.casoId === casoId)
       },
-      agendar(data: { casoId: string; proyectoId: string; fecha: string }): CitaGarantia {
+      async agendar(data: { casoId: string; proyectoId: string; fecha: string }): Promise<CitaGarantia> {
         const nuevo: CitaGarantia = {
           id: generateId('citg'),
           casoId: data.casoId,
@@ -1362,7 +1439,7 @@ export function createMockStore(): DataStore {
       listar(): CuentaFinanciera[] {
         return cuentasFinancieras
       },
-      crear(data: { nombre: string; tipo: string; saldoActual?: string }): CuentaFinanciera {
+      async crear(data: { nombre: string; tipo: string; saldoActual?: string }): Promise<CuentaFinanciera> {
         const nuevo: CuentaFinanciera = {
           id: generateId('cta'),
           nombre: data.nombre,
@@ -1387,6 +1464,9 @@ export function createMockStore(): DataStore {
       porCuenta(cuentaId: string): MovimientoFinanciero[] {
         return movimientosFinancieros.filter(m => m.cuentaOrigenId === cuentaId || m.cuentaDestinoId === cuentaId)
       },
+      porProyecto(proyectoId: string): MovimientoFinanciero[] {
+        return movimientosFinancieros.filter(m => m.proyectoId === proyectoId)
+      },
     },
 
     obligacionesPendientes: {
@@ -1396,7 +1476,13 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): ObligacionPendiente[] {
         return obligacionesPendientes.filter(o => o.proyectoId === proyectoId)
       },
-      crear(data: Partial<ObligacionPendiente> & { descripcion: string; origen: OrigenObligacion; montoTotal: string; fechaVencimiento: string }): ObligacionPendiente {
+      porPersona(personaId: string): ObligacionPendiente[] {
+        return obligacionesPendientes.filter(o => o.personaId === personaId)
+      },
+      porProveedor(proveedorId: string): ObligacionPendiente[] {
+        return obligacionesPendientes.filter(o => o.proveedorId === proveedorId)
+      },
+      async crear(data: Partial<ObligacionPendiente> & { descripcion: string; origen: OrigenObligacion; montoTotal: string; fechaVencimiento: string }): Promise<ObligacionPendiente> {
         const nuevo: ObligacionPendiente = {
           id: generateId('obl'),
           descripcion: data.descripcion,
@@ -1411,6 +1497,7 @@ export function createMockStore(): DataStore {
           proyectoId: data.proyectoId ?? null,
           contratoId: data.contratoId ?? null,
           hitoId: data.hitoId ?? null,
+          ordenCompraId: data.ordenCompraId ?? null,
           baseCalculo: data.baseCalculo ?? null,
           porcentaje: data.porcentaje ?? null,
           tipoComision: data.tipoComision ?? null,
@@ -1424,7 +1511,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      registrarPago(id: string, data: { monto: string; cuentaId: string; medioPago?: string }): ObligacionPendiente | null {
+      async registrarPago(id: string, data: { monto: string; cuentaId: string; medioPago?: string }): Promise<ObligacionPendiente | null> {
         const idx = obligacionesPendientes.findIndex(o => o.id === id)
         if (idx === -1) return null
         const obligacion = obligacionesPendientes[idx]
@@ -1466,7 +1553,7 @@ export function createMockStore(): DataStore {
       porProveedor(proveedorId: string): OrdenCompra[] {
         return ordenesCompra.filter(o => o.proveedorId === proveedorId)
       },
-      crear(data: Partial<OrdenCompra> & { proveedorId: string; montoTotal: string }): OrdenCompra {
+      async crear(data: Partial<OrdenCompra> & { proveedorId: string; montoTotal: string }): Promise<OrdenCompra> {
         const now = new Date().toISOString()
         const nuevo: OrdenCompra = {
           id: generateId('oc'),
@@ -1483,10 +1570,39 @@ export function createMockStore(): DataStore {
           updatedAt: now,
         }
         ordenesCompra.push(nuevo)
+        // C-01 (auditoría 2026-08-10): crea la obligación de pago al proveedor automáticamente,
+        // en la misma operación — mismo patrón que cuentasCobroProveedor.crear(), aplicado acá
+        // porque faltaba: sin esto, una OC en curso no aparecía en Obligaciones ni se descontaba
+        // del saldo disponible de Caja (cuentasFinancieras.disponible() sí resta obligaciones).
+        // P-21 Fix: asignar ordenCompraId para vincular la obligación a su OC de origen.
+        obligacionesPendientes.push({
+          id: generateId('obl'),
+          descripcion: `Orden de compra: ${nuevo.codigoOrden}`,
+          origen: 'proveedor',
+          montoTotal: nuevo.montoTotal,
+          montoPagado: '0',
+          fechaVencimiento: nuevo.fechaRecepcionEsperada ?? now.slice(0, 10),
+          estado: 'pendiente',
+          personaId: null,
+          clienteId: null,
+          proveedorId: nuevo.proveedorId,
+          proyectoId: nuevo.proyectoId,
+          contratoId: null,
+          hitoId: null,
+          ordenCompraId: nuevo.id,
+          baseCalculo: null,
+          porcentaje: null,
+          tipoComision: null,
+          cantidadModulos: null,
+          desfaseId: null,
+          periodicidad: null,
+          deduccionDiseno3d: false,
+          createdAt: now,
+        })
         notify()
         return nuevo
       },
-      actualizarEstado(id: string, estado: EstadoOrdenCompra): OrdenCompra | null {
+      async actualizarEstado(id: string, estado: EstadoOrdenCompra): Promise<OrdenCompra | null> {
         const idx = ordenesCompra.findIndex(o => o.id === id)
         if (idx === -1) return null
         ordenesCompra[idx] = { ...ordenesCompra[idx], estado, updatedAt: new Date().toISOString() }
@@ -1505,7 +1621,7 @@ export function createMockStore(): DataStore {
     },
 
     caja: {
-      autorizarPago(data: { ordenCompraId: string; cuentaId: string; medioPago?: string }): MovimientoFinanciero | null {
+      async autorizarPago(data: { ordenCompraId: string; cuentaId: string; medioPago?: string }): Promise<MovimientoFinanciero | null> {
         const idx = ordenesCompra.findIndex(o => o.id === data.ordenCompraId)
         if (idx === -1) return null
         const oc = ordenesCompra[idx]
@@ -1533,6 +1649,8 @@ export function createMockStore(): DataStore {
         const cuentaIdx = cuentasFinancieras.findIndex(c => c.id === data.cuentaId)
         if (cuentaIdx === -1) return null
         // R1: movimiento + OC→pagada en la misma "transacción" (mock, sin tx real).
+        // P-21 Fix: encontrar la ObligacionPendiente vinculada a esta OC y actualizar su montoPagado.
+        const obligacionIdx = obligacionesPendientes.findIndex(o => o.ordenCompraId === oc.id)
         const movimiento: MovimientoFinanciero = {
           id: generateId('mov'),
           fecha: ahora.slice(0, 10),
@@ -1541,7 +1659,7 @@ export function createMockStore(): DataStore {
           monto: oc.montoTotal,
           cuentaOrigenId: cuentasFinancieras[cuentaIdx].id,
           cuentaDestinoId: null,
-          obligacionId: null,
+          obligacionId: obligacionIdx >= 0 ? obligacionesPendientes[obligacionIdx].id : null,
           ordenCompraId: oc.id,
           proyectoId: oc.proyectoId,
           contratoId: null,
@@ -1554,6 +1672,13 @@ export function createMockStore(): DataStore {
         movimientosFinancieros.push(movimiento)
         cuentasFinancieras[cuentaIdx] = { ...cuentasFinancieras[cuentaIdx], saldoActual: String(numDe(cuentasFinancieras[cuentaIdx].saldoActual) - monto) }
         ordenesCompra[idx] = { ...oc, estado: 'pagada', updatedAt: ahora }
+        // P-21 Fix: actualizar la obligación vinculada: incrementar montoPagado y, si es necesario, cambiar estado a 'pagado'.
+        if (obligacionIdx >= 0) {
+          const obligacion = obligacionesPendientes[obligacionIdx]
+          const nuevoPagado = numDe(obligacion.montoPagado) + monto
+          const estado: EstadoObligacion = nuevoPagado >= numDe(obligacion.montoTotal) ? 'pagado' : 'parcial'
+          obligacionesPendientes[obligacionIdx] = { ...obligacion, montoPagado: String(nuevoPagado), estado }
+        }
         notify()
         return movimiento
       },
@@ -1563,7 +1688,10 @@ export function createMockStore(): DataStore {
       listar(): Proveedor[] {
         return proveedores
       },
-      crear(data: Partial<Proveedor> & { nombre: string }): Proveedor {
+      obtenerPorId(id: string): Proveedor | undefined {
+        return proveedores.find(p => p.id === id)
+      },
+      async crear(data: Partial<Proveedor> & { nombre: string }): Promise<Proveedor> {
         const nuevo: Proveedor = {
           id: generateId('prov'),
           nombre: data.nombre,
@@ -1587,11 +1715,16 @@ export function createMockStore(): DataStore {
       porOrdenCompra(ordenCompraId: string): ItemOrdenCompra[] {
         return itemsOrdenCompra.filter(i => i.ordenCompraId === ordenCompraId)
       },
-      crear(data: { ordenCompraId: string; productoCatalogoId: string; cantidadEsperada: number }): ItemOrdenCompra {
+      async crear(data: { ordenCompraId: string; productoCatalogoId?: string | null; especificacion?: string | null; cantidadEsperada: number }): Promise<ItemOrdenCompra | null> {
+        const tieneProducto = !!data.productoCatalogoId
+        const tieneEspecificacion = !!data.especificacion && data.especificacion.trim().length > 0
+        // D-04: exactamente una vía — catálogo (1) o a pedido (2), nunca ambas ni ninguna.
+        if (tieneProducto === tieneEspecificacion) return null
         const nuevo: ItemOrdenCompra = {
           id: generateId('ioc'),
           ordenCompraId: data.ordenCompraId,
-          productoCatalogoId: data.productoCatalogoId,
+          productoCatalogoId: data.productoCatalogoId ?? null,
+          especificacion: data.especificacion ?? null,
           cantidadEsperada: data.cantidadEsperada,
           recibidoCantidad: 0,
           sinDefectos: false,
@@ -1600,13 +1733,30 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
+      async crearDesdeSugeridos(ordenCompraId: string, sugeridos: { productoCatalogoId: string; cantidad: number }[]): Promise<ItemOrdenCompra[]> {
+        const nuevos: ItemOrdenCompra[] = sugeridos.map((s) => ({
+          id: generateId('ioc'),
+          ordenCompraId,
+          productoCatalogoId: s.productoCatalogoId,
+          especificacion: null,
+          cantidadEsperada: s.cantidad,
+          recibidoCantidad: 0,
+          sinDefectos: false,
+        }))
+        itemsOrdenCompra.push(...nuevos)
+        notify()
+        return nuevos
+      },
     },
 
     recepcionesMaterial: {
       porOrdenCompra(ordenCompraId: string): RecepcionMaterial[] {
         return recepcionesMaterial.filter(r => r.ordenCompraId === ordenCompraId)
       },
-      crear(data: { ordenCompraId: string; proyectoId?: string | null }): RecepcionMaterial {
+      porProyecto(proyectoId: string): RecepcionMaterial[] {
+        return recepcionesMaterial.filter(r => r.proyectoId === proyectoId)
+      },
+      async crear(data: { ordenCompraId: string; proyectoId?: string | null }): Promise<RecepcionMaterial> {
         const nuevo: RecepcionMaterial = {
           id: generateId('recm'),
           ordenCompraId: data.ordenCompraId,
@@ -1622,7 +1772,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizarChecks(id: string, data: { checkPedidoBien: boolean; checkDespachoBien: boolean; checkMaterial: boolean; descripcionDefecto?: string | null }): RecepcionMaterial | null {
+      async actualizarChecks(id: string, data: { checkPedidoBien: boolean; checkDespachoBien: boolean; checkMaterial: boolean; descripcionDefecto?: string | null }): Promise<RecepcionMaterial | null> {
         const idx = recepcionesMaterial.findIndex(r => r.id === id)
         if (idx === -1) return null
         const completa = data.checkPedidoBien && data.checkDespachoBien && data.checkMaterial
@@ -1643,6 +1793,16 @@ export function createMockStore(): DataStore {
           if (ocIdx !== -1) {
             ordenesCompra[ocIdx] = { ...ordenesCompra[ocIdx], estado: 'recibida_verificada', updatedAt: new Date().toISOString() }
           }
+          // D-04 (re-auditoría 2026-08-10): recibidoCantidad/sinDefectos se creaban en 0/false y
+          // ningún código los actualizaba nunca -- la tabla "Ítems esperados" de la recepción mostraba
+          // "0"/"No" para siempre, incluso tras una recepción verificada 3/3. Sin granularidad por ítem
+          // en esta UI (el check es agregado por OC), la única lectura consistente de "3/3 correcto" es
+          // que todos los ítems llegaron completos y sin defecto.
+          itemsOrdenCompra.forEach((it, i) => {
+            if (it.ordenCompraId === recepcionesMaterial[idx].ordenCompraId) {
+              itemsOrdenCompra[i] = { ...it, recibidoCantidad: it.cantidadEsperada, sinDefectos: true }
+            }
+          })
         }
         notify()
         return recepcionesMaterial[idx]
@@ -1653,7 +1813,7 @@ export function createMockStore(): DataStore {
       listar(): Herramienta[] {
         return herramientas
       },
-      crear(data: { nombre: string; valor: string; fotoUrl?: string | null; proveedorId?: string | null }): Herramienta {
+      async crear(data: { nombre: string; valor: string; fotoUrl?: string | null; proveedorId?: string | null }): Promise<Herramienta> {
         const nuevo: Herramienta = {
           id: generateId('herr'),
           nombre: data.nombre,
@@ -1668,14 +1828,14 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizarEstado(id: string, estado: EstadoOperativoHerramienta): Herramienta | null {
+      async actualizarEstado(id: string, estado: EstadoOperativoHerramienta): Promise<Herramienta | null> {
         const idx = herramientas.findIndex(h => h.id === id)
         if (idx === -1) return null
         herramientas[idx] = { ...herramientas[idx], estadoOperativo: estado }
         notify()
         return herramientas[idx]
       },
-      reponer(id: string): { herramienta: Herramienta; ordenCompra: OrdenCompra } | null {
+      async reponer(id: string): Promise<{ herramienta: Herramienta; ordenCompra: OrdenCompra } | null> {
         const idx = herramientas.findIndex(h => h.id === id)
         if (idx === -1) return null
         // R2: no duplica si ya hay una OC de reposición abierta para esta herramienta.
@@ -1683,12 +1843,18 @@ export function createMockStore(): DataStore {
           ? ordenesCompra.find(o => o.id === herramientas[idx].ordenCompraReposicionId && o.estado !== 'cancelada' && o.estado !== 'rechazada' && o.estado !== 'pagada')
           : undefined
         if (existente) return { herramienta: herramientas[idx], ordenCompra: existente }
+        // D-05 (re-auditoría 2026-08-10): antes usaba `?? ''` acá -- una herramienta sin proveedor
+        // asignado generaba una OrdenCompra con proveedorId: '' (string vacío), pese a que el tipo
+        // declara proveedorId: string no-nullable y el formulario manual de "Nueva orden de compra"
+        // (compras/page.tsx) exige proveedor como campo obligatorio. Guardia explícita en vez de
+        // fabricar una OC sin proveedor real.
+        if (!herramientas[idx].proveedorId) return null
         const now = new Date().toISOString()
         const nuevaOC: OrdenCompra = {
           id: generateId('oc'),
           codigoOrden: `OC-${Date.now()}`,
           proyectoId: null,
-          proveedorId: herramientas[idx].proveedorId ?? '',
+          proveedorId: herramientas[idx].proveedorId,
           montoTotal: herramientas[idx].valor,
           anticipoMonto: null,
           estado: 'solicitada',
@@ -1709,7 +1875,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): DocumentoProyecto[] {
         return documentosProyecto.filter(d => d.proyectoId === proyectoId)
       },
-      crear(data: { proyectoId: string; etapa: MacroFaseProyecto; alojador: AlojadorDocumento; url: string; nombre: string }): DocumentoProyecto | null {
+      async crear(data: { proyectoId: string; etapa: MacroFaseProyecto; alojador: AlojadorDocumento; url: string; nombre: string }): Promise<DocumentoProyecto | null> {
         if (!data.url || data.url.trim().length === 0) return null
         const nuevo: DocumentoProyecto = {
           id: generateId('doc'),
@@ -1724,7 +1890,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      eliminar(id: string): boolean {
+      async eliminar(id: string): Promise<boolean> {
         const idx = documentosProyecto.findIndex(d => d.id === id)
         if (idx === -1) return false
         documentosProyecto.splice(idx, 1)
@@ -1740,14 +1906,18 @@ export function createMockStore(): DataStore {
       porProveedor(proveedorId: string): CuentaCobroProveedor[] {
         return cuentasCobroProveedor.filter(c => c.proveedorId === proveedorId)
       },
-      crear(data: { proveedorId: string; concepto: string; valor: string; firmaDigital: string; fechaEmision: string; fechaVencimiento?: string | null }): CuentaCobroProveedor | null {
+      async crear(data: { proveedorId: string; concepto: string; valor: string; firmaDigital: string; fechaEmision: string; fechaVencimiento?: string | null }): Promise<CuentaCobroProveedor | null> {
         // R4: firma digital requerida.
         if (!data.firmaDigital || data.firmaDigital.trim().length === 0) return null
         const now = new Date().toISOString()
+        // R2: crea la obligación de pago al proveedor automáticamente, en la misma operación.
+        // P-23 Fix: capturar el ID de la obligación para vincularla.
+        const obligacionId = generateId('obl')
         const nuevo: CuentaCobroProveedor = {
           id: generateId('ccp'),
           proveedorId: data.proveedorId,
           ordenCompraId: null,
+          obligacionId,
           concepto: data.concepto,
           valor: data.valor,
           estado: 'emitida',
@@ -1758,9 +1928,8 @@ export function createMockStore(): DataStore {
           createdAt: now,
         }
         cuentasCobroProveedor.push(nuevo)
-        // R2: crea la obligación de pago al proveedor automáticamente, en la misma operación.
         obligacionesPendientes.push({
-          id: generateId('obl'),
+          id: obligacionId,
           descripcion: `Cuenta de cobro: ${data.concepto}`,
           origen: 'proveedor',
           montoTotal: data.valor,
@@ -1773,6 +1942,7 @@ export function createMockStore(): DataStore {
           proyectoId: null,
           contratoId: null,
           hitoId: null,
+          ordenCompraId: null,
           baseCalculo: null,
           porcentaje: null,
           tipoComision: null,
@@ -1785,7 +1955,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      vincularOC(id: string, ordenCompraId: string): CuentaCobroProveedor | null {
+      async vincularOC(id: string, ordenCompraId: string): Promise<CuentaCobroProveedor | null> {
         const idx = cuentasCobroProveedor.findIndex(c => c.id === id)
         if (idx === -1) return null
         const oc = ordenesCompra.find(o => o.id === ordenCompraId)
@@ -1796,22 +1966,31 @@ export function createMockStore(): DataStore {
         notify()
         return cuentasCobroProveedor[idx]
       },
-      adjuntarFactura(id: string, urlDocumento: string): CuentaCobroProveedor | null {
+      async adjuntarFactura(id: string, urlDocumento: string): Promise<CuentaCobroProveedor | null> {
         const idx = cuentasCobroProveedor.findIndex(c => c.id === id)
         if (idx === -1) return null
         cuentasCobroProveedor[idx] = { ...cuentasCobroProveedor[idx], urlDocumento }
         notify()
         return cuentasCobroProveedor[idx]
       },
-      marcarPagada(id: string): CuentaCobroProveedor | null {
+      async marcarPagada(id: string): Promise<CuentaCobroProveedor | null> {
         const idx = cuentasCobroProveedor.findIndex(c => c.id === id)
         if (idx === -1) return null
+        const cuenta = cuentasCobroProveedor[idx]
+        // P-23 Fix: validar que existe un movimiento financiero asociado a la obligación específica.
+        // Si no hay obligacionId (data legacy), rechazar para mantener integridad.
+        if (!cuenta.obligacionId) return null
+        // Buscar si hay algún movimiento que haya pagado esta obligación específica.
+        const tieneMovimientoPago = movimientosFinancieros.some(
+          m => m.obligacionId === cuenta.obligacionId && m.tipo === 'debito'
+        )
+        if (!tieneMovimientoPago) return null
         cuentasCobroProveedor[idx] = { ...cuentasCobroProveedor[idx], estado: 'pagada' }
         notify()
         return cuentasCobroProveedor[idx]
       },
       /** R18 (disenio P-23): anular es válida desde cualquier estado. */
-      anular(id: string): CuentaCobroProveedor | null {
+      async anular(id: string): Promise<CuentaCobroProveedor | null> {
         const idx = cuentasCobroProveedor.findIndex(c => c.id === id)
         if (idx === -1) return null
         cuentasCobroProveedor[idx] = { ...cuentasCobroProveedor[idx], estado: 'anulada' }
@@ -1828,7 +2007,7 @@ export function createMockStore(): DataStore {
       porTipo(tipo: string): Categoria[] {
         return categorias.filter(c => c.tipo === tipo)
       },
-      crear(data: { nombre: string; tipo: string; padreId?: string | null }): Categoria {
+      async crear(data: { nombre: string; tipo: string; padreId?: string | null }): Promise<Categoria> {
         const nuevo: Categoria = {
           id: generateId('catg'),
           nombre: data.nombre,
@@ -1853,14 +2032,14 @@ export function createMockStore(): DataStore {
       obtenerPorId(id: string): ProductoTienda | undefined {
         return productosTienda.find(p => p.id === id)
       },
-      crear(data: Partial<ProductoTienda> & { catalogoId: string; valorTienda: string }): ProductoTienda {
+      async crear(data: Partial<ProductoTienda> & { catalogoId: string; valorTienda: string }): Promise<ProductoTienda> {
         const now = new Date().toISOString()
         const nuevo: ProductoTienda = {
           id: generateId('pt'),
           catalogoId: data.catalogoId,
           descripcionDiseno: data.descripcionDiseno ?? null,
           imagenPrincipalUrl: data.imagenPrincipalUrl ?? null,
-          categoriaId: data.categoriaId ?? null,
+          categoria: data.categoria ?? SHOP_CATEGORIAS.COCINAS,
           visibleEnTienda: data.visibleEnTienda ?? false,
           valorTienda: data.valorTienda,
           inventarioDisponible: data.inventarioDisponible ?? 0,
@@ -1872,7 +2051,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      actualizar(id: string, partial: Partial<Pick<ProductoTienda, 'descripcionDiseno' | 'imagenPrincipalUrl' | 'categoriaId' | 'visibleEnTienda' | 'valorTienda' | 'inventarioDisponible'>>): ProductoTienda | null {
+      async actualizar(id: string, partial: Partial<Pick<ProductoTienda, 'descripcionDiseno' | 'imagenPrincipalUrl' | 'categoria' | 'visibleEnTienda' | 'valorTienda' | 'inventarioDisponible'>>): Promise<ProductoTienda | null> {
         const idx = productosTienda.findIndex(p => p.id === id)
         if (idx === -1) return null
         productosTienda[idx] = { ...productosTienda[idx], ...partial, updatedAt: new Date().toISOString() }
@@ -1881,11 +2060,37 @@ export function createMockStore(): DataStore {
       },
     },
 
+    productosTiendaComponentes: {
+      porProductoTienda(productoTiendaId: string): ProductoTiendaComponente[] {
+        return productosTiendaComponentes.filter(c => c.productoTiendaId === productoTiendaId)
+      },
+      async crear(data: { productoTiendaId: string; catalogoId: string; cantidad: string }): Promise<ProductoTiendaComponente> {
+        const now = new Date().toISOString()
+        const nuevo: ProductoTiendaComponente = {
+          id: generateId('ptc'),
+          productoTiendaId: data.productoTiendaId,
+          catalogoId: data.catalogoId,
+          cantidad: data.cantidad,
+          createdAt: now,
+          updatedAt: now,
+        }
+        productosTiendaComponentes.push(nuevo)
+        notify()
+        return nuevo
+      },
+      async eliminar(id: string): Promise<void> {
+        const idx = productosTiendaComponentes.findIndex(c => c.id === id)
+        if (idx === -1) return
+        productosTiendaComponentes.splice(idx, 1)
+        notify()
+      },
+    },
+
     catalogoAcabados: {
       listar(): CatalogoAcabado[] {
         return catalogoAcabados
       },
-      crear(data: Partial<CatalogoAcabado> & { nombre: string }): CatalogoAcabado {
+      async crear(data: Partial<CatalogoAcabado> & { nombre: string }): Promise<CatalogoAcabado> {
         const nuevo: CatalogoAcabado = {
           id: generateId('aca'),
           nombre: data.nombre,
@@ -1906,7 +2111,7 @@ export function createMockStore(): DataStore {
       porProducto(productoCatalogoId: string): CatalogoProductoAcabado[] {
         return catalogoProductoAcabados.filter(c => c.productoCatalogoId === productoCatalogoId)
       },
-      crear(data: { productoCatalogoId: string; acabadoId: string; esDefault?: boolean }): CatalogoProductoAcabado {
+      async crear(data: { productoCatalogoId: string; acabadoId: string; esDefault?: boolean }): Promise<CatalogoProductoAcabado> {
         const nuevo: CatalogoProductoAcabado = {
           id: generateId('cpa'),
           productoCatalogoId: data.productoCatalogoId,
@@ -1923,7 +2128,7 @@ export function createMockStore(): DataStore {
       porAcabado(acabadoId: string): AcabadoMuestra[] {
         return acabadosMuestras.filter(a => a.acabadoId === acabadoId)
       },
-      crear(data: { acabadoId: string; imagenMuestraUrl?: string | null; disponibleWeb?: boolean }): AcabadoMuestra {
+      async crear(data: { acabadoId: string; imagenMuestraUrl?: string | null; disponibleWeb?: boolean }): Promise<AcabadoMuestra> {
         const nuevo: AcabadoMuestra = {
           id: generateId('am'),
           acabadoId: data.acabadoId,
@@ -1951,42 +2156,46 @@ export function createMockStore(): DataStore {
       porSlug(slug: string): Portafolio | undefined {
         return portafolio.find(p => p.slug === slug)
       },
-      crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string; slug: string }): Portafolio {
+      async crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string; slug: string }): Promise<Portafolio> {
         const now = new Date().toISOString()
-        const nuevo: Portafolio = {
-          id: generateId('port'),
-          proyectoId: data.proyectoId,
-          titulo: data.titulo,
-          descripcionComercial: data.descripcionComercial ?? null,
-          categoriaEspacio: data.categoriaEspacio,
-          materialesDestacados: data.materialesDestacados ?? [],
-          precioReferencial: data.precioReferencial ?? null,
-          publicado: data.publicado ?? false,
-          destacado: data.destacado ?? false,
-          orden: data.orden ?? portafolio.length,
-          slug: data.slug,
-          createdAt: now,
-          updatedAt: now,
-        }
+         const nuevo: Portafolio = {
+           id: generateId('port'),
+           proyectoId: data.proyectoId,
+           titulo: data.titulo,
+           descripcionComercial: data.descripcionComercial ?? null,
+           categoriaEspacio: data.categoriaEspacio,
+           materialesDestacados: data.materialesDestacados ?? [],
+           precioReferencial: data.precioReferencial ?? null,
+           imagenPortafolioUrl: data.imagenPortafolioUrl ?? null,
+           galeriaPortafolioUrl: data.galeriaPortafolioUrl ?? [],
+           barrio: data.barrio ?? null,
+           tipoProyecto: data.tipoProyecto ?? null,
+           publicado: data.publicado ?? false,
+           destacado: data.destacado ?? false,
+           orden: data.orden ?? portafolio.length,
+           slug: data.slug,
+           createdAt: now,
+           updatedAt: now,
+         }
         portafolio.push(nuevo)
         notify()
         return nuevo
       },
-      actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'materialesDestacados' | 'precioReferencial' | 'destacado' | 'orden'>>): Portafolio | null {
+       async actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>): Promise<Portafolio | null> {
         const idx = portafolio.findIndex(p => p.id === id)
         if (idx === -1) return null
         portafolio[idx] = { ...portafolio[idx], ...partial, updatedAt: new Date().toISOString() }
         notify()
         return portafolio[idx]
       },
-      publicar(id: string): Portafolio | null {
+      async publicar(id: string): Promise<Portafolio | null> {
         const idx = portafolio.findIndex(p => p.id === id)
         if (idx === -1) return null
         portafolio[idx] = { ...portafolio[idx], publicado: true, updatedAt: new Date().toISOString() }
         notify()
         return portafolio[idx]
       },
-      despublicar(id: string): Portafolio | null {
+      async despublicar(id: string): Promise<Portafolio | null> {
         const idx = portafolio.findIndex(p => p.id === id)
         if (idx === -1) return null
         portafolio[idx] = { ...portafolio[idx], publicado: false, updatedAt: new Date().toISOString() }
@@ -1995,11 +2204,67 @@ export function createMockStore(): DataStore {
       },
     },
 
+    testimonios: {
+      listar(): Testimonio[] {
+        return testimonios
+      },
+      porId(id: string): Testimonio | undefined {
+        return testimonios.find(t => t.id === id)
+      },
+      porProyecto(proyectoId: string): Testimonio[] {
+        return testimonios.filter(t => t.proyectoId === proyectoId && t.publicado)
+      },
+      async crear(data: Partial<Testimonio> & { contenido: string }): Promise<Testimonio> {
+        const now = new Date().toISOString()
+        const nuevo: Testimonio = {
+          id: generateId('test'),
+          contenido: data.contenido,
+          rating: data.rating ?? null,
+          curado: data.curado ?? false,
+          aprobado: data.aprobado ?? false,
+          publicado: data.publicado ?? false,
+          fuente: data.fuente ?? 'GBP',
+          barrio: data.barrio ?? null,
+          tipoProyecto: data.tipoProyecto ?? null,
+          urlFuente: data.urlFuente ?? null,
+          fechaPublicacion: data.fechaPublicacion ?? null,
+          clienteId: data.clienteId ?? null,
+          proyectoId: data.proyectoId ?? null,
+          createdAt: now,
+          updatedAt: now,
+        }
+        testimonios.push(nuevo)
+        notify()
+        return nuevo
+      },
+      async actualizar(id: string, partial: Partial<Testimonio>): Promise<Testimonio | null> {
+        const idx = testimonios.findIndex(t => t.id === id)
+        if (idx === -1) return null
+        testimonios[idx] = { ...testimonios[idx], ...partial, updatedAt: new Date().toISOString() }
+        notify()
+        return testimonios[idx]
+      },
+      async publicar(id: string): Promise<Testimonio | null> {
+        const idx = testimonios.findIndex(t => t.id === id)
+        if (idx === -1) return null
+        testimonios[idx] = { ...testimonios[idx], publicado: true, aprobado: true, curado: true, updatedAt: new Date().toISOString() }
+        notify()
+        return testimonios[idx]
+      },
+      async despublicar(id: string): Promise<Testimonio | null> {
+        const idx = testimonios.findIndex(t => t.id === id)
+        if (idx === -1) return null
+        testimonios[idx] = { ...testimonios[idx], publicado: false, updatedAt: new Date().toISOString() }
+        notify()
+        return testimonios[idx]
+      },
+    },
+
     modulosArtefactos: {
       porModulo(moduloId: string): ModuloArtefacto[] {
         return modulosArtefactos.filter(m => m.moduloId === moduloId)
       },
-      crear(data: { moduloId: string; tipo: TipoModuloArtefacto; fuente: FuenteModuloArtefacto; url: string }): ModuloArtefacto {
+      async crear(data: { moduloId: string; tipo: TipoModuloArtefacto; fuente: FuenteModuloArtefacto; url: string }): Promise<ModuloArtefacto> {
         const nuevo: ModuloArtefacto = {
           id: generateId('ma'),
           moduloId: data.moduloId,
@@ -2009,6 +2274,42 @@ export function createMockStore(): DataStore {
           createdAt: new Date().toISOString(),
         }
         modulosArtefactos.push(nuevo)
+        notify()
+        return nuevo
+      },
+    },
+
+    bitacoraArticulos: {
+      listar(): BitacoraArticulo[] {
+        return bitacoraArticulos
+      },
+      publicados(): BitacoraArticulo[] {
+        // R1 disenio_F15 §4: solo publicado=true, más reciente primero.
+        return bitacoraArticulos
+          .filter(a => a.publicado)
+          .sort((a, b) => b.fechaPublicacion.localeCompare(a.fechaPublicacion))
+      },
+      porSlug(slug: string): BitacoraArticulo | undefined {
+        return bitacoraArticulos.find(a => a.slug === slug)
+      },
+      async crear(data: Partial<BitacoraArticulo> & { slug: string; titulo: string; contenidoLargo: string }): Promise<BitacoraArticulo> {
+        const now = new Date().toISOString()
+        const nuevo: BitacoraArticulo = {
+          id: generateId('ba'),
+          slug: data.slug,
+          titulo: data.titulo,
+          extracto: data.extracto ?? '',
+          contenidoLargo: data.contenidoLargo,
+          categoria: data.categoria ?? 'casos_estudio',
+          imagenPortada: data.imagenPortada ?? null,
+          fechaPublicacion: data.fechaPublicacion ?? now,
+          autorId: data.autorId ?? null,
+          proyectoRelacionadoId: data.proyectoRelacionadoId ?? null,
+          publicado: data.publicado ?? false,
+          createdAt: now,
+          updatedAt: now,
+        }
+        bitacoraArticulos.push(nuevo)
         notify()
         return nuevo
       },
