@@ -67,6 +67,7 @@ async function processImages() {
       }
       
       await sharp(img.src)
+        .rotate() // auto-rota según el tag EXIF antes de descartar metadata (mismo fix que fix-orientation-r2.ts)
         .webp({ quality: 85 })
         .toFile(targetPath);
       
