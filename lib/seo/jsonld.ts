@@ -8,10 +8,17 @@
 // - `foundingDate` usaba '1995' (narrativa de marca) en vez de '2014' (entidad legal
 //   verificable, HERMANOS GARCIA GONZALEZ S.A.S. NIT 901421357-9) — decisión ya documentada
 //   en plan_seo_2026.md línea 43.
-// `sameAs`/`address` (sin streetAddress/postalCode) quedan igual que antes: no se inventa una
-// URL de Google Maps con place_id verificado ni una dirección exacta sin que el Supervisor la
-// confirme (regla anti-invención, plan_seo_2026.md §"Reglas duras anti-invención").
-export const SITE_URL = 'https://vetadorada.co'
+//
+// Dominio + datos legales (2026-08-16, `arnes/parameros de branding y data  veta dorada.txt`,
+// dato directo de Javier): `PAGINA_WEB: www.vetadeoro.co` — el dominio real hoy, consistente con
+// plan_demanda.md línea 150 ("Segundo dominio: 4-8 semanas de métricas estables tras C" — un
+// dominio nuevo es una fase futura, no la de hoy). `NOMBRE_MARCA: Veta de Oro` y
+// `ESLOGAN_EMPRESA: Estética y Confort` de ese mismo archivo NO se aplican acá — son datos de
+// registro legal/legacy, superados por decisiones de diseño ya cerradas y confirmadas por el
+// Supervisor: nombre de marca "Veta Dorada" (plan_demanda.md línea 27, renombre del Perfil de
+// Empresa deliberadamente diferido a "después del corte") y eslogan "Diseña tu espacio. Habita
+// el bienestar." (plan_demanda.md línea 42, D1 RESUELTA 2026-08-09).
+export const SITE_URL = 'https://www.vetadeoro.co'
 
 export interface TestimonioJsonLd {
   nombre: string
@@ -32,6 +39,16 @@ export function getHomeJsonLd(testimonios: TestimonioJsonLd[]) {
           'Estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera a la medida.',
         url: SITE_URL,
         telephone: '+57 302 592 2101',
+        // NAP en la entidad LocalBusiness (Google la lee de acá, no solo de Organization).
+        // streetAddress: dato real de Javier (2026-08-16). postalCode: I-019, plan_seo_2026.md:41.
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: 'Cra 72a #71a-57',
+          postalCode: '111061',
+          addressCountry: 'CO',
+          addressRegion: 'Bogotá',
+          addressLocality: 'Bogotá',
+        },
         areaServed: 'Bogotá',
         priceRange: 'Consultar',
         knowsLanguage: 'es-CO',
@@ -58,16 +75,27 @@ export function getHomeJsonLd(testimonios: TestimonioJsonLd[]) {
         '@type': 'Organization',
         '@id': `${SITE_URL}/#organization`,
         name: 'Veta Dorada',
+        // legalName/taxID: dato real de Javier (2026-08-16, `arnes/parameros de branding y data
+        // veta dorada.txt`) — schema.org distingue `name` (marca comercial) de `legalName`
+        // (razón social), consistente con la fórmula ya aprobada del footer ("Veta Dorada es una
+        // marca comercial registrada... operados por HERMANOS GARCIA GONZALEZ SAS").
+        legalName: 'Hermanos Garcia Gonzalez SAS',
+        taxID: '901421357-9',
         url: SITE_URL,
-        // TODO(NAP completo): falta streetAddress/postalCode reales y un sameAs con place_id
-        // verificado de Google — pendiente de confirmación del Supervisor, no se inventan
-        // (plan_seo_2026.md §"NAP canónico" / "Reglas duras anti-invención").
+        // TODO: falta un sameAs con place_id verificado de Google Business Profile — ese perfil
+        // todavía no se renombró a "Veta Dorada" a propósito (plan_demanda.md línea 27/151: el
+        // renombre es una tarea aparte, deliberadamente después del corte, medida antes/después).
+        // No se inventa el link mientras el perfil siga con el nombre legacy.
         logo: `${SITE_URL}/logo-veta-positive.svg`,
         description:
           'Somos un estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera — todo a la medida, con diseño contemporáneo y manufactura en taller propio. Tres generaciones de oficio en la construcción, desde 1995.',
-        sameAs: ['https://www.google.com/maps/place/Veta+Dorada'],
         address: {
           '@type': 'PostalAddress',
+          // streetAddress: dato real de Javier (DIRECCIÓN_EMPRESA, mismo archivo 2026-08-16).
+          // postalCode ya estaba confirmado por el Supervisor (I-019, plan_seo_2026.md línea 41),
+          // no es dato nuevo de esta sesión.
+          streetAddress: 'Cra 72a #71a-57',
+          postalCode: '111061',
           addressCountry: 'CO',
           addressRegion: 'Bogotá',
           addressLocality: 'Bogotá',
