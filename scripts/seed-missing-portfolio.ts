@@ -47,9 +47,9 @@ async function getOrCreateProyecto(clienteId: string, nombreP: string) {
   const ex = await db.select().from(proyectos).where(eq(proyectos.nombreProyecto, nombreP)).limit(1);
   if (ex.length > 0) return ex[0].id;
 
-  const id = uuidv4();
+  const id = crypto.randomUUID();
   await db.insert(proyectos).values({
-    id, clienteId, nombreProyecto: nombreP, estado: 'Entregado'
+    id, clienteId, nombreProyecto: nombreP, estado: 'entregado'
   });
   return id;
 }
@@ -150,4 +150,4 @@ async function processTxts() {
 processTxts().then(() => {
   console.log("Completado");
   client.end();
-}).catch(console.error
+}).catch(console.error);

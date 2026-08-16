@@ -4,7 +4,7 @@
   "descripcion": "Push a la rama dev → Vercel genera URL de preview con datos reales de dev-local; Javier valida pantallas auditadas (D-01 a D-17) con clientes, proyectos y catálogo reales. Checkpoint final de aprobación.",
   "objetivo": "Obtener aprobación explícita del Supervisor del preview con datos reales (CA-5).",
   "prioridad": "Alta",
-  "estado": "Pendiente",
+  "estado": "Push hecho 2026-08-14 (commit 649d6da, force-push a origin/dev) — falta confirmar env vars de Vercel Preview y la aprobación del Supervisor viendo el preview real",
   "dependencias": [
     "t-117 verificación post-migración aprobada",
     "Adaptador Drizzle (F10-E) implementado para que la app lea datos reales",
