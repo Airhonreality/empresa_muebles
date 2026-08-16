@@ -1,15 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
-import { Button } from '@/components/veta/button'
 import { ReportarGarantiaModal } from '@/components/veta/reportar-garantia-modal'
-import { useDataStore } from '@/lib/data'
 import type { EstadoCasoGarantia } from '@/lib/data'
+import type { GarantiasClienteData } from '@/lib/data/actions/public'
 
 // F-07 Portal Cliente — Historial de garantías del cliente.
-// Componente 'use client' que consume useDataStore() filtrado por clienteId.
+// Auditoría 2026-08-15 (A5): ya no consume useDataStore() — recibe los datos ya escopados a
+// este clienteId como prop desde el Server Component padre.
 
 const ESTADO_LABEL: Record<EstadoCasoGarantia, string> = {
   reportado: 'Reportado',
@@ -33,22 +33,11 @@ function formatDate(iso: string): string {
 
 interface GarantiaHistorialClienteProps {
   clienteId: string
+  data: GarantiasClienteData
 }
 
-export function GarantiaHistorialCliente({ clienteId }: GarantiaHistorialClienteProps) {
-  const store = useDataStore()
-
-  const casos = useMemo(
-    () => store.casosGarantia.porCliente(clienteId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), clienteId]
-  )
-
-  const proyectos = useMemo(
-    () => store.proyectos.listar().filter((p) => p.clienteId === clienteId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), clienteId]
-  )
+export function GarantiaHistorialCliente({ clienteId, data }: GarantiaHistorialClienteProps) {
+  const { casos, proyectos } = data
 
   const proyectoMap = useMemo(() => {
     const map = new Map<string, string>()
@@ -133,6 +122,6 @@ export function GarantiaHistorialCliente({ clienteId }: GarantiaHistorialCliente
 }
 
 // Export para compatibilidad con el page.tsx
-export function GarantiaHistorialClienteConReportar({ clienteId }: GarantiaHistorialClienteProps) {
-  return <GarantiaHistorialCliente clienteId={clienteId} />
+export function GarantiaHistorialClienteConReportar({ clienteId, data }: GarantiaHistorialClienteProps) {
+  return <GarantiaHistorialCliente clienteId={clienteId} data={data} />
 }

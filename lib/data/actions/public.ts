@@ -1,0 +1,361 @@
+'use server'
+// Server Actions de lectura escopada para el sitio público y el portal cliente.
+// Fix de arquitectura (auditoría 2026-08-15, arnes/lineas/demanda/auditoria_prelanzamiento_seo_20260815.md):
+// antes, estas páginas leían de useDataStore()/<DataStoreProvider>, cuyo snapshot (hidratado en
+// el layout raíz) contenía TODAS las tablas del ERP sin proyección — cualquier página pública
+// filtraba client-side sobre datos de TODOS los clientes/proyectos, ya presentes en el HTML/RSC
+// payload. Acá cada función trae por SQL solo lo que la página necesita. Mismo patrón dual
+// DATA_IMPL ya establecido en lib/data/actions/portafolio.ts.
+import { eq, and, inArray } from 'drizzle-orm'
+import { db } from '@/lib/db/client'
+import * as s from '@/lib/db/schema'
+import type {
+  Portafolio, ProductoTienda, CatalogoAcabado, AcabadoMuestra,
+  Proyecto, EspacioVariante, ItemVariante, Contrato, HitoPago,
+  ObligacionPendiente, MovimientoFinanciero, ComunicacionProgreso,
+  Instalacion, ActaEntrega, CasoGarantia, Modulo, Cliente,
+} from '../contracts'
+
+const DATA_IMPL = () => process.env.DATA_IMPL ?? 'mock'
+
+// --- Marketing (sin PII, sin datos financieros) ---
+
+export async function listarPortafolioPublicadosAction(): Promise<Portafolio[]> {
+  if (DATA_IMPL() === 'drizzle') {
+    const rows = await db.select().from(s.portafolio).where(eq(s.portafolio.publicado, true))
+    return (rows as unknown as Portafolio[])
+      .slice()
+      .sort((a, b) => (a.destacado === b.destacado ? a.orden - b.orden : (a.destacado ? -1 : 1)))
+  }
+  const { getDataStore } = await import('@/lib/data/store')
+  return getDataStore().portafolio.publicados()
+}
+
+export async function listarProductosTiendaVisiblesAction(): Promise<ProductoTienda[]> {
+  if (DATA_IMPL() === 'drizzle') {
+    const rows = await db.select().from(s.productosTienda).where(eq(s.productosTienda.visibleEnTienda, true))
+    return rows as unknown as ProductoTienda[]
+  }
+  const { getDataStore } = await import('@/lib/data/store')
+  return getDataStore().productosTienda.visibles()
+}
+
+export interface CatalogoPublico {
+  sku: string
+  descripcion: string
+  imagenUrl: string | null
+  categoriaComercial: string | null
+}
+
+export interface AcabadoConMuestras extends CatalogoAcabado {
+  muestras: AcabadoMuestra[]
+}
+
+export interface ProductoTiendaDetalle {
+  producto: ProductoTienda
+  catalogoPublico: CatalogoPublico | null
+  acabados: AcabadoConMuestras[]
+}
+
+// R3 (colecciones/[id]): proyección segura del catálogo — sin precioDirecto/stockActual/proveedorId.
+export async function obtenerProductoTiendaConDetalleAction(id: string): Promise<ProductoTiendaDetalle | null> {
+  if (DATA_IMPL() === 'drizzle') {
+    const [producto] = await db.select().from(s.productosTienda).where(eq(s.productosTienda.id, id)).limit(1)
+    if (!producto || !producto.visibleEnTienda) return null
+
+    const [catalogo] = await db.select().from(s.productosCatalogo).where(eq(s.productosCatalogo.id, producto.catalogoId)).limit(1)
+    const relaciones = await db.select().from(s.catalogoProductoAcabados).where(eq(s.catalogoProductoAcabados.productoCatalogoId, producto.catalogoId))
+    const acabadoIds = relaciones.map((r) => r.acabadoId)
+
+    const acabadosRows = acabadoIds.length
+      ? await db.select().from(s.catalogoAcabados).where(inArray(s.catalogoAcabados.id, acabadoIds))
+      : []
+    const muestrasRows = acabadoIds.length
+      ? await db.select().from(s.acabadosMuestras).where(and(inArray(s.acabadosMuestras.acabadoId, acabadoIds), eq(s.acabadosMuestras.disponibleWeb, true)))
+      : []
+
+    return {
+      producto: producto as unknown as ProductoTienda,
+      catalogoPublico: catalogo
+        ? { sku: catalogo.sku, descripcion: catalogo.descripcion, imagenUrl: catalogo.imagenUrl, categoriaComercial: catalogo.categoriaComercial }
+        : null,
+      acabados: (acabadosRows as unknown as CatalogoAcabado[]).map((a) => ({
+        ...a,
+        muestras: (muestrasRows as unknown as AcabadoMuestra[]).filter((m) => m.acabadoId === a.id),
+      })),
+    }
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  const store = getDataStore()
+  const producto = store.productosTienda.obtenerPorId(id)
+  if (!producto || !producto.visibleEnTienda) return null
+  const catalogo = store.catalogo.obtenerPorId(producto.catalogoId)
+  const acabadosRelacion = catalogo ? store.catalogoProductoAcabados.porProducto(catalogo.id) : []
+  const acabados = acabadosRelacion
+    .map((r) => store.catalogoAcabados.listar().find((a) => a.id === r.acabadoId))
+    .filter((a): a is CatalogoAcabado => Boolean(a))
+    .map((a) => ({ ...a, muestras: store.acabadosMuestras.porAcabado(a.id).filter((m) => m.disponibleWeb) }))
+
+  return {
+    producto,
+    catalogoPublico: catalogo
+      ? { sku: catalogo.sku, descripcion: catalogo.descripcion, imagenUrl: catalogo.imagenUrl, categoriaComercial: catalogo.categoriaComercial }
+      : null,
+    acabados,
+  }
+}
+
+// --- Propuesta pública (F-08, /propuesta/[proyectoId]) ---
+// R2 (disenio_F08_propuesta_publica.md §4): snapshot proyecta solo campos públicos — sin id
+// interno/costo/margen/proveedorId del catálogo, sin traer clientes/personas/movimientosFinancieros/
+// proveedores (a diferencia del snapshot completo que este fix reemplaza).
+
+export interface CatalogoItemPublico {
+  descripcion: string
+  unidadMedida: string | null
+  imagenUrl: string | null
+  galeriaImagenesUrl: string[]
+  sku: string
+}
+
+export interface PropuestaPublicaData {
+  proyecto: Proyecto
+  espacios: EspacioVariante[]
+  items: ItemVariante[]
+  catalogoPorId: Record<string, CatalogoItemPublico>
+  contrato: Contrato | null
+  hitos: HitoPago[]
+  tarifas: { tarifaDev: number; tarifaAssembly: number; tarifaInstall: number }
+}
+
+const HORAS_POR_JORNADA = 8
+
+export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
+  if (DATA_IMPL() === 'drizzle') {
+    const [proyecto] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId)).limit(1)
+    if (!proyecto) return null
+
+    const espacios = await db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyectoId))
+    const varianteIds = espacios.map((e) => e.id)
+    const items = varianteIds.length
+      ? await db.select().from(s.itemsVariante).where(inArray(s.itemsVariante.varianteId, varianteIds))
+      : []
+
+    const catalogoIds = [...new Set(items.map((it) => it.catalogoId).filter((id): id is string => Boolean(id)))]
+    const catalogoRows = catalogoIds.length
+      ? await db.select().from(s.productosCatalogo).where(inArray(s.productosCatalogo.id, catalogoIds))
+      : []
+    const catalogoPorId: Record<string, CatalogoItemPublico> = {}
+    for (const c of catalogoRows) {
+      catalogoPorId[c.id] = {
+        descripcion: c.descripcion,
+        unidadMedida: c.unidadMedida,
+        imagenUrl: c.imagenUrl,
+        galeriaImagenesUrl: (c.galeriaImagenesUrl as string[] | null) ?? [],
+        sku: c.sku,
+      }
+    }
+
+    const [contratoRow] = await db.select().from(s.contratos).where(eq(s.contratos.proyectoId, proyectoId)).limit(1)
+    const hitos = contratoRow
+      ? await db.select().from(s.hitosPago).where(eq(s.hitosPago.contratoId, contratoRow.id))
+      : []
+
+    const clavesTarifa = ['valor_hora_desarrollador', 'valor_hora_carpintero', 'valor_hora_auxiliar']
+    const parametrosRows = await db.select().from(s.parametros).where(inArray(s.parametros.clave, clavesTarifa))
+    const valorPorClave = (clave: string): number => {
+      const p = parametrosRows.find((r) => r.clave === clave)
+      const n = Number(p?.valorNumeric ?? p?.valorTexto)
+      return Number.isFinite(n) ? n : 0
+    }
+    // Mismos defaults que PARAMETROS_DEFAULT (lib/modules/finanzas) si el parámetro no existe.
+    const { PARAMETROS_DEFAULT } = await import('@/lib/modules/finanzas')
+    const valorDev = valorPorClave('valor_hora_desarrollador') || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.desarrollador)
+    const valorCarp = valorPorClave('valor_hora_carpintero') || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.carpintero)
+    const valorAux = valorPorClave('valor_hora_auxiliar') || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.auxiliar)
+
+    return {
+      proyecto: proyecto as unknown as Proyecto,
+      espacios: espacios as unknown as EspacioVariante[],
+      items: items as unknown as ItemVariante[],
+      catalogoPorId,
+      contrato: (contratoRow as unknown as Contrato) ?? null,
+      hitos: hitos as unknown as HitoPago[],
+      tarifas: {
+        tarifaDev: valorDev * HORAS_POR_JORNADA,
+        tarifaAssembly: valorCarp * HORAS_POR_JORNADA,
+        tarifaInstall: valorAux * HORAS_POR_JORNADA,
+      },
+    }
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  const { PARAMETROS_DEFAULT } = await import('@/lib/modules/finanzas')
+  const store = getDataStore()
+  const proyecto = store.proyectos.obtenerPorId(proyectoId)
+  if (!proyecto) return null
+
+  const espacios = store.espacios.porProyecto(proyectoId)
+  const items = espacios.flatMap((e) => store.items.porVariante(e.id))
+  const catalogoPorId: Record<string, CatalogoItemPublico> = {}
+  for (const it of items) {
+    if (!it.catalogoId || catalogoPorId[it.catalogoId]) continue
+    const c = store.catalogo.obtenerPorId(it.catalogoId)
+    if (c) {
+      catalogoPorId[it.catalogoId] = {
+        descripcion: c.descripcion, unidadMedida: c.unidadMedida, imagenUrl: c.imagenUrl,
+        galeriaImagenesUrl: c.galeriaImagenesUrl ?? [], sku: c.sku,
+      }
+    }
+  }
+  const contrato = store.contratos.porProyecto(proyectoId) ?? null
+  const hitos = contrato ? store.hitos.porContrato(contrato.id) : []
+  const p = (clave: string) => store.parametros.obtenerPorClave(clave)?.valorTexto ?? store.parametros.obtenerPorClave(clave)?.valorNumeric ?? null
+  const valorDev = Number(p('valor_hora_desarrollador')) || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.desarrollador)
+  const valorCarp = Number(p('valor_hora_carpintero')) || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.carpintero)
+  const valorAux = Number(p('valor_hora_auxiliar')) || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.auxiliar)
+
+  return {
+    proyecto, espacios, items, catalogoPorId, contrato, hitos,
+    tarifas: {
+      tarifaDev: valorDev * HORAS_POR_JORNADA,
+      tarifaAssembly: valorCarp * HORAS_POR_JORNADA,
+      tarifaInstall: valorAux * HORAS_POR_JORNADA,
+    },
+  }
+}
+
+// --- Portal cliente (F-07, /cuenta/**) — escopado por clienteId/proyectoId, no el snapshot global ---
+
+export interface ProyectoClienteResumen {
+  proyecto: Proyecto
+  espaciosCount: number
+  contrato: Contrato | null
+  obligaciones: ObligacionPendiente[]
+}
+
+export interface ProyectosClienteData {
+  cliente: Cliente | null
+  proyectos: ProyectoClienteResumen[]
+}
+
+export async function obtenerProyectosClienteAction(clienteId: string): Promise<ProyectosClienteData> {
+  if (DATA_IMPL() === 'drizzle') {
+    const [cliente] = await db.select().from(s.clientes).where(eq(s.clientes.id, clienteId)).limit(1)
+    const proyectosRows = await db.select().from(s.proyectos).where(eq(s.proyectos.clienteId, clienteId))
+    const proyectos: ProyectoClienteResumen[] = []
+    for (const proyecto of proyectosRows) {
+      const espacios = await db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyecto.id))
+      const [contrato] = await db.select().from(s.contratos).where(eq(s.contratos.proyectoId, proyecto.id)).limit(1)
+      const obligaciones = await db.select().from(s.obligacionesPendientes).where(eq(s.obligacionesPendientes.proyectoId, proyecto.id))
+      proyectos.push({
+        proyecto: proyecto as unknown as Proyecto,
+        espaciosCount: espacios.length,
+        contrato: (contrato as unknown as Contrato) ?? null,
+        obligaciones: obligaciones as unknown as ObligacionPendiente[],
+      })
+    }
+    return { cliente: (cliente as unknown as Cliente) ?? null, proyectos }
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  const store = getDataStore()
+  const cliente = store.clientes.obtenerPorId(clienteId) ?? null
+  const proyectos = store.proyectos.listar()
+    .filter((p) => p.clienteId === clienteId)
+    .map((proyecto) => ({
+      proyecto,
+      espaciosCount: store.espacios.porProyecto(proyecto.id).length,
+      contrato: store.contratos.porProyecto(proyecto.id) ?? null,
+      obligaciones: store.obligacionesPendientes.porProyecto(proyecto.id),
+    }))
+  return { cliente, proyectos }
+}
+
+export interface ProyectoClienteDetalle {
+  proyecto: Proyecto
+  espacios: EspacioVariante[]
+  contrato: Contrato | null
+  obligaciones: ObligacionPendiente[]
+  movimientos: MovimientoFinanciero[]
+  comunicaciones: ComunicacionProgreso[]
+  instalaciones: Instalacion[]
+  actaEntrega: ActaEntrega | null
+  casosGarantia: CasoGarantia[]
+  modulos: Modulo[]
+}
+
+// Verifica ownership de nuevo server-side (defensa en profundidad — el caller ya validó
+// requireSesionCliente() + proyecto.clienteId === clienteId antes de llamar, ver page.tsx).
+export async function obtenerProyectoClienteAction(proyectoId: string, clienteId: string): Promise<ProyectoClienteDetalle | null> {
+  if (DATA_IMPL() === 'drizzle') {
+    const [proyecto] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId)).limit(1)
+    if (!proyecto || proyecto.clienteId !== clienteId) return null
+
+    const [espacios, contratoRows, obligaciones, movimientos, comunicacionesRows, instalacionesRows, actaEntregaRows, casosGarantiaRows, modulosRows] = await Promise.all([
+      db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyectoId)),
+      db.select().from(s.contratos).where(eq(s.contratos.proyectoId, proyectoId)).limit(1),
+      db.select().from(s.obligacionesPendientes).where(eq(s.obligacionesPendientes.proyectoId, proyectoId)),
+      db.select().from(s.movimientosFinancieros).where(eq(s.movimientosFinancieros.proyectoId, proyectoId)),
+      db.select().from(s.comunicacionesProgreso).where(and(eq(s.comunicacionesProgreso.proyectoId, proyectoId), eq(s.comunicacionesProgreso.visibleAlCliente, true))),
+      db.select().from(s.instalaciones).where(eq(s.instalaciones.proyectoId, proyectoId)),
+      db.select().from(s.actasEntrega).where(eq(s.actasEntrega.proyectoId, proyectoId)).limit(1),
+      db.select().from(s.casosGarantia).where(eq(s.casosGarantia.proyectoId, proyectoId)),
+      db.select().from(s.modulos).where(eq(s.modulos.proyectoId, proyectoId)),
+    ])
+
+    return {
+      proyecto: proyecto as unknown as Proyecto,
+      espacios: espacios as unknown as EspacioVariante[],
+      contrato: (contratoRows[0] as unknown as Contrato) ?? null,
+      obligaciones: obligaciones as unknown as ObligacionPendiente[],
+      movimientos: movimientos as unknown as MovimientoFinanciero[],
+      comunicaciones: comunicacionesRows as unknown as ComunicacionProgreso[],
+      instalaciones: instalacionesRows as unknown as Instalacion[],
+      actaEntrega: (actaEntregaRows[0] as unknown as ActaEntrega) ?? null,
+      casosGarantia: casosGarantiaRows as unknown as CasoGarantia[],
+      modulos: modulosRows as unknown as Modulo[],
+    }
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  const store = getDataStore()
+  const proyecto = store.proyectos.obtenerPorId(proyectoId)
+  if (!proyecto || proyecto.clienteId !== clienteId) return null
+
+  return {
+    proyecto,
+    espacios: store.espacios.porProyecto(proyectoId),
+    contrato: store.contratos.porProyecto(proyectoId) ?? null,
+    obligaciones: store.obligacionesPendientes.porProyecto(proyectoId),
+    movimientos: store.movimientosFinancieros.porProyecto(proyectoId),
+    comunicaciones: store.comunicaciones.visiblesAlCliente(proyectoId),
+    instalaciones: store.instalaciones.porProyecto(proyectoId),
+    actaEntrega: store.actasEntrega.porProyecto(proyectoId) ?? null,
+    casosGarantia: store.casosGarantia.porProyecto(proyectoId),
+    modulos: store.modulos.porProyecto(proyectoId),
+  }
+}
+
+export interface GarantiasClienteData {
+  casos: CasoGarantia[]
+  proyectos: Proyecto[]
+}
+
+export async function obtenerGarantiasClienteAction(clienteId: string): Promise<GarantiasClienteData> {
+  if (DATA_IMPL() === 'drizzle') {
+    const [casos, proyectos] = await Promise.all([
+      db.select().from(s.casosGarantia).where(eq(s.casosGarantia.clienteId, clienteId)),
+      db.select().from(s.proyectos).where(eq(s.proyectos.clienteId, clienteId)),
+    ])
+    return { casos: casos as unknown as CasoGarantia[], proyectos: proyectos as unknown as Proyecto[] }
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  const store = getDataStore()
+  return {
+    casos: store.casosGarantia.porCliente(clienteId),
+    proyectos: store.proyectos.listar().filter((p) => p.clienteId === clienteId),
+  }
+}

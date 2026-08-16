@@ -2,6 +2,7 @@ import { obtenerBitacoraPorSlugAction } from '@/lib/data/actions/portafolio'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { SITE_URL } from '@/lib/seo/jsonld'
 
 type RouteParams = { params: Promise<{ slug: string }> }
 
@@ -12,6 +13,7 @@ export async function generateMetadata({ params }: RouteParams) {
   return {
     title: `${articulo.titulo} — Bitácora Veta Dorada`,
     description: articulo.extracto,
+    alternates: { canonical: `${SITE_URL}/bitacora/${slug}` },
     openGraph: {
       images: articulo.imagenPortada ? [articulo.imagenPortada] : [],
     }
@@ -135,10 +137,13 @@ export default async function BitacoraArticlePage({ params }: RouteParams) {
           Agende su asesoría de diseño: un diseñador visita su espacio, lo mide y le presenta una cotización sin compromiso.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-          <Link href="/asesoria" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors">
+          {/* B6 (auditoría 2026-08-15): apuntaba a /asesoria, ruta inexistente (F-12 sin
+              construir, diferida en TAREAS_DIFERIDAS.md) — ambos CTA a WhatsApp mientras F-12
+              no exista, mismo criterio que el resto del sitio. */}
+          <a href="https://wa.me/573025922101" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors">
             Agendar asesoría de diseño
-          </Link>
-          <a href="https://wa.me/573025922101" className="px-8 py-4 border border-[var(--color-primary)] text-[var(--color-primary)] font-medium rounded hover:bg-[var(--color-bg-linen)] transition-colors">
+          </a>
+          <a href="https://wa.me/573025922101" target="_blank" rel="noopener noreferrer" className="px-8 py-4 border border-[var(--color-primary)] text-[var(--color-primary)] font-medium rounded hover:bg-[var(--color-bg-linen)] transition-colors">
             Escríbenos por WhatsApp
           </a>
         </div>

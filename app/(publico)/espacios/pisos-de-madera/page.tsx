@@ -1,25 +1,32 @@
 import Image from 'next/image'
-import Link from 'next/link'
+import { SITE_URL } from '@/lib/seo/jsonld'
 
 export const metadata = {
   title: 'Restauración de pisos de madera en Bogotá — Veta Dorada',
   description: 'Restauramos pisos de madera originales de casonas en Bogotá: pulido, reparación de piezas sueltas y sellado con acabado natural. Solicita tu diagnóstico gratuito.',
+  alternates: { canonical: `${SITE_URL}/espacios/pisos-de-madera` },
 }
+
+const WHATSAPP_URL =
+  'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20un%20diagn%C3%B3stico%20gratuito%20para%20restaurar%20mi%20piso%20de%20madera.'
 
 export default function PisosDeMaderaLanding() {
   return (
     <div className="bg-white">
       {/* 1. Hero Landing */}
       <section className="relative w-full min-h-[85vh] flex items-center justify-center overflow-hidden">
+        {/* Auditoría 2026-08-15 (B5): hero apuntaba a /images/portafolio/reales/hero_piso_madera_*.png,
+            que no existe en public/ — fotos reales pendientes de recuperar del sitio legacy (I-016).
+            Se usa temporalmente la foto real de pisos ya disponible en public/images/home/. */}
         <Image
-          src="/images/portafolio/reales/hero_piso_madera_1786816269387.png"
+          src="/images/home/pisos-madera-restauracion-bogota-1.webp"
           alt="Piso de madera restaurado en Bogotá"
           fill
           priority
           className="object-cover"
         />
         <div className="absolute inset-0 bg-black/40" /> {/* Overlay para contraste de texto */}
-        
+
         <div className="relative z-10 container mx-auto px-4 max-w-4xl text-center">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif text-white mb-6 tracking-tight leading-tight drop-shadow-lg">
             El piso de madera de su casona merece volver a vivir
@@ -28,10 +35,13 @@ export default function PisosDeMaderaLanding() {
             Restauramos pisos de madera originales: pulido, reparación de piezas sueltas y sellado con acabado natural. Sin perder el carácter del piso que guarda la historia de tu casa.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-            <Link href="/asesoria?source=landing_pisos" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl">
+            {/* B6 (auditoría 2026-08-15): apuntaba a /asesoria, ruta inexistente (F-12 sin
+                construir, diferida en TAREAS_DIFERIDAS.md) — mismo criterio que el resto del
+                sitio, CTA a WhatsApp mientras F-12 no exista. */}
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl">
               Solicitar diagnóstico gratuito
-            </Link>
-            <a href="https://wa.me/573025922101" className="px-8 py-4 border-2 border-white/80 bg-black/20 backdrop-blur-sm text-white font-medium rounded hover:bg-white hover:text-black transition-colors">
+            </a>
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 border-2 border-white/80 bg-black/20 backdrop-blur-sm text-white font-medium rounded hover:bg-white hover:text-black transition-colors">
               Hablamos por WhatsApp
             </a>
           </div>
@@ -75,29 +85,9 @@ export default function PisosDeMaderaLanding() {
         </div>
       </section>
 
-      {/* 3. Galería Antes/Después */}
-      <section className="py-24 bg-[var(--color-primary)] text-white">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif mb-4">Antes y Después</h2>
-            <p className="text-white/80 text-lg">Evidencia visual del impacto de nuestra restauración.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-2xl">
-              <div className="absolute top-4 left-4 z-10 bg-black/60 backdrop-blur-md px-4 py-1 rounded text-sm uppercase tracking-widest border border-white/20">Antes</div>
-              <Image src="/images/portafolio/reales/piso_madera_antes_1786816277765.png" alt="Piso madera antes" fill className="object-cover hover:scale-105 transition-transform duration-700" />
-            </div>
-            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-2xl">
-              <div className="absolute top-4 left-4 z-10 bg-[var(--color-accent)] px-4 py-1 rounded text-sm uppercase tracking-widest text-white shadow-md">Después</div>
-              <Image src="/images/portafolio/reales/piso_madera_despues_1786816285372.png" alt="Piso madera después" fill className="object-cover hover:scale-105 transition-transform duration-700" />
-            </div>
-          </div>
-          <div className="text-center mt-6 text-white/60 italic">
-            * Piso de madera maciza restaurado en Teusaquillo, Bogotá.
-          </div>
-        </div>
-      </section>
+      {/* 3. Galería Antes/Después — oculta a propósito (auditoría 2026-08-15, B5): las 2 fotos
+          (piso_madera_antes/despues_*.png) no existen en public/, son fotos reales pendientes de
+          recuperar del sitio legacy (I-016). Se restaura esta sección cuando existan. */}
 
       {/* 4. Materiales */}
       <section className="py-20 container mx-auto px-4 max-w-4xl text-center">
@@ -115,13 +105,13 @@ export default function PisosDeMaderaLanding() {
             Contáctanos para un diagnóstico gratuito. Evaluamos el estado de tu piso y te decimos con honestidad qué necesita.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-            <Link href="/asesoria?source=landing_pisos" className="px-8 py-4 bg-[var(--color-primary)] text-white text-lg font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-md hover:shadow-lg">
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white text-lg font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-md hover:shadow-lg">
               Solicitar diagnóstico gratuito
-            </Link>
+            </a>
           </div>
           <div className="mt-8">
-            <a href="https://wa.me/573025922101" className="text-[var(--color-accent)] font-medium hover:underline inline-flex items-center gap-2">
-              O escríbenos por WhatsApp 
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] font-medium hover:underline inline-flex items-center gap-2">
+              O escríbenos por WhatsApp
               <span>→</span>
             </a>
           </div>

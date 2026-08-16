@@ -2,11 +2,13 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
+import { SITE_URL } from '@/lib/seo/jsonld';
 
 export const metadata: Metadata = {
   title: 'Espacios a la medida en Bogotá — Veta Dorada',
   description:
     'Cocinas integrales, closets, cavas y bares, consolas, centros de entretenimiento, estudios y restauración de pisos a la medida en Bogotá. Diseño, fabricación e instalación con taller propio.',
+  alternates: { canonical: `${SITE_URL}/espacios` },
 };
 
 const WHATSAPP_URL =

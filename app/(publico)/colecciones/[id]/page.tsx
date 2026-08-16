@@ -1,9 +1,31 @@
-'use client';
-
-import { useParams } from 'next/navigation';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { useDataStore, type CatalogoAcabado } from '@/lib/data';
+import { obtenerProductoTiendaConDetalleAction } from '@/lib/data/actions/public';
+import { SITE_URL } from '@/lib/seo/jsonld';
 import { Button, LinkButton } from '@/components/veta/button';
+
+// Server Component (auditoría 2026-08-15, A3/B4): antes 'use client' con useDataStore() (ya no
+// hidrata el árbol público). Trae el detalle ya ensamblado (producto + catálogo público + acabados
+// con muestras) por Server Action escopada — de paso conecta el JSON-LD `Product` que existía
+// calculado pero nunca se inyectaba en un <script> (B4).
+export const dynamic = 'force-dynamic';
+
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: RouteParams): Promise<Metadata> {
+  const { id } = await params;
+  const detalle = await obtenerProductoTiendaConDetalleAction(id);
+  if (!detalle) return { title: 'Producto no encontrado — Veta Dorada' };
+
+  const nombre = detalle.producto.descripcionDiseno ?? detalle.catalogoPublico?.descripcion ?? 'Producto Veta Dorada';
+  return {
+    title: `${nombre} — Colecciones Veta Dorada`,
+    description: detalle.producto.descripcionDiseno ?? detalle.catalogoPublico?.descripcion ?? undefined,
+    alternates: { canonical: `${SITE_URL}/colecciones/${id}` },
+  };
+}
 
 function formatCOP(amount: string | number): string {
   const n = typeof amount === 'string' ? Number(amount) : amount;
@@ -15,15 +37,12 @@ function formatCOP(amount: string | number): string {
   }).format(Number.isFinite(n) ? n : 0);
 }
 
-export default function ProductoDetallePage() {
-  const params = useParams();
-  const id = params.id as string;
-  const store = useDataStore();
-
-  const producto = store.productosTienda.obtenerPorId(id);
+export default async function ProductoDetallePage({ params }: RouteParams) {
+  const { id } = await params;
+  const detalle = await obtenerProductoTiendaConDetalleAction(id);
 
   // R1: Filtro de visibilidad — producto no encontrado si no está visible en tienda
-  if (!producto || !producto.visibleEnTienda) {
+  if (!detalle) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-24 text-center">
         <p className="text-text-muted">Producto no encontrado.</p>
@@ -32,32 +51,11 @@ export default function ProductoDetallePage() {
     );
   }
 
-  const catalogo = store.catalogo.obtenerPorId(producto.catalogoId);
-
-  // R3: Proyección segura — solo campos públicos del catálogo (sin precioDirecto, stockActual, proveedorId)
-  interface ProductoCatalogoPublico {
-    sku: string | undefined;
-    descripcion: string | undefined;
-    imagenUrl: string | null | undefined;
-    categoriaComercial: string | null | undefined;
-  }
-
-  const catalogoPublico: ProductoCatalogoPublico | undefined = catalogo ? {
-    sku: catalogo.sku,
-    descripcion: catalogo.descripcion,
-    imagenUrl: catalogo.imagenUrl,
-    categoriaComercial: catalogo.categoriaComercial,
-  } : undefined;
+  const { producto, catalogoPublico, acabados: acabadosConMuestras } = detalle;
 
   // Usa la categoría directamente del producto (más rápido y sin lookup)
   const categoriaSHOP = producto.categoria as string | undefined;
-
-  const acabadosRelacion = catalogo ? store.catalogoProductoAcabados.porProducto(catalogo.id) : [];
-  const acabados = acabadosRelacion.map(r => store.catalogoAcabados.listar().find(a => a.id === r.acabadoId)).filter(Boolean) as CatalogoAcabado[];
-  const acabadosConMuestras = acabados.map(a => ({
-    ...a,
-    muestras: store.acabadosMuestras.porAcabado(a.id).filter(m => m.disponibleWeb),
-  }));
+  const acabados = acabadosConMuestras;
 
   // LÓGICA DE IMÁGENE PRIORITARIA
   // 1. imagenPrincipalUrl: fotografía/render del producto (preferente)
@@ -69,18 +67,18 @@ export default function ProductoDetallePage() {
 
   const disponible = (producto.inventarioDisponible ?? 0) > 0;
 
-  // LÓGICA JSON-LD PRODUCTO (D-02-2): Datos estructurados para SEO
-  // Usando valores mock/placeholder hasta I-016 (imágenes reales)
+  // LÓGICA JSON-LD PRODUCTO (D-02-2): Datos estructurados para SEO — R3: proyección segura,
+  // solo campos públicos del catálogo (catalogoPublico ya excluye precioDirecto/stockActual/proveedorId).
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: producto.descripcionDiseno ?? catalogo?.descripcion ?? 'Producto Veta Dorada',
-    description: producto.descripcionDiseno ?? catalogo?.descripcion ?? '',
+    name: producto.descripcionDiseno ?? catalogoPublico?.descripcion ?? 'Producto Veta Dorada',
+    description: producto.descripcionDiseno ?? catalogoPublico?.descripcion ?? '',
     image: [
       producto.imagenPrincipalUrl,
-      ...(catalogo?.imagenUrl ? [catalogo.imagenUrl] : [])
+      ...(catalogoPublico?.imagenUrl ? [catalogoPublico.imagenUrl] : [])
     ].filter(Boolean),
-    sku: catalogo?.sku,
+    sku: catalogoPublico?.sku,
     brand: 'Veta Dorada',
     offers: {
       '@type': 'Offer',
@@ -93,6 +91,11 @@ export default function ProductoDetallePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-bg-paper">
+      {/* JSON-LD Product (B4, auditoría 2026-08-15): antes se calculaba pero nunca se inyectaba */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       {/* Backlink */}
       <div className="mx-auto max-w-6xl px-6 pt-8 pb-4 w-full">
         <Link href="/colecciones" className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-primary">

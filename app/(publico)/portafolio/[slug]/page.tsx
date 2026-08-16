@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { LinkButton } from '@/components/veta/button';
 import { obtenerPortafolioPorSlugAction } from '@/lib/data/actions/portafolio';
+import { SITE_URL } from '@/lib/seo/jsonld';
 import { PortafolioDetalleClient } from './PortafolioDetalleClient';
 
 // Server Component a propósito (t-134): permite generateMetadata() para OG/SEO real
@@ -30,6 +31,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   return {
     title: `${proyecto.titulo} — Portafolio Veta Dorada`,
     description: descripcion,
+    alternates: { canonical: `${SITE_URL}/portafolio/${slug}` },
     openGraph: {
       title: proyecto.titulo,
       description: descripcion,

@@ -1,7 +1,20 @@
-'use client';
-
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { useDataStore, type ProductoTienda } from '@/lib/data';
+import { listarProductosTiendaVisiblesAction } from '@/lib/data/actions/public';
+import type { ProductoTienda } from '@/lib/data';
+import { SITE_URL } from '@/lib/seo/jsonld';
+
+// Server Component (auditoría 2026-08-15, A3): antes 'use client' con useDataStore(), que ya no
+// hidrata el árbol público (ver app/layout.tsx) — trae los productos visibles por Server Action
+// escopada (lib/data/actions/public.ts) en vez del snapshot completo del ERP.
+export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Colecciones — Veta Dorada',
+  description:
+    'Muebles de carpintería arquitectónica diseñados y fabricados en nuestro taller en Bogotá. Cada pieza combina tradición, precisión técnica y materiales nobles.',
+  alternates: { canonical: `${SITE_URL}/colecciones` },
+};
 
 function formatCOP(amount: string | number): string {
   const n = typeof amount === 'string' ? Number(amount) : amount;
@@ -59,9 +72,8 @@ function ProductoCard({ producto }: { producto: ProductoTienda }) {
   );
 }
 
-export default function ColeccionesPage() {
-  const store = useDataStore();
-  const productos = store.productosTienda.visibles();
+export default async function ColeccionesPage() {
+  const productos = await listarProductosTiendaVisiblesAction();
 
   const productosConCategoria = productos.map(p => ({
     ...p,

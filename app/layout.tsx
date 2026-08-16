@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono, Teachers } from "next/font/google";
 import "./globals.css";
-// Import directo de DataStoreProvider.tsx (no del barrel lib/data/index.ts): index.ts también
-// define useDataStore() (usa useSyncExternalStore, hook de cliente), y Next marca este Server
-// Component entero como "necesita 'use client'" si lo importa transitivamente. Mismo patrón que
-// getDataStore() en lib/auth/session.ts — ver comentario en lib/data/store.ts.
-import { DataStoreProvider } from "@/lib/data/DataStoreProvider";
-import type { StoreSnapshot } from "@/lib/data/snapshot";
+// Fix de arquitectura (auditoría 2026-08-15, arnes/lineas/demanda/auditoria_prelanzamiento_seo_20260815.md):
+// este layout envuelve TODO el árbol de rutas, público y /erp. Antes hidrataba acá el snapshot
+// COMPLETO del ERP (fetchSnapshotAction(), sin proyección de columnas) y lo pasaba como prop a
+// <DataStoreProvider>, un Client Component — en RSC eso se serializa en el HTML/payload que
+// recibe CUALQUIER visitante de CUALQUIER página pública. La hidratación completa se movió a
+// app/erp/layout.tsx (ya gateado por middleware.ts, solo empleados con sesión válida). Las
+// páginas públicas que necesitan datos reales los traen por Server Action escopada
+// (lib/data/actions/public.ts, lib/data/actions/portafolio.ts), no de este layout.
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -33,12 +35,6 @@ const teachers = Teachers({
   weight: ["400", "500", "600", "700"],
 });
 
-// Duración máxima de función para longPollVersionAction (lib/data/actions/longpoll.ts, t-132):
-// una función 'use server' no puede exportar valores no-función, así que el límite de duración
-// se declara acá (route segment config del layout raíz que envuelve a DataStoreProvider).
-// Verificar contra el límite real del plan de Vercel configurado en el dashboard antes de subir.
-export const maxDuration = 25;
-
 export const metadata: Metadata = {
   title: "Veta Dorada — Carpintería arquitectónica en Bogotá",
   description:
@@ -51,19 +47,9 @@ export function viewport() {
   };
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Hidratación inicial sin loading flicker (§3.1d, plan_f10_migracion.md): con
-  // DATA_IMPL=drizzle, el snapshot se trae acá server-side (Server Component) y se pasa
-  // ya listo al Provider cliente — el primer HTML ya viene con los datos reales.
-  const impl = process.env.DATA_IMPL ?? 'mock'
-  let initialSnapshot: StoreSnapshot | undefined
-  if (impl === 'drizzle') {
-    const { fetchSnapshotAction } = await import('@/lib/data/actions/hydrate')
-    initialSnapshot = await fetchSnapshotAction()
-  }
-
   return (
     <html
       lang="es"
@@ -88,9 +74,7 @@ export default async function RootLayout({
         `}</style>
       </head>
       <body className="min-h-full flex flex-col">
-        <DataStoreProvider mode={impl === 'drizzle' ? 'drizzle' : 'mock'} initialSnapshot={initialSnapshot}>
-          {children}
-        </DataStoreProvider>
+        {children}
       </body>
     </html>
   );

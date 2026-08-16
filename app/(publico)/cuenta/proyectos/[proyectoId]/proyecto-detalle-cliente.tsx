@@ -1,16 +1,16 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
-import { Button } from '@/components/veta/button'
-import { ArbolProyectoSelector } from '@/components/veta/arbol-proyecto-selector'
 import { ReportarGarantiaModal } from '@/components/veta/reportar-garantia-modal'
-import { useDataStore } from '@/lib/data'
 import type { EstadoProyecto } from '@/lib/data'
+import type { ProyectoClienteDetalle } from '@/lib/data/actions/public'
 
 // F-07 Portal Cliente — Detalle de proyecto (ProyectoDetalleCliente).
-// Componente 'use client' que consume useDataStore() filtrado por clienteId.
+// Auditoría 2026-08-15 (A5): ya no consume useDataStore() — recibe los datos ya escopados a
+// este proyecto/cliente (ownership verificado server-side) como prop desde el Server Component
+// padre.
 
 const ESTADO_LABEL: Record<EstadoProyecto, string> = {
   borrador: 'Borrador',
@@ -77,82 +77,15 @@ function formatDate(iso: string): string {
 interface ProyectoDetalleClienteProps {
   proyectoId: string
   clienteId: string
+  data: ProyectoClienteDetalle
 }
 
-export function ProyectoDetalleCliente({ proyectoId, clienteId }: ProyectoDetalleClienteProps) {
-  const store = useDataStore()
+export function ProyectoDetalleCliente({ proyectoId, clienteId, data }: ProyectoDetalleClienteProps) {
   const [garantiaEnviado, setGarantiaEnviado] = useState(false)
-
-  const proyecto = useMemo(
-    () => store.proyectos.obtenerPorId(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const espacios = useMemo(
-    () => store.espacios.porProyecto(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const contrato = useMemo(
-    () => store.contratos.porProyecto(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const obligaciones = useMemo(
-    () => store.obligacionesPendientes.porProyecto(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const movimientos = useMemo(
-    () => store.movimientosFinancieros.listar().filter((m) => m.proyectoId === proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const comunicacionesVisibles = useMemo(
-    () => store.comunicaciones.visiblesAlCliente(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const instalaciones = useMemo(
-    () => store.instalaciones.porProyecto(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const actaEntrega = useMemo(
-    () => store.actasEntrega.porProyecto(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const casosGarantia = useMemo(
-    () => store.casosGarantia.porProyecto(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  const modulos = useMemo(
-    () => store.modulos.porProyecto(proyectoId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), proyectoId]
-  )
-
-  if (!proyecto) {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-24 text-center">
-        <p className="text-text-muted">Proyecto no encontrado.</p>
-        <Link href="/cuenta" className="text-sm text-brand mt-4 inline-block hover:underline">
-          Volver a mis proyectos
-        </Link>
-      </div>
-    )
-  }
+  const {
+    proyecto, espacios, contrato, obligaciones, movimientos,
+    comunicaciones: comunicacionesVisibles, instalaciones, actaEntrega, casosGarantia, modulos,
+  } = data
 
   // Obligaciones del cliente (aislamiento R5: sin costos internos)
   const obligacionesCliente = obligaciones.filter(

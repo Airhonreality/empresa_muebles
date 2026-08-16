@@ -1,16 +1,16 @@
 'use client'
 
-import { useMemo } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
 import { LinkButton, buttonClassName } from '@/components/veta/button'
 import { LogoutButton } from '@/components/veta/logout-button'
-import { useDataStore } from '@/lib/data'
 import type { EstadoProyecto } from '@/lib/data'
+import type { ProyectosClienteData } from '@/lib/data/actions/public'
 
 // F-07 Portal Cliente — Lista de proyectos del cliente autenticado.
-// Componente 'use client' que consume useDataStore() para leer datos
-// filtrados por clienteId (aislamiento R1/R26).
+// Auditoría 2026-08-15 (A5): ya no consume useDataStore() — recibe los datos ya escopados a
+// este clienteId (Server Action, aislamiento R1/R26 verificado server-side) como prop desde el
+// Server Component padre.
 
 const ESTADO_LABEL: Record<EstadoProyecto, string> = {
   borrador: 'Borrador',
@@ -71,23 +71,11 @@ function parseNum(s: string | null | undefined): number {
 }
 
 interface MisProyectosListaProps {
-  clienteId: string
+  data: ProyectosClienteData
 }
 
-export function MisProyectosLista({ clienteId }: MisProyectosListaProps) {
-  const store = useDataStore()
-
-  const proyectos = useMemo(
-    () => store.proyectos.listar().filter((p) => p.clienteId === clienteId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), clienteId]
-  )
-
-  const cliente = useMemo(
-    () => store.clientes.obtenerPorId(clienteId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [store.getVersion(), clienteId]
-  )
+export function MisProyectosLista({ data }: MisProyectosListaProps) {
+  const { cliente, proyectos } = data
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
@@ -111,10 +99,7 @@ export function MisProyectosLista({ clienteId }: MisProyectosListaProps) {
         </div>
       ) : (
         <div className="space-y-4">
-          {proyectos.map((proyecto) => {
-            const espacios = store.espacios.porProyecto(proyecto.id)
-            const contrato = store.contratos.porProyecto(proyecto.id)
-            const obligaciones = store.obligacionesPendientes.porProyecto(proyecto.id)
+          {proyectos.map(({ proyecto, espaciosCount, contrato, obligaciones }) => {
             const totalPagado = obligaciones.reduce((s, o) => s + parseNum(o.montoPagado), 0)
             const totalContrato = contrato ? parseNum(contrato.valorTotal) : 0
 
@@ -148,7 +133,7 @@ export function MisProyectosLista({ clienteId }: MisProyectosListaProps) {
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-4 text-sm text-text-muted">
-                  <span>{espacios.length} ambiente{espacios.length !== 1 ? 's' : ''}</span>
+                  <span>{espaciosCount} ambiente{espaciosCount !== 1 ? 's' : ''}</span>
                   {contrato && (
                     <span>Contrato: {contrato.codigoContrato}</span>
                   )}

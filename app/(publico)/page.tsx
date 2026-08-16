@@ -1,11 +1,26 @@
-'use client';
-
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Box, Factory, PenTool, MapPin } from 'lucide-react';
-import { useDataStore } from '@/lib/data';
+import { MapPin } from 'lucide-react';
+import { listarPortafolioPublicadosAction } from '@/lib/data/actions/public';
+import { getHomeJsonLd, SITE_URL } from '@/lib/seo/jsonld';
 import { MetaItem } from '@/components/veta/meta-item';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
+
+// Server Component a propósito (auditoría 2026-08-15, P1-3): antes era 'use client', lo que
+// impedía exportar metadata/generateMetadata — Home heredaba el title/description genérico del
+// layout raíz, igual que otras 6 páginas sin metadata propia. También resuelve el hallazgo de
+// arquitectura (A1-A3 del plan): ya no depende de useDataStore()/<DataStoreProvider> (que ya no
+// hidrata el árbol público, ver app/layout.tsx), trae el portafolio publicado por Server Action
+// escopada (lib/data/actions/public.ts).
+export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Veta Dorada — Carpintería arquitectónica en Bogotá',
+  description:
+    'Estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera a la medida. Tres generaciones de oficio.',
+  alternates: { canonical: SITE_URL },
+};
 
 // F-01 Home real (D-10). Copy textual de arnes/lineas/demanda/contenido/contenido_F01_home.md,
 // aprobado por el Supervisor 2026-08-09. No se fabrica copy nuevo acá.
@@ -134,81 +149,12 @@ const TESTIMONIOS = [
   },
 ];
 
-export default function Home() {
-  const store = useDataStore();
-  const proyectosDestacados = store.portafolio.publicados().slice(0, 3);
+export default async function Home() {
+  const proyectosDestacados = (await listarPortafolioPublicadosAction()).slice(0, 3);
 
-  // JSON-LD: HomeAndConstructionBusiness + Organization + WebSite (SearchAction)
-  // Fuente: contenido_F01_home.md §7, plan_seo_2026.md §2
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'HomeAndConstructionBusiness',
-        '@id': 'https://vetadorada.co/#homeandconstructionbusiness',
-        name: 'Veta Dorada',
-        description:
-          'Estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera a la medida.',
-        url: 'https://vetadorada.co',
-        telephone: '+57 302 592 2101',
-        areaServed: 'Bogotá',
-        priceRange: 'Consultar',
-        knowsLanguage: 'es-CO',
-        review: TESTIMONIOS.map((t) => ({
-          '@type': 'Review',
-          reviewRating: {
-            '@type': 'Rating',
-            ratingValue: '5',
-            bestRating: '5',
-            worstRating: '1',
-          },
-          reviewBody: t.texto,
-          author: {
-            '@type': 'Person',
-            name: t.nombre,
-          },
-          publisher: {
-            '@type': 'Organization',
-            name: 'Google',
-          },
-        })),
-      },
-      {
-        '@type': 'Organization',
-        '@id': 'https://vetadorada.co/#organization',
-        name: 'Veta Dorada',
-        url: 'https://vetadorada.co',
-        logo: 'https://vetadorada.co/logo.png',
-        description:
-          'Somos un estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera — todo a la medida, con diseño contemporáneo y manufactura en taller propio. Tres generaciones de oficio en la construcción, desde 1995.',
-        sameAs: ['https://www.google.com/maps/place/Veta+Dorada'],
-        address: {
-          '@type': 'PostalAddress',
-          addressCountry: 'CO',
-          addressRegion: 'Bogotá',
-          addressLocality: 'Bogotá',
-        },
-        telephone: '+57 302 592 2101',
-        foundingDate: '1995',
-      },
-      {
-        '@type': 'WebSite',
-        '@id': 'https://vetadorada.co/#website',
-        url: 'https://vetadorada.co',
-        name: 'Veta Dorada',
-        description:
-          'Carpintería arquitectónica, diseño y fabricación de espacios integrales en madera en Bogotá.',
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: {
-            '@type': 'EntryPoint',
-            urlTemplate: 'https://vetadorada.co/buscar?q={search_term_string}',
-          },
-          'query-input': 'required name=search_term_string',
-        },
-      },
-    ],
-  };
+  // JSON-LD: HomeAndConstructionBusiness + Organization + WebSite
+  // Fuente: contenido_F01_home.md §7, plan_seo_2026.md §2 — centralizado en lib/seo/jsonld.ts.
+  const jsonLd = getHomeJsonLd(TESTIMONIOS);
 
   return (
     <div>
