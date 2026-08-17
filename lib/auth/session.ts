@@ -190,7 +190,15 @@ export async function requireSesionEmpleado(): Promise<SesionEmpleado | null> {
 
 export interface AuthResult {
   ok: boolean
-  error?: 'credenciales_invalidas' | 'token_invalido' | 'token_vencido' | 'email_en_uso' | 'password_corta'
+  error?:
+    | 'credenciales_invalidas'
+    | 'usuario_no_encontrado'
+    | 'password_incorrecta'
+    | 'error_sistema'
+    | 'token_invalido'
+    | 'token_vencido'
+    | 'email_en_uso'
+    | 'password_corta'
 }
 
 interface UsuarioEmpleadoRow {
@@ -231,34 +239,67 @@ async function getMockUsuariosEmpleado(): Promise<UsuarioEmpleadoRow[]> {
   return mockUsuariosEmpleado
 }
 
-/** Login de empleado: email + contraseña contra `usuarios` (tipo='empleado', activo=true). */
+/**
+ * Login de empleado: email + contraseña contra `usuarios` (tipo='empleado', activo=true).
+ *
+ * Cada rama de fallo devuelve un `error` distinto y deja un log server-side
+ * correspondiente (visible en Runtime Logs de Vercel) — antes todo caía en
+ * 'credenciales_invalidas' sin rastro, indistinguible de una caída real de
+ * infraestructura (ej. Neon inalcanzable) desde afuera. Pedido explícito de
+ * Javier tras un login que fallaba en silencio total (2026-08-17).
+ */
 export async function loginEmpleado(email: string, password: string): Promise<AuthResult> {
   const emailNorm = email.trim().toLowerCase()
   if (!emailNorm || !password) return { ok: false, error: 'credenciales_invalidas' }
 
   let usuario: UsuarioEmpleadoRow | undefined
 
-  if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
-    const { db } = await import('@/lib/db/client')
-    const { usuarios } = await import('@/lib/db/schema')
-    const candidatos = await db.select().from(usuarios).where(eq(usuarios.email, emailNorm))
-    usuario = candidatos.find((u) => u.tipo === 'empleado' && u.activo) as UsuarioEmpleadoRow | undefined
-  } else {
-    const lista = await getMockUsuariosEmpleado()
-    usuario = lista.find((u) => u.email.toLowerCase() === emailNorm && u.activo)
+  try {
+    if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
+      const { db } = await import('@/lib/db/client')
+      const { usuarios } = await import('@/lib/db/schema')
+      const candidatos = await db.select().from(usuarios).where(eq(usuarios.email, emailNorm))
+      usuario = candidatos.find((u) => u.tipo === 'empleado' && u.activo) as UsuarioEmpleadoRow | undefined
+    } else {
+      const lista = await getMockUsuariosEmpleado()
+      usuario = lista.find((u) => u.email.toLowerCase() === emailNorm && u.activo)
+    }
+  } catch (err) {
+    console.error(`[loginEmpleado] error de sistema consultando usuario (${emailNorm}):`, err)
+    return { ok: false, error: 'error_sistema' }
   }
 
-  if (!usuario || !usuario.passwordHash) return { ok: false, error: 'credenciales_invalidas' }
-  const valido = await verifyPassword(password, usuario.passwordHash)
-  if (!valido) return { ok: false, error: 'credenciales_invalidas' }
+  if (!usuario || !usuario.passwordHash) {
+    console.warn(`[loginEmpleado] usuario no encontrado, inactivo o sin contraseña configurada: ${emailNorm}`)
+    return { ok: false, error: 'usuario_no_encontrado' }
+  }
 
-  const session = await getErpSession()
-  session.usuarioId = usuario.id
-  session.personaId = usuario.personaId
-  session.nombre = usuario.nombre
-  session.email = usuario.email
-  session.rol = usuario.rolEmpleado ?? 'admin'
-  await session.save()
+  let valido: boolean
+  try {
+    valido = await verifyPassword(password, usuario.passwordHash)
+  } catch (err) {
+    console.error(`[loginEmpleado] error de sistema verificando contraseña (${emailNorm}):`, err)
+    return { ok: false, error: 'error_sistema' }
+  }
+  if (!valido) {
+    console.warn(`[loginEmpleado] contraseña incorrecta: ${emailNorm}`)
+    return { ok: false, error: 'password_incorrecta' }
+  }
+
+  try {
+    const session = await getErpSession()
+    session.usuarioId = usuario.id
+    session.personaId = usuario.personaId
+    session.nombre = usuario.nombre
+    session.email = usuario.email
+    session.rol = usuario.rolEmpleado ?? 'admin'
+    await session.save()
+  } catch (err) {
+    console.error(`[loginEmpleado] error de sistema guardando la sesión (${emailNorm}):`, err)
+    return { ok: false, error: 'error_sistema' }
+  }
+
+  console.log(`[loginEmpleado] login exitoso: ${emailNorm}`)
   return { ok: true }
 }
 

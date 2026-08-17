@@ -28,7 +28,18 @@ export async function logoutAction(): Promise<void> {
 export async function loginEmpleadoAction(formData: FormData): Promise<void> {
   const email = String(formData.get('email') ?? '')
   const password = String(formData.get('password') ?? '')
-  const resultado = await loginEmpleado(email, password)
+
+  let resultado: AuthResult
+  try {
+    resultado = await loginEmpleado(email, password)
+  } catch (err) {
+    // Red de seguridad: loginEmpleado() ya captura sus propios fallos de DB/sesión
+    // y devuelve error_sistema — esto solo cubre algo verdaderamente inesperado,
+    // para que nunca llegue a tirar toda la Server Action sin dar ningún mensaje.
+    console.error('[loginEmpleadoAction] error inesperado no capturado en loginEmpleado:', err)
+    redirect('/erp/login?error=error_sistema')
+  }
+
   if (!resultado.ok) {
     redirect(`/erp/login?error=${resultado.error ?? 'credenciales_invalidas'}`)
   }
