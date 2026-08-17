@@ -265,7 +265,12 @@ function ProjectCard({
         <span>{espaciosCount} esp.</span>
         <span>Items: {totalItems}</span>
         <span>Variantes {espaciosActivos}/{espaciosCount}</span>
-        <span>{diasEnEstado}d en estado</span>
+        {/* suppressHydrationWarning: diasEnEstado depende de Date.now() -- puede diferir por
+            milisegundos entre el render del servidor y la hidratación del cliente si cruza un
+            límite de día. Patrón recomendado por React para valores de tiempo variables (mismo
+            motivo que un "hace 5 min"); no afecta el valor final, solo evita el warning de
+            hidratación en ese caso límite. Hallazgo de Javier (2026-08-17), error #418 en Preview. */}
+        <span suppressHydrationWarning>{diasEnEstado}d en estado</span>
       </div>
 
       {archivar && columnEditable && (

@@ -60,7 +60,12 @@ export function ErpLoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    // method="post" (aunque onSubmit siempre gana con JS) es la red de seguridad:
+    // sin esto, un click justo antes de que React termine de hidratar cae al
+    // comportamiento nativo del <form> -- por defecto GET, que manda email y
+    // password como query string (visibles en la URL, historial y logs del
+    // servidor). Se vio pasar exactamente eso en los logs locales de dev.
+    <form onSubmit={handleSubmit} method="post" className="flex flex-col gap-4">
       <InputField label="Email" name="email" type="email" required autoComplete="email" disabled={pending} />
       <InputField
         label="Contraseña"
