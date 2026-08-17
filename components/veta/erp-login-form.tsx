@@ -1,10 +1,9 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
-import { useFormStatus } from 'react-dom'
+import { useState } from 'react'
 import { InputField } from './input-field'
 import { Button } from './button'
-import { loginEmpleadoAction, type AuthResult } from '@/lib/auth/actions'
+import type { AuthResult } from '@/lib/auth/session'
 
 // Mensajes por código de error (lib/auth/session.ts AuthResult['error']) —
 // distinguen sistema/usuario/contraseña en vez de un genérico único (pedido
@@ -16,46 +15,69 @@ const ERRORES: Record<string, string> = {
   error_sistema: 'Hubo un problema del sistema al iniciar sesión. Intentá de nuevo en un momento.',
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  return (
-    <Button type="submit" variant="primary" size="lg" className="mt-2" disabled={pending}>
-      {pending ? 'Ingresando…' : 'Ingresar'}
-    </Button>
-  )
-}
+const MENSAJE_ERROR_RED =
+  'No se pudo conectar con el servidor. Revisá tu conexión (o desactivá extensiones/VPN que puedan estar bloqueando la petición) e intentá de nuevo.'
 
 /**
- * loginEmpleadoAction ya no llama a redirect() (ver comentario en
- * lib/auth/actions.ts) — devuelve el AuthResult y este componente decide qué
- * hacer: en éxito, navega con window.location.href (recarga completa a
- * propósito, no router.push, porque la transición cliente de Next.js tras un
- * redirect() de Server Action se comprobó rota para esta ruta con un
- * navegador real). Un fallo de red genuino (el fetch de la Server Action
- * cortado) no llega acá — lo atrapa app/erp/login/error.tsx.
+ * fetch() JSON directo contra app/api/erp/login (Route Handler), NO Server
+ * Action -- ver comentario en esa ruta: el mecanismo de streaming
+ * `text/x-component` de las Server Actions se comprobó roto para este flujo
+ * (servidor respondía bien y rápido en Runtime Logs, el navegador nunca
+ * recibía la respuesta, botón trabado en "Ingresando..." para siempre). Un
+ * fetch JSON normal es el patrón más simple y confiable disponible acá.
  */
 export function ErpLoginForm() {
-  const [resultado, formAction] = useActionState<AuthResult | null, FormData>(loginEmpleadoAction, null)
+  const [pending, setPending] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (resultado?.ok) {
-      window.location.href = '/erp/comercial'
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setErrorMsg(null)
+    setPending(true)
+
+    const formData = new FormData(e.currentTarget)
+    const email = String(formData.get('email') ?? '')
+    const password = String(formData.get('password') ?? '')
+
+    try {
+      const res = await fetch('/api/erp/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const resultado = (await res.json()) as AuthResult
+      if (resultado.ok) {
+        window.location.href = '/erp/comercial'
+        return
+      }
+      setErrorMsg(ERRORES[resultado.error ?? ''] ?? 'No pudimos iniciar sesión. Intentá de nuevo.')
+    } catch (err) {
+      console.error('[ErpLoginForm] fallo de red al enviar el login:', err)
+      setErrorMsg(MENSAJE_ERROR_RED)
+    } finally {
+      setPending(false)
     }
-  }, [resultado])
-
-  const errorMsg =
-    resultado && !resultado.ok ? (ERRORES[resultado.error ?? ''] ?? 'No pudimos iniciar sesión. Intentá de nuevo.') : null
+  }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <InputField label="Email" name="email" type="email" required autoComplete="email" />
-      <InputField label="Contraseña" name="password" type="password" required autoComplete="current-password" />
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <InputField label="Email" name="email" type="email" required autoComplete="email" disabled={pending} />
+      <InputField
+        label="Contraseña"
+        name="password"
+        type="password"
+        required
+        autoComplete="current-password"
+        disabled={pending}
+      />
       {errorMsg && (
         <p role="alert" className="text-xs text-error-text">
           {errorMsg}
         </p>
       )}
-      <SubmitButton />
+      <Button type="submit" variant="primary" size="lg" className="mt-2" disabled={pending}>
+        {pending ? 'Ingresando…' : 'Ingresar'}
+      </Button>
     </form>
   )
 }

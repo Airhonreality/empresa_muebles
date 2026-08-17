@@ -4,14 +4,12 @@ import { useEffect } from 'react'
 import { buttonClassName } from '@/components/veta/button'
 
 // Boundary de error de la ruta /erp/login (convención Next.js: error.tsx
-// captura excepciones no manejadas de renders/Server Actions del segmento).
-// Los fallos ESPERADOS del login (credenciales inválidas, error de sistema
-// del backend) ya vuelven como ?error= manejado en page.tsx/ErpLoginForm —
-// esto es solo para lo que ni siquiera llega a responder: el fetch de la
-// Server Action cortado a nivel de red (extensión de navegador, VPN, proxy
-// corporativo interceptando el POST). Hallazgo de Javier (2026-08-17): sin
-// esto, ese caso dejaba el botón en "Ingresando…" para siempre, sin ningún
-// mensaje ni log.
+// captura cualquier excepción no manejada del render del segmento). El login
+// en sí ya no depende de esto para sus propios fallos -- ErpLoginForm hace un
+// fetch() JSON directo (app/api/erp/login) con su propio try/catch, ver
+// comentario ahí sobre por qué se evitó el mecanismo de Server Actions. Esto
+// queda como red de seguridad genérica para cualquier otro error de render
+// inesperado en esta ruta.
 export default function LoginError({
   error,
   reset,

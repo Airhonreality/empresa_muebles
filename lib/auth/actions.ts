@@ -7,12 +7,10 @@
 import { redirect } from 'next/navigation'
 import {
   logout,
-  loginEmpleado,
   logoutEmpleado,
   activarInvitacion,
   crearInvitacionEmpleado,
   listarEstadoCuentasEmpleado,
-  type AuthResult,
   type InvitacionResult,
   type EstadoCuentaEmpleado,
 } from './session'
@@ -24,31 +22,12 @@ export async function logoutAction(): Promise<void> {
 }
 
 // ── Login interno del ERP (D-08b, F10 2026-08-15) ──
-
-/**
- * A propósito NO llama a redirect(): se comprobó con un navegador real
- * (Playwright, 2026-08-17) que la transición cliente de Next.js tras un
- * redirect() lanzado dentro de esta Server Action nunca completaba al cruzar
- * hacia /erp/comercial (layout con fetchSnapshotAction, ~50 queries en
- * paralelo) -- el POST de datos llegaba bien (200) pero la URL nunca cambiaba,
- * dejando el botón de submit trabado en "Ingresando..." para siempre. Esta
- * acción ahora solo devuelve el resultado; ErpLoginForm (useActionState) hace
- * la navegación con window.location.href en el cliente al ver ok:true.
- * Firma (prevState, formData) => es la que exige useActionState().
- */
-export async function loginEmpleadoAction(_prevState: AuthResult | null, formData: FormData): Promise<AuthResult> {
-  const email = String(formData.get('email') ?? '')
-  const password = String(formData.get('password') ?? '')
-
-  try {
-    return await loginEmpleado(email, password)
-  } catch (err) {
-    // Red de seguridad: loginEmpleado() ya captura sus propios fallos de DB/sesión
-    // y devuelve error_sistema — esto solo cubre algo verdaderamente inesperado.
-    console.error('[loginEmpleadoAction] error inesperado no capturado en loginEmpleado:', err)
-    return { ok: false, error: 'error_sistema' }
-  }
-}
+// El login mismo ya NO es una Server Action: ver app/api/erp/login/route.ts
+// y su comentario -- se comprobó con Runtime Logs + un navegador real que el
+// servidor completaba el login rápido y sin errores en cada intento, pero el
+// navegador nunca recibía la respuesta (streaming de Server Actions roto
+// sobre el edge de Vercel para esta ruta). Un Route Handler JSON normal lo
+// evita por completo.
 
 export async function logoutEmpleadoAction(): Promise<void> {
   await logoutEmpleado()
@@ -83,5 +62,3 @@ export async function crearInvitacionEmpleadoAction(input: {
 export async function listarEstadoCuentasAction(): Promise<EstadoCuentaEmpleado[]> {
   return listarEstadoCuentasEmpleado()
 }
-
-export type { AuthResult }
