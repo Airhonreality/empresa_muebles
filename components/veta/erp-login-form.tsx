@@ -1,21 +1,21 @@
 'use client'
 
+import { useActionState, useEffect } from 'react'
 import { useFormStatus } from 'react-dom'
 import { InputField } from './input-field'
 import { Button } from './button'
-import { loginEmpleadoAction } from '@/lib/auth/actions'
+import { loginEmpleadoAction, type AuthResult } from '@/lib/auth/actions'
 
-/**
- * useFormStatus() solo lee el estado del <form> más cercano si el componente
- * que lo llama es DESCENDIENTE del form, no el mismo que lo renderiza — de ahí
- * el split. Mantener <form action={loginEmpleadoAction}> con la Server Action
- * ligada directo (no una función cliente intermedia) es a propósito: Next.js
- * necesita esa referencia directa para manejar redirect() correctamente. Un
- * intento anterior envolvía la llamada en un handler cliente propio para
- * atrapar fallos de red — reproducido con Playwright, eso rompía el redirect
- * nativo y dejaba el botón en "Ingresando…" para siempre. El fallo de red real
- * (fetch de la Server Action cortado) lo atrapa app/erp/login/error.tsx.
- */
+// Mensajes por código de error (lib/auth/session.ts AuthResult['error']) —
+// distinguen sistema/usuario/contraseña en vez de un genérico único (pedido
+// de Javier, 2026-08-17, ver lib/auth/session.ts loginEmpleado()).
+const ERRORES: Record<string, string> = {
+  credenciales_invalidas: 'Email o contraseña incorrectos.',
+  usuario_no_encontrado: 'No encontramos una cuenta activa con ese email.',
+  password_incorrecta: 'La contraseña no es correcta.',
+  error_sistema: 'Hubo un problema del sistema al iniciar sesión. Intentá de nuevo en un momento.',
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus()
   return (
@@ -25,14 +25,34 @@ function SubmitButton() {
   )
 }
 
-export function ErpLoginForm({ initialError }: { initialError?: string }) {
+/**
+ * loginEmpleadoAction ya no llama a redirect() (ver comentario en
+ * lib/auth/actions.ts) — devuelve el AuthResult y este componente decide qué
+ * hacer: en éxito, navega con window.location.href (recarga completa a
+ * propósito, no router.push, porque la transición cliente de Next.js tras un
+ * redirect() de Server Action se comprobó rota para esta ruta con un
+ * navegador real). Un fallo de red genuino (el fetch de la Server Action
+ * cortado) no llega acá — lo atrapa app/erp/login/error.tsx.
+ */
+export function ErpLoginForm() {
+  const [resultado, formAction] = useActionState<AuthResult | null, FormData>(loginEmpleadoAction, null)
+
+  useEffect(() => {
+    if (resultado?.ok) {
+      window.location.href = '/erp/comercial'
+    }
+  }, [resultado])
+
+  const errorMsg =
+    resultado && !resultado.ok ? (ERRORES[resultado.error ?? ''] ?? 'No pudimos iniciar sesión. Intentá de nuevo.') : null
+
   return (
-    <form action={loginEmpleadoAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       <InputField label="Email" name="email" type="email" required autoComplete="email" />
       <InputField label="Contraseña" name="password" type="password" required autoComplete="current-password" />
-      {initialError && (
+      {errorMsg && (
         <p role="alert" className="text-xs text-error-text">
-          {initialError}
+          {errorMsg}
         </p>
       )}
       <SubmitButton />
