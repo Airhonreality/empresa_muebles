@@ -31,7 +31,7 @@ export async function crearPortafolioAction(data: Partial<Portafolio> & { proyec
     }
     const [nuevo] = await tx.insert(s.portafolio).values({
       proyectoId: data.proyectoId, titulo: data.titulo, descripcionComercial: data.descripcionComercial ?? null,
-      categoriaEspacio: data.categoriaEspacio, materialesDestacados: data.materialesDestacados ?? [],
+      categoriaEspacio: data.categoriaEspacio, espacioVarianteId: data.espacioVarianteId ?? null, materialesDestacados: data.materialesDestacados ?? [],
       precioReferencial: data.precioReferencial ?? null, imagenPortafolioUrl: data.imagenPortafolioUrl ?? null,
       galeriaPortafolioUrl: data.galeriaPortafolioUrl ?? [], barrio: data.barrio ?? null, tipoProyecto: data.tipoProyecto ?? null,
       publicado: data.publicado ?? false, destacado: data.destacado ?? false, orden, slug: data.slug,
@@ -42,7 +42,7 @@ export async function crearPortafolioAction(data: Partial<Portafolio> & { proyec
 
 export async function actualizarPortafolioAction(
   id: string,
-  partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>
+  partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'espacioVarianteId' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>
 ): Promise<Portafolio | null> {
   const [actualizado] = await db.update(s.portafolio).set({ ...partial, updatedAt: new Date().toISOString() }).where(eq(s.portafolio.id, id)).returning()
   return (actualizado as unknown as Portafolio) ?? null

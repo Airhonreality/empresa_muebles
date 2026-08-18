@@ -7,6 +7,7 @@ import { Button } from '@/components/veta/button'
 import { LinkButton } from '@/components/veta/button'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { useDataStore } from '@/lib/data'
+import { TIPOS_ESPACIO, labelTipoEspacio } from '@/lib/catalogos/tipos-espacio'
 
 export default function ProyectoPortafolioPage() {
   const params = useParams()
@@ -18,11 +19,24 @@ export default function ProyectoPortafolioPage() {
   // Portafolio entry linked to this proyecto (if exists)
   const portafolioEntry = store.portafolio.listar().find(p => p.proyectoId === proyectoId) ?? null
 
+  // Espacios del proyecto (F-09, 2026-08-17) — uno por grupo (nombreEspacio), usando la
+  // variante activa como representante. Elegir uno acá hereda su tipoEspacio en categoriaEspacio
+  // en vez de volver a tiparlo a mano.
+  const espaciosProyecto = store.espacios.porProyecto(proyectoId)
+  const espaciosAgrupados = Array.from(
+    espaciosProyecto.reduce((mapa, e) => {
+      const actual = mapa.get(e.nombreEspacio)
+      if (!actual || (e.activa && !actual.activa)) mapa.set(e.nombreEspacio, e)
+      return mapa
+    }, new Map<string, typeof espaciosProyecto[number]>()).values()
+  )
+
   // Form state
   const [form, setForm] = useState<{
     titulo: string
     descripcionComercial: string
     categoriaEspacio: string
+    espacioVarianteId: string
     materialesDestacados: string
     precioReferencial: string
     barrio: string
@@ -37,6 +51,7 @@ export default function ProyectoPortafolioPage() {
     titulo: portafolioEntry?.titulo ?? proyecto?.nombreProyecto ?? '',
     descripcionComercial: portafolioEntry?.descripcionComercial ?? '',
     categoriaEspacio: portafolioEntry?.categoriaEspacio ?? '',
+    espacioVarianteId: portafolioEntry?.espacioVarianteId ?? '',
     materialesDestacados: portafolioEntry?.materialesDestacados?.join(', ') ?? '',
     precioReferencial: portafolioEntry?.precioReferencial ?? '',
     barrio: portafolioEntry?.barrio ?? '',
@@ -51,17 +66,6 @@ export default function ProyectoPortafolioPage() {
 
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Categorías de espacio (F-09)
-  const categoriasEspacio = [
-    'cocina',
-    'closet',
-    'centro_entretenimiento',
-    'estudio_home_office',
-    'cava_bar',
-    'consola_recibidor',
-    'pisos_madera',
-  ]
 
   const tiposProyecto = [
     'Residencial',
@@ -105,6 +109,7 @@ export default function ProyectoPortafolioPage() {
          titulo: form.titulo,
          descripcionComercial: form.descripcionComercial || null,
          categoriaEspacio: form.categoriaEspacio,
+         espacioVarianteId: form.espacioVarianteId || null,
          materialesDestacados: materiales,
          precioReferencial: form.precioReferencial || null,
          imagenPortafolioUrl: form.imagenPortafolioUrl || null,
@@ -212,6 +217,39 @@ export default function ProyectoPortafolioPage() {
            />
         </div>
 
+        {/* Espacio de origen (F-09, 2026-08-17): al elegir uno, categoriaEspacio se hereda de
+            su tipoEspacio en vez de tiparse dos veces — sigue siendo editable a mano después. */}
+        <div>
+          <label className="block text-sm font-medium text-text-heading mb-2">
+            Espacio de origen
+          </label>
+          <select
+            value={form.espacioVarianteId}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              const espacioId = e.target.value
+              const espacio = espaciosAgrupados.find((es) => es.id === espacioId)
+              setForm(prev => ({
+                ...prev,
+                espacioVarianteId: espacioId,
+                categoriaEspacio: espacio?.tipoEspacio ?? prev.categoriaEspacio,
+              }))
+            }}
+            className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+          >
+            <option value="">Sin vincular (entrada manual)</option>
+            {espaciosAgrupados.map((es) => (
+              <option key={es.id} value={es.id}>
+                {es.nombreEspacio}{es.tipoEspacio ? ` — ${labelTipoEspacio(es.tipoEspacio)}` : ' — sin tipo'}
+              </option>
+            ))}
+          </select>
+          {form.espacioVarianteId && (
+            <p className="text-xs text-text-muted mt-1">
+              Categoría heredada de este espacio — puedes cambiarla abajo si hace falta.
+            </p>
+          )}
+        </div>
+
         {/* Categoría y Tipo */}
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
@@ -225,9 +263,9 @@ export default function ProyectoPortafolioPage() {
                className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
              >
                <option value="">Seleccionar categoría</option>
-               {categoriasEspacio.map(cat => (
-                 <option key={cat} value={cat}>
-                   {cat.replace('_', ' ')}
+               {TIPOS_ESPACIO.map(t => (
+                 <option key={t.codigo} value={t.codigo}>
+                   {t.label}
                  </option>
                ))}
              </select>

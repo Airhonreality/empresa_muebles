@@ -1,5 +1,8 @@
 import Image from 'next/image'
 import { SITE_URL } from '@/lib/seo/jsonld'
+import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public'
+
+const TIPO_ESPACIO_CODIGO = 'pisos_madera'
 
 export const metadata = {
   title: 'Restauración de pisos de madera en Bogotá — Veta Dorada',
@@ -7,10 +10,15 @@ export const metadata = {
   alternates: { canonical: `${SITE_URL}/espacios/pisos-de-madera` },
 }
 
+// Lee galería real/renders vía Server Action (obtenerGaleriaEspacioAction) — mismo criterio
+// que el resto del sitio público con datos vivos (ver app/(publico)/page.tsx).
+export const dynamic = 'force-dynamic'
+
 const WHATSAPP_URL =
   'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20un%20diagn%C3%B3stico%20gratuito%20para%20restaurar%20mi%20piso%20de%20madera.'
 
-export default function PisosDeMaderaLanding() {
+export default async function PisosDeMaderaLanding() {
+  const galeria = await obtenerGaleriaEspacioAction(TIPO_ESPACIO_CODIGO)
   return (
     <div className="bg-white">
       {/* 1. Hero Landing */}
@@ -85,9 +93,23 @@ export default function PisosDeMaderaLanding() {
         </div>
       </section>
 
-      {/* 3. Galería Antes/Después — oculta a propósito (auditoría 2026-08-15, B5): las 2 fotos
-          (piso_madera_antes/despues_*.png) no existen en public/, son fotos reales pendientes de
-          recuperar del sitio legacy (I-016). Se restaura esta sección cuando existan. */}
+      {/* 3. Galería de pisos (F09, 2026-08-17) — reemplaza el placeholder de antes/después
+          (auditoría 2026-08-15, B5) por fotos publicadas de Portafolio + imágenes cargadas en
+          /erp/portafolio/renders, sin distinción visible entre ellas. */}
+      {galeria.length > 0 && (
+        <section className="py-20 bg-[var(--color-bg-linen)] border-y border-[var(--color-border)]">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <h2 className="text-3xl font-serif text-[var(--color-primary)] mb-10 text-center">Pisos que hemos restaurado</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {galeria.map((foto, i) => (
+                <div key={`${foto.url}-${i}`} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-white">
+                  <Image src={foto.url} alt={foto.alt} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 33vw" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 4. Materiales */}
       <section className="py-20 container mx-auto px-4 max-w-4xl text-center">

@@ -78,6 +78,12 @@ export const personas = pgTable("personas", {
 	referencia2Nombre: text("referencia_2_nombre"),
 	referencia2Relacion: text("referencia_2_relacion"),
 	referencia2Telefono: text("referencia_2_telefono"),
+}, (table) => {
+	return {
+		// F10 (2026-08-17): evita altas duplicadas con el mismo documento — NULL sigue permitiendo
+		// múltiples personas sin documento cargado (Postgres no compara NULLs como iguales).
+		personasDocumentoUnique: unique("personas_documento_unique").on(table.documento),
+	}
 });
 
 export const personasRoles = pgTable("personas_roles", {
@@ -140,6 +146,10 @@ export const espacioVariantes = pgTable("espacio_variantes", {
 	proyectoId: uuid("proyecto_id").notNull(),
 	nombreEspacio: text("nombre_espacio").notNull(),
 	nombreVariante: text("nombre_variante").default('Inicial'),
+	// F09/F14 (2026-08-17): tipo canónico del espacio (lib/catalogos/tipos-espacio.ts) — el
+	// proyecto tipa su espacio acá, y Portafolio lo hereda vía espacioVarianteId en vez de
+	// volver a tipar a mano.
+	tipoEspacio: text("tipo_espacio"),
 	descripcion: text(),
 	activa: boolean().default(false).notNull(),
 	// F10 (2026-08-13): renombrado de visiblePdf — contracts.ts usa visibleEnPropuestaPublica.
@@ -1362,6 +1372,9 @@ export const portafolio = pgTable("portafolio", {
 	titulo: text().notNull(),
 	descripcionComercial: text("descripcion_comercial"),
 	categoriaEspacio: text("categoria_espacio").notNull(),
+	// F09 (2026-08-17): espacio de origen dentro del proyecto — cuando está vinculado,
+	// categoriaEspacio se hereda de espacioVariantes.tipoEspacio en vez de tipar dos veces.
+	espacioVarianteId: uuid("espacio_variante_id"),
 	materialesDestacados: jsonb("materiales_destacados").default([]).notNull(),
 	precioReferencial: text("precio_referencial"),
 	imagenPortafolioUrl: text("imagen_portafolio_url"),
@@ -1379,8 +1392,25 @@ export const portafolio = pgTable("portafolio", {
 		portafolioProyectoIdFk: foreignKey({
 			columns: [table.proyectoId], foreignColumns: [proyectos.id], name: "portafolio_proyecto_id_proyectos_id_fk"
 		}),
+		portafolioEspacioVarianteIdFk: foreignKey({
+			columns: [table.espacioVarianteId], foreignColumns: [espacioVariantes.id], name: "portafolio_espacio_variante_id_espacio_variantes_id_fk"
+		}),
 		portafolioSlugUnique: unique("portafolio_slug_unique").on(table.slug),
 	}
+});
+
+// Renders conceptuales (F09, 2026-08-17): diseños propios (no proyectos reales entregados),
+// usados como relleno visual en una landing de categoría mientras esa categoría no tiene
+// todavía fotos reales publicadas. Siempre se muestran etiquetados "Render conceptual" en
+// público — nunca se presentan como un proyecto entregado (regla anti-invención del arnés).
+export const rendersConceptuales = pgTable("renders_conceptuales", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	tipoEspacio: text("tipo_espacio").notNull(),
+	imagenUrl: text("imagen_url").notNull(),
+	titulo: text(),
+	visible: boolean().default(true).notNull(),
+	orden: integer().default(0).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 });
 
 // Testimonios (REGISTRO §10, DC-1)

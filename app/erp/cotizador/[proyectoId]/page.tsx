@@ -13,6 +13,7 @@ import { ItemDescriptorModal } from '@/components/veta/item-descriptor-modal'
 import { ContratoModal } from '../ContratoModal'
 import { useDataStore, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
+import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -136,6 +137,27 @@ export default function CotizadorPage() {
   )
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
   const [nuevoEspacioNombre, setNuevoEspacioNombre] = useState('')
+  const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
+
+  const crearEspacio = useCallback(async () => {
+    const nombreFinal = nuevoEspacioNombre.trim()
+    if (!nombreFinal) return
+    const nuevoEspacio = await store.espacios.crear({
+      proyectoId,
+      nombreEspacio: nombreFinal || `Espacio ${gruposPorNombre.size + 1}`,
+      nombreVariante: 'Inicial',
+      tipoEspacio: nuevoEspacioTipo || null,
+      descripcion: '',
+      visibleEnPropuestaPublica: true,
+      orden: espaciosBase.length + 1,
+      jornadasDesarrolloTecnico: '0',
+      jornadasEnsamblajeTaller: '0',
+      jornadasInstalacionObra: '0',
+    })
+    setGruposExpandidos(prev => new Set(prev).add(nuevoEspacio.nombreEspacio))
+    setNuevoEspacioNombre('')
+    setNuevoEspacioTipo('')
+  }, [nuevoEspacioNombre, nuevoEspacioTipo, proyectoId, gruposPorNombre.size, espaciosBase.length, store])
 
   const toggleGrupo = useCallback((nombreEspacio: string) => {
     setGruposExpandidos((prev) => {
@@ -333,51 +355,32 @@ export default function CotizadorPage() {
               type="text"
               value={nuevoEspacioNombre}
               onChange={(e) => setNuevoEspacioNombre(e.target.value)}
-              onKeyDown={async (e) => {
+              onKeyDown={(e) => {
                 if (e.key === 'Enter' && nuevoEspacioNombre.trim()) {
                   e.preventDefault()
-                  const nombreFinal = nuevoEspacioNombre.trim()
-                  const nuevoEspacio = await store.espacios.crear({
-                    proyectoId,
-                    nombreEspacio: nombreFinal || `Espacio ${gruposPorNombre.size + 1}`,
-                    nombreVariante: 'Inicial',
-                    descripcion: '',
-                    visibleEnPropuestaPublica: true,
-                    orden: espaciosBase.length + 1,
-                    jornadasDesarrolloTecnico: '0',
-                    jornadasEnsamblajeTaller: '0',
-                    jornadasInstalacionObra: '0',
-                  })
-                  setGruposExpandidos(prev => new Set(prev).add(nuevoEspacio.nombreEspacio))
-                  setNuevoEspacioNombre('')
+                  void crearEspacio()
                 }
               }}
               placeholder="Añadir espacio..."
               className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none w-40 transition-all duration-fast"
               aria-label="Nombre del nuevo espacio"
             />
+            <select
+              value={nuevoEspacioTipo}
+              onChange={(e) => setNuevoEspacioTipo(e.target.value)}
+              className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none transition-all duration-fast"
+              aria-label="Tipo del nuevo espacio"
+            >
+              <option value="">Sin tipo</option>
+              {TIPOS_ESPACIO.map((t) => (
+                <option key={t.codigo} value={t.codigo}>{t.label}</option>
+              ))}
+            </select>
             <Button
               variant="ghost"
               size="md"
               className="h-8 text-xs"
-              onClick={async () => {
-                if (nuevoEspacioNombre.trim()) {
-                  const nombreFinal = nuevoEspacioNombre.trim()
-                  const nuevoEspacio = await store.espacios.crear({
-                    proyectoId,
-                    nombreEspacio: nombreFinal || `Espacio ${gruposPorNombre.size + 1}`,
-                    nombreVariante: 'Inicial',
-                    descripcion: '',
-                    visibleEnPropuestaPublica: true,
-                    orden: espaciosBase.length + 1,
-                    jornadasDesarrolloTecnico: '0',
-                    jornadasEnsamblajeTaller: '0',
-                    jornadasInstalacionObra: '0',
-                  })
-                  setGruposExpandidos(prev => new Set(prev).add(nuevoEspacio.nombreEspacio))
-                  setNuevoEspacioNombre('')
-                }
-              }}
+              onClick={() => void crearEspacio()}
               aria-label="Crear nuevo espacio"
             >
               + Crear
@@ -829,6 +832,22 @@ function EspacioGroup({
               </span>
             </span>
           )}
+          <select
+            value={varianteActiva.tipoEspacio ?? ''}
+            onClick={(e) => e.stopPropagation()}
+            onChange={async (e) => {
+              const valor = e.target.value || null
+              await Promise.all(variantes.map((v) => store.espacios.actualizar(v.id, { tipoEspacio: valor })))
+            }}
+            className="rounded border border-border-subtle bg-bg-paper px-1.5 py-0.5 text-[11px] text-text-muted hover:text-text-heading focus:border-gold-400 focus:outline-none transition-colors duration-fast"
+            aria-label={`Tipo de espacio de ${nombreEspacio}`}
+            title="Tipo de espacio — lo hereda Portafolio al publicar"
+          >
+            <option value="">Sin tipo</option>
+            {TIPOS_ESPACIO.map((t) => (
+              <option key={t.codigo} value={t.codigo}>{t.label}</option>
+            ))}
+          </select>
           <button
             type="button"
             onClick={async (e) => { e.stopPropagation(); await store.espacios.actualizar(variante.id, { visibleEnPropuestaPublica: !variante.visibleEnPropuestaPublica }) }}

@@ -11,6 +11,10 @@ if (!url) {
 export default defineConfig({
   dialect: 'postgresql',
   schema: './lib/db/schema.ts',
-  out: process.env.DRIZZLE_OUT ?? './drizzle',
+  // './drizzle' (sin sufijo) es la carpeta legacy pre-V3 — el historial real vive en
+  // './drizzle/v3'. Default corregido 2026-08-17: sin esto, `drizzle-kit generate` diffeaba
+  // contra el snapshot legacy desactualizado y disparaba prompts de ambigüedad falsos
+  // (ej. contratos.especificaciones_desmonte, ya resuelto hace semanas en v3).
+  out: process.env.DRIZZLE_OUT ?? './drizzle/v3',
   dbCredentials: { url },
 })

@@ -7,21 +7,12 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
-import { Button } from '@/components/veta/button'
+import { Button, LinkButton } from '@/components/veta/button'
 import { useDataStore, type Portafolio } from '@/lib/data'
-
-const CATEGORIAS_ESPACIO = [
-  'cocina',
-  'closet',
-  'centro_entretenimiento',
-  'estudio_home_office',
-  'cava_bar',
-  'consola_recibidor',
-  'pisos_madera',
-] as const
+import { TIPOS_ESPACIO, labelTipoEspacio } from '@/lib/catalogos/tipos-espacio'
 
 function etiquetaCategoria(categoria: string): string {
-  return categoria.replace(/_/g, ' ')
+  return labelTipoEspacio(categoria) ?? categoria.replace(/_/g, ' ')
 }
 
 function FilaPortafolioAdmin({
@@ -132,12 +123,17 @@ export default function PortafolioAdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
-      <header className="mb-6">
-        <h1 className="font-display text-2xl font-semibold text-text-heading">Gestión de portafolio</h1>
-        <p className="text-sm text-text-muted mt-1">
-          Publicar, destacar y ordenar los proyectos que aparecen en el portafolio público. Para editar título, fotos
-          o descripción, usá &quot;Editar contenido&quot; (te lleva al proyecto en el ERP).
-        </p>
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-text-heading">Gestión de portafolio</h1>
+          <p className="text-sm text-text-muted mt-1">
+            Publicar, destacar y ordenar los proyectos que aparecen en el portafolio público. Para editar título, fotos
+            o descripción, usá &quot;Editar contenido&quot; (te lleva al proyecto en el ERP).
+          </p>
+        </div>
+        <LinkButton href="/erp/portafolio/galeria" variant="secondary">
+          Galería por categoría
+        </LinkButton>
       </header>
 
       <div className="mb-4 flex flex-wrap gap-3">
@@ -148,9 +144,9 @@ export default function PortafolioAdminPage() {
           aria-label="Filtrar por categoría"
         >
           <option value="">Todas las categorías</option>
-          {CATEGORIAS_ESPACIO.map((cat) => (
-            <option key={cat} value={cat}>
-              {etiquetaCategoria(cat)}
+          {TIPOS_ESPACIO.map((t) => (
+            <option key={t.codigo} value={t.codigo}>
+              {t.label}
             </option>
           ))}
         </select>

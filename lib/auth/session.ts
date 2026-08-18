@@ -318,9 +318,14 @@ export interface InvitacionResult {
 const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 días
 
 /**
- * Crea (o reemplaza si ya había una pendiente para la misma persona) una
- * invitación de autoregistro: fila en `usuarios` sin contraseña, activo=false,
- * con un token de invitación. Devuelve el token — el link completo
+ * Crea o actualiza la cuenta de acceso de un empleado, siempre keyed por
+ * `personaId` (no por email — F10 2026-08-17, corrige el bug donde corregir
+ * el email de una persona dejaba huérfana la fila vieja en `usuarios` porque
+ * el lookup anterior era por email). Sirve tanto para "Generar acceso"
+ * (primera vez) como para "Editar acceso" (cuenta ya activa: el nuevo enlace
+ * de invitación actualiza el email; la contraseña vieja sigue funcionando
+ * hasta que se use el enlace nuevo, así nadie queda bloqueado a mitad de
+ * camino). Devuelve el token — el link completo
  * (`${origin}/erp/login/activar?token=...`) se arma en el cliente.
  */
 export async function crearInvitacionEmpleado(input: {
@@ -336,22 +341,23 @@ export async function crearInvitacionEmpleado(input: {
   if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
     const { db } = await import('@/lib/db/client')
     const { usuarios } = await import('@/lib/db/schema')
-    const existentes = await db.select().from(usuarios).where(eq(usuarios.email, emailNorm))
-    const existente = existentes[0]
-    if (existente && existente.personaId !== input.personaId) {
+    const [propia] = await db.select().from(usuarios).where(eq(usuarios.personaId, input.personaId))
+    const [otroConEseEmail] = await db.select().from(usuarios).where(eq(usuarios.email, emailNorm))
+    if (otroConEseEmail && otroConEseEmail.personaId !== input.personaId) {
       return { ok: false, error: 'email_en_uso' }
     }
-    if (existente) {
+    if (propia) {
       await db
         .update(usuarios)
         .set({
+          email: emailNorm,
           inviteToken: token,
           inviteTokenExpiraEn: expiraEn,
           rolEmpleado: input.rol,
           nombre: input.nombre,
           updatedAt: new Date().toISOString(),
         })
-        .where(eq(usuarios.id, existente.id))
+        .where(eq(usuarios.id, propia.id))
     } else {
       await db.insert(usuarios).values({
         email: emailNorm,
@@ -367,15 +373,17 @@ export async function crearInvitacionEmpleado(input: {
     }
   } else {
     const lista = await getMockUsuariosEmpleado()
-    const existente = lista.find((u) => u.email.toLowerCase() === emailNorm)
-    if (existente && existente.personaId !== input.personaId) {
+    const propia = lista.find((u) => u.personaId === input.personaId)
+    const otroConEseEmail = lista.find((u) => u.email.toLowerCase() === emailNorm)
+    if (otroConEseEmail && otroConEseEmail.personaId !== input.personaId) {
       return { ok: false, error: 'email_en_uso' }
     }
-    if (existente) {
-      existente.inviteToken = token
-      existente.inviteTokenExpiraEn = expiraEn
-      existente.rolEmpleado = input.rol
-      existente.nombre = input.nombre
+    if (propia) {
+      propia.email = emailNorm
+      propia.inviteToken = token
+      propia.inviteTokenExpiraEn = expiraEn
+      propia.rolEmpleado = input.rol
+      propia.nombre = input.nombre
     } else {
       lista.push({
         id: randomBytes(8).toString('hex'),

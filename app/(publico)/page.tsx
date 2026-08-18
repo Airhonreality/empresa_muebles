@@ -25,11 +25,15 @@ export const metadata: Metadata = {
 // F-01 Home real (D-10). Copy textual de arnes/lineas/demanda/contenido/contenido_F01_home.md,
 // aprobado por el Supervisor 2026-08-09. No se fabrica copy nuevo acá.
 //
-// F-12 (agendar asesoría), F-09 (landing por categoría), F-10 (ver espacios), F-11 (proceso) y
-// F-18 (historia) no existen todavía en este prototipo -- los CTA que el doc de contenido apunta
-// ahí van a WhatsApp (el único canal de contacto real hoy, URL aprobada en contenido_F00_shell.md)
-// o se omiten si ni siquiera WhatsApp es el intento correcto (ver CTAs de "Cómo trabajamos" y
-// "Conócenos", sin botón). Ningún <Link> de esta página apunta a una ruta que no exista.
+// F-09 (landing por categoría) y F-10 (índice /espacios) ya existen (2026-08-17) -- las cards de
+// "Espacios que creamos" navegan a su landing real en vez de WhatsApp (fix de UX, antes las 7
+// mandaban directo a WhatsApp por esta misma nota, que ya no aplica para esta sección).
+//
+// F-12 (agendar asesoría), F-11 (proceso) y F-18 (historia) siguen sin existir -- los CTA que el
+// doc de contenido apunta ahí van a WhatsApp (el único canal de contacto real hoy, URL aprobada en
+// contenido_F00_shell.md) o se omiten si ni siquiera WhatsApp es el intento correcto (ver CTAs de
+// "Cómo trabajamos" y "Conócenos", sin botón). Ningún <Link> de esta página apunta a una ruta que
+// no exista.
 const WHATSAPP_URL =
   'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
 
@@ -99,13 +103,13 @@ const VALIDACION_TECNICA = [
 ];
 
 const ESPACIOS = [
-  { nombre: 'Cocinas Integrales', imageKey: 'espaciosCocinas' },
-  { nombre: 'Closets y Vestidores', imageKey: 'espaciosClosets' },
-  { nombre: 'Centros de Entretenimiento', imageKey: 'espaciosCentrosEnt' },
-  { nombre: 'Estudios y Home Office', imageKey: 'espaciosEstudios' },
-  { nombre: 'Cavas y Bares', imageKey: 'espaciosCavas' },
-  { nombre: 'Consolas y Recibidores', imageKey: 'espaciosConsolas' },
-  { nombre: 'Pisos de Madera', imageKey: 'espaciosPisos' },
+  { nombre: 'Cocinas Integrales', imageKey: 'espaciosCocinas', href: '/espacios/cocinas-integrales-bogota' },
+  { nombre: 'Closets y Vestidores', imageKey: 'espaciosClosets', href: '/espacios/closets-vestidores-bogota' },
+  { nombre: 'Centros de Entretenimiento', imageKey: 'espaciosCentrosEnt', href: '/espacios/centros-de-entretenimiento' },
+  { nombre: 'Estudios y Home Office', imageKey: 'espaciosEstudios', href: '/espacios/estudios-home-office' },
+  { nombre: 'Cavas y Bares', imageKey: 'espaciosCavas', href: '/espacios/cavas-y-bares' },
+  { nombre: 'Consolas y Recibidores', imageKey: 'espaciosConsolas', href: '/espacios/consolas-recibidores' },
+  { nombre: 'Pisos de Madera', imageKey: 'espaciosPisos', href: '/espacios/pisos-de-madera' },
 ];
 
 const PASOS = [
@@ -277,11 +281,9 @@ export default async function Home() {
             // La primera tarjeta ocupa 2 columnas en desktop para asimetría del bento box
             const isFeatured = i === 0;
             return (
-              <a
+              <Link
                 key={espacio.nombre}
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={espacio.href}
                 className={`group flex flex-col cursor-pointer ${isFeatured ? 'lg:col-span-2' : ''}`}
               >
                 <div className="relative flex-1 overflow-hidden rounded-sm bg-bg-alt mb-4">
@@ -302,7 +304,7 @@ export default async function Home() {
                     →
                   </span>
                 </div>
-              </a>
+              </Link>
             );
           })}
         </div>

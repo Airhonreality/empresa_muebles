@@ -23,6 +23,7 @@ import * as f5 from './actions/f5'
 import * as f6 from './actions/f6'
 import * as f7 from './actions/f7-tienda'
 import * as pf from './actions/portafolio'
+import * as renders from './actions/renders'
 
 export interface DrizzleStoreHandle {
   store: DataStore
@@ -378,6 +379,23 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         if (r) { data = { ...data, personas: upsert(data.personas, r) }; notify() }
         return r
       },
+      desactivar: async (id) => {
+        const r = await f3.desactivarPersonaAction(id)
+        if (r) {
+          data = {
+            ...data,
+            personas: upsert(data.personas, r),
+            personasRoles: data.personasRoles.map((pr) => pr.personaId === id ? { ...pr, activo: false } : pr),
+          }
+          notify()
+        }
+        return r
+      },
+      reactivar: async (id) => {
+        const r = await f3.reactivarPersonaAction(id)
+        if (r) { data = { ...data, personas: upsert(data.personas, r) }; notify() }
+        return r
+      },
     },
     personasRoles: {
       activos: () => data.personasRoles.filter((r) => r.activo),
@@ -385,6 +403,11 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         const r = await f3.asignarRolAction(personaId, rolId)
         data = { ...data, personasRoles: upsert(data.personasRoles, r) }
         notify()
+        return r
+      },
+      desasignar: async (personaId, rolId) => {
+        const r = await f3.desasignarRolAction(personaId, rolId)
+        if (r) { data = { ...data, personasRoles: upsert(data.personasRoles, r) }; notify() }
         return r
       },
     },
@@ -808,6 +831,29 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         const r = await pf.despublicarPortafolioAction(id)
         if (r) { data = { ...data, portafolio: upsert(data.portafolio, r) }; notify() }
         return r
+      },
+    },
+    renderesConceptuales: {
+      listar: () => data.rendersConceptuales,
+      porTipoEspacio: (tipoEspacio) => data.rendersConceptuales
+        .filter((r) => r.tipoEspacio === tipoEspacio && r.visible)
+        .slice()
+        .sort((a, b) => a.orden - b.orden),
+      crear: async (values) => {
+        const r = await renders.crearRenderConceptualAction(values)
+        data = { ...data, rendersConceptuales: upsert(data.rendersConceptuales, r) }
+        notify()
+        return r
+      },
+      actualizar: async (id, partial) => {
+        const r = await renders.actualizarRenderConceptualAction(id, partial)
+        if (r) { data = { ...data, rendersConceptuales: upsert(data.rendersConceptuales, r) }; notify() }
+        return r
+      },
+      eliminar: async (id) => {
+        const ok = await renders.eliminarRenderConceptualAction(id)
+        if (ok) { data = { ...data, rendersConceptuales: data.rendersConceptuales.filter((r) => r.id !== id) }; notify() }
+        return ok
       },
     },
     testimonios: {

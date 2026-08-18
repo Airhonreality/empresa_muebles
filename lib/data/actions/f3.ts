@@ -7,6 +7,7 @@ import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { P18, P33, derivarDesenlace, derivarReduccionComision } from '@/lib/modules/f3/gates'
 import { puedeEmitirVeredictoCalidad, transicionModuloValida } from '@/lib/modules/f4f5f6/gates'
+import { registrarAuditLog } from '@/lib/auth/audit'
 import type {
   Cronograma, CronogramaEtapa, LineaCronograma, EtapaCronograma, DesfaseCronograma, CausaDesfase,
   CheckProduccion, DesenlaceCheck, NovedadCritica, EstadoNovedadCritica, ComunicacionProgreso,
@@ -242,28 +243,66 @@ export async function crearCambioContratoAction(data: { proyectoId: string; tipo
   return nuevo as unknown as CambioContrato
 }
 
+/** Postgres (postgres.js) reporta `unique_violation` como code '23505' con el nombre del constraint en `constraint_name`. */
+function esViolacionDocumentoDuplicado(err: unknown): boolean {
+  const e = err as { code?: string; constraint_name?: string } | undefined
+  return e?.code === '23505' && e?.constraint_name === 'personas_documento_unique'
+}
+
 export async function crearPersonaAction(data: Partial<Pick<Persona, 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>> & { nombre: string }): Promise<Persona> {
-  const [nuevo] = await db.insert(s.personas).values({
-    nombre: data.nombre, documento: data.documento ?? null, telefono: data.telefono ?? null,
-    fotoUrl: data.fotoUrl ?? null, email: data.email ?? null,
-    direccion: data.direccion ?? null,
-    referencia1Nombre: data.referencia1Nombre ?? null,
-    referencia1Relacion: data.referencia1Relacion ?? null,
-    referencia1Telefono: data.referencia1Telefono ?? null,
-    referencia2Nombre: data.referencia2Nombre ?? null,
-    referencia2Relacion: data.referencia2Relacion ?? null,
-    referencia2Telefono: data.referencia2Telefono ?? null,
-  }).returning()
+  let nuevo
+  try {
+    ;[nuevo] = await db.insert(s.personas).values({
+      nombre: data.nombre, documento: data.documento ?? null, telefono: data.telefono ?? null,
+      fotoUrl: data.fotoUrl ?? null, email: data.email ?? null,
+      direccion: data.direccion ?? null,
+      referencia1Nombre: data.referencia1Nombre ?? null,
+      referencia1Relacion: data.referencia1Relacion ?? null,
+      referencia1Telefono: data.referencia1Telefono ?? null,
+      referencia2Nombre: data.referencia2Nombre ?? null,
+      referencia2Relacion: data.referencia2Relacion ?? null,
+      referencia2Telefono: data.referencia2Telefono ?? null,
+    }).returning()
+  } catch (err) {
+    if (esViolacionDocumentoDuplicado(err)) throw new Error('documento_duplicado')
+    throw err
+  }
+  await registrarAuditLog({ accion: 'persona.crear', entidadTipo: 'persona', entidadId: nuevo.id, cambios: { nombre: nuevo.nombre } })
   return nuevo as unknown as Persona
 }
 
 export async function actualizarPersonaAction(id: string, data: Partial<Pick<Persona, 'nombre' | 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>>): Promise<Persona | null> {
-  const [actualizado] = await db.update(s.personas).set(data).where(eq(s.personas.id, id)).returning()
+  let actualizado
+  try {
+    ;[actualizado] = await db.update(s.personas).set(data).where(eq(s.personas.id, id)).returning()
+  } catch (err) {
+    if (esViolacionDocumentoDuplicado(err)) throw new Error('documento_duplicado')
+    throw err
+  }
+  return (actualizado as unknown as Persona) ?? null
+}
+
+/** F10 (2026-08-17): soft-delete — desactiva la persona y en cascada (a nivel app, no FK) todos sus roles activos,
+ * para que deje de aparecer en selectores de rol (verificador, comercial, etc.) sin perder su historial. */
+export async function desactivarPersonaAction(id: string): Promise<Persona | null> {
+  const actualizado = await db.transaction(async (tx) => {
+    const [p] = await tx.update(s.personas).set({ activo: false }).where(eq(s.personas.id, id)).returning()
+    if (!p) return null
+    await tx.update(s.personasRoles).set({ activo: false }).where(eq(s.personasRoles.personaId, id))
+    return p
+  })
+  if (actualizado) await registrarAuditLog({ accion: 'persona.desactivar', entidadTipo: 'persona', entidadId: id })
+  return (actualizado as unknown as Persona) ?? null
+}
+
+export async function reactivarPersonaAction(id: string): Promise<Persona | null> {
+  const [actualizado] = await db.update(s.personas).set({ activo: true }).where(eq(s.personas.id, id)).returning()
+  if (actualizado) await registrarAuditLog({ accion: 'persona.reactivar', entidadTipo: 'persona', entidadId: id })
   return (actualizado as unknown as Persona) ?? null
 }
 
 export async function asignarRolAction(personaId: string, rolId: RolCanonico): Promise<PersonaRol> {
-  return db.transaction(async (tx) => {
+  const resultado = await db.transaction(async (tx) => {
     const [yaExiste] = await tx.select().from(s.personasRoles).where(and(eq(s.personasRoles.personaId, personaId), eq(s.personasRoles.rolId, rolId)))
     if (yaExiste) {
       if (!yaExiste.activo) {
@@ -275,6 +314,17 @@ export async function asignarRolAction(personaId: string, rolId: RolCanonico): P
     const [nuevo] = await tx.insert(s.personasRoles).values({ personaId, rolId, activo: true }).returning()
     return nuevo as unknown as PersonaRol
   })
+  await registrarAuditLog({ accion: 'rol.asignar', entidadTipo: 'persona', entidadId: personaId, cambios: { rolId } })
+  return resultado
+}
+
+/** F10 (2026-08-17): revoca un rol específico (activo=false) sin tocar los demás roles de la persona. */
+export async function desasignarRolAction(personaId: string, rolId: RolCanonico): Promise<PersonaRol | null> {
+  const [actualizado] = await db.update(s.personasRoles).set({ activo: false })
+    .where(and(eq(s.personasRoles.personaId, personaId), eq(s.personasRoles.rolId, rolId)))
+    .returning()
+  if (actualizado) await registrarAuditLog({ accion: 'rol.desasignar', entidadTipo: 'persona', entidadId: personaId, cambios: { rolId } })
+  return (actualizado as unknown as PersonaRol) ?? null
 }
 
 export async function actualizarEstadoModuloAction(id: string, estado: string): Promise<Modulo | null> {

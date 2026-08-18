@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { CopyField } from '@/components/veta/copy-field'
+import { Modal } from '@/components/veta/modal'
 import { useDataStore } from '@/lib/data'
 import {
   crearInvitacionEmpleadoAction,
   listarEstadoCuentasAction,
 } from '@/lib/auth/actions'
 import type { EstadoCuentaEmpleado } from '@/lib/auth/session'
+import type { PersonaRol, Persona } from '@/lib/data'
 
 type RolCanonico = 'admin' | 'comercial' | 'desarrollador' | 'compras' | 'taller' | 'finanzas' | 'supervisora_qa'
 
@@ -47,16 +49,34 @@ export default function EquipoPage() {
 
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nuevoEmail, setNuevoEmail] = useState('')
-  const [nuevoRolInvitacion, setNuevoRolInvitacion] = useState<RolCanonico>('desarrollador')
+  const [nuevoRolesInvitacion, setNuevoRolesInvitacion] = useState<RolCanonico[]>(['desarrollador'])
   const [crearFormVisible, setCrearFormVisible] = useState(false)
   const [asignarRolActivo, setAsignarRolActivo] = useState<string | null>(null)
-  const [nuevoRol, setNuevoRol] = useState<RolCanonico>('desarrollador')
+  const [nuevosRoles, setNuevosRoles] = useState<RolCanonico[]>([])
+
+  // F10 (2026-08-17): estado del form de creación — guard de doble-submit + error visible
+  // (antes "Guardar" no se deshabilitaba durante el await y los errores se tragaban en silencio).
+  const [creandoPersona, setCreandoPersona] = useState(false)
+  const [errorCrear, setErrorCrear] = useState<string | null>(null)
+  const [confirmarDuplicado, setConfirmarDuplicado] = useState(false)
+
+  // F10 (2026-08-17): búsqueda/filtro — la lista sin esto se vuelve inmanejable pasados ~15 empleados.
+  const [busqueda, setBusqueda] = useState('')
+  const [filtroRol, setFiltroRol] = useState<RolCanonico | ''>('')
+  const [mostrarInactivos, setMostrarInactivos] = useState(false)
+
+  // F10 (2026-08-17): key genérica ("desactivar:<id>", "quitar:<id>:<rol>", "reactivar:<id>")
+  // para deshabilitar el botón puntual en vuelo sin un state distinto por acción.
+  const [procesando, setProcesando] = useState<string | null>(null)
+  const [confirmDesactivar, setConfirmDesactivar] = useState<{ id: string; nombre: string } | null>(null)
+  const [confirmQuitarRol, setConfirmQuitarRol] = useState<{ personaId: string; rolId: RolCanonico; nombre: string; etiqueta: string } | null>(null)
 
   // D-08b (F10 2026-08-15): estado de cuentas de acceso (sin cuenta / invitación
   // pendiente / activa) por persona — server action saneada, nunca trae passwordHash.
   const [estadoCuentas, setEstadoCuentas] = useState<EstadoCuentaEmpleado[]>([])
   const [enlaceGenerado, setEnlaceGenerado] = useState<{ personaId: string; nombre: string; url: string } | null>(null)
   const [generandoAccesoPara, setGenerandoAccesoPara] = useState<string | null>(null)
+  const [errorAcceso, setErrorAcceso] = useState<Record<string, string>>({})
 
   const cargarEstadoCuentas = useCallback(async () => {
     setEstadoCuentas(await listarEstadoCuentasAction())
@@ -66,12 +86,22 @@ export default function EquipoPage() {
     cargarEstadoCuentas()
   }, [cargarEstadoCuentas])
 
-  const personasConRol = personasRolesActivos
-    .map((pr) => ({
-      personaRol: pr,
-      persona: personas.find(p => p.id === pr.personaId),
-    }))
-    .filter(p => p.persona)
+  // Agrupado por persona ACTIVA (no por personaRol, y no derivado de personasRolesActivos):
+  // una persona con varios roles muestra una sola tarjeta con un badge por rol, y una persona
+  // sin ningún rol activo (ej. tras "Quitar rol" sobre su único rol) sigue apareciendo en vez
+  // de desaparecer de la lista como si estuviera desactivada.
+  const busquedaNorm = busqueda.trim().toLowerCase()
+  const personasConRoles: { persona: Persona; roles: PersonaRol[] }[] = personas
+    .filter((p) => p.activo)
+    .filter((p) => !busquedaNorm || p.nombre.toLowerCase().includes(busquedaNorm))
+    .filter((p) => !filtroRol || personasRolesActivos.some((pr) => pr.personaId === p.id && pr.rolId === filtroRol))
+    .map((persona) => ({ persona, roles: personasRolesActivos.filter((pr) => pr.personaId === persona.id) }))
+
+  const personasInactivas = personas.filter((p) => !p.activo)
+
+  const toggleRol = (lista: RolCanonico[], setLista: (r: RolCanonico[]) => void, rol: RolCanonico) => {
+    setLista(lista.includes(rol) ? lista.filter(r => r !== rol) : [...lista, rol])
+  }
 
   // P-12 (D-15): candidatos a verificador = personas con rol comercial activo, dedup por personaId.
   const personasComerciales = personasRolesActivos
@@ -81,47 +111,117 @@ export default function EquipoPage() {
     .filter((p, idx, arr) => arr.findIndex(o => o.id === p.id) === idx)
 
   const handleCrearPersona = async () => {
-    if (!nuevoNombre.trim()) return
-    const emailTrim = nuevoEmail.trim()
-    const persona = await store.personas.crear({
-      nombre: nuevoNombre.trim(),
-      email: emailTrim || null,
-    })
-    await store.personasRoles.asignar(persona.id, nuevoRolInvitacion)
+    const nombreTrim = nuevoNombre.trim()
+    if (!nombreTrim || nuevoRolesInvitacion.length === 0) return
 
-    if (emailTrim) {
-      const resultado = await crearInvitacionEmpleadoAction({
-        personaId: persona.id,
-        email: emailTrim,
-        rol: nuevoRolInvitacion,
-        nombre: persona.nombre,
-      })
-      if (resultado.ok && resultado.token) {
-        setEnlaceGenerado({
-          personaId: persona.id,
-          nombre: persona.nombre,
-          url: `${window.location.origin}/erp/login/activar?token=${resultado.token}`,
-        })
-        await cargarEstadoCuentas()
-      }
+    const posibleDuplicado = personas.some(
+      (p) => p.activo && p.nombre.trim().toLowerCase() === nombreTrim.toLowerCase()
+    )
+    if (posibleDuplicado && !confirmarDuplicado) {
+      setErrorCrear(`Ya existe un empleado activo llamado "${nombreTrim}". Volvé a apretar "Guardar" si igual querés crear otro.`)
+      setConfirmarDuplicado(true)
+      return
     }
 
-    setNuevoNombre('')
-    setNuevoEmail('')
-    setNuevoRolInvitacion('desarrollador')
-    setCrearFormVisible(false)
+    setCreandoPersona(true)
+    setErrorCrear(null)
+    try {
+      const emailTrim = nuevoEmail.trim()
+      const persona = await store.personas.crear({
+        nombre: nombreTrim,
+        email: emailTrim || null,
+      })
+      for (const rol of nuevoRolesInvitacion) {
+        await store.personasRoles.asignar(persona.id, rol)
+      }
+
+      if (emailTrim) {
+        const resultado = await crearInvitacionEmpleadoAction({
+          personaId: persona.id,
+          email: emailTrim,
+          rol: nuevoRolesInvitacion[0],
+          nombre: persona.nombre,
+        })
+        if (resultado.ok && resultado.token) {
+          setEnlaceGenerado({
+            personaId: persona.id,
+            nombre: persona.nombre,
+            url: `${window.location.origin}/erp/login/activar?token=${resultado.token}`,
+          })
+          await cargarEstadoCuentas()
+        } else {
+          setErrorCrear(`${persona.nombre} se creó, pero ese email ya está en uso por otra cuenta de acceso — corregilo desde "Editar acceso" en su tarjeta.`)
+        }
+      }
+
+      setNuevoNombre('')
+      setNuevoEmail('')
+      setNuevoRolesInvitacion(['desarrollador'])
+      setConfirmarDuplicado(false)
+      setCrearFormVisible(false)
+    } catch (err) {
+      setErrorCrear(
+        err instanceof Error && err.message === 'documento_duplicado'
+          ? 'Ya existe un empleado con ese documento.'
+          : 'No se pudo crear el empleado. Intentá de nuevo.'
+      )
+    } finally {
+      setCreandoPersona(false)
+    }
   }
 
-  const handleAsignarRol = async (personaId: string) => {
-    await store.personasRoles.asignar(personaId, nuevoRol)
-    setAsignarRolActivo(null)
+  const handleAsignarRoles = async (personaId: string) => {
+    setProcesando(`rol:${personaId}`)
+    try {
+      for (const rol of nuevosRoles) {
+        await store.personasRoles.asignar(personaId, rol)
+      }
+      setAsignarRolActivo(null)
+      setNuevosRoles([])
+    } finally {
+      setProcesando(null)
+    }
   }
 
-  // D-08b: genera (o regenera) el enlace de autoregistro para una persona ya
-  // existente — cubre a las personas creadas antes de esta funcionalidad.
+  const handleQuitarRol = async () => {
+    if (!confirmQuitarRol) return
+    const { personaId, rolId } = confirmQuitarRol
+    setProcesando(`quitar:${personaId}:${rolId}`)
+    try {
+      await store.personasRoles.desasignar(personaId, rolId)
+    } finally {
+      setProcesando(null)
+      setConfirmQuitarRol(null)
+    }
+  }
+
+  const handleDesactivar = async () => {
+    if (!confirmDesactivar) return
+    setProcesando(`desactivar:${confirmDesactivar.id}`)
+    try {
+      await store.personas.desactivar(confirmDesactivar.id)
+    } finally {
+      setProcesando(null)
+      setConfirmDesactivar(null)
+    }
+  }
+
+  const handleReactivar = async (id: string) => {
+    setProcesando(`reactivar:${id}`)
+    try {
+      await store.personas.reactivar(id)
+    } finally {
+      setProcesando(null)
+    }
+  }
+
+  // D-08b: genera (o regenera/edita) el enlace de autoregistro para una persona —
+  // sirve tanto para "Generar acceso" (primera vez) como "Editar acceso" (cuenta ya
+  // activa, ej. corregir un email con typo: F10 2026-08-17, item 1+4 del lote Equipo).
   const handleGenerarAcceso = async (persona: { id: string; nombre: string; email: string | null }) => {
     if (!persona.email) return
     setGenerandoAccesoPara(persona.id)
+    setErrorAcceso((prev) => { const next = { ...prev }; delete next[persona.id]; return next })
     try {
       const rolActual = personasRolesActivos.find((pr) => pr.personaId === persona.id)?.rolId ?? 'desarrollador'
       const resultado = await crearInvitacionEmpleadoAction({
@@ -137,6 +237,8 @@ export default function EquipoPage() {
           url: `${window.location.origin}/erp/login/activar?token=${resultado.token}`,
         })
         await cargarEstadoCuentas()
+      } else {
+        setErrorAcceso((prev) => ({ ...prev, [persona.id]: 'Ese email ya está en uso por la cuenta de acceso de otra persona.' }))
       }
     } finally {
       setGenerandoAccesoPara(null)
@@ -176,7 +278,7 @@ export default function EquipoPage() {
               <input
                 type="text"
                 value={nuevoNombre}
-                onChange={(e) => setNuevoNombre(e.target.value)}
+                onChange={(e) => { setNuevoNombre(e.target.value); setConfirmarDuplicado(false); setErrorCrear(null) }}
                 placeholder="Ej: Juan Pérez"
                 className="rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none"
               />
@@ -194,31 +296,40 @@ export default function EquipoPage() {
                 Si lo completás, se genera de una vez un enlace de autoregistro para que el empleado ponga su propia contraseña.
               </span>
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-semibold text-text-heading">Rol</span>
-              <select
-                value={nuevoRolInvitacion}
-                onChange={(e) => setNuevoRolInvitacion(e.target.value as RolCanonico)}
-                className="rounded border border-border-subtle bg-bg-paper px-2 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none"
-              >
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-text-heading">Rol{nuevoRolesInvitacion.length > 1 ? 'es' : ''}</span>
+              <div className="grid gap-2 sm:grid-cols-2">
                 {Object.entries(ROLES_ETIQUETAS).map(([rol, etiqueta]) => (
-                  <option key={rol} value={rol}>{etiqueta}</option>
+                  <label key={rol} className="flex items-center gap-2 text-sm text-text-heading">
+                    <input
+                      type="checkbox"
+                      checked={nuevoRolesInvitacion.includes(rol as RolCanonico)}
+                      onChange={() => toggleRol(nuevoRolesInvitacion, setNuevoRolesInvitacion, rol as RolCanonico)}
+                    />
+                    {etiqueta}
+                  </label>
                 ))}
-              </select>
-            </label>
+              </div>
+              {nuevoRolesInvitacion.length === 0 && (
+                <span className="text-xs text-red-500">Elegí al menos un rol</span>
+              )}
+            </div>
+            {errorCrear && (
+              <p className="text-xs text-red-500">{errorCrear}</p>
+            )}
             <div className="flex items-center gap-2">
               <Button
                 variant="primary"
                 size="md"
                 onClick={handleCrearPersona}
-                disabled={!nuevoNombre.trim()}
+                disabled={!nuevoNombre.trim() || nuevoRolesInvitacion.length === 0 || creandoPersona}
               >
-                Guardar
+                {creandoPersona ? 'Guardando…' : confirmarDuplicado ? 'Crear igual' : 'Guardar'}
               </Button>
               <Button
                 variant="ghost"
                 size="md"
-                onClick={() => { setCrearFormVisible(false); setNuevoNombre(''); setNuevoEmail('') }}
+                onClick={() => { setCrearFormVisible(false); setNuevoNombre(''); setNuevoEmail(''); setNuevoRolesInvitacion(['desarrollador']); setErrorCrear(null); setConfirmarDuplicado(false) }}
               >
                 Cancelar
               </Button>
@@ -243,11 +354,69 @@ export default function EquipoPage() {
         </div>
       )}
 
+      {/* Buscador / filtro / ver inactivos (F10 2026-08-17) */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por nombre..."
+          className="rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none flex-1 min-w-[180px]"
+        />
+        <select
+          value={filtroRol}
+          onChange={(e) => setFiltroRol(e.target.value as RolCanonico | '')}
+          className="rounded border border-border-subtle bg-bg-paper px-2 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none"
+        >
+          <option value="">Todos los roles</option>
+          {Object.entries(ROLES_ETIQUETAS).map(([rol, etiqueta]) => (
+            <option key={rol} value={rol}>{etiqueta}</option>
+          ))}
+        </select>
+        <Button
+          variant={mostrarInactivos ? 'secondary' : 'ghost'}
+          size="md"
+          onClick={() => setMostrarInactivos((v) => !v)}
+        >
+          {mostrarInactivos ? 'Ver activos' : `Ver inactivos (${personasInactivas.length})`}
+        </Button>
+      </div>
+
       {/* Lista de personas con roles */}
+      {mostrarInactivos ? (
+        <div className="space-y-3">
+          {personasInactivas.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border-subtle bg-bg-paper p-8 text-center">
+              <p className="text-text-muted">No hay empleados desactivados</p>
+            </div>
+          ) : (
+            personasInactivas.map((persona) => (
+              <div key={persona.id} className="rounded-lg border border-dashed border-border-subtle bg-bg-paper p-4 opacity-80">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-text-muted line-through">{persona.nombre || '(sin nombre)'}</h3>
+                    <p className="text-xs text-text-muted mt-1">Empleado desactivado</p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    disabled={procesando === `reactivar:${persona.id}`}
+                    onClick={() => handleReactivar(persona.id)}
+                  >
+                    {procesando === `reactivar:${persona.id}` ? 'Reactivando…' : 'Reactivar'}
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      ) : (
       <div className="space-y-3">
-        {personasConRol.length === 0 ? (
+        {personasConRoles.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border-subtle bg-bg-paper p-8 text-center">
-            <p className="text-text-muted mb-4">No hay empleados con roles asignados</p>
+            <p className="text-text-muted mb-4">
+              {busqueda || filtroRol ? 'Ningún empleado activo coincide con el filtro' : 'No hay empleados activos'}
+            </p>
             <Button
               variant="primary"
               size="md"
@@ -257,75 +426,114 @@ export default function EquipoPage() {
             </Button>
           </div>
         ) : (
-          personasConRol.map(({ personaRol, persona }) => {
-            const cuenta = estadoCuentas.find((c) => c.personaId === persona?.id)
+          personasConRoles.map(({ persona, roles }) => {
+            const cuenta = estadoCuentas.find((c) => c.personaId === persona.id)
+            const rolesDisponibles = (Object.keys(ROLES_ETIQUETAS) as RolCanonico[])
+              .filter((rol) => !roles.some((r) => r.rolId === rol))
             return (
-            <div key={personaRol.id} className="rounded-lg border border-border-subtle bg-bg-raised p-4">
+            <div key={persona.id} className="rounded-lg border border-border-subtle bg-bg-raised p-4">
               <div className="flex items-center justify-between gap-4">
-                <Link href={`/erp/equipo/${persona?.id}`} className="flex-1 hover:opacity-80 transition-opacity">
-                  <h3 className="font-semibold text-text-heading hover:text-gold-400">
-                    {persona?.nombre || '(sin nombre)'}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge tone={ROLES_TONE[personaRol.rolId as RolCanonico]}>
-                      {ROLES_ETIQUETAS[personaRol.rolId as RolCanonico]}
-                    </Badge>
-                    <p className="text-xs text-text-muted">
-                      Desde: {new Date(personaRol.desde).toLocaleDateString('es-CO')}
-                    </p>
+                <div className="flex-1 min-w-0">
+                  <Link href={`/erp/equipo/${persona.id}`} className="hover:opacity-80 transition-opacity">
+                    <h3 className="inline font-semibold text-text-heading hover:text-gold-400">
+                      {persona.nombre || '(sin nombre)'}
+                    </h3>
+                  </Link>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {roles.length === 0 ? (
+                      <span className="text-xs text-text-muted">(sin roles activos)</span>
+                    ) : roles.map((personaRol) => {
+                      const rolLabel = ROLES_ETIQUETAS[personaRol.rolId as RolCanonico]
+                      const key = `quitar:${persona.id}:${personaRol.rolId}`
+                      return (
+                        <span key={personaRol.id} className="inline-flex items-center gap-1">
+                          <Badge tone={ROLES_TONE[personaRol.rolId as RolCanonico]}>{rolLabel}</Badge>
+                          <button
+                            type="button"
+                            title={`Quitar rol ${rolLabel}`}
+                            disabled={procesando === key}
+                            onClick={() => setConfirmQuitarRol({ personaId: persona.id, rolId: personaRol.rolId as RolCanonico, nombre: persona.nombre, etiqueta: rolLabel })}
+                            className="text-text-muted hover:text-red-500 text-xs leading-none disabled:opacity-40"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      )
+                    })}
+                    {roles[0] && (
+                      <p className="text-xs text-text-muted">
+                        Desde: {new Date(roles[0].desde).toLocaleDateString('es-CO')}
+                      </p>
+                    )}
                   </div>
-                </Link>
+                </div>
 
-                {/* Asignar otro rol */}
-                {asignarRolActivo === personaRol.personaId ? (
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={nuevoRol}
-                      onChange={(e) => setNuevoRol(e.target.value as RolCanonico)}
-                      className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-                    >
-                      {Object.entries(ROLES_ETIQUETAS).map(([rol, etiqueta]) => (
-                        <option key={rol} value={rol}>{etiqueta}</option>
-                      ))}
-                    </select>
-                    <Button
-                      variant="primary"
-                      size="md"
-                      onClick={() => handleAsignarRol(personaRol.personaId)}
-                    >
-                      ✓
-                    </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Asignar otro rol */}
+                  {asignarRolActivo === persona.id ? (
+                    <div className="flex items-start gap-2">
+                      <div className="grid gap-1">
+                        {rolesDisponibles.length === 0 ? (
+                          <span className="text-xs text-text-muted">Ya tiene todos los roles</span>
+                        ) : rolesDisponibles.map((rol) => (
+                          <label key={rol} className="flex items-center gap-2 text-xs text-text-heading">
+                            <input
+                              type="checkbox"
+                              checked={nuevosRoles.includes(rol)}
+                              onChange={() => toggleRol(nuevosRoles, setNuevosRoles, rol)}
+                            />
+                            {ROLES_ETIQUETAS[rol]}
+                          </label>
+                        ))}
+                      </div>
+                      <Button
+                        variant="primary"
+                        size="md"
+                        disabled={nuevosRoles.length === 0 || procesando === `rol:${persona.id}`}
+                        onClick={() => handleAsignarRoles(persona.id)}
+                      >
+                        ✓
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="md"
+                        onClick={() => { setAsignarRolActivo(null); setNuevosRoles([]) }}
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
                     <Button
                       variant="ghost"
                       size="md"
-                      onClick={() => setAsignarRolActivo(null)}
+                      onClick={() => { setAsignarRolActivo(persona.id); setNuevosRoles([]) }}
                     >
-                      ✕
+                      Asignar otro rol
                     </Button>
-                  </div>
-                ) : (
+                  )}
                   <Button
                     variant="ghost"
                     size="md"
-                    onClick={() => { setAsignarRolActivo(personaRol.personaId); setNuevoRol('desarrollador') }}
+                    disabled={procesando === `desactivar:${persona.id}`}
+                    onClick={() => setConfirmDesactivar({ id: persona.id, nombre: persona.nombre })}
                   >
-                    Asignar otro rol
+                    Desactivar
                   </Button>
-                )}
+                </div>
               </div>
 
               {/* Estado de cuenta de acceso (D-08b) */}
-              <div className="mt-3 pt-3 border-t border-border-subtle/50 flex items-center justify-between gap-4">
-                {cuenta?.activo ? (
-                  <Badge tone="info">Cuenta activa · {cuenta.email}</Badge>
-                ) : cuenta ? (
-                  <Badge tone="warning">
-                    Invitación pendiente{cuenta.inviteTokenExpiraEn ? ` · vence ${new Date(cuenta.inviteTokenExpiraEn).toLocaleDateString('es-CO')}` : ''}
-                  </Badge>
-                ) : (
-                  <Badge tone="neutral">Sin cuenta de acceso</Badge>
-                )}
-                {!cuenta?.activo && persona && (
+              <div className="mt-3 pt-3 border-t border-border-subtle/50">
+                <div className="flex items-center justify-between gap-4">
+                  {cuenta?.activo ? (
+                    <Badge tone="info">Cuenta activa · {cuenta.email}</Badge>
+                  ) : cuenta ? (
+                    <Badge tone="warning">
+                      Invitación pendiente{cuenta.inviteTokenExpiraEn ? ` · vence ${new Date(cuenta.inviteTokenExpiraEn).toLocaleDateString('es-CO')}` : ''}
+                    </Badge>
+                  ) : (
+                    <Badge tone="neutral">Sin cuenta de acceso</Badge>
+                  )}
                   <Button
                     variant="secondary"
                     size="md"
@@ -333,14 +541,54 @@ export default function EquipoPage() {
                     title={!persona.email ? 'Agregá un email en el perfil de esta persona primero' : undefined}
                     onClick={() => handleGenerarAcceso(persona)}
                   >
-                    {generandoAccesoPara === persona.id ? 'Generando…' : cuenta ? 'Reenviar enlace' : 'Generar acceso'}
+                    {generandoAccesoPara === persona.id ? 'Generando…' : cuenta?.activo ? 'Editar acceso' : cuenta ? 'Reenviar enlace' : 'Generar acceso'}
                   </Button>
+                </div>
+                {errorAcceso[persona.id] && (
+                  <p className="text-xs text-red-500 mt-2">{errorAcceso[persona.id]}</p>
                 )}
               </div>
             </div>
           )})
         )}
       </div>
+      )}
+
+      {/* Confirmación: quitar rol (F10 2026-08-17) */}
+      <Modal
+        open={confirmQuitarRol !== null}
+        onClose={() => setConfirmQuitarRol(null)}
+        title="Quitar rol"
+      >
+        <div className="space-y-4">
+          <p>
+            ¿Quitarle el rol <strong>{confirmQuitarRol?.etiqueta}</strong> a <strong>{confirmQuitarRol?.nombre}</strong>?
+            Va a perder los permisos asociados a ese rol.
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="primary" size="md" onClick={handleQuitarRol}>Quitar rol</Button>
+            <Button variant="ghost" size="md" onClick={() => setConfirmQuitarRol(null)}>Cancelar</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirmación: desactivar empleado (F10 2026-08-17) */}
+      <Modal
+        open={confirmDesactivar !== null}
+        onClose={() => setConfirmDesactivar(null)}
+        title="Desactivar empleado"
+      >
+        <div className="space-y-4">
+          <p>
+            ¿Desactivar a <strong>{confirmDesactivar?.nombre}</strong>? Deja de aparecer en la lista de empleados
+            activos y pierde todos sus roles (podés reactivarlo y reasignarle roles después desde &quot;Ver inactivos&quot;).
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="primary" size="md" onClick={handleDesactivar}>Desactivar</Button>
+            <Button variant="ghost" size="md" onClick={() => setConfirmDesactivar(null)}>Cancelar</Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Info sobre roles */}
       <div className="mt-8 p-4 rounded-lg border border-border-subtle/50 bg-bg-paper">

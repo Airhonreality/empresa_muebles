@@ -91,11 +91,11 @@ const estaciones: Proyecto[] = [
 export const PROYECTOS = estaciones
 
 export const ESPACIOS: EspacioVariante[] = [
-  { id: UUID('esp01'), proyectoId: UUID('proj01'), nombreEspacio: 'Cocina principal', nombreVariante: 'Inicial', descripcion: 'Muebles bajos + altos + isla central', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '3.00', jornadasEnsamblajeTaller: '5.00', jornadasInstalacionObra: '4.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
-  { id: UUID('esp02'), proyectoId: UUID('proj01'), nombreEspacio: 'Isla central', nombreVariante: 'Inicial', descripcion: 'Isla con cubierta en granito', activa: false, visibleEnPropuestaPublica: true, orden: 1, jornadasDesarrolloTecnico: '2.00', jornadasEnsamblajeTaller: '3.00', jornadasInstalacionObra: '2.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
-  { id: UUID('esp03'), proyectoId: UUID('proj01'), nombreEspacio: 'Despensa', nombreVariante: 'Inicial', descripcion: 'Estantería de despensa en roble', activa: true, visibleEnPropuestaPublica: true, orden: 2, jornadasDesarrolloTecnico: '1.00', jornadasEnsamblajeTaller: '2.00', jornadasInstalacionObra: '1.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
-  { id: UUID('esp04'), proyectoId: UUID('proj02'), nombreEspacio: 'Closet principal', nombreVariante: 'Inicial', descripcion: 'Closet vestier completo', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '2.00', jornadasEnsamblajeTaller: '4.00', jornadasInstalacionObra: '3.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
-  { id: UUID('esp05'), proyectoId: UUID('proj03'), nombreEspacio: 'Escritorio 1', nombreVariante: 'Inicial', descripcion: 'Escritorio ejecutivo 1.60m', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '1.00', jornadasEnsamblajeTaller: '2.00', jornadasInstalacionObra: '1.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
+  { id: UUID('esp01'), proyectoId: UUID('proj01'), nombreEspacio: 'Cocina principal', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Muebles bajos + altos + isla central', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '3.00', jornadasEnsamblajeTaller: '5.00', jornadasInstalacionObra: '4.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
+  { id: UUID('esp02'), proyectoId: UUID('proj01'), nombreEspacio: 'Isla central', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Isla con cubierta en granito', activa: false, visibleEnPropuestaPublica: true, orden: 1, jornadasDesarrolloTecnico: '2.00', jornadasEnsamblajeTaller: '3.00', jornadasInstalacionObra: '2.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
+  { id: UUID('esp03'), proyectoId: UUID('proj01'), nombreEspacio: 'Despensa', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Estantería de despensa en roble', activa: true, visibleEnPropuestaPublica: true, orden: 2, jornadasDesarrolloTecnico: '1.00', jornadasEnsamblajeTaller: '2.00', jornadasInstalacionObra: '1.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
+  { id: UUID('esp04'), proyectoId: UUID('proj02'), nombreEspacio: 'Closet principal', nombreVariante: 'Inicial', tipoEspacio: 'closet', descripcion: 'Closet vestier completo', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '2.00', jornadasEnsamblajeTaller: '4.00', jornadasInstalacionObra: '3.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
+  { id: UUID('esp05'), proyectoId: UUID('proj03'), nombreEspacio: 'Escritorio 1', nombreVariante: 'Inicial', tipoEspacio: 'estudio_home_office', descripcion: 'Escritorio ejecutivo 1.60m', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '1.00', jornadasEnsamblajeTaller: '2.00', jornadasInstalacionObra: '1.00', colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
 ]
 
 export const ITEMS: ItemVariante[] = [
@@ -163,6 +163,7 @@ const SIN_DATOS_LEGALES = {
   referencia2Nombre: null,
   referencia2Relacion: null,
   referencia2Telefono: null,
+  activo: true,
 } as const
 
 export const PERSONAS: Persona[] = [
@@ -414,8 +415,8 @@ export const ACABADOS_MUESTRAS: AcabadoMuestra[] = [
 // Decisión T-03 (2026-08-12): campos `barrio` y `tipoProyecto` agregados para ubicación real (I-049).
 
 export const PORTAFOLIO: Portafolio[] = [
-  { id: UUID('port01'), proyectoId: UUID('proj06'), titulo: 'Cocina compacta en cedro — Díaz', descripcionComercial: 'Cocina pequeña con electrodomésticos integrados y aprovechamiento total del espacio.', categoriaEspacio: 'cocina', materialesDestacados: ['Cedro', 'Granito'], precioReferencial: 'desde $8.000.000 COP', imagenPortafolioUrl: null, galeriaPortafolioUrl: [], barrio: 'Chicó', tipoProyecto: 'Residencial', publicado: true, destacado: true, orden: 0, slug: 'cocina-compacta-diaz', createdAt: '2026-06-05T09:00:00Z', updatedAt: '2026-06-05T09:00:00Z' },
-  { id: UUID('port02'), proyectoId: UUID('proj12'), titulo: 'Cocina gourmet en nogal — Bosque', descripcionComercial: 'Isla doble y acabados premium para cocina gourmet.', categoriaEspacio: 'cocina', materialesDestacados: ['Nogal', 'Acero inoxidable'], precioReferencial: '$15.000.000 - $20.000.000 COP', imagenPortafolioUrl: null, galeriaPortafolioUrl: [], barrio: 'Rosales', tipoProyecto: 'Residencial', publicado: false, destacado: false, orden: 1, slug: 'cocina-gourmet-bosque', createdAt: '2026-08-05T09:00:00Z', updatedAt: '2026-08-05T09:00:00Z' },
+  { id: UUID('port01'), proyectoId: UUID('proj06'), titulo: 'Cocina compacta en cedro — Díaz', descripcionComercial: 'Cocina pequeña con electrodomésticos integrados y aprovechamiento total del espacio.', categoriaEspacio: 'cocina', espacioVarianteId: null, materialesDestacados: ['Cedro', 'Granito'], precioReferencial: 'desde $8.000.000 COP', imagenPortafolioUrl: null, galeriaPortafolioUrl: [], barrio: 'Chicó', tipoProyecto: 'Residencial', publicado: true, destacado: true, orden: 0, slug: 'cocina-compacta-diaz', createdAt: '2026-06-05T09:00:00Z', updatedAt: '2026-06-05T09:00:00Z' },
+  { id: UUID('port02'), proyectoId: UUID('proj12'), titulo: 'Cocina gourmet en nogal — Bosque', descripcionComercial: 'Isla doble y acabados premium para cocina gourmet.', categoriaEspacio: 'cocina', espacioVarianteId: null, materialesDestacados: ['Nogal', 'Acero inoxidable'], precioReferencial: '$15.000.000 - $20.000.000 COP', imagenPortafolioUrl: null, galeriaPortafolioUrl: [], barrio: 'Rosales', tipoProyecto: 'Residencial', publicado: false, destacado: false, orden: 1, slug: 'cocina-gourmet-bosque', createdAt: '2026-08-05T09:00:00Z', updatedAt: '2026-08-05T09:00:00Z' },
 ]
 
 // --- Testimonios (REGISTRO §10, DC-1 ACTIVA 2026-08-09) ---

@@ -82,6 +82,10 @@ export default function PersonaPerfilPage() {
     referencia2Relacion: persona?.referencia2Relacion || '',
     referencia2Telefono: persona?.referencia2Telefono || '',
   })
+  // F10 (2026-08-17): guardar podía fallar en silencio (ej. documento duplicado, ahora con
+  // constraint único en el schema) sin mostrar nada — se tragaba la excepción sin más.
+  const [errorGuardar, setErrorGuardar] = useState<string | null>(null)
+  const [guardando, setGuardando] = useState(false)
 
   if (!persona) {
     return (
@@ -95,36 +99,48 @@ export default function PersonaPerfilPage() {
   }
 
   const handleGuardar = async () => {
-    const updated = await store.personas.actualizar(personaId, {
-      nombre: formData.nombre.trim(),
-      documento: formData.documento.trim() || null,
-      telefono: formData.telefono.trim() || null,
-      email: formData.email.trim() || null,
-      fotoUrl: formData.fotoUrl[0] || null,
-      direccion: formData.direccion.trim() || null,
-      referencia1Nombre: formData.referencia1Nombre.trim() || null,
-      referencia1Relacion: formData.referencia1Relacion.trim() || null,
-      referencia1Telefono: formData.referencia1Telefono.trim() || null,
-      referencia2Nombre: formData.referencia2Nombre.trim() || null,
-      referencia2Relacion: formData.referencia2Relacion.trim() || null,
-      referencia2Telefono: formData.referencia2Telefono.trim() || null,
-    })
-    if (updated) {
-      setEditMode(false)
-      setFormData({
-        nombre: updated.nombre,
-        documento: updated.documento || '',
-        telefono: updated.telefono || '',
-        email: updated.email || '',
-        fotoUrl: updated.fotoUrl ? [updated.fotoUrl] : [],
-        direccion: updated.direccion || '',
-        referencia1Nombre: updated.referencia1Nombre || '',
-        referencia1Relacion: updated.referencia1Relacion || '',
-        referencia1Telefono: updated.referencia1Telefono || '',
-        referencia2Nombre: updated.referencia2Nombre || '',
-        referencia2Relacion: updated.referencia2Relacion || '',
-        referencia2Telefono: updated.referencia2Telefono || '',
+    setGuardando(true)
+    setErrorGuardar(null)
+    try {
+      const updated = await store.personas.actualizar(personaId, {
+        nombre: formData.nombre.trim(),
+        documento: formData.documento.trim() || null,
+        telefono: formData.telefono.trim() || null,
+        email: formData.email.trim() || null,
+        fotoUrl: formData.fotoUrl[0] || null,
+        direccion: formData.direccion.trim() || null,
+        referencia1Nombre: formData.referencia1Nombre.trim() || null,
+        referencia1Relacion: formData.referencia1Relacion.trim() || null,
+        referencia1Telefono: formData.referencia1Telefono.trim() || null,
+        referencia2Nombre: formData.referencia2Nombre.trim() || null,
+        referencia2Relacion: formData.referencia2Relacion.trim() || null,
+        referencia2Telefono: formData.referencia2Telefono.trim() || null,
       })
+      if (updated) {
+        setEditMode(false)
+        setFormData({
+          nombre: updated.nombre,
+          documento: updated.documento || '',
+          telefono: updated.telefono || '',
+          email: updated.email || '',
+          fotoUrl: updated.fotoUrl ? [updated.fotoUrl] : [],
+          direccion: updated.direccion || '',
+          referencia1Nombre: updated.referencia1Nombre || '',
+          referencia1Relacion: updated.referencia1Relacion || '',
+          referencia1Telefono: updated.referencia1Telefono || '',
+          referencia2Nombre: updated.referencia2Nombre || '',
+          referencia2Relacion: updated.referencia2Relacion || '',
+          referencia2Telefono: updated.referencia2Telefono || '',
+        })
+      }
+    } catch (err) {
+      setErrorGuardar(
+        err instanceof Error && err.message === 'documento_duplicado'
+          ? 'Ya existe otro empleado con ese documento.'
+          : 'No se pudo guardar. Intentá de nuevo.'
+      )
+    } finally {
+      setGuardando(false)
     }
   }
 
@@ -245,19 +261,22 @@ export default function PersonaPerfilPage() {
               </label>
 
               {/* Botones */}
+              {errorGuardar && (
+                <p className="text-xs text-red-500">{errorGuardar}</p>
+              )}
               <div className="flex items-center gap-2 pt-4">
                 <Button
                   variant="primary"
                   size="md"
                   onClick={handleGuardar}
-                  disabled={!formData.nombre.trim()}
+                  disabled={!formData.nombre.trim() || guardando}
                 >
-                  Guardar
+                  {guardando ? 'Guardando…' : 'Guardar'}
                 </Button>
                 <Button
                   variant="ghost"
                   size="md"
-                  onClick={() => setEditMode(false)}
+                  onClick={() => { setEditMode(false); setErrorGuardar(null) }}
                 >
                   Cancelar
                 </Button>

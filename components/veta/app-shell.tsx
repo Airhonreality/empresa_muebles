@@ -8,13 +8,15 @@ import { NavItem } from '@/components/veta/nav-item';
 import { MetaItem } from '@/components/veta/meta-item';
 import { WhatsappFloat } from '@/components/veta/whatsapp-float';
 
+// Slugs F-09/F-14 tal cual contenido_F09_landings.md / disenio_F14_pisos_madera.md
+// (corregidos 2026-08-17: 4 de 7 no coincidían con las rutas reales, causaban 404).
 const categoriasEspacios = [
-  { href: '/espacios/cocinas-integrales', label: 'Cocinas Integrales' },
-  { href: '/espacios/closets-y-vestidores', label: 'Closets y Vestidores' },
+  { href: '/espacios/cocinas-integrales-bogota', label: 'Cocinas Integrales' },
+  { href: '/espacios/closets-vestidores-bogota', label: 'Closets y Vestidores' },
   { href: '/espacios/centros-de-entretenimiento', label: 'Centros de Entretenimiento' },
-  { href: '/espacios/estudios-y-home-office', label: 'Estudios y Home Office' },
+  { href: '/espacios/estudios-home-office', label: 'Estudios y Home Office' },
   { href: '/espacios/cavas-y-bares', label: 'Cavas y Bares' },
-  { href: '/espacios/consolas-y-recibidores', label: 'Consolas y Recibidores' },
+  { href: '/espacios/consolas-recibidores', label: 'Consolas y Recibidores' },
   { href: '/espacios/pisos-de-madera', label: 'Pisos de Madera' },
 ];
 

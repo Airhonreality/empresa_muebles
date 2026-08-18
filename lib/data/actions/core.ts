@@ -102,6 +102,7 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
       proyectoId: data.proyectoId,
       nombreEspacio: data.nombreEspacio,
       nombreVariante: data.nombreVariante ?? 'Inicial',
+      tipoEspacio: data.tipoEspacio ?? null,
       descripcion: data.descripcion ?? null,
       activa: data.activa ?? true,
       visibleEnPropuestaPublica: data.visibleEnPropuestaPublica ?? true,
@@ -128,7 +129,7 @@ export async function actualizarJornadasAction(
 
 export async function actualizarEspacioAction(
   id: string,
-  partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
+  partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
 ): Promise<EspacioVariante | null> {
   const [actualizado] = await db.update(s.espacioVariantes).set(partial).where(eq(s.espacioVariantes.id, id)).returning()
   return (actualizado as unknown as EspacioVariante) ?? null
@@ -147,7 +148,7 @@ export async function duplicarEspacioAction(id: string, opciones: { vacio: boole
 
     const base = opciones.vacio
       ? {
-          proyectoId: origen.proyectoId, nombreEspacio, nombreVariante, descripcion: null,
+          proyectoId: origen.proyectoId, nombreEspacio, nombreVariante, tipoEspacio: origen.tipoEspacio, descripcion: null,
           activa: esGrupoNuevo, visibleEnPropuestaPublica: true, orden: nuevoOrden,
           jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0',
           colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [],

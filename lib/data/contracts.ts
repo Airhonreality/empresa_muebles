@@ -51,6 +51,8 @@ export interface EspacioVariante {
   proyectoId: string
   nombreEspacio: string
   nombreVariante: string
+  /** Tipo canónico del espacio (lib/catalogos/tipos-espacio.ts) — Portafolio lo hereda vía espacioVarianteId. */
+  tipoEspacio: string | null
   descripcion: string | null
   /** Variante activa (la que se cotiza y factura). Se controla desde el header/tab del espacio, no desde formulario. */
   activa: boolean
@@ -337,6 +339,8 @@ export interface Persona {
   referencia2Nombre: string | null
   referencia2Relacion: string | null
   referencia2Telefono: string | null
+  /** F10 (2026-08-17): soft-delete — false = empleado desactivado, oculto de los listados operativos. */
+  activo: boolean
 }
 
 export interface PersonaRol {
@@ -794,6 +798,8 @@ export interface Portafolio {
   titulo: string
   descripcionComercial: string | null
   categoriaEspacio: string
+  /** Espacio de origen dentro del proyecto — cuando está seteado, categoriaEspacio se hereda de él. */
+  espacioVarianteId: string | null
   materialesDestacados: string[]
   /** F-03 R2: rango estimado ("desde $8M COP"), nunca cifra exacta — validado en UI, no en el store. */
   precioReferencial: string | null
@@ -811,6 +817,19 @@ export interface Portafolio {
   slug: string
   createdAt: string
   updatedAt: string
+}
+
+// Renders conceptuales (F09, 2026-08-17): diseños propios, no proyectos reales entregados —
+// relleno visual por categoría mientras esa categoría no tiene fotos reales publicadas. Se
+// muestran siempre etiquetados "Render conceptual" en público (regla anti-invención del arnés).
+export interface RenderConceptual {
+  id: string
+  tipoEspacio: string
+  imagenUrl: string
+  titulo: string | null
+  visible: boolean
+  orden: number
+  createdAt: string
 }
 
 // --- Testimonios (REGISTRO §10, DC-1 ACTIVA 2026-08-09) ---
@@ -894,7 +913,7 @@ export interface DataStore {
     porProyecto(proyectoId: string): EspacioVariante[]
     crear(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante>
     actualizarJornadas(id: string, jornadas: { jornadasDesarrolloTecnico: string; jornadasEnsamblajeTaller: string; jornadasInstalacionObra: string }): Promise<EspacioVariante | null>
-    actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null>
+    actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null>
     /**
      * Duplica una variante existente. Sin `nuevoNombreEspacio`: agrega una variante nueva
      * al mismo espacio (mismo `nombreEspacio`, `activa: false`). Con `nuevoNombreEspacio`:
@@ -1020,10 +1039,15 @@ export interface DataStore {
     crear(data: Partial<Pick<Persona, 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>> & { nombre: string }): Promise<Persona>
     /** D-08a: edición de datos de contacto desde el perfil (vista gerente). F10 2026-08-15: + dirección/referencias. */
     actualizar(id: string, data: Partial<Pick<Persona, 'nombre' | 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>>): Promise<Persona | null>
+    /** F10 (2026-08-17): soft-delete — desactiva la persona y todos sus roles activos (cascada a nivel app). */
+    desactivar(id: string): Promise<Persona | null>
+    reactivar(id: string): Promise<Persona | null>
   }
   personasRoles: {
     activos(): PersonaRol[]
     asignar(personaId: string, rolId: RolCanonico): Promise<PersonaRol>
+    /** F10 (2026-08-17): revoca un rol específico sin tocar los demás. */
+    desasignar(personaId: string, rolId: RolCanonico): Promise<PersonaRol | null>
   }
   // --- F3: Producción (mínimo para gates) ---
   modulos: {
@@ -1219,9 +1243,16 @@ export interface DataStore {
      publicados(): Portafolio[]
      porSlug(slug: string): Portafolio | undefined
      crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string; slug: string }): Promise<Portafolio>
-     actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>): Promise<Portafolio | null>
+     actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'espacioVarianteId' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>): Promise<Portafolio | null>
       publicar(id: string): Promise<Portafolio | null>
       despublicar(id: string): Promise<Portafolio | null>
+    }
+    renderesConceptuales: {
+      listar(): RenderConceptual[]
+      porTipoEspacio(tipoEspacio: string): RenderConceptual[]
+      crear(data: { tipoEspacio: string; imagenUrl: string; titulo?: string | null }): Promise<RenderConceptual>
+      actualizar(id: string, partial: Partial<Pick<RenderConceptual, 'tipoEspacio' | 'imagenUrl' | 'titulo' | 'visible' | 'orden'>>): Promise<RenderConceptual | null>
+      eliminar(id: string): Promise<boolean>
     }
     testimonios: {
       listar(): Testimonio[]

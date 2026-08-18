@@ -8,7 +8,7 @@ import type {
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
-  BitacoraArticulo, Testimonio,
+  BitacoraArticulo, Testimonio, RenderConceptual,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { derivarDesenlace, derivarReduccionComision, P18, P33 } from '../modules/f3/gates'
@@ -106,6 +106,7 @@ export function createMockStore(): DataStore {
 
   // Testimonios (DC-1 ACTIVA 2026-08-09)
   const testimonios: Testimonio[] = []
+  const renders: RenderConceptual[] = []
 
   // F4 dominios (compras: recepción, herramientas — P-13/P-14/P-15)
   const itemsOrdenCompra: ItemOrdenCompra[] = deepClone(ITEMS_ORDEN_COMPRA)
@@ -283,6 +284,7 @@ export function createMockStore(): DataStore {
           proyectoId: data.proyectoId,
           nombreEspacio: data.nombreEspacio,
           nombreVariante: data.nombreVariante ?? 'Inicial',
+          tipoEspacio: data.tipoEspacio ?? null,
           descripcion: data.descripcion ?? null,
           activa: data.activa ?? true,
           visibleEnPropuestaPublica: data.visibleEnPropuestaPublica ?? true,
@@ -311,7 +313,7 @@ export function createMockStore(): DataStore {
         notify()
         return espacios[idx]
       },
-      async actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'descripcion' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null> {
+      async actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null> {
         const idx = espacios.findIndex(e => e.id === id)
         if (idx === -1) return null
         espacios[idx] = { ...espacios[idx], ...partial }
@@ -336,6 +338,7 @@ export function createMockStore(): DataStore {
               proyectoId: origen.proyectoId,
               nombreEspacio,
               nombreVariante,
+              tipoEspacio: origen.tipoEspacio,
               descripcion: null,
               activa: esGrupoNuevo,
               visibleEnPropuestaPublica: true,
@@ -1022,6 +1025,9 @@ export function createMockStore(): DataStore {
         return personas.find(p => p.id === id)
       },
       async crear(data: Partial<Pick<Persona, 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>> & { nombre: string }): Promise<Persona> {
+        if (data.documento && personas.some(p => p.documento === data.documento)) {
+          throw new Error('documento_duplicado')
+        }
         const nuevo: Persona = {
           id: generateId('p'),
           nombre: data.nombre,
@@ -1036,6 +1042,7 @@ export function createMockStore(): DataStore {
           referencia2Nombre: data.referencia2Nombre ?? null,
           referencia2Relacion: data.referencia2Relacion ?? null,
           referencia2Telefono: data.referencia2Telefono ?? null,
+          activo: true,
         }
         personas.push(nuevo)
         notify()
@@ -1044,7 +1051,27 @@ export function createMockStore(): DataStore {
       async actualizar(id: string, data: Partial<Pick<Persona, 'nombre' | 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>>): Promise<Persona | null> {
         const idx = personas.findIndex(p => p.id === id)
         if (idx === -1) return null
+        if (data.documento && personas.some(p => p.documento === data.documento && p.id !== id)) {
+          throw new Error('documento_duplicado')
+        }
         personas[idx] = { ...personas[idx], ...data }
+        notify()
+        return personas[idx]
+      },
+      async desactivar(id: string): Promise<Persona | null> {
+        const idx = personas.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        personas[idx] = { ...personas[idx], activo: false }
+        for (let i = 0; i < personasRoles.length; i++) {
+          if (personasRoles[i].personaId === id) personasRoles[i] = { ...personasRoles[i], activo: false }
+        }
+        notify()
+        return personas[idx]
+      },
+      async reactivar(id: string): Promise<Persona | null> {
+        const idx = personas.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        personas[idx] = { ...personas[idx], activo: true }
         notify()
         return personas[idx]
       },
@@ -1060,8 +1087,9 @@ export function createMockStore(): DataStore {
           if (!yaExiste.activo) {
             const idx = personasRoles.findIndex(r => r.id === yaExiste.id)
             personasRoles[idx] = { ...yaExiste, activo: true }
+            notify()
+            return personasRoles[idx]
           }
-          notify()
           return yaExiste
         }
         const nuevo: PersonaRol = {
@@ -1074,6 +1102,13 @@ export function createMockStore(): DataStore {
         personasRoles.push(nuevo)
         notify()
         return nuevo
+      },
+      async desasignar(personaId: string, rolId: RolCanonico): Promise<PersonaRol | null> {
+        const idx = personasRoles.findIndex(r => r.personaId === personaId && r.rolId === rolId && r.activo)
+        if (idx === -1) return null
+        personasRoles[idx] = { ...personasRoles[idx], activo: false }
+        notify()
+        return personasRoles[idx]
       },
     },
 
@@ -2164,6 +2199,7 @@ export function createMockStore(): DataStore {
            titulo: data.titulo,
            descripcionComercial: data.descripcionComercial ?? null,
            categoriaEspacio: data.categoriaEspacio,
+           espacioVarianteId: data.espacioVarianteId ?? null,
            materialesDestacados: data.materialesDestacados ?? [],
            precioReferencial: data.precioReferencial ?? null,
            imagenPortafolioUrl: data.imagenPortafolioUrl ?? null,
@@ -2181,7 +2217,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-       async actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>): Promise<Portafolio | null> {
+       async actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'espacioVarianteId' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>): Promise<Portafolio | null> {
         const idx = portafolio.findIndex(p => p.id === id)
         if (idx === -1) return null
         portafolio[idx] = { ...portafolio[idx], ...partial, updatedAt: new Date().toISOString() }
@@ -2201,6 +2237,46 @@ export function createMockStore(): DataStore {
         portafolio[idx] = { ...portafolio[idx], publicado: false, updatedAt: new Date().toISOString() }
         notify()
         return portafolio[idx]
+      },
+    },
+
+    renderesConceptuales: {
+      listar(): RenderConceptual[] {
+        return renders
+      },
+      porTipoEspacio(tipoEspacio: string): RenderConceptual[] {
+        return renders
+          .filter(r => r.tipoEspacio === tipoEspacio && r.visible)
+          .slice()
+          .sort((a, b) => a.orden - b.orden)
+      },
+      async crear(data: { tipoEspacio: string; imagenUrl: string; titulo?: string | null }): Promise<RenderConceptual> {
+        const nuevo: RenderConceptual = {
+          id: generateId('render'),
+          tipoEspacio: data.tipoEspacio,
+          imagenUrl: data.imagenUrl,
+          titulo: data.titulo ?? null,
+          visible: true,
+          orden: renders.length,
+          createdAt: new Date().toISOString(),
+        }
+        renders.push(nuevo)
+        notify()
+        return nuevo
+      },
+      async actualizar(id: string, partial: Partial<Pick<RenderConceptual, 'tipoEspacio' | 'imagenUrl' | 'titulo' | 'visible' | 'orden'>>): Promise<RenderConceptual | null> {
+        const idx = renders.findIndex(r => r.id === id)
+        if (idx === -1) return null
+        renders[idx] = { ...renders[idx], ...partial }
+        notify()
+        return renders[idx]
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const idx = renders.findIndex(r => r.id === id)
+        if (idx === -1) return false
+        renders.splice(idx, 1)
+        notify()
+        return true
       },
     },
 

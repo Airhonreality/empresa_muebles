@@ -57,6 +57,20 @@
       "when": 1786824399191,
       "tag": "0007_curvy_trish_tilby",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786996500894,
+      "tag": "0008_talented_magus",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787010689763,
+      "tag": "0009_redundant_veda",
+      "breakpoints": true
     }
   ]
 }

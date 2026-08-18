@@ -16,6 +16,12 @@ import type {
   Instalacion, ActaEntrega, CasoGarantia, Modulo, Cliente,
 } from '../contracts'
 
+export interface FotoGaleriaEspacio {
+  url: string
+  alt: string
+  esRender: boolean
+}
+
 const DATA_IMPL = () => process.env.DATA_IMPL ?? 'mock'
 
 // --- Marketing (sin PII, sin datos financieros) ---
@@ -29,6 +35,43 @@ export async function listarPortafolioPublicadosAction(): Promise<Portafolio[]> 
   }
   const { getDataStore } = await import('@/lib/data/store')
   return getDataStore().portafolio.publicados()
+}
+
+// F-09 (2026-08-17): galería por tipo de espacio para las landings públicas — junta las fotos
+// publicadas de Portafolio con ese tipo y las imágenes cargadas en /erp/portafolio/renders,
+// sin distinción visible entre unas y otras (Javier las administra libremente desde el ERP).
+export async function obtenerGaleriaEspacioAction(tipoEspacio: string): Promise<FotoGaleriaEspacio[]> {
+  const fotos: FotoGaleriaEspacio[] = []
+
+  if (DATA_IMPL() === 'drizzle') {
+    const proyectosPublicados = await db.select().from(s.portafolio)
+      .where(and(eq(s.portafolio.publicado, true), eq(s.portafolio.categoriaEspacio, tipoEspacio)))
+    for (const p of proyectosPublicados) {
+      const galeria = ((p.galeriaPortafolioUrl as string[] | null) ?? [])
+      const urls = galeria.length > 0 ? galeria : (p.imagenPortafolioUrl ? [p.imagenPortafolioUrl] : [])
+      urls.forEach((url) => fotos.push({ url, alt: p.titulo, esRender: false }))
+    }
+
+    const renders = await db.select().from(s.rendersConceptuales)
+      .where(and(eq(s.rendersConceptuales.tipoEspacio, tipoEspacio), eq(s.rendersConceptuales.visible, true)))
+    renders
+      .slice()
+      .sort((a, b) => a.orden - b.orden)
+      .forEach((r) => fotos.push({ url: r.imagenUrl, alt: r.titulo ?? '', esRender: true }))
+    return fotos
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  const store = getDataStore()
+  store.portafolio.publicados()
+    .filter((p) => p.categoriaEspacio === tipoEspacio)
+    .forEach((p) => {
+      const urls = p.galeriaPortafolioUrl.length > 0 ? p.galeriaPortafolioUrl : (p.imagenPortafolioUrl ? [p.imagenPortafolioUrl] : [])
+      urls.forEach((url) => fotos.push({ url, alt: p.titulo, esRender: false }))
+    })
+  store.renderesConceptuales.porTipoEspacio(tipoEspacio)
+    .forEach((r) => fotos.push({ url: r.imagenUrl, alt: r.titulo ?? '', esRender: true }))
+  return fotos
 }
 
 export async function listarProductosTiendaVisiblesAction(): Promise<ProductoTienda[]> {

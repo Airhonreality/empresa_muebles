@@ -9,7 +9,7 @@ import type {
   OrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
   CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
-  Portafolio, ModuloArtefacto, BitacoraArticulo, Testimonio,
+  Portafolio, ModuloArtefacto, BitacoraArticulo, Testimonio, RenderConceptual,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto,
 } from './contracts'
 
@@ -63,6 +63,7 @@ export interface StoreSnapshot {
   catalogoProductoAcabados: CatalogoProductoAcabado[]
   acabadosMuestras: AcabadoMuestra[]
   portafolio: Portafolio[]
+  rendersConceptuales: RenderConceptual[]
   modulosArtefactos: ModuloArtefacto[]
   bitacoraArticulos: BitacoraArticulo[]
   testimonios: Testimonio[]
@@ -88,7 +89,7 @@ export function emptySnapshot(): StoreSnapshot {
     proveedores: [], ordenesCompra: [], registrosGateCaja: [], cuentasCobroProveedor: [],
     categorias: [], productosTienda: [], productosTiendaComponentes: [],
     catalogoAcabados: [], catalogoProductoAcabados: [], acabadosMuestras: [],
-    portafolio: [], modulosArtefactos: [], bitacoraArticulos: [], testimonios: [],
+    portafolio: [], rendersConceptuales: [], modulosArtefactos: [], bitacoraArticulos: [], testimonios: [],
     itemsOrdenCompra: [], recepcionesMaterial: [], herramientas: [], documentosProyecto: [],
   }
 }

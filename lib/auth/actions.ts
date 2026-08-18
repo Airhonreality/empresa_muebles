@@ -14,6 +14,7 @@ import {
   type InvitacionResult,
   type EstadoCuentaEmpleado,
 } from './session'
+import { registrarAuditLog } from './audit'
 import type { RolCanonico } from '@/lib/data/contracts'
 
 export async function logoutAction(): Promise<void> {
@@ -45,6 +46,7 @@ export async function activarInvitacionAction(formData: FormData): Promise<void>
   if (!resultado.ok) {
     redirect(`/erp/login/activar?token=${encodeURIComponent(token)}&error=${resultado.error ?? 'token_invalido'}`)
   }
+  await registrarAuditLog({ accion: 'acceso.activar', entidadTipo: 'usuario' })
   redirect('/erp/comercial')
 }
 
@@ -55,7 +57,16 @@ export async function crearInvitacionEmpleadoAction(input: {
   rol: RolCanonico
   nombre: string
 }): Promise<InvitacionResult> {
-  return crearInvitacionEmpleado(input)
+  const resultado = await crearInvitacionEmpleado(input)
+  if (resultado.ok) {
+    await registrarAuditLog({
+      accion: 'acceso.generar_o_editar',
+      entidadTipo: 'persona',
+      entidadId: input.personaId,
+      cambios: { email: input.email },
+    })
+  }
+  return resultado
 }
 
 /** Llamado imperativamente desde app/erp/equipo/page.tsx (client component). */
