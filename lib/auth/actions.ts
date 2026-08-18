@@ -8,7 +8,6 @@ import { redirect } from 'next/navigation'
 import {
   logout,
   logoutEmpleado,
-  activarInvitacion,
   crearInvitacionEmpleado,
   listarEstadoCuentasEmpleado,
   type InvitacionResult,
@@ -35,20 +34,9 @@ export async function logoutEmpleadoAction(): Promise<void> {
   redirect('/erp/login')
 }
 
-export async function activarInvitacionAction(formData: FormData): Promise<void> {
-  const token = String(formData.get('token') ?? '')
-  const password = String(formData.get('password') ?? '')
-  const confirmacion = String(formData.get('passwordConfirmacion') ?? '')
-  if (password !== confirmacion) {
-    redirect(`/erp/login/activar?token=${encodeURIComponent(token)}&error=password_no_coincide`)
-  }
-  const resultado = await activarInvitacion(token, password)
-  if (!resultado.ok) {
-    redirect(`/erp/login/activar?token=${encodeURIComponent(token)}&error=${resultado.error ?? 'token_invalido'}`)
-  }
-  await registrarAuditLog({ accion: 'acceso.activar', entidadTipo: 'usuario' })
-  redirect('/erp/comercial')
-}
+// ── Activación de invitación de empleado ──
+// Tampoco es Server Action, mismo motivo que el login: ver
+// app/api/erp/activar/route.ts y components/veta/activar-cuenta-form.tsx.
 
 /** Llamado imperativamente desde app/erp/equipo/page.tsx (client component). */
 export async function crearInvitacionEmpleadoAction(input: {

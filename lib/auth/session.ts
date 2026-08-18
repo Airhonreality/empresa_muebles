@@ -199,6 +199,7 @@ export interface AuthResult {
     | 'token_vencido'
     | 'email_en_uso'
     | 'password_corta'
+    | 'password_no_coincide'
 }
 
 interface UsuarioEmpleadoRow {
@@ -400,6 +401,39 @@ export async function crearInvitacionEmpleado(input: {
   }
 
   return { ok: true, token }
+}
+
+export interface InvitacionInfo {
+  nombre: string
+  email: string
+  expirada: boolean
+}
+
+/** Lectura sin efectos secundarios: quién es el dueño de este enlace (F10 2026-08-17,
+ * la pantalla de activación no mostraba a quién le pertenecía la cuenta que se activaba). */
+export async function obtenerInvitacionPorToken(token: string): Promise<InvitacionInfo | null> {
+  const tokenNorm = token.trim()
+  if (!tokenNorm) return null
+
+  if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
+    const { db } = await import('@/lib/db/client')
+    const { usuarios } = await import('@/lib/db/schema')
+    const [usuario] = await db.select().from(usuarios).where(eq(usuarios.inviteToken, tokenNorm))
+    if (!usuario) return null
+    return {
+      nombre: usuario.nombre,
+      email: usuario.email,
+      expirada: !usuario.inviteTokenExpiraEn || new Date(usuario.inviteTokenExpiraEn) < new Date(),
+    }
+  }
+  const lista = await getMockUsuariosEmpleado()
+  const usuario = lista.find((u) => u.inviteToken === tokenNorm)
+  if (!usuario) return null
+  return {
+    nombre: usuario.nombre,
+    email: usuario.email,
+    expirada: !usuario.inviteTokenExpiraEn || new Date(usuario.inviteTokenExpiraEn) < new Date(),
+  }
 }
 
 /** Activa una invitación: valida el token, guarda la contraseña elegida e inicia sesión. */
