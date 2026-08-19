@@ -75,3 +75,23 @@ Esta lista se creó hoy para cortar el bucle de arnés donde las fases se "cerra
 - **NO son tareas diferidas** los fixes de tsc anteriores: son correcciones del working tree, no postergaciones.
 - **Estado:** nada commiteado. El batch completo (D-01→D-17 + sesión) sigue sin commitear, en cola de revisión en vivo del Supervisor.
 - **Próximo paso habilitado:** `next build` → push `dev` → preview Vercel → checkpoint de merge `dev`→`main`. Ninguna tarea de esta lista lo bloquea.
+
+---
+
+## 7. F-17 "Cotiza tu Espacio" — POSTPUESTO POST-LANZAMIENTO (2026-08-19)
+
+| Ítem | Detalle |
+|------|---------|
+| Pantalla | F-17 Cotiza tu Espacio (`/cotiza-tu-espacio`) — cotizador público orientativo con rangos. |
+| Decisión | **No se diseña ni se implementa en el lanzamiento ni en la 2ª actualización post-corte** (2026-08-19, checkpoint del Supervisor al aprobar el Lote C de la sesión de lanzamiento web). |
+| Por qué no bloquea el lanzamiento | Es un requerimiento de web final cuya publicación depende de parámetros de costos en el ERP (F0) que aún no están definidos. Sin esos datos cualquier cifra sería inventada (regla anti-invención I-049). |
+| Referencias | `plan_diseno_web_publica.md` §0/§1/§2.5 · `plan_seo_2026.md` §3 (JSON-LD `Service` planificado solo cuando se active). |
+| Alcance previsto cuando se active | Rangos orientativos por tipo de espacio, garantía (2 años, 8-12 días hábiles), hitos de pago, diseño 3D deducible, CTA dual hacia `/agenda-tu-asesoria` + WhatsApp. No reemplaza F-12 — la complementa. |
+
+## 8. apple-touch-icon.png — PENDIENTE (A-6 parcial)
+
+| Ítem | Detalle |
+|------|---------|
+| Qué | `app/manifest.ts` declara el icono `/icon.svg` (generado por Next). Falta `apple-touch-icon.png` (180×180) para iOS (Safari no usa SVG en el añadir a pantalla de inicio). |
+| Por qué queda pendiente | No hay tooling de rasterizado PNG en el repo (`sharp` no está como utilidad de build). El SVG actual no se puede convertir en la sandbox sin instalar dependencias nuevas. |
+| Cómo resolverlo | Convertir `app/icon.svg` → `app/apple-touch-icon.png` (180×180) con cualquier herramienta de rasterizado (incluso online) y declararlo en `app/layout.tsx` como `<link rel="apple-touch-icon">`. |

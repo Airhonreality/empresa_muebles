@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/seo/jsonld'
+import { socialMeta } from '@/lib/seo/social'
 
 // force-dynamic (bug real en Vercel, 2026-08-16, mismo motivo que app/sitemap.ts): sin esto,
 // Next prerenderiza esta página en build time con el DATA_IMPL del entorno de build — en Vercel
@@ -19,9 +20,12 @@ export async function generateMetadata({ params }: RouteParams) {
     title: `${articulo.titulo} — Bitácora Veta Dorada`,
     description: articulo.extracto,
     alternates: { canonical: `${SITE_URL}/bitacora/${slug}` },
-    openGraph: {
-      images: articulo.imagenPortada ? [articulo.imagenPortada] : [],
-    }
+    ...socialMeta({
+      title: articulo.titulo,
+      description: articulo.extracto,
+      path: `/bitacora/${slug}`,
+      image: articulo.imagenPortada,
+    }),
   }
 }
 
@@ -102,8 +106,39 @@ export default async function BitacoraArticlePage({ params }: RouteParams) {
   const articulo = await obtenerBitacoraPorSlugAction(slug)
   if (!articulo) notFound()
 
+  // JSON-LD Article/BlogPosting (plan_seo_2026.md §2, auditoría SEO 2026-08-19 checklist #6):
+  // la única página tipo blog del sitio no tenía datos estructurados. Sin aggregateRating
+  // fabricado (regla anti-invención).
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: articulo.titulo,
+    description: articulo.extracto,
+    image: articulo.imagenPortada ?? undefined,
+    datePublished: articulo.fechaPublicacion,
+    dateModified: articulo.updatedAt,
+    inLanguage: 'es-CO',
+    mainEntityOfPage: `${SITE_URL}/bitacora/${slug}`,
+    url: `${SITE_URL}/bitacora/${slug}`,
+    author: {
+      '@type': 'Organization',
+      name: 'Veta Dorada',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Veta Dorada',
+      url: SITE_URL,
+      logo: `${SITE_URL}/logo-veta-positive.svg`,
+    },
+  }
+
   return (
     <article className="container mx-auto px-4 py-16 max-w-4xl">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mb-12 text-center">
         <div className="text-sm font-bold uppercase tracking-wider text-[var(--color-accent)] mb-4 flex items-center justify-center gap-2">
           <Link href="/bitacora" className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors">BITÁCORA</Link>

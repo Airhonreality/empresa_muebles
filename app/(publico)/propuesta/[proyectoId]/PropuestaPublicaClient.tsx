@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { ArrowDown, Building2, Expand, LayoutGrid, MapPin } from 'lucide-react'
 import { Button } from '@/components/veta/button'
 import { MetaItem } from '@/components/veta/meta-item'
@@ -88,8 +89,8 @@ function ItemCard({ item, producto, onZoom }: ItemCardProps) {
       <div className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-sm bg-bg-alt">
         {imagen ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob temporales */}
-            <img src={imagen} alt="" className="h-full w-full object-cover" />
+            {/* unoptimized: propuesta es snapshot de solo lectura y sus URLs pueden ser mock/blob temporales */}
+            <Image src={imagen} alt="" fill unoptimized className="object-cover" />
             <span className="absolute inset-0 grid place-items-center bg-black/0 text-white opacity-0 transition-opacity duration-base group-hover:bg-black/30 group-hover:opacity-100">
               <Expand size={13} />
             </span>

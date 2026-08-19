@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin } from 'lucide-react';
-import { listarPortafolioPublicadosAction } from '@/lib/data/actions/public';
+import { listarPortafolioPublicadosAction, listarTestimoniosPublicadosAction } from '@/lib/data/actions/public';
 import { getHomeJsonLd, SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { MetaItem } from '@/components/veta/meta-item';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
 
@@ -20,6 +21,13 @@ export const metadata: Metadata = {
   description:
     'Estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera a la medida. Tres generaciones de oficio.',
   alternates: { canonical: SITE_URL },
+  ...socialMeta({
+    title: 'Veta Dorada — Carpintería arquitectónica en Bogotá',
+    description:
+      'Estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera a la medida.',
+    path: '/',
+    image: '/images/home/cocinas-integrales-diseno-fabricacion-bogota-1.webp',
+  }),
 };
 
 // F-01 Home real (D-10). Copy textual de arnes/lineas/demanda/contenido/contenido_F01_home.md,
@@ -131,34 +139,22 @@ const PASOS = [
   },
 ];
 
-// Testimonios reales curados (I-050, I-019 — reseñas de Google Business Profile), copy textual
-// de contenido_F01_home.md §5. Sin aggregateRating fabricado (regla anti-invención).
-// D-01-9: ahora incluye barrio y tipoProyecto (T-03, 2026-08-12).
-// TODO: migrar a store.testimonios.publicados() cuando exista UI de gestión de testimonios.
-// Por ahora se mantienen los datos hardcoded con los nuevos campos (barrio, tipoProyecto).
-const TESTIMONIOS = [
-  { nombre: 'Glenda Danuro', texto: 'Cumplieron muy buen trabajo.', barrio: 'Chicó', tipoProyecto: 'Residencial' },
-  {
-    nombre: 'Daniela Barón Esparza',
-    texto: 'Muy cumplidos y dedicados. El modelo de mi cocina quedó tal cual como lo pedí. La calidad de su trabajo es excelente.',
-    barrio: 'Rosales',
-    tipoProyecto: 'Residencial',
-  },
-  { nombre: 'Juan Spiro', texto: 'Excelente trabajo muy recomendados', barrio: 'Chapinero', tipoProyecto: 'Residencial' },
-  {
-    nombre: 'Madeline Attara',
-    texto: 'Agradecida con los trabajos obtenidos. Muy buen servicio pre y post venta. Super recomendado.',
-    barrio: 'Usaquén',
-    tipoProyecto: 'Residencial',
-  },
-];
-
 export default async function Home() {
   const proyectosDestacados = (await listarPortafolioPublicadosAction()).slice(0, 3);
 
+  // Testimonios reales curados (I-050, I-019 — reseñas de Google Business Profile) ya no se
+  // hardcodean (D-01-9 T-03): vienen de store.testimonios.publicados() por Server Action escopada.
+  // El seed de datos vive en lib/data/fixtures.ts TESTIMONIOS + DB (testimonios.nombre_autor).
+  const testimonios = (await listarTestimoniosPublicadosAction()).map((t) => ({
+    nombre: t.nombreAutor ?? 'Cliente de Veta Dorada',
+    texto: t.contenido,
+    barrio: t.barrio ?? undefined,
+    tipoProyecto: t.tipoProyecto ?? undefined,
+  }));
+
   // JSON-LD: HomeAndConstructionBusiness + Organization + WebSite
   // Fuente: contenido_F01_home.md §7, plan_seo_2026.md §2 — centralizado en lib/seo/jsonld.ts.
-  const jsonLd = getHomeJsonLd(TESTIMONIOS);
+  const jsonLd = getHomeJsonLd(testimonios);
 
   return (
     <div>
@@ -432,7 +428,7 @@ export default async function Home() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            {TESTIMONIOS.map((t) => (
+            {testimonios.map((t) => (
               <div key={t.nombre} className="group relative overflow-hidden rounded-md bg-bg-paper p-8 shadow-sm transition-shadow duration-300 hover:shadow-md">
                 {/* Comilla de marca de agua */}
                 <div className="absolute -top-4 -left-2 font-display text-9xl text-charcoal-900/[0.04] select-none pointer-events-none transition-transform duration-500 group-hover:-translate-y-2 group-hover:translate-x-2">

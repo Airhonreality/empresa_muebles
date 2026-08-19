@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Modal } from '@/components/veta/modal'
 import { type ProductoCatalogo } from '@/lib/data'
 
@@ -38,10 +39,13 @@ export function ItemDescriptorModal({ producto, onClose }: ItemDescriptorModalPr
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="sm:w-1/2">
           {producto.imagenUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob temporales
-            <img
+            // unoptimized: URLs mock/blob temporales en el cotizador
+            <Image
               src={producto.imagenUrl}
               alt={producto.descripcion}
+              width={640}
+              height={480}
+              unoptimized
               className="aspect-[4/3] w-full rounded-sm border border-border-subtle object-cover"
             />
           ) : (

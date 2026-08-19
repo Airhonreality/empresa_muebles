@@ -3,9 +3,11 @@
 import { useMemo, useState } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { Busqueda } from '@/components/veta/busqueda'
 import { Modal } from '@/components/veta/modal'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { useDataStore, type PedidoWeb, type Proyecto } from '@/lib/data'
+import { coincide } from '@/lib/search/normalizar'
 
 const ESTADOS_PEDIDO = ['nuevo', 'enganchado', 'cancelado'] as const
 type EstadoPedido = typeof ESTADOS_PEDIDO[number]
@@ -58,15 +60,15 @@ export default function PedidosWebPage() {
     let resultado = pedidos
     if (filtroEstado) resultado = resultado.filter(p => p.estado === filtroEstado)
     if (filtroCliente) {
-      const q = filtroCliente.toLowerCase()
       resultado = resultado.filter(p => {
         const nombre = clienteMap.get(p.clienteId) ?? ''
-        return nombre.toLowerCase().includes(q)
+        return coincide(filtroCliente, [nombre, p.id])
       })
     }
     if (filtroTotal) {
-      const q = filtroTotal.toLowerCase()
-      resultado = resultado.filter(p => p.totalPedido.includes(q) || formatMoney(p.totalPedido).toLowerCase().includes(q))
+      resultado = resultado.filter(p =>
+        coincide(filtroTotal, [p.totalPedido, formatMoney(p.totalPedido)])
+      )
     }
     return resultado.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   }, [pedidos, filtroEstado, filtroCliente, filtroTotal, clienteMap])
@@ -150,16 +152,13 @@ export default function PedidosWebPage() {
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Cliente</span>
-            <input
-              type="text"
-              value={filtroCliente}
-              onChange={(e) => setFiltroCliente(e.target.value)}
-              placeholder="Buscar cliente..."
-              className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-            />
-          </label>
+          <Busqueda
+            valor={filtroCliente}
+            onChange={setFiltroCliente}
+            placeholder="Buscar cliente..."
+            label="Buscar por cliente"
+            className="w-56"
+          />
           <label className="flex flex-col gap-1">
             <span className="text-xs text-text-muted">Total</span>
             <input

@@ -16,6 +16,7 @@
 // no un bug — ver plan_f10_migracion.md §3.1d.
 import type { DataStore } from './contracts'
 import type { StoreSnapshot } from './snapshot'
+import { coincide } from '../search/normalizar'
 import * as core from './actions/core'
 import * as f3 from './actions/f3'
 import * as f4 from './actions/f4'
@@ -171,11 +172,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
 
     catalogo: {
       listar: () => data.catalogo,
-      buscar: (query) => {
-        const q = query.toLowerCase()
-        return data.catalogo.filter((c) =>
-          c.descripcion.toLowerCase().includes(q) || c.sku.toLowerCase().includes(q) || Boolean(c.categoriaComercial?.toLowerCase().includes(q)))
-      },
+      buscar: (query) => data.catalogo.filter((c) => coincide(query, [c.descripcion, c.sku, c.categoriaComercial ?? ''])),
       obtenerPorId: (id) => data.catalogo.find((c) => c.id === id),
       crear: async (values) => {
         const r = await core.crearProductoCatalogoAction(values)
@@ -860,6 +857,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       listar: () => data.testimonios,
       porId: (id) => data.testimonios.find((t) => t.id === id),
       porProyecto: (proyectoId) => data.testimonios.filter((t) => t.proyectoId === proyectoId && t.publicado),
+      publicados: () => data.testimonios.filter((t) => t.publicado),
       crear: async (values) => {
         const r = await pf.crearTestimonioAction(values)
         data = { ...data, testimonios: upsert(data.testimonios, r) }

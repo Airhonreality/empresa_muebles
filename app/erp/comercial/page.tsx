@@ -3,7 +3,9 @@
 import { useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/veta/button'
+import { Busqueda } from '@/components/veta/busqueda'
 import { useDataStore, type Proyecto, type Cliente, type TransicionesProyecto } from '@/lib/data'
+import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
 
 // Macro-fases del proyecto
 type MacroFase = 'pre_venta' | 'cotizacion' | 'produccion' | 'instalacion' | 'post_venta';
@@ -340,6 +342,31 @@ export default function KanbanComercialPage() {
     return m
   }, [clientes])
 
+  // CA-7 (disenio_p01 §5.2): buscador resiliente con contexto "comercial-kanban" —
+  // matchea nombreProyecto, cliente, descripción semántica, tipo y obra (t-141, Opción A).
+  // La clave localStorage "comercial-kanban-search" se escribe apenas el usuario busca.
+  const [filtroTipo, setFiltroTipo] = useState('')
+  const { query, setQuery, resultado: proyectosBuscados } = useSmartSearch({
+    items: proyectos,
+    getCampos: (p) => [
+      p.nombreProyecto,
+      clienteMap.get(p.clienteId ?? '')?.nombre ?? '',
+      p.descripcionSemantica ?? '',
+      TIPO_PROYECTO_LABEL[p.tipoProyecto] ?? p.tipoProyecto,
+      p.direccionObra ?? '',
+    ],
+    contexto: 'comercial-kanban',
+    fuzzy: true,
+    limite: 500,
+  })
+
+  // Filtro de tipo de proyecto sobre el resultado de la búsqueda. El filtro se aplica ANTES de
+  // columnData para que los conteos de columna reflejen lo que el usuario ve (flag de t-141).
+  const proyectosFiltrados = useMemo(() => {
+    if (!filtroTipo) return proyectosBuscados
+    return proyectosBuscados.filter((p) => p.tipoProyecto === filtroTipo)
+  }, [proyectosBuscados, filtroTipo])
+
   const projectStats = useMemo(() => {
     const stats = new Map<string, { items: number; espacios: number; espaciosActivos: number }>()
     proyectos.forEach((p) => {
@@ -358,13 +385,13 @@ export default function KanbanComercialPage() {
        if (col.key) map.set(col.key, [])
        else if (col.keys) col.keys.forEach((k) => map.set(k, []))
      })
-     proyectos.forEach((p) => {
+     proyectosFiltrados.forEach((p) => {
        const arr = map.get(p.estado)
        if (arr) arr.push(p)
      })
       return map
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proyectos, version])
+  }, [proyectosFiltrados, version])
 
   const handleTransition = async (proyectoId: string, nuevoEstado: EstadoProyecto) => {
     await store.proyectos.actualizarEstado(proyectoId, nuevoEstado)
@@ -372,22 +399,59 @@ export default function KanbanComercialPage() {
 
   return (
     <div className="mx-auto max-w-full px-6 py-6">
-      <header className="flex flex-wrap items-end justify-between gap-4 mb-6">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-text-heading">
-            Kanban Comercial
-          </h1>
-          <p className="text-sm text-text-muted">
-            {proyectos.length} proyectos · {COLUMNAS_KANBAN.length} estados
-          </p>
-        </div>
-        <div className="flex gap-3">
+      <header className="mb-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-text-heading">
+              Kanban Comercial
+            </h1>
+            <p className="text-sm text-text-muted">
+              {proyectos.length} proyectos · {COLUMNAS_KANBAN.length} estados
+              {(query.trim() || filtroTipo) && (
+                <span className="ml-2 text-gold-600">
+                  · {proyectosFiltrados.length} mostrando
+                </span>
+              )}
+            </p>
+          </div>
           <Button
             variant="primary"
             onClick={() => router.push('/erp/cotizador/new')}
           >
             + Nuevo Proyecto
           </Button>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Busqueda
+            valor={query}
+            onChange={setQuery}
+            placeholder="Buscar proyecto, cliente u obra..."
+            label="Buscar en el tablero"
+            className="w-full sm:w-72"
+          />
+          <select
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value)}
+            aria-label="Filtrar por tipo de proyecto"
+            className="rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-heading focus:border-brand focus:shadow-ring-focus focus:outline-none"
+          >
+            <option value="">Todos los tipos</option>
+            {Object.entries(TIPO_PROYECTO_LABEL).map(([valor, etiqueta]) => (
+              <option key={valor} value={valor}>{etiqueta}</option>
+            ))}
+          </select>
+          {(query.trim() || filtroTipo) && (
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => {
+                setQuery('')
+                setFiltroTipo('')
+              }}
+            >
+              Limpiar filtros
+            </Button>
+          )}
         </div>
       </header>
 

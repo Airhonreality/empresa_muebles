@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useCallback, useId, useState, type KeyboardEvent } from 'react'
 
 export interface GalleryImage {
@@ -78,12 +79,10 @@ export function GalleryRail({ fotos, etiqueta, aspectRatio = '4 / 3', onZoom, cl
             aria-label="Ampliar imagen"
             className="block h-full w-full cursor-zoom-in"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={actual.url} alt={actual.alt} className="h-full w-full object-cover" />
+            <Image src={actual.url} alt={actual.alt} fill unoptimized className="object-cover" />
           </button>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={actual.url} alt={actual.alt} className="h-full w-full object-cover" />
+          <Image src={actual.url} alt={actual.alt} fill unoptimized className="object-cover" />
         )}
 
         {etiqueta && (
@@ -136,14 +135,13 @@ export function GalleryRail({ fotos, etiqueta, aspectRatio = '4 / 3', onZoom, cl
                 onClick={() => ir(i)}
                 aria-label={`Ver imagen ${i + 1}`}
                 aria-current={i === activo}
-                className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-[var(--radius-sm)] border-2 transition ${
+                className={`relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-[var(--radius-sm)] border-2 transition ${
                   i === activo
                     ? 'border-[var(--color-border-brand)]'
                     : 'border-transparent opacity-70 hover:opacity-100'
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={f.url} alt={f.alt} className="h-full w-full object-cover" />
+                <Image src={f.url} alt={f.alt} fill unoptimized className="object-cover" />
               </button>
             </li>
           ))}

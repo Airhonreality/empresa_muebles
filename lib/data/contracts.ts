@@ -837,6 +837,8 @@ export interface RenderConceptual {
 export interface Testimonio {
   id: string
   contenido: string
+  /** 2026-08-19: nombre del autor (texto libre, reseñas reales de GBP). */
+  nombreAutor: string | null
   rating: number | null
   curado: boolean
   aprobado: boolean
@@ -1258,6 +1260,8 @@ export interface DataStore {
       listar(): Testimonio[]
       porId(id: string): Testimonio | undefined
       porProyecto(proyectoId: string): Testimonio[]
+      /** R1: solo publicado=true (paridad con portafolio.publicados()). */
+      publicados(): Testimonio[]
       crear(data: Partial<Testimonio> & { contenido: string }): Promise<Testimonio>
       actualizar(id: string, partial: Partial<Testimonio>): Promise<Testimonio | null>
       publicar(id: string): Promise<Testimonio | null>

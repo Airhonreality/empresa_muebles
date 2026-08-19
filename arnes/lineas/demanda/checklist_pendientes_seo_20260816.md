@@ -16,14 +16,16 @@ Fuga de snapshot completo del ERP en páginas públicas (P0), rutas PoC pública
 - **`legalName`/`taxID`** agregados a `Organization` (Hermanos Garcia Gonzalez SAS / NIT 901421357-9), consistente con la fórmula legal ya aprobada del footer.
 - **Confirmado, sin cambios de código:** el nombre de marca ("Veta Dorada") y el eslogan ("Diseña tu espacio. Habita el bienestar.") del archivo de branding son datos legales/legacy — `plan_demanda.md` documenta ambos como decisiones de diseño ya cerradas y confirmadas por el Supervisor (renombre de marca DD-08, eslogan D1 resuelta 2026-08-09). No se tocaron.
 
+**Resuelto 2026-08-19 (decisión de Javier en sesión):**
+- **#3 CERRADO** — el Perfil de Empresa en Google ya está renombrado a "Veta Dorada". `sameAs` actualizado al link real en `lib/seo/jsonld.ts` (`https://share.google/C4ERFWARygKWHkNGO`).
+- **#4 CERRADO** — Javier confirmó que las 4 reseñas reales del Google Business Profile son 5/5. El `ratingValue` 5 de los `Review` es correcto. **El Home YA es data-driven (Lote B, 2026-08-19):** lee `listarTestimoniosPublicadosAction()` y el rating sale del registro; los 4 testimonios reales están sembrados en la BD (ver `estado.md`).
+
 ---
 
 ## 🔴 Bloquea decisiones de negocio — requiere a Javier antes de que el código avance
 
 | # | Pendiente | Por qué lo bloquea Javier | Impacto de no resolverlo |
 |---|---|---|---|
-| 3 | **`sameAs` de Google Business Profile verificado** | El JSON-LD no tiene `sameAs` (se quitó la URL genérica que había antes). `plan_demanda.md` dice que el renombre del Perfil de Empresa a "Veta Dorada" es una tarea aparte, deliberadamente después del corte — hasta que ese perfil exista con el nombre correcto, no hay un link real que poner. | Sin `sameAs`, Google tiene una señal menos para confirmar la entidad — aceptable mientras el perfil siga sin renombrar; hay que volver a esto cuando se ejecute el renombre. |
-| 4 | **`ratingValue` fijo en 5 para las 4 reseñas del Home** | Están hardcodeadas en el código (`app/(publico)/page.tsx`, sección `TESTIMONIOS`) con 5 estrellas parejas — necesito que confirmes que las 4 reseñas reales del Google Business Profile son efectivamente 5/5, o que me pases el rating real de cada una. | Riesgo bajo pero real: si alguna reseña real no es 5 estrellas, el JSON-LD queda con un dato falso — exactamente el tipo de cosa que puede derivar en acción manual de Google (`plan_seo_2026.md` lo marca como riesgo del documento completo). |
 | 5 | **Recuperar fotos reales de `/espacios/pisos-de-madera`** (I-016) | Las 3 imágenes originales (hero + antes/después) nunca se migraron del sitio Wix legacy. Hoy el hero usa un placeholder temporal y la sección antes/después está oculta. Necesito que me pases las fotos reales o el acceso al hosting de Wix para recuperarlas. | La landing de pisos de madera pierde su prueba visual más fuerte (antes/después) hasta que existan fotos reales — no es invisible para SEO, pero sí para conversión. |
 | 16 | **`encabezado_general_veta_oro.html`** (referenciado en el archivo de branding, `ENCABEZADO_GENERAL_V1`) | El archivo no existe en el repo — no lo tengo. Si es un asset del sitio Wix legacy (header/logo viejo), probablemente no aplica al sistema de diseño D4 ya construido (`AppShell`); si es otra cosa, necesito que me lo pases. | Ninguno mientras no se confirme qué es — no bloquea nada del sitio actual, solo queda sin resolver. |
 | 17 | **Datos del representante legal** (Airhon García Rozo, ID 1233506023, del mismo archivo) | Capturados pero sin uso todavía — la página F-18 "Conócenos" (que llevaría `Person` schema para los fundadores) no está construida. Se documenta acá para no perder el dato cuando se construya F-18. | Ninguno hoy — es solo un recordatorio para cuando exista esa pantalla. |

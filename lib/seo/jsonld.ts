@@ -23,8 +23,10 @@ export const SITE_URL = 'https://www.vetadeoro.co'
 // Redes sociales reales (2026-08-16, pasadas por Javier). Facebook incluido acá (identidad de
 // entidad para Google/IA) aunque no se muestre como ícono clickeable en el footer — está
 // inactiva y no se quiere mandar visitantes reales a una página sin actividad.
+// 2026-08-19: Perfil de Empresa en Google renombrado a "Veta Dorada" (checklist #3 CERRADO) —
+// sameAs actualizado al link real que Javier pasó en sesión.
 const SAME_AS = [
-  'https://share.google/iNlxzNKge0icFtPwx',
+  'https://share.google/C4ERFWARygKWHkNGO',
   'https://www.instagram.com/veta_dorada/',
   'https://www.tiktok.com/@veta_dorada.co',
   'https://www.facebook.com/profile.php?id=61567800401365',

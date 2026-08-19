@@ -4,9 +4,11 @@ import { useState, useMemo, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { Busqueda } from '@/components/veta/busqueda'
 import { CopyField } from '@/components/veta/copy-field'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore } from '@/lib/data'
+import { coincide } from '@/lib/search/normalizar'
 import {
   crearInvitacionEmpleadoAction,
   listarEstadoCuentasAction,
@@ -90,10 +92,9 @@ export default function EquipoPage() {
   // una persona con varios roles muestra una sola tarjeta con un badge por rol, y una persona
   // sin ningún rol activo (ej. tras "Quitar rol" sobre su único rol) sigue apareciendo en vez
   // de desaparecer de la lista como si estuviera desactivada.
-  const busquedaNorm = busqueda.trim().toLowerCase()
   const personasConRoles: { persona: Persona; roles: PersonaRol[] }[] = personas
     .filter((p) => p.activo)
-    .filter((p) => !busquedaNorm || p.nombre.toLowerCase().includes(busquedaNorm))
+    .filter((p) => !busqueda.trim() || coincide(busqueda, [p.nombre, p.email ?? '', p.documento ?? '', p.telefono ?? '']))
     .filter((p) => !filtroRol || personasRolesActivos.some((pr) => pr.personaId === p.id && pr.rolId === filtroRol))
     .map((persona) => ({ persona, roles: personasRolesActivos.filter((pr) => pr.personaId === persona.id) }))
 
@@ -356,12 +357,12 @@ export default function EquipoPage() {
 
       {/* Buscador / filtro / ver inactivos (F10 2026-08-17) */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <input
-          type="text"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar por nombre..."
-          className="rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none flex-1 min-w-[180px]"
+        <Busqueda
+          valor={busqueda}
+          onChange={setBusqueda}
+          placeholder="Buscar por nombre, correo o documento..."
+          label="Buscar empleado"
+          className="flex-1 min-w-[180px]"
         />
         <select
           value={filtroRol}

@@ -17,6 +17,7 @@ const eslintConfig = [
     "out/**",
     "build/**",
     "next-env.d.ts",
+    ".history/**",
   ]),
   {
     // Contrato de reactividad (M-07): ninguna pantalla lee el store fuera de

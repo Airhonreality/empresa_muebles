@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { EspacioLanding, type EspacioLandingConfig } from '@/components/veta/espacio-landing';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public';
 
 const TIPO_ESPACIO_CODIGO = 'closet';
@@ -27,6 +28,12 @@ export const metadata: Metadata = {
   description:
     'Closets y vestidores a medida en Bogotá. Diseño personalizado, materiales duraderos y instalación profesional.',
   alternates: { canonical: `${SITE_URL}/espacios/${CONFIG.slug}` },
+  ...socialMeta({
+    title: 'Closets y Vestidores en Bogotá | Diseño a Medida',
+    description:
+      'Closets y vestidores a medida en Bogotá. Diseño personalizado, materiales duraderos y instalación profesional.',
+    path: `/espacios/${CONFIG.slug}`,
+  }),
 };
 
 export default async function ClosetsVestidoresPage() {

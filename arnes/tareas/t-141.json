@@ -1,0 +1,51 @@
+{
+  "id": "t-141",
+  "nombre": "Módulo de búsqueda resiliente estándar (normalización + tokens + fuzzy Opción A) + filtros, en las pantallas principales del ERP",
+  "descripcion": "El ERP tenía búsquedas naive (toLowerCase().includes()) que no toleraban tildes/ñ/ü/caracteres raros, y varias pantallas (portafolio, taller, kanban) sin buscador de texto. M-06 §A.3/A.5 y las primitivas D4 §2.2/§2.3 (Búsqueda y Filtros) estaban documentadas pero sin materializar. Javier pidió un buscador 'ultra estándar 2027' resiliente e inteligente y, tras una verificación de compatibilidad (plan aprobado 2026-08-19), eligió la Opción A: matcher en capas con fuzzy acotado ON por default (Levenshtein ≤1 para tokens ≥4, ≤2 para ≥6). DESVIACIÓN DOCUMENTADA vs m06 §A.5: A.5 describe Levenshtein como mecanismo principal; acá es la capa 3 de un pipeline cuya base es normalización+tokens (decisión del Supervisor 2026-08-19, reversible por flag por pantalla). Se implementa un módulo puro (lib/search/normalizar.ts) consumido por un hook A.5 (lib/hooks/useSmartSearch.ts, con historial por contexto en localStorage y uso frecuente LRU), dos primitivas D4 (components/veta/busqueda.tsx y filtros.tsx), el upgrade de SmartSearch (matcher resiliente + prop aditiva contexto) y la integración en 6 pantallas: kanban comercial (cierra CA-7: localStorage 'comercial-kanban-search', filtro por tipo aplicado antes de columnData), portafolio, clientes, equipo, pedidos-web y taller. Catálogo se beneficia gratis vía SmartSearch. Cero escrituras a Neon, cero cambios de schema.",
+  "objetivo": "Toda pantalla del ERP que lista colecciones/registros busca de forma resiliente (tildes, tokens en cualquier orden, typos) con un módulo estándar reutilizable y filtros, materializando los patrones M-06 §A.3/A.5 y las primitivas D4 Búsqueda/Filtros.",
+  "prioridad": "Media",
+  "estado": "En progreso — plan aprobado por el Supervisor (2026-08-19, Opción A), implementación completada, pendiente verificación final y checkpoint visual humano",
+  "zona": "lib/search/ (nuevo) + lib/hooks/ (nuevo) + components/veta/ (primitivas + SmartSearch) + 6 pantallas ERP",
+  "tipo": "mixto: logica (módulo puro + hooks) + ui (primitivas + integración)",
+  "riesgo": "bajo-medio — cero escrituras a Neon (build con DATA_IMPL=mock), cero cambios de schema, cero lib/data/actions/; historial/uso solo en localStorage del navegador",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "evidencia": "Javier aprobó el plan ajustado tras el reporte de compatibilidad y respondió 'IMPLEMENTA. opcion A' (2026-08-19) a la pregunta sobre el default del fuzzy. Verificada la alineación con M-06 (A.3/A.5 en lib/hooks/), primitivas D4 Búsqueda/Filtros, DoD F10 (useId, read-only, getVersion) y el flag de desviación A.5."
+  },
+  "cambios_de_datos": [
+    "NINGUNO — escrituras a la base de datos real fuera de alcance por decisión del Supervisor (se usó DATA_IMPL=mock para el build y tests con placeholder de DATABASE_URL)."
+  ],
+  "archivos_afectados": [
+    "lib/search/normalizar.ts (nuevo) — matcher en capas: normalizarTexto (NFD+diacríticos), tokensDe, distanciaLevenshtein, coincide (AND tokens + fuzzy Opción A), scoreCoincidencia.",
+    "lib/search/normalizar.test.ts (nuevo) — 12 tests de round-trip del matcher.",
+    "lib/hooks/useDebounce.ts (nuevo) — patrón M-06 §A.3 (materializa la doc).",
+    "lib/hooks/useSmartSearch.ts (nuevo) — patrón M-06 §A.5 (materializa la doc): query+resultado+puntuación, historial por contexto (clave <contexto>-search, max 20), uso frecuente LRU (max 50).",
+    "components/veta/busqueda.tsx (nuevo) — primitiva D4 Búsqueda (variante local).",
+    "components/veta/filtros.tsx (nuevo) — primitiva D4 Filtros (FiltroChip aria-pressed + BarraFiltros fieldset/legend).",
+    "components/veta/smart-search.tsx (modificar) — matching naive -> useSmartSearch; prop aditiva contexto; sugerencias de uso frecuente; fix dropdown vacío.",
+    "lib/data/mock-store.ts (modificar) — catalogo.buscar() alineado al matcher (read-only, sin notify).",
+    "lib/data/drizzle-impl.ts (modificar) — catalogo.buscar() alineado al matcher.",
+    "lib/data/mock-store.test.ts (modificar) — test round-trip de catalogo.buscar() con tildes/tokens/typo.",
+    "app/erp/comercial/page.tsx (modificar) — cierra CA-7: Busqueda + useSmartSearch contexto comercial-kanban + filtro por tipo + 'Limpiar filtros'; filtro antes de columnData.",
+    "app/erp/portafolio/page.tsx (modificar) — Busqueda + coincide.",
+    "app/erp/clientes/page.tsx (modificar) — input naive -> Busqueda + coincide.",
+    "app/erp/equipo/page.tsx (modificar) — input naive -> Busqueda + coincide.",
+    "app/erp/pedidos-web/page.tsx (modificar) — filtro cliente naive -> Busqueda + coincide; filtro total alineado.",
+    "app/erp/taller/page.tsx (modificar) — Busqueda + coincide sobre resumen por gate."
+  ],
+  "criterios_aceptacion": [
+    "lib/search/normalizar.test.ts pasa (12 tests): tildes, tokens AND orden distinto, fuzzy ≤1 (≥4 chars) y ≤2 (≥6 chars), sin fuzzy < 4, umbral configurable, fuzzy desactivable.",
+    "mock-store.test.ts incluye el caso round-trip de catalogo.buscar() (tildes + tokens + typo) y pasa.",
+    "Kanban: escribir 'cocina' filtra las tarjetas; la clave 'comercial-kanban-search' se escribe en localStorage; el filtro por tipo se aplica antes de columnData (los conteos de columna reflejan el filtro); 'Limpiar filtros' restaura todo.",
+    "Portafolio, clientes, equipo, pedidos-web y taller muestran el buscador en el nivel superior y filtran con tolerancia a tildes/typos.",
+    "Catálogo y el selector de proyecto de pedidos-web (SmartSearch) buscan con el matcher resiliente sin cambios en sus callers.",
+    "npx tsc --noEmit = 0 errores.",
+    "npx eslint . = 0 errores.",
+    "DATA_IMPL=mock npx next build no muestra errores salvo los esperados por falta de DATABASE_URL (AGENTS.md).",
+    "Sin escrituras a Neon, sin cambios de schema, sin getDataStore()."
+  ],
+  "no_verificado": "Verificación visual en navegador (npm run dev): comportamiento del fuzzy y del historial de uso en el kanban, y el aspecto de las primitivas Búsqueda/Filtros — pendiente de que Javier confirme en Preview.",
+  "relacionado": ["t-136", "t-140"],
+  "fecha_creacion": "2026-08-19"
+}

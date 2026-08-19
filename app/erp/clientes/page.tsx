@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import { LinkButton } from '@/components/veta/button'
+import { Busqueda } from '@/components/veta/busqueda'
 import { useDataStore, type Cliente } from '@/lib/data'
+import { coincide } from '@/lib/search/normalizar'
 
 interface ClienteFila {
   cliente: Cliente
@@ -48,16 +50,12 @@ export default function ClientesTableroPage() {
   }, [store, version])
 
   const filasFiltradas = useMemo(() => {
-    const q = busqueda.trim().toLowerCase()
+    const q = busqueda.trim()
     return filas.filter((fila) => {
       if (soloConObligaciones && fila.obligacionesCount === 0) return false
       if (!q) return true
       const c = fila.cliente
-      return (
-        (c.nombre ?? '').toLowerCase().includes(q) ||
-        (c.telefono ?? '').toLowerCase().includes(q) ||
-        (c.email ?? '').toLowerCase().includes(q)
-      )
+      return coincide(q, [c.nombre ?? '', c.telefono ?? '', c.email ?? '', c.documento ?? ''])
     })
   }, [filas, busqueda, soloConObligaciones])
 
@@ -71,13 +69,12 @@ export default function ClientesTableroPage() {
       </header>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
+        <Busqueda
+          valor={busqueda}
+          onChange={setBusqueda}
           placeholder="Buscar por nombre, teléfono o correo..."
-          aria-label="Buscar cliente"
-          className="w-full max-w-sm rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none"
+          label="Buscar cliente"
+          className="w-full max-w-sm"
         />
         <label className="flex items-center gap-2 text-sm text-text-muted">
           <input

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { EspacioLanding, type EspacioLandingConfig } from '@/components/veta/espacio-landing';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public';
 
 const TIPO_ESPACIO_CODIGO = 'estudio_home_office';
@@ -27,6 +28,12 @@ export const metadata: Metadata = {
   description:
     'Estudios y home office a medida en Bogotá. Diseño ergonómico, materiales duraderos y instalación profesional.',
   alternates: { canonical: `${SITE_URL}/espacios/${CONFIG.slug}` },
+  ...socialMeta({
+    title: 'Estudios y Home Office a Medida en Bogotá',
+    description:
+      'Estudios y home office a medida en Bogotá. Diseño ergonómico, materiales duraderos y instalación profesional.',
+    path: `/espacios/${CONFIG.slug}`,
+  }),
 };
 
 export default async function EstudiosHomeOfficePage() {

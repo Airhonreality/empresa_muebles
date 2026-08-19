@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { EspacioLanding, type EspacioLandingConfig } from '@/components/veta/espacio-landing';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public';
 
 const TIPO_ESPACIO_CODIGO = 'cocina';
@@ -27,6 +28,12 @@ export const metadata: Metadata = {
   description:
     'Cocinas integrales a medida en Bogotá. Diseño, fabricación e instalación con materiales de primera y acabados personalizados.',
   alternates: { canonical: `${SITE_URL}/espacios/${CONFIG.slug}` },
+  ...socialMeta({
+    title: 'Cocinas Integrales en Bogotá | Diseño a Medida',
+    description:
+      'Cocinas integrales a medida en Bogotá. Diseño, fabricación e instalación con materiales de primera y acabados personalizados.',
+    path: `/espacios/${CONFIG.slug}`,
+  }),
 };
 
 export default async function CocinasIntegralesPage() {

@@ -60,7 +60,7 @@ export async function despublicarPortafolioAction(id: string): Promise<Portafoli
 
 export async function crearTestimonioAction(data: Partial<Testimonio> & { contenido: string }): Promise<Testimonio> {
   const [nuevo] = await db.insert(s.testimonios).values({
-    contenido: data.contenido, rating: data.rating ?? null, curado: data.curado ?? false, aprobado: data.aprobado ?? false,
+    contenido: data.contenido, nombreAutor: data.nombreAutor ?? null, rating: data.rating ?? null, curado: data.curado ?? false, aprobado: data.aprobado ?? false,
     publicado: data.publicado ?? false, fuente: data.fuente ?? 'GBP', barrio: data.barrio ?? null,
     tipoProyecto: data.tipoProyecto ?? null, urlFuente: data.urlFuente ?? null, fechaPublicacion: data.fechaPublicacion ?? null,
     clienteId: data.clienteId ?? null, proyectoId: data.proyectoId ?? null,

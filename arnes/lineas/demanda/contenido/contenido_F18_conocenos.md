@@ -1,6 +1,6 @@
 # F-18 — Conócenos (Historia, oficio, personas)
 
-**Fecha:** 2026-08-09 · **Estado:** aprobado (copy sujeto a D-matriz) · **Ruta:** `/conocenos` · **Arquetipo:** Creador Experto
+**Fecha:** 2026-08-09 · **Estado:** aprobado (copy con D-matriz resuelta 2026-08-19) · **Ruta:** `/conocenos` · **Arquetipo:** Creador Experto
 
 ---
 
@@ -33,7 +33,7 @@
 
 | Elemento | Copy | Estado | Fuente |
 |---|---|---|---|
-| H1 | Tres generaciones construyendo. Un estudio diseñando. | Verificado | `plan_diseno_web_publica.md` §2.3 (copy provisional → verificado 2026-08-09) |
+| H1 | Tres generaciones construyendo. Un estudio diseñando. | **Verificado (2026-08-19, matriz resuelta — aprobado como aproximación de la línea familiar: abuelo → Hugo y hermanos → Airhon → Veta Dorada)** | `plan_diseno_web_publica.md` §2.3 (copy provisional → verificado 2026-08-09) |
 | CTA primario | Conozca nuestro trabajo | Verificado | `plan_diseno_web_publica.md` §2.3 Sección 3 → F-03 |
 | CTA secundario | Agende su asesoría | Verificado | `plan_diseno_web_publica.md` §2.3 Sección 3 → F-12 |
 | Imagen de fondo | Directiva: fotografía del taller real o de manos en obra. Recuperar del sitio actual si existe (I-016). | — | Tokens D4 Luz & Biofilia (I-037) |
@@ -43,8 +43,8 @@
 | Elemento | Copy | Estado | Fuente |
 |---|---|---|---|
 | H2 | Del ladrillo al diseño | Verificado | `plan_diseno_web_publica.md` §2.3 |
-| Párrafo 1 (1971) | El padre de Hugo García fabricaba ladrillos. | **Provisional — D-matriz pendiente** (¿relato verificable? ¿se publica?) | `plan_diseno_web_publica.md` §2.3 Historia; matriz fila "Padre de Hugo: ladrillos desde 1971" |
-| Párrafo 2 (1995) | Hugo y sus hermanos, liderados por Víctor García, se dedicaron a la construcción y la remodelación. | **Provisional — D-matriz pendiente** (verificar año de inicio y nombre/rol de Víctor) | `plan_diseno_web_publica.md` §2.3 Historia; matriz filas "Hugo y hermanos desde 1995" y "Víctor García" |
+| Párrafo 1 | El padre de Víctor fabricaba ladrillos. Ese oficio, el ladrillo, es el origen de la tradición familiar que hoy llega hasta el taller de Veta Dorada. | **Verificado (2026-08-19, matriz resuelta — se omite el año 1971, no confirmado)** | `plan_diseno_web_publica.md` §2.3 Historia; matriz fila "Padre de Víctor: ladrillos (abuelo de Javier)" |
+| Párrafo 2 | Hugo y sus hermanos se dedicaron a la construcción y la remodelación de casas y espacios. De esas décadas en obra nace el oficio que hoy sostiene el taller. | **Verificado (2026-08-19, matriz resuelta — sin "liderados por Víctor García"; Víctor es el abuelo del ladrillo, no el líder del equipo de obra)** | `plan_diseno_web_publica.md` §2.3 Historia; matriz fila "Hugo y hermanos desde 1995" (se omite la mención de liderazgo de Víctor) |
 | Párrafo 3 (2014–2019) | En 2014 se constituye formalmente la sociedad HERMANOS GARCIA GONZALEZ S.A.S. En 2019 nace Veta Dorada: un estudio que integra diseño, manufactura e instalación en un solo servicio, sin intermediarios y con la obra y el diseño en la misma mesa. | Verificado | `plan_diseno_web_publica.md` §2.3; DC-4 (2014 constitución, 2019 fundación) + `plan_seo_2026.md` (openingDate = 2014) |
 | Nota de marca legal | Veta Dorada es marca comercial registrada; la operación legal la representa HERMANOS GARCIA GONZALEZ SAS, NIT 901421357-9. | Verificado | I-039; `destilacion_docs_veta.md` (fórmula aprobada: marca arriba, sociedad abajo) |
 
@@ -55,7 +55,7 @@
 | Elemento | Copy | Estado | Fuente |
 |---|---|---|---|
 | Nombre | Hugo García — Maestría en obra | Verificado | `plan_diseno_web_publica.md` §2.3 |
-| Cuerpo | El oficio se hereda y se cultiva. Hugo creció entre ladrillos, mezclas y planos, en una familia dedicada a la construcción y la remodelación desde 1995. De esas décadas en obra salen la sensibilidad para distribuir un espacio — que una cocina respire y un closet funcione — y el conocimiento técnico que pocos talleres tienen: pinturas, estructuras, acabados, instalaciones de gas y electricidad. Hugo conoce la obra completa: gestiona proyectos de principio a fin y entrega acabados de calidad. | **Provisional — D-matriz pendiente** (verificar alcance real de gas/electricidad y gestión) | `plan_diseno_web_publica.md` §2.3; matriz fila "Hugo: gas/electricidad, gestión" |
+| Cuerpo | El oficio se hereda y se cultiva. Hugo creció entre ladrillos, mezclas y planos, en una familia dedicada a la construcción y la remodelación. De esas décadas en obra salen la sensibilidad para distribuir un espacio — que una cocina respire y un closet funcione — y el conocimiento técnico que pocos talleres tienen. Hugo gestiona obras de principio a fin y conoce a detalle la infraestructura: plomería, electricidad, gas, acabados y más. | **Verificado (2026-08-19, matriz resuelta — gestión de obras + conocimiento a detalle de infraestructura, plomería, electricidad, gas, acabados)** | `plan_diseno_web_publica.md` §2.3; matriz fila "Hugo: gestión de obras, infraestructura, plomería, electricidad, gas, acabados" |
 | Nota | Se omitió "domina cada etapa porque la ha vivido" (duplicaba el párrafo anterior) — revisar si se restaura en QA en caso de que el Supervisor lo apruebe. | — | — |
 
 #### Airhon J. García — Diseñador
@@ -63,7 +63,7 @@
 | Elemento | Copy | Estado | Fuente |
 |---|---|---|---|
 | Nombre | Airhon J. García — Diseñador | Verificado | `plan_diseno_web_publica.md` §2.3 |
-| Cuerpo | Diseñador industrial de la Universidad Nacional de Colombia. Su recorrido cruza el prototipado digital y análogo: impresión 3D, postformado, termoformado. Ha diseñado mobiliario, piezas de decoración interior y sistemas de almacenamiento. Lo mueve una convicción: la bioinspiración — integrar la naturaleza al diseño para que cada espacio dialogue con quien lo vive. | **Provisional — D-matriz pendiente** (verificar título y portafolio) | `plan_diseno_web_publica.md` §2.3; matriz fila "Airhon: UNAL, prototipado, bioinspiración" |
+| Cuerpo | Su trabajo parte de una convicción: el buen vivir. Diseña espacios estéticos, confortables y eficientes, con una sensibilidad especial para el habitar — cómo se vive un espacio, cómo circula la luz, cómo respira una cocina. Su mirada del diseño une lo contemporáneo con el oficio del taller: cada proyecto responde a quien lo va a vivir. | **Verificado con salvedad (2026-08-19, matriz resuelta — interpretación asumida por el agente: "diseñador industrial" es ESPECULATIVO; se omite UNAL, impresión 3D, postformado, termoformado y bioinspiración. El copy se centra en buen vivir. Javier puede corregir esta interpretación antes de publicar.)** | `plan_diseno_web_publica.md` §2.3; matriz fila "Airhon: buen vivir, espacios estéticos/confortables/eficientes, sensibilidad para el habitar" |
 
 ### 3.4 — CTA final
 
@@ -80,7 +80,7 @@
 
 | # | Pregunta (H2 visible) | Respuesta (40-60 palabras) | Fuente |
 |---|---|---|---|
-| RA-1 | ¿Quiénes son los fundadores de Veta Dorada? | Hugo García, con décadas de oficio en la construcción, y Airhon J. García, diseñador industrial de la Universidad Nacional. Del oficio en la obra al diseño contemporáneo: juntos entregan espacios integrales en madera sin intermediarios, con la fábrica en el mismo lugar. | `plan_diseno_web_publica.md` §2.3 (sujeto a D-matriz) |
+| RA-1 | ¿Quiénes son los fundadores de Veta Dorada? | Hugo García, con décadas de oficio en la construcción y el conocimiento a detalle de la obra (infraestructura, plomería, electricidad, gas, acabados), y Airhon J. García, diseñador que trabaja por el buen vivir: espacios estéticos, confortables y eficientes. Del oficio en la obra al diseño contemporáneo: juntos entregan espacios integrales en madera sin intermediarios, con la fábrica en el mismo lugar. | `plan_diseno_web_publica.md` §2.3 (matriz resuelta 2026-08-19) |
 
 ---
 
@@ -122,12 +122,27 @@
 ## 8. Verificación de integridad (pre-entrega)
 
 - [x] Todo bloque de copy en §3 tiene `estado` y `fuente`. Ninguna afirmación sin matriz queda como "Verificado".
-- [x] **D-matriz respetada:** las 6 afirmaciones por verificar (padre 1971, Hugo-desde-1995, Víctor, gas/electricidad, Airhon UNAL/bioinspiración, tres generaciones) están marcadas como **Provisional — pendiente de verificación con los protagonistas**.
+- [x] **D-matriz resuelta (2026-08-19, respuestas del Supervisor Javier):** las 6 afirmaciones por verificar quedaron resueltas y aplicadas en este documento (ver Addendum §9).
 - [x] Cifras cerradas no inventadas: 2014 (constitución, `openingDate`) y 2019 (fundación Veta Dorada) — DC-4.
 - [x] La identidad legal (marca → sociedad, NIT) sigue la fórmula aprobada de I-039.
 - [x] Sin testimonio inventado (§5) — decisión editorial de no incluir.
 - [x] Las imágenes en §6 no piden producir contenido nuevo — recuperables (I-016).
 - [x] El SEO narrativo (§7) cita `plan_seo_2026.md` §2.
 - [x] El copy no contradice decisiones cerradas (D1, D2, D5, DC-1, DC-3, DC-4).
-- [ ] **Pendiente (Supervisor):** completar la D-matriz verificando las 6 afirmaciones con Hugo/Airhon antes de publicar.
+- [ ] **Pendiente:** confirmación del Supervisor sobre la interpretación asumida del perfil de Airhon (copy de "buen vivir" — ver Addendum §9, punto 4).
 - [ ] **Pendiente:** fotografías de los perfiles (I-016).
+
+---
+
+## 9. Addendum 2026-08-19 — Matriz F-18 resuelta (copy final)
+
+**Origen:** checkpoint del Supervisor al aprobar el Lote C de la sesión de lanzamiento web. Respuestas textuales de Javier sobre las 6 afirmaciones de la D-matriz.
+
+| # | Afirmación original (provisional) | Respuesta del Supervisor | Copy final aplicado |
+|---|---|---|---|
+| 1 | "El padre de Hugo fabricaba ladrillos desde 1971" | El **padre de Víctor** fabricaba ladrillos (= **abuelo de Javier**). **Se omite el año 1971** (no confirmado). | Párrafo 1 Historia (§3.2): "El padre de Víctor fabricaba ladrillos. Ese oficio, el ladrillo, es el origen de la tradición familiar que hoy llega hasta el taller de Veta Dorada." |
+| 2 | "Hugo y sus hermanos, liderados por Víctor García, se dedicaron a la construcción" | Hugo y hermanos se dedican a la construcción. **Sin** "liderados por Víctor García". | Párrafo 2 Historia (§3.2): "Hugo y sus hermanos se dedicaron a la construcción y la remodelación de casas y espacios. De esas décadas en obra nace el oficio que hoy sostiene el taller." |
+| 3 | "Hugo: gas/electricidad, gestión" | Hugo: **gestión de obras**, conoce a detalle **infraestructura, plomería, electricidad, gas, acabados**, etc. | Perfil Hugo (§3.3): "...gestiona obras de principio a fin y conoce a detalle la infraestructura: plomería, electricidad, gas, acabados y más." |
+| 4 | "Airhon: UNAL, prototipado, bioinspiración" | "Diseñador industrial" es **ESPECULATIVO**. Se omiten UNAL, impresión 3D, postformado, termoformado y bioinspiración. Copy centrado en **buen vivir**: espacios estéticos, confortables y eficientes, sensibilidad para el habitar. ⚠️ Interpretación asumida por el agente — Javier puede corregirla. | Perfil Airhon (§3.3): "Su trabajo parte de una convicción: el buen vivir..." |
+| 5 | "Tres generaciones" (H1) | **Aprobado (aproximado).** Línea: abuelo (ladrillos) → papá/Hugo y hermanos (construcción) → Airhon (diseño) → Veta Dorada. | H1 (§3.1): "Tres generaciones construyendo. Un estudio diseñando." |
+| 6 | RA-1 "diseñador industrial de la UNAL" | Aplica la misma corrección del punto 4 (sin UNAL, sin especulación de título). | RA-1 (§4): "Hugo García, con décadas de oficio en la construcción..., y Airhon J. García, diseñador que trabaja por el buen vivir..." |

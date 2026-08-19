@@ -1,4 +1,4 @@
-﻿# Hermanos García González S.A.S (Veta de Oro) — ERP + Sitio Web — V3 "Veta Dorada Real"
+# Hermanos García González S.A.S (Veta de Oro) — ERP + Sitio Web — V3 "Veta Dorada Real"
 
 **Fuente de verdad del arnés agéntico.** Todo agente lee este archivo antes de actuar. Si algo que quieres que haga un agente no está aquí, no va a pasar.
 
@@ -76,6 +76,8 @@ dev                      → rama huérfana (sin historia de main) donde se cons
 - Un agente **nunca** hace `checkout` de `dev` sobre el working tree principal del humano (`c:\Users\javir\Documents\DEVs\empresa_muebles_clone`). Todo trabajo de la V3 ocurre en el worktree `../empresa_muebles_clone_v3`.
 - No se debe reutilizar código del prototipo v2 (`backup/dev-v2-arquitectura-20260804`) — la V3 es código nuevo a propósito. Si un patrón del prototipo resultara necesario, se discute con el Supervisor antes de copiarlo.
 - **El código de las PoC (Diamante 4: PoC 1/2/3/3.1, o cualquier prueba de concepto futura, sea v1/v2/v3) nunca es evidencia de que una pantalla de negocio "existe" o está aprobada.** Es prueba de concepto de estética/tokens/interacción exclusivamente. La única fuente de aprobación de una pantalla es un `disenio_PXX.md`/`disenio_FXX.md` con checkpoint del Supervisor (decisión 2026-08-08, corrige el hallazgo de que `estado.md`/`plan_f7.md` daban F-01 por "existente" citando la PoC).
+- **[REGLA DE ECOSISTEMA WINDOWS] Prohibido usar Git Worktrees para proyectos con Antigravity:** Debido a un bug arquitectónico en el motor de Golang del IDE Antigravity, crear entornos (`v4`, `v5`, etc.) usando `git worktree add` causará *Deadlocks* infinitos. Toda nueva versión debe instanciarse exclusivamente mediante un `git clone` tradicional nativo.
+- **[REGLA DE ECOSISTEMA WINDOWS] Blindaje de Contexto Obligatorio:** Todo repositorio DEBE tener un archivo `.antigravityignore` en la raíz que excluya las carpetas masivas (`.opencode/`, `node_modules/`, `.next/`, `poc_screenshots/`) y los JSON gigantes (`tsconfig.tsbuildinfo`, `package-lock.json`) para evitar que el motor de la IA colapse por *Catastrophic Backtracking*. Nunca usar `*` como comodín global.
 
 ## Zonas y dueños
 

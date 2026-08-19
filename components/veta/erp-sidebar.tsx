@@ -22,6 +22,7 @@ import {
   Images,
   Users,
   Shield,
+  MessageSquare,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -83,6 +84,7 @@ const ERP_NAV_SECTIONS: NavSection[] = [
       { href: '/erp/catalogo', label: 'Catálogo', icon: <Package className="h-5 w-5" /> },
       { href: '/erp/pedidos-web', label: 'Pedidos web', icon: <Globe className="h-5 w-5" /> },
       { href: '/erp/portafolio', label: 'Portafolio', icon: <Images className="h-5 w-5" /> },
+      { href: '/erp/portafolio/testimonios', label: 'Testimonios', icon: <MessageSquare className="h-5 w-5" /> },
     ],
   },
   {

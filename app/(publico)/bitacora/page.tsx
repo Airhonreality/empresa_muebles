@@ -2,6 +2,7 @@ import { listarBitacoraAction } from '@/lib/data/actions/portafolio'
 import Link from 'next/link'
 import Image from 'next/image'
 import { SITE_URL } from '@/lib/seo/jsonld'
+import { socialMeta } from '@/lib/seo/social'
 
 // force-dynamic (bug real en Vercel, 2026-08-16, mismo motivo que app/sitemap.ts): sin esto,
 // Next prerenderiza esta página en build time con el DATA_IMPL del entorno de build — en Vercel
@@ -12,6 +13,11 @@ export const metadata = {
   title: 'Bitácora de Diseño — Veta Dorada',
   description: 'Casos de estudio reales, materiales y técnica de carpintería arquitectónica a la medida en Bogotá. El cuaderno de obra de Veta Dorada.',
   alternates: { canonical: `${SITE_URL}/bitacora` },
+  ...socialMeta({
+    title: 'Bitácora de Diseño — Veta Dorada',
+    description: 'Casos de estudio reales, materiales y técnica de carpintería arquitectónica a la medida en Bogotá. El cuaderno de obra de Veta Dorada.',
+    path: '/bitacora',
+  }),
 }
 
 export default async function BitacoraIndexPage() {

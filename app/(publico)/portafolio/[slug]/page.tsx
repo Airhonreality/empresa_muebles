@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { LinkButton } from '@/components/veta/button';
 import { obtenerPortafolioPorSlugAction } from '@/lib/data/actions/portafolio';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { PortafolioDetalleClient } from './PortafolioDetalleClient';
 
 // Server Component a propósito (t-134): permite generateMetadata() para OG/SEO real
@@ -32,11 +33,14 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
     title: `${proyecto.titulo} — Portafolio Veta Dorada`,
     description: descripcion,
     alternates: { canonical: `${SITE_URL}/portafolio/${slug}` },
-    openGraph: {
+    ...socialMeta({
       title: proyecto.titulo,
       description: descripcion,
+      path: `/portafolio/${slug}`,
+      image: imagen,
+    }),
+    openGraph: {
       type: 'article',
-      images: imagen ? [{ url: imagen }] : undefined,
     },
   };
 }
@@ -56,5 +60,41 @@ export default async function PortafolioDetallePage({ params }: RouteParams) {
     );
   }
 
-  return <PortafolioDetalleClient proyecto={proyecto} />;
+  // JSON-LD CreativeWork + ImageObject + BreadcrumbList (plan_seo_2026.md §2, auditoría SEO
+  // 2026-08-19 checklist #7). Sin precios (precio_referencial no se publica), sin dirección
+  // exacta — barrio sí (es contenido público del portafolio, I-049).
+  const imagenes = [proyecto.imagenPortafolioUrl, ...proyecto.galeriaPortafolioUrl].filter(Boolean) as string[];
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CreativeWork',
+        name: proyecto.titulo,
+        description: proyecto.descripcionComercial || `Proyecto de carpintería arquitectónica: ${proyecto.titulo}`,
+        image: imagenes.map((url) => ({ '@type': 'ImageObject', url })),
+        about: proyecto.categoriaEspacio,
+        inLanguage: 'es-CO',
+        url: `${SITE_URL}/portafolio/${slug}`,
+        mainEntityOfPage: `${SITE_URL}/portafolio/${slug}`,
+        datePublished: proyecto.createdAt,
+        dateModified: proyecto.updatedAt,
+        creator: { '@type': 'Organization', name: 'Veta Dorada', url: SITE_URL },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Inicio', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Portafolio', item: `${SITE_URL}/portafolio` },
+          { '@type': 'ListItem', position: 3, name: proyecto.titulo, item: `${SITE_URL}/portafolio/${slug}` },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <PortafolioDetalleClient proyecto={proyecto} />
+    </>
+  );
 }

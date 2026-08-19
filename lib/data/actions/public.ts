@@ -14,6 +14,7 @@ import type {
   Proyecto, EspacioVariante, ItemVariante, Contrato, HitoPago,
   ObligacionPendiente, MovimientoFinanciero, ComunicacionProgreso,
   Instalacion, ActaEntrega, CasoGarantia, Modulo, Cliente,
+  Testimonio,
 } from '../contracts'
 
 export interface FotoGaleriaEspacio {
@@ -35,6 +36,17 @@ export async function listarPortafolioPublicadosAction(): Promise<Portafolio[]> 
   }
   const { getDataStore } = await import('@/lib/data/store')
   return getDataStore().portafolio.publicados()
+}
+
+// Testimonios publicados (Home, D-01-9). Escopado y sin PII financiera: solo los campos que ya
+// expone el sitio (contenido, nombreAutor, barrio, tipoProyecto, rating, fuente, urlFuente).
+export async function listarTestimoniosPublicadosAction(): Promise<Testimonio[]> {
+  if (DATA_IMPL() === 'drizzle') {
+    const rows = await db.select().from(s.testimonios).where(eq(s.testimonios.publicado, true))
+    return (rows as unknown as Testimonio[])
+  }
+  const { getDataStore } = await import('@/lib/data/store')
+  return getDataStore().testimonios.publicados()
 }
 
 // F-09 (2026-08-17): galería por tipo de espacio para las landings públicas — junta las fotos

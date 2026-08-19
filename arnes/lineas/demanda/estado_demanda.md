@@ -70,7 +70,7 @@ Las tareas del ledger que trazan estos pendientes: t-110, t-111, t-112 (creadas 
   - **v3:** F-17 "Cotiza tu Espacio" (requerimiento bloqueado por parámetros ERP), F-18 "Conócenos" (historia + perfiles Hugo García / Airhon J. García, 3 tiempos 1995→2014→2019), F-19 "Para Arquitectos y Diseñadores" (segmento B2B). DC-4 (línea de tiempo) cerrada. FAQ descartado como página independiente (diseño axiomático Nam P. Suh). Matriz de ponderación exigida para copy de F-18.
 - `plan_seo_2026.md` — subsistema SEO transversal actualizado con F-17..F-19 y línea de tiempo canónica.
 
-**Decisiones aplicadas:** eslogan **"Diseña tu espacio. Habita el bienestar."** (D1 **cerrada 2026-08-09**), D2/D3/D4/D5 cerradas, tokens D4 (Luz & Biofilia). DC-1 **cerrada 2026-08-09** (testimonios ACTIVA), DC-3 **cerrada 2026-08-09** (embudo híbrido: modal + página). DC-4 cerrada: línea de tiempo 1995→2014→2019, `openingDate` = 2014. Precio asesoría 3D ($130.000) debe venir de parámetro ERP (D-parámetro). Copy de F-18 requiere matriz de ponderación (D-matriz). Condiciones B2B para prescriptores pendientes (D-B2B).
+**Decisiones aplicadas:** eslogan **"Diseña tu espacio. Habita el bienestar."** (D1 **cerrada 2026-08-09**), D2/D3/D4/D5 cerradas, tokens D4 (Luz & Biofilia). DC-1 **cerrada 2026-08-09** (testimonios ACTIVA), DC-3 **cerrada 2026-08-09** (embudo híbrido: modal + página). DC-4 cerrada: línea de tiempo 1995→2014→2019, `openingDate` = 2014. Precio asesoría 3D ($130.000) debe venir de parámetro ERP (D-parámetro). Copy de F-18 requiere matriz de ponderación (**D-matriz RESUELTA 2026-08-19**, ver `contenido_F18_conocenos.md` §9). Condiciones B2B para prescriptores pendientes (D-B2B).
 
 **Bloqueado por:** ~~DC-1 (adelantar `testimonios` de DIFERIDO — bloquea F-13 y secciones de prueba social en F-01/F-03/F-14/F-15).~~ F-17 bloqueado por parámetros de costos en ERP (D-parámetro).
 
@@ -95,7 +95,7 @@ Las tareas del ledger que trazan estos pendientes: t-110, t-111, t-112 (creadas 
 - Nunca inventar copy sin traza. Nunca escribir componentes ni tokens D4 — eso es territorio de la línea técnica.
 - No se escribe `contenido_F17.md` (bloqueado por parámetros ERP).
 - Testimonios: solo texto real (gate de publicación en `archivo/flags_testimonios_seo.md` §1) — D1 (eslogan) y DC-1 (testimonios ACTIVA) resueltas 2026-08-09.
-- Copy de F-18 opera bajo la matriz de ponderación (D-matriz) pendiente.
+- Copy de F-18 opera bajo la matriz de ponderación (**D-matriz RESUELTA 2026-08-19** — copy final en `contenido_F18_conocenos.md` §9; única salvedad: la interpretación del perfil de Airhon centrada en "buen vivir" es asumida y está pendiente de confirmación de Javier).
 
 **Orden de producción (WIP=1):** F-00 → F-01 → F-09 → F-10 → F-11 → F-12(+F-16) → F-13 → F-14 → F-15 → F-18 → F-19. Una pantalla se escribe completa, se verifica el checkpoint y se continúa con la siguiente.
 
@@ -109,7 +109,7 @@ Las tareas del ledger que trazan estos pendientes: t-110, t-111, t-112 (creadas 
 - `contenido_F12_agendar.md` — "Agenda tu Asesoría" `/agenda-tu-asesoria`: dos types de asesoría (tabla comparativa, $130K desde parámetro ERP), cobertura geográfica F-16 anidada (D5), embudo híbrido modal+página (DC-3), 4 Respuestas Atómicas. ✅ **Aprobado por Supervisor.**
 - `contenido_F14_pisos.md` — "Pisos de Madera" `/espacios/pisos-de-madera`: restauración (diagnóstico → pulido → reparación → sellado), materiales bajo VOC, galería antes/después, CTA "Solicitar diagnóstico gratuito", 2 Respuestas Atómicas. ✅ **Aprobado por Supervisor.**
 - `contenido_F15_bitacora.md` — "Bitácora de Diseño" `/bitacora`, `/bitacora/[slug]`: portada con grid indexable + 4 categorías, entradas (caso Jose Talero, "Tipos de materiales", primer caso Bloque D), JSON-LD `Blog`/`Article`. ✅ **Aprobado por Supervisor.**
-- `contenido_F18_conocenos.md` — "Conócenos" `/conocenos`: historia 3 generaciones (1995→2014→2019), perfiles Hugo/Airhon, identidad legal (I-039). Copy sujeto a **D-matriz**: las 6 afirmaciones por verificar quedan marcadas como provisionales, no inventadas. ✅ **Aprobado por Supervisor (pendiente completar matriz).**
+- `contenido_F18_conocenos.md` — "Conócenos" `/conocenos`: historia 3 generaciones (1995→2014→2019), perfiles Hugo/Airhon, identidad legal (I-039). **D-matriz RESUELTA 2026-08-19** — copy final aplicado (§9 Addendum: sin año 1971, sin "liderados por Víctor", abuelo fabricaba ladrillos, Hugo gestión de obras + infraestructura/plomería/electricidad/gas/acabados, Airhon "buen vivir" con salvedad pendiente de confirmación). ✅ **Aprobado por Supervisor (2026-08-19).**
 - `contenido_F19_arquitectos.md` — "Para Arquitectos y Diseñadores" `/para-arquitectos`: canal de prescripción (I-021), flujo planos → cotización 3-5 días hábiles, formulario con adjunto, JSON-LD `ProfessionalService`. Condiciones comerciales marcadas **por definir** (D-B2B, sin inventar). ✅ **Aprobado por Supervisor (pendiente D-B2B).**
 - **Serie completa de contenido** `contenido_F00..F-19` (11 archivos) — única excepción documentada: F-17 (bloqueado por parámetros ERP). ✅
 - `contenido_F13_testimonios.md` — semilla de testimonios reales: Jose Talero (pendiente texto) + 4 reseñas reales de GBP (Daniela Barón Esparza, Glenda Danuro, Juan Spiro, Madeline Attara). ✅ **Aprobado por Supervisor.**

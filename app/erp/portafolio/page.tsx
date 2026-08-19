@@ -8,8 +8,10 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button, LinkButton } from '@/components/veta/button'
+import { Busqueda } from '@/components/veta/busqueda'
 import { useDataStore, type Portafolio } from '@/lib/data'
 import { TIPOS_ESPACIO, labelTipoEspacio } from '@/lib/catalogos/tipos-espacio'
+import { coincide } from '@/lib/search/normalizar'
 
 function etiquetaCategoria(categoria: string): string {
   return labelTipoEspacio(categoria) ?? categoria.replace(/_/g, ' ')
@@ -108,18 +110,29 @@ export default function PortafolioAdminPage() {
     return map
   }, [proyectos])
 
+  const [busqueda, setBusqueda] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [filtroPublicado, setFiltroPublicado] = useState<'' | 'publicado' | 'sin_publicar'>('')
 
   const entradasFiltradas = useMemo(() => {
     let resultado = entradas
+    if (busqueda.trim()) {
+      resultado = resultado.filter((e) =>
+        coincide(busqueda, [
+          e.titulo,
+          proyectoNombreMap.get(e.proyectoId) ?? '',
+          etiquetaCategoria(e.categoriaEspacio),
+          e.descripcionComercial ?? '',
+        ])
+      )
+    }
     if (filtroCategoria) resultado = resultado.filter((e) => e.categoriaEspacio === filtroCategoria)
     if (filtroPublicado === 'publicado') resultado = resultado.filter((e) => e.publicado)
     if (filtroPublicado === 'sin_publicar') resultado = resultado.filter((e) => !e.publicado)
     return resultado
       .slice()
       .sort((a, b) => (a.destacado === b.destacado ? a.orden - b.orden : a.destacado ? -1 : 1))
-  }, [entradas, filtroCategoria, filtroPublicado])
+  }, [entradas, busqueda, proyectoNombreMap, filtroCategoria, filtroPublicado])
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
@@ -137,6 +150,13 @@ export default function PortafolioAdminPage() {
       </header>
 
       <div className="mb-4 flex flex-wrap gap-3">
+        <Busqueda
+          valor={busqueda}
+          onChange={setBusqueda}
+          placeholder="Buscar por título, proyecto o categoría..."
+          label="Buscar en portafolio"
+          className="w-full sm:w-72"
+        />
         <select
           value={filtroCategoria}
           onChange={(e) => setFiltroCategoria(e.target.value)}

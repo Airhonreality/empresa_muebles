@@ -1418,6 +1418,9 @@ export const rendersConceptuales = pgTable("renders_conceptuales", {
 export const testimonios = pgTable("testimonios", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	contenido: text().notNull(),
+	// 2026-08-19: nombre del autor (texto libre) — reseñas reales de GBP traídas por el
+	// equipo comercial tienen nombre de persona; el modelo anterior solo ataba cliente/proyecto.
+	nombreAutor: text("nombre_autor"),
 	rating: integer(),
 	curado: boolean().default(false).notNull(),
 	aprobado: boolean().default(false).notNull(),

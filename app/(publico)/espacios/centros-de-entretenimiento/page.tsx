@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { EspacioLanding, type EspacioLandingConfig } from '@/components/veta/espacio-landing';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public';
 
 const TIPO_ESPACIO_CODIGO = 'centro_entretenimiento';
@@ -27,6 +28,12 @@ export const metadata: Metadata = {
   description:
     'Centros de entretenimiento a medida en Bogotá. Integración de tecnología, diseño personalizado y materiales de calidad.',
   alternates: { canonical: `${SITE_URL}/espacios/${CONFIG.slug}` },
+  ...socialMeta({
+    title: 'Centros de Entretenimiento a Medida en Bogotá',
+    description:
+      'Centros de entretenimiento a medida en Bogotá. Integración de tecnología, diseño personalizado y materiales de calidad.',
+    path: `/espacios/${CONFIG.slug}`,
+  }),
 };
 
 export default async function CentrosDeEntretenimientoPage() {

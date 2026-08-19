@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { listarPortafolioPublicadosAction } from '@/lib/data/actions/public';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { PortafolioListaClient } from './PortafolioListaClient';
 
 // Server Component (auditoría 2026-08-15, A3): antes 'use client' con useDataStore() (ya no
@@ -12,6 +13,11 @@ export const metadata: Metadata = {
   title: 'Portafolio — Veta Dorada',
   description: 'Una selección de obras recientes en carpintería arquitectónica y mobiliario a la medida en Bogotá.',
   alternates: { canonical: `${SITE_URL}/portafolio` },
+  ...socialMeta({
+    title: 'Portafolio — Veta Dorada',
+    description: 'Una selección de obras recientes en carpintería arquitectónica y mobiliario a la medida en Bogotá.',
+    path: '/portafolio',
+  }),
 };
 
 export default async function PortafolioPage() {

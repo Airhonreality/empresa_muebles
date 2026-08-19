@@ -109,7 +109,7 @@ function buildReviewSchema(testimonio: TestimonioPublico) {
 
 | Flag | Detalle | Estado |
 |---|---|---|
-| `proyectoId` `NOT NULL` actual | Reseñas genericas de GBP sin proyecto identificado no pueden insertarse. | **ABIERTO — decisión del Supervisor:** permitir `NULL` en `proyectoId` para reseñas sin proyecto mapeado, o forzar mapeo manual (ej: Glenda Danuro/Daniela Barón Esparza a proyectos de cocina reales). Ver `contenido_F13_testimonios.md` §3.2. |
+| `proyectoId` nullable | Reseñas genericas de GBP sin proyecto identificado. **RESUELTO (2026-08-19):** `proyectoId`/`clienteId` son `uuid` nullable en `schema.ts` (testimonios) y el seed de los 4 testimonios reales siembra FKs en `null` — las reseñas GBP sin proyecto mapeado se insertan sin violar FK. | **CERRADO** — ver `schema.ts` testimonios y `scripts/seed-dev.ts`. |
 | `fuente` como columna | Nuevo campo de rastreabilidad (GBP / WhatsApp / Notion / video). Aprobado 2026-08-09. | CERRADO — en el canon `REGISTRO_DE_ENTIDADES.md` §10. |
 | `barrio`, `tipo_proyecto`, `url_fuente`, `fecha_publicacion` | Contexto barrial + categoría + trazabilidad para SEO local. Aprobados 2026-08-09. | CERRADO — en el canon `REGISTRO_DE_ENTIDADES.md` §10. |
 | E-55 y P-33 (curaduría) | El flujo de captura `curado → aprobado → publicado` es E-55; la pantalla de curaduría P-33 sigue DIFERIDO (t-034). No se construye ahora. | DIFERIDO — respetar frontera. |

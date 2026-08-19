@@ -1,0 +1,1 @@
+ALTER TABLE "testimonios" ADD COLUMN "nombre_autor" text;

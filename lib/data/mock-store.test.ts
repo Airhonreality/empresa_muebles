@@ -692,6 +692,19 @@ await test('p27 catalogo: round-trip galeriaImagenesUrl (crear -> leer -> actual
   assert.equal(store.catalogo.obtenerPorId(creado.id)!.galeriaImagenesUrl.length, 2)
 })
 
+await test('p27 catalogo.buscar: búsqueda resiliente (tildes, tokens AND, fuzzy Opción A) [t-141]', () => {
+  const store = createMockStore()
+  const sku = 'MES-TV-NOG'
+  // Tilde: "nogál" encuentra "Nogal" (normalización NFD).
+  assert.equal(store.catalogo.buscar('nogál').some(c => c.sku === sku), true)
+  // Tokens AND en orden distinto: "tv nogal" encuentra "Mueble TV flotante Nogal 1.80m".
+  assert.equal(store.catalogo.buscar('tv nogal').some(c => c.sku === sku), true)
+  // Typo (fuzzy, Opción A): "mogal" ~ "nogal" (1 edición, token >= 4).
+  assert.equal(store.catalogo.buscar('mogal').some(c => c.sku === sku), true)
+  // Sin coincidencia -> vacío.
+  assert.equal(store.catalogo.buscar('zzz-inexistente').length, 0)
+})
+
 // --- F-03: Portafolio de proyectos ---
 
 await test('f3-portafolio: publicados() ordena destacado DESC luego orden ASC, filtra publicado=true (R1/R4)', async () => {
@@ -709,6 +722,24 @@ await test('f3-portafolio: publicados() ordena destacado DESC luego orden ASC, f
 
   await store.portafolio.despublicar(nuevo.id)
   assert.equal(store.portafolio.publicados().some(p => p.id === nuevo.id), false)
+})
+
+await test('dc1 testimonios: crear con nombreAutor -> publicados() filtra publicado=true (R1)', async () => {
+  const store = createMockStore()
+  const sinPublicar = await store.testimonios.crear({ contenido: 'Borrador interno', nombreAutor: 'Anónimo', rating: 5, fuente: 'GBP' })
+  assert.equal(store.testimonios.publicados().some(t => t.id === sinPublicar.id), false, 'no publicado por defecto')
+  assert.equal(sinPublicar.nombreAutor, 'Anónimo', 'nombreAutor hace round-trip en crear')
+
+  const publicado = await store.testimonios.publicar(sinPublicar.id)
+  assert.equal(publicado!.publicado, true)
+  assert.equal(publicado!.aprobado, true)
+  assert.equal(store.testimonios.publicados().some(t => t.id === sinPublicar.id), true, 'publicar lo expone')
+
+  const actualizado = await store.testimonios.actualizar(sinPublicar.id, { nombreAutor: 'Glenda Danuro' })
+  assert.equal(actualizado!.nombreAutor, 'Glenda Danuro', 'nombreAutor hace round-trip en actualizar')
+
+  await store.testimonios.despublicar(sinPublicar.id)
+  assert.equal(store.testimonios.publicados().some(t => t.id === sinPublicar.id), false, 'despublicar lo oculta')
 })
 
 await test('f3-portafolio: modulosArtefactos round-trip por módulo', async () => {

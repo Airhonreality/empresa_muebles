@@ -37,7 +37,7 @@
 | **Nombre** | Debounce Hook |
 | **Descripción** | Hook genérico que retorna un valor diferido por un intervalo de tiempo. Usa `useState` + `useEffect` + `setTimeout`/`clearTimeout`. Dos implementaciones casi idénticas: una en `utils.ts:8-15` y otra en `src/hooks/useDebounce.ts:13-27`. |
 | **Ubicación legacy** | `src/components/specialized/cotizador/utils.ts:8-15` y `src/hooks/useDebounce.ts:13-27` |
-| **Equivalente en repo nuevo** | No |
+| **Equivalente en repo nuevo** | **Sí — `lib/hooks/useDebounce.ts` (t-141, materializado 2026-08-19)** |
 | **Recomendación** | **Preservar (adaptar)** — Ubicar en `lib/hooks/useDebounce.ts` del repo nuevo. Unificar las dos implementaciones en una sola. Usar `useRef` para el timer y limpiar en `useEffect` de cleanup. |
 
 ### A.4 useAutoSave Hook
@@ -57,8 +57,10 @@
 | **Nombre** | Smart Search con Fuzzy Matching + History |
 | **Descripción** | Hook de búsqueda inteligente que implementa: (1) búsqueda difusa con distancia de Levenshtein, (2) historial de búsquedas por contexto en localStorage, (3) seguimiento de uso de items con eviction LRU, (4) sugerencias basadas en historial, (5) bonus de relevancia para items usados recientemente. Retorna `{ query, setQuery, results, saveToHistory, trackUsage, history, usage }`. |
 | **Ubicación legacy** | `src/hooks/useSmartSearch.ts:1-229` |
-| **Equivalente en repo nuevo** | No |
+| **Equivalente en repo nuevo** | **Sí — `lib/hooks/useSmartSearch.ts` (t-141, materializado 2026-08-19)** |
 | **Recomendación** | **Preservar (adaptar)** — Ubicar en `lib/hooks/useSmartSearch.ts` del repo nuevo. La búsqueda difusa y el historial por contexto son patrones de infraestructura de interfaz que aplican a cualquier módulo con búsqueda de datos. Adaptar para usar la API del repo nuevo en vez de `/api/vault`. |
+
+> **Nota t-141 (materializado 2026-08-19):** el contrato se mantiene pero el matcher se cambió por decisión del Supervisor: en vez de Levenshtein como mecanismo principal, la base es **normalización (NFD) + tokens AND** (`lib/search/normalizar.ts`) con Levenshtein acotado como **capa opcional** (`fuzzy` default ON, Opción A: ≤1 edición para tokens ≥4, ≤2 para ≥6). Historial por contexto (`<contexto>-search`), uso frecuente LRU (max 50) y ranking por `scoreCoincidencia` se implementan igual. Reversible por flag por pantalla.
 
 ### A.6 Payload Normalization (toContractZapRecord)
 

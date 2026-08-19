@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { obtenerProductoTiendaConDetalleAction } from '@/lib/data/actions/public';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { Button, LinkButton } from '@/components/veta/button';
 
 // Server Component (auditoría 2026-08-15, A3/B4): antes 'use client' con useDataStore() (ya no
@@ -20,10 +22,17 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   if (!detalle) return { title: 'Producto no encontrado — Veta Dorada' };
 
   const nombre = detalle.producto.descripcionDiseno ?? detalle.catalogoPublico?.descripcion ?? 'Producto Veta Dorada';
+  const descripcion = detalle.producto.descripcionDiseno ?? detalle.catalogoPublico?.descripcion ?? 'Mueble de carpintería arquitectónica a la medida en Bogotá.';
   return {
     title: `${nombre} — Colecciones Veta Dorada`,
-    description: detalle.producto.descripcionDiseno ?? detalle.catalogoPublico?.descripcion ?? undefined,
+    description: descripcion,
     alternates: { canonical: `${SITE_URL}/colecciones/${id}` },
+    ...socialMeta({
+      title: `${nombre} — Colecciones Veta Dorada`,
+      description: descripcion,
+      path: `/colecciones/${id}`,
+      image: detalle.producto.imagenPrincipalUrl,
+    }),
   };
 }
 
@@ -108,11 +117,14 @@ export default async function ProductoDetallePage({ params }: RouteParams) {
         <div className="space-y-4">
           <div className="relative aspect-[4/3] rounded-sm bg-bg-paper overflow-hidden">
             {imagenPrincipal && (
-              <img
+              <Image
                 src={imagenPrincipal}
                 alt={producto.descripcionDiseno ?? 'Producto'}
-                className="w-full h-full object-cover"
-                loading="eager"
+                fill
+                unoptimized
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-cover"
+                priority
               />
             )}
             {!imagenPrincipal && (
@@ -137,12 +149,14 @@ export default async function ProductoDetallePage({ params }: RouteParams) {
                   a.muestras
                     .filter(m => m.imagenMuestraUrl)
                     .map(m => (
-                      <img
+                      <Image
                         key={m.id}
                         src={m.imagenMuestraUrl!}
                         alt={`Muestra ${a.nombre}`}
+                        width={80}
+                        height={80}
+                        unoptimized
                         className="w-20 h-20 flex-shrink-0 rounded-sm border border-border-subtle object-cover"
-                        loading="lazy"
                       />
                     ))
                 )}

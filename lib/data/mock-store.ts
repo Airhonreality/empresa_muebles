@@ -11,6 +11,7 @@ import type {
   BitacoraArticulo, Testimonio, RenderConceptual,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
+import { coincide } from '../search/normalizar'
 import { derivarDesenlace, derivarReduccionComision, P18, P33 } from '../modules/f3/gates'
 import {
   transicionModuloValida, puedeEmitirVeredictoCalidad, P24, rangoInstalacionValido,
@@ -491,11 +492,9 @@ export function createMockStore(): DataStore {
         return catalogo
       },
       buscar(query: string): ProductoCatalogo[] {
-        const q = query.toLowerCase()
-        return catalogo.filter(c =>
-          c.descripcion.toLowerCase().includes(q) ||
-          c.sku.toLowerCase().includes(q) ||
-          (c.categoriaComercial?.toLowerCase().includes(q)))
+        // t-141: búsqueda resiliente (tildes, tokens AND, fuzzy Opción A) — mismo matcher que
+        // consume el SmartSearch del ERP. Read-only: no dispara notify().
+        return catalogo.filter(c => coincide(query, [c.descripcion, c.sku, c.categoriaComercial ?? '']))
       },
       obtenerPorId(id: string): ProductoCatalogo | undefined {
         return catalogo.find(c => c.id === id)
@@ -2290,11 +2289,15 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Testimonio[] {
         return testimonios.filter(t => t.proyectoId === proyectoId && t.publicado)
       },
+      publicados(): Testimonio[] {
+        return testimonios.filter(t => t.publicado)
+      },
       async crear(data: Partial<Testimonio> & { contenido: string }): Promise<Testimonio> {
         const now = new Date().toISOString()
         const nuevo: Testimonio = {
           id: generateId('test'),
           contenido: data.contenido,
+          nombreAutor: data.nombreAutor ?? null,
           rating: data.rating ?? null,
           curado: data.curado ?? false,
           aprobado: data.aprobado ?? false,

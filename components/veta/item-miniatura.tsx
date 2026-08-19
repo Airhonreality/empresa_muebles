@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { type ProductoCatalogo } from '@/lib/data'
 
 interface ItemMiniaturaProps {
@@ -31,11 +32,11 @@ export function ItemMiniatura({ producto, onClick }: ItemMiniaturaProps) {
       onClick={onClick}
       title="Ver detalle del producto"
       aria-label={`Ver detalle de ${producto.descripcion}`}
-      className="h-9 w-9 shrink-0 overflow-hidden rounded-sm border border-border-subtle bg-bg-alt p-0 align-middle shadow-xs transition-colors duration-fast hover:border-brand"
+      className="relative h-9 w-9 shrink-0 overflow-hidden rounded-sm border border-border-subtle bg-bg-alt p-0 align-middle shadow-xs transition-colors duration-fast hover:border-brand"
     >
       {producto.imagenUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob temporales
-        <img src={producto.imagenUrl} alt="" className="h-full w-full object-cover" />
+        // unoptimized: URLs mock/blob temporales en el cotizador
+        <Image src={producto.imagenUrl} alt="" fill unoptimized className="object-cover" />
       ) : (
         <span className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
           {producto.sku.charAt(0) || '·'}

@@ -35,8 +35,8 @@
 | F-14 Pisos de Madera | **v2: anidado bajo F-10.** I-014 — restauración no mapeada. Sin entrada propia en menú principal. | Ruta: `/espacios/pisos-de-madera`. |
 | F-15 Bitácora de Diseño | **v2: renombrado desde "Noticiario".** Blog/casos de estudio. **v3:** entrada programada "Tipos de materiales" (categoría Materiales y Técnica). | Agregar entrada canónica de la bitácora sobre tipos de materiales (madera, barnices, acabados). No es pantalla — es artículo SEO. |
 | F-16 Áreas de Servicio | **v2: anidado bajo F-12.** Sin página independiente. | Sección dentro de F-12. |
-| **F-17** Cotiza tu Espacio | **Nuevo (v3). Requerimiento de web final, bloqueado.** Cotizador público orientativo con rangos. Incluye garantía (2 años), hitos de pago, diseño 3D deducible. | **NO se diseña esta fase.** Gate de publicación: parámetros de costos definidos en ERP (F0). Ver §2.5. |
-| **F-18** Conócenos | **Nuevo (v3).** Historia del taller + perfiles de Hugo García y Airhon J. García. Fundación 2019. Copy con matriz de ponderación (verificación pendiente). | Ruta: `/conocenos`. Ver §2.3. |
+| **F-17** Cotiza tu Espacio | **Nuevo (v3). Requerimiento de web final, bloqueado.** Cotizador público orientativo con rangos. Incluye garantía (2 años), hitos de pago, diseño 3D deducible. | **POSTPUESTO POST-LANZAMIENTO (decisión 2026-08-19).** Gate de publicación: parámetros de costos definidos en ERP (F0). Ver §2.5 y `TAREAS_DIFERIDAS.md` §7. |
+| **F-18** Conócenos | **Nuevo (v3).** Historia del taller + perfiles de Hugo García y Airhon J. García. Fundación 2019. **D-matriz RESUELTA 2026-08-19** (copy final en `contenido_F18_conocenos.md` §9). | Ruta: `/conocenos`. Ver §2.3. |
 | **F-19** Para Arquitectos y Diseñadores | **Nuevo (v3).** Segmento B2B para prescriptores (D2, I-021). Canales de cotización técnica, planos, condiciones comerciales. | Ruta: `/para-arquitectos`. Ver §2.4. |
 
 **Conclusión:** la base F-00..F-13 está sólida. Este plan refina jerarquía, mejora rutas SEO, y agrega las pantallas de confianza y conversión que el análisis competitivo (`destilacion_docs_veta.md`, competidores con showroom/calculadoras/tarifas) señala como ausentes. El subsistema SEO es entregable separado: `plan_seo_2026.md`.
@@ -64,7 +64,7 @@ Namespace F-XX (frontstage). F-02/03/07/08 se conservan tal cual.
 | **F-14** | Pisos de Madera | `/espacios/pisos-de-madera` | Anidado bajo F-10 | I-014. Restauración: pulido, reparación, sellado. | §2.1 |
 | **F-15** | Bitácora de Diseño | `/bitacora`, `/bitacora/[slug]` | Por diseñar | Bloque E + Bloque D. Contenido orgánico. Entrada: "Tipos de materiales". | §2.2 |
 | **F-16** | Áreas de Servicio | (sección dentro de F-12) | Anidado bajo F-12 | D5 (Bogotá + Chía/Cajicá/Cota). Sin página independiente. | §2.0 |
-| **F-17** | Cotiza tu Espacio | `/cotiza-tu-espacio` | **Requerimiento — NO se diseña esta fase** | Rangos orientativos + garantía (2 años) + hitos de pago + 3D deducible. **Bloqueado** hasta parámetros de costos en ERP. | §2.5 |
+| **F-17** | Cotiza tu Espacio | `/cotiza-tu-espacio` | **POSTPUESTO POST-LANZAMIENTO (2026-08-19)** | Rangos orientativos + garantía (2 años) + hitos de pago + 3D deducible. **Bloqueado** hasta parámetros de costos en ERP. Fuera del alcance del lanzamiento actual. | §2.5 |
 | **F-18** | Conócenos | `/conocenos` | **Nuevo (v3)** | Historia (1995→2014→2019), perfiles Hugo García + Airhon J. García, oficio, confianza artesanal. Copy con matriz de ponderación. | §2.3 |
 | **F-19** | Para Arquitectos | `/para-arquitectos` | **Nuevo (v3)** | Segmento prescriptor B2B (D2, I-021). Canales, planos, condiciones comerciales. | §2.4 |
 
@@ -261,11 +261,11 @@ Cada afirmación del copy debe verificarse contra estos criterios antes de publi
 
 ---
 
-### 2.5 — F-17 Cotiza tu Espacio (requerimiento de web final — NO se diseña esta fase)
+### 2.5 — F-17 Cotiza tu Espacio (requerimiento de web final — POSTPUESTO POST-LANZAMIENTO)
 
-**Estado: requerimiento bloqueado.** Esta pantalla no se diseña ni se implementa en la fase actual. Se anota como requisito para la web final.
+**Estado: requerimiento bloqueado y diferido post-lanzamiento (decisión 2026-08-19).** Esta pantalla no se diseña ni se implementa en la fase actual ni en la 2ª actualización de la web post-corte. Se anota como requisito para una iteración futura. No es bloqueante del lanzamiento.
 
-**Gate de publicación:** el ERP debe tener definidos —vía parámetros— los costos base, rangos de precio por tipo de espacio y las reglas de cálculo que alimentan el cotizador. Sin esos datos, cualquier cifra mostrada sería inventada (viola regla anti-invención I-049).
+**Gate de publicación (cuando se active):** el ERP debe tener definidos —vía parámetros— los costos base, rangos de precio por tipo de espacio y las reglas de cálculo que alimentan el cotizador. Sin esos datos, cualquier cifra mostrada sería inventada (viola regla anti-invención I-049).
 
 **Alcance previsto (para cuando se active):**
 - Ruta: `/cotiza-tu-espacio`.
@@ -304,7 +304,7 @@ Para leads cualificados en etapa de negociación, el proceso incluye corroboraci
 | **DC-4** | Línea de tiempo canónica — **CERRADA** (2026-08-08). 1995 tradición familiar → 2014 constitución SAS → 2019 fundación estudio Veta Dorada. `openingDate` en ficha de Google = 2014. El 1995 vive en el relato de marca, no en el dato estructurado. | — (cerrada) | Supervisor |
 | **D-parámetro** | El precio de la asesoría con diseño 3D ($130.000) debe venir de un parámetro del ERP, no hardcodeado. Lo mismo para los rangos de F-17 cuando se active. | F-12 (tiers), F-17 (cotizador) | `plan_demanda.md` D3 |
 | **D-B2B** | Condiciones comerciales para prescriptores (descuento por gremio, modelo white-label vs. co-branded). | F-19 | Supervisor |
-| **D-matriz** | Matriz de ponderación para el copy de F-18 (6 afirmaciones por verificar — ver §2.3). | F-18 (copy definitivo) | Este documento |
+| **D-matriz** | Matriz de ponderación para el copy de F-18 (6 afirmaciones por verificar — ver §2.3). **RESUELTA 2026-08-19** por el Supervisor — copy final aplicado en `contenido_F18_conocenos.md` §9 (sin 1971, sin "liderados por Víctor", abuelo fabricaba ladrillos, Hugo gestión de obras + infraestructura/plomería/electricidad/gas/acabados, Airhon "buen vivir" con salvedad de confirmación). | F-18 (copy definitivo) | Este documento + `contenido_F18_conocenos.md` §9 |
 
 ---
 

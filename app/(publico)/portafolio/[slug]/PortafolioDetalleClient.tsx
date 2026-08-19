@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import type { Portafolio } from '@/lib/data/contracts';
 import Link from 'next/link';
 
@@ -72,11 +73,13 @@ function GalleryOverlay({
 
         {/* Imagen Central con Carrusel */}
         <div className="relative w-full h-full flex flex-col items-center justify-center pointer-events-auto px-16 lg:px-32 py-16">
-          <img
+          <Image
             src={current.url}
             alt={current.alt}
-            className="w-full h-full object-contain drop-shadow-2xl animate-in zoom-in-95 duration-300"
-            loading="eager"
+            fill
+            unoptimized
+            className="object-contain drop-shadow-2xl animate-in zoom-in-95 duration-300"
+            priority
           />
           
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-text-heading text-[10px] font-mono tracking-widest uppercase bg-bg-alt/50 backdrop-blur-md px-4 py-2 rounded-full border border-border-subtle">
@@ -220,6 +223,7 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
                   className="break-inside-avoid relative group cursor-zoom-in overflow-hidden rounded-sm bg-bg-alt ring-1 ring-border-subtle"
                   onClick={() => handleOpenOverlay(idx)}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- grid masonry: next/image exige dimensión fija y el CSS de columnas depende de la altura natural */}
                   <img 
                     src={img.url} 
                     alt={img.alt} 

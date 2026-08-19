@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, type KeyboardEvent } from "react";
 import { InputField } from "./input-field";
+import { useSmartSearch } from "@/lib/hooks/useSmartSearch";
 
 export interface SmartSearchItem {
   id: string;
@@ -21,9 +22,14 @@ export interface SmartSearchProps {
   className?: string;
   allowCreate?: boolean;
   onCreateNew?: () => void;
+  /** Contexto de búsqueda (A.5): aísla historial/uso por pantalla y habilita sugerencias
+   *  de "uso frecuente" cuando el campo está vacío. Ej. "comercial-kanban". */
+  contexto?: string;
 }
 
-/* Primitiva SmartSearch (C4). Fuzzy + historial localStorage, combobox, crear on-the-fly. */
+/* Primitiva SmartSearch (C4). Combobox con matcher resiliente en capas (t-141):
+   normalización + tokens AND + fuzzy acotado (Opción A), historial/uso por contexto en
+   localStorage (A.5), crear on-the-fly. */
 export function SmartSearch({
   items,
   onSelect,
@@ -32,30 +38,30 @@ export function SmartSearch({
   className = "",
   allowCreate = true,
   onCreateNew,
+  contexto,
 }: SmartSearchProps) {
   const [query, setQuery] = useState("");
-  const [filtered, setFiltered] = useState<SmartSearchItem[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Fuzzy filter
-  useEffect(() => {
-    if (!query.trim()) {
-      setFiltered([]);
-      return;
-    }
-    const q = query.toLowerCase();
-    const results = items.filter(
-      (item) =>
-        item.descripcion.toLowerCase().includes(q) ||
-        item.sku.toLowerCase().includes(q) ||
-        (item.categoriaComercial?.toLowerCase().includes(q) ?? false) ||
-        (item.tipo?.toLowerCase().includes(q) ?? false)
-    );
-    setFiltered(results.slice(0, 10));
-    setSelectedIndex(-1);
-  }, [query, items]);
+  const getCampos = (item: SmartSearchItem) => [
+    item.descripcion,
+    item.sku,
+    item.categoriaComercial ?? "",
+    item.tipo ?? "",
+  ];
+
+  const { resultado: filtered, usoFrecuente, registrarUso } = useSmartSearch({
+    items,
+    getCampos,
+    contexto,
+    fuzzy: true,
+    limite: 10,
+  });
+
+  // Query vacía + contexto: sugerencias de uso frecuente (A.5). Con query: resultados.
+  const itemsSugeridos = query.trim() ? filtered : contexto ? usoFrecuente : [];
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -70,22 +76,23 @@ export function SmartSearch({
 
   const handleSelect = (item: SmartSearchItem) => {
     onSelect(item);
+    registrarUso(item);
     setQuery(item.descripcion);
     setShowDropdown(false);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (filtered.length === 0) return;
+    if (itemsSugeridos.length === 0) return;
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % filtered.length);
+      setSelectedIndex((prev) => (prev + 1) % itemsSugeridos.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
+      setSelectedIndex((prev) => (prev - 1 + itemsSugeridos.length) % itemsSugeridos.length);
     } else if (e.key === "Enter" && selectedIndex >= 0) {
       e.preventDefault();
-      handleSelect(filtered[selectedIndex]);
+      handleSelect(itemsSugeridos[selectedIndex]);
     } else if (e.key === "Escape") {
       setShowDropdown(false);
     }
@@ -98,9 +105,12 @@ export function SmartSearch({
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
+          setSelectedIndex(-1);
           setShowDropdown(true);
         }}
-        onFocus={() => query.trim() && setShowDropdown(true)}
+        onFocus={() => {
+          if (query.trim() || itemsSugeridos.length > 0) setShowDropdown(true);
+        }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         role="combobox"
@@ -108,13 +118,21 @@ export function SmartSearch({
         aria-expanded={showDropdown}
         aria-controls="smart-search-list"
       />
-      {showDropdown && (filtered.length > 0 || allowCreate) && (
+      {showDropdown && (itemsSugeridos.length > 0 || (allowCreate && query.trim() && onCreateNew)) && (
         <ul
           id="smart-search-list"
           className="absolute z-50 mt-1 w-full rounded-md border border-border-subtle bg-bg-raised shadow-lg max-h-60 overflow-y-auto"
           role="listbox"
         >
-          {filtered.map((item, index) => (
+          {!query.trim() && itemsSugeridos.length > 0 && (
+            <li
+              role="presentation"
+              className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted"
+            >
+              Uso frecuente
+            </li>
+          )}
+          {itemsSugeridos.map((item, index) => (
             <li
               key={item.id}
               role="option"
@@ -133,16 +151,16 @@ export function SmartSearch({
               </div>
             </li>
           ))}
-            {allowCreate && filtered.length === 0 && query.trim() && onCreateNew && (
-              <li
-                role="option"
-                aria-selected={false}
-                onClick={onCreateNew}
-                className="px-3 py-2 text-sm cursor-pointer hover:bg-bg-alt text-gold-600"
-              >
-                + Crear &quot;{query}&quot; en catálogo
-              </li>
-            )}
+          {allowCreate && filtered.length === 0 && query.trim() && onCreateNew && (
+            <li
+              role="option"
+              aria-selected={false}
+              onClick={onCreateNew}
+              className="px-3 py-2 text-sm cursor-pointer hover:bg-bg-alt text-gold-600"
+            >
+              + Crear &quot;{query}&quot; en catálogo
+            </li>
+          )}
         </ul>
       )}
     </div>

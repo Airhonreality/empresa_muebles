@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { EspacioLanding, type EspacioLandingConfig } from '@/components/veta/espacio-landing';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public';
 
 const TIPO_ESPACIO_CODIGO = 'cava_bar';
@@ -27,6 +28,12 @@ export const metadata: Metadata = {
   description:
     'Cavas y bares a medida en Bogotá. Diseño personalizado, materiales de calidad y acabados premium.',
   alternates: { canonical: `${SITE_URL}/espacios/${CONFIG.slug}` },
+  ...socialMeta({
+    title: 'Cavas y Bares a Medida en Bogotá',
+    description:
+      'Cavas y bares a medida en Bogotá. Diseño personalizado, materiales de calidad y acabados premium.',
+    path: `/espacios/${CONFIG.slug}`,
+  }),
 };
 
 export default async function CavasYBaresPage() {

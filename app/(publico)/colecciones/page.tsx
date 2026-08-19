@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { listarProductosTiendaVisiblesAction } from '@/lib/data/actions/public';
 import type { ProductoTienda } from '@/lib/data';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { socialMeta } from '@/lib/seo/social';
 
 // Server Component (auditoría 2026-08-15, A3): antes 'use client' con useDataStore(), que ya no
 // hidrata el árbol público (ver app/layout.tsx) — trae los productos visibles por Server Action
@@ -14,6 +16,12 @@ export const metadata: Metadata = {
   description:
     'Muebles de carpintería arquitectónica diseñados y fabricados en nuestro taller en Bogotá. Cada pieza combina tradición, precisión técnica y materiales nobles.',
   alternates: { canonical: `${SITE_URL}/colecciones` },
+  ...socialMeta({
+    title: 'Colecciones — Veta Dorada',
+    description:
+      'Muebles de carpintería arquitectónica diseñados y fabricados en nuestro taller en Bogotá. Cada pieza combina tradición, precisión técnica y materiales nobles.',
+    path: '/colecciones',
+  }),
 };
 
 function formatCOP(amount: string | number): string {
@@ -37,11 +45,13 @@ function ProductoCard({ producto }: { producto: ProductoTienda }) {
       {/* Imagen protagonista */}
       <div className="relative aspect-square bg-bg-paper overflow-hidden">
         {producto.imagenPrincipalUrl && (
-          <img
+          <Image
             src={producto.imagenPrincipalUrl}
             alt={producto.descripcionDiseno ?? 'Producto'}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
+            fill
+            unoptimized
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         )}
         {!producto.imagenPrincipalUrl && (

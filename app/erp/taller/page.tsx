@@ -3,9 +3,11 @@
 import { useMemo, useState } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { Busqueda } from '@/components/veta/busqueda'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type Cliente, type Modulo, type Proyecto, type Instalacion, type CasoGarantia } from '@/lib/data'
 import { transicionModuloValida } from '@/lib/modules/f4f5f6/gates'
+import { coincide } from '@/lib/search/normalizar'
 
 const ESTADOS_MODULO = ['por_armar', 'en_armado', 'armado', 'en_calidad'] as const
 type EstadoModulo = (typeof ESTADOS_MODULO)[number]
@@ -80,6 +82,7 @@ export default function TallerPage() {
   const store = useDataStore()
   const version = store.getVersion()
   const [filtroActivo, setFiltroActivo] = useState<EstadoGate | null>(null)
+  const [busqueda, setBusqueda] = useState('')
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState<string | null>(null)
 
   // Agregar datos por proyecto
@@ -158,23 +161,32 @@ export default function TallerPage() {
     return counts
   }, [resumenPorProyecto])
 
-  // Filtrar proyectos según el gate activo
+  // Filtrar proyectos según el gate activo y la búsqueda resiliente (t-141)
   const proyectosFiltrados = useMemo(() => {
-    if (!filtroActivo) {
-      return resumenPorProyecto
+    let resultado = resumenPorProyecto
+    if (filtroActivo) {
+      resultado = resultado.filter(resumen => {
+        if (filtroActivo === 'instalacion') {
+          return resumen.instalaciones.some(i => INSTALACION_ACTIVA.has(i.estado))
+        }
+        if (filtroActivo === 'garantia') {
+          return resumen.casosGarantia.some(c => GARANTIA_ACTIVA.has(c.estado))
+        }
+        // Para estados de módulo
+        return resumen.modulos.some(m => m.estado === filtroActivo)
+      })
     }
-
-    return resumenPorProyecto.filter(resumen => {
-      if (filtroActivo === 'instalacion') {
-        return resumen.instalaciones.some(i => INSTALACION_ACTIVA.has(i.estado))
-      }
-      if (filtroActivo === 'garantia') {
-        return resumen.casosGarantia.some(c => GARANTIA_ACTIVA.has(c.estado))
-      }
-      // Para estados de módulo
-      return resumen.modulos.some(m => m.estado === filtroActivo)
-    })
-  }, [resumenPorProyecto, filtroActivo])
+    if (busqueda.trim()) {
+      resultado = resultado.filter(r =>
+        coincide(busqueda, [
+          r.proyecto.nombreProyecto,
+          r.cliente?.nombre ?? '',
+          r.proyecto.direccionObra ?? '',
+        ])
+      )
+    }
+    return resultado
+  }, [resumenPorProyecto, filtroActivo, busqueda])
 
   // Obtener resumen de conteos de un proyecto
   const conteosPorProyecto = (resumen: ResumenProyecto) => {
@@ -203,6 +215,14 @@ export default function TallerPage() {
         <p className="text-sm text-text-muted mt-2">
           Avance de producción: módulos, instalación y garantía
         </p>
+        <div className="mt-4 max-w-sm">
+          <Busqueda
+            valor={busqueda}
+            onChange={setBusqueda}
+            placeholder="Buscar proyecto o cliente..."
+            label="Buscar en la fila del taller"
+          />
+        </div>
       </header>
 
       {/* Cards de gate como filtros */}
@@ -230,7 +250,7 @@ export default function TallerPage() {
       {/* Lista de proyectos */}
       {proyectosFiltrados.length === 0 ? (
         <p className="text-sm text-text-muted italic">
-          {filtroActivo ? 'Sin proyectos en este filtro.' : 'Sin proyectos en la fila del taller.'}
+          {filtroActivo || busqueda.trim() ? 'Sin proyectos con estos filtros.' : 'Sin proyectos en la fila del taller.'}
         </p>
       ) : (
         <div className="space-y-3">

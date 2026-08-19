@@ -1,0 +1,8 @@
+﻿.opencode/
+.next/
+node_modules/
+poc_screenshots/
+tsconfig.tsbuildinfo
+package-lock.json
+build.log
+.env*
