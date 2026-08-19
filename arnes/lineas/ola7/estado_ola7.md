@@ -1,9 +1,21 @@
-﻿# Estado — Línea Técnica (Ola 6/7: ERP + Sitio)
+# Estado — Línea Técnica (Ola 6/7: ERP + Sitio)
 
 Progreso detallado de la línea técnica. Se lee al arrancar cualquier sesión de esta línea y se actualiza al cerrar cada tarea. Ver `plan_ola7_maestro.md` para el contrato maestro F0-F9.
 
 ---
 
+## ✅ PLAN B3 COMPLETO — ARQUITECTURA WEB PÚBLICA FINALIZADA (2026-08-19, sesión agente)
+
+**Qué se hizo (Arquitectura web de conversión):**
+- **D-Parámetro:** Creado `precio_asesoria_3d` en `fixtures.ts` y la Server Action `obtenerPrecioAsesoria3dAction` para lectura dinámica en F-12.
+- **5 Vistas React construidas:** F-11 (Proceso), F-12 (Asesoría), F-13 (Testimonios), F-18 (Conócenos), F-19 (Para Arquitectos B2B) usando tokens D4 y componentes Server-Side.
+- **Interlinking y Nav:** Se desocupó el nav principal, moviendo links secundarios al footer. Se inyectó navegación contextual en el Home (botones carnada).
+- **Conversión B2B:** El formulario de F-19 se reemplazó por un link directo a WhatsApp corporativo (menor fricción).
+- **Hallazgo técnico resuelto (Home Portafolio):** El componente del Home usaba `<ImagenPlaceholder>` de forma estática; se reemplazó por `next/image` leyendo de `proyecto.imagenPortafolioUrl` (Bug de UI crítico solucionado).
+- **SEO Técnico:** Se añadieron las 5 rutas nuevas a `sitemap.ts` y `llms.txt`.
+- **Verificación mecánica:** `tsc --noEmit` 0, `eslint` 0, build estático de rutas públicas superado.
+
+---
 ## 🧭 PASE DE TRAZABILIDAD PUNTO-0 — CERRADO (2026-08-07)
 
 **Resultado:** bucle completo de 3 bloques ejecutado y verificado.

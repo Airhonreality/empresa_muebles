@@ -40,22 +40,12 @@
 | Elemento | Copy | Estado | Fuente |
 |---|---|---|---|
 | CTA primario | Agenda tu asesoría gratuita | Verificado | `plan_diseno_web_publica.md` §2.0, F-12 |
-| CTA secundario | Hablamos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 | Imagen de fondo | Directiva: fotografía real de un proyecto de la categoría, con luz natural. Recuperar del sitio actual (I-016). Si no hay foto real, usar token D4 `--color-bg-linen`. | — | Tokens D4 Luz & Biofilia (I-037) |
 
 ---
 
 ### 3.2 — Cocinas Integrales
-
-**Ruta:** `/espacios/cocinas-integrales-bogota`
-
-| Elemento | Copy | Estado | Fuente |
-|---|---|---|---|
-| H1 | Cocinas integrales a medida | Verificado | Legacy: `app/(publico)/cocinas-integrales/page.tsx` (backup `dev-v2-arquitectura-20260804`) |
-| Subtítulo | Diseño y fabricación a la medida de tu espacio y estilo | Verificado | Legacy: `app/(publico)/cocinas-integrales/page.tsx` |
-| Párrafo descriptor | Cocinas integrales diseñadas para aprovechar cada centímetro de tu espacio. Materiales de primera, acabados personalizados y instalación impecable. | Verificado | Legacy: `LandingEspacio.tsx` (cocinas) |
-| `<title>` | Cocinas Integrales en Bogotá \| Diseño a Medida | Verificado | Legacy + decisión 2026-08-09 (sin "Premium") |
-| Meta description | Cocinas integrales a medida en Bogotá. Diseño, fabricación e instalación con materiales de primera y acabados personalizados. | Verificado | Legacy + `plan_seo_2026.md` §3 |
+*Nota: Por su altísimo rendimiento histórico y requisitos custom de conversión, el diseño de esta landing fue extraído a su propio documento: `contenido_F09_cocinas.md`.*
 
 ---
 
@@ -134,11 +124,12 @@
 *Las secciones de Validación Técnica, Proceso y CTA final son idénticas en todas las landings.*
 
 #### Validación Técnica (Grid de 3 cards)
+*Nota para Cocinas: usar obligatoriamente las 3 fotos reales del legacy (1. Asesoría integral frente a herraje, 2. Modelado 3D en monitores dobles, 3. Instalación real con el gato).*
 | Card | Título | Cuerpo | Estado | Fuente |
 |---|---|---|---|---|
-| 1 | Disminuye la incertidumbre | Visualizas tu espacio en 3D antes de cortar la primera pieza. Así ves exactamente cómo quedará y tomas decisiones con toda la información. | Verificado | `contenido_F01_home.md` §3.3 |
-| 2 | Punto de Fábrica Directo | Diseñamos y fabricamos en nuestro propio taller. Sin intermediarios, sin sobrecostos, sin perder calidad en cada eslabón de la cadena. | Verificado | `contenido_F01_home.md` §3.3 |
-| 3 | Asesoría con diseñadores | Tu proyecto lo acompaña un diseñador industrial de la Universidad Nacional de principio a fin. No vendemos catálogos: diseñamos contigo cada espacio para que responda a cómo vives. | Verificado | `contenido_F01_home.md` §3.3 |
+| 1 | Disminuye la incertidumbre (Modelado 3D) | Visualizas tu proyecto antes de que empiece, asegurando una ejecución sin sorpresas. Ves exactamente cómo quedará en 3D antes de cortar la primera pieza. | Verificado / Override | `contenido_F01_home.md` / Legacy |
+| 2 | Punto de Fábrica Directo (Asesoría Integral) | Te guiamos en cada paso: distribución, materiales y diseño funcional. Sin intermediarios, fabricamos en nuestro propio taller para cuidar cada eslabón de la cadena. | Verificado / Override | `contenido_F01_home.md` / Legacy |
+| 3 | Garantía y Satisfacción | Aseguramos la calidad y durabilidad de cada proyecto, respaldados por nuestra experiencia técnica y un equipo de diseñadores industriales a tu lado. | Override | Ingeniería inversa landing original |
 
 #### Cómo trabajamos (4 pasos resumidos)
 | Paso | Título | Cuerpo | Estado | Fuente |
@@ -154,7 +145,6 @@
 | H2 | ¿Hablamos de tu espacio? | Verificado | `contenido_F01_home.md` §3.11 |
 | Cuerpo | Cuéntanos qué tienes en mente. Un diseñador te escucha, visita tu espacio y te entrega una cotización detallada sin compromiso. | Verificado | `contenido_F01_home.md` §3.11 |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | `contenido_F01_home.md` §3.11 |
-| CTA secundario | Escríbenos por WhatsApp | Verificado | `contenido_F01_home.md` §3.11 |
 
 ---
 

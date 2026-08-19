@@ -36,7 +36,6 @@
 | H1 | Lo que dicen nuestros clientes | Verificado | `contenido_F01_home.md` §3.10 |
 | Subtítulo | Historias reales de proyectos entregados en Bogotá y la sabana. | Verificado | Tono Creador Experto: "historias reales" vs. "testimonios inventados". |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | `plan_diseno_web_publica.md` §2.0, F-12 |
-| CTA secundario | Hablamos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 | Imagen de fondo | Directiva: fotografía de un proyecto terminado por Veta Dorada (ej: cocina o closet) con luz natural. Recuperar del sitio actual (I-016). Si no hay foto real, usar token D4 `--color-bg-linen`. | — | Tokens D4 Luz & Biofilia (I-037) |
 
 ---
@@ -71,7 +70,6 @@
 | H2 | ¿Listo para ser nuestro próximo cliente satisfecho? | Verificado | Tono Creador Experto: directo, sin presión de venta. |
 | Cuerpo | Agenda una asesoría gratuita y descubre por qué nuestros clientes nos recomiendan. | Verificado | `plan_diseno_web_publica.md` §2.0 |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | `plan_diseno_web_publica.md` §2.0, F-12 |
-| CTA secundario | Escríbenos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 
 ---
 

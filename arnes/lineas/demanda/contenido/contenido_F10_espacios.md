@@ -37,7 +37,6 @@
 | H1 | Espacios que diseñamos, fabricamos e instalamos en madera | Verificado | Tono Creador Experto: verbos concretos, cero adjetivos impostados. |
 | Párrafo descriptor | Cada espacio de tu hogar merece una solución a la medida: la medida de tu cocina, de tu closet, de tu forma de vivir. Tres generaciones de oficio en la construcción, un estudio de diseño al frente y la fábrica en el mismo lugar. | Verificado | `plan_diseno_web_publica.md` §1 (embudo); F-01 descriptor |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | `plan_diseno_web_publica.md` §2.0, F-12 |
-| CTA secundario | Hablamos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 | Imagen de fondo | Directiva: fotografía de una pieza a grano abierto en el taller o un espacio integral terminado con luz natural. Recuperar del sitio actual (I-016). | — | Tokens D4 Luz & Biofilia (I-037) |
 
 ### 3.2 — Grid de categorías (7 tarjetas)
@@ -62,7 +61,6 @@
 | H2 | ¿No sabes por dónde empezar? | Verificado | Tono Creador Experto: honesto respecto de que no todo se elige con tarjeta. |
 | Cuerpo | Cuéntanos qué espacio tienes en mente. Un diseñador te escucha, visita tu espacio y te entrega una cotización detallada sin compromiso. | Verificado | `contenido_F01_home.md` §3.11 |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | → F-12 |
-| CTA secundario | Escríbenos por WhatsApp | Verificado | → `https://wa.me/573025922101?...` (F-00) |
 
 ---
 

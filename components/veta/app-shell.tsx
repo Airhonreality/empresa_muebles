@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Phone, Clock, LayoutGrid, Images, NotebookPen, UserCircle, Home } from 'lucide-react';
+import { MapPin, Phone, Clock, LayoutGrid, Images, NotebookPen, UserCircle, Home, Users, Briefcase } from 'lucide-react';
 import { NavItem } from '@/components/veta/nav-item';
 import { MetaItem } from '@/components/veta/meta-item';
 import { WhatsappFloat } from '@/components/veta/whatsapp-float';
@@ -32,13 +32,12 @@ const navigation = [
   { href: '/cuenta', label: 'Mi cuenta', icon: UserCircle },
 ] as const;
 
-// Footer §3.4 contenido_F00_shell.md (Col 3 — Enlaces): mismas rutas reales de arriba + Inicio,
-// sin íconos (es una lista de texto, no el nav). No se agregan Espacios/Cómo Trabajamos/
-// Conócenos/Para Arquitectos/Agenda tu Asesoría: esas páginas (F-10/F-11/F-18/F-19/F-12) no
-// existen todavía -- mismo criterio que app/(publico)/page.tsx:15 ("ningún <Link> apunta a una
-// ruta que no exista").
 const footerEnlaces = [
   ...navigation.map(({ href, label }) => ({ href, label })),
+  { href: '/como-trabajamos', label: 'Proceso' },
+  { href: '/conocenos', label: 'Conócenos' },
+  { href: '/testimonios', label: 'Testimonios' },
+  { href: '/para-arquitectos', label: 'Para Arquitectos B2B' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -77,6 +76,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                 ) : item.href === '/cuenta' ? (
                   <div key={item.href} className="flex items-center gap-6 pl-2">
+                    <Link
+                      href="/agenda-tu-asesoria"
+                      className="hidden lg:flex px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white text-sm font-medium rounded-sm transition-colors shadow-sm"
+                    >
+                      Agenda tu asesoría
+                    </Link>
                     <div className="h-5 w-px bg-border-subtle" aria-hidden="true" />
                     <Link
                       href={item.href}

@@ -30,6 +30,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/portafolio`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/colecciones`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/bitacora`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${SITE_URL}/como-trabajamos`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${SITE_URL}/agenda-tu-asesoria`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${SITE_URL}/testimonios`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${SITE_URL}/conocenos`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${SITE_URL}/para-arquitectos`, changeFrequency: 'monthly', priority: 0.7 },
   ]
 
   const portafolioUrls: MetadataRoute.Sitemap = portafolio.map((p) => ({

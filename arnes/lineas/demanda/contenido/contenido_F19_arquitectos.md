@@ -37,7 +37,6 @@
 | H1 | Diseñe con quien fabrica. Sin intermediarios. | Verificado | `plan_diseno_web_publica.md` §2.4 (copy provisional → verificado 2026-08-09) |
 | Párrafo descriptor | Veta Dorada fabrica lo que usted diseña: cocinas, closets y espacios integrales en madera, con la obra y el diseño en la misma mesa. Comunicación directa con el taller y cotización con plazo claro. | Verificado | `plan_diseno_web_publica.md` §2.4; I-021 |
 | CTA primario | Envíe su proyecto para cotizar | Verificado | `plan_diseno_web_publica.md` §2.4 ítem 5 (formulario con adjunto) |
-| CTA secundario | Hablamos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 
 ### 3.2 — ¿Por qué trabajar con Veta Dorada?
 

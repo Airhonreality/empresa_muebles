@@ -3,7 +3,7 @@
 **Fecha:** 2026-08-19
 **Autor:** Agente (a petición del Supervisor)
 **Línea:** Técnica · Subsistema de almacenamiento de imágenes
-**Estado:** ⚠️ PROPUESTA ABIERTA — requiere checkpoint del Supervisor
+**Estado:** ✅ IMPLEMENTADA (Middleware con inferencia de contexto por prefijo en lib/r2/optimize.ts)
 
 ---
 

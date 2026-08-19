@@ -10,31 +10,31 @@ export type HomeImageSeoFlow = {
 export const HOME_IMAGES_SEO: Record<string, HomeImageSeoFlow> = {
   hero: {
     section: 'Hero',
-    src: '/images/home/cocina-integral-madera-bogota-1.webp',
-    alt: 'Cocina integral en madera diseñada y fabricada por Veta Dorada en Bogotá',
-    title: 'Cocina integral instalada en Bogotá — Veta Dorada',
-    caption: 'Cocina integral instalada en Bogotá',
-    keywords: ['cocina integral', 'carpinteria arquitectonica', 'muebles madera bogota']
+    src: 'https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/home/1787176798909-cocina-integral-lujo-madera-bogota.webp',
+    alt: 'Diseño y fabricación de cocina integral de lujo en madera a la medida en Bogotá por Veta Dorada',
+    title: 'Cocina integral de lujo en madera — Veta Dorada Bogotá',
+    caption: 'Cocina integral de lujo instalada en Bogotá',
+    keywords: ['cocina integral lujo', 'carpinteria arquitectonica', 'muebles madera bogota', 'cocinas modernas']
   },
   validacion3d: {
     section: 'ValidacionTecnica_1',
-    src: '/images/home/diseno-3d-visualizacion-previa-bogota-1.webp',
+    src: '/images/home/modelado-3d.avif',
     alt: 'Visualización de diseño 3D previa a fabricación — Veta Dorada',
-    title: 'Visualización de diseño 3D para proyecto a medida',
+    title: 'Modelado 3D y Optimización',
     keywords: ['diseño 3d muebles', 'previsualizacion carpinteria']
   },
   validacionTaller: {
     section: 'ValidacionTecnica_2',
-    src: '/images/home/taller-fabricacion-muebles-madera-bogota-1.webp',
+    src: '/images/home/mirando-herrajes.avif',
     alt: 'Taller de fabricación de muebles en madera — Veta Dorada, Bogotá',
-    title: 'Taller propio de fabricación de muebles en Bogotá',
+    title: 'Asesoría Integral',
     keywords: ['fabrica muebles bogota', 'taller carpinteria']
   },
   validacionDiseñador: {
     section: 'ValidacionTecnica_3',
-    src: '/images/home/disenador-industrial-midiendo-espacio-bogota-1.webp',
-    alt: 'Diseñador industrial de Veta Dorada midiendo espacio en Bogotá',
-    title: 'Visita y medición técnica en espacio',
+    src: '/images/home/instalacion-real.jpg',
+    alt: 'Instalación final con cliente en espacio — Veta Dorada',
+    title: 'Garantía y Satisfacción',
     keywords: ['medicion muebles medida', 'asesoría diseño bogota']
   },
   espaciosCocinas: {

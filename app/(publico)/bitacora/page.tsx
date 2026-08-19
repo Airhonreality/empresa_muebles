@@ -46,14 +46,7 @@ export default async function BitacoraIndexPage() {
                 >
                   Agendar asesoría de diseño
                 </a>
-                <a 
-                  href={WHATSAPP_URL} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-sm border border-border-strong px-8 py-4 text-sm font-medium text-text-heading transition-colors hover:bg-surface-100"
-                >
-                  Hablamos por WhatsApp
-                </a>
+                
               </div>
             </div>
           </div>

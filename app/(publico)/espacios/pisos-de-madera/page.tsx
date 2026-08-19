@@ -55,9 +55,7 @@ export default async function PisosDeMaderaLanding() {
             <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl">
               Solicitar diagnóstico gratuito
             </a>
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 border-2 border-white/80 bg-black/20 backdrop-blur-sm text-white font-medium rounded hover:bg-white hover:text-black transition-colors">
-              Hablamos por WhatsApp
-            </a>
+            
           </div>
         </div>
       </section>

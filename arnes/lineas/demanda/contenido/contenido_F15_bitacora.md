@@ -44,7 +44,6 @@
 | H1 | Bitácora de Diseño | Verificado | `plan_diseno_web_publica.md` §2.2 (v2, renombrado desde "Noticiario") |
 | Párrafo descriptor | El cuaderno de obra de Veta Dorada: proyectos reales, materiales y decisiones de diseño. Historias de espacios que se fabricaron, no imágenes de catálogo. | Verificado | `plan_diseno_web_publica.md` §2.2 (engagement) |
 | CTA primario | Agendar asesoría de diseño | Verificado | → F-12 |
-| CTA secundario | Hablamos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 | Imagen de fondo | Directiva: detalle de taller o de una obra en proceso. Recuperar del sitio actual si existe (I-016). | — | Tokens D4 Luz & Biofilia (I-037) |
 
 ### 3.2 — Categorías
@@ -72,7 +71,6 @@
 | H2 | ¿Quiere un proyecto así? | Verificado | `plan_diseno_web_publica.md` §2.2 (aproximación de detalle) |
 | Cuerpo | Agende su asesoría de diseño: un diseñador visita su espacio, lo mide y le presenta una cotización sin compromiso. | Verificado | `contenido_F12_agendar.md` §3.1 |
 | CTA primario | Agendar asesoría de diseño | Verificado | → F-12 |
-| CTA secundario | Escríbenos por WhatsApp | Verificado | → F-00 |
 
 ---
 

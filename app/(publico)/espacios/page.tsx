@@ -162,14 +162,7 @@ export default function EspaciosPage() {
           </p>
           <div className="mt-10 flex flex-wrap justify-center items-center gap-4">
             <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-1 text-sm font-medium text-white border-b border-white/30 transition-all duration-300 hover:border-gold-500 hover:text-gold-400 pb-1"
-            >
-              Hablamos por WhatsApp
-            </a>
+            
           </div>
         </div>
       </section>
@@ -247,7 +240,7 @@ export default function EspaciosPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
-            <CtaSecondary href={WHATSAPP_URL}>Escríbenos por WhatsApp</CtaSecondary>
+            
           </div>
         </div>
       </section>

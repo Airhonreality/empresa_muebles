@@ -133,12 +133,20 @@ Las 16 piezas de la tabla de Notion ya están mapeadas al embudo (Descubrimiento
 
 ---
 
-### 🅵 BLOQUE F — Ad manager agentivo
-**Cierra cuando:** *una decisión de puja se toma con datos de venta real, no de formularios.*
+### 🅵 BLOQUE F — Ad manager agentivo (Automatización Total)
+**Cierra cuando:** *el agente ejecuta un Test A/B, lee el ganador mediante la API y reasigna el presupuesto automáticamente sin intervención humana.*
 
-Primero solo lectura y análisis. **La pregunta que abre el bloque:** al duplicar el presupuesto, ¿el CPA se mantuvo o subió? Si se mantuvo → volver a duplicar. Si subió → ahí empieza la optimización estructural.
+**Fase 1: Configuración y lectura de datos base**
+- **Dependencia dura:** Bloque A cerrado, sin excepción. Sin verdad de terreno (`gclid` y conversiones reales capturadas), un agente automatizando campañas amplifica el error más rápido que un humano.
+- **Acción manual inicial (`t-110`):** El humano gestiona el Developer Token y el flujo OAuth2 para habilitar las credenciales de la API de Google Ads. (La facturación sigue siendo manual).
+- **La pregunta de transición:** Al duplicar el presupuesto base, ¿el CPA se mantuvo o subió? Si se mantuvo → volver a duplicar. Si subió → arranca la optimización estructural (Fase 2).
 
-**Depende de:** A, sin excepción. Sin verdad de terreno, un agente optimizando campañas amplifica el error más rápido que un humano.
+**Fase 2: Agencialidad total (Cero pasos manuales en el día a día)**
+Una vez autorizada la API y con la data estructurada en la web, el agente asume el control del ciclo completo de pauta vía código (REST/gRPC):
+1. **Generación de Estructura:** Creación programática de Grupos de Anuncios y segmentación precisa, mapeando palabras clave directo a sus URLs F-09 específicas (ej. "Cavas" a `/espacios/cavas-y-bares`).
+2. **Experimentación Autónoma:** Despliegue de `Campaign Experiments` (Test A/B reales). El agente inyecta múltiples variantes de copys (DSA/RSA) dividiendo el tráfico.
+3. **Optimización en tiempo real:** Lectura programática de rendimiento mediante GAQL (Google Ads Query Language). El agente pausa automáticamente anuncios perdedores y concentra presupuesto en los ganadores.
+4. **Defensa de Presupuesto:** Monitoreo autónomo de términos de búsqueda reales para inyectar palabras clave negativas apenas se detecten intenciones basura (ej. "muebles usados").
 
 ---
 

@@ -2,8 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin } from 'lucide-react';
-import { listarPortafolioPublicadosAction, listarTestimoniosPublicadosAction } from '@/lib/data/actions/public';
+import { 
+  listarPortafolioPublicadosAction, 
+  listarTestimoniosPublicadosAction,
+  obtenerHeroCarouselImagesAction
+} from '@/lib/data/actions/public';
 import { getHomeJsonLd, SITE_URL } from '@/lib/seo/jsonld';
+import { HeroCarousel } from '@/components/veta/hero-carousel';
 import { socialMeta } from '@/lib/seo/social';
 import { MetaItem } from '@/components/veta/meta-item';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
@@ -37,11 +42,8 @@ export const metadata: Metadata = {
 // "Espacios que creamos" navegan a su landing real en vez de WhatsApp (fix de UX, antes las 7
 // mandaban directo a WhatsApp por esta misma nota, que ya no aplica para esta sección).
 //
-// F-12 (agendar asesoría), F-11 (proceso) y F-18 (historia) siguen sin existir -- los CTA que el
-// doc de contenido apunta ahí van a WhatsApp (el único canal de contacto real hoy, URL aprobada en
-// contenido_F00_shell.md) o se omiten si ni siquiera WhatsApp es el intento correcto (ver CTAs de
-// "Cómo trabajamos" y "Conócenos", sin botón). Ningún <Link> de esta página apunta a una ruta que
-// no exista.
+// F-12 (agendar asesoría), F-11 (proceso), F-13 (testimonios), F-18 (historia) y F-19 (arquitectos) ya existen (Bloque B3 implementado).
+// Los CTAs dirigen a su respectiva página para mantener al usuario en el circuito cerrado.
 const WHATSAPP_URL =
   'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
 
@@ -91,22 +93,22 @@ function ImagenPlaceholder({ inicial, className }: { inicial: string; className?
 
 const VALIDACION_TECNICA = [
   {
-    imageKey: 'validacion3d',
-    titulo: 'Disminuye la incertidumbre',
+    imageKey: 'validacionTaller',
+    titulo: 'Asesoría Integral',
     cuerpo:
-      'Visualizas tu espacio en 3D antes de cortar la primera pieza. Así ves exactamente cómo quedará y tomas decisiones con toda la información.',
+      'Te guiamos en cada paso: distribución, materiales y diseño funcional.',
   },
   {
-    imageKey: 'validacionTaller',
-    titulo: 'Punto de Fábrica Directo',
+    imageKey: 'validacion3d',
+    titulo: 'Modelado 3D y Optimización',
     cuerpo:
-      'Diseñamos y fabricamos en nuestro propio taller. Sin intermediarios, sin sobrecostos, sin perder calidad en cada eslabón de la cadena.',
+      'Visualiza tu proyecto antes de que empiece, asegurando una ejecución sin sorpresas.',
   },
   {
     imageKey: 'validacionDiseñador',
-    titulo: 'Asesoría con diseñadores',
+    titulo: 'Garantía y Satisfacción',
     cuerpo:
-      'Tu proyecto lo acompaña un diseñador industrial de la Universidad Nacional de principio a fin. No vendemos catálogos: diseñamos contigo cada espacio para que responda a cómo vives.',
+      'Aseguramos la calidad y durabilidad de cada proyecto, respaldados por nuestra experiencia.',
   },
 ];
 
@@ -140,8 +142,10 @@ const PASOS = [
 ];
 
 export default async function Home() {
-  const proyectosDestacados = (await listarPortafolioPublicadosAction()).slice(0, 3);
-
+  const [proyectosDestacados, heroImages] = await Promise.all([
+    listarPortafolioPublicadosAction().then(res => res.slice(0, 3)),
+    obtenerHeroCarouselImagesAction()
+  ]);
   // Testimonios reales curados (I-050, I-019 — reseñas de Google Business Profile) ya no se
   // hardcodean (D-01-9 T-03): vienen de store.testimonios.publicados() por Server Action escopada.
   // El seed de datos vive en lib/data/fixtures.ts TESTIMONIOS + DB (testimonios.nombre_autor).
@@ -171,18 +175,16 @@ export default async function Home() {
             {/* Copy intermedio oculto temporalmente por solicitud del usuario */}
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
-              <CtaSecondary href={WHATSAPP_URL}>Hablamos por WhatsApp</CtaSecondary>
+              
             </div>
           </div>
           {/* Lado Derecho: Imagen de alta calidad */}
           <div className="relative h-[50vh] lg:h-auto overflow-hidden bg-bg-alt">
-            <Image
-              src={HOME_IMAGES_SEO.hero.src}
-              alt={HOME_IMAGES_SEO.hero.alt}
-              fill
-              priority
-              className="object-cover transition-transform duration-[20s] ease-out hover:scale-105"
-              sizes="(max-width: 1024px) 100vw, 50vw"
+            <HeroCarousel
+              images={heroImages}
+              fallbackImage={{ src: HOME_IMAGES_SEO.hero.src, alt: HOME_IMAGES_SEO.hero.alt }}
+              priority={true}
+              sizes="100vw"
             />
           </div>
         </div>
@@ -213,32 +215,28 @@ export default async function Home() {
       {/* 2. Validación Técnica */}
       <section className="bg-charcoal-900 py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-12 md:grid-cols-3">
             {VALIDACION_TECNICA.map((card) => {
               const imgData = HOME_IMAGES_SEO[card.imageKey as keyof typeof HOME_IMAGES_SEO];
               return (
-                <div key={card.titulo} className="group relative h-[450px] w-full overflow-hidden rounded-sm cursor-default">
-                  {/* Background Image */}
-                  <Image
-                    src={imgData.src}
-                    alt={imgData.alt}
-                    fill
-                    className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                  />
-                  {/* Overlays (Estado fijo protector) */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/95 via-charcoal-900/60 to-transparent" />
-                  <div className="absolute inset-0 bg-charcoal-900/30" />
+                <div key={card.titulo} className="group relative flex flex-col w-full cursor-default">
+                  {/* Image Container (Text is OUTSIDE below) */}
+                  <div className="relative h-[450px] w-full overflow-hidden rounded-sm mb-6">
+                    <Image
+                      src={imgData.src}
+                      alt={imgData.alt}
+                      fill
+                      className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                  </div>
 
-                  {/* Content */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-8 z-10">
-                    {/* Título */}
-                    <h3 className="font-display text-2xl font-semibold text-white relative mb-3">
+                  {/* Content (Outside) */}
+                  <div className="flex flex-col">
+                    <h3 className="font-display text-xl font-semibold text-gold-500 mb-3 transition-colors duration-300 group-hover:text-gold-400">
                       {card.titulo}
                     </h3>
-
-                    {/* Texto descriptivo (siempre visible) */}
-                    <p className="text-sm text-gold-100/90 leading-relaxed">
+                    <p className="text-sm text-gold-100/90 leading-relaxed font-light">
                       {card.cuerpo}
                     </p>
                   </div>
@@ -262,7 +260,7 @@ export default async function Home() {
               </p>
             </div>
             <div className="lg:col-span-5 flex lg:justify-end">
-              <CtaPrimary href={WHATSAPP_URL}>Agendar visita técnica a mi espacio</CtaPrimary>
+              <CtaPrimary href="/agenda-tu-asesoria">Agendar visita técnica a mi espacio</CtaPrimary>
             </div>
           </div>
         </div>
@@ -334,6 +332,9 @@ export default async function Home() {
               ))}
             </div>
           </div>
+          <div className="mt-16 text-center">
+            <CtaSecondary href="/como-trabajamos">Ver nuestro método completo</CtaSecondary>
+          </div>
         </div>
       </section>
 
@@ -348,10 +349,22 @@ export default async function Home() {
               <Link
                 key={proyecto.id}
                 href={`/portafolio/${proyecto.slug}`}
-                className="group rounded-sm overflow-hidden border border-border-subtle/50 transition-shadow duration-300 hover:shadow-lg"
+                className="group rounded-sm overflow-hidden border border-border-subtle/50 transition-shadow duration-300 hover:shadow-lg flex flex-col bg-bg-paper"
               >
-                <ImagenPlaceholder inicial={proyecto.titulo.charAt(0)} className="aspect-[16/9]" />
-                <div className="p-4">
+                {proyecto.imagenPortafolioUrl ? (
+                  <div className="relative aspect-[16/9] w-full overflow-hidden">
+                    <Image
+                      src={proyecto.imagenPortafolioUrl}
+                      alt={`Proyecto ${proyecto.titulo}`}
+                      fill
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                    />
+                  </div>
+                ) : (
+                  <ImagenPlaceholder inicial={proyecto.titulo.charAt(0)} className="aspect-[16/9]" />
+                )}
+                <div className="p-4 flex flex-col flex-1">
                   <h3 className="font-display font-semibold text-text-heading line-clamp-1">{proyecto.titulo}</h3>
                   <MetaItem icon={MapPin}>{proyecto.categoriaEspacio}</MetaItem>
                 </div>
@@ -383,6 +396,9 @@ export default async function Home() {
                 Airhon J. García traduce esa experiencia al lenguaje del diseño. Juntos, en Veta Dorada, entregan
                 espacios que se habitan con gusto.
               </p>
+              <div className="mt-8">
+                <CtaSecondary href="/conocenos">Conoce a Hugo y Airhon</CtaSecondary>
+              </div>
             </div>
           </div>
         </div>
@@ -404,7 +420,7 @@ export default async function Home() {
                 forma de saberlo con certeza es una visita a tu espacio: medimos, diseñamos y cotizamos sin compromiso.
               </p>
               <div className="mt-8">
-                <CtaPrimary href={WHATSAPP_URL}>Agendar una visita sin costo</CtaPrimary>
+                <CtaPrimary href="/agenda-tu-asesoria">Agendar una visita sin costo</CtaPrimary>
               </div>
             </div>
           </div>
@@ -462,6 +478,9 @@ export default async function Home() {
               </div>
             ))}
           </div>
+          <div className="mt-16 text-center">
+            <CtaSecondary href="/testimonios">Leer más historias de clientes</CtaSecondary>
+          </div>
         </div>
       </section>
 
@@ -491,15 +510,8 @@ export default async function Home() {
             detallada sin compromiso.
           </p>
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
-            <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-1 text-sm font-medium text-white border-b border-white/30 transition-all duration-300 hover:border-gold-500 hover:text-gold-400 pb-1"
-            >
-              Escríbenos por WhatsApp
-            </a>
+            <CtaPrimary href="/agenda-tu-asesoria">Agenda tu asesoría gratuita</CtaPrimary>
+            
           </div>
         </div>
       </section>

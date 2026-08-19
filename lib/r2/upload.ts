@@ -1,4 +1,7 @@
+"use server";
+
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { optimizeImage, inferContextFromPrefix } from "./optimize";
 
 // Inicializar cliente de R2 (Cloudflare R2 es compatible con S3 SDK)
 const r2Client = new S3Client({
@@ -25,19 +28,32 @@ export async function uploadFileToR2(file: File, prefix: string = "portafolio"):
   }
 
   const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  const rawBuffer = Buffer.from(arrayBuffer);
+  
+  // Inferir el contexto (hero, general, logo, avatar) a partir de la carpeta destino
+  const context = inferContextFromPrefix(prefix);
+  
+  // Procesar la imagen con sharp
+  const { data: optimizedBuffer, contentType } = await optimizeImage(rawBuffer, file.type, context);
+
   const timestamp = Date.now();
-  const sanitizedName = file.name
+  // Al cambiar formato a webp, asegurarse de cambiar la extensión si es necesario
+  let sanitizedName = file.name
     .replace(/\s+/g, "_")
     .replace(/[^a-zA-Z0-9._-]/g, "");
+    
+  if (contentType === "image/webp" && !sanitizedName.endsWith(".webp")) {
+    sanitizedName = sanitizedName.replace(/\.[^/.]+$/, "") + ".webp";
+  }
+
   const key = `${prefix}/${timestamp}-${sanitizedName}`;
 
   await r2Client.send(
     new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
-      Body: buffer,
-      ContentType: file.type,
+      Body: optimizedBuffer,
+      ContentType: contentType,
       CacheControl: "public, max-age=31536000", // Cache de 1 año
     })
   );
@@ -62,7 +78,7 @@ export async function deleteFileFromR2(key: string): Promise<void> {
  * Extrae la clave de R2 de una URL pública.
  * Ejemplo: "https://bucket.r2.cloudflarestorage.com/portafolio/123-foto.jpg" -> "portafolio/123-foto.jpg"
  */
-export function extractR2KeyFromUrl(url: string): string | null {
+export async function extractR2KeyFromUrl(url: string): Promise<string | null> {
   try {
     const urlObj = new URL(url);
     const path = urlObj.pathname.substring(1); // Remover el "/" inicial

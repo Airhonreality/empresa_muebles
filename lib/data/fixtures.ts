@@ -70,6 +70,7 @@ export const PARAMETROS: Parametro[] = [
   { id: UUID('par22'), clave: 'promesa_semanas', grupo: 'cronograma', tipo: 'numerico', valorNumeric: '7', valorTexto: null, valorBooleano: null, unidad: 'semanas', descripcion: 'Promesa actual al cliente: 7 semanas (ideal 4; hoy se tarda 6.5)' },
   { id: UUID('par23'), clave: 'sla_novedad_critica_min_horas', grupo: 'cronograma', tipo: 'numerico', valorNumeric: '5', valorTexto: null, valorBooleano: null, unidad: 'horas', descripcion: 'Ventana mínima SLA de novedad crítica' },
   { id: UUID('par24'), clave: 'sla_novedad_critica_max_horas', grupo: 'cronograma', tipo: 'numerico', valorNumeric: '24', valorTexto: null, valorBooleano: null, unidad: 'horas', descripcion: 'Ventana máxima SLA de novedad crítica' },
+  { id: UUID('par25'), clave: 'precio_asesoria_3d', grupo: 'comercial', tipo: 'numerico', valorNumeric: '130000', valorTexto: null, valorBooleano: null, unidad: 'COP', descripcion: 'Precio base de la asesoría con diseño 3D' },
 ]
 
 const estaciones: Proyecto[] = [

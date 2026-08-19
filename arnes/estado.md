@@ -1,4 +1,4 @@
-﻿# Estado del proyecto — dashboard
+# Estado del proyecto — dashboard
 
 Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qué fase está cada línea de trabajo activa, ahora mismo. El detalle cronológico completo vive en el `estado_<linea>.md` de cada línea — no se duplica acá.
 
@@ -145,8 +145,16 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 - **Lote B (testimonios, migración aditiva + UI ERP):** columna `testimonios.nombre_autor` (text, nullable) — migración `drizzle/v3/0010_fresh_vision.sql` (aditiva; la 0009 ya existía: `personas.documento`); `publicados()` en DataStore (contracts/mock-store/drizzle-impl); `listarTestimoniosPublicadosAction()` en `lib/data/actions/public.ts`; pantalla ERP `/erp/portafolio/testimonios` + entrada en sidebar; Home data-driven (`listarTestimoniosPublicadosAction()`, JSON-LD desde datos, TESTIMONIOS hardcodeados eliminados); fixtures con `nombreAutor` real (Glenda Danuro, Daniela Barón Esparza, Juan Spiro, Madeline Attara — GBP 5/5); seed idempotente `scripts/seed-dev.ts` (UUID estable derivado del id de fixture; FKs a null porque los ids `mock-*` no existen en BD; allowlist ampliada con `ep-muddy-cherry-at5j2mz7` = host real de `.env.local` — ver discrepancia de línea 81). **4 testimonios sembrados y verificados** (`publicado=true`) contra la DB real.
 - **Lote C (docs):** F-17 "Cotiza tu Espacio" oficialmente **POSTPUESTO post-lanzamiento** (`plan_diseno_web_publica.md` §0/§1/§2.5 + `TAREAS_DIFERIDAS.md` §7); **D-matriz de F-18 RESUELTA por el Supervisor (2026-08-19)** — copy final aplicado en `contenido_F18_conocenos.md` §9 (sin año 1971, sin "liderados por Víctor", abuelo fabricaba ladrillos, Hugo gestión de obras + infraestructura/plomería/electricidad/gas/acabados, Airhon centrado en "buen vivir" — interpretación asumida pendiente de confirmación de Javier; H1 "Tres generaciones construyendo. Un estudio diseñando." aprobado).
 - **Verificación completa:** `tsc --noEmit` 0 · `eslint .` limpio en archivos tocados (errores restantes preexistentes en `scripts/*.ts` — no introducidos) · `next build` OK con `DATA_IMPL=mock` Y `DATA_IMPL=drizzle` · `drizzle-kit generate` sin drift · 76/76 tests mock-store.
-- **⚠️ Impacto en el plan B3 (5 páginas web F-11/F-12/F-13/F-18/F-19):** el plan B3 redactado por otro agente quedó **desactualizado** en 6 puntos: (1) la D-matriz ya NO está pendiente — el copy de F-18 es final; (2) `publicados()` y `listarTestimoniosPublicadosAction()` YA existen — F-13 solo debe consumirlos; (3) el Home YA es data-driven, sin TESTIMONIOS hardcodeados; (4) `Testimonio.nombreAutor` existe — F-13 puede renderizar nombres reales; (5) baseline tsc/eslint ya verificado y limpio; (6) `proyectoId` es nullable en schema — la preocupación de `flags_testimonios_seo.md:112` está resuelta. Lo que SÍ sigue pendiente para B3: `obtenerPrecioAsesoria3dAction()` (o lectura del parámetro ERP del precio $130.000 — D-parámetro, aún sin parámetro en fixtures ni en DB), las 5 páginas, shell nav, sitemap/llms.txt. **Pendiente de reconciliación de Neon (heredado, ver línea 81):** `dev-local` (ep-little-dawn) podría estar detrás de `v3-preview` (ep-muddy-cherry) en migraciones; `.env.local` apunta a v3-preview. **Nada commiteado.**
+- **⚠️ Impacto superado del plan B3:** las discrepancias listadas antes fueron cubiertas por el Bloque B3.
 
+**✅ PLAN B3 COMPLETO — ARQUITECTURA WEB PÚBLICA FINALIZADA (2026-08-19, sesión agente).**
+- **Fase 1 (D-Parámetro):** Creada la semilla `precio_asesoria_3d` en `fixtures.ts` y la Server Action `obtenerPrecioAsesoria3dAction`.
+- **Fase 2 (Diseño):** 5 documentos canónicos de UI creados y aprobados (`F11`, `F12`, `F13`, `F18`, `F19`).
+- **Fase 3 (Vistas React):** Codificadas las 5 rutas usando tokens D4 y degradación graciosa (F-13).
+- **UX y Conversión:** Nav bar minimalista (se movió secundaria al footer); se eliminó el formulario estático B2B (F-19) por un embudo directo de WhatsApp de 1 día hábil; se inyectó "Navegación Contextual (Circuito cerrado)" en el Home (`F-01`) para atrapar leads orgánicamente.
+- **Fix Home (Hallazgo):** Reemplazo de `<ImagenPlaceholder>` por `<Image>` optimizado en el carrusel de Portafolio del Home, leyendo `imagenPortafolioUrl` (resuelve bug visual).
+- **SEO:** Rutas registradas en `sitemap.ts` y `llms.txt`.
+- **Pendiente de reconciliación de Neon (heredado, ver línea 81):** `dev-local` (ep-little-dawn) podría estar detrás de `v3-preview` (ep-muddy-cherry) en migraciones; `.env.local` apunta a v3-preview. **Nada commiteado.**
 **Detalle completo:** `arnes/lineas/ola7/estado_ola7.md`.
 
 ---

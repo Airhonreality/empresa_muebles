@@ -38,5 +38,5 @@ export const metadata: Metadata = {
 
 export default async function CavasYBaresPage() {
   const galeria = await obtenerGaleriaEspacioAction(TIPO_ESPACIO_CODIGO);
-  return <EspacioLanding config={CONFIG} galeria={galeria} />;
+  return <EspacioLanding config={CONFIG} galeria={galeria} tipoEspacio={TIPO_ESPACIO_CODIGO} />;
 }

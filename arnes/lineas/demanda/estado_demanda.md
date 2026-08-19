@@ -124,11 +124,14 @@ Las tareas del ledger que trazan estos pendientes: t-110, t-111, t-112 (creadas 
 - **DC-3 (embudo híbrido):** modal transversal (F-00) + página `/agenda-tu-asesoria` (SEO). Confirmado.
 - **`<title>` de F-09:** se elimina "Premium" de las 6 landings — adjetivo impostado sin valor de búsqueda (I-019, I-023, I-031).
 
-**Pendientes para fase de código (no bloquean contenido):**
-- Recuperar el texto/transcripción de Jose Talero para semilla de testimonios (t-113, postergado por el Supervisor).
-- Seleccionar los 3 proyectos reales del portafolio para la sección teaser de F-01 (Jose Talero I-050 candidato #1).
-- Recuperar las imágenes de los proyectos reales (I-016) para los grids de F-01, F-09 y F-13.
-- Decidir en fase de schema si `testimonios.proyectoId` permite NULL para reseñas genéricas de GBP (`flags_testimonios_seo.md` §6).
+**✅ CÓDIGO COMPLETADO (PLAN B3) — 2026-08-19**
+- Todo el contenido de las pantallas F-11, F-12, F-13, F-18 y F-19 ha sido codificado, desplegado en la rama `dev`, e integrado al circuito cerrado de navegación del Home.
+- `testimonios.proyectoId` fue resuelto como nullable y las reseñas GBP ya operan sin problemas.
+- F-13 (Testimonios) ya renderiza nombres reales y usa degradación graciosa para manejar clientes sin fotos de proyecto (R3).
+- **Pendientes remanentes (Recursos Humanos/Materiales, NO técnicos):**
+  - Recuperar el texto/transcripción de Jose Talero para semilla de testimonios (t-113, postergado por el Supervisor).
+  - Subir las imágenes reales de alta resolución (I-016) al directorio público para reemplazar los placeholders restantes en el Portafolio y Landings.
+  - D-B2B (Condiciones comerciales para arquitectos) se resolvió con un CTA directo a WhatsApp con SLA de 1 día hábil, en vez de un formulario estático.
 
-**Próxima acción:** verificación de integridad del set de contenido (11 archivos) por parte del Supervisor; luego destilación a `ola7/pantallas/` cuando la línea técnica abra el bucle F-web. Pendientes de recursos: t-113 (Talero), D-B2B, D-matriz, I-016 (imágenes).
+**Próxima acción:** Aprobar alcance de captación (`plan_demanda.md` §5) o continuar con el Bloque B4 (FAQs y Contacto) en la línea técnica.
 

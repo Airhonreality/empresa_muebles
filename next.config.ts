@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev',
       },
+      {
+        protocol: 'https',
+        hostname: 'veta-dorada.r2.cloudflarestorage.com',
+      },
     ],
   },
   // Headers de seguridad y caché (checklist SEO 2026-08-16, #13/#14). Auditoría 2026-08-19: la

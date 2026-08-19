@@ -183,9 +183,7 @@ export default async function BitacoraArticlePage({ params }: RouteParams) {
           <a href="https://wa.me/573025922101" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors">
             Agendar asesoría de diseño
           </a>
-          <a href="https://wa.me/573025922101" target="_blank" rel="noopener noreferrer" className="px-8 py-4 border border-[var(--color-primary)] text-[var(--color-primary)] font-medium rounded hover:bg-[var(--color-bg-linen)] transition-colors">
-            Escríbenos por WhatsApp
-          </a>
+          
         </div>
       </div>
     </article>

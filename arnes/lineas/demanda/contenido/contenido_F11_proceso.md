@@ -37,7 +37,6 @@
 | H1 | Cómo trabajamos | Verificado | `plan_estructura_sitio_publico.md` §2.4 (F-11) |
 | Párrafo descriptor | Un proceso claro y sin sorpresas: te visitamos, te cotizamos línea por línea, fabricamos en nuestro taller y te lo dejamos instalado. Así de directo. Tres generaciones de oficio respaldan cada paso. | Verificado | `plan_estructura_sitio_publico.md` §2.4; DC-4 (1995→2014→2019) |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | `plan_diseno_web_publica.md` §2.0, F-12 |
-| CTA secundario | Hablamos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 | Imagen de fondo | Directiva: fotografía de taller real o de un diseñador midiendo en sitio. Recuperar del sitio actual si existe (I-016). | — | Tokens D4 Luz & Biofilia (I-037) |
 
 ### 3.2 — Los 4 pasos del proceso
@@ -73,7 +72,6 @@
 | H2 | ¿Empezamos con tu espacio? | Verificado | Tono Creador Experto: directo, sin presión de venta |
 | Cuerpo | El primer paso es una visita sin costo y sin compromiso. Cuéntanos qué tienes en mente y un diseñador te acompaña desde la primera medición. | Verificado | `contenido_F01_home.md` §3.11; `plan_estructura_sitio_publico.md` §2.4 |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | → F-12 |
-| CTA secundario | Escríbenos por WhatsApp | Verificado | → `https://wa.me/573025922101?...` (F-00) |
 
 ---
 

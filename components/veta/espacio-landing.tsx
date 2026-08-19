@@ -2,6 +2,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
 import { SITE_URL } from '@/lib/seo/jsonld';
+import { obtenerHeroCarouselImagesAction } from '@/lib/data/actions/public';
+import { HeroCarousel } from '@/components/veta/hero-carousel';
 
 const WHATSAPP_URL =
   'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
@@ -12,22 +14,22 @@ const WHATSAPP_URL =
 // cross-page para algo que no vuelve a cambiar independientemente.
 const VALIDACION_TECNICA = [
   {
-    imageKey: 'validacion3d',
-    titulo: 'Disminuye la incertidumbre',
+    imageKey: 'validacionTaller',
+    titulo: 'Asesoría Integral',
     cuerpo:
-      'Visualizas tu espacio en 3D antes de cortar la primera pieza. Así ves exactamente cómo quedará y tomas decisiones con toda la información.',
+      'Te guiamos en cada paso: distribución, materiales y diseño funcional.',
   },
   {
-    imageKey: 'validacionTaller',
-    titulo: 'Punto de Fábrica Directo',
+    imageKey: 'validacion3d',
+    titulo: 'Modelado 3D y Optimización',
     cuerpo:
-      'Diseñamos y fabricamos en nuestro propio taller. Sin intermediarios, sin sobrecostos, sin perder calidad en cada eslabón de la cadena.',
+      'Visualiza tu proyecto antes de que empiece, asegurando una ejecución sin sorpresas.',
   },
   {
     imageKey: 'validacionDiseñador',
-    titulo: 'Asesoría con diseñadores',
+    titulo: 'Garantía y Satisfacción',
     cuerpo:
-      'Tu proyecto lo acompaña un diseñador industrial de la Universidad Nacional de principio a fin. No vendemos catálogos: diseñamos contigo cada espacio para que responda a cómo vives.',
+      'Aseguramos la calidad y durabilidad de cada proyecto, respaldados por nuestra experiencia.',
   },
 ] as const;
 
@@ -77,15 +79,7 @@ function CtaPrimary({ href, children }: { href: string; children: React.ReactNod
   );
 }
 
-function CtaSecondary({ href, children }: { href: string; children: React.ReactNode }) {
-  const className =
-    'inline-flex items-center justify-center px-1 text-sm font-medium text-white border-b border-white/30 transition-all duration-300 hover:border-gold-500 hover:text-gold-400 pb-1';
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-      {children}
-    </a>
-  );
-}
+
 
 export interface FotoGaleriaEspacio {
   url: string;
@@ -93,9 +87,10 @@ export interface FotoGaleriaEspacio {
   esRender: boolean;
 }
 
-export function EspacioLanding({ config, galeria = [] }: { config: EspacioLandingConfig; galeria?: FotoGaleriaEspacio[] }) {
+export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { config: EspacioLandingConfig; galeria?: FotoGaleriaEspacio[]; tipoEspacio?: string }) {
   const { slug, nombreCategoria, h1, subtitulo, parrafoDescriptor, imageKey } = config;
-  const heroImage = HOME_IMAGES_SEO[imageKey];
+  const heroImageFallback = HOME_IMAGES_SEO[imageKey];
+  const heroImages = await obtenerHeroCarouselImagesAction(tipoEspacio || slug);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -111,16 +106,15 @@ export function EspacioLanding({ config, galeria = [] }: { config: EspacioLandin
     <div>
       {/* 1. Hero */}
       <section className="relative overflow-hidden border-b border-border-subtle bg-charcoal-900">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={heroImage.src}
-            alt={heroImage.alt}
-            fill
-            priority
-            className="object-cover opacity-60"
+        <div className="absolute inset-0 z-0 bg-charcoal-900">
+          <HeroCarousel
+            images={heroImages}
+            fallbackImage={{ src: heroImageFallback.src, alt: heroImageFallback.alt }}
+            priority={true}
+            imageClassName="object-cover opacity-60"
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900 via-charcoal-900/50 to-charcoal-900/70" />
+          <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900 via-charcoal-900/50 to-charcoal-900/70 pointer-events-none z-20" />
         </div>
 
         <div className="relative z-10 flex flex-col justify-center px-6 py-32 lg:py-40 max-w-6xl mx-auto text-center">
@@ -132,7 +126,7 @@ export function EspacioLanding({ config, galeria = [] }: { config: EspacioLandin
           </p>
           <div className="mt-10 flex flex-wrap justify-center items-center gap-4">
             <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
-            <CtaSecondary href={WHATSAPP_URL}>Hablamos por WhatsApp</CtaSecondary>
+
           </div>
         </div>
       </section>
@@ -169,28 +163,32 @@ export function EspacioLanding({ config, galeria = [] }: { config: EspacioLandin
         </section>
       )}
 
-      {/* 3. Validación Técnica */}
       <section className="bg-charcoal-900 py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-12 md:grid-cols-3">
             {VALIDACION_TECNICA.map((card) => {
               const imgData = HOME_IMAGES_SEO[card.imageKey as keyof typeof HOME_IMAGES_SEO];
               return (
-                <div key={card.titulo} className="group relative h-[450px] w-full overflow-hidden rounded-sm cursor-default">
-                  <Image
-                    src={imgData.src}
-                    alt={imgData.alt}
-                    fill
-                    className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/95 via-charcoal-900/60 to-transparent" />
-                  <div className="absolute inset-0 bg-charcoal-900/30" />
-                  <div className="absolute inset-0 flex flex-col justify-end p-8 z-10">
-                    <h3 className="font-display text-2xl font-semibold text-white relative mb-3">
+                <div key={card.titulo} className="group relative flex flex-col w-full cursor-default">
+                  {/* Image Container (Text is OUTSIDE below) */}
+                  <div className="relative h-[450px] w-full overflow-hidden rounded-sm mb-6">
+                    <Image
+                      src={imgData.src}
+                      alt={imgData.alt}
+                      fill
+                      className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                  </div>
+
+                  {/* Content (Outside) */}
+                  <div className="flex flex-col">
+                    <h3 className="font-display text-xl font-semibold text-gold-500 mb-3 transition-colors duration-300 group-hover:text-gold-400">
                       {card.titulo}
                     </h3>
-                    <p className="text-sm text-gold-100/90 leading-relaxed">{card.cuerpo}</p>
+                    <p className="text-sm text-gold-100/90 leading-relaxed font-light">
+                      {card.cuerpo}
+                    </p>
                   </div>
                 </div>
               );
@@ -234,7 +232,7 @@ export function EspacioLanding({ config, galeria = [] }: { config: EspacioLandin
           </p>
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
             <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
-            <CtaSecondary href={WHATSAPP_URL}>Escríbenos por WhatsApp</CtaSecondary>
+
           </div>
         </div>
       </section>

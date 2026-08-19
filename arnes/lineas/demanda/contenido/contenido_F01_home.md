@@ -41,7 +41,6 @@
 | Subtítulo (eslogan) | Diseña tu espacio. Habita el bienestar. | Verificado | Aprobado por el Supervisor 2026-08-09 — versión completa del `Tono de voz de marca.md` (D1 resuelta). |
 | Párrafo descriptor | Diseñamos, fabricamos e instalamos espacios integrales en madera. Tres generaciones de oficio en la construcción, un estudio de diseño al frente, y la fábrica en el mismo lugar. Sin intermediarios. | Verificado | Sintetizado de `destilacion_docs_veta.md` §12.5 + DC-4 (línea de tiempo) |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | `plan_diseno_web_publica.md` §2.0, F-12 |
-| CTA secundario | Hablamos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 | Imagen de fondo | Directiva: fotografía de un espacio terminado por Veta Dorada — cocina o centro de entretenimiento con luz natural. Sin renders, sin fotos de banco de imágenes. Si no hay foto real disponible, usar token D4 `--color-bg-linen` como fondo. | — | Tokens D4 Luz & Biofilia (I-037): luz solar y fotografía natural, no verde literal. |
 
 ### 3.2 — Respuesta Atómica primaria (bajo el H1)
@@ -140,7 +139,6 @@
 | H2 | ¿Hablamos de tu espacio? | Verificado | Tono Creador Experto: directo, sin presión de venta |
 | Cuerpo | Cuéntanos qué tienes en mente. Un diseñador te escucha, visita tu espacio y te entrega una cotización detallada sin compromiso. | Verificado | `plan_diseno_web_publica.md` §2.0 |
 | CTA primario | Agenda tu asesoría gratuita | Verificado | → F-12 |
-| CTA secundario | Escríbenos por WhatsApp | Verificado | → `https://wa.me/573025922101?...` (F-00) |
 
 ---
 

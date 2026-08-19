@@ -34,9 +34,14 @@ export async function GET() {
   partes.push(
     seccion('Páginas principales', [
       { url: SITE_URL, nombre: 'Inicio', descripcion: 'Presentación del estudio, proceso de trabajo y proyectos destacados' },
+      { url: `${SITE_URL}/como-trabajamos`, nombre: 'Proceso', descripcion: 'Proceso de 4 pasos para espacios a la medida (visita, cotización, taller, instalación)' },
+      { url: `${SITE_URL}/agenda-tu-asesoria`, nombre: 'Agenda tu Asesoría', descripcion: 'Agenda asesoría gratis o con diseño 3D fotorrealista en Bogotá y sabana' },
       { url: `${SITE_URL}/espacios`, nombre: 'Espacios', descripcion: 'Categorías de espacios a la medida: cocinas, closets, cavas, consolas, estudios, centros de entretenimiento' },
       { url: `${SITE_URL}/espacios/pisos-de-madera`, nombre: 'Restauración de pisos de madera', descripcion: 'Servicio de restauración de pisos de madera originales en Bogotá' },
       { url: `${SITE_URL}/portafolio`, nombre: 'Portafolio', descripcion: 'Casos reales de proyectos ejecutados' },
+      { url: `${SITE_URL}/testimonios`, nombre: 'Testimonios', descripcion: 'Prueba social de clientes satisfechos con nombre y barrio' },
+      { url: `${SITE_URL}/conocenos`, nombre: 'Conócenos', descripcion: 'Historia de Veta Dorada, perfiles de Hugo García (obra) y Airhon García (diseño)' },
+      { url: `${SITE_URL}/para-arquitectos`, nombre: 'Para Arquitectos B2B', descripcion: 'Fabricación a la medida para estudios, cotización de planos en 1 día hábil' },
       { url: `${SITE_URL}/colecciones`, nombre: 'Colecciones', descripcion: 'Piezas de mobiliario diseñadas y fabricadas en taller propio' },
       { url: `${SITE_URL}/bitacora`, nombre: 'Bitácora de diseño', descripcion: 'Casos de estudio y notas de proceso, materiales y técnica' },
     ])

@@ -286,6 +286,23 @@ html:focus-within {
   animation: dotPulseMini var(--badge-dot-pulse-duration) var(--ease-out) infinite;
 }
 
+/* Efecto Ken Burns ultra sutil para Heroes (paneo y zoom imperceptible) */
+@keyframes kenBurns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.06) translate(-1%, -1%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+@utility animate-ken-burns {
+  animation: kenBurns 35s var(--ease-in-out) infinite alternate;
+}
+
 /* ---- Scrollbars de marca (D4) — escala dorada sutil, sin ruido visual ----
    Firefox (scrollbar-width) + WebKit (pseudo-elementos). No es decoración:
    mantiene el thumb visible y de bajo contraste en todas las superficies. */

@@ -414,3 +414,64 @@ export async function obtenerGarantiasClienteAction(clienteId: string): Promise<
     proyectos: store.proyectos.listar().filter((p) => p.clienteId === clienteId),
   }
 }
+
+// --- Precios Parametrizados (Fase 1 - Plan B3) ---
+
+export async function obtenerPrecioAsesoria3dAction(): Promise<number | null> {
+  if (DATA_IMPL() === 'drizzle') {
+    const [param] = await db.select().from(s.parametros).where(eq(s.parametros.clave, 'precio_asesoria_3d')).limit(1)
+    if (!param || !param.valorNumeric) return null
+    const valor = Number(param.valorNumeric)
+    return Number.isNaN(valor) ? null : valor
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  const param = getDataStore().parametros.obtenerPorClave('precio_asesoria_3d')
+  if (!param || !param.valorNumeric) return null
+  const valor = Number(param.valorNumeric)
+  return Number.isNaN(valor) ? null : valor
+}
+
+export async function obtenerHeroCarouselImagesAction(categoriaEspacio?: string): Promise<{src: string, alt: string}[]> {
+  const limit = 5;
+  const fotos: {src: string, alt: string}[] = [];
+
+  if (DATA_IMPL() === 'drizzle') {
+    let query = db.select().from(s.portafolio).where(eq(s.portafolio.publicado, true));
+    if (categoriaEspacio) {
+      query = db.select().from(s.portafolio).where(and(eq(s.portafolio.publicado, true), eq(s.portafolio.categoriaEspacio, categoriaEspacio)));
+    }
+    
+    const rows = await query;
+    // Ordenamos por orden (los más recientes/destacados)
+    const sorted = (rows as unknown as Portafolio[]).sort((a, b) => a.orden - b.orden);
+    
+    for (const p of sorted) {
+      if (p.imagenPortafolioUrl) {
+        // Evitar duplicados de la misma URL
+        if (!fotos.find(f => f.src === p.imagenPortafolioUrl)) {
+          fotos.push({ src: p.imagenPortafolioUrl, alt: p.titulo });
+        }
+      }
+      if (fotos.length >= limit) break;
+    }
+  } else {
+    const { getDataStore } = await import('@/lib/data/store')
+    const store = getDataStore()
+    let proyectos = store.portafolio.publicados();
+    if (categoriaEspacio) {
+      proyectos = proyectos.filter(p => p.categoriaEspacio === categoriaEspacio);
+    }
+    proyectos.sort((a, b) => a.orden - b.orden);
+    for (const p of proyectos) {
+      if (p.imagenPortafolioUrl) {
+        if (!fotos.find(f => f.src === p.imagenPortafolioUrl)) {
+          fotos.push({ src: p.imagenPortafolioUrl, alt: p.titulo });
+        }
+      }
+      if (fotos.length >= limit) break;
+    }
+  }
+
+  return fotos;
+}

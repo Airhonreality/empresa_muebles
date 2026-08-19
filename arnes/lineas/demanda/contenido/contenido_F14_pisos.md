@@ -37,7 +37,6 @@
 | H1 | El piso de madera de tu casona merece volver a vivir | Verificado | `plan_diseno_web_publica.md` §2.1 (copy provisional → verificado 2026-08-09) |
 | Párrafo descriptor | Restauramos pisos de madera originales: pulido, reparación de piezas sueltas y sellado con acabado natural. Sin perder el carácter del piso que guarda la historia de tu casa. | Verificado | `plan_diseno_web_publica.md` §2.1 Sección 2; I-014 |
 | CTA primario | Solicitar diagnóstico gratuito | Verificado | `plan_diseno_web_publica.md` §2.1 Sección 2 → F-12 (modal) |
-| CTA secundario | Hablamos por WhatsApp | Verificado | `plan_demanda.md` Bloque C, I-011 |
 | Imagen de fondo | Directiva: fotografía real de un piso de madera restaurado en una casona bogotana, luz natural. Recuperar de la documentación de F-14 (I-016). | — | Tokens D4 Luz & Biofilia (I-037) |
 
 ### 3.2 — Proceso de restauración
@@ -70,7 +69,6 @@
 | H2 | ¿Tu piso necesita una segunda vida? | Verificado | Tono Creador Experto |
 | Cuerpo | Contáctanos para un diagnóstico gratuito. Evaluamos el estado de tu piso y te decimos con honestidad qué necesita. | Verificado | `plan_diseno_web_publica.md` §2.1 Sección 2 |
 | CTA primario | Solicitar diagnóstico gratuito | Verificado | → F-12 (modal) |
-| CTA secundario | Escríbenos por WhatsApp | Verificado | → `https://wa.me/573025922101?...` (F-00) |
 
 ---
 
