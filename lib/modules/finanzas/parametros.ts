@@ -6,7 +6,9 @@ export type TipoCosto = 'por_modulos' | 'por_tiempo';
 
 // Parámetros de jornadas para cálculo de costos (Tipo 2: por tiempo)
 export interface ParametrosJornadas {
-  // Valor por hora para cada rol
+  // Valor por JORNADA (día) para cada rol — compatibilidad 1:1 con el legacy (hallazgo
+  // 2026-08-20: el nombre del campo dice "hora" pero el valor siempre fue por jornada,
+  // nunca se multiplica por horas).
   valorHoraPorRol: Record<RolJornada, string>;
   // Horas estimadas por tarea (clave: tareaId o nombreTarea)
   horasPorTarea: Record<string, number>;

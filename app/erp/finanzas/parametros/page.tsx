@@ -78,32 +78,16 @@ export default function FinanzasParametrosPage() {
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<{ tipo: "exito" | "error"; texto: string } | null>(null);
 
-  // Calcular costo ejemplo para visualización
+  // Calcular costo ejemplo para visualización — misma fórmula que usa el cotizador real
+  // (app/erp/cotizador/[proyectoId]/page.tsx: derivarTarifas): tarifa por jornada × jornadas,
+  // sin conversión a horas ni arriendo (el cotizador real no suma arriendo al total).
   const costoEjemplo = useMemo(() => {
-    const valorHoraDev = parseFloat(form.jornadas.valorHoraPorRol.desarrollador) || 0;
-    const valorHoraCar = parseFloat(form.jornadas.valorHoraPorRol.carpintero) || 0;
-    const valorHoraAux = parseFloat(form.jornadas.valorHoraPorRol.auxiliar) || 0;
-    const arriendo = parseFloat(form.jornadas.arriendoTallerPorDia) || 0;
-    const diasHabiles = form.jornadas.diasHabilesPorMes || 25;
-    
-    // Ejemplo: 8 horas de desarrollo, 4 horas de carpintería, 2 horas de auxiliar
-    const horasDev = 8;
-    const horasCar = 4;
-    const horasAux = 2;
-    const horasTotales = horasDev + horasCar + horasAux;
-    
-    const costoManodeObra = 
-      (valorHoraDev * horasDev) + 
-      (valorHoraCar * horasCar) + 
-      (valorHoraAux * horasAux);
-    
-    const costoArriendoProrrateado = (arriendo / diasHabiles) * horasTotales;
-    
-    return {
-      manodeObra: costoManodeObra,
-      arriendo: costoArriendoProrrateado,
-      total: costoManodeObra + costoArriendoProrrateado,
-    };
+    const valorJornadaDev = parseFloat(form.jornadas.valorHoraPorRol.desarrollador) || 0;
+    const valorJornadaCar = parseFloat(form.jornadas.valorHoraPorRol.carpintero) || 0;
+    const valorJornadaAux = parseFloat(form.jornadas.valorHoraPorRol.auxiliar) || 0;
+
+    // Ejemplo: 1 jornada de desarrollo, 1 de carpintería, 1 de auxiliar
+    return { total: valorJornadaDev + valorJornadaCar + valorJornadaAux };
   }, [form]);
 
   const handleSubmit = useCallback(async () => {
@@ -202,9 +186,12 @@ export default function FinanzasParametrosPage() {
       <div className="border border-border-subtle rounded-lg bg-bg-alt/60 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-text-heading">
-            Tarifas por Rol (Valor Hora / Hombre)
+            Tarifas por Rol (Valor por Jornada)
           </h2>
         </div>
+        <p className="text-xs text-text-muted mb-4">
+          Valor por jornada (día), no por hora — mismo valor que se manejaba en el sistema anterior.
+        </p>
         <div className="grid grid-cols-3 gap-4">
           {([
             { rol: "desarrollador" as RolJornada, label: "Desarrollador" },
@@ -406,21 +393,9 @@ export default function FinanzasParametrosPage() {
       {/* Ejemplo de cálculo */}
       <div className="border border-border-subtle rounded-lg bg-bg-alt/40 p-6 mb-6">
         <h2 className="text-lg font-semibold text-text-heading mb-4">
-          Ejemplo de Cálculo (8h Dev + 4h Car + 2h Aux)
+          Ejemplo de Cálculo (1 jornada de Dev + 1 de Car + 1 de Aux)
         </h2>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-text-muted">Costo Mano de Obra:</span>
-            <span className="font-mono text-text-heading">
-              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(costoEjemplo.manodeObra)}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-text-muted">Arriendo Taller (prorrateado):</span>
-            <span className="font-mono text-text-heading">
-              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(costoEjemplo.arriendo)}
-            </span>
-          </div>
           <div className="flex justify-between border-t border-border-subtle pt-2 mt-2">
             <span className="text-text-heading font-medium">Total Estimado:</span>
             <span className="font-mono text-lg font-semibold text-brand">

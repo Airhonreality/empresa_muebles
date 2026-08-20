@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useId, type InputHTMLAttributes } from "react";
+import { useState, useId, type InputHTMLAttributes } from "react";
+import { useDebouncedInput } from "@/lib/hooks/useDebouncedInput";
 
 export interface MoneyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
   value: string;
@@ -9,30 +10,27 @@ export interface MoneyInputProps extends Omit<InputHTMLAttributes<HTMLInputEleme
   error?: string;
 }
 
-/* Primitiva MoneyInput (C4). Formateo COP, inputmode="decimal", aria-label. */
+/* Primitiva MoneyInput (C4). Formateo COP, inputmode="decimal", aria-label.
+   `local` (useDebouncedInput) es la fuente de verdad mientras se edita -- nunca se pisa por un
+   re-render del store mientras el usuario escribe; solo se formatea a COP bonito al perder foco. */
 export function MoneyInput({ value, onChange, label, error, className = "", ...props }: MoneyInputProps) {
   const id = useId();
-  const [displayValue, setDisplayValue] = useState<string>(formatCOPInput(value));
-
-  // Sync display when external value changes
-  useEffect(() => {
-    setDisplayValue(formatCOPInput(value));
-  }, [value]);
+  const { local, onChangeLocal, onBlurLocal } = useDebouncedInput(value, onChange);
+  const [focused, setFocused] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^\d]/g, "");
-    onChange(raw);
+    onChangeLocal(raw);
   };
+
+  const handleFocus = () => setFocused(true);
 
   const handleBlur = () => {
-    // Re-format on blur to show pretty COP
-    setDisplayValue(formatCOPInput(value));
+    setFocused(false);
+    onBlurLocal();
   };
 
-  const handleFocus = () => {
-    // Show raw number for editing
-    setDisplayValue(value);
-  };
+  const displayValue = focused ? local : formatCOPInput(local);
 
   return (
     <div className={`flex flex-col gap-2 ${className}`}>

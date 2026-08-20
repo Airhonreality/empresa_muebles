@@ -130,12 +130,55 @@ await test('proyectos: actualizarParametrosFinancieros -> obtenerPorId refleja a
   assert.equal(store.proyectos.obtenerPorId(p.id)?.porcentajeIva, '19')
 })
 
+await test('proyectos: actualizar (t-143) permite renombrar y editar datos maestros', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'Nombre Viejo', tipoProyecto: 'personalizado', costosOperativos: '0' })
+  assert.equal(store.proyectos.obtenerPorId(p.id)?.nombreProyecto, 'Nombre Viejo')
+
+  const actualizado = await store.proyectos.actualizar(p.id, {
+    nombreProyecto: 'Nombre Nuevo',
+    tipoProyecto: 'producto_fijo',
+    direccionObra: 'Cra 15 #123-45, Bogotá',
+    diasEntregaEstimados: 45,
+    costosOperativos: '500000',
+    descuentoComercial: '200000',
+  })
+  assert.ok(actualizado)
+  assert.equal(actualizado.nombreProyecto, 'Nombre Nuevo')
+  assert.equal(actualizado.tipoProyecto, 'producto_fijo')
+  assert.equal(actualizado.direccionObra, 'Cra 15 #123-45, Bogotá')
+  assert.equal(actualizado.diasEntregaEstimados, 45)
+  assert.equal(actualizado.costosOperativos, '500000')
+  assert.equal(actualizado.descuentoComercial, '200000')
+  assert.equal(actualizado.estado, 'activa', 'actualizar datos no debe tocar el estado')
+  assert.equal(await store.proyectos.actualizar('id-inexistente', { nombreProyecto: 'Z' }), null)
+})
+
 await test('clientes: crear -> listar lo incluye', async () => {
   const store = createMockStore()
   const antes = store.clientes.listar().length
   const c = await store.clientes.crear({ nombre: 'Cliente Test' })
   assert.equal(store.clientes.listar().length, antes + 1)
   assert.equal(store.clientes.obtenerPorId(c.id)?.nombre, 'Cliente Test')
+})
+
+await test('clientes: actualizar (t-143) edita nombre/documento/telefono/email/domicilio', async () => {
+  const store = createMockStore()
+  const c = await store.clientes.crear({ nombre: 'Antes' })
+  const actualizado = await store.clientes.actualizar(c.id, {
+    nombre: 'Después',
+    documento: 'CC-123',
+    telefono: '3001234567',
+    email: 'nuevo@correo.co',
+    domicilio: 'Calle 1 #2-3',
+  })
+  assert.ok(actualizado)
+  assert.equal(actualizado.nombre, 'Después')
+  assert.equal(actualizado.documento, 'CC-123')
+  assert.equal(actualizado.telefono, '3001234567')
+  assert.equal(actualizado.email, 'nuevo@correo.co')
+  assert.equal(actualizado.domicilio, 'Calle 1 #2-3')
+  assert.equal(await store.clientes.actualizar('id-inexistente', { nombre: 'Z' }), null)
 })
 
 await test('espacios: crear -> porProyecto lo incluye', async () => {

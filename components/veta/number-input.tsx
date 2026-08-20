@@ -1,6 +1,7 @@
 "use client";
 
 import { type InputHTMLAttributes, useId } from "react";
+import { useDebouncedInput } from "@/lib/hooks/useDebouncedInput";
 
 export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
   value: string;
@@ -23,8 +24,9 @@ export function NumberInput({
   ...props
 }: NumberInputProps) {
   const id = useId();
+  const { local, onChangeLocal, onBlurLocal } = useDebouncedInput(value, onChange);
   const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    onChange(e.target.value);
+    onChangeLocal(e.target.value);
   };
 
   return (
@@ -40,8 +42,9 @@ export function NumberInput({
         inputMode="decimal"
         step={step}
         min={min}
-        value={value}
+        value={local}
         onChange={handleChange}
+        onBlur={onBlurLocal}
         className={`w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 text-base text-text-primary outline-none ${
           error
             ? "border-error-stroke focus:border-error-stroke"

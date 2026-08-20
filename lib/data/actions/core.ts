@@ -151,8 +151,26 @@ export async function actualizarVerificadorAction(id: string, verificadorId: str
   return (actualizado as unknown as Proyecto) ?? null
 }
 
+// t-143: edición flexible de datos maestros de la cotización. Actualiza solo los
+// campos pasados (partial) y toca updatedAt. Los campos con orden de negocio
+// (estado vía kanban, IVA/garantía vía actualizarParametrosFinancieros) quedan fuera.
+export async function actualizarProyectoAction(
+  id: string,
+  partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
+): Promise<Proyecto | null> {
+  const [actualizado] = await db.update(s.proyectos)
+    .set({ ...partial, tipoProyecto: partial.tipoProyecto as 'personalizado' | 'producto_fijo' | undefined, updatedAt: new Date().toISOString() })
+    .where(eq(s.proyectos.id, id)).returning()
+  return (actualizado as unknown as Proyecto) ?? null
+}
+
 export async function crearProyectoAction(data: Partial<Proyecto> & { nombreProyecto: string }): Promise<Proyecto> {
+  // id opcional generado en el cliente (crypto.randomUUID()) para creación optimista (piloto
+  // 2026-08-20, plan "optimistic create"): si no viene, Postgres sigue usando defaultRandom()
+  // igual que antes. onConflictDoNothing hace que un reintento con el mismo id (retry de red,
+  // o un doble-submit que se coló pese a usePendingGuard) sea idempotente en vez de duplicar.
   const [nuevo] = await db.insert(s.proyectos).values({
+    id: data.id,
     nombreProyecto: data.nombreProyecto,
     estado: (data.estado as EstadoProyecto) ?? 'activa',
     tipoProyecto: (data.tipoProyecto as 'personalizado' | 'producto_fijo') ?? 'personalizado',
@@ -171,7 +189,14 @@ export async function crearProyectoAction(data: Partial<Proyecto> & { nombreProy
     verificadorId: data.verificadorId ?? null,
     fechaEntradaDesarrollo: data.fechaEntradaDesarrollo ?? null,
     comercialVendedorId: data.comercialVendedorId ?? null,
-  }).returning()
+  }).onConflictDoNothing({ target: s.proyectos.id }).returning()
+
+  if (!nuevo) {
+    if (!data.id) throw new Error('crearProyectoAction: conflicto de id sin id de entrada')
+    const [existente] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, data.id))
+    if (existente) return existente as unknown as Proyecto
+    throw new Error('crearProyectoAction: conflicto de id sin fila existente')
+  }
   return nuevo as unknown as Proyecto
 }
 
@@ -189,6 +214,18 @@ export async function crearClienteAction(data: Partial<Cliente> & { nombre: stri
     domicilio: data.domicilio ?? null,
   }).returning()
   return nuevo as unknown as Cliente
+}
+
+// t-143: edición de datos maestros del cliente. Actualiza solo los campos pasados
+// (partial); no se puede cambiar el id.
+export async function actualizarClienteAction(
+  id: string,
+  partial: Partial<Omit<Cliente, 'id'>>
+): Promise<Cliente | null> {
+  const [actualizado] = await db.update(s.clientes)
+    .set({ ...partial, updatedAt: new Date().toISOString() })
+    .where(eq(s.clientes.id, id)).returning()
+  return (actualizado as unknown as Cliente) ?? null
 }
 
 export async function crearEspacioAction(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante> {

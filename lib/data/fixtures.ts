@@ -14,9 +14,9 @@ import { SHOP_CATEGORIAS } from './contracts'
 const UUID = (suffix: string) => `mock-${suffix}`
 
 export const CLIENTES: Cliente[] = [
-  { id: UUID('c01'), nombre: 'Casa Río', documento: 'CC-52345678', telefono: '3101112233', email: 'casa.rio@correo.com', domicilio: 'Carrera 15 #98-40, Bogotá' },
-  { id: UUID('c02'), nombre: 'Oficina Llanos', documento: 'NIT-900123456', telefono: '3145556677', email: 'admin@oficinalanos.com', domicilio: 'Calle 72 #10-34, Of. 502' },
-  { id: UUID('c03'), nombre: 'Cocina Márquez', documento: 'CC-79865432', telefono: '3189990011', email: 'marquez.cocina@correo.com', domicilio: 'Calle 134 #7B-21, Apto 401' },
+  { id: UUID('c01'), nombre: 'Casa Río', documento: 'CC-52345678', telefono: '3101112233', email: 'casa.rio@correo.com', domicilio: 'Carrera 15 #98-40, Bogotá', createdAt: '2026-05-10T10:00:00Z' },
+  { id: UUID('c02'), nombre: 'Oficina Llanos', documento: 'NIT-900123456', telefono: '3145556677', email: 'admin@oficinalanos.com', domicilio: 'Calle 72 #10-34, Of. 502', createdAt: '2026-06-20T10:00:00Z' },
+  { id: UUID('c03'), nombre: 'Cocina Márquez', documento: 'CC-79865432', telefono: '3189990011', email: 'marquez.cocina@correo.com', domicilio: 'Calle 134 #7B-21, Apto 401', createdAt: '2026-07-01T10:00:00Z' },
 ]
 
 const CATALOGO_TS = '2026-06-01T08:00:00Z'

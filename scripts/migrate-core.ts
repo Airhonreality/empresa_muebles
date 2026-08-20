@@ -28,6 +28,21 @@ const previewUrl = process.env.DATABASE_URL_V3_PREVIEW
 if (!legacyUrl) throw new Error('falta DATABASE_URL_LEGACY en .env.local')
 if (!previewUrl) throw new Error('falta DATABASE_URL_V3_PREVIEW en .env.local')
 
+// 🔴 BLOQUEADO A PROPÓSITO (2026-08-20) — NO BORRAR ESTE GUARD SIN CONFIRMAR CON JAVIER.
+// Este script hace TRUNCATE ... CASCADE sobre proyectos/espacio_variantes/items_variante/
+// productos_catalogo/clientes en DATABASE_URL_V3_PREVIEW. Cuando se escribió (2026-08-14)
+// v3-preview era descartable. Ya NO lo es: Javier confirmó que v3-preview (ep-muddy-cherry-
+// at5j2mz7) es hoy su base de trabajo real — tiene 62 `contratos` reales (backfill del
+// 2026-08-16, ver arnes/estado.md) y ediciones de ERP en vivo hasta la fecha. Volver a correr
+// este script BORRARÍA todo eso. Ver arnes/estado.md, entrada "CORRECCIÓN CRÍTICA DE ENTORNO".
+// Para correrlo a propósito (confirmado con Javier), exportar CONFIRM_MIGRATE_CORE_DESTRUCTIVE=1.
+if (!process.env.CONFIRM_MIGRATE_CORE_DESTRUCTIVE) {
+  throw new Error(
+    'migrate-core.ts deshabilitado: v3-preview ya no es descartable, ver arnes/estado.md (2026-08-20). ' +
+    'Si de verdad necesitas correr esto, confirma con Javier primero y exporta CONFIRM_MIGRATE_CORE_DESTRUCTIVE=1.'
+  )
+}
+
 const prod = postgres(legacyUrl, { prepare: false })
 const previewClient = postgres(previewUrl, { prepare: false })
 const db = drizzle(previewClient, { schema })

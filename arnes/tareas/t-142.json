@@ -1,0 +1,39 @@
+{
+  "id": "t-142",
+  "nombre": "Ley uniforme de colecciones: todo se lista de más reciente a más antigua (createdAt DESC, fallback updatedAt) en la capa de datos",
+  "descripcion": "Javier reportó que el cotizador muestra las cotizaciones más viejas arriba y las más recientes hasta abajo, y pidió diagnosticar todas las pantallas principales que listan colecciones (kanban comercial, cotizador, etc.) para aplicar la misma ley en general: el usuario siempre debe ver lo más reciente primero. Diagnóstico: ninguna capa ordena — hydrate.ts carga db.select().from(proyectos) sin ORDER BY (orden de inserción = viejas primero) y los listar() de mock-store.ts y drizzle-impl.ts devuelven el array crudo. Las pantallas que reordenan por su cuenta ya estaban bien (pedidos-web, compras OC, cuentas-cobro, caja, garantía, testimonios, calidad). La solución se aplica en la capa de datos (no en cada UI): helper masRecientePrimero() (createdAt DESC, fallback updatedAt, sort no mutante) aplicado a los listar() de 14 colecciones en ambos impls. Se exceptúan las colecciones con orden de negocio propio: portafolio público (destacado/orden curado), obligaciones (vencimiento), parámetros, categorías/acabados, cuentasFinancieras, registrosGateCaja. Cliente no exponía createdAt en el contrato; se agregó (schema ya tiene created_at, los rows de drizzle ya lo traen) y los fixtures mock de clientes ahora lo incluyen para que local refleje la nube.",
+  "objetivo": "Toda colección del ERP se lista de más reciente a más antigua de forma uniforme, aplicada en la capa de datos para que rija en todas las pantallas sin tocar cada UI.",
+  "prioridad": "Media",
+  "estado": "Implementado — plan aprobado por el Supervisor (2026-08-20, 'implementar'); verificado con tsc/eslint/tests/build",
+  "zona": "lib/data/ (capa de datos: orden.ts nuevo, mock-store.ts, drizzle-impl.ts, contracts.ts, fixtures.ts)",
+  "tipo": "logica (data layer)",
+  "riesgo": "bajo — cero cambios de schema, cero escrituras a Neon, sort no mutante sobre copia; las pantallas que ya reordenaban no cambian su resultado",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "evidencia": "Javier respondió 'implementar' (2026-08-20) al plan presentado tras el diagnóstico completo (pantallas que ya cumplen vs las que incumplen, colecciones a tocar y excepciones de orden de negocio)."
+  },
+  "cambios_de_datos": [
+    "NINGUNO — escrituras a la base de datos real fuera de alcance; solo ordenamiento de lectura en la caché del store."
+  ],
+  "archivos_afectados": [
+    "lib/data/orden.ts (nuevo) — helper masRecientePrimero(): createdAt DESC con fallback updatedAt, ordena copia (no muta), estable para items sin timestamps.",
+    "lib/data/mock-store.ts (modificar) — 14 listar() usan masRecientePrimero: proyectos, clientes, catalogo, personas, pedidosWeb, movimientosFinancieros, ordenesCompra, proveedores, herramientas, cuentasCobroProveedor, portafolio, renderesConceptuales, testimonios, bitacoraArticulos.",
+    "lib/data/drizzle-impl.ts (modificar) — los mismos 14 listar() usan masRecientePrimero.",
+    "lib/data/contracts.ts (modificar) — Cliente gana campo createdAt?: string (el schema clientes ya tiene created_at).",
+    "lib/data/fixtures.ts (modificar) — clientes c01/c02/c03 ganan createdAt para que local refleje la nube."
+  ],
+  "criterios_aceptacion": [
+    "Cotizador y kanban comercial muestran los proyectos más recientes primero (createdAt DESC).",
+    "Clientes, equipo, herramientas, catálogo, compras, pedidos-web, cuentas-cobro, caja, galería de renders, portafolio ERP, testimonios y bitácora heredan la misma ley vía listar().",
+    "Portafolio público (destacado/orden), obligaciones (vencimiento), parámetros, categorías/acabados, cuentas financieras y registros de gate conservan su orden de negocio.",
+    "npx tsc --noEmit = 0 errores.",
+    "npx eslint . = 0 errores.",
+    "mock-store.test.ts: 81 pruebas OK.",
+    "DATA_IMPL=mock npx next build compila sin errores (solo warnings preexistentes).",
+    "Verificación manual: proyectos.listar() en mock devuelve mock-proj10 (2026-07-25) antes que mock-proj01; clientes.listar() devuelve Cocina Márquez primero."
+  ],
+  "no_verificado": "Verificación visual en navegador/Preview (npm run dev): orden real de tarjetas en cotizador y columnas del kanban — pendiente de que Javier confirme.",
+  "relacionado": ["t-141"],
+  "fecha_creacion": "2026-08-20"
+}

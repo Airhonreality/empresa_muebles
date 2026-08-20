@@ -35,7 +35,14 @@ export default function NuevoProyectoPage() {
     // Detener si hay errores
     if (Object.keys(nuevosErrores).length > 0) return;
 
+    // Id generado acá, no en el servidor -- es el id PERMANENTE del proyecto (piloto optimistic
+    // create, 2026-08-20), no uno temporal a reconciliar después. Deja navegar de inmediato sin
+    // esperar la confirmación de la DB: store.proyectos.crear ya insertó la fila localmente antes
+    // de este punto (ver lib/data/drizzle-impl.ts) y la pantalla del proyecto lee de ese mismo
+    // store, así que renderiza igual sin tener que esperar la red.
+    const id = crypto.randomUUID();
     const nuevoProyecto: Partial<Proyecto> & { nombreProyecto: string } = {
+      id,
       nombreProyecto: nombreProyecto.trim(),
       clienteId: clienteSeleccionado?.id ?? null,
       tipoProyecto: 'personalizado',
@@ -52,10 +59,13 @@ export default function NuevoProyectoPage() {
       diasEntregaEstimados: null,
     };
 
-    const proyectoCreado = await store.proyectos.crear(nuevoProyecto);
-    if (proyectoCreado) {
-      router.push(`/erp/cotizador/${proyectoCreado.id}`);
-    }
+    // No se espera esta promesa: si falla (raro -- red/DB), el store revierte la fila optimista
+    // y quien esté en /erp/cotizador/{id} ve el estado "Proyecto no encontrado" que esa pantalla
+    // ya maneja hoy para ids desconocidos.
+    store.proyectos.crear(nuevoProyecto).catch((err) => {
+      console.error('No se pudo crear el proyecto', err);
+    });
+    router.push(`/erp/cotizador/${id}`);
   }, [nombreProyecto, clienteSeleccionado, direccionObra, descripcionSemantica, router, store]);
 
   return (

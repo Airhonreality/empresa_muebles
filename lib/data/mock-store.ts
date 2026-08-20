@@ -12,6 +12,7 @@ import type {
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
+import { masRecientePrimero } from './orden'
 import { derivarDesenlace, derivarReduccionComision, P18, P33 } from '../modules/f3/gates'
 import {
   transicionModuloValida, puedeEmitirVeredictoCalidad, P24, rangoInstalacionValido,
@@ -170,7 +171,7 @@ export function createMockStore(): DataStore {
   return {
     proyectos: {
       listar(): Proyecto[] {
-        return proyectos
+        return masRecientePrimero(proyectos)
       },
       obtenerPorId(id: string): Proyecto | undefined {
         return proyectos.find(p => p.id === id)
@@ -224,6 +225,13 @@ export function createMockStore(): DataStore {
           comercialVendedorId: verificadorId,
           updatedAt: new Date().toISOString(),
         }
+        notify()
+        return proyectos[idx]
+      },
+      async actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null> {
+        const idx = proyectos.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        proyectos[idx] = { ...proyectos[idx], ...partial, updatedAt: new Date().toISOString() }
         notify()
         return proyectos[idx]
       },
@@ -371,7 +379,7 @@ export function createMockStore(): DataStore {
 
     clientes: {
       listar(): Cliente[] {
-        return clientes
+        return masRecientePrimero(clientes)
       },
       obtenerPorId(id: string): Cliente | undefined {
         return clientes.find(c => c.id === id)
@@ -388,6 +396,13 @@ export function createMockStore(): DataStore {
         clientes.push(nuevo)
         notify()
         return nuevo
+      },
+      async actualizar(id: string, partial: Partial<Omit<Cliente, 'id'>>): Promise<Cliente | null> {
+        const idx = clientes.findIndex(c => c.id === id)
+        if (idx === -1) return null
+        clientes[idx] = { ...clientes[idx], ...partial }
+        notify()
+        return clientes[idx]
       },
     },
 
@@ -605,7 +620,7 @@ export function createMockStore(): DataStore {
 
     catalogo: {
       listar(): ProductoCatalogo[] {
-        return catalogo
+        return masRecientePrimero(catalogo)
       },
       buscar(query: string): ProductoCatalogo[] {
         // t-141: búsqueda resiliente (tildes, tokens AND, fuzzy Opción A) — mismo matcher que
@@ -1134,7 +1149,7 @@ export function createMockStore(): DataStore {
     // --- F3: Equipo ---
     personas: {
       listar(): Persona[] {
-        return personas
+        return masRecientePrimero(personas)
       },
       obtenerPorId(id: string): Persona | undefined {
         return personas.find(p => p.id === id)
@@ -1270,7 +1285,7 @@ export function createMockStore(): DataStore {
 
     pedidosWeb: {
       listar(): PedidoWeb[] {
-        return pedidosWeb
+        return masRecientePrimero(pedidosWeb)
       },
       porCliente(clienteId: string): PedidoWeb[] {
         return pedidosWeb.filter(p => p.clienteId === clienteId)
@@ -1609,7 +1624,7 @@ export function createMockStore(): DataStore {
 
     movimientosFinancieros: {
       listar(): MovimientoFinanciero[] {
-        return movimientosFinancieros
+        return masRecientePrimero(movimientosFinancieros)
       },
       porCuenta(cuentaId: string): MovimientoFinanciero[] {
         return movimientosFinancieros.filter(m => m.cuentaOrigenId === cuentaId || m.cuentaDestinoId === cuentaId)
@@ -1698,7 +1713,7 @@ export function createMockStore(): DataStore {
 
     ordenesCompra: {
       listar(): OrdenCompra[] {
-        return ordenesCompra
+        return masRecientePrimero(ordenesCompra)
       },
       porProveedor(proveedorId: string): OrdenCompra[] {
         return ordenesCompra.filter(o => o.proveedorId === proveedorId)
@@ -1836,7 +1851,7 @@ export function createMockStore(): DataStore {
 
     proveedores: {
       listar(): Proveedor[] {
-        return proveedores
+        return masRecientePrimero(proveedores)
       },
       obtenerPorId(id: string): Proveedor | undefined {
         return proveedores.find(p => p.id === id)
@@ -1961,7 +1976,7 @@ export function createMockStore(): DataStore {
 
     herramientas: {
       listar(): Herramienta[] {
-        return herramientas
+        return masRecientePrimero(herramientas)
       },
       async crear(data: { nombre: string; valor: string; fotoUrl?: string | null; proveedorId?: string | null }): Promise<Herramienta> {
         const nuevo: Herramienta = {
@@ -2051,7 +2066,7 @@ export function createMockStore(): DataStore {
 
     cuentasCobroProveedor: {
       listar(): CuentaCobroProveedor[] {
-        return cuentasCobroProveedor
+        return masRecientePrimero(cuentasCobroProveedor)
       },
       porProveedor(proveedorId: string): CuentaCobroProveedor[] {
         return cuentasCobroProveedor.filter(c => c.proveedorId === proveedorId)
@@ -2294,7 +2309,7 @@ export function createMockStore(): DataStore {
     // --- F-03: Portafolio de proyectos ---
     portafolio: {
       listar(): Portafolio[] {
-        return portafolio
+        return masRecientePrimero(portafolio)
       },
       publicados(): Portafolio[] {
         // R1/R4: solo publicado=true, ordenado destacado DESC, luego orden ASC.
@@ -2357,7 +2372,7 @@ export function createMockStore(): DataStore {
 
     renderesConceptuales: {
       listar(): RenderConceptual[] {
-        return renders
+        return masRecientePrimero(renders)
       },
       porTipoEspacio(tipoEspacio: string): RenderConceptual[] {
         return renders
@@ -2397,7 +2412,7 @@ export function createMockStore(): DataStore {
 
     testimonios: {
       listar(): Testimonio[] {
-        return testimonios
+        return masRecientePrimero(testimonios)
       },
       porId(id: string): Testimonio | undefined {
         return testimonios.find(t => t.id === id)
@@ -2476,7 +2491,7 @@ export function createMockStore(): DataStore {
 
     bitacoraArticulos: {
       listar(): BitacoraArticulo[] {
-        return bitacoraArticulos
+        return masRecientePrimero(bitacoraArticulos)
       },
       publicados(): BitacoraArticulo[] {
         // R1 disenio_F15 §4: solo publicado=true, más reciente primero.

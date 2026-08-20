@@ -14,9 +14,10 @@
 // de inmediato el registro PRINCIPAL devuelto por el Action; los registros secundarios llegan con
 // el siguiente ciclo de polling (≤4s), no instantáneamente. Es una degradación aceptada explícita,
 // no un bug — ver plan_f10_migracion.md §3.1d.
-import type { DataStore } from './contracts'
+import type { DataStore, Proyecto } from './contracts'
 import type { StoreSnapshot } from './snapshot'
 import { coincide } from '../search/normalizar'
+import { masRecientePrimero } from './orden'
 import * as core from './actions/core'
 import * as f3 from './actions/f3'
 import * as f4 from './actions/f4'
@@ -41,9 +42,55 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
     listeners.forEach((l) => l())
   }
 
+  // Piloto "optimistic create" (2026-08-20, plan proyectos.crear): ids de filas insertadas
+  // localmente antes de que el servidor confirme. applySnapshot() reemplaza `data` por completo
+  // (no hace merge) -- si un snapshot llega mientras una fila optimista todavía no aterrizó en
+  // Postgres, sin este registro la borraría en silencio. Se re-inserta cualquier pendiente que el
+  // snapshot fresco todavía no traiga; se limpia del registro cuando el propio crear() resuelve.
+  const pendientesOptimistas = {
+    proyectos: new Set<string>(),
+  }
+
   function applySnapshot(snap: StoreSnapshot): void {
-    data = snap
+    let siguiente = snap
+    for (const id of pendientesOptimistas.proyectos) {
+      if (!siguiente.proyectos.some((p) => p.id === id)) {
+        const enCurso = data.proyectos.find((p) => p.id === id)
+        if (enCurso) siguiente = { ...siguiente, proyectos: [...siguiente.proyectos, enCurso] }
+      }
+    }
+    data = siguiente
     notify()
+  }
+
+  // Espeja los defaults de crearProyectoAction (lib/data/actions/core.ts) para que la fila
+  // optimista se vea igual a lo que el servidor va a devolver. Si un default cambia en el
+  // server, hay que recordar espejarlo acá -- es el costo conocido de optimistic UI.
+  function construirProyectoOptimista(values: Partial<Proyecto> & { nombreProyecto: string }, id: string): Proyecto {
+    const ahora = new Date().toISOString()
+    return {
+      id,
+      nombreProyecto: values.nombreProyecto,
+      estado: values.estado ?? 'activa',
+      tipoProyecto: values.tipoProyecto ?? 'personalizado',
+      direccionObra: values.direccionObra ?? null,
+      costosOperativos: values.costosOperativos ?? '0',
+      imprevistosInstalacion: values.imprevistosInstalacion ?? '0',
+      descuentoComercial: values.descuentoComercial ?? '0',
+      ajusteArbitrario: values.ajusteArbitrario ?? '0',
+      aplicaIva: values.aplicaIva ?? false,
+      porcentajeIva: values.porcentajeIva ?? '19',
+      garantiaAnios: values.garantiaAnios ?? 2,
+      diasEntregaEstimados: values.diasEntregaEstimados ?? null,
+      descripcionSemantica: values.descripcionSemantica ?? null,
+      clienteId: values.clienteId ?? null,
+      comercialId: values.comercialId ?? null,
+      verificadorId: values.verificadorId ?? null,
+      fechaEntradaDesarrollo: values.fechaEntradaDesarrollo ?? null,
+      comercialVendedorId: values.comercialVendedorId ?? null,
+      createdAt: ahora,
+      updatedAt: ahora,
+    }
   }
 
   function upsert<T extends { id: string }>(arr: T[], row: T): T[] {
@@ -65,7 +112,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
 
   const store: DataStore = {
     proyectos: {
-      listar: () => data.proyectos,
+      listar: () => masRecientePrimero(data.proyectos),
       obtenerPorId: (id) => data.proyectos.find((p) => p.id === id),
       actualizarEstado: async (id, estado) => {
         const r = await core.actualizarEstadoProyectoAction(id, estado)
@@ -82,11 +129,34 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         if (r) { data = { ...data, proyectos: upsert(data.proyectos, r) }; notify() }
         return r
       },
-      crear: async (values) => {
-        const r = await core.crearProyectoAction(values)
-        data = { ...data, proyectos: upsert(data.proyectos, r) }
-        notify()
+      actualizar: async (id, partial) => {
+        const r = await core.actualizarProyectoAction(id, partial)
+        if (r) { data = { ...data, proyectos: upsert(data.proyectos, r) }; notify() }
         return r
+      },
+      crear: async (values) => {
+        // Optimistic create (piloto 2026-08-20): el id lo genera el llamador (crypto.randomUUID())
+        // o, si no vino, se genera acá mismo -- en ambos casos es el id PERMANENTE, no uno
+        // temporal a reconciliar después (mismo patrón que usa Linear en su sync engine). Se
+        // inserta en el store local y se notifica ANTES de esperar al servidor, para que la UI
+        // (y una navegación inmediata a /erp/cotizador/{id}) no tenga que esperar la red.
+        const id = values.id ?? crypto.randomUUID()
+        const optimista = construirProyectoOptimista(values, id)
+        data = { ...data, proyectos: upsert(data.proyectos, optimista) }
+        pendientesOptimistas.proyectos.add(id)
+        notify()
+        try {
+          const r = await core.crearProyectoAction({ ...values, id })
+          data = { ...data, proyectos: upsert(data.proyectos, r) }
+          return r
+        } catch (err) {
+          data = { ...data, proyectos: removeById(data.proyectos, id) }
+          notify()
+          throw err
+        } finally {
+          pendientesOptimistas.proyectos.delete(id)
+          notify()
+        }
       },
       eliminar: async (id) => {
         const ok = await core.eliminarProyectoAction(id)
@@ -146,12 +216,17 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
     },
 
     clientes: {
-      listar: () => data.clientes,
+      listar: () => masRecientePrimero(data.clientes),
       obtenerPorId: (id) => data.clientes.find((c) => c.id === id),
       crear: async (values) => {
         const r = await core.crearClienteAction(values)
         data = { ...data, clientes: upsert(data.clientes, r) }
         notify()
+        return r
+      },
+      actualizar: async (id, partial) => {
+        const r = await core.actualizarClienteAction(id, partial)
+        if (r) { data = { ...data, clientes: upsert(data.clientes, r) }; notify() }
         return r
       },
     },
@@ -230,7 +305,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
     },
 
     catalogo: {
-      listar: () => data.catalogo,
+      listar: () => masRecientePrimero(data.catalogo),
       buscar: (query) => data.catalogo.filter((c) => coincide(query, [c.descripcion, c.sku, c.categoriaComercial ?? ''])),
       obtenerPorId: (id) => data.catalogo.find((c) => c.id === id),
       crear: async (values) => {
@@ -422,7 +497,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
 
     // --- F3: Equipo ---
     personas: {
-      listar: () => data.personas,
+      listar: () => masRecientePrimero(data.personas),
       obtenerPorId: (id) => data.personas.find((p) => p.id === id),
       crear: async (values) => {
         const r = await f3.crearPersonaAction(values)
@@ -492,7 +567,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
     pedidosWeb: {
-      listar: () => data.pedidosWeb,
+      listar: () => masRecientePrimero(data.pedidosWeb),
       porCliente: (clienteId) => data.pedidosWeb.filter((p) => p.clienteId === clienteId),
       crear: async (values) => {
         const r = await f5.crearPedidoWebAction(values)
@@ -630,7 +705,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
     movimientosFinancieros: {
-      listar: () => data.movimientosFinancieros,
+      listar: () => masRecientePrimero(data.movimientosFinancieros),
       porCuenta: (cuentaId) => data.movimientosFinancieros.filter((m) => m.cuentaOrigenId === cuentaId || m.cuentaDestinoId === cuentaId),
       porProyecto: (proyectoId) => data.movimientosFinancieros.filter((m) => m.proyectoId === proyectoId),
     },
@@ -652,7 +727,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
     ordenesCompra: {
-      listar: () => data.ordenesCompra,
+      listar: () => masRecientePrimero(data.ordenesCompra),
       porProveedor: (proveedorId) => data.ordenesCompra.filter((o) => o.proveedorId === proveedorId),
       crear: async (values) => {
         const r = await f6.crearOrdenCompraAction(values)
@@ -681,7 +756,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
     proveedores: {
-      listar: () => data.proveedores,
+      listar: () => masRecientePrimero(data.proveedores),
       obtenerPorId: (id) => data.proveedores.find((p) => p.id === id),
       crear: async (values) => {
         const r = await f6.crearProveedorAction(values)
@@ -726,7 +801,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
     herramientas: {
-      listar: () => data.herramientas,
+      listar: () => masRecientePrimero(data.herramientas),
       crear: async (values) => {
         const r = await f4.crearHerramientaAction(values)
         data = { ...data, herramientas: upsert(data.herramientas, r) }
@@ -764,7 +839,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
     },
 
     cuentasCobroProveedor: {
-      listar: () => data.cuentasCobroProveedor,
+      listar: () => masRecientePrimero(data.cuentasCobroProveedor),
       porProveedor: (proveedorId) => data.cuentasCobroProveedor.filter((c) => c.proveedorId === proveedorId),
       crear: async (values) => {
         const r = await f7.crearCuentaCobroProveedorAction(values)
@@ -864,7 +939,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
 
     // --- F-03: Portafolio de proyectos ---
     portafolio: {
-      listar: () => data.portafolio,
+      listar: () => masRecientePrimero(data.portafolio),
       publicados: () => data.portafolio.filter((p) => p.publicado).slice().sort((a, b) => (a.destacado === b.destacado ? a.orden - b.orden : (a.destacado ? -1 : 1))),
       porSlug: (slug) => data.portafolio.find((p) => p.slug === slug),
       crear: async (values) => {
@@ -890,7 +965,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
     renderesConceptuales: {
-      listar: () => data.rendersConceptuales,
+      listar: () => masRecientePrimero(data.rendersConceptuales),
       porTipoEspacio: (tipoEspacio) => data.rendersConceptuales
         .filter((r) => r.tipoEspacio === tipoEspacio && r.visible)
         .slice()
@@ -913,7 +988,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
     testimonios: {
-      listar: () => data.testimonios,
+      listar: () => masRecientePrimero(data.testimonios),
       porId: (id) => data.testimonios.find((t) => t.id === id),
       porProyecto: (proyectoId) => data.testimonios.filter((t) => t.proyectoId === proyectoId && t.publicado),
       publicados: () => data.testimonios.filter((t) => t.publicado),
@@ -951,7 +1026,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
 
     // --- F-15: Bitácora de Diseño ---
     bitacoraArticulos: {
-      listar: () => data.bitacoraArticulos,
+      listar: () => masRecientePrimero(data.bitacoraArticulos),
       publicados: () => data.bitacoraArticulos.filter((a) => a.publicado).slice().sort((a, b) => b.fechaPublicacion.localeCompare(a.fechaPublicacion)),
       porSlug: (slug) => data.bitacoraArticulos.find((a) => a.slug === slug),
       crear: async (values) => {

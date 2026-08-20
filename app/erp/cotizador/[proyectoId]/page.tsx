@@ -11,10 +11,30 @@ import { ImagePicker } from '@/components/veta/image-picker'
 import { ItemMiniatura } from '@/components/veta/item-miniatura'
 import { ItemDescriptorModal } from '@/components/veta/item-descriptor-modal'
 import { ContratoModal } from '../ContratoModal'
+import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { useDataStore, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { useDebouncedInput } from '@/lib/hooks/useDebouncedInput'
+
+/* Wrapper local para el input de "Grupo referencial": vive dentro de un `.map()`, así que el hook
+   no puede llamarse directamente en el callback del map (violaría Rules of Hooks) -- por eso se
+   envuelve en su propio componente, igual que NumberInput/MoneyInput envuelven useDebouncedInput. */
+function GrupoReferencialInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const { local, onChangeLocal, onBlurLocal } = useDebouncedInput(value, onChange)
+  return (
+    <input
+      type="text"
+      value={local}
+      onChange={(e) => onChangeLocal(e.target.value)}
+      onBlur={onBlurLocal}
+      placeholder="Grupo (ej. Ventanas)"
+      className="rounded border border-border-subtle bg-bg-paper px-1.5 py-0.5 text-xs text-text-heading focus:border-gold-400 focus:outline-none w-36"
+      aria-label="Grupo referencial"
+    />
+  )
+}
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -138,6 +158,7 @@ export default function CotizadorPage() {
     new Set(espaciosBase.map((e) => e.nombreEspacio)),
   )
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
+  const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [nuevoEspacioNombre, setNuevoEspacioNombre] = useState('')
   const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
   const { guard: guardCrearEspacio, isPending: creandoEspacio } = usePendingGuard()
@@ -323,6 +344,9 @@ export default function CotizadorPage() {
 
           {/* Acciones */}
           <div className="flex items-center gap-1.5 shrink-0">
+            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => setMostrarEditarProyecto(true)}>
+              Editar datos
+            </Button>
             <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>
               Propuesta pública
             </Button>
@@ -551,6 +575,16 @@ export default function CotizadorPage() {
             manoDeObra={moTotal}
             onClose={() => setMostrarContratoModal(false)}
             onSaved={() => setMostrarContratoModal(false)}
+          />
+        )}
+
+        {/* Modal Editar datos del proyecto (t-143) */}
+        {mostrarEditarProyecto && (
+          <EditarProyectoModal
+            proyecto={proyecto}
+            clientes={store.clientes.listar()}
+            onClose={() => setMostrarEditarProyecto(false)}
+            onSaved={() => setMostrarEditarProyecto(false)}
           />
         )}
       </div>
@@ -1266,13 +1300,9 @@ function VarianteContenido({
                         <option key={valor} value={valor}>{label}</option>
                       ))}
                     </select>
-                    <input
-                      type="text"
+                    <GrupoReferencialInput
                       value={item.grupoReferencial ?? ''}
-                      onChange={(e) => actualizarItem(item.id, 'grupoReferencial', e.target.value)}
-                      placeholder="Grupo (ej. Ventanas)"
-                      className="rounded border border-border-subtle bg-bg-paper px-1.5 py-0.5 text-xs text-text-heading focus:border-gold-400 focus:outline-none w-36"
-                      aria-label="Grupo referencial"
+                      onChange={(v) => actualizarItem(item.id, 'grupoReferencial', v)}
                     />
                   </div>
                 </div>

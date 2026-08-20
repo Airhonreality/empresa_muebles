@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
-import { LinkButton } from '@/components/veta/button'
+import { Button, LinkButton } from '@/components/veta/button'
+import { EditarClienteModal } from '@/components/veta/editar-cliente-modal'
 import { useDataStore, type EstadoProyecto, type ObligacionPendiente, type PedidoWeb, type Proyecto } from '@/lib/data'
 import { formatCurrency } from '@/lib/utils/format'
 
@@ -94,6 +95,7 @@ export default function ClienteDetallePage() {
 
   const clienteId = params.clienteId as string
   const [tabActiva, setTabActiva] = useState<TabActiva>('proyectos')
+  const [mostrarEditarCliente, setMostrarEditarCliente] = useState(false)
 
   const cliente = useMemo(() => store.clientes.obtenerPorId(clienteId), [store, clienteId])
 
@@ -134,7 +136,12 @@ export default function ClienteDetallePage() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
       <div className="mb-8">
-        <LinkButton href="/erp/clientes" variant="ghost" size="md">← Volver</LinkButton>
+        <div className="flex items-center justify-between gap-3">
+          <LinkButton href="/erp/clientes" variant="ghost" size="md">← Volver</LinkButton>
+          <Button variant="secondary" size="md" onClick={() => setMostrarEditarCliente(true)}>
+            Editar datos
+          </Button>
+        </div>
         <h1 className="font-display text-3xl font-semibold text-text-heading mt-4">{cliente.nombre}</h1>
         <div className="mt-3 grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -267,6 +274,14 @@ export default function ClienteDetallePage() {
             </div>
           )}
         </div>
+      )}
+
+      {mostrarEditarCliente && (
+        <EditarClienteModal
+          cliente={cliente}
+          onClose={() => setMostrarEditarCliente(false)}
+          onSaved={() => setMostrarEditarCliente(false)}
+        />
       )}
     </div>
   )

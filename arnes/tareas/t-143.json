@@ -1,0 +1,41 @@
+{
+  "id": "t-143",
+  "nombre": "Sistema flexible: edición de datos maestros de proyecto/cotización y de cliente (nombre, cliente, tipo, obra, descripción, días, ajustes financieros)",
+  "descripcion": "Javier reportó que no podía renombrar una cotización/proyecto y pidió diagnosticar qué más no se puede cambiar y flexibilizar el sistema. Diagnóstico: proyectos solo exponía actualizarEstado, actualizarParametrosFinancieros (IVA/garantía) y actualizarVerificador; nombreProyecto, clienteId, tipoProyecto, direccionObra, descripcionSemantica, diasEntregaEstimados y los 4 ajustes financieros (costosOperativos, imprevistosInstalacion, descuentoComercial, ajusteArbitrario) eran inmutables tras crear. Cliente solo exponía crear: nombre/documento/telefono/email/domicilio inmutables. Solución: actualizar genérico (partial) en la capa de datos (contracts + action core + mock-store + drizzle-impl, con updatedAt) + UI: modal 'Editar datos' en el header del cotizador y botón/modal 'Editar datos' en el detalle del cliente. Nota técnica: el enum PG tipo_proyecto solo admite 'personalizado'|'producto_fijo' (por eso el modal solo ofrece esos dos; los labels 'proyecto_a_medida'/'servicio_tecnico' del mapa de comercial son alias de label, no valores de BD).",
+  "objetivo": "Que el usuario pueda corregir los datos maestros de una cotización/proyecto y de un cliente en cualquier momento, no solo al crearlos.",
+  "prioridad": "Alta",
+  "estado": "Implementado y verificado — plan aprobado por el Supervisor (2026-08-20, 'implenta y finaliza con commit y push')",
+  "zona": "lib/data/ (capa de datos) + components/veta/ (modales) + app/erp/cotizador/[proyectoId]/ + app/erp/clientes/[clienteId]/",
+  "tipo": "mixto: logica (data layer) + ui (modales)",
+  "riesgo": "bajo — cero cambios de schema, cero migraciones; el enum tipo_proyecto ya existía y se respeta; las escrituras usan el Server Action con updatedAt",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "evidencia": "Javier respondió 'implenta y finaliza con commit y push' (2026-08-20) al plan presentado tras el diagnóstico de los campos inmutables."
+  },
+  "cambios_de_datos": [
+    "NINGUNO — solo UPDATE de filas existentes a través del Server Action; sin migraciones."
+  ],
+  "archivos_afectados": [
+    "lib/data/contracts.ts (modificar) — DataStore.proyectos.actualizar(id, partial) y DataStore.clientes.actualizar(id, partial) con Pick de campos editables.",
+    "lib/data/actions/core.ts (modificar) — actualizarProyectoAction (partial con updatedAt; tipoProyecto casteado al enum PG) y actualizarClienteAction.",
+    "lib/data/mock-store.ts (modificar) — implementación de ambos actualizar.",
+    "lib/data/drizzle-impl.ts (modificar) — delegan en los Server Actions y hacen upsert local + notify.",
+    "lib/data/mock-store.test.ts (modificar) — 2 tests nuevos (renombrar + datos maestros de proyecto; edición completa de cliente).",
+    "components/veta/editar-proyecto-modal.tsx (nuevo) — modal con nombre, cliente, tipo, dirección, descripción, días de entrega y los 4 ajustes financieros (MoneyInput).",
+    "components/veta/editar-cliente-modal.tsx (nuevo) — modal con nombre, documento, teléfono, email y domicilio.",
+    "app/erp/cotizador/[proyectoId]/page.tsx (modificar) — botón 'Editar datos' en el header + render del modal.",
+    "app/erp/clientes/[clienteId]/page.tsx (modificar) — botón 'Editar datos' + render del modal."
+  ],
+  "criterios_aceptacion": [
+    "Desde el cotizador, 'Editar datos' permite renombrar el proyecto y cambiar cliente, tipo, dirección, descripción semántica, días de entrega y costos/imprevistos/descuento/ajuste; el total de la cotización se recalcula al instante.",
+    "Desde el detalle del cliente, 'Editar datos' permite corregir nombre, documento, teléfono, email y domicilio.",
+    "mock-store.test.ts: 83 pruebas OK (2 nuevas).",
+    "npx tsc --noEmit = 0 errores.",
+    "npx eslint = 0 errores en archivos tocados.",
+    "DATA_IMPL=mock npx next build compila sin errores (solo warnings preexistentes)."
+  ],
+  "no_verificado": "Verificación visual del modal en navegador/Preview (npm run dev) — pendiente de que Javier confirme.",
+  "relacionado": ["t-142"],
+  "fecha_creacion": "2026-08-20"
+}
