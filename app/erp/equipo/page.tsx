@@ -8,7 +8,8 @@ import { Busqueda } from '@/components/veta/busqueda'
 import { CopyField } from '@/components/veta/copy-field'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore } from '@/lib/data'
-import { coincide } from '@/lib/search/normalizar'
+import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import {
   crearInvitacionEmpleadoAction,
   listarEstadoCuentasAction,
@@ -61,9 +62,9 @@ export default function EquipoPage() {
   const [creandoPersona, setCreandoPersona] = useState(false)
   const [errorCrear, setErrorCrear] = useState<string | null>(null)
   const [confirmarDuplicado, setConfirmarDuplicado] = useState(false)
+  const { guard: guardCrearPersona, isPending: creandoPersonaGuard } = usePendingGuard()
 
   // F10 (2026-08-17): búsqueda/filtro — la lista sin esto se vuelve inmanejable pasados ~15 empleados.
-  const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState<RolCanonico | ''>('')
   const [mostrarInactivos, setMostrarInactivos] = useState(false)
 
@@ -88,13 +89,21 @@ export default function EquipoPage() {
     cargarEstadoCuentas()
   }, [cargarEstadoCuentas])
 
+  // Búsqueda inteligente (t-141) sobre personas activas: fuzzy + historial por contexto "equipo".
+  const personasActivas = useMemo(() => personas.filter((p) => p.activo), [personas])
+  const { query: busqueda, setQuery: setBusqueda, resultado: personasBuscadas } = useSmartSearch({
+    items: personasActivas,
+    getCampos: (p) => [p.nombre, p.email ?? '', p.documento ?? '', p.telefono ?? ''],
+    contexto: 'equipo',
+    fuzzy: true,
+    limite: 500,
+  })
+
   // Agrupado por persona ACTIVA (no por personaRol, y no derivado de personasRolesActivos):
   // una persona con varios roles muestra una sola tarjeta con un badge por rol, y una persona
   // sin ningún rol activo (ej. tras "Quitar rol" sobre su único rol) sigue apareciendo en vez
   // de desaparecer de la lista como si estuviera desactivada.
-  const personasConRoles: { persona: Persona; roles: PersonaRol[] }[] = personas
-    .filter((p) => p.activo)
-    .filter((p) => !busqueda.trim() || coincide(busqueda, [p.nombre, p.email ?? '', p.documento ?? '', p.telefono ?? '']))
+  const personasConRoles: { persona: Persona; roles: PersonaRol[] }[] = personasBuscadas
     .filter((p) => !filtroRol || personasRolesActivos.some((pr) => pr.personaId === p.id && pr.rolId === filtroRol))
     .map((persona) => ({ persona, roles: personasRolesActivos.filter((pr) => pr.personaId === persona.id) }))
 
@@ -322,8 +331,9 @@ export default function EquipoPage() {
               <Button
                 variant="primary"
                 size="md"
-                onClick={handleCrearPersona}
-                disabled={!nuevoNombre.trim() || nuevoRolesInvitacion.length === 0 || creandoPersona}
+                onClick={() => guardCrearPersona(handleCrearPersona)}
+                disabled={!nuevoNombre.trim() || nuevoRolesInvitacion.length === 0 || creandoPersona || creandoPersonaGuard}
+                loading={creandoPersonaGuard}
               >
                 {creandoPersona ? 'Guardando…' : confirmarDuplicado ? 'Crear igual' : 'Guardar'}
               </Button>

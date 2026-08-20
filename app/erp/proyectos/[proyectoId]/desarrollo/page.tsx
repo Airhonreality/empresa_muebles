@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { useDataStore } from '@/lib/data'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 export default function DesarrolloPage() {
   const params = useParams()
@@ -26,6 +27,7 @@ export default function DesarrolloPage() {
 
   const [rechazoDiagnostico, setRechazoDiagnostico] = useState('')
   const [procesando, setProcesando] = useState(false)
+  const { guard: guardCrearSchema, isPending: creandoSchema } = usePendingGuard()
 
   // Guard R6: verificador único
   const puedeAprobar = proyecto?.verificadorId === usuario.id
@@ -171,7 +173,9 @@ export default function DesarrolloPage() {
           <Button
             variant="primary"
             size="md"
-            onClick={handleCrearSchema}
+            onClick={() => guardCrearSchema(handleCrearSchema)}
+            disabled={creandoSchema}
+            loading={creandoSchema}
           >
             + Crear esquema
           </Button>

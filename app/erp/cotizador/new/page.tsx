@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/veta/button";
 import { InputField } from "@/components/veta/input-field";
 import { useDataStore, type Proyecto, type Cliente } from "@/lib/data";
+import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
 
 export default function NuevoProyectoPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function NuevoProyectoPage() {
   }>({});
 
   const clientes = store.clientes.listar();
+  const { guard: guardCrearProyecto, isPending: creandoProyecto } = usePendingGuard();
 
   const handleSubmit = useCallback(async () => {
     const nuevosErrores: typeof errores = {};
@@ -117,8 +119,9 @@ export default function NuevoProyectoPage() {
       <div className="mt-8 flex gap-3">
         <Button
           variant="primary"
-          onClick={handleSubmit}
-          disabled={!nombreProyecto.trim()}
+          onClick={() => guardCrearProyecto(handleSubmit)}
+          disabled={!nombreProyecto.trim() || creandoProyecto}
+          loading={creandoProyecto}
         >
           Crear Proyecto
         </Button>
@@ -159,6 +162,8 @@ function HybridClientSelector({
     query.trim().length > 0 &&
     !filtrados.some(c => c.nombre.toLowerCase() === query.trim().toLowerCase())
 
+  const { guard: guardCrearCliente, isPending: creandoCliente } = usePendingGuard()
+
   const crearNuevo = useCallback(async () => {
     const nombre = query.trim()
     if (!nombre) return
@@ -196,10 +201,11 @@ function HybridClientSelector({
             <li>
               <button
                 type="button"
-                className="w-full px-3 py-2 text-left text-sm text-brand hover:bg-bg-alt"
-                onMouseDown={(e) => { e.preventDefault(); crearNuevo() }}
+                disabled={creandoCliente}
+                className="w-full px-3 py-2 text-left text-sm text-brand hover:bg-bg-alt disabled:opacity-40 disabled:cursor-not-allowed"
+                onMouseDown={(e) => { e.preventDefault(); guardCrearCliente(crearNuevo) }}
               >
-                + Crear cliente: {query.trim()}
+                {creandoCliente ? 'Creando...' : `+ Crear cliente: ${query.trim()}`}
               </button>
             </li>
           )}

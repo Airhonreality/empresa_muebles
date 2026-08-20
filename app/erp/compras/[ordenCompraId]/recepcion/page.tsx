@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { useDataStore, type EstadoRecepcionMaterial, type ItemOrdenCompra } from '@/lib/data'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -58,6 +59,9 @@ export default function RecepcionMaterialPage() {
   const [descripcionDefecto, setDescripcionDefecto] = useState('')
   const [errorDefecto, setErrorDefecto] = useState<string | null>(null)
   const [reprocesoCreado, setReprocesoCreado] = useState(false)
+
+  const { guard: guardRegistrarRecepcion, isPending: registrandoRecepcion } = usePendingGuard()
+  const { guard: guardCrearReproceso, isPending: creandoReproceso } = usePendingGuard()
 
   useEffect(() => {
     if (recepcion) {
@@ -186,7 +190,13 @@ export default function RecepcionMaterialPage() {
               <p className="text-sm text-text-muted mb-3">
                 El pedido llegó al taller. Registre la recepción para activar la triple verificación (pedido, despacho y material).
               </p>
-              <Button variant="primary" size="md" onClick={handleRegistrarRecepcion}>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => guardRegistrarRecepcion(handleRegistrarRecepcion)}
+                disabled={registrandoRecepcion}
+                loading={registrandoRecepcion}
+              >
                 Registrar recepción
               </Button>
             </div>
@@ -260,7 +270,13 @@ export default function RecepcionMaterialPage() {
                   {reprocesoCreado ? (
                     <Badge tone="info" dot>Reproceso de recepción creado</Badge>
                   ) : (
-                    <Button variant="secondary" size="md" onClick={handleCrearReproceso}>
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      onClick={() => guardCrearReproceso(handleCrearReproceso)}
+                      disabled={creandoReproceso}
+                      loading={creandoReproceso}
+                    >
                       Crear reproceso
                     </Button>
                   )}

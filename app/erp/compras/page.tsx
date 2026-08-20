@@ -10,6 +10,7 @@ import { MoneyInput } from '@/components/veta/money-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { useDataStore, type EstadoOrdenCompra, type MecanicaPagoOC, type OrdenCompra, type Proyecto, type Proveedor } from '@/lib/data'
 import { puedeCrearOrdenCompra } from '@/lib/modules/f4/gates'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -154,6 +155,9 @@ export default function ComprasPage() {
     montoNum > 0 &&
     guardCrearOk &&
     anticipoValido
+
+  const { guard: guardCrearOrden, isPending: creandoOrden } = usePendingGuard()
+  const { guard: guardCrearProveedor, isPending: creandoProveedor } = usePendingGuard()
 
   const handleCrearOrden = useCallback(async () => {
     if (!puedeCrear) return
@@ -496,7 +500,13 @@ export default function ComprasPage() {
           </label>
 
           <div className="flex gap-2 pt-2">
-            <Button variant="primary" size="md" onClick={handleCrearOrden} disabled={!puedeCrear}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => guardCrearOrden(handleCrearOrden)}
+              disabled={!puedeCrear || creandoOrden}
+              loading={creandoOrden}
+            >
               Crear orden de compra
             </Button>
             <Button variant="ghost" size="md" onClick={() => setMostrarCrear(false)}>
@@ -552,7 +562,13 @@ export default function ComprasPage() {
             />
           </label>
           <div className="flex gap-2 pt-2">
-            <Button variant="primary" size="md" onClick={handleCrearProveedor} disabled={!formProveedor.nombre.trim()}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => guardCrearProveedor(handleCrearProveedor)}
+              disabled={!formProveedor.nombre.trim() || creandoProveedor}
+              loading={creandoProveedor}
+            >
               Crear proveedor
             </Button>
             <Button variant="ghost" size="md" onClick={() => setMostrarNuevoProveedor(false)}>

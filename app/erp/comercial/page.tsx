@@ -27,16 +27,18 @@ const MACRO_FASE_POR_ESTADO: Record<EstadoProyecto, MacroFase> = {
   cancelada: 'post_venta',
 };
 
-// Acciones permitidas por estado (solo transiciones válidas dentro de su macro-fase o a macro-fases adyacentes)
+// Acciones permitidas por estado (solo transiciones válidas dentro de su macro-fase o a macro-fases adyacentes).
+// Bidireccional (2026-08-19): cada columna permite avanzar Y retroceder un paso dentro del corredor
+// canónico — enviada→activa, en_contrato→negociacion, produccion→pre_produccion, entregado→produccion.
 const ACCIONES_POR_ESTADO: Record<EstadoProyecto, { transiciones: string[]; puedeRetoma: boolean }> = {
   activa: { transiciones: ['enviada', 'perdida', 'cancelada'], puedeRetoma: false },
-  enviada: { transiciones: ['negociacion', 'en_contrato', 'perdida', 'cancelada'], puedeRetoma: false },
+  enviada: { transiciones: ['activa', 'negociacion', 'en_contrato', 'perdida', 'cancelada'], puedeRetoma: false },
   negociacion: { transiciones: ['en_contrato', 'enviada', 'perdida', 'cancelada'], puedeRetoma: false },
-  en_contrato: { transiciones: ['pre_produccion', 'retoma', 'perdida', 'cancelada'], puedeRetoma: true },
+  en_contrato: { transiciones: ['pre_produccion', 'retoma', 'negociacion', 'perdida', 'cancelada'], puedeRetoma: true },
   retoma: { transiciones: ['en_contrato', 'pre_produccion', 'perdida', 'cancelada'], puedeRetoma: false },
   pre_produccion: { transiciones: ['produccion', 'retoma', 'cancelada'], puedeRetoma: true },
-  produccion: { transiciones: ['entregado', 'retoma', 'cancelada'], puedeRetoma: true },
-  entregado: { transiciones: ['perdida', 'cancelada'], puedeRetoma: false },
+  produccion: { transiciones: ['entregado', 'retoma', 'pre_produccion', 'cancelada'], puedeRetoma: true },
+  entregado: { transiciones: ['produccion', 'perdida', 'cancelada'], puedeRetoma: false },
   perdida: { transiciones: [], puedeRetoma: false },
   cancelada: { transiciones: [], puedeRetoma: false },
 };
@@ -127,9 +129,13 @@ const CANONICO_AVANZAR: Partial<Record<EstadoProyecto, EstadoProyecto>> = {
 }
 
 const CANONICO_RETORNAR: Partial<Record<EstadoProyecto, EstadoProyecto>> = {
+  enviada: 'activa',
   negociacion: 'enviada',
+  en_contrato: 'negociacion',
   retoma: 'en_contrato',
   pre_produccion: 'retoma',
+  produccion: 'pre_produccion',
+  entregado: 'produccion',
 }
 
 function ProjectCard({

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { LinkButton } from '@/components/veta/button'
 import { Busqueda } from '@/components/veta/busqueda'
 import { useDataStore, type Cliente } from '@/lib/data'
-import { coincide } from '@/lib/search/normalizar'
+import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
 
 interface ClienteFila {
   cliente: Cliente
@@ -17,7 +17,6 @@ export default function ClientesTableroPage() {
   const store = useDataStore()
   const version = store.getVersion()
 
-  const [busqueda, setBusqueda] = useState('')
   const [soloConObligaciones, setSoloConObligaciones] = useState(false)
 
   const filas = useMemo(() => {
@@ -49,15 +48,28 @@ export default function ClientesTableroPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, version])
 
+  const filasConId = useMemo(() => filas.map((f) => ({ ...f, id: f.cliente.id })), [filas])
+
+  const { query: busqueda, setQuery: setBusqueda, resultado: filasBuscadas } = useSmartSearch({
+    items: filasConId,
+    getCampos: (f) => [
+      f.cliente.nombre ?? '',
+      f.cliente.telefono ?? '',
+      f.cliente.email ?? '',
+      f.cliente.documento ?? '',
+      f.cliente.domicilio ?? '',
+    ],
+    contexto: 'clientes',
+    fuzzy: true,
+    limite: 500,
+  })
+
   const filasFiltradas = useMemo(() => {
-    const q = busqueda.trim()
-    return filas.filter((fila) => {
+    return filasBuscadas.filter((fila) => {
       if (soloConObligaciones && fila.obligacionesCount === 0) return false
-      if (!q) return true
-      const c = fila.cliente
-      return coincide(q, [c.nombre ?? '', c.telefono ?? '', c.email ?? '', c.documento ?? ''])
+      return true
     })
-  }, [filas, busqueda, soloConObligaciones])
+  }, [filasBuscadas, soloConObligaciones])
 
   return (
     <div className="mx-auto max-w-full px-6 py-6">

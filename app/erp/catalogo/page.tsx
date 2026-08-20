@@ -12,6 +12,7 @@ import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { ProductoFicha, type ProductoFichaData } from '@/components/veta/producto-ficha'
 import { useDataStore, type ProductoCatalogo } from '@/lib/data'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -132,6 +133,7 @@ function CatalogoPageContent() {
   const [form, setForm] = useState<ProductoForm>(EMPTY_FORM)
   const [bannerError, setBannerError] = useState<string | null>(null)
   const [yaAbiertoDesdeLaURL, setYaAbiertoDesdeLaURL] = useState(false)
+  const { guard: guardGuardarProducto, isPending: guardandoProducto } = usePendingGuard()
 
   const productosVisibles = (filtroId ? productos.filter((p) => p.id === filtroId) : productos)
     .filter((p) => !soloTienda || catalogoIdsEnTienda.has(p.id))
@@ -360,7 +362,13 @@ function CatalogoPageContent() {
               <Button variant="ghost" size="md" onClick={() => setModalAbierto(false)}>
                 Cancelar
               </Button>
-              <Button variant="primary" size="md" onClick={guardarProducto}>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => guardGuardarProducto(guardarProducto)}
+                disabled={guardandoProducto}
+                loading={guardandoProducto}
+              >
                 {editandoId ? 'Guardar cambios' : 'Crear producto'}
               </Button>
             </div>

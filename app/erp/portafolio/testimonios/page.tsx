@@ -9,6 +9,7 @@ import { Button } from '@/components/veta/button'
 import { Busqueda } from '@/components/veta/busqueda'
 import { useDataStore, type Testimonio } from '@/lib/data'
 import { coincide } from '@/lib/search/normalizar'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 const FUENTES: Array<Testimonio['fuente']> = ['GBP', 'WhatsApp', 'Notion', 'video', 'otro']
 
@@ -61,6 +62,8 @@ function FormularioTestimonio({
   })
 
   const set = (campo: keyof typeof form, valor: string) => setForm((f) => ({ ...f, [campo]: valor }))
+
+  const { guard: guardGuardarTestimonio, isPending: guardandoTestimonio } = usePendingGuard()
 
   const guardar = () => {
     if (!form.contenido.trim()) return
@@ -145,7 +148,13 @@ function FormularioTestimonio({
         className="mb-3 w-full rounded-sm border border-border-default bg-bg-paper px-3 py-2 text-sm"
       />
       <div className="flex gap-2">
-        <Button variant="primary" size="md" onClick={guardar}>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => guardGuardarTestimonio(async () => guardar())}
+          disabled={guardandoTestimonio}
+          loading={guardandoTestimonio}
+        >
           {inicial ? 'Guardar cambios' : 'Crear testimonio'}
         </Button>
         {onCancelar && (

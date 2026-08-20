@@ -11,7 +11,7 @@ import { Button, LinkButton } from '@/components/veta/button'
 import { Busqueda } from '@/components/veta/busqueda'
 import { useDataStore, type Portafolio } from '@/lib/data'
 import { TIPOS_ESPACIO, labelTipoEspacio } from '@/lib/catalogos/tipos-espacio'
-import { coincide } from '@/lib/search/normalizar'
+import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
 
 function etiquetaCategoria(categoria: string): string {
   return labelTipoEspacio(categoria) ?? categoria.replace(/_/g, ' ')
@@ -110,29 +110,31 @@ export default function PortafolioAdminPage() {
     return map
   }, [proyectos])
 
-  const [busqueda, setBusqueda] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [filtroPublicado, setFiltroPublicado] = useState<'' | 'publicado' | 'sin_publicar'>('')
 
+  const { query: busqueda, setQuery: setBusqueda, resultado: entradasBuscadas } = useSmartSearch({
+    items: entradas,
+    getCampos: (e) => [
+      e.titulo,
+      proyectoNombreMap.get(e.proyectoId) ?? '',
+      etiquetaCategoria(e.categoriaEspacio),
+      e.descripcionComercial ?? '',
+    ],
+    contexto: 'portafolio',
+    fuzzy: true,
+    limite: 500,
+  })
+
   const entradasFiltradas = useMemo(() => {
-    let resultado = entradas
-    if (busqueda.trim()) {
-      resultado = resultado.filter((e) =>
-        coincide(busqueda, [
-          e.titulo,
-          proyectoNombreMap.get(e.proyectoId) ?? '',
-          etiquetaCategoria(e.categoriaEspacio),
-          e.descripcionComercial ?? '',
-        ])
-      )
-    }
+    let resultado = entradasBuscadas
     if (filtroCategoria) resultado = resultado.filter((e) => e.categoriaEspacio === filtroCategoria)
     if (filtroPublicado === 'publicado') resultado = resultado.filter((e) => e.publicado)
     if (filtroPublicado === 'sin_publicar') resultado = resultado.filter((e) => !e.publicado)
     return resultado
       .slice()
       .sort((a, b) => (a.destacado === b.destacado ? a.orden - b.orden : a.destacado ? -1 : 1))
-  }, [entradas, busqueda, proyectoNombreMap, filtroCategoria, filtroPublicado])
+  }, [entradasBuscadas, filtroCategoria, filtroPublicado])
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">

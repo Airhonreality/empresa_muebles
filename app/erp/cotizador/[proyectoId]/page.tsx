@@ -14,6 +14,7 @@ import { ContratoModal } from '../ContratoModal'
 import { useDataStore, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -84,6 +85,7 @@ export default function CotizadorPage() {
   // todavía (F10 mock) — el auto-routing por rol (R2/CA-15/CA-16) queda diferido
   // hasta que exista un sistema de sesión de staff; por ahora es explícito por query param.
   const readonly = searchParams.get('readonly') === 'true'
+  const router = useRouter()
   const store = useDataStore()
   const version = store.getVersion()
 
@@ -138,6 +140,7 @@ export default function CotizadorPage() {
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
   const [nuevoEspacioNombre, setNuevoEspacioNombre] = useState('')
   const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
+  const { guard: guardCrearEspacio, isPending: creandoEspacio } = usePendingGuard()
 
   const crearEspacio = useCallback(async () => {
     const nombreFinal = nuevoEspacioNombre.trim()
@@ -329,6 +332,21 @@ export default function CotizadorPage() {
             <Button variant="primary" size="md" className="h-7 px-3 text-xs" onClick={() => setMostrarContratoModal(true)}>
               Generar Contrato
             </Button>
+            {proyecto.estado === 'activa' && (
+              <Button
+                variant="ghost"
+                size="md"
+                className="h-7 px-2 text-xs text-red-500 hover:text-red-600"
+                onClick={async () => {
+                  if (window.confirm(`¿Eliminar la cotización "${proyecto.nombreProyecto}"? Solo se pueden eliminar cotizaciones en estado Lead. Esta acción borra todos sus datos y no se puede deshacer.`)) {
+                    const ok = await store.proyectos.eliminar(proyecto.id)
+                    if (ok) router.push('/erp/cotizador')
+                  }
+                }}
+              >
+                Eliminar
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -358,12 +376,13 @@ export default function CotizadorPage() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && nuevoEspacioNombre.trim()) {
                   e.preventDefault()
-                  void crearEspacio()
+                  void guardCrearEspacio(crearEspacio)
                 }
               }}
               placeholder="Añadir espacio..."
               className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none w-40 transition-all duration-fast"
               aria-label="Nombre del nuevo espacio"
+              disabled={creandoEspacio}
             />
             <select
               value={nuevoEspacioTipo}
@@ -380,7 +399,9 @@ export default function CotizadorPage() {
               variant="ghost"
               size="md"
               className="h-8 text-xs"
-              onClick={() => void crearEspacio()}
+              onClick={() => void guardCrearEspacio(crearEspacio)}
+              disabled={creandoEspacio}
+              loading={creandoEspacio}
               aria-label="Crear nuevo espacio"
             >
               + Crear
@@ -998,6 +1019,8 @@ function VarianteContenido({
   const [mostrarDetalles, setMostrarDetalles] = useState(false)
   const [modalItemId, setModalItemId] = useState<string | null>(null)
   const artefactosList = store.artefactos.porEspacio(espacio.id)
+  const { guard: guardCrearItem, isPending: creandoItem } = usePendingGuard()
+  const { guard: guardCrearItemReferencial, isPending: creandoItemReferencial } = usePendingGuard()
 
   const modalItem = modalItemId ? items.find((i) => i.id === modalItemId) : undefined
   const modalProd = modalItem?.catalogoId ? productMap.get(modalItem.catalogoId) : undefined
@@ -1039,7 +1062,7 @@ function VarianteContenido({
           <div className="mb-3">
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-              onSelect={async (producto) => {
+              onSelect={(producto) => guardCrearItem(async () => {
                 await store.items.crear({
                   varianteId: espacio.id,
                   catalogoId: producto.id,
@@ -1048,13 +1071,14 @@ function VarianteContenido({
                   nombrePersonalizado: null,
                 })
                 setModoBusquedaItem('off')
-              }}
+              })}
               onCreateNew={() => { window.location.href = `/erp/catalogo?source=cotizador&proyectoId=${proyectoId}`; setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
             />
-            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2">
+            {creandoItem && <p className="mt-1 text-xs text-text-muted">Agregando ítem...</p>}
+            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2" disabled={creandoItem}>
               Cancelar
             </Button>
           </div>
@@ -1148,7 +1172,7 @@ function VarianteContenido({
           <div className="mb-3">
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-              onSelect={async (producto) => {
+              onSelect={(producto) => guardCrearItemReferencial(async () => {
                 await store.items.crear({
                   varianteId: espacio.id,
                   catalogoId: producto.id,
@@ -1158,13 +1182,14 @@ function VarianteContenido({
                   esReferencial: true,
                 })
                 setModoBusquedaItem('off')
-              }}
+              })}
               onCreateNew={() => { window.location.href = `/erp/catalogo?source=cotizador&proyectoId=${proyectoId}`; setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
             />
-            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2">
+            {creandoItemReferencial && <p className="mt-1 text-xs text-text-muted">Agregando ítem...</p>}
+            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2" disabled={creandoItemReferencial}>
               Cancelar
             </Button>
           </div>
@@ -1482,6 +1507,7 @@ function FormArtefacto({
   const [dimensiones, setDimensiones] = useState('')
   const [ubicacion, setUbicacion] = useState('')
   const [fotoUrl, setFotoUrl] = useState<string[]>([])
+  const { guard: guardCrearArtefacto, isPending: creandoArtefacto } = usePendingGuard()
 
   const handleGuardar = useCallback(async () => {
     if (!tipo.trim()) return
@@ -1548,10 +1574,11 @@ function FormArtefacto({
       <div className="flex items-center gap-2 pt-1">
         <button
           type="button"
-          onClick={handleGuardar}
-          className="rounded bg-gold-500 px-3 py-1 text-xs font-medium text-white hover:bg-gold-600 transition-colors duration-fast"
+          onClick={() => guardCrearArtefacto(handleGuardar)}
+          disabled={creandoArtefacto}
+          className="rounded bg-gold-500 px-3 py-1 text-xs font-medium text-white hover:bg-gold-600 transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Guardar
+          {creandoArtefacto ? 'Guardando...' : 'Guardar'}
         </button>
         <button
           type="button"

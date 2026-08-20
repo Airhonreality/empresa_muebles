@@ -7,7 +7,7 @@ import { Busqueda } from '@/components/veta/busqueda'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type Cliente, type Modulo, type Proyecto, type Instalacion, type CasoGarantia } from '@/lib/data'
 import { transicionModuloValida } from '@/lib/modules/f4f5f6/gates'
-import { coincide } from '@/lib/search/normalizar'
+import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
 
 const ESTADOS_MODULO = ['por_armar', 'en_armado', 'armado', 'en_calidad'] as const
 type EstadoModulo = (typeof ESTADOS_MODULO)[number]
@@ -82,7 +82,6 @@ export default function TallerPage() {
   const store = useDataStore()
   const version = store.getVersion()
   const [filtroActivo, setFiltroActivo] = useState<EstadoGate | null>(null)
-  const [busqueda, setBusqueda] = useState('')
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState<string | null>(null)
 
   // Agregar datos por proyecto
@@ -161,9 +160,24 @@ export default function TallerPage() {
     return counts
   }, [resumenPorProyecto])
 
-  // Filtrar proyectos según el gate activo y la búsqueda resiliente (t-141)
+  const resumenConId = useMemo(() => resumenPorProyecto.map((r) => ({ ...r, id: r.proyecto.id })), [resumenPorProyecto])
+
+  const { query: busqueda, setQuery: setBusqueda, resultado: resumenBuscado } = useSmartSearch({
+    items: resumenConId,
+    getCampos: (r) => [
+      r.proyecto.nombreProyecto,
+      r.cliente?.nombre ?? '',
+      r.proyecto.direccionObra ?? '',
+      r.proyecto.tipoProyecto ?? '',
+    ],
+    contexto: 'taller',
+    fuzzy: true,
+    limite: 500,
+  })
+
+  // Filtrar proyectos según el gate activo sobre el resultado de la búsqueda inteligente (t-141)
   const proyectosFiltrados = useMemo(() => {
-    let resultado = resumenPorProyecto
+    let resultado = resumenBuscado
     if (filtroActivo) {
       resultado = resultado.filter(resumen => {
         if (filtroActivo === 'instalacion') {
@@ -176,17 +190,8 @@ export default function TallerPage() {
         return resumen.modulos.some(m => m.estado === filtroActivo)
       })
     }
-    if (busqueda.trim()) {
-      resultado = resultado.filter(r =>
-        coincide(busqueda, [
-          r.proyecto.nombreProyecto,
-          r.cliente?.nombre ?? '',
-          r.proyecto.direccionObra ?? '',
-        ])
-      )
-    }
     return resultado
-  }, [resumenPorProyecto, filtroActivo, busqueda])
+  }, [resumenBuscado, filtroActivo])
 
   // Obtener resumen de conteos de un proyecto
   const conteosPorProyecto = (resumen: ResumenProyecto) => {

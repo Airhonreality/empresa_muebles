@@ -8,6 +8,7 @@ import { LinkButton } from '@/components/veta/button'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { useDataStore } from '@/lib/data'
 import { TIPOS_ESPACIO, labelTipoEspacio } from '@/lib/catalogos/tipos-espacio'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 export default function ProyectoPortafolioPage() {
   const params = useParams()
@@ -66,6 +67,7 @@ export default function ProyectoPortafolioPage() {
 
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { guard: guardGuardarPortafolio, isPending: guardandoPortafolio } = usePendingGuard()
 
   const tiposProyecto = [
     'Residencial',
@@ -187,7 +189,7 @@ export default function ProyectoPortafolioPage() {
       )}
 
       {/* Form */}
-      <form onSubmit={(e) => { e.preventDefault(); handleSubmit() }} className="space-y-6">
+      <form onSubmit={(e) => { e.preventDefault(); guardGuardarPortafolio(handleSubmit) }} className="space-y-6">
         {/* Titulo */}
         <div>
           <label className="block text-sm font-medium text-text-heading mb-2">
@@ -410,7 +412,7 @@ export default function ProyectoPortafolioPage() {
           <LinkButton href={`/erp/proyectos/${proyectoId}`} variant="secondary">
             Volver al proyecto
           </LinkButton>
-          <Button type="submit" disabled={isSaving} variant="primary">
+          <Button type="submit" disabled={isSaving || guardandoPortafolio} loading={guardandoPortafolio} variant="primary">
             {isSaving ? 'Guardando...' : 'Guardar cambios'}
           </Button>
         </div>

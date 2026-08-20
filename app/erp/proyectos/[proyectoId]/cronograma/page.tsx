@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { useDataStore, type CronogramaEtapa, type CausaDesfase, type EstadoNovedadCritica, type DesenlaceCheck } from '@/lib/data'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -99,6 +100,11 @@ export default function CronogramaPage() {
   const [anularSugerencia, setAnularSugerencia] = useState(false)
   const [anulationDesenlace, setAnulationDesenlace] = useState<DesenlaceCheck | null>(null)
   const [overrideJustificacion, setOverrideJustificacion] = useState('')
+
+  // Guards de doble-submit (uno por acción/botón — no comparten estado entre sí)
+  const { guard: guardRegistrarNovedad, isPending: registrandoNovedad } = usePendingGuard()
+  const { guard: guardGenerarCheck, isPending: generandoCheck } = usePendingGuard()
+  const { guard: guardCrearComunicacion, isPending: creandoComunicacion } = usePendingGuard()
 
   if (!proyecto) {
     return (
@@ -421,7 +427,7 @@ export default function CronogramaPage() {
                     {ultimaComun ? (
                       <p className="text-sm text-text-muted italic">&quot;{ultimaComun.contenido}&quot;</p>
                     ) : (
-                      <Button variant="secondary" size="md" onClick={handleCrearComunicacion}>
+                      <Button variant="secondary" size="md" onClick={() => guardCrearComunicacion(handleCrearComunicacion)} disabled={creandoComunicacion} loading={creandoComunicacion}>
                         + Crear comunicación
                       </Button>
                     )}
@@ -495,10 +501,11 @@ export default function CronogramaPage() {
                 <div className="flex gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={handleRegistrarNovedad}
-                    className="rounded bg-gold-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-gold-600 transition-colors"
+                    onClick={() => guardRegistrarNovedad(handleRegistrarNovedad)}
+                    disabled={registrandoNovedad}
+                    className="rounded bg-gold-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-gold-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    Registrar novedad
+                    {registrandoNovedad ? 'Registrando...' : 'Registrar novedad'}
                   </button>
                   <button
                     type="button"
@@ -811,10 +818,11 @@ export default function CronogramaPage() {
                     <div className="flex gap-2 pt-2">
                       <button
                         type="button"
-                        onClick={handleGenerarCheck}
-                        className="rounded bg-gold-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-gold-600 transition-colors"
+                        onClick={() => guardGenerarCheck(handleGenerarCheck)}
+                        disabled={generandoCheck}
+                        className="rounded bg-gold-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-gold-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        Generar check
+                        {generandoCheck ? 'Generando...' : 'Generar check'}
                       </button>
                       <button
                         type="button"

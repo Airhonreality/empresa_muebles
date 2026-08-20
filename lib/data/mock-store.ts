@@ -151,6 +151,13 @@ export function createMockStore(): DataStore {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   }
 
+  /** Elimina en el arreglo todas las filas cuyo proyectoId === id (cascada de borrado). */
+  function filterByProyecto<T extends { proyectoId: string | null }>(arr: T[], id: string): void {
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i].proyectoId === id) arr.splice(i, 1)
+    }
+  }
+
   // Contrato de reactividad (M-07): toda mutación llama notify() antes de retornar,
   // así ninguna pantalla necesita reinventar su propio trigger/refresh manual.
   let version = 0
@@ -250,6 +257,115 @@ export function createMockStore(): DataStore {
         proyectos.push(nuevo)
         notify()
         return nuevo
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const proyecto = proyectos.find(p => p.id === id)
+        if (!proyecto) return false
+        // Solo se eliminan cotizaciones en estado lead (activa). Nunca las que ya
+        // están en contrato ni las que tengan compromisos financieros/producción.
+        if (proyecto.estado !== 'activa') return false
+        if (contratos.some(c => c.proyectoId === id)) return false
+        if (movimientosFinancieros.some(m => m.proyectoId === id)) return false
+        if (obligacionesPendientes.some(o => o.proyectoId === id)) return false
+        if (ordenesCompra.some(o => o.proyectoId === id)) return false
+
+        // Espacios del proyecto (y sus ítems/artefactos) — cascada.
+        const espacioIds = espacios.filter(e => e.proyectoId === id).map(e => e.id)
+        if (espacioIds.length > 0) {
+          for (let i = espacios.length - 1; i >= 0; i--) {
+            if (espacioIds.includes(espacios[i].id)) espacios.splice(i, 1)
+          }
+          for (let i = items.length - 1; i >= 0; i--) {
+            if (espacioIds.includes(items[i].varianteId)) items.splice(i, 1)
+          }
+          for (let i = artefactos.length - 1; i >= 0; i--) {
+            if (espacioIds.includes(artefactos[i].espacioVarianteId)) artefactos.splice(i, 1)
+          }
+        }
+
+        // Contrato e hitos (defensivo: el guard ya bloquea cuando existe).
+        const contratoIds = contratos.filter(c => c.proyectoId === id).map(c => c.id)
+        for (let i = hitos.length - 1; i >= 0; i--) {
+          if (contratoIds.includes(hitos[i].contratoId)) hitos.splice(i, 1)
+        }
+        for (let i = contratos.length - 1; i >= 0; i--) {
+          if (contratos[i].proyectoId === id) contratos.splice(i, 1)
+        }
+
+        // Historial de estados.
+        for (let i = proyectosEstadosHistorial.length - 1; i >= 0; i--) {
+          if (proyectosEstadosHistorial[i].proyectoId === id) proyectosEstadosHistorial.splice(i, 1)
+        }
+
+        // Cronograma y control.
+        const cronogramaIds = cronogramas.filter(c => c.proyectoId === id).map(c => c.id)
+        for (let i = cronogramaEtapas.length - 1; i >= 0; i--) {
+          if (cronogramaIds.includes(cronogramaEtapas[i].cronogramaId)) cronogramaEtapas.splice(i, 1)
+        }
+        for (let i = cronogramas.length - 1; i >= 0; i--) {
+          if (cronogramas[i].proyectoId === id) cronogramas.splice(i, 1)
+        }
+        filterByProyecto(desfases, id)
+        filterByProyecto(checks, id)
+        filterByProyecto(novedades, id)
+        filterByProyecto(comunicaciones, id)
+
+        // Schema y BOM.
+        const schemaIds = schemas.filter(s => s.proyectoId === id).map(s => s.id)
+        for (let i = bom.length - 1; i >= 0; i--) {
+          if (schemaIds.includes(bom[i].schemaId)) bom.splice(i, 1)
+        }
+        for (let i = schemas.length - 1; i >= 0; i--) {
+          if (schemas[i].proyectoId === id) schemas.splice(i, 1)
+        }
+        filterByProyecto(verificaciones, id)
+        filterByProyecto(retomas, id)
+        filterByProyecto(cambiosContrato, id)
+
+        // Producción.
+        const moduloIds = modulos.filter(m => m.proyectoId === id).map(m => m.id)
+        for (let i = modulosArtefactos.length - 1; i >= 0; i--) {
+          if (moduloIds.includes(modulosArtefactos[i].moduloId)) modulosArtefactos.splice(i, 1)
+        }
+        for (let i = modulos.length - 1; i >= 0; i--) {
+          if (modulos[i].proyectoId === id) modulos.splice(i, 1)
+        }
+        filterByProyecto(estimaciones, id)
+        filterByProyecto(ordenesTrabajo, id)
+
+        // F5 (taller, calidad, instalación, entrega, garantía).
+        filterByProyecto(citacionesCalidad, id)
+        filterByProyecto(reprocesos, id)
+        filterByProyecto(instalaciones, id)
+        filterByProyecto(actasEntrega, id)
+        filterByProyecto(casosGarantia, id)
+        filterByProyecto(citasGarantia, id)
+
+        // F6/F7/F4 (defensivo: el guard ya bloquea los comprometidos).
+        filterByProyecto(movimientosFinancieros, id)
+        filterByProyecto(obligacionesPendientes, id)
+        filterByProyecto(ordenesCompra, id)
+        filterByProyecto(recepcionesMaterial, id)
+        filterByProyecto(documentosProyecto, id)
+        filterByProyecto(portafolio, id)
+        filterByProyecto(testimonios, id)
+
+        // Referencias nulables que apuntan al proyecto.
+        for (const pw of pedidosWeb) {
+          if (pw.proyectoId === id) pw.proyectoId = null
+        }
+        for (const pc of catalogo) {
+          if (pc.proyectoOrigenId === id) pc.proyectoOrigenId = null
+        }
+        for (const ba of bitacoraArticulos) {
+          if (ba.proyectoRelacionadoId === id) ba.proyectoRelacionadoId = null
+        }
+
+        const idx = proyectos.findIndex(p => p.id === id)
+        if (idx === -1) return false
+        proyectos.splice(idx, 1)
+        notify()
+        return true
       },
     },
 

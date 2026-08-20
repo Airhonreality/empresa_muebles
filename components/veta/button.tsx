@@ -8,6 +8,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   children?: ReactNode;
+  /** Deshabilita el botón y muestra un spinner. Úsese con `usePendingGuard` para bloquear
+   * doble-submit en acciones async (crear/guardar/enviar). */
+  loading?: boolean;
+}
+
+function ButtonSpinner() {
+  return (
+    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
 }
 
 const BUTTON_BASE =
@@ -39,10 +51,19 @@ export function Button({
   size = "lg",
   className = "",
   children,
+  loading = false,
+  disabled,
   ...props
 }: ButtonProps) {
   return (
-    <button type="button" className={buttonClassName(variant, size, className)} {...props}>
+    <button
+      type="button"
+      className={buttonClassName(variant, size, className)}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {loading && <ButtonSpinner />}
       {children}
     </button>
   );

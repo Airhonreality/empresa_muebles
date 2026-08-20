@@ -7,6 +7,7 @@ import { Button } from '@/components/veta/button'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type EstadoOrdenCompra, type ItemOrdenCompra, type ProductoCatalogo } from '@/lib/data'
 import { derivarListaCompraSugerida } from '@/lib/modules/f4/gates'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -81,6 +82,8 @@ export default function DetalleOrdenCompraPage() {
   const [mostrarAgregarItem, setMostrarAgregarItem] = useState(false)
   const [formNuevoItem, setFormNuevoItem] = useState<FormNuevoItemAPedido>(FORM_ITEM_INICIAL)
   const [errorAgregarItem, setErrorAgregarItem] = useState<string | null>(null)
+
+  const { guard: guardAgregarItem, isPending: agregandoItem } = usePendingGuard()
 
   const handleSugerirItems = useCallback(() => {
     if (!orden?.proyectoId) return
@@ -408,7 +411,13 @@ export default function DetalleOrdenCompraPage() {
             <p role="alert" className="text-xs text-red-600">{errorAgregarItem}</p>
           )}
           <div className="flex gap-2 pt-2">
-            <Button variant="primary" size="md" onClick={handleAgregarItemAPedido}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => guardAgregarItem(handleAgregarItemAPedido)}
+              disabled={agregandoItem}
+              loading={agregandoItem}
+            >
               Agregar ítem
             </Button>
             <Button variant="ghost" size="md" onClick={() => {

@@ -5,6 +5,7 @@ import { Button } from "@/components/veta/button";
 import { InputField } from "@/components/veta/input-field";
 import { MoneyInput } from "@/components/veta/money-input";
 import { useDataStore, type Proyecto, type Cliente, type EspacioVariante, type ItemVariante, type ProductoCatalogo, type Contrato } from "@/lib/data";
+import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
 
 export interface ContratoModalProps {
   proyecto: Proyecto;
@@ -43,6 +44,7 @@ type FormContrato = {
 export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, catalogo, manoDeObra, onClose, onSaved }: ContratoModalProps) {
   const store = useDataStore();
   const productMap = useMemo(() => new Map(catalogo.map((p) => [p.id, p])), [catalogo]);
+  const { guard: guardCrearContrato, isPending: creandoContrato } = usePendingGuard();
 
   // Estado del formulario
   const [form, setForm] = useState<FormContrato>({
@@ -425,10 +427,10 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
           <Button variant="ghost" size="md" onClick={onClose}>
             Cancelar
           </Button>
-          <Button variant="primary" size="md" onClick={handleSave} disabled={!esValido}>
+          <Button variant="primary" size="md" onClick={() => guardCrearContrato(handleSave)} disabled={!esValido || creandoContrato} loading={creandoContrato}>
             Guardar Borrador
           </Button>
-          <Button variant="primary" size="md" onClick={handleSave}>
+          <Button variant="primary" size="md" onClick={() => guardCrearContrato(handleSave)} disabled={creandoContrato} loading={creandoContrato}>
             Generar Contrato
           </Button>
         </div>

@@ -8,6 +8,7 @@ import { Modal } from '@/components/veta/modal'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { useDataStore, type PedidoWeb, type Proyecto } from '@/lib/data'
 import { coincide } from '@/lib/search/normalizar'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 const ESTADOS_PEDIDO = ['nuevo', 'enganchado', 'cancelado'] as const
 type EstadoPedido = typeof ESTADOS_PEDIDO[number]
@@ -85,6 +86,8 @@ export default function PedidosWebPage() {
     setCrearNuevoProyecto(false)
     setNuevoProyectoNombre('')
   }
+
+  const { guard: guardEnganchar, isPending: enganchando } = usePendingGuard()
 
   const handleEnganchar = async () => {
     if (!modalEnganchar) return
@@ -329,8 +332,9 @@ export default function PedidosWebPage() {
             <Button
               variant="primary"
               size="md"
-              disabled={!proyectoSeleccionado && !(crearNuevoProyecto && nuevoProyectoNombre.trim())}
-              onClick={handleEnganchar}
+              disabled={(!proyectoSeleccionado && !(crearNuevoProyecto && nuevoProyectoNombre.trim())) || enganchando}
+              loading={enganchando}
+              onClick={() => guardEnganchar(handleEnganchar)}
             >
               Enganchar a producción
             </Button>

@@ -7,6 +7,7 @@ import { Button } from '@/components/veta/button'
 import { MoneyInput } from '@/components/veta/money-input'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type CuentaCobroProveedor, type EstadoCuentaCobro, type Proveedor, type OrdenCompra } from '@/lib/data'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -99,6 +100,8 @@ export default function CuentasCobroPage() {
     if (!cuenta.obligacionId) return false
     return obligaciones.some(o => o.id === cuenta.obligacionId && o.estado === 'pagado')
   }, [obligaciones])
+
+  const { guard: guardCrearCuenta, isPending: creandoCuenta } = usePendingGuard()
 
   const handleCrearCuenta = useCallback(async () => {
     const result = await store.cuentasCobroProveedor.crear({
@@ -359,7 +362,13 @@ export default function CuentasCobroPage() {
             </label>
           </div>
           <div className="flex gap-2 pt-2">
-            <Button variant="primary" size="md" onClick={handleCrearCuenta}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => guardCrearCuenta(handleCrearCuenta)}
+              disabled={creandoCuenta}
+              loading={creandoCuenta}
+            >
               Crear cuenta
             </Button>
             <Button variant="ghost" size="md" onClick={() => setMostrarCrear(false)}>

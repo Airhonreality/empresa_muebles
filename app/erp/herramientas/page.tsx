@@ -8,6 +8,7 @@ import { MoneyInput } from '@/components/veta/money-input'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type Herramienta, type EstadoOperativoHerramienta, type OrdenCompra } from '@/lib/data'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatCOP(amount: string | number): string {
   const n = typeof amount === 'string' ? parseInt(amount.replace(/[^\d]/g, ''), 10) : amount
@@ -163,6 +164,8 @@ export default function HerramientasPage() {
     if (Number.isNaN(valorNum) || valorNum < 0) return 'El valor debe ser un número positivo'
     return null
   }
+
+  const { guard: guardGuardarHerramienta, isPending: guardandoHerramienta } = usePendingGuard()
 
   const guardarHerramienta = async () => {
     const errorValidacion = validarForm()
@@ -349,7 +352,13 @@ export default function HerramientasPage() {
             <Button variant="ghost" size="md" onClick={() => setModalAbierto(false)}>
               Cancelar
             </Button>
-            <Button variant="primary" size="md" onClick={guardarHerramienta}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => guardGuardarHerramienta(guardarHerramienta)}
+              disabled={guardandoHerramienta}
+              loading={guardandoHerramienta}
+            >
               Crear herramienta
             </Button>
           </div>

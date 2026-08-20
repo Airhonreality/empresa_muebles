@@ -58,6 +58,11 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
     return arr.filter((x) => x.id !== id)
   }
 
+  /** Elimina de un arreglo todas las filas cuyo proyectoId === id. */
+  function dropByProyecto<T extends { proyectoId: string | null }>(arr: T[], id: string): T[] {
+    return arr.filter((x) => x.proyectoId !== id)
+  }
+
   const store: DataStore = {
     proyectos: {
       listar: () => data.proyectos,
@@ -82,6 +87,60 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         data = { ...data, proyectos: upsert(data.proyectos, r) }
         notify()
         return r
+      },
+      eliminar: async (id) => {
+        const ok = await core.eliminarProyectoAction(id)
+        if (!ok) return false
+        // Cascada local: refleja en la caché lo que el server action borró en Postgres.
+        const espacioIds = data.espacios.filter((e) => e.proyectoId === id).map((e) => e.id)
+        const contratoIds = data.contratos.filter((c) => c.proyectoId === id).map((c) => c.id)
+        const cronogramaIds = data.cronogramas.filter((c) => c.proyectoId === id).map((c) => c.id)
+        const schemaIds = data.schemas.filter((s) => s.proyectoId === id).map((s) => s.id)
+        const moduloIds = data.modulos.filter((m) => m.proyectoId === id).map((m) => m.id)
+        const inIds = (arr: string[], value: string) => arr.includes(value)
+        data = {
+          ...data,
+          proyectos: removeById(data.proyectos, id),
+          espacios: data.espacios.filter((e) => e.proyectoId !== id),
+          items: data.items.filter((i) => !inIds(espacioIds, i.varianteId)),
+          artefactos: data.artefactos.filter((a) => !inIds(espacioIds, a.espacioVarianteId)),
+          proyectosEstadosHistorial: data.proyectosEstadosHistorial.filter((h) => h.proyectoId !== id),
+          contratos: data.contratos.filter((c) => c.proyectoId !== id),
+          hitos: data.hitos.filter((h) => !inIds(contratoIds, h.contratoId)),
+          cronogramas: data.cronogramas.filter((c) => c.proyectoId !== id),
+          cronogramaEtapas: data.cronogramaEtapas.filter((e) => !inIds(cronogramaIds, e.cronogramaId)),
+          desfases: dropByProyecto(data.desfases, id),
+          checks: dropByProyecto(data.checks, id),
+          novedades: dropByProyecto(data.novedades, id),
+          comunicaciones: dropByProyecto(data.comunicaciones, id),
+          schemas: data.schemas.filter((s) => s.proyectoId !== id),
+          bom: data.bom.filter((b) => !inIds(schemaIds, b.schemaId)),
+          verificaciones: dropByProyecto(data.verificaciones, id),
+          retomas: dropByProyecto(data.retomas, id),
+          cambiosContrato: dropByProyecto(data.cambiosContrato, id),
+          modulos: data.modulos.filter((m) => m.proyectoId !== id),
+          modulosArtefactos: data.modulosArtefactos.filter((a) => !inIds(moduloIds, a.moduloId)),
+          estimaciones: dropByProyecto(data.estimaciones, id),
+          ordenesTrabajo: data.ordenesTrabajo.filter((o) => o.proyectoId !== id),
+          citacionesCalidad: dropByProyecto(data.citacionesCalidad, id),
+          reprocesos: dropByProyecto(data.reprocesos, id),
+          instalaciones: dropByProyecto(data.instalaciones, id),
+          actasEntrega: dropByProyecto(data.actasEntrega, id),
+          casosGarantia: dropByProyecto(data.casosGarantia, id),
+          citasGarantia: dropByProyecto(data.citasGarantia, id),
+          movimientosFinancieros: data.movimientosFinancieros.filter((m) => m.proyectoId !== id),
+          obligacionesPendientes: data.obligacionesPendientes.filter((o) => o.proyectoId !== id),
+          ordenesCompra: data.ordenesCompra.filter((o) => o.proyectoId !== id),
+          recepcionesMaterial: data.recepcionesMaterial.filter((r) => r.proyectoId !== id),
+          documentosProyecto: dropByProyecto(data.documentosProyecto, id),
+          portafolio: dropByProyecto(data.portafolio, id),
+          testimonios: data.testimonios.filter((t) => t.proyectoId !== id),
+          pedidosWeb: data.pedidosWeb.map((p) => (p.proyectoId === id ? { ...p, proyectoId: null } : p)),
+          catalogo: data.catalogo.map((c) => (c.proyectoOrigenId === id ? { ...c, proyectoOrigenId: null } : c)),
+          bitacoraArticulos: data.bitacoraArticulos.map((b) => (b.proyectoRelacionadoId === id ? { ...b, proyectoRelacionadoId: null } : b)),
+        }
+        notify()
+        return true
       },
       historialEstado: (proyectoId) => data.proyectosEstadosHistorial.filter((h) => h.proyectoId === proyectoId),
     },

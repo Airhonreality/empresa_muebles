@@ -60,6 +60,65 @@ await test('proyectos.actualizarEstado: transición inválida según transicione
   assert.equal(historial.length, 0, 'no debe crear entrada de historial para transición rechazada')
 })
 
+await test('proyectos.actualizarEstado: retroceso bidireccional del kanban -> enviada→activa y en_contrato→negociacion', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'Retroceso', estado: 'enviada' })
+  const vuelta = await store.proyectos.actualizarEstado(p.id, 'activa')
+  assert.ok(vuelta, 'enviada→activa debe ser válida (retroceso de columna)')
+  assert.equal(vuelta?.estado, 'activa')
+
+  const q = await store.proyectos.crear({ nombreProyecto: 'Retroceso 2', estado: 'en_contrato' })
+  const vuelta2 = await store.proyectos.actualizarEstado(q.id, 'negociacion')
+  assert.ok(vuelta2, 'en_contrato→negociacion debe ser válida (retroceso de columna)')
+  assert.equal(vuelta2?.estado, 'negociacion')
+
+  const r = await store.proyectos.crear({ nombreProyecto: 'Retroceso 3', estado: 'produccion' })
+  const vuelta3 = await store.proyectos.actualizarEstado(r.id, 'pre_produccion')
+  assert.ok(vuelta3, 'produccion→pre_produccion debe ser válida (retroceso de columna)')
+  assert.equal(vuelta3?.estado, 'pre_produccion')
+})
+
+await test('proyectos.eliminar: proyecto en estado activa -> se borra con sus espacios/items/artefactos/historial', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'A eliminar', estado: 'activa' })
+  const espacio = await store.espacios.crear({ proyectoId: p.id, nombreEspacio: 'Cocina' })
+  await store.items.crear({ varianteId: espacio.id, catalogoId: null, cantidad: '1', nombrePersonalizado: 'Mueble X' })
+  await store.artefactos.crear({ espacioVarianteId: espacio.id, categoria: 'electrodomestico' })
+  await store.proyectos.actualizarEstado(p.id, 'enviada')
+  await store.proyectos.actualizarEstado(p.id, 'activa')
+
+  const ok = await store.proyectos.eliminar(p.id)
+  assert.equal(ok, true, 'un lead (activa) debe poder eliminarse')
+  assert.equal(store.proyectos.obtenerPorId(p.id), undefined, 'el proyecto no debe existir')
+  assert.equal(store.espacios.porProyecto(p.id).length, 0, 'sus espacios deben borrarse')
+  assert.equal(store.items.porVariante(espacio.id).length, 0, 'sus items deben borrarse')
+  assert.equal(store.artefactos.porEspacio(espacio.id).length, 0, 'sus artefactos deben borrarse')
+  assert.equal(store.proyectos.historialEstado(p.id).length, 0, 'su historial debe borrarse')
+})
+
+await test('proyectos.eliminar: proyecto que ya no es activa -> se rechaza sin tocar nada', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'No eliminar', estado: 'enviada' })
+  const ok = await store.proyectos.eliminar(p.id)
+  assert.equal(ok, false, 'un proyecto fuera de lead (activa) no debe poder eliminarse')
+  assert.ok(store.proyectos.obtenerPorId(p.id), 'el proyecto debe seguir existiendo')
+})
+
+await test('proyectos.eliminar: proyecto en activa pero con contrato -> se rechaza', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'Con contrato', estado: 'activa' })
+  await store.contratos.crear({ proyectoId: p.id, codigoContrato: 'CT-X', valorTotal: '1000000', hitos: [] })
+  const ok = await store.proyectos.eliminar(p.id)
+  assert.equal(ok, false, 'un proyecto con contrato no debe poder eliminarse aunque esté en activa')
+  assert.ok(store.proyectos.obtenerPorId(p.id), 'el proyecto debe seguir existiendo')
+})
+
+await test('proyectos.eliminar: proyecto inexistente -> false', async () => {
+  const store = createMockStore()
+  const ok = await store.proyectos.eliminar('id-inexistente')
+  assert.equal(ok, false)
+})
+
 await test('proyectos: actualizarParametrosFinancieros -> obtenerPorId refleja aplicaIva y porcentajeIva', async () => {
   const store = createMockStore()
   const p = await store.proyectos.crear({ nombreProyecto: 'X', aplicaIva: false, porcentajeIva: '0' })

@@ -2,7 +2,7 @@
 // Server Actions del cluster núcleo: proyectos, clientes, espacios, items, artefactos,
 // catálogo, parámetros, contratos. Porta 1:1 la lógica de lib/data/mock-store.ts (73/73
 // tests) a Drizzle/Postgres real. Ver plan_f10_migracion.md §3.1d.
-import { eq, and, ne } from 'drizzle-orm'
+import { eq, and, ne, inArray, or } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { num } from './mappers'
@@ -33,6 +33,106 @@ export async function actualizarEstadoProyectoAction(id: string, estado: string)
       proyectoId: id, estadoAnterior: estadoAnterior as EstadoProyecto, estadoNuevo: estado as EstadoProyecto, cambiadoPor: null, razon: null,
     })
     return actualizado as unknown as Proyecto
+  })
+}
+
+export async function eliminarProyectoAction(id: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [proyecto] = await tx.select().from(s.proyectos).where(eq(s.proyectos.id, id))
+    if (!proyecto) return false
+    // Solo se eliminan cotizaciones en estado lead (activa). Nunca las que ya
+    // están en contrato ni las que tengan compromisos financieros.
+    if (proyecto.estado !== 'activa') return false
+    const contratosProyecto = await tx.select().from(s.contratos).where(eq(s.contratos.proyectoId, id))
+    if (contratosProyecto.length > 0) return false
+    const movimientos = await tx.select().from(s.movimientosFinancieros).where(eq(s.movimientosFinancieros.proyectoId, id))
+    if (movimientos.length > 0) return false
+    const obligaciones = await tx.select().from(s.obligacionesPendientes).where(eq(s.obligacionesPendientes.proyectoId, id))
+    if (obligaciones.length > 0) return false
+    const ocs = await tx.select().from(s.ordenesCompra).where(eq(s.ordenesCompra.proyectoId, id))
+    if (ocs.length > 0) return false
+
+    // ── Cascada de borrado (orden dependencias primero) ──
+    // Contratos e hitos (defensivo: el guard ya bloquea cuando existe contrato).
+    const contratoIds = contratosProyecto.map(c => c.id)
+    if (contratoIds.length > 0) {
+      await tx.delete(s.hitosPago).where(inArray(s.hitosPago.contratoId, contratoIds))
+      await tx.delete(s.contratos).where(inArray(s.contratos.id, contratoIds))
+    }
+
+    // Garantía (hijos primero).
+    await tx.delete(s.citasGarantia).where(eq(s.citasGarantia.proyectoId, id))
+    await tx.delete(s.casosGarantia).where(eq(s.casosGarantia.proyectoId, id))
+
+    // Producción.
+    const moduloIds = (await tx.select({ id: s.modulos.id }).from(s.modulos).where(eq(s.modulos.proyectoId, id))).map(r => r.id)
+    if (moduloIds.length > 0) {
+      await tx.delete(s.reprocesos).where(inArray(s.reprocesos.moduloId, moduloIds))
+      await tx.delete(s.modulosArtefactos).where(inArray(s.modulosArtefactos.moduloId, moduloIds))
+      await tx.delete(s.modulos).where(inArray(s.modulos.id, moduloIds))
+    }
+    await tx.delete(s.reprocesos).where(eq(s.reprocesos.proyectoId, id))
+
+    const ordenIds = (await tx.select({ id: s.ordenesTrabajo.id }).from(s.ordenesTrabajo).where(eq(s.ordenesTrabajo.proyectoId, id))).map(r => r.id)
+    if (ordenIds.length > 0) {
+      await tx.delete(s.tareasProduccion).where(inArray(s.tareasProduccion.ordenId, ordenIds))
+      await tx.delete(s.ordenesTrabajo).where(inArray(s.ordenesTrabajo.id, ordenIds))
+    }
+    await tx.delete(s.citacionesCalidad).where(eq(s.citacionesCalidad.proyectoId, id))
+    await tx.delete(s.instalaciones).where(eq(s.instalaciones.proyectoId, id))
+    await tx.delete(s.actasEntrega).where(eq(s.actasEntrega.proyectoId, id))
+    await tx.delete(s.estimaciones).where(eq(s.estimaciones.proyectoId, id))
+
+    // Desarrollo / schema / control (hijos primero).
+    const schemaIds = (await tx.select({ id: s.schemasProyecto.id }).from(s.schemasProyecto).where(eq(s.schemasProyecto.proyectoId, id))).map(r => r.id)
+    if (schemaIds.length > 0) {
+      await tx.delete(s.bomMaterial).where(inArray(s.bomMaterial.schemaId, schemaIds))
+      await tx.delete(s.schemasProyecto).where(inArray(s.schemasProyecto.id, schemaIds))
+    }
+    await tx.delete(s.verificaciones).where(eq(s.verificaciones.proyectoId, id))
+    await tx.delete(s.retomas).where(eq(s.retomas.proyectoId, id))
+    await tx.delete(s.cambiosContrato).where(eq(s.cambiosContrato.proyectoId, id))
+
+    // Cronograma y control (hijos primero).
+    const cronogramaIds = (await tx.select({ id: s.cronogramas.id }).from(s.cronogramas).where(eq(s.cronogramas.proyectoId, id))).map(r => r.id)
+    if (cronogramaIds.length > 0) {
+      await tx.delete(s.cronogramaEtapas).where(inArray(s.cronogramaEtapas.cronogramaId, cronogramaIds))
+      await tx.delete(s.cronogramas).where(inArray(s.cronogramas.id, cronogramaIds))
+    }
+    await tx.delete(s.desfasesCronograma).where(eq(s.desfasesCronograma.proyectoId, id))
+    await tx.delete(s.checksProduccion).where(eq(s.checksProduccion.proyectoId, id))
+    await tx.delete(s.novedadesCriticas).where(eq(s.novedadesCriticas.proyectoId, id))
+    await tx.delete(s.comunicacionesProgreso).where(eq(s.comunicacionesProgreso.proyectoId, id))
+
+    // Contenido y referencias.
+    await tx.delete(s.documentosProyecto).where(eq(s.documentosProyecto.proyectoId, id))
+    await tx.delete(s.portafolio).where(eq(s.portafolio.proyectoId, id))
+    await tx.delete(s.testimonios).where(eq(s.testimonios.proyectoId, id))
+    await tx.update(s.bitacoraArticulos).set({ proyectoRelacionadoId: null }).where(eq(s.bitacoraArticulos.proyectoRelacionadoId, id))
+    await tx.update(s.pedidosWeb).set({ proyectoId: null }).where(eq(s.pedidosWeb.proyectoId, id))
+    await tx.update(s.productosCatalogo).set({ proyectoOrigenId: null }).where(eq(s.productosCatalogo.proyectoOrigenId, id))
+
+    // Espacios (hijos primero — el portafolio ya se borró arriba).
+    const espacioIds = (await tx.select({ id: s.espacioVariantes.id }).from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, id))).map(r => r.id)
+    if (espacioIds.length > 0) {
+      await tx.delete(s.itemsVariante).where(inArray(s.itemsVariante.varianteId, espacioIds))
+      await tx.delete(s.espaciosArtefactos).where(inArray(s.espaciosArtefactos.espacioVarianteId, espacioIds))
+      await tx.delete(s.espacioVariantes).where(inArray(s.espacioVariantes.id, espacioIds))
+    }
+
+    // Historial, auditoría y lineage.
+    await tx.delete(s.proyectosEstadosHistorial).where(eq(s.proyectosEstadosHistorial.proyectoId, id))
+    await tx.delete(s.eventos).where(or(
+      eq(s.eventos.proyectoId, id),
+      and(eq(s.eventos.entidad, 'proyecto'), eq(s.eventos.entidadId, id)),
+    ))
+    await tx.delete(s.procedencia).where(or(
+      and(eq(s.procedencia.hijoEntidad, 'proyecto'), eq(s.procedencia.hijoId, id)),
+      and(eq(s.procedencia.padreEntidad, 'proyecto'), eq(s.procedencia.padreId, id)),
+    ))
+
+    await tx.delete(s.proyectos).where(eq(s.proyectos.id, id))
+    return true
   })
 }
 

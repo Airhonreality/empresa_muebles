@@ -9,6 +9,7 @@ import { Button, LinkButton } from '@/components/veta/button'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { useDataStore } from '@/lib/data'
 import { TIPOS_ESPACIO, labelTipoEspacio } from '@/lib/catalogos/tipos-espacio'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 export default function GaleriaEspaciosPage() {
   const store = useDataStore()
@@ -22,6 +23,7 @@ export default function GaleriaEspaciosPage() {
   const [titulo, setTitulo] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { guard: guardCrearRender, isPending: creandoRender } = usePendingGuard()
 
   const handleCrear = async () => {
     if (!tipoEspacio || !imagenUrl) {
@@ -108,7 +110,12 @@ export default function GaleriaEspaciosPage() {
           />
         </div>
         <div className="flex justify-end">
-          <Button variant="primary" onClick={handleCrear} disabled={isSaving}>
+          <Button
+            variant="primary"
+            onClick={() => guardCrearRender(handleCrear)}
+            disabled={isSaving || creandoRender}
+            loading={creandoRender}
+          >
             {isSaving ? 'Guardando...' : 'Agregar imagen'}
           </Button>
         </div>

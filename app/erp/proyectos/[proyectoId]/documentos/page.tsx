@@ -7,6 +7,7 @@ import { Button } from '@/components/veta/button'
 import { Modal } from '@/components/veta/modal'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { useDataStore, type DocumentoProyecto, type MacroFaseProyecto, type AlojadorDocumento } from '@/lib/data'
+import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 const MACRO_FASES: MacroFaseProyecto[] = ['pre_venta', 'cotizacion', 'produccion', 'instalacion', 'post_venta']
 
@@ -42,6 +43,9 @@ export default function DocumentosPage() {
   const [imagenes, setImagenes] = useState<string[]>([])
   const [urlDrive, setUrlDrive] = useState('')
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null)
+
+  const { guard: guardSubmitImagen, isPending: guardandoImagen } = usePendingGuard()
+  const { guard: guardSubmitDrive, isPending: guardandoDrive } = usePendingGuard()
 
   if (!proyecto) {
     return (
@@ -236,8 +240,9 @@ export default function DocumentosPage() {
                 <Button
                   variant="primary"
                   size="md"
-                  disabled={imagenes.length === 0}
-                  onClick={handleSubmitImagen}
+                  disabled={imagenes.length === 0 || guardandoImagen}
+                  loading={guardandoImagen}
+                  onClick={() => guardSubmitImagen(handleSubmitImagen)}
                 >
                   Guardar imagen
                 </Button>
@@ -263,8 +268,9 @@ export default function DocumentosPage() {
                 <Button
                   variant="primary"
                   size="md"
-                  disabled={!urlDrive.trim()}
-                  onClick={handleSubmitDrive}
+                  disabled={!urlDrive.trim() || guardandoDrive}
+                  loading={guardandoDrive}
+                  onClick={() => guardSubmitDrive(handleSubmitDrive)}
                 >
                   Guardar enlace
                 </Button>

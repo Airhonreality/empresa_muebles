@@ -904,6 +904,9 @@ export interface DataStore {
     /** P-12 (D-15): designa el verificador único del proyecto (= comercial vendedor, I-035). Setea verificadorId y comercialVendedorId con el mismo valor. */
     actualizarVerificador(id: string, verificadorId: string): Promise<Proyecto | null>
     crear(data: Partial<Proyecto> & { nombreProyecto: string }): Promise<Proyecto>
+    /** Elimina una cotización en estado lead (`activa`) con todos sus datos asociados.
+     * Rechaza si el proyecto no está en `activa` o si ya tiene contrato. Retorna true si borró. */
+    eliminar(id: string): Promise<boolean>
     historialEstado(proyectoId: string): ProyectosEstadosHistorial[]
   }
   clientes: {
