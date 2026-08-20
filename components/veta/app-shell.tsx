@@ -7,6 +7,7 @@ import { MapPin, Phone, Clock, LayoutGrid, Images, NotebookPen, UserCircle, Home
 import { NavItem } from '@/components/veta/nav-item';
 import { MetaItem } from '@/components/veta/meta-item';
 import { WhatsappFloat } from '@/components/veta/whatsapp-float';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 
 // Slugs F-09/F-14 tal cual contenido_F09_landings.md / disenio_F14_pisos_madera.md
 // (corregidos 2026-08-17: 4 de 7 no coincidían con las rutas reales, causaban 404).
@@ -40,7 +41,7 @@ const footerEnlaces = [
   { href: '/para-arquitectos', label: 'Para Arquitectos B2B' },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, precio3dFormatted }: { children: React.ReactNode, precio3dFormatted: string }) {
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
 
   return (
@@ -76,12 +77,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                 ) : item.href === '/cuenta' ? (
                   <div key={item.href} className="flex items-center gap-6 pl-2">
-                    <Link
-                      href="/agenda-tu-asesoria"
+                    <AsesoriaBoton
+                      precio3dFormatted={precio3dFormatted}
                       className="hidden lg:flex px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white text-sm font-medium rounded-sm transition-colors shadow-sm"
                     >
                       Agenda tu asesoría
-                    </Link>
+                    </AsesoriaBoton>
                     <div className="h-5 w-px bg-border-subtle" aria-hidden="true" />
                     <Link
                       href={item.href}

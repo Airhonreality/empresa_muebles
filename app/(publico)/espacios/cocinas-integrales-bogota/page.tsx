@@ -3,9 +3,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { SITE_URL } from '@/lib/seo/jsonld';
 import { socialMeta } from '@/lib/seo/social';
-import { obtenerGaleriaEspacioAction, obtenerHeroCarouselImagesAction } from '@/lib/data/actions/public';
+import { obtenerGaleriaEspacioAction, obtenerHeroCarouselImagesAction, obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
 import { HeroCarousel } from '@/components/veta/hero-carousel';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +72,11 @@ const VALIDACION_TECNICA = [
 export default async function CocinasIntegralesPage() {
   const galeria = await obtenerGaleriaEspacioAction('cocinas-integrales');
   const heroImages = await obtenerHeroCarouselImagesAction('cocinas-integrales');
+  const precio3d = (await obtenerPrecioAsesoria3dAction()) || 130000;
+  
+  const formattedPrice = precio3d !== null 
+    ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(precio3d || 130000)
+    : 'tarifa vigente';
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -277,13 +283,16 @@ export default async function CocinasIntegralesPage() {
           <h2 className="font-display text-4xl lg:text-6xl font-semibold text-white tracking-tight">
             ¿Listo para comenzar tu proyecto?
           </h2>
-          <div className="mt-8 mb-12 py-4 px-6 bg-white/5 border border-white/10 rounded-sm inline-block backdrop-blur-sm">
+          <div className="mt-8 mb-12 py-4 px-6 bg-white/5 border border-white/10 rounded-sm inline-block backdrop-blur-sm max-w-2xl mx-auto">
             <p className="text-gold-400 text-lg font-medium">
-              Asesoría completa: incluye plano, modelado 3D y propuesta personalizada.
+              Visita, asesoría técnica y cotización sin costo.<br />
+              <span className="text-white/70 text-base font-normal mt-2 block">Diseño 3D opcional por {formattedPrice} (100% deducible si apruebas el proyecto).</span>
             </p>
           </div>
           <div className="flex items-center justify-center">
-            <CtaPrimary href={WHATSAPP_URL}>Agendar ahora</CtaPrimary>
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
+              Agendar ahora
+            </AsesoriaBoton>
           </div>
         </div>
       </section>

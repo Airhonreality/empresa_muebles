@@ -10,7 +10,7 @@ export type HomeImageSeoFlow = {
 export const HOME_IMAGES_SEO: Record<string, HomeImageSeoFlow> = {
   hero: {
     section: 'Hero',
-    src: 'https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev/home/1787176798909-cocina-integral-lujo-madera-bogota.webp',
+    src: '/images/home/cocina-integral-madera-bogota-1.webp',
     alt: 'Diseño y fabricación de cocina integral de lujo en madera a la medida en Bogotá por Veta Dorada',
     title: 'Cocina integral de lujo en madera — Veta Dorada Bogotá',
     caption: 'Cocina integral de lujo instalada en Bogotá',

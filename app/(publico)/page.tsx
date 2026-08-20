@@ -5,10 +5,12 @@ import { MapPin } from 'lucide-react';
 import { 
   listarPortafolioPublicadosAction, 
   listarTestimoniosPublicadosAction,
-  obtenerHeroCarouselImagesAction
+  obtenerHeroCarouselImagesAction,
+  obtenerPrecioAsesoria3dAction
 } from '@/lib/data/actions/public';
 import { getHomeJsonLd, SITE_URL } from '@/lib/seo/jsonld';
 import { HeroCarousel } from '@/components/veta/hero-carousel';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 import { socialMeta } from '@/lib/seo/social';
 import { MetaItem } from '@/components/veta/meta-item';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
@@ -44,31 +46,10 @@ export const metadata: Metadata = {
 //
 // F-12 (agendar asesoría), F-11 (proceso), F-13 (testimonios), F-18 (historia) y F-19 (arquitectos) ya existen (Bloque B3 implementado).
 // Los CTAs dirigen a su respectiva página para mantener al usuario en el circuito cerrado.
-const WHATSAPP_URL =
-  'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
-
-function CtaPrimary({ href, children }: { href: string; children: React.ReactNode }) {
-  const externa = href.startsWith('http');
-  const className =
-    'inline-flex items-center justify-center rounded-sm bg-gold-600 px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:bg-gold-700';
-  if (externa) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
-  );
-}
-
 function CtaSecondary({ href, children }: { href: string; children: React.ReactNode }) {
   const externa = href.startsWith('http');
   const className =
-    'inline-flex items-center justify-center rounded-sm border border-gold-400 px-6 py-3 text-sm font-medium text-gold-700 transition-colors duration-300 hover:bg-gold-100/40';
+    'inline-flex items-center justify-center rounded-sm border border-gold-400 px-6 py-3 text-sm text-gold-700 transition-colors duration-300 hover:bg-gold-100/40';
   if (externa) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
@@ -142,10 +123,15 @@ const PASOS = [
 ];
 
 export default async function Home() {
-  const [proyectosDestacados, heroImages] = await Promise.all([
+  const [proyectosDestacados, heroImages, precio3d] = await Promise.all([
     listarPortafolioPublicadosAction().then(res => res.slice(0, 3)),
-    obtenerHeroCarouselImagesAction()
+    obtenerHeroCarouselImagesAction(),
+    obtenerPrecioAsesoria3dAction()
   ]);
+  
+  const formattedPrice = precio3d !== null 
+    ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(precio3d || 130000)
+    : 'tarifa vigente';
   // Testimonios reales curados (I-050, I-019 — reseñas de Google Business Profile) ya no se
   // hardcodean (D-01-9 T-03): vienen de store.testimonios.publicados() por Server Action escopada.
   // El seed de datos vive en lib/data/fixtures.ts TESTIMONIOS + DB (testimonios.nombre_autor).
@@ -174,8 +160,9 @@ export default async function Home() {
             <p className="mt-6 text-text-lead text-gold-700 italic">Diseña tu espacio. Habita el bienestar.</p>
             {/* Copy intermedio oculto temporalmente por solicitud del usuario */}
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
-              
+              <AsesoriaBoton precio3dFormatted={formattedPrice}>
+                Agenda tu asesoría
+              </AsesoriaBoton>
             </div>
           </div>
           {/* Lado Derecho: Imagen de alta calidad */}
@@ -260,7 +247,7 @@ export default async function Home() {
               </p>
             </div>
             <div className="lg:col-span-5 flex lg:justify-end">
-              <CtaPrimary href="/agenda-tu-asesoria">Agendar visita técnica a mi espacio</CtaPrimary>
+              <AsesoriaBoton precio3dFormatted={formattedPrice}>Agendar visita técnica a mi espacio</AsesoriaBoton>
             </div>
           </div>
         </div>
@@ -420,7 +407,7 @@ export default async function Home() {
                 forma de saberlo con certeza es una visita a tu espacio: medimos, diseñamos y cotizamos sin compromiso.
               </p>
               <div className="mt-8">
-                <CtaPrimary href="/agenda-tu-asesoria">Agendar una visita sin costo</CtaPrimary>
+                <AsesoriaBoton precio3dFormatted={formattedPrice}>Agendar una visita sin costo</AsesoriaBoton>
               </div>
             </div>
           </div>
@@ -506,12 +493,13 @@ export default async function Home() {
             ¿Hablamos de tu espacio?
           </h2>
           <p className="mt-8 text-gold-100/70 text-xl max-w-2xl mx-auto font-light leading-relaxed">
-            Cuéntanos qué tienes en mente. Un diseñador te escucha, visita tu espacio y te entrega una cotización
-            detallada sin compromiso.
+            Visita, asesoría técnica y cotización sin costo.<br />
+            <span className="text-white/60 text-base mt-2 block">Diseño 3D opcional por {formattedPrice} (deducible del contrato).</span>
           </p>
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
-            <CtaPrimary href="/agenda-tu-asesoria">Agenda tu asesoría gratuita</CtaPrimary>
-            
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
+              Agenda tu asesoría
+            </AsesoriaBoton>
           </div>
         </div>
       </section>

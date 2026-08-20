@@ -1,12 +1,21 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
+import { obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
 
 export const metadata: Metadata = {
   title: 'Conócenos — Veta Dorada, carpintería arquitectónica en Bogotá',
   description: 'Conoce a Veta Dorada: tres generaciones de oficio en la construcción y un estudio de diseño en Bogotá. Hugo García (obra) y Airhon J. García (diseño), sin intermediarios.',
 };
 
-export default function ConocenosPage() {
+export default async function ConocenosPage() {
+  const precio3d = (await obtenerPrecioAsesoria3dAction()) || 130000;
+  const formattedPrice = new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(precio3d || 130000);
+
   return (
     <>
       <script
@@ -44,9 +53,9 @@ export default function ConocenosPage() {
             <Link href="/portafolio" className="px-6 py-3 border border-border-subtle bg-bg-raised hover:bg-bg-alt text-text-heading font-medium rounded-sm transition-colors w-full sm:w-auto">
               Conozca nuestro trabajo
             </Link>
-            <Link href="/agenda-tu-asesoria" className="px-6 py-3 bg-gold-600 hover:bg-gold-700 text-white font-medium rounded-sm transition-colors w-full sm:w-auto">
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
               Agende su asesoría
-            </Link>
+            </AsesoriaBoton>
           </div>
         </div>
       </section>
@@ -116,9 +125,9 @@ export default function ConocenosPage() {
             <Link href="/portafolio" className="px-8 py-4 border border-border-subtle bg-bg-raised hover:bg-bg-alt text-text-heading font-medium rounded-sm transition-colors w-full sm:w-auto">
               Conozca nuestro trabajo
             </Link>
-            <Link href="/agenda-tu-asesoria" className="px-8 py-4 bg-gold-600 hover:bg-gold-700 text-white font-medium rounded-sm transition-colors w-full sm:w-auto">
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
               Agende su asesoría
-            </Link>
+            </AsesoriaBoton>
           </div>
         </div>
       </section>

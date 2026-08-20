@@ -1,12 +1,21 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
+import { obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
 
 export const metadata: Metadata = {
   title: 'Cómo trabajamos con muebles a la medida en Bogotá — Veta Dorada',
   description: 'Conoce el proceso de Veta Dorada: visita, medición, cotización línea por línea, fabricación en taller propio e instalación con garantía. Sin costos ocultos.',
 };
 
-export default function ComoTrabajamosPage() {
+export default async function ComoTrabajamosPage() {
+  const precio3d = (await obtenerPrecioAsesoria3dAction()) || 130000;
+  const formattedPrice = new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(precio3d || 130000);
+
   return (
     <>
       <script
@@ -68,9 +77,9 @@ export default function ComoTrabajamosPage() {
             Un proceso claro y sin sorpresas: te visitamos, te cotizamos línea por línea, fabricamos en nuestro taller y te lo dejamos instalado. Así de directo. Tres generaciones de oficio respaldan cada paso.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/agenda-tu-asesoria" className="px-6 py-3 bg-gold-600 hover:bg-gold-700 text-white font-medium rounded-sm transition-colors w-full sm:w-auto">
-              Agenda tu asesoría gratuita
-            </Link>
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
+              Agenda tu asesoría
+            </AsesoriaBoton>
             
           </div>
         </div>
@@ -147,9 +156,9 @@ export default function ComoTrabajamosPage() {
             El primer paso es una visita sin costo y sin compromiso. Cuéntanos qué tienes en mente y un diseñador te acompaña desde la primera medición.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/agenda-tu-asesoria" className="px-8 py-4 bg-gold-600 hover:bg-gold-700 text-white font-medium rounded-sm transition-colors w-full sm:w-auto">
-              Agenda tu asesoría gratuita
-            </Link>
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
+              Agenda tu asesoría
+            </AsesoriaBoton>
             
           </div>
         </div>

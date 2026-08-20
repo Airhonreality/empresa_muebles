@@ -2,8 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
 import { SITE_URL } from '@/lib/seo/jsonld';
-import { obtenerHeroCarouselImagesAction } from '@/lib/data/actions/public';
+import { obtenerHeroCarouselImagesAction, obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
 import { HeroCarousel } from '@/components/veta/hero-carousel';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 
 const WHATSAPP_URL =
   'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
@@ -91,6 +92,11 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
   const { slug, nombreCategoria, h1, subtitulo, parrafoDescriptor, imageKey } = config;
   const heroImageFallback = HOME_IMAGES_SEO[imageKey];
   const heroImages = await obtenerHeroCarouselImagesAction(tipoEspacio || slug);
+  const precio3d = (await obtenerPrecioAsesoria3dAction()) || 130000;
+  
+  const formattedPrice = precio3d !== null 
+    ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(precio3d || 130000)
+    : 'tarifa vigente';
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -227,12 +233,13 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
             ¿Hablamos de tu espacio?
           </h2>
           <p className="mt-8 text-gold-100/70 text-xl max-w-2xl mx-auto font-light leading-relaxed">
-            Cuéntanos qué tienes en mente. Un diseñador te escucha, visita tu espacio y te entrega una cotización
-            detallada sin compromiso.
+            Visita, asesoría técnica y cotización sin costo.<br />
+            <span className="text-white/60 text-base mt-2 block">Diseño 3D opcional por {formattedPrice} (deducible del contrato).</span>
           </p>
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
-            <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
-
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
+              Agendar asesoría
+            </AsesoriaBoton>
           </div>
         </div>
       </section>

@@ -81,12 +81,12 @@ export function PortafolioListaClient({ proyectos }: { proyectos: Portafolio[] }
         <div className="relative z-10 w-[60%] flex flex-col h-full">
 
           {/* HEADER FIJO (Contenido Comercial) */}
-          <header className="px-16 pt-20 pb-8 z-20 flex-shrink-0">
-            <p className="text-xs tracking-widest text-gold-600 uppercase font-bold mb-4">Portafolio Veta Dorada</p>
-            <h1 className="font-display text-5xl lg:text-6xl font-semibold tracking-tighter text-text-heading mb-4 leading-none">
-              Proyectos<br />realizados.
+          <header className="px-16 pt-12 pb-6 z-20 flex-shrink-0">
+            <p className="text-xs tracking-widest text-gold-600 uppercase font-bold mb-3">Portafolio Veta Dorada</p>
+            <h1 className="font-display text-3xl lg:text-4xl font-semibold tracking-tight text-text-heading mb-2 leading-tight">
+              Proyectos realizados.
             </h1>
-            <p className="text-text-muted text-base max-w-sm font-light leading-relaxed">
+            <p className="text-text-muted text-sm max-w-md font-light leading-relaxed">
               Una selección de obras recientes en carpintería arquitectónica y mobiliario a la medida.
             </p>
           </header>
@@ -109,15 +109,15 @@ export function PortafolioListaClient({ proyectos }: { proyectos: Portafolio[] }
                     <Link
                       key={uniqueKey}
                       href={`/portafolio/${proyecto.slug}`}
-                      className="group flex items-start gap-4 cursor-pointer py-4"
+                      className="group flex items-baseline gap-4 cursor-pointer py-2.5"
                       onMouseEnter={() => setHoveredProyectoId(proyecto.id)}
                     >
-                      <span className={`font-mono text-sm pt-2 transition-colors duration-500 ${isHovered ? 'text-gold-500' : 'text-border-strong'}`}>
+                      <span className={`font-mono text-xs transition-colors duration-500 ${isHovered ? 'text-gold-500' : 'text-border-strong'}`}>
                         {String(index + 1).padStart(2, '0')}
                       </span>
 
                       <div className="flex flex-col flex-1 min-w-0 pr-4">
-                        <h2 className={`font-display text-2xl lg:text-3xl font-medium capitalize truncate transition-all duration-500 origin-left ${isHovered ? 'text-text-heading scale-100 translate-x-2' : 'text-text-muted scale-95'}`}>
+                        <h2 className={`font-display font-medium capitalize truncate transition-all duration-300 origin-left ${isHovered ? 'text-2xl lg:text-3xl text-text-heading translate-x-2' : 'text-base lg:text-lg text-text-muted'}`}>
                           {formatTitle(proyecto.titulo)}
                         </h2>
 

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { listarTestimoniosPublicadosAction, listarPortafolioPublicadosAction } from '@/lib/data/actions/public';
+import { listarTestimoniosPublicadosAction, listarPortafolioPublicadosAction, obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,10 +24,17 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default async function TestimoniosPage() {
-  const [testimonios, portafolio] = await Promise.all([
+  const [testimonios, portafolio, precio3d] = await Promise.all([
     listarTestimoniosPublicadosAction(),
-    listarPortafolioPublicadosAction()
+    listarPortafolioPublicadosAction(),
+    obtenerPrecioAsesoria3dAction()
   ]);
+
+  const formattedPrice = new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(precio3d || 130000);
 
   // Cruzar testimonios con portafolio (Degradación Graciosa)
   const testimoniosEnriquecidos = testimonios.map(t => {
@@ -61,9 +69,9 @@ export default async function TestimoniosPage() {
             Historias reales de proyectos entregados en Bogotá y la sabana.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/agenda-tu-asesoria" className="px-6 py-3 bg-gold-600 hover:bg-gold-700 text-white font-medium rounded-sm transition-colors w-full sm:w-auto">
-              Agenda tu asesoría gratuita
-            </Link>
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
+              Agenda tu asesoría
+            </AsesoriaBoton>
             
           </div>
         </div>
@@ -78,7 +86,7 @@ export default async function TestimoniosPage() {
                 <div key={t.id} className="bg-bg-raised border border-border-subtle p-8 rounded-md shadow-sm flex flex-col h-full">
                   <StarRating rating={t.rating || 5} />
                   <blockquote className="text-text-heading text-lg mb-6 flex-1">
-                    "{t.contenido}"
+                    &ldquo;{t.contenido}&rdquo;
                   </blockquote>
                   <div className="mt-auto border-t border-border-subtle pt-4">
                     <p className="font-bold text-text-heading">{t.nombreAutor}</p>
@@ -120,9 +128,9 @@ export default async function TestimoniosPage() {
             Agenda una asesoría gratuita y descubre por qué nuestros clientes nos recomiendan.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/agenda-tu-asesoria" className="px-8 py-4 bg-gold-600 hover:bg-gold-700 text-white font-medium rounded-sm transition-colors w-full sm:w-auto">
-              Agenda tu asesoría gratuita
-            </Link>
+            <AsesoriaBoton precio3dFormatted={formattedPrice}>
+              Agenda tu asesoría
+            </AsesoriaBoton>
             
           </div>
         </div>

@@ -59,7 +59,7 @@ El último botón antes del footer.
 | Elemento | Copy | Justificación |
 |---|---|---|
 | Headline | ¿Listo para comenzar tu proyecto? | Cierre persuasivo estándar. |
-| **Anclaje de Valor** | **Asesoría completa: incluye plano, modelado 3D y propuesta personalizada.** | **CRÍTICO.** El usuario no quiere "una charla de ventas", quiere un 3D y un plano gratis. Hacer explícito lo que incluye la asesoría dispara la conversión. |
+| **Anclaje de Valor** | **Visita y cotización sin costo. Diseño 3D opcional.** | **CORREGIDO.** No se puede prometer 3D gratis. El 3D cuesta $130k (paramétrico) y es deducible. Ofrecer la visita gratis y el 3D como addon pago. |
 | CTA | Agendar ahora | Redirige al F-12 (Embudo híbrido) estándar. |
 
 ---

@@ -124,9 +124,9 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
     }
 
     return (
-      <div className="flex items-baseline gap-2 mt-1">
-        <span className="font-display text-4xl lg:text-5xl text-gold-700 leading-none tracking-tight">{valor}</span>
-        {sufijo && <span className="text-xs lg:text-sm font-mono text-gold-700/60 uppercase tracking-widest">{sufijo}</span>}
+      <div className="flex items-baseline gap-2 mt-1 min-w-0 flex-wrap">
+        <span className="font-display text-lg sm:text-xl lg:text-2xl xl:text-3xl text-gold-700 leading-none tracking-tight break-words">{valor}</span>
+        {sufijo && <span className="text-[10px] lg:text-xs font-mono text-gold-700/60 uppercase tracking-widest">{sufijo}</span>}
       </div>
     );
   };
@@ -182,7 +182,7 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
                   </>
                 )}
               </p>
-              <h1 className="font-display text-4xl xl:text-5xl font-semibold text-text-heading capitalize leading-tight tracking-tight">
+              <h1 className="font-display text-2xl lg:text-3xl xl:text-4xl font-semibold text-text-heading capitalize leading-tight tracking-tight">
                 {formatTitle(proyecto.titulo)}
               </h1>
             </div>
@@ -248,19 +248,19 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
                Ficha Técnica y Especificaciones
             </h3>
             
-            <dl className="grid grid-cols-1 gap-y-8 sm:grid-cols-2 lg:grid-cols-5 bg-bg-alt/30 p-8 lg:p-12 border border-border-subtle rounded-sm">
-              
+            <dl className="grid grid-cols-1 gap-y-8 sm:grid-cols-2 lg:grid-cols-5 bg-bg-alt/30 p-8 lg:p-12 border border-border-subtle rounded-sm overflow-hidden">
+
               {/* Columna 1: Ubicación (Ocupa 1) */}
               {proyecto.barrio && (
-                <div className="lg:col-span-1 pr-6 flex flex-col justify-start">
+                <div className="lg:col-span-1 min-w-0 pr-6 flex flex-col justify-start">
                   <dt className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-3">Ubicación</dt>
                   <dd className="text-sm text-text-heading font-medium leading-relaxed">{proyecto.barrio}</dd>
                 </div>
               )}
-              
+
               {/* Columna 2: Intervención (Ocupa 1) */}
               {proyecto.tipoProyecto && (
-                <div className="lg:col-span-1 sm:pl-6 sm:border-l border-border-subtle flex flex-col justify-start">
+                <div className="lg:col-span-1 min-w-0 sm:pl-6 sm:border-l border-border-subtle flex flex-col justify-start">
                   <dt className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-3">Intervención</dt>
                   <dd className="text-sm text-text-heading font-medium capitalize leading-relaxed">{proyecto.tipoProyecto.replace(/_/g, ' ')}</dd>
                 </div>
@@ -268,7 +268,7 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
 
               {/* Columna 3: Materialidad (Ocupa 2 espacios para equilibrar el texto denso) */}
               {proyecto.materialesDestacados && proyecto.materialesDestacados.length > 0 && (
-                <div className="sm:col-span-2 lg:col-span-2 lg:pl-8 lg:border-l border-border-subtle flex flex-col justify-start">
+                <div className="sm:col-span-2 lg:col-span-2 min-w-0 lg:pl-8 lg:border-l border-border-subtle flex flex-col justify-start">
                   <dt className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-3">Materialidad</dt>
                   <dd className="text-sm text-text-heading font-medium leading-relaxed">
                     {proyecto.materialesDestacados.join(', ')}
@@ -278,7 +278,7 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
 
               {/* Columna 4: Precio (Ocupa 1) */}
               {proyecto.precioReferencial && (
-                <div className="sm:col-span-2 lg:col-span-1 pt-8 sm:pt-0 lg:pl-8 lg:border-l border-border-subtle flex flex-col justify-center">
+                <div className="sm:col-span-2 lg:col-span-1 min-w-0 pt-8 sm:pt-0 lg:pl-8 lg:border-l border-border-subtle flex flex-col justify-center">
                   <dt className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-1">
                     {proyecto.precioReferencial.toLowerCase().startsWith('desde ') ? 'Inversión Base' : 'Inversión Referencial'}
                   </dt>
