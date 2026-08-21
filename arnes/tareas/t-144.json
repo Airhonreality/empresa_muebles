@@ -1,0 +1,37 @@
+{
+  "id": "t-144",
+  "nombre": "Integración de Motor de Envío de Contratos (Gmail OAuth2) en ERP Next.js",
+  "descripcion": "Integrar un servicio nativo de envío de correos electrónicos desde el ERP (Next.js + Vercel) utilizando la API oficial de Gmail con autenticación OAuth2 persistente (credenciales derivadas de Agentic Toolbox `google_workspace_cli`). Esto permitirá enviar contratos en PDF (almacenados en Cloudflare R2) a los clientes directamente desde la cuenta oficial de la empresa, garantizando que el correo saliente quede registrado en la bandeja de 'Enviados' de Gmail y que las respuestas lleguen de forma directa.",
+  "objetivo": "Automatizar el envío de contratos PDF desde el ERP con autenticación persistente OAuth2 mediante Gmail API.",
+  "prioridad": "Alta",
+  "estado": "Propuesta formalizada en arnés — pendiente de aprobación del Supervisor para implementación",
+  "zona": "lib/email/ (servicio) + app/actions/ (server action) + app/erp/contratos/ (o modales ERP)",
+  "tipo": "servicio técnico / backend / integración",
+  "riesgo": "medio — requiere configuración de llaves de entorno Google OAuth2 en Vercel y adición de la dependencia googleapis",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "evidencia": "Especificación técnica aportada por Javier 2026-08-21"
+  },
+  "cambios_de_datos": [
+    "NINGUNO en schema DB — consume URLs de contratos PDF almacenados en Cloudflare R2 y datos de clientes de la base de datos Neon (Drizzle)."
+  ],
+  "archivos_afectados": [
+    "package.json (modificar) — instalar googleapis.",
+    "lib/email/gmail-service.ts (nuevo) — cliente OAuth2 persistente con refresh token + función sendContractEmail.",
+    "app/actions/send-contract.ts (nuevo) — Server Action que valida datos, recupera URL de PDF en R2 y desencadena sendContractEmail.",
+    "components/veta/contrato-modal.tsx o app/erp/... (modificar) — botón / trigger para enviar contrato por correo."
+  ],
+  "criterios_aceptacion": [
+    "Instalación limpia de googleapis en package.json.",
+    "Variables de entorno documentadas (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, SENDER_EMAIL).",
+    "Helper lib/email/gmail-service.ts exporta getGmailClient y sendContractEmail con codificación base64url adecuada para MIME multipart/HTML.",
+    "Server action app/actions/send-contract.ts valida entrada e invoca el servicio sin fallos.",
+    "Respuesta HTTP 200/éxito al enviar desde el ERP y verificación en la bandeja de 'Enviados' de Gmail oficial.",
+    "npx tsc --noEmit = 0 errores.",
+    "npx eslint = 0 errores en archivos tocados."
+  ],
+  "no_verificado": "Ejecución real de envío desde el ERP — requiere setear las llaves de entorno en Vercel/.env.local y confirmación de Javier.",
+  "relacionado": ["t-009", "t-143"],
+  "fecha_creacion": "2026-08-21"
+}

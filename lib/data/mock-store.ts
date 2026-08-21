@@ -13,6 +13,7 @@ import type {
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
 import { masRecientePrimero } from './orden'
+import { generarSlugPortafolioBase } from '../utils/portafolio-slug'
 import { derivarDesenlace, derivarReduccionComision, P18, P33 } from '../modules/f3/gates'
 import {
   transicionModuloValida, puedeEmitirVeredictoCalidad, P24, rangoInstalacionValido,
@@ -2321,8 +2322,12 @@ export function createMockStore(): DataStore {
       porSlug(slug: string): Portafolio | undefined {
         return portafolio.find(p => p.slug === slug)
       },
-      async crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string; slug: string }): Promise<Portafolio> {
+      async crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string }): Promise<Portafolio> {
         const now = new Date().toISOString()
+        const base = generarSlugPortafolioBase(data.categoriaEspacio, data.barrio ?? null)
+        let slug = base
+        let sufijo = 2
+        while (portafolio.some(p => p.slug === slug)) { slug = `${base}-${sufijo}`; sufijo++ }
          const nuevo: Portafolio = {
            id: generateId('port'),
            proyectoId: data.proyectoId,
@@ -2339,7 +2344,7 @@ export function createMockStore(): DataStore {
            publicado: data.publicado ?? false,
            destacado: data.destacado ?? false,
            orden: data.orden ?? portafolio.length,
-           slug: data.slug,
+           slug,
            createdAt: now,
            updatedAt: now,
          }
@@ -2350,7 +2355,9 @@ export function createMockStore(): DataStore {
        async actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'espacioVarianteId' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>): Promise<Portafolio | null> {
         const idx = portafolio.findIndex(p => p.id === id)
         if (idx === -1) return null
-        portafolio[idx] = { ...portafolio[idx], ...partial, updatedAt: new Date().toISOString() }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { slug: _slugIgnorado, ...seguro } = partial as typeof partial & { slug?: string }
+        portafolio[idx] = { ...portafolio[idx], ...seguro, updatedAt: new Date().toISOString() }
         notify()
         return portafolio[idx]
       },

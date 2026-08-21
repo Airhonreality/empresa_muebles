@@ -7,6 +7,7 @@ import * as s from '@/lib/db/schema'
 import type {
   Portafolio, Testimonio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto, BitacoraArticulo,
 } from '../contracts'
+import { generarSlugPortafolioBase } from '@/lib/utils/portafolio-slug'
 
 // Lectura server-side para páginas públicas (SSR/generateMetadata) que corren fuera de
 // <DataStoreProvider> (no hay React ni useDataStore() disponible ahí). Réplica del patrón
@@ -22,19 +23,30 @@ export async function obtenerPortafolioPorSlugAction(slug: string): Promise<Port
   return store.portafolio.listar().find((p) => p.slug === slug) ?? null
 }
 
-export async function crearPortafolioAction(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string; slug: string }): Promise<Portafolio> {
+// El slug ya NO lo escribe el humano (hallazgo 2026-08-21: un slug tipeado a mano rompió la
+// URL pública de un proyecto real) — se genera siempre server-side desde categoriaEspacio +
+// barrio, y queda fijo después de crear (nunca lo toca actualizarPortafolioAction, para no
+// romper una URL ya compartida/indexada si alguien cambia el barrio más tarde).
+export async function crearPortafolioAction(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string }): Promise<Portafolio> {
   return db.transaction(async (tx) => {
     let orden = data.orden
     if (orden === undefined) {
       const [{ value }] = await tx.select({ value: count() }).from(s.portafolio)
       orden = value
     }
+    const base = generarSlugPortafolioBase(data.categoriaEspacio, data.barrio ?? null)
+    let slug = base
+    let sufijo = 2
+    while ((await tx.select({ id: s.portafolio.id }).from(s.portafolio).where(eq(s.portafolio.slug, slug))).length > 0) {
+      slug = `${base}-${sufijo}`
+      sufijo++
+    }
     const [nuevo] = await tx.insert(s.portafolio).values({
       proyectoId: data.proyectoId, titulo: data.titulo, descripcionComercial: data.descripcionComercial ?? null,
       categoriaEspacio: data.categoriaEspacio, espacioVarianteId: data.espacioVarianteId ?? null, materialesDestacados: data.materialesDestacados ?? [],
       precioReferencial: data.precioReferencial ?? null, imagenPortafolioUrl: data.imagenPortafolioUrl ?? null,
       galeriaPortafolioUrl: data.galeriaPortafolioUrl ?? [], barrio: data.barrio ?? null, tipoProyecto: data.tipoProyecto ?? null,
-      publicado: data.publicado ?? false, destacado: data.destacado ?? false, orden, slug: data.slug,
+      publicado: data.publicado ?? false, destacado: data.destacado ?? false, orden, slug,
     }).returning()
     return nuevo as unknown as Portafolio
   })
@@ -44,7 +56,11 @@ export async function actualizarPortafolioAction(
   id: string,
   partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'espacioVarianteId' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>
 ): Promise<Portafolio | null> {
-  const [actualizado] = await db.update(s.portafolio).set({ ...partial, updatedAt: new Date().toISOString() }).where(eq(s.portafolio.id, id)).returning()
+  // Guard en runtime, no solo de tipos: si algún caller todavía manda `slug` en el objeto
+  // (el spread de un Partial no lo bloquea TypeScript en tiempo de ejecución), se descarta acá.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { slug: _slugIgnorado, ...seguro } = partial as typeof partial & { slug?: string }
+  const [actualizado] = await db.update(s.portafolio).set({ ...seguro, updatedAt: new Date().toISOString() }).where(eq(s.portafolio.id, id)).returning()
   return (actualizado as unknown as Portafolio) ?? null
 }
 

@@ -1,0 +1,10 @@
+Informe de campaña
+27 de marzo de 2026 - 21 de agosto de 2026
+Estado de la campaña,Campaña,Presupuesto,Nombre de presupuesto,Tipo de presupuesto,Código de moneda,Estado,Motivos del estado,Nivel de optimización,Tipo de campaña,Impr.,Interacciones,Tasa de interacción,Coste medio,Coste,CTR,Cuota de impr. de búsqueda,Tipo de estrategia de puja,Clics,Tasa de conv.,Conversiones,CPC medio,Coste/conv.
+Habilitada,Hermanos_garcia_busqueda_noviembre_2023,"8500,00", --,Diario,COP,Apto (limitado),elemento limitado por el presupuesto,"78,50",Buscar,7.525,778,"10,34%","1120,32","871608,24","10,34%","30,64%",CPA objetivo,778,"13,76%","107,05","1120,32","8142,36"
+Habilitada,Performance Max-1,"1000,00", --,Diario,COP,Apto (limitado),elemento limitado por el presupuesto; falta la extensión de llamada,"89,69",Rendimiento máximo,18.581,1.024,"5,51%","152,18","155835,43","4,91%",< 10%,CPA objetivo,913,"3,71%","37,95","170,69","4105,92"
+Total: Campañas, --, --, --, --,COP, --,, --, --,26.106,1.802,"6,90%","570,17","1027443,66","6,48%","24,18%", --,1.691,"8,05%","145,00","607,60","7085,82"
+Total: Cuenta,,,,,COP,,,,,26.106,1.802,"6,90%","570,17","1027443,66","6,48%","24,18%",,1.691,"8,05%","145,00","607,60","7085,82"
+Total: Inteligente,,,,,COP,,,,Inteligente,0,0, --,0,"0,00", --, --,,0,"0,00%","0,00",0,"0,00"
+Total: Buscar,,,,,COP,,,,Buscar,7.525,778,"10,34%","1120,32","871608,24","10,34%","30,64%",,778,"13,76%","107,05","1120,32","8142,36"
+Total: Rendimiento máximo,,,,,COP,,,,Rendimiento máximo,18.581,1.024,"5,51%","152,18","155835,43","4,91%",< 10%,,913,"3,71%","37,95","170,69","4105,92"

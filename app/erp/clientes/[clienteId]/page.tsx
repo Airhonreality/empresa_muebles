@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button, LinkButton } from '@/components/veta/button'
 import { EditarClienteModal } from '@/components/veta/editar-cliente-modal'
-import { useDataStore, type EstadoProyecto, type ObligacionPendiente, type PedidoWeb, type Proyecto } from '@/lib/data'
+import { useDataStore, type Contrato, type EstadoProyecto, type ObligacionPendiente, type PedidoWeb, type Proyecto } from '@/lib/data'
 import { formatCurrency } from '@/lib/utils/format'
 
 type TabActiva = 'proyectos' | 'pedidos' | 'obligaciones'
@@ -111,6 +111,16 @@ export default function ClienteDetallePage() {
     [store, clienteId, version]
   )
 
+  const contratosPorProyecto = useMemo<Map<string, Contrato>>(() => {
+    const mapa = new Map<string, Contrato>()
+    proyectos.forEach((p) => {
+      const contrato = store.contratos.porProyecto(p.id)
+      if (contrato) mapa.set(p.id, contrato)
+    })
+    return mapa
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, proyectos, version])
+
   const obligaciones = useMemo<ObligacionPendiente[]>(() => {
     const porId = new Map<string, ObligacionPendiente>()
     proyectos.forEach((p) => {
@@ -204,6 +214,11 @@ export default function ClienteDetallePage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
+                    {contratosPorProyecto.has(proyecto.id) && (
+                      <p className="text-sm font-semibold text-text-heading">
+                        {formatCurrency(contratosPorProyecto.get(proyecto.id)!.valorTotal)}
+                      </p>
+                    )}
                     <Badge tone={PROYECTO_BADGE_TONE[proyecto.estado] ?? 'neutral'}>
                       {ESTADO_PROYECTO_LABELS[proyecto.estado] ?? proyecto.estado}
                     </Badge>

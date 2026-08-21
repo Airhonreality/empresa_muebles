@@ -9,7 +9,7 @@ interface AsesoriaModalProps {
 }
 
 export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaModalProps) {
-  const [tipo, setTipo] = useState<'gratis' | '3d'>('gratis');
+  const [tipo, setTipo] = useState<'gratis' | '3d' | 'medidas'>('gratis');
   const [ubicacion, setUbicacion] = useState('Bogotá D.C.');
   const [telefono, setTelefono] = useState('');
 
@@ -21,8 +21,13 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
     // Aquí iría el Server Action que guarda el teléfono y el GCLID (DIFERIDO a Parte II)
     // guardarLead({ telefono, tipo, ubicacion, gclid: getGclidCookie() });
     
-    const tipoText = tipo === 'gratis' ? 'una Asesoría Gratuita' : 'una Asesoría con Diseño 3D';
-    const text = `Hola, vengo del sitio web de Veta Dorada. Quiero agendar ${tipoText}. Mi espacio está en ${ubicacion}.`;
+    let text = '';
+    if (tipo === 'medidas') {
+      text = `Hola, vengo del sitio web de Veta Dorada. Ya tengo las medidas/planos de mi proyecto y quiero enviarlos para recibir una cotización. Mi espacio está en ${ubicacion}.`;
+    } else {
+      const tipoText = tipo === 'gratis' ? 'una Asesoría Gratuita' : 'una Asesoría con Diseño 3D';
+      text = `Hola, vengo del sitio web de Veta Dorada. Quiero agendar ${tipoText}. Mi espacio está en ${ubicacion}.`;
+    }
     const url = `https://wa.me/573025922101?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
     onClose();
@@ -33,7 +38,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
       <div className="relative bg-bg-paper w-full max-w-lg rounded-md shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex-none flex items-center justify-between p-6 border-b border-border-subtle bg-bg-surface rounded-t-md">
-          <h3 className="text-2xl font-serif text-text-heading">Agenda tu Asesoría</h3>
+          <h3 className="text-2xl font-serif text-text-heading">Inicia tu Proyecto</h3>
           <button onClick={onClose} className="p-2 text-text-muted hover:text-text-heading transition-colors" aria-label="Cerrar">
             <X size={24} />
           </button>
@@ -43,14 +48,14 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Tipo de Asesoría */}
           <div>
-            <label className="block text-sm font-semibold text-text-heading mb-2">1. Tipo de asesoría</label>
+            <label className="block text-sm font-semibold text-text-heading mb-2">1. ¿Cómo prefieres empezar?</label>
             <div className="grid grid-cols-2 gap-3">
               <label className={`flex flex-col p-3 border rounded-sm cursor-pointer transition-colors ${tipo === 'gratis' ? 'border-gold-600 bg-gold-600/5' : 'border-border-subtle hover:border-gold-600/10'}`}>
                 <div className="flex items-center mb-1">
                   <input type="radio" name="tipo" value="gratis" checked={tipo === 'gratis'} onChange={() => setTipo('gratis')} className="mr-2 accent-gold-600" />
-                  <span className="font-bold text-sm text-text-heading leading-none">Base (Gratis)</span>
+                  <span className="font-bold text-sm text-text-heading leading-none">Asesoría Base</span>
                 </div>
-                <div className="text-xs text-text-primary ml-5 leading-tight">Visita, medidas y cotización.</div>
+                <div className="text-xs text-text-primary ml-5 leading-tight">Gratis. Visita, medidas y cotización.</div>
               </label>
               
               <label className={`flex flex-col p-3 border rounded-sm cursor-pointer transition-colors ${tipo === '3d' ? 'border-gold-600 bg-gold-600/5' : 'border-border-subtle hover:border-gold-600/10'}`}>
@@ -59,6 +64,14 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
                   <span className="font-bold text-sm text-text-heading leading-none">Premium (3D)</span>
                 </div>
                 <div className="text-xs text-text-primary ml-5 leading-tight">+ Render 3D ({precio3dFormatted})</div>
+              </label>
+              
+              <label className={`col-span-2 flex flex-col p-3 border rounded-sm cursor-pointer transition-colors ${tipo === 'medidas' ? 'border-gold-600 bg-gold-600/5' : 'border-border-subtle hover:border-gold-600/10'}`}>
+                <div className="flex items-center mb-1">
+                  <input type="radio" name="tipo" value="medidas" checked={tipo === 'medidas'} onChange={() => setTipo('medidas')} className="mr-2 accent-gold-600" />
+                  <span className="font-bold text-sm text-text-heading leading-none">Cotizar con mis medidas</span>
+                </div>
+                <div className="text-xs text-text-primary ml-5 leading-tight">Si ya tienes un plano o diseño previo, envíalo y te cotizamos directamente.</div>
               </label>
             </div>
           </div>
@@ -108,7 +121,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
               >
                 Continuar a WhatsApp
               </button>
-              <p className="text-center text-xs text-text-muted mt-4">Un diseñador te atenderá directamente para coordinar la agenda.</p>
+              <p className="text-center text-xs text-text-muted mt-4">Un diseñador te atenderá directamente para continuar.</p>
             </>
           )}
         </div>

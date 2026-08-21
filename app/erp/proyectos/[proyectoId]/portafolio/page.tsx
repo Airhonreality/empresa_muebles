@@ -47,7 +47,6 @@ export default function ProyectoPortafolioPage() {
     publicado: boolean
     destacado: boolean
     orden: number
-    slug: string
   }>({
     titulo: portafolioEntry?.titulo ?? proyecto?.nombreProyecto ?? '',
     descripcionComercial: portafolioEntry?.descripcionComercial ?? '',
@@ -62,7 +61,6 @@ export default function ProyectoPortafolioPage() {
     publicado: portafolioEntry?.publicado ?? false,
     destacado: portafolioEntry?.destacado ?? false,
     orden: portafolioEntry?.orden ?? 0,
-    slug: portafolioEntry?.slug ?? '',
   })
 
   const [isSaving, setIsSaving] = useState(false)
@@ -104,8 +102,6 @@ export default function ProyectoPortafolioPage() {
         .map(m => m.trim())
         .filter(m => m.length > 0)
 
-      const slug = form.slug || form.titulo.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-
        const data = {
          proyectoId,
          titulo: form.titulo,
@@ -121,7 +117,6 @@ export default function ProyectoPortafolioPage() {
          publicado: form.publicado,
          destacado: form.destacado,
          orden: form.orden,
-         slug,
        }
 
       if (portafolioEntry) {
@@ -393,18 +388,28 @@ export default function ProyectoPortafolioPage() {
           </div>
         </div>
 
-        {/* Slug */}
+        {/* URL pública — generada automáticamente server-side desde categoría + barrio
+            (hallazgo 2026-08-21: un slug tipeado a mano rompió la URL pública de un proyecto
+            real). No editable: evita ese punto de falla y mantiene el patrón SEO consistente
+            (tipo-bogota-barrio, ej. "cocina-bogota-rosales"). */}
         <div>
           <label className="block text-sm font-medium text-text-heading mb-2">
-            Slug (URL amigable)
+            URL pública
           </label>
-           <input
-             type="text"
-             value={form.slug}
-             onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('slug', e.target.value)}
-             placeholder="Ej: cocina-compacta-diaz"
-             className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-           />
+          {portafolioEntry ? (
+            <a
+              href={`/portafolio/${portafolioEntry.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-brand underline underline-offset-2 hover:text-brand-hover"
+            >
+              /portafolio/{portafolioEntry.slug}
+            </a>
+          ) : (
+            <p className="text-sm text-text-muted">
+              Se genera automáticamente al guardar (categoría + barrio) — disponible después del primer guardado.
+            </p>
+          )}
         </div>
 
         {/* Actions */}

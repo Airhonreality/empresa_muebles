@@ -1252,7 +1252,8 @@ export interface DataStore {
      /** F-03 R1/R4: solo publicado=true, ordenado destacado DESC luego orden ASC. */
      publicados(): Portafolio[]
      porSlug(slug: string): Portafolio | undefined
-     crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string; slug: string }): Promise<Portafolio>
+     /** El slug se genera server-side desde categoriaEspacio + barrio (lib/utils/portafolio-slug.ts) — no se recibe del caller. */
+     crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string }): Promise<Portafolio>
      actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'espacioVarianteId' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>): Promise<Portafolio | null>
       publicar(id: string): Promise<Portafolio | null>
       despublicar(id: string): Promise<Portafolio | null>
