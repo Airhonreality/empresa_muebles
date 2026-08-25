@@ -206,24 +206,24 @@ export default async function Home() {
             {VALIDACION_TECNICA.map((card) => {
               const imgData = HOME_IMAGES_SEO[card.imageKey as keyof typeof HOME_IMAGES_SEO];
               return (
-                <div key={card.titulo} className="group relative flex flex-col w-full cursor-default">
-                  {/* Image Container (Text is OUTSIDE below) */}
-                  <div className="relative h-[450px] w-full overflow-hidden rounded-sm mb-6">
+                <div key={card.titulo} className="group flex flex-col w-full bg-bg-paper border border-border-subtle rounded-sm p-4 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
+                  {/* Image Container */}
+                  <div className="relative h-[400px] w-full overflow-hidden rounded-sm mb-6">
                     <Image
                       src={imgData.src}
                       alt={imgData.alt}
                       fill
-                      className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
+                      className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105 opacity-90 group-hover:opacity-100"
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   </div>
 
-                  {/* Content (Outside) */}
-                  <div className="flex flex-col">
-                    <h3 className="font-display text-xl font-semibold text-gold-500 mb-3 transition-colors duration-300 group-hover:text-gold-400">
+                  {/* Content (Framed in White) */}
+                  <div className="flex flex-col px-2 pb-4">
+                    <h3 className="font-display text-2xl font-semibold text-text-heading mb-3 transition-colors duration-300">
                       {card.titulo}
                     </h3>
-                    <p className="text-sm text-gold-100/90 leading-relaxed font-light">
+                    <p className="text-sm text-text-primary leading-relaxed font-light">
                       {card.cuerpo}
                     </p>
                   </div>
@@ -235,19 +235,31 @@ export default async function Home() {
       </section>
 
       {/* 3. Conocemos Bogotá (Banner Técnico) */}
-      <section className="bg-charcoal-900 border-y border-border-strong">
-        <div className="mx-auto max-w-6xl px-6 py-20 lg:py-24">
+      <section className="bg-charcoal-950 border-y border-border-strong">
+        <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7">
-              <h2 className="font-display text-3xl lg:text-4xl font-semibold text-white leading-tight">
-                Conocemos la arquitectura de Bogotá.
+            <div className="lg:col-span-8">
+              {/* Header Editorial */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="h-[1px] w-8 bg-gold-600" />
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-600 font-semibold">Cobertura & Experiencia</span>
+              </div>
+              <h2 className="font-display text-3xl lg:text-5xl font-medium text-white leading-tight tracking-tight">
+                Conocemos la arquitectura de <span className="font-serif italic font-light text-gold-500">Bogotá.</span>
               </h2>
-              <p className="mt-6 text-gold-100/80 text-lg leading-relaxed font-light">
+              {/* Contraste corregido: Adiós al párrafo dorado */}
+              <p className="mt-8 text-text-muted text-lg leading-relaxed font-light max-w-2xl">
                 Entendemos la rigurosidad de los reglamentos de propiedad horizontal. Cumplimos con todos los protocolos de ingreso y horarios, y nuestro equipo técnico realiza mediciones milimétricas en sitio para adaptarse a los desniveles e irregularidades únicas de cada espacio.
               </p>
             </div>
-            <div className="lg:col-span-5 flex lg:justify-end">
-              <AsesoriaBoton precio3dFormatted={formattedPrice}>Agendar visita técnica a mi espacio</AsesoriaBoton>
+            <div className="lg:col-span-4 flex lg:justify-end">
+              {/* Ghost button en lugar del bloque sólido */}
+              <AsesoriaBoton 
+                precio3dFormatted={formattedPrice}
+                className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 border border-gold-500/40 text-gold-500 hover:border-gold-500 hover:bg-gold-500/10 text-sm font-medium rounded-sm transition-all duration-500"
+              >
+                Agendar visita técnica
+              </AsesoriaBoton>
             </div>
           </div>
         </div>

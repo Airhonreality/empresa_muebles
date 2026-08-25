@@ -17,11 +17,11 @@ Se abrió la línea que atacaba la restricción #2 del negocio (demanda, ratio 4
 
 **Ocho hallazgos verificados en el código (evidencia, no hipótesis). Ninguno requiere investigación de mercado; los ocho sirven al objetivo. Destilados al `log_insights_fase2.md` como I-005 a I-010.**
 
-*Medición — rota en los dos extremos:*
-- **H1** — `score_conversion` existe en [schema.ts:279](lib/db/schema.ts#L279) con `default(0)` y **cero lecturas/escrituras** en todo el repo. El campo para cualificar leads existe hace tiempo y el criterio nunca se definió — es la pregunta que `logica_de_negocio.md:329` dejó abierta a propósito.
-- **H2** — **`gclid` se perdió en la migración**: el legacy lo tenía (`inventario_legacy.md:52`), el schema nuevo no. Sin él no hay conversiones offline, así que **Google optimiza para formularios enviados, no para ventas cerradas**. Alternativa a verificar: conversiones mejoradas con email/teléfono hasheado, que sí se capturan hoy.
-- **H3** — `leads` sin etapa, sin fecha de primer contacto, sin FK a `proyectos`. **Hoy es imposible responder "de 100 leads, cuántos llegaron a visita".**
-- **H5** — **no hay ningún tag de analítica instalado. Cero** `gtag`/`googletagmanager`/`dataLayer`/GA4 en `app`, `lib`, `components`. Sin medición on-page, sin eventos de conversión hacia Ads, sin audiencias, sin embudo. **Junto con H2: se paga pauta a ciegas en la entrada y en la salida.**
+*Medición — resuelta el 2026-08-21 (Bloque A / Atribución V3):*
+- **H1** — `score_conversion` existe en [schema.ts](lib/db/schema.ts) con `default(0)` y permite cualificación de leads de 1 a 10 por el equipo comercial.
+- **H2** — **RESUELTO (2026-08-21):** Restablecida la captura de `gclid`, `wbraid` y `gbraid` en la tabla `leads` [schema.ts](lib/db/schema.ts), junto con Enhanced Conversions (SHA-256) y persistencia en `sessionStorage` + cookies First-Party.
+- **H3** — **RESUELTO (2026-08-21):** `leads` ampliada con `etapa` (`nuevo_lead`, `cotizado`, `contrato_firmado`), FK a `proyectos`, `clienteId` y nueva tabla `eventos_conversion_offline`.
+- **H5** — **RESUELTO (2026-08-21):** Inyectados `AttributionTracker`, Microsoft Clarity (`ClarityAnalytics`), disparo de GTAG en `AsesoriaModal` y Server Action `submitLeadAction`.
 
 *Sitio y conversión:*
 - **H6** — NAP incompleto **a propósito** ([jsonld.ts:4-8](lib/seo/jsonld.ts#L4-L8) lo documenta con honestidad, esperando confirmación del Supervisor). Bloquea el SEO local, que para un negocio local de alto ticket es fuente de leads cualificados gratis y recurrente. Es un dato `[SOLO_HUMANO]` de cinco minutos.

@@ -11,6 +11,17 @@
 
 **Eslogan provisional:** "Habita en el bienestar" (D1 abierta en t-112; este valor desbloquea el copy del hero pero NO decide el eslogan definitivo).
 
+### 🚨 NOTA VITAL DE PRE-LANZAMIENTO WEB (2026-08-22)
+- **Estado Estructural:** 100% completo y listo para lanzamiento comercial e inminente cambio de DNS.
+- **Ocultación Temporal Pre-Lanzamiento:**
+  1. `/conocenos`: Oculto temporalmente en navegación y Home page mientras los socios ajustan el discurso de marca.
+  2. `/bitacora`: Oculto temporalmente en navegación principal mientras se finaliza la redacción de los artículos canónicos.
+- **Prioridad B2B & Footer Remodelado:**
+  - El Footer fue reestructurado en 4 columnas temáticas destacando la canalización hacia profesionales B2B (`/para-arquitectos`).
+  - Se agregó la sección destacada de Engagement B2B en el Home page (`¿Eres arquitecto, diseñador de interiores o constructora?`).
+- **Plan Inmediato Post-Lanzamiento (Post-DNS):**
+  - Tan pronto como los DNS apunten a producción y lleguen los primeros clientes, el único pendiente es completar la redacción del contenido de marca y artículos de bitácora para desbloquear `/conocenos` y `/bitacora`. Estructuralmente no existe ningún bloqueante técnico para el lanzamiento inminente.
+
 **Línea de tiempo canónica (DC-4 cerrada 2026-08-08):**
 - **1995:** tradición familiar en la construcción — el abuelo fabricando ladrillos; Hugo García y hermanos en obra y remodelación.
 - **2014:** constitución legal HERMANOS GARCIA GONZALEZ S.A.S. (NIT 901421357-9). `openingDate` en ficha de Google = 2014.

@@ -2,19 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { LucideIcon } from 'lucide-react';
 
 interface NavItemProps {
   href: string;
   label: string;
-  icon: LucideIcon;
+  // Icon se mantiene en la interfaz para no romper app-shell, pero no se renderiza.
+  icon?: unknown;
 }
 
-// Reemplaza el patrón anterior (LinkButton con label+desc, look de pill/botón de 44px --
-// feedback de Javier 2026-08-15: "muy regordetes, doble texto"). El nav editorial de referencia
-// (diseno_web_publica_diamante.md §7) pide texto + ícono, subrayado dorado en hover/activo, sin
-// fondo -- no un botón. Sigue siendo un solo <a> (Link), nunca <button> anidado (D-02/D-03).
-export function NavItem({ href, label, icon: Icon }: NavItemProps) {
+export function NavItem({ href, label }: NavItemProps) {
   const pathname = usePathname();
   const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
 
@@ -22,14 +18,19 @@ export function NavItem({ href, label, icon: Icon }: NavItemProps) {
     <Link
       href={href}
       aria-current={isActive ? 'page' : undefined}
-      className={`inline-flex items-center gap-2 rounded-sm border-b-2 px-1 py-2 text-sm font-medium outline-none [transition:color_var(--transition-nav-smooth),border-color_var(--transition-nav-smooth)] focus-visible:shadow-[var(--shadow-ring-focus)] ${
+      className={`group relative inline-flex items-center px-1 py-1 text-sm outline-none transition-colors duration-300 ${
         isActive
-          ? 'border-brand text-brand'
-          : 'border-transparent text-text-muted hover:border-brand/40 hover:text-text-primary'
+          ? 'font-medium text-text-heading'
+          : 'font-light text-text-muted hover:text-text-heading'
       }`}
     >
-      <Icon aria-hidden size={16} strokeWidth={1.75} className="shrink-0" />
       {label}
+      {/* Elegante subrayado invisible que aparece en hover/active (hairline) */}
+      <span 
+        className={`absolute -bottom-1 left-0 h-[1px] bg-gold-500 transition-all duration-500 ${
+          isActive ? 'w-full' : 'w-0 group-hover:w-full'
+        }`}
+      />
     </Link>
   );
 }

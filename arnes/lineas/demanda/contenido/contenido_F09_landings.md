@@ -119,17 +119,57 @@
 
 ---
 
-### 3.8 — Bloques compartidos (reutilizados de F-01)
+### 3.8 — Evolución: Módulo Editorial de Validación Técnica Especializada (Estilo Revista)
 
-*Las secciones de Validación Técnica, Proceso y CTA final son idénticas en todas las landings.*
+*Propuesta de actualización de diseño (2026-08-22): Se reemplaza el grid estático de 3 cards iguales por un **Slider Dinámico Editorial (Estilo Revista de Moda)**. Cada categoría de espacio cuenta con una colección rica de atributos técnicos específicos (materiales, herrajes, ergonomía, conectividad, acabados), presentados en diapositivas con diagramación variable.*
 
-#### Validación Técnica (Grid de 3 cards)
-*Nota para Cocinas: usar obligatoriamente las 3 fotos reales del legacy (1. Asesoría integral frente a herraje, 2. Modelado 3D en monitores dobles, 3. Instalación real con el gato).*
-| Card | Título | Cuerpo | Estado | Fuente |
-|---|---|---|---|---|
-| 1 | Disminuye la incertidumbre (Modelado 3D) | Visualizas tu proyecto antes de que empiece, asegurando una ejecución sin sorpresas. Ves exactamente cómo quedará en 3D antes de cortar la primera pieza. | Verificado / Override | `contenido_F01_home.md` / Legacy |
-| 2 | Punto de Fábrica Directo (Asesoría Integral) | Te guiamos en cada paso: distribución, materiales y diseño funcional. Sin intermediarios, fabricamos en nuestro propio taller para cuidar cada eslabón de la cadena. | Verificado / Override | `contenido_F01_home.md` / Legacy |
-| 3 | Garantía y Satisfacción | Aseguramos la calidad y durabilidad de cada proyecto, respaldados por nuestra experiencia técnica y un equipo de diseñadores industriales a tu lado. | Override | Ingeniería inversa landing original |
+#### Especificación UI del Slider Editorial:
+- **Estética Revista / High-Fashion:** Tipografía serifa en títulos, bordes sutiles con acentos dorados (`gold-500`), tipografía contrastada y maquetación de alto nivel visual.
+- **Diagramación Dinámica por Frame:**
+  - **Frame 1 (Cuádruple Editorial):** Layout 2x2 de 4 cards compactas para atributos de respuesta rápida.
+  - **Frame 2 (Doble Impacto Hero):** Layout de 2 cards de gran formato con imágenes protagónicas y copy descriptivo profundo.
+  - **Frame 3 (Tríptico Técnico):** Layout de 3 tarjetas verticales para especificaciones de materiales y resistencia.
+- **Navegación:** Control de navegación perimetral discreto (indicador numérico estilo editorial `01 / 03` y flechas de transición suave).
+
+---
+
+### 3.9 — Atributos Técnicos Especializados por Categoría (Base de Copy)
+
+#### 1. Closets y Vestidores (`/espacios/closets-vestidores-bogota`)
+- **Card A1:** *Ergonomía Interior Modulada* — Módulos a medida para vestidos largos, cajones aterciopelados con organizadores y rieles de extracción total.
+- **Card A2:** *Iluminación Térmica & Sensores* — Perfilería LED integrada en maleteros y barras de colgar con sensores de presencia invisibles.
+- **Card A3:** *Estructuras Anti-Polvo RH* — Melaminas Madecor RH de textura textil con trasera de 9mm para hermetismo total.
+- **Card A4:** *Zapateros Extraíbles de Alta Capacidad* — Bandejas inclinadas con tope metálico y deslizamiento suave.
+
+#### 2. Cavas y Bares (`/espacios/cavas-y-bares`)
+- **Card B1:** *Nicho para Cava Térmica Empotrada* — Compartimentos con ventilación trasera regulada para conservación de temperatura.
+- **Card B2:** *Iluminación Escénica de Cristalería* — Repisas flotantes con iluminación LED cálida direccionada para copas y botellas.
+- **Card B3:** *Mesones Inmunes a Manchas* — Superficies en piedra sinterizada (Dekton/Neolith) o cuarzo inmunes a acidez y licores.
+- **Card B4:** *Soportes de Madera Maciza* — Cunas torneadas a medida para botellas de reserva en roble o nogal.
+
+#### 3. Centros de Entretenimiento (`/espacios/centros-de-entretenimiento`)
+- **Card C1:** *Gestión Oculta de Cableado* — Paneles alistonados flotantes con ductos traseros invisibles para TV y dispositivos.
+- **Card C2:** *Ventilación Pasiva de Equipos* — Módulos con ranuras disimuladas para evitar sobrecalentamiento de receptores y consolas.
+- **Card C3:** *Soporte Estructural Pesado* — Anclajes invisibles a muro (drywall/concreto) ensayados para pantallas de gran formato.
+- **Card C4:** *Almacenamiento Discreto* — Puertas abatibles con apertura *push-to-open* y herrajes de amortiguación.
+
+#### 4. Estudios y Home Office (`/espacios/estudios-home-office`)
+- **Card D1:** *Conectividad Oculta Pop-Up* — Torretas emergentes de energía y puertos USB/C integrados en la superficie de trabajo.
+- **Card D2:** *Estantes Anti-Pandeo* — Libreros reforzados con alma interna para libros y bibliotecas de gran volumen.
+- **Card D3:** *Acústica en Madera Alistonada* — Paneles de respaldo que reducen la reverberación en videollamadas.
+- **Card D4:** *Archivadores de Seguridad* — Cajoneras con cerradura centralizada y rieles de alta carga.
+
+#### 5. Consolas y Recibidores (`/espacios/consolas-recibidores`)
+- **Card E1:** *Volumen Suspendido Elegante* — Muebles flotantes que despejan el piso y optimizan la circulación del hall.
+- **Card E2:** *Composición con Espejos & Luz Indirecta* — Marcos en madera noble integrados con espejos biselados y tira LED perimetral.
+- **Card E3:** *Encimeras de Alto Tráfico* — Cubiertas en madera dura tratada o cuarzo resistentes a llaves y objetos cotidianos.
+
+#### 6. Pisos de Madera (`/espacios/pisos-de-madera`)
+- **Card F1:** *Pulido & Lijado Técnico sin Polvo* — Restauro de casonas mediante maquinaria con aspiración ciclónica integrada.
+- **Card F2:** *Sellados de Tráfico Pesado* — Barnices ecológicos base agua (Bona) que resaltan la veta sin amarillear.
+- **Card F3:** *Sustitución de Injertos Históricos* — Reposición de tablones dañados respetando el tono y pátina de la madera original.
+
+---
 
 #### Cómo trabajamos (4 pasos resumidos)
 | Paso | Título | Cuerpo | Estado | Fuente |

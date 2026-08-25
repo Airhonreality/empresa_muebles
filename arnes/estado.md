@@ -17,7 +17,14 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 
 **Consecuencia operativa:** `scripts/migrate-core.ts` tiene un `TRUNCATE ... CASCADE` sobre `proyectos`/`espacio_variantes`/`items_variante`/`productos_catalogo`/`clientes` al inicio, pensado para poder re-correrse libremente contra una base de prueba. **Ya no se puede re-correr contra `ep-muddy-cherry-at5j2mz7` bajo ninguna circunstancia** — borraría los 62 contratos, todos los proyectos editados esta semana, y cualquier fix de código que dependa de datos reales (ej. el fix de mano-de-obra de esta misma sesión). El script fue actualizado con un guard duro que lo bloquea por completo (ver comentario en el archivo) hasta que alguien lo revise a propósito. Pendiente: decidir si `v3-preview` se re-nombra formalmente a lo que realmente es (ej. tratarla como `dev-local`/producción V3), y reconciliar qué pasó con la branch `dev-local` real (¿tiene datos, o quedó vacía cuando todo el trabajo real se fue por accidente a `v3-preview`?) — no verificado en esta sesión.
 
-**Banda F0–F9 CERRADA** (2026-08-08, checkpoint Supervisor). Todos los planes de diseño aprobados; QA documental pasó 10/10 condiciones; 17 pantallas alineadas a PLANTILLA_PANTALLA; 5 gates con predicados; glosario H07 completo.
+**Banda F0–F9 CERRADA** (2026-08-08, checkpoint Supervisor). Todos los planes de diseño aprobados; QA documental pasó 10/10 conditions; 17 pantallas alineadas a PLANTILLA_PANTALLA; 5 gates con predicados; glosario H07 completo.
+
+**🚀 AJUSTES PRE-LANZAMIENTO WEB PÚBLICA (2026-08-22).** Sitio web público **100% listo estructuralmente para lanzamiento inminente y cambio de DNS**. Se ejecutaron 4 ajustes vitales de pre-lanzamiento:
+1. Ocultación temporal de `/conocenos` (navegación y Home) mientras los socios refinan el discurso de marca.
+2. Ocultación temporal de `/bitacora` (menú principal) mientras se completa la redacción de los artículos canónicos.
+3. Remodelación completa del Footer por 4 columnas temáticas con alta prioridad y canalización B2B (`/para-arquitectos`).
+4. Nueva sección de engagement B2B en la Home (`¿Eres arquitecto, diseñador de interiores o constructora?`).
+*Nota:* Post-DNS el trabajo continúa únicamente desbloqueando el contenido editorial restante; estructuralmente no existen bloqueantes técnicos. Verificación: `npx tsc --noEmit` 0 errores.
 
 **F10 — Prototipo con mocks (ABIERTA).** Plan aprobado: prototipado real de las pantallas con subsistema de datos mock controlado, antes de migraciones. Feedback de uso → hallazgos → cambios de diseño/gates/schema → migraciones reales al final.
 

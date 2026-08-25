@@ -1,0 +1,167 @@
+# ==============================================================================
+# LISTA ROBUSTA Y ANTICIPATIVA DE PALABRAS CLAVE NEGATIVAS — VETA DE ORO (COCINAS)
+# Fecha de creación: 21 de Agosto de 2026
+# Uso: Copiar y pegar directamente en la sección "Palabras clave negativas" de la campaña en Google Ads.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. COMPETENCIA, MARCAS Y GRANDES SUPERFICIES (Evitar pagar por tráfico de otros)
+# ------------------------------------------------------------------------------
+jamar
+sanicoc
+madesa
+cociarte
+amaderarte
+maderarte
+modugal
+pekos
+nicol
+matma
+valcucine
+stosa
+alfa
+tecnicocinas
+incormaderas
+spacios integrales
+oriol
+la petite
+berma
+ardila
+homecenter
+sodimac
+easy
+tugo
+tugó
+ikea
+madecentro
+socoda
+dico
+falabella
+exito
+éxito
+alkosto
+corona
+rhiss
+
+# ------------------------------------------------------------------------------
+# 2. INTENCIÓN BRICOLAJE, TUTORIALES, CURSOS Y TRABAJO (Evitar estudiantes y DIY)
+# ------------------------------------------------------------------------------
+como hacer
+como fabricar
+como remodelar
+como instalar
+como modernizar
+como renovar
+tutorial
+diy
+paso a paso
+planos
+plano
+autocad
+sketchup
+3d max
+revit
+curso
+cursos
+diplomado
+aprender
+estudio
+empleo
+trabajo
+vacantes
+hoja de vida
+sueldo
+salario
+herramientas
+cortes de madera
+mdf suelto
+triplex suelto
+
+# ------------------------------------------------------------------------------
+# 3. SEGMENTO BAJO PRECIO, USADOS Y CRÉDITO POPULAR (Proteger el ticket alto)
+# ------------------------------------------------------------------------------
+segunda
+segunda mano
+usado
+usados
+remate
+remates
+liquidacion
+liquidación
+barato
+baratos
+barata
+baratas
+economica
+economicas
+economico
+economicos
+saldo
+saldos
+regalado
+gratis
+credito
+crédito
+financiada
+financiadas
+gas natural
+subsidio
+
+# ------------------------------------------------------------------------------
+# 4. CIUDADES Y REGIONES FUERA DE COBERTURA (Bogotá y Sabana únicamente)
+# ------------------------------------------------------------------------------
+ibague
+ibagué
+valledupar
+jamundi
+jamundí
+monteria
+montería
+pitalito
+duitama
+rionegro
+antioquia
+medellin
+medellín
+cali
+barranquilla
+bucaramanga
+pereira
+manizales
+cartagena
+santa marta
+cucuta
+cúcuta
+villavicencio
+neiva
+popayan
+popayán
+pasto
+tunja
+armenia
+girardot
+melgar
+
+# ------------------------------------------------------------------------------
+# 5. ELECTRODOMÉSTICOS Y ACCESORIOS SUELTOS (Evitar ventas de bajo margen)
+# ------------------------------------------------------------------------------
+bisagras
+rieles
+manijas
+platero suelto
+griferia
+grifería
+lavaplatos suelto
+estufa
+cubierta
+extractor
+campana
+nevecon
+nevecón
+electrodomesticos
+electrodomésticos
+medidas de
+altura de
+pdf
+catalogo gratis
+catálogo gratis

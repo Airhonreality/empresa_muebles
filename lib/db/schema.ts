@@ -14,6 +14,8 @@ export const rolEmpleado = pgEnum("rol_empleado", ['admin', 'comercial', 'desarr
 export const tipoHitoPago = pgEnum("tipo_hito_pago", ['percentage', 'fixed'])
 export const tipoProyecto = pgEnum("tipo_proyecto", ['personalizado', 'producto_fijo'])
 export const tipoUsuario = pgEnum("tipo_usuario", ['empleado', 'cliente'])
+export const estadoLead = pgEnum("estado_lead", ['nuevo_lead', 'contactado', 'asesoria_agendada', 'cotizado', 'contrato_firmado', 'descartado'])
+export const estadoEnvioGoogle = pgEnum("estado_envio_google", ['pendiente', 'procesando', 'enviado_exitoso', 'error_matching'])
 
 // ── F10: enums nuevos para las ~30 tablas que faltaban (derivados 1:1 de lib/data/contracts.ts) ──
 export const lineaCronograma = pgEnum("linea_cronograma", ['contractual', 'interna'])
@@ -102,11 +104,65 @@ export const leads = pgTable("leads", {
 	nombre: text().notNull(),
 	telefonoWhatsapp: text("telefono_whatsapp"),
 	email: text(),
+	gclid: text("gclid"),
+	wbraid: text("wbraid"),
+	gbraid: text("gbraid"),
 	utmSource: text("utm_source"),
 	utmMedium: text("utm_medium"),
 	utmCampaign: text("utm_campaign"),
+	utmTerm: text("utm_term"),
+	utmContent: text("utm_content"),
+	hashedPhone: text("hashed_phone"),
+	hashedEmail: text("hashed_email"),
+	tipoProyecto: text("tipo_proyecto"),
+	ubicacion: text("ubicacion"),
 	scoreConversion: integer("score_conversion").default(0),
+	etapa: estadoLead("etapa").default('nuevo_lead').notNull(),
+	proyectoId: uuid("proyecto_id"),
+	clienteId: uuid("cliente_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		leadsProyectoIdFk: foreignKey({
+			columns: [table.proyectoId],
+			foreignColumns: [proyectos.id],
+			name: "leads_proyecto_id_proyectos_id_fk"
+		}),
+		leadsClienteIdFk: foreignKey({
+			columns: [table.clienteId],
+			foreignColumns: [clientes.id],
+			name: "leads_cliente_id_clientes_id_fk"
+		}),
+	}
+});
+
+export const eventosConversionOffline = pgTable("eventos_conversion_offline", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	leadId: uuid("lead_id").notNull(),
+	contratoId: uuid("contrato_id"),
+	nombreEventoGoogle: text("nombre_evento_google").notNull(),
+	valorConversion: numeric("valor_conversion", { precision: 14, scale: 2 }).default('0').notNull(),
+	gclidUsado: text("gclid_usado"),
+	hashedPhoneUsado: text("hashed_phone_usado"),
+	estadoEnvio: estadoEnvioGoogle("estado_envio").default('pendiente').notNull(),
+	respuestaGoogleApi: jsonb("respuesta_google_api"),
+	reintentos: integer("reintentos").default(0),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	enviadoEn: timestamp("enviado_en", { mode: 'string' }),
+}, (table) => {
+	return {
+		eventosConversionOfflineLeadIdFk: foreignKey({
+			columns: [table.leadId],
+			foreignColumns: [table.id],
+			name: "eventos_conversion_offline_lead_id_leads_id_fk"
+		}),
+		eventosConversionOfflineContratoIdFk: foreignKey({
+			columns: [table.contratoId],
+			foreignColumns: [contratos.id],
+			name: "eventos_conversion_offline_contrato_id_contratos_id_fk"
+		}),
+	}
 });
 
 export const contratos = pgTable("contratos", {

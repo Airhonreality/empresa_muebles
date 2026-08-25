@@ -5,6 +5,8 @@ import { SITE_URL } from '@/lib/seo/jsonld';
 import { obtenerHeroCarouselImagesAction, obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
 import { HeroCarousel } from '@/components/veta/hero-carousel';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
+import { ValidacionTecnicaSlider } from '@/components/veta/validacion-tecnica-slider';
+import { ATRIBUTOS_ESPACIOS } from '@/lib/data/espacios-atributos';
 
 const WHATSAPP_URL =
   'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
@@ -65,7 +67,7 @@ export interface EspacioLandingConfig {
 function CtaPrimary({ href, children }: { href: string; children: React.ReactNode }) {
   const externa = href.startsWith('http');
   const className =
-    'inline-flex items-center justify-center rounded-sm bg-gold-600 px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:bg-gold-700';
+    'inline-flex items-center justify-center rounded-sm bg-gold-600 px-6 py-3 text-sm font-bold text-white transition-colors duration-300 hover:bg-gold-700';
   if (externa) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
@@ -108,60 +110,141 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
     ],
   };
 
+  const displayGaleria = galeria.length > 0 
+    ? galeria 
+    : (process.env.NODE_ENV === 'development' 
+        ? [
+            { url: HOME_IMAGES_SEO.espaciosClosets.src, alt: 'Mock', esRender: false },
+            { url: HOME_IMAGES_SEO.espaciosCocinas.src, alt: 'Mock', esRender: true },
+            { url: HOME_IMAGES_SEO.espaciosCavas.src, alt: 'Mock', esRender: false },
+            { url: HOME_IMAGES_SEO.espaciosEstudios.src, alt: 'Mock', esRender: false },
+            { url: HOME_IMAGES_SEO.espaciosCentrosEnt.src, alt: 'Mock', esRender: true },
+            { url: HOME_IMAGES_SEO.espaciosConsolas.src, alt: 'Mock', esRender: false },
+            { url: HOME_IMAGES_SEO.espaciosPisos.src, alt: 'Mock', esRender: false },
+            { url: HOME_IMAGES_SEO.validacion3d.src, alt: 'Mock', esRender: true },
+          ]
+        : []);
+
   return (
     <div>
       {/* 1. Hero */}
-      <section className="relative overflow-hidden border-b border-border-subtle bg-charcoal-900">
-        <div className="absolute inset-0 z-0 bg-charcoal-900">
+      <section className="relative flex flex-col lg:flex-row min-h-[85vh] overflow-hidden border-b border-border-subtle bg-charcoal-950">
+        
+        {/* Left Column: Typography Block */}
+        <div className="relative z-10 flex flex-col justify-center w-full lg:w-5/12 px-8 lg:px-16 py-24 lg:py-0 bg-charcoal-950 lg:shadow-[20px_0_40px_-15px_rgba(0,0,0,0.6)]">
+          <div className="max-w-xl mx-auto lg:mx-0">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-[1px] w-8 bg-gold-500"></div>
+              <p className="text-gold-400 text-xs md:text-sm font-bold tracking-[0.3em] uppercase">
+                Somos fabricantes directos
+              </p>
+            </div>
+            
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-white leading-[1.1] tracking-tight">
+              {h1}
+            </h1>
+            
+            <p className="mt-8 text-gold-100/80 text-lg lg:text-xl font-light leading-relaxed">
+              {subtitulo}
+            </p>
+            
+            <div className="mt-12 flex items-center gap-6">
+              <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Imagery */}
+        <div className="relative w-full lg:w-7/12 h-[50vh] lg:h-auto bg-charcoal-900">
           <HeroCarousel
             images={heroImages}
             fallbackImage={{ src: heroImageFallback.src, alt: heroImageFallback.alt }}
             priority={true}
-            imageClassName="object-cover opacity-60"
-            sizes="100vw"
+            imageClassName="object-cover"
+            sizes="(max-width: 1024px) 100vw, 60vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900 via-charcoal-900/50 to-charcoal-900/70 pointer-events-none z-20" />
         </div>
+      </section>
 
-        <div className="relative z-10 flex flex-col justify-center px-6 py-32 lg:py-40 max-w-6xl mx-auto text-center">
-          <h1 className="font-display text-4xl lg:text-6xl font-semibold text-white leading-tight mx-auto max-w-4xl">
-            {h1}
-          </h1>
-          <p className="mt-6 text-gold-100/90 text-lg lg:text-xl font-light max-w-2xl mx-auto">
-            {subtitulo}
-          </p>
-          <div className="mt-10 flex flex-wrap justify-center items-center gap-4">
-            <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
+      {/* 2. Validación Técnica Especializada (Slider Editorial Estilo Revista) */}
+      {ATRIBUTOS_ESPACIOS[slug] ? (
+        <ValidacionTecnicaSlider
+          frames={ATRIBUTOS_ESPACIOS[slug]}
+          nombreCategoria={nombreCategoria}
+        />
+      ) : (
+        <section className="bg-charcoal-900 py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="grid gap-12 md:grid-cols-3">
+              {VALIDACION_TECNICA.map((card) => {
+                const imgData = HOME_IMAGES_SEO[card.imageKey as keyof typeof HOME_IMAGES_SEO];
+                return (
+                  <div key={card.titulo} className="group relative flex flex-col w-full cursor-default">
+                    {/* Image Container (Text is OUTSIDE below) */}
+                    <div className="relative h-[450px] w-full overflow-hidden rounded-sm mb-6">
+                      <Image
+                        src={imgData.src}
+                        alt={imgData.alt}
+                        fill
+                        className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    </div>
 
+                    {/* Content (Outside) */}
+                    <div className="flex flex-col">
+                      <h3 className="font-display text-xl font-semibold text-gold-500 mb-3 transition-colors duration-300 group-hover:text-gold-400">
+                        {card.titulo}
+                      </h3>
+                      <p className="text-sm text-gold-100/90 leading-relaxed font-light">
+                        {card.cuerpo}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* 2. Descripción técnica */}
-      <section className="bg-bg-paper py-20 border-b border-border-subtle">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <p className="text-text-muted text-lg lg:text-xl leading-relaxed font-light">
-            {parrafoDescriptor}
-          </p>
-        </div>
-      </section>
-
-      {/* 2.5. Galería del espacio (F09, 2026-08-17) — junta fotos publicadas de Portafolio con
-          las cargadas en /erp/portafolio/renders, sin distinción visible entre ellas. */}
-      {galeria.length > 0 && (
+      {/* 3. Galería del espacio (F09, 2026-08-17) */}
+      {displayGaleria.length > 0 && (
         <section className="bg-bg-alt py-24 border-b border-border-subtle">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="font-display text-3xl font-semibold text-text-heading mb-10">Espacios que creamos</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {galeria.map((foto, i) => (
-                <div key={`${foto.url}-${i}`} className="relative aspect-[4/3] overflow-hidden rounded-sm bg-bg-paper">
+            {/* Header Editorial de Lujo */}
+            <div className="mb-12 md:mb-16">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="h-[1px] w-8 bg-gold-600" />
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-600 font-semibold">Portafolio</span>
+              </div>
+              <h2 className="font-display text-4xl md:text-5xl font-medium text-text-heading tracking-tight">
+                Espacios que <span className="font-serif italic text-gold-700 font-light">creamos</span>
+              </h2>
+            </div>
+            
+            {/* Destruimos la grilla asfixiante. Añadimos gap generoso y redondeo sutil. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+              {displayGaleria.map((foto, i) => (
+                <div 
+                  key={`${foto.url}-${i}`} 
+                  className="group relative aspect-[4/5] overflow-hidden bg-charcoal-950 rounded-sm shadow-sm"
+                >
                   <Image
                     src={foto.url}
                     alt={foto.alt}
                     fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 33vw"
+                    className="object-cover opacity-90 saturate-75 group-hover:opacity-100 group-hover:saturate-100 group-hover:scale-105 transition-all duration-700"
+                    sizes="(max-width: 768px) 100vw, 33vw"
                   />
+                  <div className="absolute inset-0 bg-charcoal-900/10 group-hover:bg-transparent transition-colors duration-500" />
+                  
+                  {/* Distinción elegante para Renders 3D */}
+                  {foto.esRender && (
+                    <div className="absolute bottom-4 left-4 bg-bg-paper/90 backdrop-blur-md text-gold-700 text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-xs border border-gold-500/20 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
+                      Render 3D
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -169,56 +252,41 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
         </section>
       )}
 
-      <section className="bg-charcoal-900 py-24">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid gap-12 md:grid-cols-3">
-            {VALIDACION_TECNICA.map((card) => {
-              const imgData = HOME_IMAGES_SEO[card.imageKey as keyof typeof HOME_IMAGES_SEO];
-              return (
-                <div key={card.titulo} className="group relative flex flex-col w-full cursor-default">
-                  {/* Image Container (Text is OUTSIDE below) */}
-                  <div className="relative h-[450px] w-full overflow-hidden rounded-sm mb-6">
-                    <Image
-                      src={imgData.src}
-                      alt={imgData.alt}
-                      fill
-                      className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
-                  </div>
-
-                  {/* Content (Outside) */}
-                  <div className="flex flex-col">
-                    <h3 className="font-display text-xl font-semibold text-gold-500 mb-3 transition-colors duration-300 group-hover:text-gold-400">
-                      {card.titulo}
-                    </h3>
-                    <p className="text-sm text-gold-100/90 leading-relaxed font-light">
-                      {card.cuerpo}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Cómo trabajamos */}
+      {/* 4. Cómo trabajamos (Alineación corregida y contraste mejorado) */}
       <section className="bg-bg-alt py-24">
-        <div className="mx-auto max-w-7xl px-6">
-          <h2 className="font-display text-3xl font-semibold text-text-heading mb-16 text-center">Cómo trabajamos</h2>
+        <div className="mx-auto max-w-6xl px-6">
+          {/* Header Editorial de Lujo */}
+          <div className="mb-16 md:mb-20">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="h-[1px] w-8 bg-gold-600" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-600 font-semibold">Metodología</span>
+            </div>
+            <h2 className="font-display text-4xl md:text-5xl font-medium text-text-heading tracking-tight">
+              Cómo <span className="font-serif italic text-gold-700 font-light">trabajamos</span>
+            </h2>
+          </div>
           <div className="relative">
-            <div className="hidden lg:block absolute top-0 left-0 w-full h-[1px] bg-border-strong" />
+            {/* Línea de tiempo sutil en lugar de un borde de Excel */}
+            <div className="hidden lg:block absolute top-4 left-0 w-full h-[1px] bg-border-subtle" />
+            
             <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
               {PASOS.map((paso, i) => (
-                <div key={paso.titulo} className="relative group pt-6 lg:pt-8">
-                  <div className="hidden lg:block absolute top-0 left-0 w-0 h-[2px] bg-gold-500 transition-all duration-500 group-hover:w-full" />
-                  <div className="absolute top-0 right-4 lg:right-0 font-display text-9xl font-bold text-charcoal-900/[0.03] select-none -z-10 transition-transform duration-500 group-hover:-translate-y-4">
+                <div key={paso.titulo} className="relative group pt-4">
+                  {/* Hilo conductor de la línea de tiempo */}
+                  <div className="hidden lg:block absolute top-4 left-0 w-0 h-[1px] bg-gold-600 transition-all duration-700 group-hover:w-full z-10" />
+                  
+                  {/* Punto de anclaje (Timeline node) */}
+                  <div className="hidden lg:block absolute top-[13.5px] left-0 w-1.5 h-1.5 rounded-full bg-gold-600 z-20 shadow-[0_0_0_4px_var(--color-bg-alt)]" />
+                  
+                  {/* Número elegante visible */}
+                  <div className="absolute -top-6 right-4 lg:right-0 font-display text-8xl font-bold text-gold-600/5 select-none -z-10 transition-transform duration-500 group-hover:-translate-y-2">
                     0{i + 1}
                   </div>
-                  <span className="inline-block font-display text-xl font-bold text-gold-600 mb-4">Paso {i + 1}</span>
-                  <h3 className="font-display text-xl font-semibold text-text-heading mb-3">{paso.titulo}</h3>
-                  <p className="text-text-muted leading-relaxed relative z-10">{paso.cuerpo}</p>
+                  
+                  <span className="inline-block font-display text-lg font-semibold text-gold-600 mb-3 mt-6 lg:mt-8">Paso {i + 1}</span>
+                  <h3 className="font-display text-xl font-bold text-text-heading mb-3">{paso.titulo}</h3>
+                  {/* Contraste incrementado para accesibilidad (text-text-primary) */}
+                  <p className="text-text-primary leading-relaxed relative z-10 font-light">{paso.cuerpo}</p>
                 </div>
               ))}
             </div>

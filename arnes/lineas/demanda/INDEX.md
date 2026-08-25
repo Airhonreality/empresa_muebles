@@ -15,7 +15,9 @@ Estos documentos dictan las reglas del juego actuales y el camino a seguir:
 Donde vive la ciencia de datos aplicada al presupuesto de marketing:
 *   📄 **`archivo/parametros_auditoria_ads_agosto_2026.md`**: **[ACTIVO]** El marco analítico creado para diagnosticar el "apagón" de agosto y medir el rendimiento reciente (incluye la corrección sobre la limitación de presupuesto del 17 de agosto).
 *   📁 **`archivo/ads_historico_marzo_2026/`**: Histórico fundamental. Contiene el último benchmark exitoso previo a los problemas técnicos de la V3.
-*   📁 **`archivo/ads_historico_agosto_2026/`**: *(En espera de datos)* Destinado a almacenar las descargas CSV del 27 de marzo al día de hoy para la auditoría actual.
+*   📁 **`archivo/Ads_hisotrico_agosto_2026/`**: **[ACTIVO]** Contiene los CSVs descargados (27 mar - 21 ago), el diagnóstico integral (`DIAGNOSTICO_AGOSTO_2026.md`), la lista de negativas (`LISTA_PALABRAS_NEGATIVAS_ROBUSTA_AGOSTO_2026.txt`) y el reporte de ejecución táctica (`REPORTE_EJECUCION_Y_OPTIMIZACION_21_AGOSTO_2026.md`).
+*   📄 **`archivo/PLAN_ARQUITECTURA_MEDICION_Y_ATRIBUCION_V3.md`**: **[ACTIVO - DIAMANTE 1]** Plan Maestro de Medición, Atribución (GCLID/GBRAID/WBRAID, Enhanced Conversions), Clarity y Resiliencia en WhatsApp.
+*   📁 **Investigaciones del Diamante 1:** `INVESTIGACION_P1_GCLID_NEXTJS.md`, `INVESTIGACION_P2_ENHANCED_CONVERSIONS.md`, `INVESTIGACION_P3_ANALITICA_COMPORTAMIENTO.md`, `INVESTIGACION_P4_RESILIENCIA_WHATSAPP.md`, `INVESTIGACION_P5_MODELO_DATOS_ERP.md`.
 
 ## 🌐 3. Tráfico Orgánico y Sitio Público
 Los cimientos de la conversión y el SEO:
