@@ -1469,6 +1469,22 @@ export const rendersConceptuales = pgTable("renders_conceptuales", {
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 });
 
+// Atributos técnicos (2026-08-25): tarjetas del slider "Validación Técnica" de cada landing de
+// espacio, antes hardcodeadas en lib/data/espacios-atributos.ts. Mismo patrón que
+// renders_conceptuales: sin agrupación de "folios" en el schema — el slider público las agrupa
+// solas de a 4 según `orden`.
+export const atributosTecnicos = pgTable("atributos_tecnicos", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	tipoEspacio: text("tipo_espacio").notNull(),
+	titulo: text().notNull(),
+	cuerpo: text().notNull(),
+	badge: text(),
+	imagenUrl: text("imagen_url"),
+	visible: boolean().default(true).notNull(),
+	orden: integer().default(0).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+});
+
 // Testimonios (REGISTRO §10, DC-1)
 
 export const testimonios = pgTable("testimonios", {

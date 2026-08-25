@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
+import Image from 'next/image'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { InputField } from '@/components/veta/input-field'
@@ -277,11 +278,9 @@ export default function HerramientasPage() {
                   >
                     <span className="flex justify-center">
                       {h.fotoUrl ? (
-                        <img
-                          src={h.fotoUrl}
-                          alt={h.nombre}
-                          className="h-12 w-12 rounded-sm object-cover border border-border-subtle"
-                        />
+                        <span className="relative block h-12 w-12 overflow-hidden rounded-sm border border-border-subtle">
+                          <Image src={h.fotoUrl} alt={h.nombre} fill className="object-cover" />
+                        </span>
                       ) : (
                         <div className="h-12 w-12 rounded-sm border border-border-subtle bg-bg-paper flex items-center justify-center text-xs text-text-muted">
                           Sin foto

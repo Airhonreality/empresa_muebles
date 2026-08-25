@@ -146,9 +146,14 @@ export default function PortafolioAdminPage() {
             o descripción, usá &quot;Editar contenido&quot; (te lleva al proyecto en el ERP).
           </p>
         </div>
-        <LinkButton href="/erp/portafolio/galeria" variant="secondary">
-          Galería por categoría
-        </LinkButton>
+        <div className="flex gap-2">
+          <LinkButton href="/erp/portafolio/galeria" variant="secondary">
+            Galería por categoría
+          </LinkButton>
+          <LinkButton href="/erp/portafolio/atributos-tecnicos" variant="secondary">
+            Validación técnica
+          </LinkButton>
+        </div>
       </header>
 
       <div className="mb-4 flex flex-wrap gap-3">

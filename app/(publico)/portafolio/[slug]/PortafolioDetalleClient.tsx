@@ -304,6 +304,15 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
         </main>
       </div>
 
+      {isOverlayOpen && (
+        <GalleryOverlay
+          imagenes={imagenes}
+          selectedIndex={selectedIndex}
+          onClose={handleCloseOverlay}
+          onPrev={handlePrev}
+          onNext={handleNext}
+        />
+      )}
     </div>
   );
 }

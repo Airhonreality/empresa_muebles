@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Para arquitectos y diseñadores — fabricación a medida en Bogotá',

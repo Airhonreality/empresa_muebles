@@ -833,6 +833,22 @@ export interface RenderConceptual {
   createdAt: string
 }
 
+// Atributos técnicos (2026-08-25): tarjetas del slider "Validación Técnica" de cada landing de
+// espacio (antes hardcodeadas en lib/data/espacios-atributos.ts). Sin campo de "folio": el
+// slider público agrupa de a 4 según `orden`, el número mostrado ("01", "02"...) se deriva de la
+// posición, no se guarda.
+export interface AtributoTecnico {
+  id: string
+  tipoEspacio: string
+  titulo: string
+  cuerpo: string
+  badge: string | null
+  imagenUrl: string | null
+  visible: boolean
+  orden: number
+  createdAt: string
+}
+
 // --- Testimonios (REGISTRO §10, DC-1 ACTIVA 2026-08-09) ---
 // Especificación: contenido (texto real), rating (1-5), curado, aprobado, publicado, fuente (GBP/WhatsApp/Notion/video), barrio (I-013), tipo_proyecto, url_fuente, fecha_publicacion.
 export interface Testimonio {
@@ -1263,6 +1279,13 @@ export interface DataStore {
       porTipoEspacio(tipoEspacio: string): RenderConceptual[]
       crear(data: { tipoEspacio: string; imagenUrl: string; titulo?: string | null }): Promise<RenderConceptual>
       actualizar(id: string, partial: Partial<Pick<RenderConceptual, 'tipoEspacio' | 'imagenUrl' | 'titulo' | 'visible' | 'orden'>>): Promise<RenderConceptual | null>
+      eliminar(id: string): Promise<boolean>
+    }
+    atributosTecnicos: {
+      listar(): AtributoTecnico[]
+      porTipoEspacio(tipoEspacio: string): AtributoTecnico[]
+      crear(data: { tipoEspacio: string; titulo: string; cuerpo: string; badge?: string | null; imagenUrl?: string | null }): Promise<AtributoTecnico>
+      actualizar(id: string, partial: Partial<Pick<AtributoTecnico, 'tipoEspacio' | 'titulo' | 'cuerpo' | 'badge' | 'imagenUrl' | 'visible' | 'orden'>>): Promise<AtributoTecnico | null>
       eliminar(id: string): Promise<boolean>
     }
     testimonios: {

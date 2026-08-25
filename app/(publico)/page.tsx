@@ -149,31 +149,46 @@ export default async function Home() {
   return (
     <div>
       {/* 1. Hero */}
-      <section className="relative overflow-hidden border-b border-border-subtle bg-bg-paper">
-        <div className="grid lg:grid-cols-2 lg:min-h-[85vh]">
-          {/* Lado Izquierdo: Manifiesto */}
-          <div className="relative z-10 flex flex-col justify-center px-8 py-20 lg:px-16 lg:pt-32 lg:pb-24">
-            <div className="absolute inset-0 z-[-1] opacity-5 pointer-events-none mix-blend-multiply" style={{ backgroundImage: "url('/vetas-decorativas.svg')", backgroundSize: "cover", backgroundPosition: "center" }} />
-            <h1 className="font-display text-display-publico font-semibold text-text-heading leading-tight">
-              Carpintería arquitectónica.<br />Diseñamos, fabricamos, instalamos.
+      <section className="relative flex flex-col lg:flex-row min-h-[85vh] overflow-hidden border-b border-border-subtle bg-charcoal-950">
+        {/* Lado Izquierdo: Manifiesto */}
+        <div className="relative z-10 flex flex-col justify-center w-full lg:w-5/12 px-8 py-20 lg:px-16 lg:pt-32 lg:pb-24 bg-charcoal-950 lg:shadow-[20px_0_40px_-15px_rgba(0,0,0,0.6)]">
+          <div className="absolute inset-0 z-[-1] opacity-10 pointer-events-none mix-blend-overlay" style={{ backgroundImage: "url('/vetas-decorativas.svg')", backgroundSize: "cover", backgroundPosition: "center" }} />
+          
+          <div className="max-w-xl mx-auto lg:mx-0">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-[1px] w-8 bg-gold-500"></div>
+              <p className="text-gold-400 text-xs md:text-sm font-bold tracking-[0.3em] uppercase">
+                Estudio de Diseño
+              </p>
+            </div>
+
+            <h1 className="font-display text-5xl lg:text-6xl xl:text-7xl font-semibold text-white leading-[1.05] tracking-tight">
+              Carpintería<br />
+              <span className="font-light italic text-gold-100/90">arquitectónica.</span>
             </h1>
-            <p className="mt-6 text-text-lead text-gold-700 italic">Diseña tu espacio. Habita el bienestar.</p>
-            {/* Copy intermedio oculto temporalmente por solicitud del usuario */}
-            <div className="mt-10 flex flex-wrap items-center gap-4">
+            
+            <p className="mt-8 text-gold-100/80 text-lg lg:text-xl font-light leading-relaxed">
+              Diseñamos, fabricamos e instalamos a la medida.<br />
+              <span className="text-gold-400/80 text-base mt-2 block tracking-wide">Diseña tu espacio. Habita el bienestar.</span>
+            </p>
+
+            <div className="mt-12 flex flex-wrap items-center gap-4">
               <AsesoriaBoton precio3dFormatted={formattedPrice}>
                 Agenda tu asesoría
               </AsesoriaBoton>
             </div>
           </div>
-          {/* Lado Derecho: Imagen de alta calidad */}
-          <div className="relative h-[50vh] lg:h-auto overflow-hidden bg-bg-alt">
-            <HeroCarousel
-              images={heroImages}
-              fallbackImage={{ src: HOME_IMAGES_SEO.hero.src, alt: HOME_IMAGES_SEO.hero.alt }}
-              priority={true}
-              sizes="100vw"
-            />
-          </div>
+        </div>
+        
+        {/* Lado Derecho: Imagen de alta calidad */}
+        <div className="relative w-full lg:w-7/12 h-[50vh] lg:h-auto overflow-hidden bg-charcoal-900">
+          <HeroCarousel
+            images={heroImages}
+            fallbackImage={{ src: HOME_IMAGES_SEO.hero.src, alt: HOME_IMAGES_SEO.hero.alt }}
+            priority={true}
+            imageClassName="object-cover"
+            sizes="(max-width: 1024px) 100vw, 60vw"
+          />
         </div>
       </section>
 
@@ -200,15 +215,15 @@ export default async function Home() {
       </section>
 
       {/* 2. Validación Técnica */}
-      <section className="bg-charcoal-900 py-24">
+      <section className="bg-bg-paper py-24 border-y border-border-subtle">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid gap-12 md:grid-cols-3">
             {VALIDACION_TECNICA.map((card) => {
               const imgData = HOME_IMAGES_SEO[card.imageKey as keyof typeof HOME_IMAGES_SEO];
               return (
-                <div key={card.titulo} className="group flex flex-col w-full bg-bg-paper border border-border-subtle rounded-sm p-4 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
-                  {/* Image Container */}
-                  <div className="relative h-[400px] w-full overflow-hidden rounded-sm mb-6">
+                <div key={card.titulo} className="group flex flex-col w-full">
+                  {/* Image Container (Directly on light background) */}
+                  <div className="relative h-[450px] w-full overflow-hidden mb-6">
                     <Image
                       src={imgData.src}
                       alt={imgData.alt}
@@ -216,11 +231,12 @@ export default async function Home() {
                       className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105 opacity-90 group-hover:opacity-100"
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
+                    <div className="absolute inset-0 bg-charcoal-900/5 group-hover:bg-transparent transition-colors duration-500 pointer-events-none" />
                   </div>
 
-                  {/* Content (Framed in White) */}
-                  <div className="flex flex-col px-2 pb-4">
-                    <h3 className="font-display text-2xl font-semibold text-text-heading mb-3 transition-colors duration-300">
+                  {/* Content (Frameless with editorial divider) */}
+                  <div className="flex flex-col border-t border-gold-600/40 pt-6">
+                    <h3 className="font-display text-xl font-semibold text-text-heading mb-3 transition-colors duration-300 group-hover:text-gold-700">
                       {card.titulo}
                     </h3>
                     <p className="text-sm text-text-primary leading-relaxed font-light">
@@ -235,28 +251,33 @@ export default async function Home() {
       </section>
 
       {/* 3. Conocemos Bogotá (Banner Técnico) */}
-      <section className="bg-charcoal-950 border-y border-border-strong">
-        <div className="mx-auto max-w-6xl px-6 py-24">
+      <section className="relative bg-charcoal-950 border-y border-border-strong overflow-hidden">
+        {/* Marca de agua brutalista BOGOTÁ */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 font-display text-[15rem] lg:text-[25rem] font-bold text-white/[0.02] select-none pointer-events-none z-0 whitespace-nowrap">
+          BOGOTÁ
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-6xl px-6 py-32">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-8">
               {/* Header Editorial */}
               <div className="flex items-center gap-4 mb-6">
-                <div className="h-[1px] w-8 bg-gold-600" />
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-600 font-semibold">Cobertura & Experiencia</span>
+                <div className="h-[1px] w-8 bg-gold-500" />
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-400 font-semibold">Cobertura & Experiencia</span>
               </div>
-              <h2 className="font-display text-3xl lg:text-5xl font-medium text-white leading-tight tracking-tight">
-                Conocemos la arquitectura de <span className="font-serif italic font-light text-gold-500">Bogotá.</span>
+              <h2 className="font-display text-4xl lg:text-5xl font-medium text-white leading-tight tracking-tight">
+                Conocemos la arquitectura de <span className="font-serif italic font-light text-gold-400">Bogotá.</span>
               </h2>
-              {/* Contraste corregido: Adiós al párrafo dorado */}
-              <p className="mt-8 text-text-muted text-lg leading-relaxed font-light max-w-2xl">
+              {/* Contraste corregido para accesibilidad total */}
+              <p className="mt-8 text-gold-100/80 text-lg leading-relaxed font-light max-w-2xl">
                 Entendemos la rigurosidad de los reglamentos de propiedad horizontal. Cumplimos con todos los protocolos de ingreso y horarios, y nuestro equipo técnico realiza mediciones milimétricas en sitio para adaptarse a los desniveles e irregularidades únicas de cada espacio.
               </p>
             </div>
             <div className="lg:col-span-4 flex lg:justify-end">
-              {/* Ghost button en lugar del bloque sólido */}
+              {/* Botón Ghost de Alto Contraste */}
               <AsesoriaBoton 
                 precio3dFormatted={formattedPrice}
-                className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 border border-gold-500/40 text-gold-500 hover:border-gold-500 hover:bg-gold-500/10 text-sm font-medium rounded-sm transition-all duration-500"
+                className="inline-flex w-full sm:w-auto items-center justify-center px-8 py-4 border-2 border-gold-500 text-gold-400 hover:bg-gold-500 hover:text-charcoal-950 text-sm font-bold uppercase tracking-wider rounded-none transition-all duration-300"
               >
                 Agendar visita técnica
               </AsesoriaBoton>

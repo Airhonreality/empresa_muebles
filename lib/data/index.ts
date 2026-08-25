@@ -42,5 +42,5 @@ export type {
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
-  BitacoraArticulo, BitacoraCategoria, Testimonio,
+  BitacoraArticulo, BitacoraCategoria, Testimonio, AtributoTecnico,
 } from './contracts'

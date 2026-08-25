@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 import { obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
 

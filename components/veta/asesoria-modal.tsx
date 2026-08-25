@@ -15,19 +15,42 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
   const [ubicacion, setUbicacion] = useState('Bogotá D.C.');
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'redirecting'>('idle');
 
-  const isPhoneValid = telefono.replace(/\D/g, '').length >= 10;
+  const digitsLength = telefono.replace(/\D/g, '').length;
+  const isPhoneValid = digitsLength >= 10;
+  const showPhoneWarning = digitsLength > 0 && digitsLength < 10;
 
   if (!isOpen) return null;
 
-  const handleWhatsApp = async () => {
-    if (!isPhoneValid || isSubmitting) return;
+  const executeRedirect = (url: string) => {
+    setFormStatus('redirecting');
+    
+    const gtagFn = typeof window !== 'undefined' ? (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag : undefined;
+    if (gtagFn) {
+      try {
+        const sendTo = process.env.NEXT_PUBLIC_GTAG_SEND_TO || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
+        gtagFn('event', 'conversion', { send_to: sendTo });
+      } catch {
+        // Ignorar
+      }
+    }
 
-    setIsSubmitting(true);
+    // Abordaje Axiomático: Navegación directa en la misma pestaña para evadir Popup Blockers y forzar Deep Linking en móviles
+    window.location.href = url;
+    
+    setTimeout(onClose, 800);
+  };
+
+  const handleWhatsApp = async () => {
+    if (!isPhoneValid || formStatus !== 'idle') return;
+
+    setFormStatus('submitting');
+    
+    const tipoProyectoTexto = tipo === 'gratis' ? 'Asesoría Base' : tipo === '3d' ? 'Asesoría 3D' : 'Cotización con medidas';
+    const fallbackUrl = `https://wa.me/573025922101?text=${encodeURIComponent(`Hola, me interesa la ${tipoProyectoTexto}. Mi proyecto es en ${ubicacion}.`)}`;
 
     try {
-      // 1. Rescatar identificadores de atribución de sessionStorage
       const gclid = typeof window !== 'undefined' ? sessionStorage.getItem('veta_gclid') || undefined : undefined;
       const wbraid = typeof window !== 'undefined' ? sessionStorage.getItem('veta_wbraid') || undefined : undefined;
       const gbraid = typeof window !== 'undefined' ? sessionStorage.getItem('veta_gbraid') || undefined : undefined;
@@ -37,10 +60,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
       const utmTerm = typeof window !== 'undefined' ? sessionStorage.getItem('veta_utm_term') || undefined : undefined;
       const utmContent = typeof window !== 'undefined' ? sessionStorage.getItem('veta_utm_content') || undefined : undefined;
 
-      const tipoProyectoTexto = tipo === 'gratis' ? 'Asesoría Base' : tipo === '3d' ? 'Asesoría 3D' : 'Cotización con medidas';
-
-      // 2. Ejecutar Server Action para persistir lead y generar URL de WhatsApp
-      const result = await submitLeadAction({
+      const fetchPromise = submitLeadAction({
         nombre: nombre.trim() || 'Cliente Web',
         telefono: telefono.trim(),
         tipoProyecto: tipoProyectoTexto,
@@ -55,37 +75,20 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
         utmContent,
       });
 
-      const targetUrl = result.whatsappUrl || `https://wa.me/573025922101`;
+      // Patrón Circuit Breaker: si Neon DB o Vercel Actions tardan más de 1.5s, forzamos el fallo
+      const timeoutPromise = new Promise<{ whatsappUrl?: string }>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout_Circuit_Breaker')), 1500);
+      });
 
-      // 3. Resiliencia: Disparar evento a Google Ads (si gtag está presente) con fallback timeout
-      let hasRedirected = false;
-      const executeRedirect = () => {
-        if (!hasRedirected) {
-          hasRedirected = true;
-          window.open(targetUrl, '_blank');
-          setIsSubmitting(false);
-          onClose();
-        }
-      };
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      const targetUrl = result.whatsappUrl || fallbackUrl;
+      executeRedirect(targetUrl);
 
-      const gtagFn = typeof window !== 'undefined' ? (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag : undefined;
-      if (gtagFn) {
-        try {
-          const sendTo = process.env.NEXT_PUBLIC_GTAG_SEND_TO || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
-          gtagFn('event', 'conversion', {
-            send_to: sendTo,
-            event_callback: executeRedirect,
-          });
-        } catch {
-          // Ignorar error si adblocker interfiere
-        }
-      }
-
-      // Fallback: Si Google Ads no responde en 500ms, abrir WhatsApp de todos modos
-      setTimeout(executeRedirect, 500);
     } catch (error) {
-      console.error('Error al procesar la conversión:', error);
-      setIsSubmitting(false);
+      console.error('Fallback activado: Error al procesar lead', error);
+      // Graceful Degradation: El usuario igual va a WhatsApp con la URL estática
+      executeRedirect(fallbackUrl);
     }
   };
 
@@ -172,8 +175,13 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
               placeholder="Ej. 300 123 4567"
-              className="w-full p-2.5 text-sm border border-border-strong/40 rounded-sm bg-bg-alt text-text-primary focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500/20 placeholder:text-text-muted"
+              className={`w-full p-2.5 text-sm border rounded-sm bg-bg-alt text-text-primary focus:outline-none focus:ring-1 transition-colors ${showPhoneWarning ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-border-strong/40 focus:border-gold-500 focus:ring-gold-500/20'} placeholder:text-text-muted`}
             />
+            {showPhoneWarning && (
+              <p className="text-red-500 text-xs mt-1.5 font-light animate-in fade-in slide-in-from-top-1">
+                Ingresa al menos 10 dígitos.
+              </p>
+            )}
           </div>
         </div>
 
@@ -187,14 +195,25 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
             <>
               <button 
                 onClick={handleWhatsApp}
-                disabled={!isPhoneValid || isSubmitting}
-                className={`w-full py-3.5 uppercase tracking-[0.15em] text-sm font-semibold rounded-sm transition-all duration-300 ${
-                  isPhoneValid && !isSubmitting 
+                disabled={!isPhoneValid || formStatus !== 'idle'}
+                className={`w-full py-3.5 uppercase tracking-[0.15em] text-sm font-semibold rounded-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+                  isPhoneValid && formStatus === 'idle'
                     ? 'bg-charcoal-950 text-gold-500 hover:text-gold-400 hover:bg-charcoal-900 shadow-md' 
+                    : formStatus !== 'idle'
+                    ? 'bg-charcoal-900 text-gold-500/70 cursor-wait shadow-inner'
                     : 'bg-bg-alt text-text-muted/50 border border-border-subtle cursor-not-allowed'
                 }`}
               >
-                {isSubmitting ? 'Conectando...' : 'Ir a WhatsApp'}
+                {formStatus === 'submitting' ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-gold-500/30 border-t-gold-500 rounded-full animate-spin" />
+                    Conectando...
+                  </>
+                ) : formStatus === 'redirecting' ? (
+                  'Abriendo WhatsApp...'
+                ) : (
+                  'Ir a WhatsApp'
+                )}
               </button>
               <p className="text-center text-xs text-text-muted mt-4 font-light">Un diseñador te atenderá directamente para coordinar los detalles.</p>
             </>
@@ -205,3 +224,4 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
     </div>
   );
 }
+

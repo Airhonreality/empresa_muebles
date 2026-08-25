@@ -1,0 +1,106 @@
+[
+  {
+    "portfolio": {
+      "id": "3ebe9829-97b7-4d53-9a5d-cdc71b7274b2",
+      "proyectoId": "5be16645-5b0d-4422-b586-e10de46a6ed0",
+      "titulo": "Proyecto angela y luis cocina bano wk closet",
+      "slug": "portafolio-angela-y-luis-cocina-bano-wk-closet-9757",
+      "categoriaEspacio": null,
+      "barrio": null,
+      "publicado": true,
+      "createdAt": "2026-08-15 21:49:57.687111"
+    },
+    "images": []
+  },
+  {
+    "portfolio": {
+      "id": "1f2f369d-6b49-422c-8f2a-6060763d9fb4",
+      "proyectoId": "5be16645-5b0d-4422-b586-e10de46a6ed0",
+      "titulo": "Proyecto angela y luis cocina bano wk closet",
+      "slug": "portafolio-angela-y-luis-cocina-bano-wk-closet-9741",
+      "categoriaEspacio": null,
+      "barrio": null,
+      "publicado": true,
+      "createdAt": "2026-08-15 22:04:37.630623"
+    },
+    "images": []
+  },
+  {
+    "portfolio": {
+      "id": "e084f5a6-19ea-4e6e-ada3-72c42d5f2e4f",
+      "proyectoId": "11086145-94ff-4c3c-8a76-ad6c880d666d",
+      "titulo": "Proyecto ciro rincon",
+      "slug": "portafolio-ciro-rincon-0033",
+      "categoriaEspacio": null,
+      "barrio": null,
+      "publicado": true,
+      "createdAt": "2026-08-15 21:49:57.963017"
+    },
+    "images": []
+  },
+  {
+    "portfolio": {
+      "id": "a9758e1d-e839-40dd-a484-44b16fbf3919",
+      "proyectoId": "11086145-94ff-4c3c-8a76-ad6c880d666d",
+      "titulo": "Proyecto ciro rincon",
+      "slug": "portafolio-ciro-rincon-0007",
+      "categoriaEspacio": null,
+      "barrio": null,
+      "publicado": true,
+      "createdAt": "2026-08-15 22:04:37.897319"
+    },
+    "images": []
+  },
+  {
+    "portfolio": {
+      "id": "1075f4c1-296b-4266-921a-cc36ad817960",
+      "proyectoId": "31d2411d-2524-441f-ab09-d1e42064a1f0",
+      "titulo": "Proyecto victoria giraldo",
+      "slug": "portafolio-victoria-giraldo-0240",
+      "categoriaEspacio": null,
+      "barrio": null,
+      "publicado": true,
+      "createdAt": "2026-08-15 21:49:58.169162"
+    },
+    "images": []
+  },
+  {
+    "portfolio": {
+      "id": "d4a8738e-e532-4359-a705-c6a59eab6270",
+      "proyectoId": "31d2411d-2524-441f-ab09-d1e42064a1f0",
+      "titulo": "Proyecto victoria giraldo",
+      "slug": "portafolio-victoria-giraldo-0208",
+      "categoriaEspacio": null,
+      "barrio": null,
+      "publicado": true,
+      "createdAt": "2026-08-15 22:04:38.096652"
+    },
+    "images": []
+  },
+  {
+    "portfolio": {
+      "id": "08d411aa-63d2-4afd-b2b5-69ea05383413",
+      "proyectoId": "f891ac73-4451-4937-a6ef-0eb5b94ce6a9",
+      "titulo": "Proyecto wilson baron",
+      "slug": "portafolio-wilson-baron-0420",
+      "categoriaEspacio": null,
+      "barrio": null,
+      "publicado": true,
+      "createdAt": "2026-08-15 21:49:58.347955"
+    },
+    "images": []
+  },
+  {
+    "portfolio": {
+      "id": "6ebe206d-639d-44e1-8d1f-d06b02574a20",
+      "proyectoId": "f891ac73-4451-4937-a6ef-0eb5b94ce6a9",
+      "titulo": "Proyecto wilson baron",
+      "slug": "portafolio-wilson-baron-0397",
+      "categoriaEspacio": null,
+      "barrio": null,
+      "publicado": true,
+      "createdAt": "2026-08-15 22:04:38.286572"
+    },
+    "images": []
+  }
+]

@@ -9,7 +9,7 @@ import type {
   OrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
   CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
-  Portafolio, ModuloArtefacto, BitacoraArticulo, Testimonio, RenderConceptual,
+  Portafolio, ModuloArtefacto, BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto,
 } from './contracts'
 
@@ -64,6 +64,7 @@ export interface StoreSnapshot {
   acabadosMuestras: AcabadoMuestra[]
   portafolio: Portafolio[]
   rendersConceptuales: RenderConceptual[]
+  atributosTecnicos: AtributoTecnico[]
   modulosArtefactos: ModuloArtefacto[]
   bitacoraArticulos: BitacoraArticulo[]
   testimonios: Testimonio[]
@@ -89,7 +90,7 @@ export function emptySnapshot(): StoreSnapshot {
     proveedores: [], ordenesCompra: [], registrosGateCaja: [], cuentasCobroProveedor: [],
     categorias: [], productosTienda: [], productosTiendaComponentes: [],
     catalogoAcabados: [], catalogoProductoAcabados: [], acabadosMuestras: [],
-    portafolio: [], rendersConceptuales: [], modulosArtefactos: [], bitacoraArticulos: [], testimonios: [],
+    portafolio: [], rendersConceptuales: [], atributosTecnicos: [], modulosArtefactos: [], bitacoraArticulos: [], testimonios: [],
     itemsOrdenCompra: [], recepcionesMaterial: [], herramientas: [], documentosProyecto: [],
   }
 }

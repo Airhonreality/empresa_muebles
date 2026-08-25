@@ -5,7 +5,6 @@
  */
 
 import { generate } from '@pdfme/generator';
-import type { Template } from '@pdfme/common';
 
 // Tokens D4 como constantes (ya definidos en globals.css)
 const D4_TOKENS = {
@@ -647,4 +646,5 @@ export async function generarPDFCotizacion(input: CotizacionPDFInput): Promise<B
   return Buffer.from(pdfBuffer);
 }
 
-export default { generarPDFCotizacion };
+const cotizacionPdf = { generarPDFCotizacion };
+export default cotizacionPdf;

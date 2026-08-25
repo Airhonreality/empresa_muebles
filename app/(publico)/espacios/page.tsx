@@ -84,23 +84,6 @@ function CtaPrimary({ href, children }: { href: string; children: React.ReactNod
   );
 }
 
-function CtaSecondary({ href, children }: { href: string; children: React.ReactNode }) {
-  const externa = href.startsWith('http');
-  const className =
-    'inline-flex items-center justify-center rounded-sm border border-gold-400 px-6 py-3 text-sm font-medium text-gold-700 transition-colors duration-300 hover:bg-gold-100/40';
-  if (externa) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
-  );
-}
 
 export default function EspaciosPage() {
   const jsonLd = {

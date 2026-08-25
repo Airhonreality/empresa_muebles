@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { Modulo } from '@/lib/data';
 
 interface ArbolProyectoSelectorProps {

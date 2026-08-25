@@ -2,11 +2,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
 import { SITE_URL } from '@/lib/seo/jsonld';
-import { obtenerHeroCarouselImagesAction, obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
+import { obtenerHeroCarouselImagesAction, obtenerPrecioAsesoria3dAction, obtenerAtributosTecnicosAction } from '@/lib/data/actions/public';
 import { HeroCarousel } from '@/components/veta/hero-carousel';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 import { ValidacionTecnicaSlider } from '@/components/veta/validacion-tecnica-slider';
-import { ATRIBUTOS_ESPACIOS } from '@/lib/data/espacios-atributos';
 
 const WHATSAPP_URL =
   'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
@@ -94,6 +93,7 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
   const { slug, nombreCategoria, h1, subtitulo, parrafoDescriptor, imageKey } = config;
   const heroImageFallback = HOME_IMAGES_SEO[imageKey];
   const heroImages = await obtenerHeroCarouselImagesAction(tipoEspacio || slug);
+  const atributosTecnicos = await obtenerAtributosTecnicosAction(tipoEspacio || slug);
   const precio3d = (await obtenerPrecioAsesoria3dAction()) || 130000;
   
   const formattedPrice = precio3d !== null 
@@ -147,7 +147,11 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
             <p className="mt-8 text-gold-100/80 text-lg lg:text-xl font-light leading-relaxed">
               {subtitulo}
             </p>
-            
+
+            <p className="mt-4 text-gold-100/60 text-sm lg:text-base font-light leading-relaxed">
+              {parrafoDescriptor}
+            </p>
+
             <div className="mt-12 flex items-center gap-6">
               <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
             </div>
@@ -167,11 +171,8 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
       </section>
 
       {/* 2. Validación Técnica Especializada (Slider Editorial Estilo Revista) */}
-      {ATRIBUTOS_ESPACIOS[slug] ? (
-        <ValidacionTecnicaSlider
-          frames={ATRIBUTOS_ESPACIOS[slug]}
-          nombreCategoria={nombreCategoria}
-        />
+      {atributosTecnicos.length > 0 ? (
+        <ValidacionTecnicaSlider atributos={atributosTecnicos} />
       ) : (
         <section className="bg-charcoal-900 py-24">
           <div className="mx-auto max-w-6xl px-6">

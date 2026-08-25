@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { Button } from './button';
 import { Modal } from './modal';
 import { ArbolProyectoSelector } from './arbol-proyecto-selector';
@@ -33,6 +34,7 @@ export function ReportarGarantiaModal({
   onSuccess,
 }: ReportarGarantiaModalProps) {
   const store = useDataStore();
+  const storeVersion = store.getVersion();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedProyectoId, setSelectedProyectoId] = useState<string | null>(proyectoId ?? null);
   const [selectedModuloId, setSelectedModuloId] = useState<string | null>(null);
@@ -51,7 +53,9 @@ export function ReportarGarantiaModal({
       return proj && proj.estado === 'entregado' && proj.clienteId === clienteId ? [proj] : [];
     }
     return store.proyectos.listar().filter((p) => p.estado === 'entregado' && p.clienteId === clienteId);
-  }, [proyectos, proyectoId, clienteId, store.getVersion()]);
+    // storeVersion: fuerza recomputar cuando el store muta (M-07); no se lee en el cuerpo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proyectos, proyectoId, clienteId, store, storeVersion]);
 
   // Obtener módulos del proyecto seleccionado
   const modulos = useMemo(() => {
@@ -62,7 +66,9 @@ export function ReportarGarantiaModal({
       return store.modulos.porProyecto(selectedProyectoId);
     }
     return [];
-  }, [modulosProp, selectedProyectoId, proyectoId, store.getVersion()]);
+    // storeVersion: fuerza recomputar cuando el store muta (M-07); no se lee en el cuerpo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modulosProp, selectedProyectoId, proyectoId, store, storeVersion]);
 
   // Módulos elegibles para garantía (R3)
   const modulosGarantia = useMemo(
@@ -129,7 +135,7 @@ export function ReportarGarantiaModal({
       } else {
         setError('Error al crear el reporte de garantía');
       }
-    } catch (err) {
+    } catch {
       setError('Error al enviar el reporte');
     } finally {
       setIsSubmitting(false);
@@ -252,11 +258,14 @@ export function ReportarGarantiaModal({
             {fotos.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {fotos.map((file, index) => (
-                  <div key={index} className="relative">
-                    <img
+                  <div key={index} className="relative w-20 h-20">
+                    {/* unoptimized: blob URL local, no pasa por el optimizador de Next */}
+                    <Image
                       src={URL.createObjectURL(file)}
                       alt={`Foto ${index + 1}`}
-                      className="w-20 h-20 rounded object-cover"
+                      fill
+                      unoptimized
+                      className="rounded object-cover"
                     />
                     <button
                       type="button"

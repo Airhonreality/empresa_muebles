@@ -4,7 +4,7 @@ import { SITE_URL } from '@/lib/seo/jsonld';
 import { socialMeta } from '@/lib/seo/social';
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public';
 
-const TIPO_ESPACIO_CODIGO = 'cocinas-integrales';
+const TIPO_ESPACIO_CODIGO = 'cocina';
 
 export const dynamic = 'force-dynamic';
 

@@ -14,7 +14,7 @@ import type {
   Proyecto, EspacioVariante, ItemVariante, Contrato, HitoPago,
   ObligacionPendiente, MovimientoFinanciero, ComunicacionProgreso,
   Instalacion, ActaEntrega, CasoGarantia, Modulo, Cliente,
-  Testimonio,
+  Testimonio, AtributoTecnico,
 } from '../contracts'
 
 export interface FotoGaleriaEspacio {
@@ -84,6 +84,19 @@ export async function obtenerGaleriaEspacioAction(tipoEspacio: string): Promise<
   store.renderesConceptuales.porTipoEspacio(tipoEspacio)
     .forEach((r) => fotos.push({ url: r.imagenUrl, alt: r.titulo ?? '', esRender: true }))
   return fotos
+}
+
+// Tarjetas del slider "Validación Técnica" de la landing de un tipo de espacio (2026-08-25,
+// reemplaza el objeto estático ATRIBUTOS_ESPACIOS que vivía en lib/data/espacios-atributos.ts).
+// Solo visible=true, ordenadas por `orden` — el componente las agrupa de a 4 por folio.
+export async function obtenerAtributosTecnicosAction(tipoEspacio: string): Promise<AtributoTecnico[]> {
+  if (DATA_IMPL() === 'drizzle') {
+    const rows = await db.select().from(s.atributosTecnicos)
+      .where(and(eq(s.atributosTecnicos.tipoEspacio, tipoEspacio), eq(s.atributosTecnicos.visible, true)))
+    return (rows as unknown as AtributoTecnico[]).slice().sort((a, b) => a.orden - b.orden)
+  }
+  const { getDataStore } = await import('@/lib/data/store')
+  return getDataStore().atributosTecnicos.porTipoEspacio(tipoEspacio)
 }
 
 export async function listarProductosTiendaVisiblesAction(): Promise<ProductoTienda[]> {

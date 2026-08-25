@@ -26,6 +26,7 @@ import * as f6 from './actions/f6'
 import * as f7 from './actions/f7-tienda'
 import * as pf from './actions/portafolio'
 import * as renders from './actions/renders'
+import * as atributosTec from './actions/atributos-tecnicos'
 
 export interface DrizzleStoreHandle {
   store: DataStore
@@ -984,6 +985,29 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       eliminar: async (id) => {
         const ok = await renders.eliminarRenderConceptualAction(id)
         if (ok) { data = { ...data, rendersConceptuales: data.rendersConceptuales.filter((r) => r.id !== id) }; notify() }
+        return ok
+      },
+    },
+    atributosTecnicos: {
+      listar: () => masRecientePrimero(data.atributosTecnicos),
+      porTipoEspacio: (tipoEspacio) => data.atributosTecnicos
+        .filter((a) => a.tipoEspacio === tipoEspacio && a.visible)
+        .slice()
+        .sort((a, b) => a.orden - b.orden),
+      crear: async (values) => {
+        const a = await atributosTec.crearAtributoTecnicoAction(values)
+        data = { ...data, atributosTecnicos: upsert(data.atributosTecnicos, a) }
+        notify()
+        return a
+      },
+      actualizar: async (id, partial) => {
+        const a = await atributosTec.actualizarAtributoTecnicoAction(id, partial)
+        if (a) { data = { ...data, atributosTecnicos: upsert(data.atributosTecnicos, a) }; notify() }
+        return a
+      },
+      eliminar: async (id) => {
+        const ok = await atributosTec.eliminarAtributoTecnicoAction(id)
+        if (ok) { data = { ...data, atributosTecnicos: data.atributosTecnicos.filter((a) => a.id !== id) }; notify() }
         return ok
       },
     },

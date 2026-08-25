@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Phone, Clock, LayoutGrid, Images, NotebookPen, UserCircle, Home, Users, Briefcase } from 'lucide-react';
+import { MapPin, Phone, Clock, LayoutGrid, Images, UserCircle, Home } from 'lucide-react';
 import { NavItem } from '@/components/veta/nav-item';
 import { MetaItem } from '@/components/veta/meta-item';
 import { WhatsappFloat } from '@/components/veta/whatsapp-float';

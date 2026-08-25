@@ -8,7 +8,7 @@ import type {
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
-  BitacoraArticulo, Testimonio, RenderConceptual,
+  BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
@@ -110,6 +110,7 @@ export function createMockStore(): DataStore {
   // Testimonios (DC-1 ACTIVA 2026-08-09)
   const testimonios: Testimonio[] = []
   const renders: RenderConceptual[] = []
+  const atributosTecnicos: AtributoTecnico[] = []
 
   // F4 dominios (compras: recepción, herramientas — P-13/P-14/P-15)
   const itemsOrdenCompra: ItemOrdenCompra[] = deepClone(ITEMS_ORDEN_COMPRA)
@@ -2412,6 +2413,48 @@ export function createMockStore(): DataStore {
         const idx = renders.findIndex(r => r.id === id)
         if (idx === -1) return false
         renders.splice(idx, 1)
+        notify()
+        return true
+      },
+    },
+
+    atributosTecnicos: {
+      listar(): AtributoTecnico[] {
+        return masRecientePrimero(atributosTecnicos)
+      },
+      porTipoEspacio(tipoEspacio: string): AtributoTecnico[] {
+        return atributosTecnicos
+          .filter(a => a.tipoEspacio === tipoEspacio && a.visible)
+          .slice()
+          .sort((a, b) => a.orden - b.orden)
+      },
+      async crear(data: { tipoEspacio: string; titulo: string; cuerpo: string; badge?: string | null; imagenUrl?: string | null }): Promise<AtributoTecnico> {
+        const nuevo: AtributoTecnico = {
+          id: generateId('atrtec'),
+          tipoEspacio: data.tipoEspacio,
+          titulo: data.titulo,
+          cuerpo: data.cuerpo,
+          badge: data.badge ?? null,
+          imagenUrl: data.imagenUrl ?? null,
+          visible: true,
+          orden: atributosTecnicos.length,
+          createdAt: new Date().toISOString(),
+        }
+        atributosTecnicos.push(nuevo)
+        notify()
+        return nuevo
+      },
+      async actualizar(id: string, partial: Partial<Pick<AtributoTecnico, 'tipoEspacio' | 'titulo' | 'cuerpo' | 'badge' | 'imagenUrl' | 'visible' | 'orden'>>): Promise<AtributoTecnico | null> {
+        const idx = atributosTecnicos.findIndex(a => a.id === id)
+        if (idx === -1) return null
+        atributosTecnicos[idx] = { ...atributosTecnicos[idx], ...partial }
+        notify()
+        return atributosTecnicos[idx]
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const idx = atributosTecnicos.findIndex(a => a.id === id)
+        if (idx === -1) return false
+        atributosTecnicos.splice(idx, 1)
         notify()
         return true
       },
