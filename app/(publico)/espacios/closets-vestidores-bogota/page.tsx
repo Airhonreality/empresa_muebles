@@ -24,6 +24,7 @@ const CONFIG: EspacioLandingConfig = {
 };
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: 'Closets y Vestidores en Bogotá | Diseño a Medida',
   description:
     'Closets y vestidores a medida en Bogotá. Diseño personalizado, materiales duraderos y instalación profesional.',

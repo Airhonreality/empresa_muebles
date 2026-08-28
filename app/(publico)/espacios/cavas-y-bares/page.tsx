@@ -24,6 +24,7 @@ const CONFIG: EspacioLandingConfig = {
 };
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: 'Cavas y Bares a Medida en Bogotá',
   description:
     'Cavas y bares a medida en Bogotá. Diseño personalizado, materiales de calidad y acabados premium.',

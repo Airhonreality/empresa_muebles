@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Server Actions (uploadFileToR2 en lib/r2/upload.ts recibe el File crudo del navegador antes
+  // de optimizarlo con sharp) topaban con el límite por defecto de 1MB de Next -- cualquier foto
+  // real de celular/cámara lo supera y Next rechaza la petición antes de correr la acción, dejando
+  // "Error al subir a R2: An unexpected response was received from the server" en consola.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
   images: {
     remotePatterns: [
       {

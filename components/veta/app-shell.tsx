@@ -9,25 +9,13 @@ import { MetaItem } from '@/components/veta/meta-item';
 import { WhatsappFloat } from '@/components/veta/whatsapp-float';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 
-// Slugs F-09/F-14 tal cual contenido_F09_landings.md / disenio_F14_pisos_madera.md
-// (corregidos 2026-08-17: 4 de 7 no coincidían con las rutas reales, causaban 404).
-const categoriasEspacios = [
-  { href: '/espacios/cocinas-integrales-bogota', label: 'Cocinas Integrales' },
-  { href: '/espacios/closets-vestidores-bogota', label: 'Closets y Vestidores' },
-  { href: '/espacios/centros-de-entretenimiento', label: 'Centros de Entretenimiento' },
-  { href: '/espacios/estudios-home-office', label: 'Estudios y Home Office' },
-  { href: '/espacios/cavas-y-bares', label: 'Cavas y Bares' },
-  { href: '/espacios/consolas-recibidores', label: 'Consolas y Recibidores' },
-  { href: '/espacios/pisos-de-madera', label: 'Pisos de Madera' },
-];
-
-// Feedback Javier 2026-08-15: nav anterior (label + desc en texto) se veía "regordete" y con
-// doble texto. Un ícono por ítem reemplaza el desc -- mismo criterio editorial de MetaItem (D-01):
-// ícono + una sola palabra, nada de badges ni texto secundario apilado.
-// Decisión actualizada 2026-08-15 (SEO/UX): "Espacios" usa desplegable.
+// Lanzamiento web (2026-08-25): se publica solo "Cocinas Integrales" como landing de espacio.
+// El tab "Espacios" (con su desplegable de 7 categorías) se reemplaza por un tab directo a cocinas.
+// Las otras 6 landings quedan noindex y sin enlazar (ver TAREAS_DIFERIDAS.md), a la espera de
+// contenido real (textos/imágenes/descripciones) antes de desbloquearse.
 const navigation = [
   { href: '/', label: 'Inicio', icon: Home },
-  { href: '/espacios', label: 'Espacios', icon: LayoutGrid },
+  { href: '/espacios/cocinas-integrales-bogota', label: 'Cocinas Integrales', icon: LayoutGrid },
   { href: '/portafolio', label: 'Portafolio', icon: Images },
   { href: '/cuenta', label: 'Mi cuenta', icon: UserCircle },
 ] as const;
@@ -55,26 +43,7 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
             {/* 2. Centro: Enlaces de Navegación (Centrados) */}
             <nav className="hidden md:flex flex-[2] items-center justify-center gap-8" aria-label="Navegación principal">
               {navigation.filter(item => item.href !== '/cuenta').map((item) => (
-                item.href === '/espacios' ? (
-                  <div className="relative group" key={item.href}>
-                    <NavItem {...item} />
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible translate-y-2 transition-all duration-200 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
-                      <div className="w-64 bg-bg-raised border border-border-subtle rounded-md shadow-[var(--shadow-nav-elevated)] p-2 flex flex-col gap-1">
-                        {categoriasEspacios.map((cat) => (
-                          <Link
-                            key={cat.href}
-                            href={cat.href}
-                            className="px-3 py-2 text-sm text-text-muted hover:text-text-heading hover:bg-bg-alt rounded-sm transition-colors duration-fast"
-                          >
-                            {cat.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <NavItem key={item.href} {...item} />
-                )
+                <NavItem key={item.href} {...item} />
               ))}
             </nav>
 
@@ -114,38 +83,14 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
           {menuMovilAbierto && (
             <nav className="md:hidden pb-4 flex flex-col gap-1" aria-label="Navegación principal (móvil)">
               {navigation.map((item) => (
-                item.href === '/espacios' ? (
-                  <div key={item.href} className="flex flex-col gap-1">
-                    <Link
-                      href={item.href}
-                      onClick={() => setMenuMovilAbierto(false)}
-                      className="rounded-sm px-3 py-2 text-sm font-medium text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-                    >
-                      {item.label}
-                    </Link>
-                    <div className="pl-6 flex flex-col gap-1 border-l border-border-subtle ml-3">
-                      {categoriasEspacios.map((cat) => (
-                        <Link
-                          key={cat.href}
-                          href={cat.href}
-                          onClick={() => setMenuMovilAbierto(false)}
-                          className="rounded-sm px-3 py-2 text-sm text-text-muted hover:text-text-heading hover:bg-bg-alt transition-colors"
-                        >
-                          {cat.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMenuMovilAbierto(false)}
-                    className="rounded-sm px-3 py-2 text-sm text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-                  >
-                    {item.label}
-                  </Link>
-                )
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuMovilAbierto(false)}
+                  className="rounded-sm px-3 py-2 text-sm text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                >
+                  {item.label}
+                </Link>
               ))}
             </nav>
           )}
@@ -222,19 +167,16 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
             </div>
           </div>
 
-          {/* Columna 2: Categorías de Espacios */}
+          {/* Columna 2: Categorías de Espacios (lanzamiento: solo Cocinas Integrales) */}
           <div>
             <p className="text-xs font-mono font-semibold uppercase tracking-widest text-gold-600 mb-3">Colección de Espacios</p>
             <nav className="flex flex-col gap-2" aria-label="Categorías de espacios">
-              {categoriasEspacios.map((cat) => (
-                <Link
-                  key={cat.href}
-                  href={cat.href}
-                  className="text-xs text-text-muted hover:text-text-heading hover:translate-x-0.5 transition-all duration-fast font-light"
-                >
-                  {cat.label}
-                </Link>
-              ))}
+              <Link
+                href="/espacios/cocinas-integrales-bogota"
+                className="text-xs text-text-muted hover:text-text-heading hover:translate-x-0.5 transition-all duration-fast font-light"
+              >
+                Cocinas Integrales
+              </Link>
             </nav>
           </div>
 

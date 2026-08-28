@@ -25,8 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const estaticas: MetadataRoute.Sitemap = [
     { url: SITE_URL, changeFrequency: 'weekly', priority: 1 },
-    { url: `${SITE_URL}/espacios`, changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${SITE_URL}/espacios/pisos-de-madera`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${SITE_URL}/espacios/cocinas-integrales-bogota`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${SITE_URL}/portafolio`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/colecciones`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/bitacora`, changeFrequency: 'weekly', priority: 0.7 },

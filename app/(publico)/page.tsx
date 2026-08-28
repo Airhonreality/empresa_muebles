@@ -295,10 +295,9 @@ export default async function Home() {
             // La primera tarjeta ocupa 2 columnas en desktop para asimetría del bento box
             const isFeatured = i === 0;
             return (
-              <Link
+              <div
                 key={espacio.nombre}
-                href={espacio.href}
-                className={`group flex flex-col cursor-pointer ${isFeatured ? 'lg:col-span-2' : ''}`}
+                className={`group flex flex-col ${isFeatured ? 'lg:col-span-2' : ''}`}
               >
                 <div className="relative flex-1 overflow-hidden rounded-sm bg-bg-alt mb-4">
                   <Image
@@ -318,7 +317,7 @@ export default async function Home() {
                     →
                   </span>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

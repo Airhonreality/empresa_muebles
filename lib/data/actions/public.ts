@@ -6,7 +6,7 @@
 // filtraba client-side sobre datos de TODOS los clientes/proyectos, ya presentes en el HTML/RSC
 // payload. Acá cada función trae por SQL solo lo que la página necesita. Mismo patrón dual
 // DATA_IMPL ya establecido en lib/data/actions/portafolio.ts.
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, or, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import type {
@@ -56,9 +56,19 @@ export async function obtenerGaleriaEspacioAction(tipoEspacio: string): Promise<
   const fotos: FotoGaleriaEspacio[] = []
 
   if (DATA_IMPL() === 'drizzle') {
-    const proyectosPublicados = await db.select().from(s.portafolio)
-      .where(and(eq(s.portafolio.publicado, true), eq(s.portafolio.categoriaEspacio, tipoEspacio)))
-    for (const p of proyectosPublicados) {
+    // Herencia real (estado.md 2026-08-17): el tipo de espacio se toma de espacio_variantes.tipoEspacio
+    // vía espacioVarianteId, NO de portafolio.categoriaEspacio (campo con datos sucios históricos:
+    // "Residencial", "Cocina y Zona Social", etc.). Se acepta además categoriaEspacio === tipoEspacio
+    // por si algún registro aún no tiene el FK poblado.
+    const proyectosPublicados = await db.select()
+      .from(s.portafolio)
+      .leftJoin(s.espacioVariantes, eq(s.portafolio.espacioVarianteId, s.espacioVariantes.id))
+      .where(and(
+        eq(s.portafolio.publicado, true),
+        or(eq(s.espacioVariantes.tipoEspacio, tipoEspacio), eq(s.portafolio.categoriaEspacio, tipoEspacio)),
+      ))
+    for (const row of proyectosPublicados) {
+      const p = row.portafolio
       const galeria = ((p.galeriaPortafolioUrl as string[] | null) ?? [])
       const urls = galeria.length > 0 ? galeria : (p.imagenPortafolioUrl ? [p.imagenPortafolioUrl] : [])
       urls.forEach((url) => fotos.push({ url, alt: p.titulo, esRender: false }))

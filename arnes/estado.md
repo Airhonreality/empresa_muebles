@@ -171,7 +171,14 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 - **Fix Home (Hallazgo):** Reemplazo de `<ImagenPlaceholder>` por `<Image>` optimizado en el carrusel de Portafolio del Home, leyendo `imagenPortafolioUrl` (resuelve bug visual).
 - **SEO:** Rutas registradas en `sitemap.ts` y `llms.txt`.
 - **Pendiente de reconciliación de Neon (heredado, ver línea 81):** `dev-local` (ep-little-dawn) podría estar detrás de `v3-preview` (ep-muddy-cherry) en migraciones; `.env.local` apunta a v3-preview. **Nada commiteado.**
-**Detalle completo:** `arnes/lineas/ola7/estado_ola7.md`.
+ **Detalle completo:** `arnes/lineas/ola7/estado_ola7.md`.
+
+**✅ LANZAMIENTO WEB PÚBLICA — SOLO "COCINAS INTEGRALES" (2026-08-25, sesión agente, checkpoint Javier).** Decisión de lanzamiento: el sitio público se publica con **una sola landing de espacio indexable y enlazada: Cocinas Integrales** (`/espacios/cocinas-integrales-bogota`). Cambios ejecutados:
+- `components/veta/app-shell.tsx`: el tab "Espacios" (con su desplegable de 7 categorías) se reemplazó por el tab directo "Cocinas Integrales"; el footer "Colección de Espacios" quedó reducido a ese único link. Eliminado el array `categoriasEspacios`.
+- Home (`app/(publico)/page.tsx`): la sección "Espacios que creamos" conserva las 7 cards como pieza comunicacional, pero ya **no enlazan** (`<div>`, no `<Link`).
+- `noindex` (`robots: { index:false, follow:false }`) en las 6 landings restantes (`closets`, `centros`, `estudios`, `cavas`, `consolas`, `pisos-de-madera`) y en el hub `/espacios`. `sitemap.ts` y `llms.txt` realineados a solo cocinas (removidas las entradas `/espacios` y `/espacios/pisos-de-madera`).
+- `arnes/TAREAS_DIFERIDAS.md` §9: registro de **pendientes de desbloqueo de landings** — cada una de las 6 requiere contenido real (textos, imágenes, descripciones) antes de quitársele el `noindex` y re-enlazarse. Criterio de desbloqueo documentado.
+- **Verificado:** `tsc --noEmit` 0, `eslint .` 0 en archivos tocados, `next build` exit 0 (`DATA_IMPL=mock`). **Nada commiteado.**
 
 ---
 

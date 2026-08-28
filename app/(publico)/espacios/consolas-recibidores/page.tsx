@@ -24,6 +24,7 @@ const CONFIG: EspacioLandingConfig = {
 };
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: 'Consolas y Recibidores a Medida en Bogotá',
   description:
     'Consolas y recibidores a medida en Bogotá. Diseño personalizado, materiales resistentes y instalación profesional.',

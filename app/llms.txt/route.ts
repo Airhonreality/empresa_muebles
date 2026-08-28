@@ -35,8 +35,7 @@ export async function GET() {
     seccion('Páginas principales', [
       { url: SITE_URL, nombre: 'Inicio', descripcion: 'Presentación del estudio, proceso de trabajo y proyectos destacados' },
       { url: `${SITE_URL}/como-trabajamos`, nombre: 'Proceso', descripcion: 'Proceso de 4 pasos para espacios a la medida (visita, cotización, taller, instalación)' },
-      { url: `${SITE_URL}/espacios`, nombre: 'Espacios', descripcion: 'Categorías de espacios a la medida: cocinas, closets, cavas, consolas, estudios, centros de entretenimiento' },
-      { url: `${SITE_URL}/espacios/pisos-de-madera`, nombre: 'Restauración de pisos de madera', descripcion: 'Servicio de restauración de pisos de madera originales en Bogotá' },
+      { url: `${SITE_URL}/espacios/cocinas-integrales-bogota`, nombre: 'Cocinas Integrales', descripcion: 'Cocinas integrales a la medida en Bogotá: materiales, diseño y fabricación en taller propio' },
       { url: `${SITE_URL}/portafolio`, nombre: 'Portafolio', descripcion: 'Casos reales de proyectos ejecutados' },
       { url: `${SITE_URL}/testimonios`, nombre: 'Testimonios', descripcion: 'Prueba social de clientes satisfechos con nombre y barrio' },
       { url: `${SITE_URL}/conocenos`, nombre: 'Conócenos', descripcion: 'Historia de Veta Dorada, perfiles de Hugo García (obra) y Airhon García (diseño)' },

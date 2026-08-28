@@ -95,3 +95,27 @@ Esta lista se creó hoy para cortar el bucle de arnés donde las fases se "cerra
 | Qué | `app/manifest.ts` declara el icono `/icon.svg` (generado por Next). Falta `apple-touch-icon.png` (180×180) para iOS (Safari no usa SVG en el añadir a pantalla de inicio). |
 | Por qué queda pendiente | No hay tooling de rasterizado PNG en el repo (`sharp` no está como utilidad de build). El SVG actual no se puede convertir en la sandbox sin instalar dependencias nuevas. |
 | Cómo resolverlo | Convertir `app/icon.svg` → `app/apple-touch-icon.png` (180×180) con cualquier herramienta de rasterizado (incluso online) y declararlo en `app/layout.tsx` como `<link rel="apple-touch-icon">`. |
+
+## 9. Lanzamiento web — solo "Cocinas Integrales" (2026-08-25)
+
+| Ítem | Detalle |
+|------|---------|
+| Decisión | El sitio público se lanza con **una sola landing de espacio indexable y enlazada: Cocinas Integrales** (`/espacios/cocinas-integrales-bogota`). El tab "Espacios" del menú (con su desplegable de 7 categorías) fue reemplazado por el tab directo "Cocinas Integrales"; el footer "Colección de Espacios" quedó reducido a ese único link. |
+| Home | La sección "Espacios que creamos" de la Home **conserva las 7 cards como pieza comunicacional**, pero ya NO enlazan (son `<div>`, no `<Link>`): muestran el catálogo de espacios sin dirigir a las landings no publicadas. |
+| Landing `/espacios` (hub) | `noindex` + removida del sitemap. Las otras 6 landings (`closets`, `centros`, `estudios`, `cavas`, `consolas`, `pisos-de-madera`) también `noindex` (sin enlazar desde menú/footer; accesibles solo por URL directa). |
+| Por qué no bloquea el lanzamiento | Son páginas ya construidas con copy de `contenido_F09_landings.md`; lo que falta es **contenido real por espacio** antes de desbloquearlas e indexarlas. |
+
+### Pendientes de desbloqueo de landings (contenido por espacio)
+
+Cada una de las 6 landings pendientes requiere, antes de quitarse el `noindex` y volver a enlazarse, contenido real propio:
+
+| Espacio (ruta) | Contenido pendiente |
+|----------------|---------------------|
+| Closets y Vestidores (`/espacios/closets-vestidores-bogota`) | Textos, imágenes y descripciones reales |
+| Centros de Entretenimiento (`/espacios/centros-de-entretenimiento`) | Textos, imágenes y descripciones reales |
+| Estudios y Home Office (`/espacios/estudios-home-office`) | Textos, imágenes y descripciones reales |
+| Cavas y Bares (`/espacios/cavas-y-bares`) | Textos, imágenes y descripciones reales |
+| Consolas y Recibidores (`/espacios/consolas-recibidores`) | Textos, imágenes y descripciones reales |
+| Pisos de Madera (`/espacios/pisos-de-madera`) | Textos, imágenes y descripciones reales |
+
+Criterio de desbloqueo por espacio: contenido real cargado (textos + galería de imágenes + descripciones) → quitar `robots: { index:false }` en su `metadata` → re-enlazar desde menú/footer y (si aplica) Home.

@@ -61,6 +61,8 @@ export interface EspacioLandingConfig {
   subtitulo: string;
   parrafoDescriptor: string;
   imageKey: keyof typeof HOME_IMAGES_SEO;
+  materiales?: { titulo: string; cuerpo: string; imageSrc?: string; imageAlt?: string }[];
+  faqs?: { pregunta: string; respuesta: string }[];
 }
 
 function CtaPrimary({ href, children }: { href: string; children: React.ReactNode }) {
@@ -170,46 +172,23 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
         </div>
       </section>
 
-      {/* 2. Validación Técnica Especializada (Slider Editorial Estilo Revista) */}
-      {atributosTecnicos.length > 0 ? (
-        <ValidacionTecnicaSlider atributos={atributosTecnicos} />
-      ) : (
-        <section className="bg-charcoal-900 py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="grid gap-12 md:grid-cols-3">
-              {VALIDACION_TECNICA.map((card) => {
-                const imgData = HOME_IMAGES_SEO[card.imageKey as keyof typeof HOME_IMAGES_SEO];
-                return (
-                  <div key={card.titulo} className="group relative flex flex-col w-full cursor-default">
-                    {/* Image Container (Text is OUTSIDE below) */}
-                    <div className="relative h-[450px] w-full overflow-hidden rounded-sm mb-6">
-                      <Image
-                        src={imgData.src}
-                        alt={imgData.alt}
-                        fill
-                        className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                    </div>
-
-                    {/* Content (Outside) */}
-                    <div className="flex flex-col">
-                      <h3 className="font-display text-xl font-semibold text-gold-500 mb-3 transition-colors duration-300 group-hover:text-gold-400">
-                        {card.titulo}
-                      </h3>
-                      <p className="text-sm text-gold-100/90 leading-relaxed font-light">
-                        {card.cuerpo}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {/* 1.5. CTA Temprano (¿Ya tienes medidas?) */}
+      <section className="bg-bg-paper py-16 border-b border-border-subtle">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="font-display text-2xl md:text-3xl font-semibold text-text-heading mb-4">¿Ya tienes medidas?</h2>
+          <p className="text-text-primary mb-8 font-light max-w-2xl mx-auto">
+            Recibe una cotización sin costo enviando las dimensiones de tu espacio. Saltamos directo a los números.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <CtaPrimary href={WHATSAPP_URL}>Enviar medidas</CtaPrimary>
+            <Link href="/blog/como-medir-tu-espacio" className="text-sm text-gold-600 hover:text-gold-700 underline underline-offset-4 font-medium transition-colors">
+              ¿No sabes cómo? Aprende a tomar tus medidas aquí
+            </Link>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
-      {/* 3. Galería del espacio (F09, 2026-08-17) */}
+      {/* 2. Galería del espacio (F09, 2026-08-17) */}
       {displayGaleria.length > 0 && (
         <section className="bg-bg-alt py-24 border-b border-border-subtle">
           <div className="mx-auto max-w-6xl px-6">
@@ -246,6 +225,56 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
                       Render 3D
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 3. Materiales que garantizan durabilidad (Módulo educativo F-09C, cocina-específico) */}
+      {config.materiales && config.materiales.length > 0 && (
+        <section className="bg-bg-paper py-32 border-b border-border-subtle">
+          <div className="mx-auto max-w-6xl px-6">
+            {/* Header Editorial */}
+            <div className="mb-16 md:mb-24">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="h-[1px] w-12 bg-gold-600" />
+                <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-gold-600 font-semibold">
+                  M A T E R I A L E S
+                </span>
+              </div>
+              <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-normal text-text-heading tracking-tight max-w-3xl">
+                Materiales que <span className="font-serif italic text-gold-700 font-light">garantizan durabilidad</span>
+              </h2>
+            </div>
+            
+            {/* Grid Editorial Tipo Paspartú */}
+            <div className="grid gap-12 md:gap-8 lg:gap-12 md:grid-cols-3">
+              {config.materiales.map((m, i) => (
+                <div key={m.titulo} className="flex flex-col group relative pt-6 border-t border-border-subtle">
+                  {/* Numeración de Catálogo */}
+                  <div className="absolute top-0 left-0 -mt-3 bg-bg-paper pr-3">
+                    <span className="font-mono text-xs font-medium text-gold-600 tracking-widest">
+                      0{i + 1}
+                    </span>
+                  </div>
+
+                  {m.imageSrc && (
+                    <div className="relative aspect-[4/5] w-full overflow-hidden mb-8 rounded-none bg-charcoal-900">
+                      <Image
+                        src={m.imageSrc}
+                        alt={m.imageAlt || m.titulo}
+                        fill
+                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105 saturate-75 group-hover:saturate-100"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                      <div className="absolute inset-0 bg-charcoal-900/5 group-hover:bg-transparent transition-colors duration-700" />
+                    </div>
+                  )}
+                  
+                  <h3 className="font-display text-2xl font-medium text-text-heading mb-4 tracking-tight">{m.titulo}</h3>
+                  <p className="text-[13px] text-text-primary leading-loose font-light">{m.cuerpo}</p>
                 </div>
               ))}
             </div>
@@ -295,7 +324,65 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
         </div>
       </section>
 
-      {/* 5. CTA final */}
+      {/* 5. Validación Técnica Especializada (Slider Editorial Estilo Revista) */}
+      {atributosTecnicos.length > 0 ? (
+        <ValidacionTecnicaSlider atributos={atributosTecnicos} />
+      ) : (
+        <section className="bg-charcoal-900 py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="grid gap-12 md:grid-cols-3">
+              {VALIDACION_TECNICA.map((card) => {
+                const imgData = HOME_IMAGES_SEO[card.imageKey as keyof typeof HOME_IMAGES_SEO];
+                return (
+                  <div key={card.titulo} className="group relative flex flex-col w-full cursor-default">
+                    {/* Image Container (Text is OUTSIDE below) */}
+                    <div className="relative h-[450px] w-full overflow-hidden rounded-sm mb-6">
+                      <Image
+                        src={imgData.src}
+                        alt={imgData.alt}
+                        fill
+                        className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    </div>
+
+                    {/* Content (Outside) */}
+                    <div className="flex flex-col">
+                      <h3 className="font-display text-xl font-semibold text-gold-500 mb-3 transition-colors duration-300 group-hover:text-gold-400">
+                        {card.titulo}
+                      </h3>
+                      <p className="text-sm text-gold-100/90 leading-relaxed font-light">
+                        {card.cuerpo}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 6. Preguntas Frecuentes */}
+      {config.faqs && config.faqs.length > 0 && (
+        <section className="bg-bg-paper py-24 border-b border-border-subtle">
+          <div className="mx-auto max-w-3xl px-6">
+            <h2 className="font-display text-3xl md:text-4xl font-medium text-text-heading tracking-tight mb-12 text-center">
+              Preguntas Frecuentes
+            </h2>
+            <div className="space-y-12">
+              {config.faqs.map((faq, i) => (
+                <div key={i} className="border-b border-border-subtle pb-8 last:border-0 last:pb-0">
+                  <h3 className="font-display text-xl font-semibold text-text-heading mb-4">{faq.pregunta}</h3>
+                  <p className="text-text-primary font-light leading-relaxed">{faq.respuesta}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 7. CTA final */}
       <section className="relative py-32 px-6 flex items-center justify-center bg-charcoal-900 border-t border-charcoal-900">
         <div className="relative z-10 w-full max-w-4xl mx-auto text-center">
           <h2 className="font-display text-4xl lg:text-6xl font-semibold text-white tracking-tight">

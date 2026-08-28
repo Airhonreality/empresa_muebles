@@ -6,6 +6,7 @@ import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public'
 const TIPO_ESPACIO_CODIGO = 'pisos_madera'
 
 export const metadata = {
+  robots: { index: false, follow: false },
   title: 'Restauración de pisos de madera en Bogotá — Veta Dorada',
   description: 'Restauramos pisos de madera originales de casonas en Bogotá: pulido, reparación de piezas sueltas y sellado con acabado natural. Solicita tu diagnóstico gratuito.',
   alternates: { canonical: `${SITE_URL}/espacios/pisos-de-madera` },

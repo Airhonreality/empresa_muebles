@@ -6,6 +6,7 @@ import { SITE_URL } from '@/lib/seo/jsonld';
 import { socialMeta } from '@/lib/seo/social';
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: 'Espacios a la medida en Bogotá — Veta Dorada',
   description:
     'Cocinas integrales, closets, cavas y bares, consolas, centros de entretenimiento, estudios y restauración de pisos a la medida en Bogotá. Diseño, fabricación e instalación con taller propio.',

@@ -24,6 +24,7 @@ const CONFIG: EspacioLandingConfig = {
 };
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: 'Estudios y Home Office a Medida en Bogotá',
   description:
     'Estudios y home office a medida en Bogotá. Diseño ergonómico, materiales duraderos y instalación profesional.',

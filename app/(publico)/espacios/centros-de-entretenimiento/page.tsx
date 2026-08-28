@@ -24,6 +24,7 @@ const CONFIG: EspacioLandingConfig = {
 };
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: 'Centros de Entretenimiento a Medida en Bogotá',
   description:
     'Centros de entretenimiento a medida en Bogotá. Integración de tecnología, diseño personalizado y materiales de calidad.',
