@@ -215,28 +215,58 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-text-heading mb-2">URL de imagen principal (opcional)</label>
-        <input
-          type="text"
-          value={form.imagenPortafolioUrl}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('imagenPortafolioUrl', e.target.value)}
-          placeholder="Ej: https://r2.cloud/portafolio/cocina-diaz-hero.jpg"
-          className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-        />
-        <p className="text-xs text-text-muted mt-1">Si no se especifica, se usará la primera imagen de la galería.</p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-text-heading mb-2">Galería de imágenes (máx. 10)</label>
+        <label className="block text-sm font-medium text-text-heading mb-2">Galería de imágenes (máx. 10) y Portada</label>
         <ImagePicker
           label="Arrastrar imágenes aquí o hacer clic para seleccionar"
           value={form.galeriaPortafolioUrl}
-          onChange={(urls) => setForm((prev) => ({ ...prev, galeriaPortafolioUrl: urls.slice(0, 10) }))}
+          onChange={(urls) => {
+            const nuevasUrls = urls.slice(0, 10)
+            setForm((prev) => {
+              // Si la portada actual ya no está en la galería, la limpiamos
+              const mantienePortada = prev.imagenPortafolioUrl && nuevasUrls.includes(prev.imagenPortafolioUrl)
+              return { 
+                ...prev, 
+                galeriaPortafolioUrl: nuevasUrls,
+                imagenPortafolioUrl: mantienePortada ? prev.imagenPortafolioUrl : ''
+              }
+            })
+          }}
           multiple={true}
           uploadToR2={true}
           r2Prefix="portafolio"
         />
-        <p className="text-xs text-text-muted mt-1">Las imágenes se subirán automáticamente a R2. Máximo 10 imágenes.</p>
+        <p className="text-xs text-text-muted mt-2">Las imágenes se subirán automáticamente a R2. Selecciona abajo la imagen que será la portada.</p>
+        
+        {form.galeriaPortafolioUrl.length > 0 && (
+          <div className="mt-5 rounded-md border border-border-subtle bg-bg-paper p-4">
+            <label className="block text-sm font-medium text-text-heading mb-3">Haz clic en una imagen para establecerla como Portada:</label>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-5">
+              {form.galeriaPortafolioUrl.map((url, index) => {
+                const isPortada = form.imagenPortafolioUrl ? form.imagenPortafolioUrl === url : index === 0;
+                return (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => handleChange('imagenPortafolioUrl', url)}
+                    className={`relative aspect-square overflow-hidden rounded-md border-2 transition-all ${
+                      isPortada ? 'border-brand ring-2 ring-brand/20 ring-offset-2 ring-offset-bg-paper' : 'border-transparent hover:border-brand/50'
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Imagen ${index + 1}`} className="h-full w-full object-cover" />
+                    {isPortada && (
+                      <div className="absolute inset-0 bg-brand/10 flex items-start justify-end p-2">
+                        <span className="inline-flex items-center rounded-sm bg-brand px-2 py-0.5 text-xs font-semibold text-white shadow-sm">
+                          Portada
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
@@ -354,45 +384,50 @@ export default function ProyectoPortafolioPage() {
       </header>
 
       {/* Listado de galerías ya creadas para este proyecto */}
-      <section className="space-y-3 mb-6">
+      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-6">
         {entradasProyecto.length === 0 && !formularioAbierto && (
-          <div className="rounded-sm border border-border-subtle bg-bg-raised py-10 text-center text-text-muted">
-            Este proyecto todavía no tiene ninguna galería de portafolio.
+          <div className="col-span-full rounded-sm border border-border-subtle bg-bg-raised py-12 text-center text-text-muted">
+            Este proyecto todavía no tiene ningún espacio en el portafolio.
           </div>
         )}
         {entradasProyecto.map((entrada) => {
           const imagenUrl = entrada.imagenPortafolioUrl || entrada.galeriaPortafolioUrl[0]
           return (
-            <div key={entrada.id} className="flex items-center gap-4 rounded-lg border border-border-subtle bg-bg-raised p-4">
-              <div className="h-16 w-24 shrink-0 overflow-hidden rounded-sm bg-bg-paper">
+            <div key={entrada.id} className="flex flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-raised shadow-sm transition-shadow hover:shadow-md">
+              <div className="relative h-48 w-full bg-bg-paper">
                 {imagenUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={imagenUrl} alt={entrada.titulo} className="h-full w-full object-cover" loading="lazy" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-text-muted">Sin foto</div>
+                  <div className="flex h-full w-full items-center justify-center text-sm text-text-muted">Sin foto de portada</div>
                 )}
+                <div className="absolute top-3 right-3 flex gap-2">
+                  <Badge tone={entrada.publicado ? 'info' : 'neutral'}>{entrada.publicado ? 'Publicado' : 'Borrador'}</Badge>
+                  {entrada.destacado && <Badge tone="warning">Destacado</Badge>}
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-text-primary truncate">{entrada.titulo}</p>
-                <p className="text-xs text-text-muted">{labelTipoEspacio(entrada.categoriaEspacio) ?? entrada.categoriaEspacio}</p>
-              </div>
-              <Badge tone={entrada.publicado ? 'info' : 'neutral'}>{entrada.publicado ? 'Publicado' : 'Sin publicar'}</Badge>
-              {entrada.destacado && <Badge tone="warning">Destacado</Badge>}
-              <div className="flex shrink-0 gap-2">
-                <Button
-                  variant="secondary"
-                  size="md"
-                  onClick={() => { setEntradaEditandoId(entrada.id); setFormularioAbierto(true) }}
-                >
-                  Editar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="md"
-                  onClick={() => void (entrada.publicado ? store.portafolio.despublicar(entrada.id) : store.portafolio.publicar(entrada.id))}
-                >
-                  {entrada.publicado ? 'Despublicar' : 'Publicar'}
-                </Button>
+              <div className="p-5 flex flex-col flex-1">
+                <p className="font-display font-semibold text-text-heading text-lg leading-tight mb-1">{entrada.titulo}</p>
+                <p className="text-sm text-brand font-medium mb-4">{labelTipoEspacio(entrada.categoriaEspacio) ?? entrada.categoriaEspacio}</p>
+                
+                <div className="mt-auto flex gap-3 pt-2">
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    className="flex-1"
+                    onClick={() => { setEntradaEditandoId(entrada.id); setFormularioAbierto(true) }}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    className="flex-1"
+                    onClick={() => void (entrada.publicado ? store.portafolio.despublicar(entrada.id) : store.portafolio.publicar(entrada.id))}
+                  >
+                    {entrada.publicado ? 'Ocultar' : 'Publicar'}
+                  </Button>
+                </div>
               </div>
             </div>
           )
