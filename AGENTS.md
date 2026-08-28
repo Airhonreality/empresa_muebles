@@ -43,27 +43,37 @@ Si nadie te dijo qué rol asumir, asume **Orquestador** y pregunta antes de actu
 
 ## Modelo de repositorio y despliegue (léelo antes de tocar git)
 
-**No hay repo nuevo, no hay Neon nuevo, no hay Cloudflare R2 nuevo, no hay proyecto Vercel nuevo.** Todo vive en el mismo repositorio GitHub (`Airhonreality/empresa_muebles`), la misma base de datos Neon, el mismo bucket R2, el mismo proyecto Vercel. Lo único que cambia es el código de la aplicación.
+**No hay repo nuevo, no hay Neon nuevo, no hay Cloudflare R2 nuevo, no hay proyecto Vercel nuevo.** Todo vive en el mismo repositorio GitHub (`Airhonreality/empresa_muebles`), la misma base de datos Neon, el mismo bucket R2, el mismo proyecto Vercel (`empresa-muebles-vl37`). Lo único que cambia es el código de la aplicación.
+
+**🔴 CORTE DE PRODUCCIÓN DEL SITIO PÚBLICO YA OCURRIÓ (2026-08-28) — el "Flujo de corte" original de abajo describía un merge `dev`→`main` como único disparador de producción; eso ya no es el modelo vigente para el sitio público.** Lo que pasó en la práctica: se cambió la configuración **"Production Branch" del proyecto Vercel de `main` a `dev`**, directamente, sin fusionar ni tocar historial de git. Es el mismo proyecto de siempre — solo cambió qué rama sirve el dominio real. Detalle completo en `arnes/estado.md` (entrada "CORTE DE PRODUCCIÓN DEL SITIO PÚBLICO", 2026-08-28).
 
 ```text
-main                     → producción real (empresa-muebles-vl37.vercel.app). NO se toca hasta el corte final.
+main                     → YA NO es lo que sirve el dominio público. Sigue existiendo; su último deploy (el
+                            sistema legacy "Agnostic") quedó congelado en su propia URL fija de Vercel
+                            (ver arnes/estado.md para la URL exacta) — el equipo sigue usando ESA URL para
+                            cotizar en el ERP viejo hasta que el ERP nuevo (`/erp/**` en `dev`) esté terminado.
+                            Sigue sin tocarse con push/merge nuevo (ver Prohibido).
 legacy-agnostic-backup   → snapshot de seguridad del sistema Agnostic, congelado en el commit fbe9bdd (2026-07-31).
                             Puro respaldo. Nunca se le hace push de código nuevo.
 backup/dev-v2-arquitectura-20260804
                          → snapshot del trabajo de arquitectura v2 (prototipo) congelado en 8526676 (2026-08-04).
                             Puro respaldo: la rama `dev` v2 nunca se pusheó a producción y su código se descartó.
                             Todo el conocimiento valioso ya está en `arnes/`.
-dev                      → rama huérfana (sin historia de main) donde se construye la V3.
+dev                      → rama huérfana (sin historia de main) donde se construye la V3. DESDE 2026-08-28 es la
+                            "Production Branch" real de Vercel: cada push se despliega automáticamente al
+                            dominio público (`vetadeoro.co`) y al ERP nuevo en `/erp/**` del mismo dominio.
                             Se trabaja en el worktree `../empresa_muebles_clone_v3` (ESTA carpeta), nunca en el
                             working tree principal del humano (que sigue en `main` con su propio trabajo en curso).
 ```
 
-**Flujo de corte:**
+**Consecuencia operativa directa:** cualquier push a `dev` ahora es un despliegue a producción real del sitio público (y, aunque nadie lo esté usando todavía para trabajo real, también del ERP nuevo bajo el mismo dominio). Ya no hay una URL de preview intermedia que amortigüe errores antes del dominio real — tratar cada push a `dev` con el mismo cuidado que antes se reservaba para el merge a `main`.
+
+**Flujo de corte (histórico — así se pensó originalmente; sigue aplicando tal cual para decidir, más adelante, qué hacer con `main`/el ERP legacy, no para el sitio público que ya se cortó distinto):**
 1. Todo el trabajo de reconstrucción ocurre en `dev` (este worktree, `empresa_muebles_clone_v3`).
-2. Vercel, al tener Git Integration activada sobre este mismo proyecto, genera automáticamente una URL de preview por cada push a `dev` — usando las MISMAS variables de entorno de Neon/R2 que producción (verificar en el dashboard de Vercel que `DATABASE_URL`, `CF_R2_*` estén habilitadas para el entorno Preview, no solo Production — checkpoint pendiente, ver `arnes/estado.md`).
-3. Javier prueba esa URL de preview con datos REALES (misma base de datos que producción — cuidado: esto significa que escrituras desde `dev` SÍ tocan datos reales, no hay entorno de pruebas aislado a menos que se decida lo contrario).
-4. Solo cuando Javier aprueba explícitamente, se hace merge de `dev` → `main`. Ese merge es lo único que dispara el redeploy de producción real.
-5. Nunca se hace push directo a `main` durante la migración. `legacy-agnostic-backup` queda como punto de retorno si algo sale mal después del corte.
+2. Vercel, al tener Git Integration activada sobre este mismo proyecto, genera automáticamente una URL de preview por cada push a `dev` — usando las MISMAS variables de entorno de Neon/R2 que producción (`DATABASE_URL`/`DATA_IMPL` ya están también en el entorno Production desde el corte del 2026-08-28, no solo Preview — checkpoint que este mismo párrafo marcaba como pendiente ya está resuelto).
+3. Javier prueba con datos REALES (misma base de datos Neon que producción — escrituras SÍ tocan datos reales, no hay entorno de pruebas aislado).
+4. Para el ERP (pendiente, no corrido todavía): cuando esté listo para reemplazar al legacy, es un checkpoint explícito del Supervisor — igual de deliberado que el corte del sitio público, aunque el mecanismo exacto (merge, o repetir el cambio de Production Branch que ya se usó una vez) se decide en el momento.
+5. Nunca se hace push directo a `main` durante la migración. `legacy-agnostic-backup` queda como punto de retorno si algo sale mal.
 
 ## Prohibido
 

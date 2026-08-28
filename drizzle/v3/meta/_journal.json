@@ -85,6 +85,13 @@
       "when": 1787241300000,
       "tag": "0011_kanban_bidireccional",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1787340000000,
+      "tag": "0012_atributos_tecnicos",
+      "breakpoints": true
     }
   ]
 }
