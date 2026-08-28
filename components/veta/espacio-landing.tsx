@@ -234,10 +234,10 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
 
       {/* 3. Materiales que garantizan durabilidad (Módulo educativo F-09C, cocina-específico) */}
       {config.materiales && config.materiales.length > 0 && (
-        <section className="bg-bg-paper py-32 border-b border-border-subtle">
+        <section className="bg-bg-paper py-16 md:py-20 border-b border-border-subtle">
           <div className="mx-auto max-w-6xl px-6">
             {/* Header Editorial */}
-            <div className="mb-16 md:mb-24">
+            <div className="mb-10 md:mb-12">
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-[1px] w-12 bg-gold-600" />
                 <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-gold-600 font-semibold">

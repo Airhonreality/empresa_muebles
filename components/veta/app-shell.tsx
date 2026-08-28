@@ -33,10 +33,15 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
             <div className="flex flex-1 items-center justify-start">
               <Link href="/" className="flex items-center gap-2.5" aria-label="Veta Dorada - Inicio">
                 <Image src="/logo-veta-positive.svg" alt="Ícono Veta Dorada" width={32} height={40} priority className="h-8 w-auto" />
-                <span className="text-xl tracking-tight hidden sm:block">
-                  <strong className="font-bold text-text-heading">Veta</strong>{' '}
-                  <span className="font-medium text-gold-600">Dorada</span>
-                </span>
+                <div className="hidden sm:block">
+                  <span className="text-xl tracking-tight font-display leading-none">
+                    <strong className="font-bold text-text-heading">Veta</strong>{' '}
+                    <span className="font-medium text-gold-600 font-serif italic">Dorada</span>
+                  </span>
+                  <p className="text-[10px] text-text-muted font-light mt-0.5">
+                    Carpintería Arquitectónica & Ebanistería a la Medida
+                  </p>
+                </div>
               </Link>
             </div>
 

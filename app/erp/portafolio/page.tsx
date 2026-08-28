@@ -145,6 +145,16 @@ export default function PortafolioAdminPage() {
             Publicar, destacar y ordenar los proyectos que aparecen en el portafolio público. Para editar título, fotos
             o descripción, usá &quot;Editar contenido&quot; (te lleva al proyecto en el ERP).
           </p>
+          <div className="mt-3 rounded-sm border border-brand-primary/30 bg-brand-primary/5 px-4 py-3 text-sm">
+            <span className="font-semibold text-brand-primary">💡 Regla de Nomenclatura Pública (High-Ticket):</span>
+            <p className="mt-1 text-text-muted">
+              Para proteger la privacidad del cliente y mantener el estatus de marca, usa el formato:{' '}
+              <code className="rounded bg-bg-paper px-1 py-0.5 text-text-primary">[Espacio] [Inicial]. — [Barrio]</code>.
+            </p>
+            <p className="mt-1 text-text-muted">
+              Ejemplo correcto: <strong className="text-text-primary">Cocina G. — Rosales</strong> (No usar nombres completos).
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <LinkButton href="/erp/portafolio/galeria" variant="secondary">
