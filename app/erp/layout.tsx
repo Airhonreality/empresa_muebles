@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 // se declara acá (route segment config del layout que envuelve a DataStoreProvider).
 // Verificar contra el límite real del plan de Vercel configurado en el dashboard antes de subir.
 export const maxDuration = 25
+export const dynamic = 'force-dynamic'
 
 export default async function ErpLayout({ children }: { children: React.ReactNode }) {
   const impl = process.env.DATA_IMPL ?? 'mock'
