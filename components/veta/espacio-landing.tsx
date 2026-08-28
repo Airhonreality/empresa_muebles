@@ -188,46 +188,56 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
         </div>
       </section>
 
-      {/* 2. Galería del espacio (F09, 2026-08-17) */}
+      {/* 2. Galería del espacio (F09, 2026-08-17) - Refactor Filmstrip Editorial 2027 */}
       {displayGaleria.length > 0 && (
-        <section className="bg-bg-alt py-24 border-b border-border-subtle">
-          <div className="mx-auto max-w-6xl px-6">
-            {/* Header Editorial de Lujo */}
-            <div className="mb-12 md:mb-16">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="h-[1px] w-8 bg-gold-600" />
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-600 font-semibold">Portafolio</span>
-              </div>
-              <h2 className="font-display text-4xl md:text-5xl font-medium text-text-heading tracking-tight">
-                Espacios que <span className="font-serif italic text-gold-700 font-light">creamos</span>
-              </h2>
+        <section className="bg-bg-alt py-24 md:py-32 border-b border-border-subtle overflow-hidden">
+          {/* Header Editorial (Dentro del max-w) */}
+          <div className="mx-auto max-w-6xl px-6 mb-12 md:mb-20">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="h-[1px] w-8 bg-gold-600" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-600 font-semibold">Portafolio</span>
             </div>
+            <h2 className="font-display text-4xl md:text-5xl font-medium text-text-heading tracking-tight">
+              Espacios que <span className="font-serif italic text-gold-700 font-light">creamos</span>
+            </h2>
+          </div>
             
-            {/* Destruimos la grilla asfixiante. Añadimos gap generoso y redondeo sutil. */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-              {displayGaleria.map((foto, i) => (
+          {/* Track Horizontal Cinematico (Rompe el contenedor) */}
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 md:gap-8 px-6 xl:px-[calc((100vw-72rem)/2+1.5rem)] pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {displayGaleria.slice(0, 12).map((foto, i) => {
+              // Ritmo asimétrico predecible basado en el índice para curaduría editorial
+              let aspectClass = "aspect-[3/4] w-[75vw] md:w-[30vw]"; // Default Portrait
+              if (i % 5 === 0) aspectClass = "aspect-[16/9] w-[85vw] md:w-[50vw]"; // Large Landscape
+              if (i % 5 === 2) aspectClass = "aspect-square w-[75vw] md:w-[35vw]"; // Square
+              if (i % 5 === 4) aspectClass = "aspect-[3/2] w-[80vw] md:w-[45vw]"; // Medium Landscape
+              
+              return (
                 <div 
                   key={`${foto.url}-${i}`} 
-                  className="group relative aspect-[4/5] overflow-hidden bg-charcoal-950 rounded-sm shadow-sm"
+                  className={`group relative flex-shrink-0 snap-center overflow-hidden bg-charcoal-950 ${aspectClass}`}
                 >
                   <Image
                     src={foto.url}
                     alt={foto.alt}
                     fill
-                    className="object-cover opacity-90 saturate-75 group-hover:opacity-100 group-hover:saturate-100 group-hover:scale-105 transition-all duration-700"
-                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover opacity-90 saturate-50 group-hover:opacity-100 group-hover:saturate-100 group-hover:scale-105 transition-all duration-[1500ms] ease-out"
+                    sizes="(max-width: 768px) 100vw, 60vw"
                   />
-                  <div className="absolute inset-0 bg-charcoal-900/10 group-hover:bg-transparent transition-colors duration-500" />
+                  <div className="absolute inset-0 bg-charcoal-900/10 group-hover:bg-transparent transition-colors duration-700" />
                   
-                  {/* Distinción elegante para Renders 3D */}
-                  {foto.esRender && (
-                    <div className="absolute bottom-4 left-4 bg-bg-paper/90 backdrop-blur-md text-gold-700 text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-xs border border-gold-500/20 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
-                      Render 3D
-                    </div>
-                  )}
+                  {/* Etiqueta descriptiva (Lujo silencioso: solo aparece en hover) */}
+                  <div className="absolute bottom-6 left-6 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10">
+                    <div className="h-[1px] w-4 bg-gold-500"></div>
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-gold-100 bg-charcoal-950/80 px-2 py-1 backdrop-blur-sm border border-gold-500/10">
+                      {foto.esRender ? 'Render 3D' : 'Proyecto Real'}
+                    </span>
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+            
+            {/* Espaciador fantasma para dejar margen al hacer scroll hasta el final */}
+            <div className="flex-shrink-0 w-6 md:w-[10vw]"></div>
           </div>
         </section>
       )}
