@@ -14,6 +14,8 @@ export interface ImagePickerProps {
   uploadToR2?: boolean;
   /** Prefijo para la clave en R2 (ej: 'portafolio/', 'cotizador/'). Default: 'portafolio'. */
   r2Prefix?: string;
+  /** Oculta la grilla interna de previsualización (útil si el componente padre renderiza su propia grilla). Default: false. */
+  hideGrid?: boolean;
 }
 
 /* Primitiva ImagePicker (D4) — ÚNICO input de imagen del proyecto, por
@@ -31,6 +33,7 @@ export function ImagePicker({
   multiple = true,
   uploadToR2 = false,
   r2Prefix = "portafolio",
+  hideGrid = false,
 }: ImagePickerProps) {
   const id = useId();
   const [urlDraft, setUrlDraft] = useState("");
@@ -99,7 +102,7 @@ export function ImagePicker({
           isDragOver ? "border-gold-400 bg-bg-alt" : "border-border-subtle"
         }`}
       >
-        {value.length > 0 && (
+        {value.length > 0 && !hideGrid && (
           <div className={multiple ? "grid grid-cols-4 gap-2 mb-2 sm:grid-cols-6" : "mb-2 flex justify-center"}>
             {value.map((url) => (
               <div key={url} className={`group relative aspect-square overflow-hidden rounded-sm border border-border-subtle bg-bg-paper ${multiple ? "" : "w-24"}`}>

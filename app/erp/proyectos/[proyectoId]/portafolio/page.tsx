@@ -120,40 +120,11 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
         />
       </div>
 
-      {/* Espacio de origen (F-09, 2026-08-17): al elegir uno, categoriaEspacio se hereda de
-          su tipoEspacio en vez de tiparse dos veces. En proyectos migrados sin espacios reales
-          completos, se deja "Sin vincular" y la categoría se tipea a mano — cada galería es
-          independiente, no exige que el proyecto tenga un espacio real para existir. */}
-      <div>
-        <label className="block text-sm font-medium text-text-heading mb-2">Espacio de origen</label>
-        <select
-          value={form.espacioVarianteId}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-            const espacioId = e.target.value
-            const espacio = espaciosAgrupados.find((es) => es.id === espacioId)
-            setForm((prev) => ({
-              ...prev,
-              espacioVarianteId: espacioId,
-              categoriaEspacio: espacio?.tipoEspacio ?? prev.categoriaEspacio,
-            }))
-          }}
-          className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-        >
-          <option value="">Sin vincular (entrada manual)</option>
-          {espaciosAgrupados.map((es) => (
-            <option key={es.id} value={es.id}>
-              {es.nombreEspacio}{es.tipoEspacio ? ` — ${labelTipoEspacio(es.tipoEspacio)}` : ' — sin tipo'}
-            </option>
-          ))}
-        </select>
-        {form.espacioVarianteId && (
-          <p className="text-xs text-text-muted mt-1">Categoría heredada de este espacio — puedes cambiarla abajo si hace falta.</p>
-        )}
-      </div>
-
+      {/* Jerarquía UX invertida (2026-08-28): El campo principal es la categoría del espacio.
+          El vínculo a un espacio cotizado es secundario (útil para proyectos viejos). */}
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-text-heading mb-2">Categoría de espacio *</label>
+          <label className="block text-sm font-medium text-text-heading mb-2">Categoría del espacio a publicar *</label>
           <select
             value={form.categoriaEspacio}
             onChange={(e: ChangeEvent<HTMLSelectElement>) => handleChange('categoriaEspacio', e.target.value)}
@@ -179,6 +150,33 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-text-heading mb-2">Vincular a espacio cotizado (Opcional, proyectos nuevos)</label>
+        <select
+          value={form.espacioVarianteId}
+          onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+            const espacioId = e.target.value
+            const espacio = espaciosAgrupados.find((es) => es.id === espacioId)
+            setForm((prev) => ({
+              ...prev,
+              espacioVarianteId: espacioId,
+              categoriaEspacio: espacio?.tipoEspacio ?? prev.categoriaEspacio,
+            }))
+          }}
+          className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+        >
+          <option value="">Sin vincular (Creación de galería libre)</option>
+          {espaciosAgrupados.map((es) => (
+            <option key={es.id} value={es.id}>
+              {es.nombreEspacio}{es.tipoEspacio ? ` — ${labelTipoEspacio(es.tipoEspacio)}` : ' — sin tipo'}
+            </option>
+          ))}
+        </select>
+        {form.espacioVarianteId && (
+          <p className="text-xs text-text-muted mt-1">Si seleccionas un espacio, se sugerirá su categoría automáticamente.</p>
+        )}
       </div>
 
       <div>
@@ -222,7 +220,6 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
           onChange={(urls) => {
             const nuevasUrls = urls.slice(0, 10)
             setForm((prev) => {
-              // Si la portada actual ya no está en la galería, la limpiamos
               const mantienePortada = prev.imagenPortafolioUrl && nuevasUrls.includes(prev.imagenPortafolioUrl)
               return { 
                 ...prev, 
@@ -234,8 +231,9 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
           multiple={true}
           uploadToR2={true}
           r2Prefix="portafolio"
+          hideGrid={true}
         />
-        <p className="text-xs text-text-muted mt-2">Las imágenes se subirán automáticamente a R2. Selecciona abajo la imagen que será la portada.</p>
+        <p className="text-xs text-text-muted mt-2">Las imágenes se subirán automáticamente a R2. Abajo puedes borrar fotos o elegir cuál será la portada.</p>
         
         {form.galeriaPortafolioUrl.length > 0 && (
           <div className="mt-5 rounded-md border border-border-subtle bg-bg-paper p-4">
@@ -244,24 +242,42 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
               {form.galeriaPortafolioUrl.map((url, index) => {
                 const isPortada = form.imagenPortafolioUrl ? form.imagenPortafolioUrl === url : index === 0;
                 return (
-                  <button
+                  <div
                     key={url}
-                    type="button"
                     onClick={() => handleChange('imagenPortafolioUrl', url)}
-                    className={`relative aspect-square overflow-hidden rounded-md border-2 transition-all ${
+                    className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all cursor-pointer ${
                       isPortada ? 'border-brand ring-2 ring-brand/20 ring-offset-2 ring-offset-bg-paper' : 'border-transparent hover:border-brand/50'
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt={`Imagen ${index + 1}`} className="h-full w-full object-cover" />
                     {isPortada && (
-                      <div className="absolute inset-0 bg-brand/10 flex items-start justify-end p-2">
+                      <div className="pointer-events-none absolute inset-0 bg-brand/10 flex items-start justify-start p-2">
                         <span className="inline-flex items-center rounded-sm bg-brand px-2 py-0.5 text-xs font-semibold text-white shadow-sm">
                           Portada
                         </span>
                       </div>
                     )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const nuevasUrls = form.galeriaPortafolioUrl.filter(u => u !== url);
+                        setForm(prev => {
+                          const mantienePortada = prev.imagenPortafolioUrl && nuevasUrls.includes(prev.imagenPortafolioUrl)
+                          return {
+                            ...prev,
+                            galeriaPortafolioUrl: nuevasUrls,
+                            imagenPortafolioUrl: mantienePortada ? prev.imagenPortafolioUrl : ''
+                          }
+                        })
+                      }}
+                      aria-label="Quitar imagen"
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-sm leading-none text-white opacity-0 transition-opacity duration-fast hover:bg-red-600 group-hover:opacity-100"
+                    >
+                      ×
+                    </button>
+                  </div>
                 )
               })}
             </div>
@@ -439,7 +455,7 @@ export default function ProyectoPortafolioPage() {
           variant="primary"
           onClick={() => { setEntradaEditandoId(null); setFormularioAbierto(true) }}
         >
-          + Agregar galería de otro espacio
+          + Crear Espacio en el Portafolio
         </Button>
       )}
 
