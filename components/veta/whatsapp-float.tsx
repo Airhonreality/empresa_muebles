@@ -21,11 +21,12 @@ export function WhatsappFloat() {
         {/* Tooltip Editorial Minimalista (Absoluto y pointer-events-none para no bloquear interacciones) */}
         <span
           role="tooltip"
-          className={`absolute right-full mr-2.5 whitespace-nowrap rounded-xs bg-charcoal-950 border border-gold-500/30 px-2.5 py-1 text-[11px] font-light text-gold-200 shadow-md backdrop-blur-md transition-all duration-300 pointer-events-none ${
+          className={`absolute right-full mr-2.5 whitespace-nowrap rounded-xs bg-charcoal-950 border border-gold-500/30 px-3 py-1.5 text-right shadow-md backdrop-blur-md transition-all duration-300 pointer-events-none ${
             tooltipVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
           }`}
         >
-          ¿Hablamos por WhatsApp?
+          <div className="text-[11px] font-medium text-gold-200 leading-tight">¿Hablamos por WhatsApp?</div>
+          <div className="text-[9.5px] font-light text-gold-200/60 leading-tight tracking-widest mt-0.5">+57 302 5922101</div>
         </span>
 
         {/* Botón Compacto Estilo Veta Dorada (Hitbox estricto de 40px x 40px) */}

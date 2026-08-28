@@ -72,7 +72,7 @@ export async function submitLeadAction(input: SubmitLeadInput): Promise<SubmitLe
       input.tipoProyecto || "Cocina"
     } en ${input.ubicacion || "Bogotá"}. Solicito mi asesoría.`;
 
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensajeText)}`;
+    const whatsappUrl = `https://api.whatsapp.com/send/?phone=${whatsappNumber}&text=${encodeURIComponent(mensajeText)}`;
 
     return {
       success: true,

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { submitLeadAction } from '@/app/actions/lead-actions';
 
@@ -11,17 +12,60 @@ interface AsesoriaModalProps {
 }
 
 export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [tipo, setTipo] = useState<'gratis' | '3d' | 'medidas'>('gratis');
   const [ubicacion, setUbicacion] = useState('Bogotá D.C.');
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'redirecting'>('idle');
 
+  // Asegurar que solo usamos Portal en el cliente
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 1. Efecto: Tecla Escape, Bloqueo de Scroll y Limpieza
+  useEffect(() => {
+    if (!isOpen) {
+      setFormStatus('idle'); // Reset por si vuelve de estado zombie
+      return;
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    
+    // Bloquear el scroll del body
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalStyle;
+    };
+  }, [isOpen, onClose]);
+
+  // 2. Manejador del reseteo Zombi (pageshow) - por si usa el botón Atrás
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setFormStatus('idle');
+        onClose();
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [onClose]);
+
   const digitsLength = telefono.replace(/\D/g, '').length;
   const isPhoneValid = digitsLength >= 10;
   const showPhoneWarning = digitsLength > 0 && digitsLength < 10;
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const executeRedirect = (url: string) => {
     setFormStatus('redirecting');
@@ -39,7 +83,12 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
     // Abordaje Axiomático: Navegación directa en la misma pestaña para evadir Popup Blockers y forzar Deep Linking en móviles
     window.location.href = url;
     
-    setTimeout(onClose, 800);
+    // Limpieza resiliente
+    setTimeout(() => {
+      if (formStatus !== 'idle') {
+        onClose();
+      }
+    }, 800);
   };
 
   const handleWhatsApp = async () => {
@@ -48,7 +97,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
     setFormStatus('submitting');
     
     const tipoProyectoTexto = tipo === 'gratis' ? 'Asesoría Base' : tipo === '3d' ? 'Asesoría 3D' : 'Cotización con medidas';
-    const fallbackUrl = `https://wa.me/573025922101?text=${encodeURIComponent(`Hola, me interesa la ${tipoProyectoTexto}. Mi proyecto es en ${ubicacion}.`)}`;
+    const fallbackUrl = `https://api.whatsapp.com/send/?phone=573025922101&text=${encodeURIComponent(`Hola, me interesa la ${tipoProyectoTexto}. Mi proyecto es en ${ubicacion}.`)}`;
 
     try {
       const gclid = typeof window !== 'undefined' ? sessionStorage.getItem('veta_gclid') || undefined : undefined;
@@ -92,10 +141,16 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/80 backdrop-blur-md">
-      <div className="flex min-h-full justify-center p-4 sm:p-6 text-center">
-        <div className="relative my-auto bg-bg-paper w-full max-w-lg rounded-sm shadow-[0_0_40px_rgba(0,0,0,0.5)] flex flex-col text-left sm:my-8 animate-in fade-in zoom-in-95 duration-200 border border-border-subtle/50">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[100] overflow-y-auto bg-black/80 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+        <div 
+          className="relative bg-bg-paper w-full max-w-lg max-h-[calc(100vh-2rem)] rounded-sm shadow-[0_0_40px_rgba(0,0,0,0.5)] flex flex-col text-left sm:my-8 border border-border-subtle/50 animate-slide-in"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Header */}
         <div className="flex-none flex items-center justify-between p-6 border-b border-border-subtle bg-bg-paper rounded-t-sm">
           <div>
@@ -178,7 +233,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
               className={`w-full p-2.5 text-sm border rounded-sm bg-bg-alt text-text-primary focus:outline-none focus:ring-1 transition-colors ${showPhoneWarning ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-border-strong/40 focus:border-gold-500 focus:ring-gold-500/20'} placeholder:text-text-muted`}
             />
             {showPhoneWarning && (
-              <p className="text-red-500 text-xs mt-1.5 font-light animate-in fade-in slide-in-from-top-1">
+              <p className="text-red-500 text-xs mt-1.5 font-light animate-slide-in">
                 Ingresa al menos 10 dígitos.
               </p>
             )}
@@ -201,7 +256,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
                     ? 'bg-charcoal-950 text-gold-500 hover:text-gold-400 hover:bg-charcoal-900 shadow-md' 
                     : formStatus !== 'idle'
                     ? 'bg-charcoal-900 text-gold-500/70 cursor-wait shadow-inner'
-                    : 'bg-bg-alt text-text-muted/50 border border-border-subtle cursor-not-allowed'
+                    : 'bg-bg-paper text-gold-500/50 border border-gold-500/20 shadow-none cursor-not-allowed'
                 }`}
               >
                 {formStatus === 'submitting' ? (
@@ -223,5 +278,6 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
     </div>
     </div>
   );
-}
 
+  return createPortal(modalContent, document.body);
+}
