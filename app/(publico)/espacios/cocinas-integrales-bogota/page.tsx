@@ -27,7 +27,7 @@ const CONFIG: EspacioLandingConfig = {
       titulo: 'Funciones y Herrajes',
       cuerpo:
         'La calidad se siente al tacto. Integramos Herrajes Europeos (Blum, Hettich o Ducasse) con cierre lento, brazos neumáticos y rieles de carga pesada. Además, diseñamos la perfilería oculta con iluminación LED y sensores de movimiento integrados.',
-      imageSrc: '/images/home/herrajes.jpg',
+      imageSrc: '/images/home/IMG_20260418_142949279_HDR_AE.jpg',
     },
     {
       titulo: 'Mesones',

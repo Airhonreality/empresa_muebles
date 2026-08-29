@@ -17,20 +17,23 @@ function etiquetaCategoria(categoria: string): string {
   return labelTipoEspacio(categoria) ?? categoria.replace(/_/g, ' ')
 }
 
-function FilaPortafolioAdmin({
+function generarIdHumano(nombre: string, idOriginal: string) {
+  // Ej: Ciro -> CIR, UUID f47a... -> F47A = CIR-F47A
+  const prefijo = nombre.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase()
+  const sufijo = idOriginal.substring(0, 4).toUpperCase()
+  return `${prefijo}-${sufijo}`
+}
+
+function TarjetaEspacioAdmin({
   entrada,
-  nombreProyecto,
   onTogglePublicar,
   onToggleDestacado,
   onChangeOrden,
-  onEditarContenido,
 }: {
   entrada: Portafolio
-  nombreProyecto: string
   onTogglePublicar: () => void
   onToggleDestacado: () => void
   onChangeOrden: (nuevoOrden: number) => void
-  onEditarContenido: () => void
 }) {
   const [ordenInput, setOrdenInput] = useState(String(entrada.orden))
   const imagenUrl = entrada.imagenPortafolioUrl || entrada.galeriaPortafolioUrl[0]
@@ -45,52 +48,46 @@ function FilaPortafolioAdmin({
   }
 
   return (
-    <tr className="border-b border-border-subtle">
-      <td className="py-3 pr-4">
-        <div className="h-14 w-20 overflow-hidden rounded-sm bg-bg-paper">
-          {imagenUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imagenUrl} alt={entrada.titulo} className="h-full w-full object-cover" loading="lazy" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-text-muted">Sin foto</div>
-          )}
+    <div className="flex flex-col overflow-hidden rounded-md border border-border-subtle bg-bg-paper shadow-sm transition-shadow hover:shadow-md">
+      <div className="relative h-40 w-full bg-bg-alt">
+        {imagenUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imagenUrl} alt={entrada.titulo} className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-xs text-text-muted">Sin foto</div>
+        )}
+        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+          <Badge tone={entrada.publicado ? 'info' : 'neutral'}>{entrada.publicado ? 'Publicado' : 'Borrador'}</Badge>
+          {entrada.destacado && <Badge tone="warning">Destacado</Badge>}
         </div>
-      </td>
-      <td className="py-3 pr-4">
-        <p className="font-medium text-text-primary">{entrada.titulo}</p>
-        <p className="text-xs text-text-muted">{nombreProyecto}</p>
-      </td>
-      <td className="py-3 pr-4 text-sm text-text-muted">{etiquetaCategoria(entrada.categoriaEspacio)}</td>
-      <td className="py-3 pr-4">
-        <Badge tone={entrada.publicado ? 'info' : 'neutral'}>{entrada.publicado ? 'Publicado' : 'Sin publicar'}</Badge>
-      </td>
-      <td className="py-3 pr-4">
-        {entrada.destacado && <Badge tone="warning">Destacado</Badge>}
-      </td>
-      <td className="py-3 pr-4">
-        <input
-          type="number"
-          value={ordenInput}
-          onChange={(e) => setOrdenInput(e.target.value)}
-          onBlur={commitOrden}
-          className="w-16 rounded-sm border border-border-default bg-bg-raised px-2 py-1 text-sm"
-          aria-label={`Orden de ${entrada.titulo}`}
-        />
-      </td>
-      <td className="py-3 pr-4">
-        <div className="flex flex-wrap gap-2">
-          <Button variant="primary" size="md" onClick={onEditarContenido}>
-            Editar contenido
-          </Button>
-          <Button variant="secondary" size="md" onClick={onTogglePublicar}>
-            {entrada.publicado ? 'Despublicar' : 'Publicar'}
-          </Button>
-          <Button variant="ghost" size="md" onClick={onToggleDestacado}>
-            {entrada.destacado ? 'Quitar destacado' : 'Destacar'}
-          </Button>
+      </div>
+      <div className="flex flex-1 flex-col p-3">
+        <p className="font-semibold text-text-primary text-sm line-clamp-1 mb-0.5" title={entrada.titulo}>{entrada.titulo}</p>
+        <p className="text-xs text-brand font-medium mb-3">{etiquetaCategoria(entrada.categoriaEspacio)}</p>
+        
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-subtle pt-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">Ord:</span>
+            <input
+              type="number"
+              value={ordenInput}
+              onChange={(e) => setOrdenInput(e.target.value)}
+              onBlur={commitOrden}
+              className="w-12 rounded-sm border border-border-default bg-bg-raised px-1 py-1 text-xs text-center outline-none focus:border-brand"
+              aria-label={`Orden de ${entrada.titulo}`}
+            />
+          </div>
+          <div className="flex gap-1.5">
+            <Button variant="ghost" size="md" onClick={onToggleDestacado} title={entrada.destacado ? 'Quitar destacado' : 'Destacar'}>
+              ⭐
+            </Button>
+            <Button variant={entrada.publicado ? "secondary" : "primary"} size="md" onClick={onTogglePublicar}>
+              {entrada.publicado ? 'Ocultar' : 'Publicar'}
+            </Button>
+          </div>
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   )
 }
 
@@ -136,14 +133,31 @@ export default function PortafolioAdminPage() {
       .sort((a, b) => (a.destacado === b.destacado ? a.orden - b.orden : a.destacado ? -1 : 1))
   }, [entradasBuscadas, filtroCategoria, filtroPublicado])
 
+  // F-03 (2026-08-28): Agrupar entradas por proyecto para la vista de Árbol
+  const proyectosConPortafolio = useMemo(() => {
+    const mapa = new Map<string, { proyectoNombre: string; proyectoIdHumano: string; espacios: Portafolio[] }>()
+    
+    entradasFiltradas.forEach((entrada) => {
+      const pId = entrada.proyectoId
+      if (!mapa.has(pId)) {
+        const nombre = proyectoNombreMap.get(pId) ?? 'Proyecto Desconocido'
+        const idHumano = generarIdHumano(nombre, pId)
+        mapa.set(pId, { proyectoNombre: nombre, proyectoIdHumano: idHumano, espacios: [] })
+      }
+      mapa.get(pId)!.espacios.push(entrada)
+    })
+
+    // Convertir a array y ordenar alfabéticamente por nombre de proyecto
+    return Array.from(mapa.entries()).sort((a, b) => a[1].proyectoNombre.localeCompare(b[1].proyectoNombre))
+  }, [entradasFiltradas, proyectoNombreMap])
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-semibold text-text-heading">Gestión de portafolio</h1>
           <p className="text-sm text-text-muted mt-1">
-            Publicar, destacar y ordenar los proyectos que aparecen en el portafolio público. Para editar título, fotos
-            o descripción, usá &quot;Editar contenido&quot; (te lleva al proyecto en el ERP).
+            Administra la visibilidad de los espacios de cada proyecto. Para editar las fotos de un espacio, entra a su Mesa de Trabajo.
           </p>
           <div className="mt-3 rounded-sm border border-brand-primary/30 bg-brand-primary/5 px-4 py-3 text-sm">
             <span className="font-semibold text-brand-primary">💡 Regla de Nomenclatura Pública (High-Ticket):</span>
@@ -166,7 +180,7 @@ export default function PortafolioAdminPage() {
         </div>
       </header>
 
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mb-6 flex flex-wrap gap-3">
         <Busqueda
           valor={busqueda}
           onChange={setBusqueda}
@@ -177,7 +191,7 @@ export default function PortafolioAdminPage() {
         <select
           value={filtroCategoria}
           onChange={(e) => setFiltroCategoria(e.target.value)}
-          className="rounded-sm border border-border-default bg-bg-raised px-3 py-2 text-sm"
+          className="rounded-sm border border-border-default bg-bg-raised px-3 py-2 text-sm outline-none focus:border-brand"
           aria-label="Filtrar por categoría"
         >
           <option value="">Todas las categorías</option>
@@ -190,7 +204,7 @@ export default function PortafolioAdminPage() {
         <select
           value={filtroPublicado}
           onChange={(e) => setFiltroPublicado(e.target.value as '' | 'publicado' | 'sin_publicar')}
-          className="rounded-sm border border-border-default bg-bg-raised px-3 py-2 text-sm"
+          className="rounded-sm border border-border-default bg-bg-raised px-3 py-2 text-sm outline-none focus:border-brand"
           aria-label="Filtrar por estado de publicación"
         >
           <option value="">Publicados y sin publicar</option>
@@ -201,46 +215,51 @@ export default function PortafolioAdminPage() {
 
       {entradasFiltradas.length === 0 ? (
         <div className="rounded-sm border border-border-subtle bg-bg-raised py-16 text-center text-text-muted">
-          No hay entradas de portafolio con estos filtros.
+          No hay espacios de portafolio que coincidan con estos filtros.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-sm border border-border-subtle">
-          <table className="w-full text-left">
-            <thead className="bg-bg-paper text-xs uppercase tracking-wide text-text-muted">
-              <tr>
-                <th className="py-2 pl-4 pr-4 font-medium">Foto</th>
-                <th className="py-2 pr-4 font-medium">Proyecto</th>
-                <th className="py-2 pr-4 font-medium">Categoría</th>
-                <th className="py-2 pr-4 font-medium">Estado</th>
-                <th className="py-2 pr-4 font-medium">Destacado</th>
-                <th className="py-2 pr-4 font-medium">Orden</th>
-                <th className="py-2 pr-4 font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="px-4">
-              {entradasFiltradas.map((entrada) => (
-                <FilaPortafolioAdmin
-                  key={entrada.id}
-                  entrada={entrada}
-                  nombreProyecto={proyectoNombreMap.get(entrada.proyectoId) ?? 'Proyecto no encontrado'}
-                  onTogglePublicar={() => {
-                    if (entrada.publicado) {
-                      void store.portafolio.despublicar(entrada.id)
-                    } else {
-                      void store.portafolio.publicar(entrada.id)
-                    }
-                  }}
-                  onToggleDestacado={() => {
-                    void store.portafolio.actualizar(entrada.id, { destacado: !entrada.destacado })
-                  }}
-                  onChangeOrden={(nuevoOrden) => {
-                    void store.portafolio.actualizar(entrada.id, { orden: nuevoOrden })
-                  }}
-                  onEditarContenido={() => router.push(`/erp/proyectos/${entrada.proyectoId}/portafolio`)}
-                />
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-6">
+          {proyectosConPortafolio.map(([pId, datos]) => (
+            <section key={pId} className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden shadow-sm">
+              <header className="flex items-center justify-between border-b border-border-subtle bg-bg-alt px-5 py-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="font-display text-xl font-semibold text-text-heading">{datos.proyectoNombre}</h2>
+                    <span className="rounded-md bg-brand/10 px-2.5 py-1 font-mono text-xs font-bold tracking-wider text-brand">
+                      {datos.proyectoIdHumano}
+                    </span>
+                  </div>
+                  <p className="text-sm text-text-muted mt-1">{datos.espacios.length} espacio(s) en portafolio</p>
+                </div>
+                <Button variant="secondary" size="md" onClick={() => router.push(`/erp/proyectos/${pId}/portafolio`)}>
+                  Gestionar Fotos en Mesa de Trabajo
+                </Button>
+              </header>
+              <div className="p-5">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {datos.espacios.map((entrada) => (
+                    <TarjetaEspacioAdmin
+                      key={entrada.id}
+                      entrada={entrada}
+                      onTogglePublicar={() => {
+                        if (entrada.publicado) {
+                          void store.portafolio.despublicar(entrada.id)
+                        } else {
+                          void store.portafolio.publicar(entrada.id)
+                        }
+                      }}
+                      onToggleDestacado={() => {
+                        void store.portafolio.actualizar(entrada.id, { destacado: !entrada.destacado })
+                      }}
+                      onChangeOrden={(nuevoOrden) => {
+                        void store.portafolio.actualizar(entrada.id, { orden: nuevoOrden })
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </div>

@@ -67,11 +67,22 @@ export async function obtenerGaleriaEspacioAction(tipoEspacio: string): Promise<
         eq(s.portafolio.publicado, true),
         or(eq(s.espacioVariantes.tipoEspacio, tipoEspacio), eq(s.portafolio.categoriaEspacio, tipoEspacio)),
       ))
+    // Agrupamos las fotos por proyecto para intercalarlas (round-robin) después,
+    // garantizando que al menos una foto de cada proyecto asociado aparezca en la muestra.
+    const fotosPorProyecto: FotoGaleriaEspacio[][] = []
     for (const row of proyectosPublicados) {
       const p = row.portafolio
       const galeria = ((p.galeriaPortafolioUrl as string[] | null) ?? [])
       const urls = galeria.length > 0 ? galeria : (p.imagenPortafolioUrl ? [p.imagenPortafolioUrl] : [])
-      urls.forEach((url) => fotos.push({ url, alt: p.titulo, esRender: false }))
+      if (urls.length > 0) fotosPorProyecto.push(urls.map((url) => ({ url, alt: p.titulo, esRender: false })))
+    }
+    // Intercalado round-robin: reparte una foto de cada proyecto por vuelta hasta agotarlas.
+    const colas = fotosPorProyecto.filter((g) => g.length > 0)
+    let vuelta = 0
+    while (colas.some((g) => g.length > 0)) {
+      const g = colas[vuelta % colas.length]
+      if (g.length > 0) fotos.push(g.shift()!)
+      vuelta++
     }
 
     const renders = await db.select().from(s.rendersConceptuales)
@@ -85,12 +96,20 @@ export async function obtenerGaleriaEspacioAction(tipoEspacio: string): Promise<
 
   const { getDataStore } = await import('@/lib/data/store')
   const store = getDataStore()
+  const fotosPorProyectoMock: FotoGaleriaEspacio[][] = []
   store.portafolio.publicados()
     .filter((p) => p.categoriaEspacio === tipoEspacio)
     .forEach((p) => {
       const urls = p.galeriaPortafolioUrl.length > 0 ? p.galeriaPortafolioUrl : (p.imagenPortafolioUrl ? [p.imagenPortafolioUrl] : [])
-      urls.forEach((url) => fotos.push({ url, alt: p.titulo, esRender: false }))
+      if (urls.length > 0) fotosPorProyectoMock.push(urls.map((url) => ({ url, alt: p.titulo, esRender: false })))
     })
+  const colasMock = fotosPorProyectoMock.filter((g) => g.length > 0)
+  let vueltaMock = 0
+  while (colasMock.some((g) => g.length > 0)) {
+    const g = colasMock[vueltaMock % colasMock.length]
+    if (g.length > 0) fotos.push(g.shift()!)
+    vueltaMock++
+  }
   store.renderesConceptuales.porTipoEspacio(tipoEspacio)
     .forEach((r) => fotos.push({ url: r.imagenUrl, alt: r.titulo ?? '', esRender: true }))
   return fotos

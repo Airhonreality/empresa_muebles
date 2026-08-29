@@ -204,7 +204,7 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
             
           {/* Track Horizontal Cinematico (Rompe el contenedor) */}
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 md:gap-8 px-6 xl:px-[calc((100vw-72rem)/2+1.5rem)] pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {displayGaleria.slice(0, 12).map((foto, i) => {
+            {displayGaleria.slice(0, 30).map((foto, i) => {
               // Ritmo asimétrico predecible basado en el índice para curaduría editorial
               let aspectClass = "aspect-[3/4] w-[75vw] md:w-[30vw]"; // Default Portrait
               if (i % 5 === 0) aspectClass = "aspect-[16/9] w-[85vw] md:w-[50vw]"; // Large Landscape
