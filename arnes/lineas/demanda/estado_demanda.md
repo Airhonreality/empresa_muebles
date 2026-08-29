@@ -4,6 +4,16 @@ Progreso de la línea de demanda (captación, conversión, marca). Ver `plan_dem
 
 ---
 
+## Relanzamiento 2026-08-29 — sitio V3 en producción + ciclo de Ads reanudado
+
+**El sitio V3 se lanzó a producción el 2026-08-28** (ver `arnes/estado.md`, entrada "CORTE DE PRODUCCIÓN DEL SITIO PÚBLICO"). Al día siguiente, **2026-08-29, se reanudó el ciclo de pago de Google Ads** ya corriendo sobre el sitio nuevo — no sobre Wix ni sobre una preview. Configuración reportada por el Supervisor: presupuesto **$1.122 COP/día**, CPA objetivo **$7.200 COP**, grupo de anuncios **Cocinas** activo, dirección directa a la landing de cocinas. Detalle completo, incluyendo lo pendiente de verificar, en `archivo/Ads_hisotrico_agosto_2026/RELANZAMIENTO_29_AGOSTO_2026.md`.
+
+**Regla dura para el próximo análisis de Ads:** cortar en 2026-08-29 — no mezclar la data histórica (27 marzo–21 agosto, ver `archivo/parametros_auditoria_ads_agosto_2026.md` y `REPORTE_EJECUCION_Y_OPTIMIZACION_21_AGOSTO_2026.md`) con el rendimiento posterior al relanzamiento, porque cambiaron a la vez el sitio de destino y los parámetros de puja.
+
+**Gap detectado el mismo día (auditoría SEO ad-hoc):** no existía mapa de redirecciones 301 del Wix legacy (3 años de trayectoria del dominio) hacia las rutas nuevas de V3. Con el ciclo de Ads reanudado el mismo día, se prioriza como urgente el redirect `/cocinas → /espacios/cocinas-integrales-bogota` (la ruta legacy devolvía 404 en producción antes del fix). El Supervisor confirma tener acceso al Wix antiguo para completar el resto del mapa — pendiente el listado completo de URLs legacy.
+
+---
+
 ## Línea de demanda: captación, conversión y sistema de marca (2026-08-03) — t-034, `esperando_humano`
 
 Se abrió la línea que atacaba la restricción #2 del negocio (demanda, ratio 4:1), documentada desde el mapeo y sin dueño: las 33 tareas del ledger eran todas técnicas. **Objetivo del Supervisor:** *más leads cualificados reales → más ventas → el departamento de diseño comercial visitando clientes en forma.*

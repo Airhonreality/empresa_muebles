@@ -22,6 +22,22 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Redirects 301 del sitio legacy en Wix (3 años de trayectoria del dominio, DNS repuntado a
+  // Vercel 2026-08-28) hacia las rutas nuevas de V3. Sin esto, backlinks/bookmarks/resultados de
+  // búsqueda viejos, y el tráfico pagado de Ads que apunte a la ruta legacy, aterrizan en un 404.
+  // /cocinas es urgente (2026-08-29): el grupo de anuncios "Cocinas" se reactivó hoy mismo con
+  // dirección directa a la web de cocinas (arnes/lineas/demanda/estado_demanda.md). El resto del
+  // mapa de URLs legacy queda pendiente hasta que el Supervisor confirme el listado completo del
+  // Wix antiguo.
+  async redirects() {
+    return [
+      {
+        source: '/cocinas',
+        destination: '/espacios/cocinas-integrales-bogota',
+        permanent: true,
+      },
+    ]
+  },
   // Headers de seguridad y caché (checklist SEO 2026-08-16, #13/#14). Auditoría 2026-08-19: la
   // app no usaba cámara/micrófono/geolocalización; nosniff + frame-deny + referrer estricto.
   async headers() {
