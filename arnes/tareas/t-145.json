@@ -1,0 +1,30 @@
+{
+  "id": "t-145",
+  "titulo": "Cruzar investigación de modelado 3D con agentes autónomos + auditar veta_designer para fijar requisitos del visor 3D de Veta Dorada (hoja de diseño prototipo 2)",
+  "intencion_negocio": "El prototipo 1 del visor 3D (skp -> glb -> galería -> visor -> screenshot, construido como skill separada en Agentic_Toolbox/sketchup_render_studio) ya cumple su función base y se da por cerrado. Antes de construir un prototipo 2 real para Veta Dorada, Javier pidió que la próxima sesión lea toda la documentación del proyecto ya existente 'veta_designer' (C:\\Users\\javir\\Documents\\DEVs\\modualdor_arbol_3d_veta_designer), analice su teleología base, y evalúe explícitamente si esa teleología cumple los 3 requisitos reales del visor: (1) ver el árbol 3D, (2) asociar/heredar etiquetas a grupos y objetos al estilo SketchUp, (3) focalizar un solo grupo/etiqueta en el visor para tomar screenshots de calidad con buena perspectiva del objeto o conjunto que el usuario necesita. Esa evaluación debe cruzarse contra el estado del arte ya investigado en Agentic_Toolbox (invs_Modelado_3D_Agentes_Autonomos.txt) para aportar visión, y desembocar en una hoja de diseño de alcance/requisitos de prototipo 2 firmada (aprobada explícitamente) por Javier.",
+  "zona": "arnes/lineas/",
+  "tipo": "mutacion_arnes",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "arnes/lineas/Ampliacion de features/3d viwer.md",
+    "arnes/lineas/Ampliacion de features/hoja_diseno_veta_designer_prototipo2.md"
+  ],
+  "criterios_aceptacion": [
+    "Se leyó de punta a punta la documentación real de C:\\Users\\javir\\Documents\\DEVs\\modualdor_arbol_3d_veta_designer (el documento resultante lista explícitamente qué archivos se leyeron, no un resumen genérico sin fuente)",
+    "Esa lectura se cruzó explícitamente contra C:\\Users\\javir\\Documents\\DEVs\\Agentic_Toolbox\\0_Archivo_Investigaciones\\invs_Modelado_3D_Agentes_Autonomos.txt, citando los hallazgos concretos de ese archivo que aplican a la decisión",
+    "El documento resultante evalúa uno por uno, sin saltarse ninguno, los 3 requisitos registrados: (1) ver el árbol 3D, (2) asociar/heredar etiquetas a grupos y objetos estilo SketchUp, (3) focalizar un solo grupo/etiqueta en el visor para screenshots de calidad con buena perspectiva",
+    "Javier aprobó explícitamente la hoja de diseño resultante (checkpoint.veredicto_humano = aprobado) antes de cerrar esta tarea -- sin esa aprobación la tarea no puede pasar a cerrada (tipo mutacion_arnes, checkpoint obligatorio)"
+  ],
+  "plan_ref": null,
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-08-30T00:00:00Z",
+  "cerrada_en": null
+}
