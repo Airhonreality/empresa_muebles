@@ -33,20 +33,32 @@
 
 ---
 
-## 🚀 INICIATIVA VIGENTE: SEO Imágenes + Spaces Conversion (2026-07-29)
+## 🚀 INICIATIVA VIGENTE: Espacios High-Design Conversion Funnels (2026-07-29)
 
 ### Estado Actual
-- **Fase**: Ejecución Agentica Paralela (Haiku x2)
+- **Fase**: Ejecución Creativa (Haiku) + Infraestructura (Opus)
 - **Coordinador**: Opus 4.5
-- **Plan**: `storage/progreso/lanes/LANE_seo-imagenes-spaces-conversion.md`
+- **Diseñador**: Haiku 4.5
+- **Planes**: 
+  - `LANE_spaces-static-content.md` - Arquitectura datos estáticos
+  - `LANE_spaces-high-design-funnels.md` - 6 diseños únicos
 
 ### Tareas Activas
-- ✅ SEO Audit + SeoImageUploader.tsx (Opus)
-- 🔄 LLM helper (Haiku-1) - seo-metadata-generator.ts
-- 🔄 UI Components (Haiku-2) - SpaceShowcasePage + páginas estáticas
+- ✅ SEO Audit + SeoImageUploader.tsx (completado)
+- ✅ LLM helper + UI Components (completado)
+- 🔄 **Haiku**: Diseña 6 embudos de conversión únicos
+  - CochinasPage ("Precisión del Lujo")
+  - ClosetsPage ("Orden que Transforma")
+  - CavasPage ("Preservar Experiencias")
+  - RecibidoresPage ("Primera Impresión Perfecta")
+  - EntretenimientoPage ("Centro de Conexión")
+  - EstudiosPage ("Productividad + Serenidad")
+- 🔄 **Opus**: Script de build + páginas SSG (próximo)
 
 ### Timeline
-~2 horas total | 1/3 completado | Validación Opus próxima
+Fase 1 (SEO): ✅ Completada  
+Fase 2 (High-Design): 🔄 En curso (Haiku ~3-4 horas)  
+Fase 3 (Build): ⏳ Próximo (Opus ~1-2 horas)
 
 ---
 

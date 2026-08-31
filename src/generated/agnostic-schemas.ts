@@ -188,6 +188,7 @@ export interface Contratos {
   email_asunto?: string  // Asunto del Correo
   email_cuerpo?: string  // Cuerpo del Correo
   descripcion_semantica?: string  // Descripcion Semantica
+  hitos_pago?: Record<string, unknown>  // Hitos de Pago Personalizados
 }
 
 export type ContratosRecord = AgnosticDataItem<Contratos>

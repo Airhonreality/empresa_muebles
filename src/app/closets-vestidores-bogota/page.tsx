@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { buildMetadata } from '@/lib/seo/metadata-helpers';
-import SpaceShowcasePage from '@/components/specialized/spaces/SpaceShowcasePage';
-import type { SeoImageData, TestimonialItem } from '@/types/space-showcase';
+import ClosetsPage from '@/components/specialized/spaces/ClosetsPage';
+import type { SeoImageData, TestimonialItem } from '@/components/specialized/spaces/types';
 
 export const dynamic = 'force-static';
 
@@ -99,12 +99,10 @@ const testimoniosDemo: TestimonialItem[] = [
   },
 ];
 
-export default function ClosetsPage() {
+export default function ClosetsPageRoute() {
   return (
-    <SpaceShowcasePage
-      categoryId="closets"
+    <ClosetsPage
       title="Closets que se adaptan a tu forma de vestir"
-      subtitle="Vestidores y closets a medida"
       description="Diseñamos closets y vestidores que organizan tu ropa y accesorios según tu ritmo. Cada proyecto es una conversación sobre cómo usas tu armario."
       descriptionExtended="Un buen closet no es solo bonito, es funcional. Diseñamos sistemas de organización que crecen con tus necesidades: barras para colgar, estantes para doblado, divisiones para accesorios. Cada detalle se piensa en 3D antes de fabricar. Luego nuestro equipo instala con cuidado, garantizando que cada componente encaje perfectamente en tu espacio."
       images={closetsImages}

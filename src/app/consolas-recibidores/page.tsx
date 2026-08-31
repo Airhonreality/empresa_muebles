@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { buildMetadata } from '@/lib/seo/metadata-helpers';
-import SpaceShowcasePage from '@/components/specialized/spaces/SpaceShowcasePage';
-import type { SeoImageData, TestimonialItem } from '@/types/space-showcase';
+import RecibidoresPage from '@/components/specialized/spaces/RecibidoresPage';
+import type { SeoImageData, TestimonialItem } from '@/components/specialized/spaces/types';
 
 export const dynamic = 'force-static';
 
@@ -100,12 +100,10 @@ const testimoniosDemo: TestimonialItem[] = [
   },
 ];
 
-export default function RecibitoresPage() {
+export default function RecibidoresPageRoute() {
   return (
-    <SpaceShowcasePage
-      categoryId="recibidores"
+    <RecibidoresPage
       title="Consolas que cuentan historias desde la entrada"
-      subtitle="Consolas y recibidores a medida"
       description="Diseñamos muebles de recibidor que hacen una primera impresión memorable. Funcionales, bellos, y perfectamente adaptados a tu espacio de entrada."
       descriptionExtended="El recibidor es lo primero que ve quien entra a tu casa. Merece un mueble que hable de tu gusto y que resuelva de forma elegante donde ponen las llaves, los sombreros, los zapatos mojados. Nuestros diseños de consolas y muebles de entrada combinan almacenamiento inteligente con acabados que enmarcan perfectamente tus espacios."
       images={recibitoresImages}

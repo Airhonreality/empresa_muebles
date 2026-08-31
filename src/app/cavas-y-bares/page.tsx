@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { buildMetadata } from '@/lib/seo/metadata-helpers';
-import SpaceShowcasePage from '@/components/specialized/spaces/SpaceShowcasePage';
-import type { SeoImageData, TestimonialItem } from '@/types/space-showcase';
+import CavasPage from '@/components/specialized/spaces/CavasPage';
+import type { SeoImageData, TestimonialItem } from '@/components/specialized/spaces/types';
 
 export const dynamic = 'force-static';
 
@@ -99,12 +99,10 @@ const testimoniosDemo: TestimonialItem[] = [
   },
 ];
 
-export default function CavasPage() {
+export default function CavasPageRoute() {
   return (
-    <SpaceShowcasePage
-      categoryId="cavas"
+    <CavasPage
       title="Cavas y bares que crean momentos"
-      subtitle="Cavas y bares a medida"
       description="Diseñamos cavas y bares que integran almacenamiento, exhibición y una experiencia social dentro de tu casa o proyecto comercial."
       descriptionExtended="Un buen mueble bar va más allá de guardar botellas: es una invitación a compartir. Cada cava o bar que diseñamos piensa en cómo quieres que se sienta ese espacio, qué colección quieres exhibir y cómo el mueble se integra con el resto del ambiente. Nuestro equipo fabrica con acabados que mejoran con el tiempo."
       images={cavasImages}

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { buildMetadata } from '@/lib/seo/metadata-helpers';
-import SpaceShowcasePage from '@/components/specialized/spaces/SpaceShowcasePage';
-import type { SeoImageData, TestimonialItem } from '@/types/space-showcase';
+import CochinasPage from '@/components/specialized/spaces/CochinasPage';
+import type { SeoImageData, TestimonialItem } from '@/components/specialized/spaces/types';
 
 export const dynamic = 'force-static';
 
@@ -108,12 +108,10 @@ const testimoniosDemo: TestimonialItem[] = [
   },
 ];
 
-export default function CocinasPage() {
+export default function CocinasPageRoute() {
   return (
-    <SpaceShowcasePage
-      categoryId="cocinas"
+    <CochinasPage
       title="Cocinas que organizan tu forma de vivir"
-      subtitle="Cocinas a medida"
       description="Diseñamos cocinas integrales a medida para aprovechar cada centímetro, ordenar el trabajo diario y lograr un espacio coherente con tu casa."
       descriptionExtended="Diseñamos, fabricamos e instalamos cocinas integrales pensadas para tu ritmo y tu espacio. Cada proyecto comienza con una conversación profunda sobre cómo usas tu cocina, qué colores y materiales te hablan, y cómo queremos que se sienta el espacio. Luego nuestro equipo prepara visualizaciones 3D precisas para que decidas con confianza, y finalmente fabricamos con precisión de fábrica e instalamos con cuidado en tu hogar."
       images={cocinasImages}
