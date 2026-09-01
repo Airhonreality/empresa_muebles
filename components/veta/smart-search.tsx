@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type KeyboardEvent } from "react";
+import { useState, useEffect, useRef, useCallback, type KeyboardEvent } from "react";
 import { InputField } from "./input-field";
 import { useSmartSearch } from "@/lib/hooks/useSmartSearch";
 
@@ -40,19 +40,21 @@ export function SmartSearch({
   onCreateNew,
   contexto,
 }: SmartSearchProps) {
-  const [query, setQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const getCampos = (item: SmartSearchItem) => [
-    item.descripcion,
-    item.sku,
-    item.categoriaComercial ?? "",
-    item.tipo ?? "",
-  ];
+  const getCampos = useCallback(
+    (item: SmartSearchItem) => [
+      item.descripcion,
+      item.sku,
+      item.categoriaComercial ?? "",
+      item.tipo ?? "",
+    ],
+    []
+  );
 
-  const { resultado: filtered, usoFrecuente, registrarUso } = useSmartSearch({
+  const { query, setQuery, resultado: filtered, usoFrecuente, registrarUso } = useSmartSearch({
     items,
     getCampos,
     contexto,
@@ -60,8 +62,12 @@ export function SmartSearch({
     limite: 10,
   });
 
-  // Query vacía + contexto: sugerencias de uso frecuente (A.5). Con query: resultados.
-  const itemsSugeridos = query.trim() ? filtered : contexto ? usoFrecuente : [];
+  // Query vacía + contexto: sugerencias de uso frecuente (A.5). Con query o sin contexto: resultados filtrados/predeterminados.
+  const itemsSugeridos = query.trim()
+    ? filtered
+    : (contexto && usoFrecuente.length > 0)
+    ? usoFrecuente
+    : filtered;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -124,7 +130,7 @@ export function SmartSearch({
           className="absolute z-50 mt-1 w-full rounded-md border border-border-subtle bg-bg-raised shadow-lg max-h-60 overflow-y-auto"
           role="listbox"
         >
-          {!query.trim() && itemsSugeridos.length > 0 && (
+          {!query.trim() && contexto && usoFrecuente.length > 0 && (
             <li
               role="presentation"
               className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted"

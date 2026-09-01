@@ -1110,6 +1110,7 @@ function VarianteContenido({
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
+              contexto="cotizador-items"
             />
             {creandoItem && <p className="mt-1 text-xs text-text-muted">Agregando ítem...</p>}
             <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2" disabled={creandoItem}>
@@ -1221,6 +1222,7 @@ function VarianteContenido({
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
+              contexto="cotizador-items"
             />
             {creandoItemReferencial && <p className="mt-1 text-xs text-text-muted">Agregando ítem...</p>}
             <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2" disabled={creandoItemReferencial}>
