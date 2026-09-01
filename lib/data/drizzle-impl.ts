@@ -27,6 +27,7 @@ import * as f7 from './actions/f7-tienda'
 import * as pf from './actions/portafolio'
 import * as renders from './actions/renders'
 import * as atributosTec from './actions/atributos-tecnicos'
+import * as catEsp from './actions/catalogo-espacios'
 
 export interface DrizzleStoreHandle {
   store: DataStore
@@ -964,6 +965,11 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         if (r) { data = { ...data, portafolio: upsert(data.portafolio, r) }; notify() }
         return r
       },
+      eliminar: async (id) => {
+        const ok = await pf.eliminarPortafolioAction(id)
+        if (ok) { data = { ...data, portafolio: data.portafolio.filter((p) => p.id !== id) }; notify() }
+        return ok
+      },
     },
     renderesConceptuales: {
       listar: () => masRecientePrimero(data.rendersConceptuales),
@@ -1008,6 +1014,25 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       eliminar: async (id) => {
         const ok = await atributosTec.eliminarAtributoTecnicoAction(id)
         if (ok) { data = { ...data, atributosTecnicos: data.atributosTecnicos.filter((a) => a.id !== id) }; notify() }
+        return ok
+      },
+    },
+    catalogosEspaciosArquitectonicos: {
+      listar: () => masRecientePrimero(data.catalogosEspaciosArquitectonicos),
+      crear: async (values) => {
+        const r = await catEsp.crearCatalogoEspacioAction(values)
+        data = { ...data, catalogosEspaciosArquitectonicos: upsert(data.catalogosEspaciosArquitectonicos, r) }
+        notify()
+        return r
+      },
+      actualizar: async (id, partial) => {
+        const r = await catEsp.actualizarCatalogoEspacioAction(id, partial)
+        if (r) { data = { ...data, catalogosEspaciosArquitectonicos: upsert(data.catalogosEspaciosArquitectonicos, r) }; notify() }
+        return r
+      },
+      eliminar: async (id) => {
+        const ok = await catEsp.eliminarCatalogoEspacioAction(id)
+        if (ok) { data = { ...data, catalogosEspaciosArquitectonicos: data.catalogosEspaciosArquitectonicos.filter((c) => c.id !== id) }; notify() }
         return ok
       },
     },

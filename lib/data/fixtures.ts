@@ -5,7 +5,7 @@ import type {
   OrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
   CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
-  Portafolio, ModuloArtefacto,
+  Portafolio, ModuloArtefacto, CatalogoEspacioArquitectonico,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto,
   BitacoraArticulo, Testimonio,
 } from './contracts'
@@ -410,6 +410,16 @@ export const CATALOGO_PRODUCTO_ACABADOS: CatalogoProductoAcabado[] = [
 export const ACABADOS_MUESTRAS: AcabadoMuestra[] = [
   { id: UUID('am01'), acabadoId: UUID('aca01'), imagenMuestraUrl: 'https://r2.mock/muestras/nogal-natural.jpg', disponibleWeb: true },
   { id: UUID('am02'), acabadoId: UUID('aca02'), imagenMuestraUrl: 'https://r2.mock/muestras/roble-blanqueado.jpg', disponibleWeb: true },
+]
+
+// --- t-147: Taxonomía orgánica de espacios (catalogo_espacios_arquitectonicos) ---
+// Independiente de las 7 landings: tipa y modula espacios (unidad base, rangos, módulos típicos).
+// Códigos con prefijo ESP-* (espacio de nombres distinto al de la landing: 'cocina', 'closet'...).
+// Semilla con los ejemplos del diseño (OLA_6_SCHEMAS_APROBADOS.md §5).
+export const CATALOGO_ESPACIOS_ARQUITECTONICOS: CatalogoEspacioArquitectonico[] = [
+  { id: UUID('espcat01'), codigo: 'ESP-001', nombre: 'Cocina integral', descripcion: 'Cocina lineal o en U con distribución estándar de gabinetes, encimera y electrodomésticos.', unidadBase: 'metro_lineal', rangoMinimo: '2.5', rangoMaximo: '4', ejemploTamanio: '2.5 m.l.', modulosTipicosJson: [{ nombre: 'gabinetes', componente_id: null }, { nombre: 'encimera', componente_id: null }, { nombre: 'electrodomésticos', componente_id: null }], createdAt: '2026-08-31T08:00:00Z' },
+  { id: UUID('espcat02'), codigo: 'ESP-002', nombre: 'Closet', descripcion: 'Vestidor o armario empotrado con distribución de colgadores, cajoneras y repisas.', unidadBase: 'metro_lineal', rangoMinimo: '1.5', rangoMaximo: '3', ejemploTamanio: '2.5 m.l. × 2.5 m²', modulosTipicosJson: [{ nombre: 'colgadores', componente_id: null }, { nombre: 'cajoneras', componente_id: null }], createdAt: '2026-08-31T08:00:00Z' },
+  { id: UUID('espcat03'), codigo: 'ESP-003', nombre: 'Forma especial', descripcion: 'Cava hexagonal, mesa redonda u otras geometrías no estándar que escapan a la métrica lineal.', unidadBase: 'metro_cuadrado', rangoMinimo: '1', rangoMaximo: '10', ejemploTamanio: 'Cava hexagonal, mesa round', modulosTipicosJson: null, createdAt: '2026-08-31T08:00:00Z' },
 ]
 
 // --- F-03: Portafolio de proyectos (REGISTRO §10) ---

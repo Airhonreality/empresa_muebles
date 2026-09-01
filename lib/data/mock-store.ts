@@ -8,7 +8,7 @@ import type {
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
-  BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico,
+  BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
@@ -29,7 +29,7 @@ import {
   CASOS_GARANTIA, CITAS_GARANTIA, CUENTAS_FINANCIERAS, MOVIMIENTOS_FINANCIEROS, OBLIGACIONES_PENDIENTES,
   PROVEEDORES, ORDENES_COMPRA, REGISTROS_GATE_CAJA, CUENTAS_COBRO_PROVEEDOR,
   CATEGORIAS, PRODUCTOS_TIENDA, PRODUCTOS_TIENDA_COMPONENTES, CATALOGO_ACABADOS, CATALOGO_PRODUCTO_ACABADOS, ACABADOS_MUESTRAS,
-  PORTAFOLIO, MODULOS_ARTEFACTOS,
+  PORTAFOLIO, MODULOS_ARTEFACTOS, CATALOGO_ESPACIOS_ARQUITECTONICOS,
   ITEMS_ORDEN_COMPRA, RECEPCIONES_MATERIAL, HERRAMIENTAS, DOCUMENTOS_PROYECTO,
   BITACORA_ARTICULOS,
 } from './fixtures'
@@ -99,6 +99,9 @@ export function createMockStore(): DataStore {
   const catalogoAcabados: CatalogoAcabado[] = deepClone(CATALOGO_ACABADOS)
   const catalogoProductoAcabados: CatalogoProductoAcabado[] = deepClone(CATALOGO_PRODUCTO_ACABADOS)
   const acabadosMuestras: AcabadoMuestra[] = deepClone(ACABADOS_MUESTRAS)
+
+  // t-147: taxonomía orgánica de espacios (independiente de las landings)
+  const catalogoEspaciosArquitectonicos: CatalogoEspacioArquitectonico[] = deepClone(CATALOGO_ESPACIOS_ARQUITECTONICOS)
 
   // F-03 dominio (portafolio de proyectos)
   const portafolio: Portafolio[] = deepClone(PORTAFOLIO)
@@ -2308,6 +2311,44 @@ export function createMockStore(): DataStore {
       },
     },
 
+    // --- t-147: Taxonomía orgánica de espacios (independiente de las landings) ---
+    catalogosEspaciosArquitectonicos: {
+      listar(): CatalogoEspacioArquitectonico[] {
+        return catalogoEspaciosArquitectonicos
+      },
+      async crear(data: Partial<CatalogoEspacioArquitectonico> & { codigo: string; nombre: string }): Promise<CatalogoEspacioArquitectonico> {
+        const nuevo: CatalogoEspacioArquitectonico = {
+          id: generateId('espcat'),
+          codigo: data.codigo,
+          nombre: data.nombre,
+          descripcion: data.descripcion ?? null,
+          unidadBase: data.unidadBase ?? null,
+          rangoMinimo: data.rangoMinimo ?? null,
+          rangoMaximo: data.rangoMaximo ?? null,
+          ejemploTamanio: data.ejemploTamanio ?? null,
+          modulosTipicosJson: data.modulosTipicosJson ?? null,
+          createdAt: new Date().toISOString(),
+        }
+        catalogoEspaciosArquitectonicos.push(nuevo)
+        notify()
+        return nuevo
+      },
+      async actualizar(id: string, partial: Partial<Pick<CatalogoEspacioArquitectonico, 'codigo' | 'nombre' | 'descripcion' | 'unidadBase' | 'rangoMinimo' | 'rangoMaximo' | 'ejemploTamanio' | 'modulosTipicosJson'>>): Promise<CatalogoEspacioArquitectonico | null> {
+        const idx = catalogoEspaciosArquitectonicos.findIndex(c => c.id === id)
+        if (idx === -1) return null
+        catalogoEspaciosArquitectonicos[idx] = { ...catalogoEspaciosArquitectonicos[idx], ...partial }
+        notify()
+        return catalogoEspaciosArquitectonicos[idx]
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const idx = catalogoEspaciosArquitectonicos.findIndex(c => c.id === id)
+        if (idx === -1) return false
+        catalogoEspaciosArquitectonicos.splice(idx, 1)
+        notify()
+        return true
+      },
+    },
+
     // --- F-03: Portafolio de proyectos ---
     portafolio: {
       listar(): Portafolio[] {
@@ -2323,7 +2364,7 @@ export function createMockStore(): DataStore {
       porSlug(slug: string): Portafolio | undefined {
         return portafolio.find(p => p.slug === slug)
       },
-      async crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string }): Promise<Portafolio> {
+      async crear(data: Partial<Portafolio> & { titulo: string; categoriaEspacio: string }): Promise<Portafolio> {
         const now = new Date().toISOString()
         const base = generarSlugPortafolioBase(data.categoriaEspacio, data.barrio ?? null)
         let slug = base
@@ -2331,7 +2372,7 @@ export function createMockStore(): DataStore {
         while (portafolio.some(p => p.slug === slug)) { slug = `${base}-${sufijo}`; sufijo++ }
          const nuevo: Portafolio = {
            id: generateId('port'),
-           proyectoId: data.proyectoId,
+           proyectoId: data.proyectoId ?? null,
            titulo: data.titulo,
            descripcionComercial: data.descripcionComercial ?? null,
            categoriaEspacio: data.categoriaEspacio,
@@ -2375,6 +2416,13 @@ export function createMockStore(): DataStore {
         portafolio[idx] = { ...portafolio[idx], publicado: false, updatedAt: new Date().toISOString() }
         notify()
         return portafolio[idx]
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const idx = portafolio.findIndex(p => p.id === id)
+        if (idx === -1) return false
+        portafolio.splice(idx, 1)
+        notify()
+        return true
       },
     },
 

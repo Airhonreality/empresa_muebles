@@ -27,7 +27,9 @@ export async function obtenerPortafolioPorSlugAction(slug: string): Promise<Port
 // URL pública de un proyecto real) — se genera siempre server-side desde categoriaEspacio +
 // barrio, y queda fijo después de crear (nunca lo toca actualizarPortafolioAction, para no
 // romper una URL ya compartida/indexada si alguien cambia el barrio más tarde).
-export async function crearPortafolioAction(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string }): Promise<Portafolio> {
+// t-146 (2026-08-31): proyectoId ahora es opcional — es NULL para entradas de portafolio libres
+// (independientes del proyecto pero relacionables).
+export async function crearPortafolioAction(data: Partial<Portafolio> & { titulo: string; categoriaEspacio: string }): Promise<Portafolio> {
   return db.transaction(async (tx) => {
     let orden = data.orden
     if (orden === undefined) {
@@ -72,6 +74,13 @@ export async function publicarPortafolioAction(id: string): Promise<Portafolio |
 export async function despublicarPortafolioAction(id: string): Promise<Portafolio | null> {
   const [actualizado] = await db.update(s.portafolio).set({ publicado: false, updatedAt: new Date().toISOString() }).where(eq(s.portafolio.id, id)).returning()
   return (actualizado as unknown as Portafolio) ?? null
+}
+
+// Elimina UNA entrada de portafolio. No toca el proyecto padre, los cotizados (espacioVariante)
+// ni los otros espacios del mismo proyecto — son independientes pero relacionables.
+export async function eliminarPortafolioAction(id: string): Promise<boolean> {
+  await db.delete(s.portafolio).where(eq(s.portafolio.id, id))
+  return true
 }
 
 export async function crearTestimonioAction(data: Partial<Testimonio> & { contenido: string }): Promise<Testimonio> {

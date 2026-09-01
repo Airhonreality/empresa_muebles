@@ -7,10 +7,29 @@ import { Button } from '@/components/veta/button'
 import { LinkButton } from '@/components/veta/button'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { useDataStore, type Portafolio } from '@/lib/data'
-import { TIPOS_ESPACIO, labelTipoEspacio } from '@/lib/catalogos/tipos-espacio'
+import { TIPOS_ESPACIO, labelTipoEspacio, nombreBaseTituloTipoEspacio } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { slugify } from '@/lib/utils/slug'
 
 const TIPOS_PROYECTO = ['Residencial', 'Comercial', 'Oficina', 'Hotel', 'Otro']
+
+// --- Helpers de nomenclatura (ley de nomenclatura pública High-Ticket):
+// título = `[Espacio] [Inicial]. — [Barrio]`. La inicial es la primera letra del apellido del
+// cliente (protege privacidad, ver arnes/nucleo/nomenclatura_proyectos.md).
+
+/** Extrae la inicial de un título ya formado ("Cocina G. — Rosales" -> "G."). */
+function inicialClienteDeTitulo(titulo: string | null | undefined): string | null {
+  if (!titulo) return null
+  const match = titulo.match(/([A-ZÁÉÍÓÚÑ][a-záéíóúñ]*)\.\s*[—–-]/)
+  return match ? `${match[1]}.` : null
+}
+
+/** Deriva una inicial desde un nombre/alias libre (p. ej. nombre del proyecto). */
+function inicialDelNombre(nombre: string | null | undefined): string {
+  if (!nombre) return ''
+  const match = nombre.match(/\b([A-ZÁÉÍÓÚÑ])\b/)
+  return match ? `${match[1]}.` : ''
+}
 
 interface FormularioEntradaPortafolioProps {
   proyectoId: string
@@ -23,10 +42,22 @@ interface FormularioEntradaPortafolioProps {
 
 function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrada, espaciosAgrupados, onGuardado, onCancelar }: FormularioEntradaPortafolioProps) {
   const store = useDataStore()
+
+  // --- Nomenclatura automática (ley de nomenclatura pública High-Ticket):
+  // `[Espacio] [Inicial]. — [Barrio]`, ej. "Cocina G. — Rosales". El título se compone en vivo
+  // desde categoría + inicial del cliente + barrio, en vez de tipearlo a mano (2026-08-31).
+  // La inicial se extrae del título existente al editar (regex) o del nombre del proyecto.
+  const categoriaInicial = entrada?.categoriaEspacio ?? ''
+  const esCategoriaDelCatalogo = TIPOS_ESPACIO.some((t) => t.codigo === categoriaInicial)
   const [form, setForm] = useState({
-    titulo: entrada?.titulo ?? nombreProyectoDefault,
+    // titulo se calcula; se conserva solo para override manual (avanzado)
+    sobreescribirTitulo: false,
+    tituloManual: '',
     descripcionComercial: entrada?.descripcionComercial ?? '',
-    categoriaEspacio: entrada?.categoriaEspacio ?? '',
+    categoriaEspacio: categoriaInicial,
+    esEspacioCustom: Boolean(categoriaInicial && !esCategoriaDelCatalogo),
+    nombreEspacioCustom: (entrada && !esCategoriaDelCatalogo) ? (entrada.titulo.match(/^(.*?)\s+[A-ZÁÉÍÓÚÑ]\./)?.[1]?.trim() ?? null) : null,
+    inicialCliente: inicialClienteDeTitulo(entrada?.titulo) ?? inicialDelNombre(nombreProyectoDefault),
     espacioVarianteId: entrada?.espacioVarianteId ?? '',
     materialesDestacados: entrada?.materialesDestacados?.join(', ') ?? '',
     precioReferencial: entrada?.precioReferencial ?? '',
@@ -42,24 +73,48 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
   const [error, setError] = useState<string | null>(null)
   const { guard: guardGuardarPortafolio, isPending: guardandoPortafolio } = usePendingGuard()
 
+  const nombreBaseTitulo = form.esEspacioCustom
+    ? (form.nombreEspacioCustom ?? '')
+    : (nombreBaseTituloTipoEspacio(form.categoriaEspacio) ?? form.categoriaEspacio)
+
+  const tituloGenerado = `${nombreBaseTitulo} ${form.inicialCliente}. — ${form.barrio}`.trim()
+
   const handleChange = (field: string, value: string | boolean | number) => {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleSubmit = async () => {
-    if (!form.titulo || !form.categoriaEspacio) {
-      setError('Título y categoría de espacio son obligatorios.')
+    if (!form.categoriaEspacio) {
+      setError('La categoría de espacio es obligatoria.')
       return
     }
+    if (form.esEspacioCustom && !form.nombreEspacioCustom?.trim()) {
+      setError('Escribe el nombre de la categoría personalizada.')
+      return
+    }
+    if (!form.inicialCliente.trim()) {
+      setError('Escribe la inicial del cliente (ej. "G.") para componer el título.')
+      return
+    }
+    if (!form.barrio?.trim()) {
+      setError('Escribe el barrio (ubicación real) para componer el título.')
+      return
+    }
+    const tituloFinal = form.sobreescribirTitulo ? form.tituloManual.trim() : tituloGenerado
+    // Para categorías personalizadas, el código persistible es un slug del nombre base del título
+    // (p. ej. "Cocina Compacta" -> "cocina-compacta"), que además alimenta la URL pública.
+    const categoriaFinal = form.esEspacioCustom
+      ? slugify(form.nombreEspacioCustom ?? '') || slugify(form.categoriaEspacio) || 'espacio'
+      : form.categoriaEspacio
     setIsSaving(true)
     setError(null)
     try {
       const materiales = form.materialesDestacados.split(',').map((m) => m.trim()).filter((m) => m.length > 0)
       const data = {
         proyectoId,
-        titulo: form.titulo,
+        titulo: tituloFinal,
         descripcionComercial: form.descripcionComercial || null,
-        categoriaEspacio: form.categoriaEspacio,
+        categoriaEspacio: categoriaFinal,
         espacioVarianteId: form.espacioVarianteId || null,
         materialesDestacados: materiales,
         precioReferencial: form.precioReferencial || null,
@@ -97,16 +152,96 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
         <div className="p-4 rounded-sm border border-red-500 bg-red-500/10 text-red-600 text-sm">{error}</div>
       )}
 
-      <div>
-        <label className="block text-sm font-medium text-text-heading mb-2">Título *</label>
-        <input
-          type="text"
-          value={form.titulo}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('titulo', e.target.value)}
-          placeholder="Ej: Cocina integral en roble — Chicó"
-          required
-          className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-        />
+      {/* Título público — se genera automáticamente con la ley de nomenclatura High-Ticket:
+          `[Espacio] [Inicial]. — [Barrio]` (ej. "Cocina G. — Rosales"). Se compone en vivo desde
+          categoría + inicial del cliente + barrio; el override manual queda como opción avanzada. */}
+      <div className="rounded-md border border-brand/30 bg-brand/5 p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-medium text-text-heading">Título público (auto-generado) *</label>
+          <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.sobreescribirTitulo}
+              onChange={(e) => handleChange('sobreescribirTitulo', e.target.checked)}
+              className="h-4 w-4 rounded-sm border-border-subtle text-gold-600 focus:ring-gold-500"
+            />
+            Editar manualmente
+          </label>
+        </div>
+
+        {form.sobreescribirTitulo ? (
+          <input
+            type="text"
+            value={form.tituloManual}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('tituloManual', e.target.value)}
+            placeholder="Ej: Cocina G. — Rosales"
+            className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+          />
+        ) : (
+          <div className="rounded-sm border border-border-default bg-bg-paper px-4 py-3 text-lg font-display font-semibold text-text-heading">
+            {tituloGenerado || <span className="text-sm font-normal text-text-muted">Completa categoría, inicial y barrio para generar el título.</span>}
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="block text-xs font-medium text-text-muted mb-1">Categoría del espacio *</label>
+            <select
+              value={form.esEspacioCustom ? '__custom__' : form.categoriaEspacio}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                const val = e.target.value
+                if (val === '__custom__') {
+                  setForm((prev) => ({ ...prev, esEspacioCustom: true, categoriaEspacio: prev.categoriaEspacio || '__custom__' }))
+                } else {
+                  setForm((prev) => ({ ...prev, esEspacioCustom: false, categoriaEspacio: val }))
+                }
+              }}
+              className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+            >
+              <option value="">Seleccionar categoría</option>
+              {TIPOS_ESPACIO.map((t) => (
+                <option key={t.codigo} value={t.codigo}>{t.label}</option>
+              ))}
+              <option value="__custom__">+ Nueva categoría personalizada...</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-text-muted mb-1">Inicial del cliente *</label>
+            <input
+              type="text"
+              value={form.inicialCliente}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('inicialCliente', e.target.value)}
+              placeholder="Ej: G."
+              className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-text-muted mb-1">Barrio (ubicación real) *</label>
+            <input
+              type="text"
+              value={form.barrio}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('barrio', e.target.value)}
+              placeholder="Ej: Rosales"
+              className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+            />
+          </div>
+        </div>
+
+        {form.esEspacioCustom && (
+          <div>
+            <label className="block text-xs font-medium text-text-muted mb-1">Nombre de la categoría personalizada (para el título) *</label>
+            <input
+              type="text"
+              value={form.nombreEspacioCustom ?? ''}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('nombreEspacioCustom', e.target.value)}
+              placeholder="Ej: Cocina Compacta, Proyecto Integral, Tocador"
+              className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+            />
+            <p className="text-xs text-text-muted mt-1">
+              Esta categoría personalizada aún no tiene landing pública propia. Las landings se definen por separado cuando una categoría acumula suficientes recursos.
+            </p>
+          </div>
+        )}
       </div>
 
       <div>
@@ -122,34 +257,18 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
 
       {/* Jerarquía UX invertida (2026-08-28): El campo principal es la categoría del espacio.
           El vínculo a un espacio cotizado es secundario (útil para proyectos viejos). */}
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-text-heading mb-2">Categoría del espacio a publicar *</label>
-          <select
-            value={form.categoriaEspacio}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => handleChange('categoriaEspacio', e.target.value)}
-            required
-            className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-          >
-            <option value="">Seleccionar categoría</option>
-            {TIPOS_ESPACIO.map((t) => (
-              <option key={t.codigo} value={t.codigo}>{t.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-text-heading mb-2">Tipo de proyecto</label>
-          <select
-            value={form.tipoProyecto}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => handleChange('tipoProyecto', e.target.value)}
-            className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-          >
-            <option value="">Seleccionar tipo</option>
-            {TIPOS_PROYECTO.map((tipo) => (
-              <option key={tipo} value={tipo}>{tipo}</option>
-            ))}
-          </select>
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-text-heading mb-2">Tipo de proyecto</label>
+        <select
+          value={form.tipoProyecto}
+          onChange={(e: ChangeEvent<HTMLSelectElement>) => handleChange('tipoProyecto', e.target.value)}
+          className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+        >
+          <option value="">Seleccionar tipo</option>
+          {TIPOS_PROYECTO.map((tipo) => (
+            <option key={tipo} value={tipo}>{tipo}</option>
+          ))}
+        </select>
       </div>
 
       <div>
@@ -159,11 +278,19 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
           onChange={(e: ChangeEvent<HTMLSelectElement>) => {
             const espacioId = e.target.value
             const espacio = espaciosAgrupados.find((es) => es.id === espacioId)
-            setForm((prev) => ({
-              ...prev,
-              espacioVarianteId: espacioId,
-              categoriaEspacio: espacio?.tipoEspacio ?? prev.categoriaEspacio,
-            }))
+            setForm((prev) => {
+              const tipo = espacio?.tipoEspacio
+              const enCatalogo = tipo ? TIPOS_ESPACIO.some((t) => t.codigo === tipo) : false
+              return {
+                ...prev,
+                espacioVarianteId: espacioId,
+                // Al vincular un espacio cotizado que ya tiene tipo en el catálogo, se sugiere su
+                // categoría automáticamente (comportamiento previo). Si el tipo no está en el
+                // catálogo, se pasa a modo personalizado y se sugiere su nombre.
+                ...(tipo && enCatalogo ? { categoriaEspacio: tipo, esEspacioCustom: false } : {}),
+                ...(tipo && !enCatalogo ? { categoriaEspacio: tipo, esEspacioCustom: true, nombreEspacioCustom: tipo } : {}),
+              }
+            })
           }}
           className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
         >
@@ -177,17 +304,6 @@ function FormularioEntradaPortafolio({ proyectoId, nombreProyectoDefault, entrad
         {form.espacioVarianteId && (
           <p className="text-xs text-text-muted mt-1">Si seleccionas un espacio, se sugerirá su categoría automáticamente.</p>
         )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-text-heading mb-2">Barrio (ubicación real, no inventado — I-049)</label>
-        <input
-          type="text"
-          value={form.barrio}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('barrio', e.target.value)}
-          placeholder="Ej: Chicó, Chapinero, Rosales"
-          className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-        />
       </div>
 
       <div>
@@ -442,6 +558,24 @@ export default function ProyectoPortafolioPage() {
                     onClick={() => void (entrada.publicado ? store.portafolio.despublicar(entrada.id) : store.portafolio.publicar(entrada.id))}
                   >
                     {entrada.publicado ? 'Ocultar' : 'Publicar'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    className="shrink-0"
+                    aria-label={`Eliminar ${entrada.titulo}`}
+                    onClick={() => {
+                      const confirma = window.confirm(
+                        `¿Eliminar "${entrada.titulo}" del portafolio?\n\nEsta acción no se puede deshacer. No afecta al proyecto (${proyecto.nombreProyecto}) ni a sus otros espacios.`
+                      )
+                      if (confirma) {
+                        void store.portafolio.eliminar(entrada.id).then((ok) => {
+                          if (ok) router.refresh()
+                        })
+                      }
+                    }}
+                  >
+                    Eliminar
                   </Button>
                 </div>
               </div>

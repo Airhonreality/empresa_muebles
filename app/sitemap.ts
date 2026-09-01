@@ -23,10 +23,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     listarBitacoraAction(),
   ])
 
+  // Landing de espacios (SEO): cada una es un servicio indexable propio. Se listan todas las
+  // rutas /espacios/* existentes (mapeadas contra app/(publico)/espacios/ para no dejar ninguna
+  // fuera del rastreo).
+  const espaciosUrls: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/espacios`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${SITE_URL}/espacios/cocinas-integrales-bogota`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${SITE_URL}/espacios/closets-vestidores-bogota`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${SITE_URL}/espacios/centros-de-entretenimiento`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${SITE_URL}/espacios/estudios-home-office`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${SITE_URL}/espacios/cavas-y-bares`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${SITE_URL}/espacios/consolas-recibidores`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${SITE_URL}/espacios/pisos-de-madera`, changeFrequency: 'monthly', priority: 0.7 },
+  ]
+
   const estaticas: MetadataRoute.Sitemap = [
     { url: SITE_URL, changeFrequency: 'weekly', priority: 1 },
-    { url: `${SITE_URL}/espacios/cocinas-integrales-bogota`, changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${SITE_URL}/portafolio`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/portafolio`, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${SITE_URL}/colecciones`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/bitacora`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${SITE_URL}/como-trabajamos`, changeFrequency: 'monthly', priority: 0.8 },
@@ -55,5 +68,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }))
 
-  return [...estaticas, ...portafolioUrls, ...productosUrls, ...bitacoraUrls]
+  return [...espaciosUrls, ...estaticas, ...portafolioUrls, ...productosUrls, ...bitacoraUrls]
 }

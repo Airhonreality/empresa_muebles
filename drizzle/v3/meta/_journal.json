@@ -92,6 +92,13 @@
       "when": 1787340000000,
       "tag": "0012_atributos_tecnicos",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787350000000,
+      "tag": "0013_portafolio_nullable_y_catalogo_espacios",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,29 @@
+{
+  "id": "t-148",
+  "nombre": "F2: desacoplar tipoEspacio (categoría de landing vs tipo orgánico) + migración auditada",
+  "descripcion": "Fase 2 del plan maestro plan_separacion_tipo_espacio.md (pendiente de aprobación del Supervisor). Desacopla el uso sobrecargado de tipoEspacio: hoy UN mismo código hace de categoría de landing (7 landings, renders, atributos) y de tipo de espacio de negocio (espacio_variantes, cotizador, portafolio). Tras F0+F1, redefine la semántica para que espacioVariantes.tipoEspacio apunte al catálogo orgánico y portafolio.categoriaEspacio quede como categoría de landing, y ajusta el join público obtenerGaleriaEspacioAction. Sustituye el escape hatch 'categoría personalizada' por la taxonomía real. Incluye migración de datos auditada (prohibido migrar as-is).",
+  "objetivo": "Formalizar que la taxonomía orgánica crece con independencia de las landings: crear un tipo de espacio orgánico jamás genera landing, y un espacio tipado orgánicamente solo se muestra en una landing si su portafolio.categoriaEspacio coincide.",
+  "prioridad": "Media",
+  "estado": "Propuesta — dependiente de t-146/t-147, pendiente de aprobación del Supervisor (checkpoint obligatorio, cambia semántica de columna con datos)",
+  "tipo": "mutacion_schema",
+  "riesgo": "alto",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_separacion_tipo_espacio.md",
+  "criterios_de_aceptacion": [
+    "espacioVariantes.tipoEspacio tipa con el catálogo orgánico (catalogo_espacios_arquitectonicos), no con la categoría de landing",
+    "portafolio.categoriaEspacio queda como categoría de landing (clasificación de la galería pública)",
+    "obtenerGaleriaEspacioAction filtra por categoriaEspacio (landing) y deja de heredar el tipo orgánico — un espacio orgánico solo aparece en landing si coincide categoriaEspacio",
+    "Los <select> del cotizador (add-space + inline) y el formulario de portafolio separan el flujo: categoría de landing (TIPOS_ESPACIO) para clasificación pública, tipo orgánico para tipar el espacio; el escape custom se sustituye por la taxonomía real",
+    "renders_conceptuales y atributos_tecnicos siguen keying por la categoría de landing (sin cambio)",
+    "Migración de datos auditada contra auditoria_neon.md, sin migrar registros as-is",
+    "Las 6 landings + pisos-de-madera y la lista /portafolio siguen funcionando; un huérfano solo aparece en /portafolio, no en ninguna landing",
+    "npx tsc --noEmit = 0 errores",
+    "npx eslint . = 0 errores nuevos en archivos tocados"
+  ],
+  "relacionado": ["t-146", "t-147", "t-075", "plan_t-075.md", "plan_separacion_tipo_espacio.md", "auditoria_neon.md"],
+  "fecha_creacion": "2026-08-31"
+}

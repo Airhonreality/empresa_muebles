@@ -43,4 +43,5 @@ export type {
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, BitacoraCategoria, Testimonio, AtributoTecnico,
+  CatalogoEspacioArquitectonico,
 } from './contracts'

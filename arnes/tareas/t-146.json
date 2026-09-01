@@ -1,0 +1,29 @@
+{
+  "id": "t-146",
+  "nombre": "F0: flow de uso del portafolio (wizard crear entrada + proyecto_id nullable + entradas libres)",
+  "descripcion": "Fase 0 del plan maestro plan_separacion_tipo_espacio.md (pendiente de aprobación del Supervisor). Núcleo del pedido de Javier: implementar el flow de uso del portafolio como un wizard de pasos — (1) ¿Asociado a un proyecto? sí/no, (2) crear/tipar el espacio (categoría de landing + tipo orgánico), (3) añadir fotos (SEO auto), (4) publicar/despublicar/destacar/ordenar/eliminar. Requiere mutar portafolio.proyecto_id de NOT NULL a nullable para permitir entradas libres (independientes pero relacionables). Eliminar ya está implementado en ambas pantallas; se integra al flow.",
+  "objetivo": "Que el equipo comercial cree entradas de portafolio asociadas a un proyecto o libres, guiado por un flow por pasos, con la nomenclatura [Espacio] [Inicial]. — [Barrio] auto-generada y el SEO de fotos auto-registrado, y que publique/despublique/elimine sin fricción.",
+  "prioridad": "Alta",
+  "estado": "Propuesta — pendiente de aprobación del Supervisor (checkpoint obligatorio: mutación de cardinalidad)",
+  "tipo": "mutacion_schema + ui",
+  "riesgo": "alto",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_separacion_tipo_espacio.md",
+  "criterios_de_aceptacion": [
+    "portafolio.proyecto_id pasa a nullable (migración) — se puede crear una entrada sin proyecto",
+    "Wizard de 4 pasos: proyecto sí/no → espacio (categoría + título auto) → fotos (SEO auto) → publicar",
+    "Se puede crear entrada asociada a proyecto (proyectoId) y entrada libre sin proyecto",
+    "Ruta de entrada libre: /erp/portafolio/nuevo (o equivalente)",
+    "Set blu/desblu/destacar/ordenar/eliminar funcionan en ambas rutas (eliminar ya implementado, se integra)",
+    "SEO de fotos auto-registrado: alt desde título, JSON-LD CreativeWork/ImageObject, generateMetadata",
+    "npx tsc --noEmit = 0 errores",
+    "npx eslint . = 0 errores nuevos en archivos tocados",
+    "build OK (DATA_IMPL=mock)"
+  ],
+  "relacionado": ["t-147", "t-148", "t-135", "disenio_P27_gestion_portafolio.md", "disenio_F03_portafolio_proyectos.md", "plan_separacion_tipo_espacio.md"],
+  "fecha_creacion": "2026-08-31"
+}

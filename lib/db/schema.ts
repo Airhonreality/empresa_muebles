@@ -1420,11 +1420,32 @@ export const acabadosMuestras = pgTable("acabados_muestras", {
 	}
 });
 
+// t-147 (2026-08-31): taxonomía orgánica de espacios (catalogo_espacios_arquitectonicos).
+// Diseñada en OLA_6_SCHEMAS_APROBADOS.md §5 y plan_t-075.md, materializada ahora. Es independiente
+// de las 7 landings: sirve para TIPAR y MODULAR espacios (unidad base, rangos, módulos típicos),
+// y crear una categoría aquí JAMÁS genera una landing. código usa prefijo ESP-* (espacio de
+// nombres distinto al de los códigos de landing como 'cocina'/'closet').
+export const catalogoEspaciosArquitectonicos = pgTable("catalogo_espacios_arquitectonicos", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	codigo: text("codigo").notNull().unique(),
+	nombre: text("nombre").notNull(),
+	descripcion: text("descripcion"),
+	unidadBase: text("unidad_base").$type<"metro_lineal" | "metro_cuadrado" | "metro_cubico">(),
+	rangoMinimo: numeric("rango_minimo", { precision: 14, scale: 2 }),
+	rangoMaximo: numeric("rango_maximo", { precision: 14, scale: 2 }),
+	ejemploTamanio: text("ejemplo_tamanio"),
+	modulosTipicosJson: jsonb("modulos_tipicos_json").$type<unknown>(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+});
+
 // F-03 · Portafolio de proyectos (REGISTRO §10, ARCH-012 2026-08-12: desacoplado de EspacioVariante)
 
 export const portafolio = pgTable("portafolio", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	proyectoId: uuid("proyecto_id").notNull(),
+	// t-146 (2026-08-31): ahora NULLABLE para permitir entradas de portafolio libres
+	// (independientes de un proyecto pero relacionables). Las entradas asociadas siguen
+	// referenciando proyectos.id; las libres dejan null.
+	proyectoId: uuid("proyecto_id"),
 	titulo: text().notNull(),
 	descripcionComercial: text("descripcion_comercial"),
 	categoriaEspacio: text("categoria_espacio").notNull(),

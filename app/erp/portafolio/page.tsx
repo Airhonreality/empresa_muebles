@@ -29,14 +29,17 @@ function TarjetaEspacioAdmin({
   onTogglePublicar,
   onToggleDestacado,
   onChangeOrden,
+  onEliminar,
 }: {
   entrada: Portafolio
   onTogglePublicar: () => void
   onToggleDestacado: () => void
   onChangeOrden: (nuevoOrden: number) => void
+  onEliminar: () => void
 }) {
   const [ordenInput, setOrdenInput] = useState(String(entrada.orden))
   const imagenUrl = entrada.imagenPortafolioUrl || entrada.galeriaPortafolioUrl[0]
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false)
 
   const commitOrden = () => {
     const valor = parseInt(ordenInput, 10)
@@ -84,6 +87,20 @@ function TarjetaEspacioAdmin({
             <Button variant={entrada.publicado ? "secondary" : "primary"} size="md" onClick={onTogglePublicar}>
               {entrada.publicado ? 'Ocultar' : 'Publicar'}
             </Button>
+            {confirmandoEliminar ? (
+              <div className="flex items-center gap-1">
+                <Button variant="destructive" size="md" onClick={onEliminar} title="Confirmar eliminación">
+                  Confirmar
+                </Button>
+                <Button variant="ghost" size="md" onClick={() => setConfirmandoEliminar(false)} title="Cancelar eliminación">
+                  ✕
+                </Button>
+              </div>
+            ) : (
+              <Button variant="ghost" size="md" onClick={() => setConfirmandoEliminar(true)} title="Eliminar esta entrada del portafolio">
+                🗑
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -114,7 +131,7 @@ export default function PortafolioAdminPage() {
     items: entradas,
     getCampos: (e) => [
       e.titulo,
-      proyectoNombreMap.get(e.proyectoId) ?? '',
+      (e.proyectoId ? proyectoNombreMap.get(e.proyectoId) ?? '' : 'Portafolio libre'),
       etiquetaCategoria(e.categoriaEspacio),
       e.descripcionComercial ?? '',
     ],
@@ -133,22 +150,29 @@ export default function PortafolioAdminPage() {
       .sort((a, b) => (a.destacado === b.destacado ? a.orden - b.orden : a.destacado ? -1 : 1))
   }, [entradasBuscadas, filtroCategoria, filtroPublicado])
 
-  // F-03 (2026-08-28): Agrupar entradas por proyecto para la vista de Árbol
+  // F-03 (2026-08-28): Agrupar entradas por proyecto para la vista de Árbol.
+  // t-146 (2026-08-31): las entradas LIBRES (sin proyecto, proyectoId null) se agrupan bajo la
+  // sección "Portafolio libre" — independientes pero relacionables.
   const proyectosConPortafolio = useMemo(() => {
     const mapa = new Map<string, { proyectoNombre: string; proyectoIdHumano: string; espacios: Portafolio[] }>()
     
     entradasFiltradas.forEach((entrada) => {
-      const pId = entrada.proyectoId
+      const pId = entrada.proyectoId ?? 'LIBRE'
+      const esLibre = !entrada.proyectoId
       if (!mapa.has(pId)) {
-        const nombre = proyectoNombreMap.get(pId) ?? 'Proyecto Desconocido'
-        const idHumano = generarIdHumano(nombre, pId)
+        const nombre = esLibre ? 'Portafolio libre' : (proyectoNombreMap.get(pId) ?? 'Proyecto Desconocido')
+        const idHumano = esLibre ? 'LIBRE' : generarIdHumano(nombre, pId)
         mapa.set(pId, { proyectoNombre: nombre, proyectoIdHumano: idHumano, espacios: [] })
       }
       mapa.get(pId)!.espacios.push(entrada)
     })
 
-    // Convertir a array y ordenar alfabéticamente por nombre de proyecto
-    return Array.from(mapa.entries()).sort((a, b) => a[1].proyectoNombre.localeCompare(b[1].proyectoNombre))
+    // Convertir a array y ordenar alfabéticamente por nombre de proyecto (la sección libre al final)
+    return Array.from(mapa.entries()).sort((a, b) => {
+      if (a[0] === 'LIBRE') return 1
+      if (b[0] === 'LIBRE') return -1
+      return a[1].proyectoNombre.localeCompare(b[1].proyectoNombre)
+    })
   }, [entradasFiltradas, proyectoNombreMap])
 
   return (
@@ -171,6 +195,9 @@ export default function PortafolioAdminPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <LinkButton href="/erp/portafolio/nuevo" variant="primary">
+            + Nueva entrada
+          </LinkButton>
           <LinkButton href="/erp/portafolio/galeria" variant="secondary">
             Galería por categoría
           </LinkButton>
@@ -231,8 +258,16 @@ export default function PortafolioAdminPage() {
                   </div>
                   <p className="text-sm text-text-muted mt-1">{datos.espacios.length} espacio(s) en portafolio</p>
                 </div>
-                <Button variant="secondary" size="md" onClick={() => router.push(`/erp/proyectos/${pId}/portafolio`)}>
-                  Gestionar Fotos en Mesa de Trabajo
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() =>
+                    pId === 'LIBRE'
+                      ? router.push(`/erp/portafolio/nuevo?id=${datos.espacios[0]?.id ?? ''}`)
+                      : router.push(`/erp/proyectos/${pId}/portafolio`)
+                  }
+                >
+                  {pId === 'LIBRE' ? 'Editar entrada libre' : 'Gestionar Fotos en Mesa de Trabajo'}
                 </Button>
               </header>
               <div className="p-5">
@@ -253,6 +288,14 @@ export default function PortafolioAdminPage() {
                       }}
                       onChangeOrden={(nuevoOrden) => {
                         void store.portafolio.actualizar(entrada.id, { orden: nuevoOrden })
+                      }}
+                      onEliminar={() => {
+                        const confirma = window.confirm(
+                          `¿Eliminar "${entrada.titulo}" del portafolio?\n\nEsta acción no se puede deshacer. No afecta al proyecto padre ni a sus otros espacios.`
+                        )
+                        if (confirma) {
+                          void store.portafolio.eliminar(entrada.id).then((ok) => { if (ok) router.refresh() })
+                        }
                       }}
                     />
                   ))}

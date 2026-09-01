@@ -795,7 +795,8 @@ export interface AcabadoMuestra {
 // Decisión T-03 (2026-08-12): agregar campo `barrio` para ubicación real (I-049).
 export interface Portafolio {
   id: string
-  proyectoId: string
+  /** t-146 (2026-08-31): nullable — las entradas de portafolio pueden ser libres (sin proyecto) o estar relacionadas a un proyecto. */
+  proyectoId: string | null
   titulo: string
   descripcionComercial: string | null
   categoriaEspacio: string
@@ -846,6 +847,22 @@ export interface AtributoTecnico {
   imagenUrl: string | null
   visible: boolean
   orden: number
+  createdAt: string
+}
+
+// t-147 (2026-08-31): taxonomía orgánica de espacios (catalogo_espacios_arquitectonicos) —
+// independiente de las 7 landings. Tipa y modula espacios; crear uno aquí jamás genera landing.
+export interface CatalogoEspacioArquitectonico {
+  id: string
+  /** Prefijo ESP-* (espacio de nombres distinto al de la landing, ej. 'cocina'). */
+  codigo: string
+  nombre: string
+  descripcion: string | null
+  unidadBase: 'metro_lineal' | 'metro_cuadrado' | 'metro_cubico' | null
+  rangoMinimo: string | null
+  rangoMaximo: string | null
+  ejemploTamanio: string | null
+  modulosTipicosJson: unknown
   createdAt: string
 }
 
@@ -1262,6 +1279,14 @@ export interface DataStore {
     crear(data: { acabadoId: string; imagenMuestraUrl?: string | null; disponibleWeb?: boolean }): Promise<AcabadoMuestra>
   }
 
+  // --- t-147: Taxonomía orgánica de espacios (independiente de las landings) ---
+  catalogosEspaciosArquitectonicos: {
+    listar(): CatalogoEspacioArquitectonico[]
+    crear(data: Partial<CatalogoEspacioArquitectonico> & { codigo: string; nombre: string }): Promise<CatalogoEspacioArquitectonico>
+    actualizar(id: string, partial: Partial<Pick<CatalogoEspacioArquitectonico, 'codigo' | 'nombre' | 'descripcion' | 'unidadBase' | 'rangoMinimo' | 'rangoMaximo' | 'ejemploTamanio' | 'modulosTipicosJson'>>): Promise<CatalogoEspacioArquitectonico | null>
+    eliminar(id: string): Promise<boolean>
+  }
+
   // --- F-03: Portafolio de proyectos ---
    portafolio: {
      listar(): Portafolio[]
@@ -1269,10 +1294,12 @@ export interface DataStore {
      publicados(): Portafolio[]
      porSlug(slug: string): Portafolio | undefined
      /** El slug se genera server-side desde categoriaEspacio + barrio (lib/utils/portafolio-slug.ts) — no se recibe del caller. */
-     crear(data: Partial<Portafolio> & { proyectoId: string; titulo: string; categoriaEspacio: string }): Promise<Portafolio>
+     crear(data: Partial<Portafolio> & { titulo: string; categoriaEspacio: string }): Promise<Portafolio>
      actualizar(id: string, partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'espacioVarianteId' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>): Promise<Portafolio | null>
       publicar(id: string): Promise<Portafolio | null>
       despublicar(id: string): Promise<Portafolio | null>
+      /** Elimina una entrada de portafolio (y solo esa entrada — no afecta al proyecto padre ni a sus otros espacios). */
+      eliminar(id: string): Promise<boolean>
     }
     renderesConceptuales: {
       listar(): RenderConceptual[]

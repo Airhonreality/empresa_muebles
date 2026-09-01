@@ -1,0 +1,28 @@
+{
+  "id": "t-147",
+  "nombre": "F1: materializar catalogo_espacios_arquitectonicos (taxonomía orgánica de espacios)",
+  "descripcion": "Fase 1 del plan maestro plan_separacion_tipo_espacio.md (pendiente de aprobación del Supervisor). Materializa en schema la entidad catalogo_espacios_arquitectonicos YA diseñada en OLA_6_SCHEMAS_APROBADOS.md:194-219 y plan_t-075.md:98,126 pero nunca construida: una taxonomía arquitectónica (codigo ESP-*, nombre, unidad_base enum, rango min/max, ejemploTamanio, modulos_tipicos_json) que tipa y modula espacios con independencia de las 7 landings. Crear una categoría orgánica NUNCA genera landing. La Fase 1 es ADITIVA: no toca ni una landing ni el join público obtenerGaleriaEspacioAction.",
+  "objetivo": "Proveer una taxonomía real de tipos de espacio orgánicos (crear/editar/eliminar desde ERP, con seed y soporte en DataStore), separada conceptualmente de la categoría de landing.",
+  "prioridad": "Media",
+  "estado": "Propuesta — pendiente de aprobación del Supervisor (checkpoint obligatorio, mutación de schema)",
+  "tipo": "mutacion_schema",
+  "riesgo": "medio",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_separacion_tipo_espacio.md",
+  "criterios_de_aceptacion": [
+    "Existe la tabla catalogo_espacios_arquitectonicos en schema con codigo UNIQUE (prefijo ESP-*), nombre, unidadBase enum (metro_lineal/metro_cuadrado/metro_cubico), rango min/max, ejemploTamanio, modulosTipicosJson",
+    "DataStore expone catalogosEspaciosArquitectonicos: listar/crear/actualizar/eliminar en contracts + mock-store + drizzle-impl",
+    "Seed base con los ejemplos del diseño (ESP-001 Cocina integral, ESP-002 Closet, ESP-003 Forma especial)",
+    "Pantalla ERP de administración del catálogo orgánico permite crear/editar/eliminar, y esa pantalla NO despliega ninguna landing",
+    "Ninguna landing ni el join público fueron modificados en esta fase (comportamiento intacto)",
+    "npx tsc --noEmit = 0 errores",
+    "npx eslint . = 0 errores nuevos en archivos tocados",
+    "Tests del catálogo nuevo pasan con DATABASE_URL placeholder"
+  ],
+  "relacionado": ["t-146", "t-148", "t-075", "plan_t-075.md", "OLA_6_SCHEMAS_APROBADOS.md", "plan_separacion_tipo_espacio.md"],
+  "fecha_creacion": "2026-08-31"
+}
