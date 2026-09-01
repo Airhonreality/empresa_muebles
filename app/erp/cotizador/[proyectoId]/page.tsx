@@ -343,7 +343,7 @@ export default function CotizadorPage() {
           </div>
 
           {/* Acciones */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
             <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => setMostrarEditarProyecto(true)}>
               Editar datos
             </Button>
@@ -588,8 +588,18 @@ export default function CotizadorPage() {
           />
         )}
       </div>
+
+      {/* Mobile Bottom Sticky Bar for Actions */}
+      <div className="sm:hidden fixed bottom-14 left-0 right-0 z-40 bg-bg-raised border-t border-border-subtle p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex items-center justify-between gap-2 pb-safe">
+        <Button variant="ghost" size="md" className="h-10 px-4 text-xs font-semibold flex-1" onClick={() => setMostrarEditarProyecto(true)}>
+          Editar
+        </Button>
+        <Button variant="primary" size="md" className="h-10 px-4 text-xs font-semibold flex-1" onClick={() => setMostrarContratoModal(true)}>
+          Generar Contrato
+        </Button>
       </div>
-    )
+    </div>
+  )
 }
 
 /**
@@ -1125,58 +1135,66 @@ function VarianteContenido({
           const precioNum = parseNum(item.precioUnitario)
           const total = cantidadNum * precioNum
           return (
-            <div key={item.id} className="flex items-center justify-between text-sm border-b border-border-subtle/50 pb-2 last:pb-0 last:border-0">
+            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 sm:gap-2">
                   <ItemMiniatura producto={prod} onClick={() => setModalItemId(item.id)} />
-                  <span className="text-text-heading">
-                    {item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem sin catálogo'}
-                  </span>
-                  {prod && (
-                    <span className="text-xs text-text-muted font-mono">{prod.sku}</span>
-                  )}
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-text-heading text-base sm:text-sm font-medium sm:font-normal truncate">
+                      {item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem sin catálogo'}
+                    </span>
+                    {prod && (
+                      <span className="text-xs text-text-muted font-mono truncate">{prod.sku}</span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                <NumberInput
-                  value={item.cantidad}
-                  onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
-                  step={0.1}
-                  min={0}
-                  label=""
-                  className="w-20"
-                  aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
-                />
-                <MoneyInput
-                  value={item.precioUnitario}
-                  onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
-                  label=""
-                  className="w-28"
-                  aria-label={`Precio ${prod?.descripcion ?? item.id}`}
-                />
-                <span className="font-mono text-sm font-medium text-text-heading w-24 text-right">
-                  {formatCOP(total)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => actualizarItem(item.id, 'esReferencial', true)}
-                  aria-label="Mover a Presupuesto Adicional (referencial)"
-                  title="Mover a Presupuesto Adicional — inversión estimada, no cotizada"
-                  className="p-1 text-text-muted hover:text-gold-600 transition-colors duration-fast"
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M3 1.5v13M3 1.5h9l-2 3.25 2 3.25H3" strokeLinejoin="round" strokeLinecap="round" />
-                  </svg>
-                </button>
-                <Button
-                  variant="ghost"
-                  size="md"
-                  onClick={async () => await store.items.eliminar(item.id)}
-                  aria-label="Anular ítem"
-                  className="text-text-muted hover:text-red-500"
-                >
-                  ×
-                </Button>
+              <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 sm:ml-4 w-full sm:w-auto bg-bg-alt/30 sm:bg-transparent p-2 sm:p-0 rounded">
+                <div className="flex items-center gap-2">
+                  <NumberInput
+                    value={item.cantidad}
+                    onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
+                    step={0.1}
+                    min={0}
+                    label=""
+                    className="w-24 sm:w-20 h-10 sm:h-8 text-right font-mono"
+                    aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
+                  />
+                  <MoneyInput
+                    value={item.precioUnitario}
+                    onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
+                    label=""
+                    className="w-32 sm:w-28 h-10 sm:h-8 text-right font-mono"
+                    aria-label={`Precio ${prod?.descripcion ?? item.id}`}
+                  />
+                </div>
+                <div className="flex items-center justify-end w-full sm:w-auto gap-2">
+                  <span className="font-mono text-base sm:text-sm font-semibold text-text-heading sm:w-24 text-right">
+                    {formatCOP(total)}
+                  </span>
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => actualizarItem(item.id, 'esReferencial', true)}
+                      aria-label="Mover a Presupuesto Adicional (referencial)"
+                      title="Mover a Presupuesto Adicional — inversión estimada, no cotizada"
+                      className="p-2 sm:p-1 text-text-muted hover:text-gold-600 transition-colors duration-fast"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="sm:w-3 sm:h-3">
+                        <path d="M3 1.5v13M3 1.5h9l-2 3.25 2 3.25H3" strokeLinejoin="round" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      onClick={async () => await store.items.eliminar(item.id)}
+                      aria-label="Anular ítem"
+                      className="text-text-muted hover:text-red-500 h-10 w-10 sm:h-8 sm:w-8 p-0"
+                    >
+                      <span className="text-xl sm:text-base">×</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )
@@ -1239,73 +1257,81 @@ function VarianteContenido({
               const prod = item.catalogoId ? productMap.get(item.catalogoId) : undefined
               const total = parseNum(item.cantidad) * parseNum(item.precioUnitario)
               return (
-                <div key={item.id} className="text-sm border-b border-border-subtle/50 pb-2 last:pb-0 last:border-0 pt-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-1 last:pb-0 last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 sm:gap-2">
                       <ItemMiniatura producto={prod} onClick={() => setModalItemId(item.id)} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-gold-500 flex-shrink-0" title="Referencial" />
-                      <span className="text-text-heading truncate">
-                        {item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem sin catálogo'}
-                      </span>
+                      <span className="w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full bg-gold-500 flex-shrink-0" title="Referencial" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-text-heading text-base sm:text-sm font-medium sm:font-normal truncate">
+                          {item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem sin catálogo'}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1 sm:mt-0">
+                          <select
+                            value={item.fuenteReferencial ?? ''}
+                            onChange={(e) => actualizarItem(item.id, 'fuenteReferencial', e.target.value)}
+                            className="rounded border border-border-subtle bg-bg-paper px-1.5 py-0.5 text-xs text-text-heading focus:border-gold-400 focus:outline-none h-8 sm:h-6"
+                            aria-label="Fuente del ítem referencial"
+                          >
+                            <option value="">Fuente…</option>
+                            {Object.entries(FUENTE_REFERENCIAL_LABEL).map(([valor, label]) => (
+                              <option key={valor} value={valor}>{label}</option>
+                            ))}
+                          </select>
+                          <GrupoReferencialInput
+                            value={item.grupoReferencial ?? ''}
+                            onChange={(v) => actualizarItem(item.id, 'grupoReferencial', v)}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 sm:ml-4 w-full sm:w-auto mt-2 sm:mt-0 bg-bg-alt/30 sm:bg-transparent p-2 sm:p-0 rounded">
+                    <div className="flex items-center gap-2">
                       <NumberInput
                         value={item.cantidad}
                         onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
                         step={0.1}
                         min={0}
                         label=""
-                        className="w-20"
+                        className="w-24 sm:w-20 h-10 sm:h-8 text-right font-mono"
                         aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
                       />
                       <MoneyInput
                         value={item.precioUnitario}
                         onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
                         label=""
-                        className="w-28"
+                        className="w-32 sm:w-28 h-10 sm:h-8 text-right font-mono"
                         aria-label={`Precio ${prod?.descripcion ?? item.id}`}
                       />
-                      <span className="font-mono text-sm font-medium text-text-heading w-24 text-right">
+                    </div>
+                    <div className="flex items-center justify-end w-full sm:w-auto gap-2">
+                      <span className="font-mono text-base sm:text-sm font-semibold text-text-heading sm:w-24 text-right">
                         {formatCOP(total)}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => actualizarItem(item.id, 'esReferencial', false)}
-                        aria-label="Mover a Ítems (cotizado)"
-                        title="Mover a Ítems — pasa a ser objeto de contrato"
-                        className="p-1 text-text-muted hover:text-emerald-600 transition-colors duration-fast"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M13 1.5v13M13 1.5H4l2 3.25-2 3.25h9" strokeLinejoin="round" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                      <Button
-                        variant="ghost"
-                        size="md"
-                        onClick={async () => await store.items.eliminar(item.id)}
-                        aria-label="Eliminar ítem referencial"
-                        className="text-text-muted hover:text-red-500"
-                      >
-                        ×
-                      </Button>
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => actualizarItem(item.id, 'esReferencial', false)}
+                          aria-label="Mover a Ítems (cotizado)"
+                          title="Mover a Ítems — pasa a ser objeto de contrato"
+                          className="p-2 sm:p-1 text-text-muted hover:text-emerald-600 transition-colors duration-fast"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="sm:w-3 sm:h-3">
+                            <path d="M13 1.5v13M13 1.5H4l2 3.25-2 3.25h9" strokeLinejoin="round" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="md"
+                          onClick={async () => await store.items.eliminar(item.id)}
+                          aria-label="Eliminar ítem referencial"
+                          className="text-text-muted hover:text-red-500 h-10 w-10 sm:h-8 sm:w-8 p-0"
+                        >
+                          <span className="text-xl sm:text-base">×</span>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1 pl-3.5">
-                    <select
-                      value={item.fuenteReferencial ?? ''}
-                      onChange={(e) => actualizarItem(item.id, 'fuenteReferencial', e.target.value)}
-                      className="rounded border border-border-subtle bg-bg-paper px-1.5 py-0.5 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-                      aria-label="Fuente del ítem referencial"
-                    >
-                      <option value="">Fuente…</option>
-                      {Object.entries(FUENTE_REFERENCIAL_LABEL).map(([valor, label]) => (
-                        <option key={valor} value={valor}>{label}</option>
-                      ))}
-                    </select>
-                    <GrupoReferencialInput
-                      value={item.grupoReferencial ?? ''}
-                      onChange={(v) => actualizarItem(item.id, 'grupoReferencial', v)}
-                    />
                   </div>
                 </div>
               )
@@ -1469,13 +1495,13 @@ function VarianteContenido({
       </div>
 
       <div className="border-t border-border-subtle pt-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Jornadas de Mano de Obra</p>
-        <div className="grid grid-cols-3 gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-4 sm:mb-2">Jornadas de Mano de Obra</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-2">
           <NumberInput
             label="Desarrollo"
             step="0.5"
             min="0"
-            className="w-24"
+            className="w-full sm:w-24 h-12 sm:h-8 text-right font-mono"
             value={jornadas.dev}
             onChange={(v) => onUpdateJornadas(espacio.id, 'dev', v)}
             aria-label={`Jornadas desarrollo ${espacio.nombreEspacio}`}
@@ -1484,7 +1510,7 @@ function VarianteContenido({
             label="Ensamblaje"
             step="0.5"
             min="0"
-            className="w-24"
+            className="w-full sm:w-24 h-12 sm:h-8 text-right font-mono"
             value={jornadas.ens}
             onChange={(v) => onUpdateJornadas(espacio.id, 'ens', v)}
             aria-label={`Jornadas ensamblaje ${espacio.nombreEspacio}`}
@@ -1493,7 +1519,7 @@ function VarianteContenido({
             label="Instalación"
             step="0.5"
             min="0"
-            className="w-24"
+            className="w-full sm:w-24 h-12 sm:h-8 text-right font-mono"
             value={jornadas.inst}
             onChange={(v) => onUpdateJornadas(espacio.id, 'inst', v)}
             aria-label={`Jornadas instalación ${espacio.nombreEspacio}`}
