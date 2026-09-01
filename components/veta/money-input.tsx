@@ -40,7 +40,6 @@ export function MoneyInput({ value, onChange, label, error, className = "", ...p
         </label>
       )}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-text-muted">$</span>
         <input
           id={id}
           type="text"
@@ -49,7 +48,7 @@ export function MoneyInput({ value, onChange, label, error, className = "", ...p
           onChange={handleChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          className="w-full min-h-[44px] rounded-sm border bg-bg-paper pl-7 pr-3 text-base text-text-primary outline-none border-border-subtle focus:border-brand focus:shadow-ring-focus"
+          className="w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 text-base text-text-primary outline-none border-border-subtle focus:border-brand focus:shadow-ring-focus"
           aria-label={props["aria-label"] || "Monto en COP"}
           {...props}
         />

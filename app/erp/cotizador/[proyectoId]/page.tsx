@@ -276,11 +276,11 @@ export default function CotizadorPage() {
   return (
     <div className="mx-auto max-w-5xl">
       {/* Header — Ultra Compacto, sticky (disenio_p04_cotizador.md §5.1) */}
-      <header className="sticky top-0 z-10 bg-bg-raised px-4 py-2 border-b border-border-subtle">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+      <header className="sticky top-0 z-10 bg-bg-raised px-4 py-3 sm:py-2 border-b border-border-subtle shadow-sm">
+        <div className="flex items-center justify-between gap-x-4">
           {/* Proyecto + cliente + estado */}
-          <div className="min-w-0 flex flex-1 items-baseline gap-2">
-            <h1 className="font-display text-base font-semibold text-text-heading truncate" title={proyecto.nombreProyecto}>
+          <div className="min-w-0 flex flex-1 items-center gap-3">
+            <h1 className="font-display text-lg sm:text-base font-semibold text-text-heading truncate" title={proyecto.nombreProyecto}>
               {proyecto.nombreProyecto}
             </h1>
             {cliente && (
@@ -291,85 +291,52 @@ export default function CotizadorPage() {
             </Badge>
           </div>
 
-          {/* Garantía — parámetro editable (D-11/D-12: ya no es badge) */}
-          <label className="flex items-center gap-1.5 shrink-0">
-            <span className="text-xs text-text-muted">Garantía</span>
-            <input
-              type="number"
-              min={0}
-              max={20}
-              value={proyecto.garantiaAnios}
-              onChange={async (e) => {
-                const n = Number(e.target.value)
-                await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { garantiaAnios: Number.isFinite(n) ? n : 0 })
-              }}
-              className="w-12 rounded border border-border-subtle bg-bg-paper px-1.5 py-1 text-xs font-mono focus:border-gold-400 focus:outline-none"
-              aria-label="Años de garantía"
-            />
-            <span className="text-xs text-text-muted">años</span>
-          </label>
-
-          {/* IVA — compacto */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <label className="flex items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={proyecto.aplicaIva}
-                onChange={async (e) => {
-                  await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { aplicaIva: e.target.checked })
-                }}
-                className="rounded border border-border-subtle cursor-pointer"
-                aria-label="Aplicar IVA"
-              />
-              <span className="text-xs font-medium text-text-heading">IVA</span>
-            </label>
-            {proyecto.aplicaIva && (
-              <label className="flex items-center gap-1">
-                <input
-                  type="number"
-                  value={proyecto.porcentajeIva}
-                  onChange={async (e) => {
-                    await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { porcentajeIva: e.target.value })
-                  }}
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  className="w-12 rounded border border-border-subtle bg-bg-paper px-1.5 py-1 text-xs font-mono focus:border-gold-400 focus:outline-none"
-                  aria-label="Porcentaje IVA"
-                />
-                <span className="text-xs text-text-muted">%</span>
-              </label>
-            )}
-          </div>
-
-          {/* Acciones */}
+          {/* Acciones de escritorio (ocultas en móvil) */}
           <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => setMostrarEditarProyecto(true)}>
-              Editar datos
-            </Button>
-            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>
-              Propuesta pública
-            </Button>
-            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/erp/cotizador/${proyecto.id}?readonly=true`, '_blank')}>
-              Solo lectura
-            </Button>
-            <Button variant="primary" size="md" className="h-7 px-3 text-xs" onClick={() => setMostrarContratoModal(true)}>
-              Generar Contrato
-            </Button>
+            {/* Garantía */}
+            <label className="flex items-center gap-1.5 shrink-0 mr-2">
+              <span className="text-xs text-text-muted">Garantía</span>
+              <input
+                type="number"
+                min={0}
+                max={20}
+                value={proyecto.garantiaAnios}
+                onChange={async (e) => {
+                  const n = Number(e.target.value)
+                  await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { garantiaAnios: Number.isFinite(n) ? n : 0 })
+                }}
+                className="w-12 rounded border border-border-subtle bg-bg-paper px-1.5 py-1 text-xs font-mono focus:border-gold-400 focus:outline-none"
+              />
+              <span className="text-xs text-text-muted">años</span>
+            </label>
+
+            {/* IVA */}
+            <div className="flex items-center gap-1.5 shrink-0 mr-2">
+              <label className="flex items-center gap-1.5">
+                <input
+                  type="checkbox"
+                  checked={proyecto.aplicaIva}
+                  onChange={async (e) => await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { aplicaIva: e.target.checked })}
+                  className="rounded border border-border-subtle cursor-pointer"
+                />
+                <span className="text-xs font-medium text-text-heading">IVA</span>
+              </label>
+            </div>
+
+            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => setMostrarEditarProyecto(true)}>Editar datos</Button>
+            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>Propuesta pública</Button>
+            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/erp/cotizador/${proyecto.id}?readonly=true`, '_blank')}>Solo lectura</Button>
+            <Button variant="primary" size="md" className="h-7 px-3 text-xs" onClick={() => setMostrarContratoModal(true)}>Generar Contrato</Button>
             {proyecto.estado === 'activa' && (
               <Button
-                variant="ghost"
-                size="md"
-                className="h-7 px-2 text-xs text-red-500 hover:text-red-600"
+                variant="ghost" size="md" className="h-7 px-2 text-xs text-red-500 hover:text-red-600"
                 onClick={async () => {
-                  if (window.confirm(`¿Eliminar la cotización "${proyecto.nombreProyecto}"? Solo se pueden eliminar cotizaciones en estado Lead. Esta acción borra todos sus datos y no se puede deshacer.`)) {
+                  if (window.confirm(`¿Eliminar la cotización "${proyecto.nombreProyecto}"?`)) {
                     const ok = await store.proyectos.eliminar(proyecto.id)
                     if (ok) router.push('/erp/cotizador')
                   }
                 }}
-              >
-                Eliminar
-              </Button>
+              >Eliminar</Button>
             )}
           </div>
         </div>
@@ -390,9 +357,9 @@ export default function CotizadorPage() {
 
       {/* Espacios */}
       <section className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Espacios</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <input
               type="text"
               value={nuevoEspacioNombre}
@@ -404,14 +371,14 @@ export default function CotizadorPage() {
                 }
               }}
               placeholder="Añadir espacio..."
-              className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none w-40 transition-all duration-fast"
+              className="rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none sm:w-48 transition-all duration-fast"
               aria-label="Nombre del nuevo espacio"
               disabled={creandoEspacio}
             />
             <select
               value={nuevoEspacioTipo}
               onChange={(e) => setNuevoEspacioTipo(e.target.value)}
-              className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none transition-all duration-fast"
+              className="rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none transition-all duration-fast"
               aria-label="Tipo del nuevo espacio"
             >
               <option value="">Sin tipo</option>
@@ -420,9 +387,9 @@ export default function CotizadorPage() {
               ))}
             </select>
             <Button
-              variant="ghost"
+              variant="secondary"
               size="md"
-              className="h-8 text-xs"
+              className="h-10 text-sm w-full sm:w-auto"
               onClick={() => void guardCrearEspacio(crearEspacio)}
               disabled={creandoEspacio}
               loading={creandoEspacio}
@@ -1149,51 +1116,56 @@ function VarianteContenido({
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 sm:ml-4 w-full sm:w-auto bg-bg-alt/30 sm:bg-transparent p-2 sm:p-0 rounded">
-                <div className="flex items-center gap-2">
-                  <NumberInput
-                    value={item.cantidad}
-                    onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
-                    step={0.1}
-                    min={0}
-                    label=""
-                    className="w-24 sm:w-20 h-10 sm:h-8 text-right font-mono"
-                    aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
-                  />
-                  <MoneyInput
-                    value={item.precioUnitario}
-                    onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
-                    label=""
-                    className="w-32 sm:w-28 h-10 sm:h-8 text-right font-mono"
-                    aria-label={`Precio ${prod?.descripcion ?? item.id}`}
-                  />
-                </div>
-                <div className="flex items-center justify-end w-full sm:w-auto gap-2">
-                  <span className="font-mono text-base sm:text-sm font-semibold text-text-heading sm:w-24 text-right">
-                    {formatCOP(total)}
-                  </span>
-                  <div className="flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => actualizarItem(item.id, 'esReferencial', true)}
-                      aria-label="Mover a Presupuesto Adicional (referencial)"
-                      title="Mover a Presupuesto Adicional — inversión estimada, no cotizada"
-                      className="p-2 sm:p-1 text-text-muted hover:text-gold-600 transition-colors duration-fast"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="sm:w-3 sm:h-3">
-                        <path d="M3 1.5v13M3 1.5h9l-2 3.25 2 3.25H3" strokeLinejoin="round" strokeLinecap="round" />
-                      </svg>
-                    </button>
-                    <Button
-                      variant="ghost"
-                      size="md"
-                      onClick={async () => await store.items.eliminar(item.id)}
-                      aria-label="Anular ítem"
-                      className="text-text-muted hover:text-red-500 h-10 w-10 sm:h-8 sm:w-8 p-0"
-                    >
-                      <span className="text-xl sm:text-base">×</span>
-                    </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 w-full sm:w-auto mt-3 sm:mt-0 bg-surface-100 sm:bg-transparent p-3 sm:p-0 rounded border border-border-subtle/50 sm:border-0">
+                <div className="grid grid-cols-12 sm:flex items-center gap-2 w-full sm:w-auto">
+                  <div className="col-span-3 sm:w-20">
+                    <NumberInput
+                      value={item.cantidad}
+                      onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
+                      step={0.1}
+                      min={0}
+                      label=""
+                      className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+                      aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
+                    />
                   </div>
+                  <div className="col-span-1 text-center text-text-muted text-xs">×</div>
+                  <div className="col-span-4 sm:w-28">
+                    <MoneyInput
+                      value={item.precioUnitario}
+                      onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
+                      label=""
+                      className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+                      aria-label={`Precio ${prod?.descripcion ?? item.id}`}
+                    />
+                  </div>
+                  <div className="col-span-4 text-right">
+                    <span className="font-mono text-sm font-semibold text-text-heading">
+                      {formatCOP(total)}
+                    </span>
+                  </div>
+                </div>
+                {/* Acciones */}
+                <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0">
+                  <button
+                    type="button"
+                    onClick={() => actualizarItem(item.id, 'esReferencial', true)}
+                    aria-label="Mover a Presupuesto Adicional"
+                    title="Mover a Presupuesto Adicional"
+                    className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M3 1.5v13M3 1.5h9l-2 3.25 2 3.25H3" strokeLinejoin="round" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onClick={async () => await store.items.eliminar(item.id)}
+                    className="text-text-muted hover:text-red-500 h-10 w-10 sm:h-8 sm:w-8 p-0 rounded"
+                  >
+                    <span className="text-2xl sm:text-lg">×</span>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1286,51 +1258,56 @@ function VarianteContenido({
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 sm:ml-4 w-full sm:w-auto mt-2 sm:mt-0 bg-bg-alt/30 sm:bg-transparent p-2 sm:p-0 rounded">
-                    <div className="flex items-center gap-2">
-                      <NumberInput
-                        value={item.cantidad}
-                        onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
-                        step={0.1}
-                        min={0}
-                        label=""
-                        className="w-24 sm:w-20 h-10 sm:h-8 text-right font-mono"
-                        aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
-                      />
-                      <MoneyInput
-                        value={item.precioUnitario}
-                        onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
-                        label=""
-                        className="w-32 sm:w-28 h-10 sm:h-8 text-right font-mono"
-                        aria-label={`Precio ${prod?.descripcion ?? item.id}`}
-                      />
-                    </div>
-                    <div className="flex items-center justify-end w-full sm:w-auto gap-2">
-                      <span className="font-mono text-base sm:text-sm font-semibold text-text-heading sm:w-24 text-right">
-                        {formatCOP(total)}
-                      </span>
-                      <div className="flex items-center">
-                        <button
-                          type="button"
-                          onClick={() => actualizarItem(item.id, 'esReferencial', false)}
-                          aria-label="Mover a Ítems (cotizado)"
-                          title="Mover a Ítems — pasa a ser objeto de contrato"
-                          className="p-2 sm:p-1 text-text-muted hover:text-emerald-600 transition-colors duration-fast"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="sm:w-3 sm:h-3">
-                            <path d="M13 1.5v13M13 1.5H4l2 3.25-2 3.25h9" strokeLinejoin="round" strokeLinecap="round" />
-                          </svg>
-                        </button>
-                        <Button
-                          variant="ghost"
-                          size="md"
-                          onClick={async () => await store.items.eliminar(item.id)}
-                          aria-label="Eliminar ítem referencial"
-                          className="text-text-muted hover:text-red-500 h-10 w-10 sm:h-8 sm:w-8 p-0"
-                        >
-                          <span className="text-xl sm:text-base">×</span>
-                        </Button>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 w-full sm:w-auto mt-3 sm:mt-0 bg-surface-100 sm:bg-transparent p-3 sm:p-0 rounded border border-border-subtle/50 sm:border-0">
+                    <div className="grid grid-cols-12 sm:flex items-center gap-2 w-full sm:w-auto">
+                      <div className="col-span-3 sm:w-20">
+                        <NumberInput
+                          value={item.cantidad}
+                          onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
+                          step={0.1}
+                          min={0}
+                          label=""
+                          className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+                          aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
+                        />
                       </div>
+                      <div className="col-span-1 text-center text-text-muted text-xs">×</div>
+                      <div className="col-span-4 sm:w-28">
+                        <MoneyInput
+                          value={item.precioUnitario}
+                          onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
+                          label=""
+                          className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+                          aria-label={`Precio ${prod?.descripcion ?? item.id}`}
+                        />
+                      </div>
+                      <div className="col-span-4 text-right">
+                        <span className="font-mono text-sm font-semibold text-text-heading">
+                          {formatCOP(total)}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Acciones */}
+                    <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0">
+                      <button
+                        type="button"
+                        onClick={() => actualizarItem(item.id, 'esReferencial', false)}
+                        aria-label="Mover a Ítems (cotizado)"
+                        title="Mover a Ítems"
+                        className="p-2 sm:p-1 text-text-muted hover:text-emerald-600 rounded"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M13 1.5v13M13 1.5H4l2 3.25-2 3.25h9" strokeLinejoin="round" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="md"
+                        onClick={async () => await store.items.eliminar(item.id)}
+                        className="text-text-muted hover:text-red-500 h-10 w-10 sm:h-8 sm:w-8 p-0 rounded"
+                      >
+                        <span className="text-2xl sm:text-lg">×</span>
+                      </Button>
                     </div>
                   </div>
                 </div>
