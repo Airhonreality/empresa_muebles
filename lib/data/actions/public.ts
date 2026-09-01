@@ -236,7 +236,7 @@ export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise
     const espacios = await db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyectoId))
     const varianteIds = espacios.map((e) => e.id)
     const items = varianteIds.length
-      ? await db.select().from(s.itemsVariante).where(inArray(s.itemsVariante.varianteId, varianteIds))
+      ? await db.select().from(s.itemsVariante).where(and(inArray(s.itemsVariante.varianteId, varianteIds), eq(s.itemsVariante.anulado, false)))
       : []
 
     const catalogoIds = [...new Set(items.map((it) => it.catalogoId).filter((id): id is string => Boolean(id)))]
