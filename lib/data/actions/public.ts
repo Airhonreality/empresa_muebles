@@ -226,7 +226,6 @@ export interface PropuestaPublicaData {
   tarifas: { tarifaDev: number; tarifaAssembly: number; tarifaInstall: number }
 }
 
-const HORAS_POR_JORNADA = 8
 
 export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
   if (DATA_IMPL() === 'drizzle') {
@@ -280,9 +279,9 @@ export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise
       contrato: (contratoRow as unknown as Contrato) ?? null,
       hitos: hitos as unknown as HitoPago[],
       tarifas: {
-        tarifaDev: valorDev * HORAS_POR_JORNADA,
-        tarifaAssembly: valorCarp * HORAS_POR_JORNADA,
-        tarifaInstall: valorAux * HORAS_POR_JORNADA,
+        tarifaDev: valorDev,
+        tarifaAssembly: valorCarp,
+        tarifaInstall: valorAux,
       },
     }
   }
@@ -316,9 +315,9 @@ export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise
   return {
     proyecto, espacios, items, catalogoPorId, contrato, hitos,
     tarifas: {
-      tarifaDev: valorDev * HORAS_POR_JORNADA,
-      tarifaAssembly: valorCarp * HORAS_POR_JORNADA,
-      tarifaInstall: valorAux * HORAS_POR_JORNADA,
+      tarifaDev: valorDev,
+      tarifaAssembly: valorCarp,
+      tarifaInstall: valorAux,
     },
   }
 }
