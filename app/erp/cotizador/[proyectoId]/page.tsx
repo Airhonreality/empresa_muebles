@@ -66,9 +66,9 @@ function derivarTarifas(store: DataStore): TarifasMO {
   const parametros = obtenerParametrosJornadas(store)
   const hora = (rol: keyof ParametrosJornadas['valorHoraPorRol']) => parseNum(parametros.valorHoraPorRol[rol])
   return {
-    tarifaDev: hora('desarrollador') * HORAS_POR_JORNADA,
-    tarifaAssembly: hora('carpintero') * HORAS_POR_JORNADA,
-    tarifaInstall: hora('auxiliar') * HORAS_POR_JORNADA,
+    tarifaDev: hora('desarrollador'),
+    tarifaAssembly: hora('carpintero'),
+    tarifaInstall: hora('auxiliar'),
   }
 }
 
@@ -1471,45 +1471,33 @@ function VarianteContenido({
       <div className="border-t border-border-subtle pt-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Jornadas de Mano de Obra</p>
         <div className="grid grid-cols-3 gap-2">
-          <label className="flex flex-col gap-1">
-            <span className="text-[11px] text-text-muted">Desarrollo</span>
-            <input
-              type="number"
-              step="0.5"
-              min="0"
-              className="w-20 rounded border border-border-subtle bg-bg-paper px-2 py-1 font-mono text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              value={jornadas.dev}
-              onChange={(e) => onUpdateJornadas(espacio.id, 'dev', e.target.value)}
-              aria-label={`Jornadas desarrollo ${espacio.nombreEspacio}`}
-              inputMode="decimal"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-[11px] text-text-muted">Ensamblaje</span>
-            <input
-              type="number"
-              step="0.5"
-              min="0"
-              className="w-20 rounded border border-border-subtle bg-bg-paper px-2 py-1 font-mono text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              value={jornadas.ens}
-              onChange={(e) => onUpdateJornadas(espacio.id, 'ens', e.target.value)}
-              aria-label={`Jornadas ensamblaje ${espacio.nombreEspacio}`}
-              inputMode="decimal"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-[11px] text-text-muted">Instalación</span>
-            <input
-              type="number"
-              step="0.5"
-              min="0"
-              className="w-20 rounded border border-border-subtle bg-bg-paper px-2 py-1 font-mono text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              value={jornadas.inst}
-              onChange={(e) => onUpdateJornadas(espacio.id, 'inst', e.target.value)}
-              aria-label={`Jornadas instalación ${espacio.nombreEspacio}`}
-              inputMode="decimal"
-            />
-          </label>
+          <NumberInput
+            label="Desarrollo"
+            step="0.5"
+            min="0"
+            className="w-24"
+            value={jornadas.dev}
+            onChange={(v) => onUpdateJornadas(espacio.id, 'dev', v)}
+            aria-label={`Jornadas desarrollo ${espacio.nombreEspacio}`}
+          />
+          <NumberInput
+            label="Ensamblaje"
+            step="0.5"
+            min="0"
+            className="w-24"
+            value={jornadas.ens}
+            onChange={(v) => onUpdateJornadas(espacio.id, 'ens', v)}
+            aria-label={`Jornadas ensamblaje ${espacio.nombreEspacio}`}
+          />
+          <NumberInput
+            label="Instalación"
+            step="0.5"
+            min="0"
+            className="w-24"
+            value={jornadas.inst}
+            onChange={(v) => onUpdateJornadas(espacio.id, 'inst', v)}
+            aria-label={`Jornadas instalación ${espacio.nombreEspacio}`}
+          />
         </div>
           <div className="mt-2 flex justify-between items-center border-t border-border-subtle pt-2">
             <span className="text-[11px] text-text-muted">Total MO (jornadas × tarifa):</span>
