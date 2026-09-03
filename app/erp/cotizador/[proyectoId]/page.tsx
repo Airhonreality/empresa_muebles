@@ -9,7 +9,10 @@ import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { ItemMiniatura } from '@/components/veta/item-miniatura'
-import { ItemDescriptorModal } from '@/components/veta/item-descriptor-modal'
+import { ItemEditorModal } from '@/components/veta/item-editor-modal'
+import { AcabadoPicker, type AcabadoItem } from '@/components/veta/acabado-picker'
+import { Modal } from '@/components/veta/modal'
+import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-espacios'
 import { ContratoModal } from '../ContratoModal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { useDataStore, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
@@ -161,9 +164,43 @@ export default function CotizadorPage() {
   )
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
+  const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
   const [nuevoEspacioNombre, setNuevoEspacioNombre] = useState('')
   const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
   const { guard: guardCrearEspacio, isPending: creandoEspacio } = usePendingGuard()
+
+  const aplicarPreset = useCallback(async (preset: PresetEspacio) => {
+    setMostrarPlantillasModal(false)
+    await guardCrearEspacio(async () => {
+      const nuevoEspacio = await store.espacios.crear({
+        proyectoId,
+        nombreEspacio: preset.nombre,
+        nombreVariante: 'Inicial',
+        tipoEspacio: preset.tipoEspacio,
+        descripcion: preset.descripcion,
+        visibleEnPropuestaPublica: true,
+        orden: espaciosBase.length + 1,
+        jornadasDesarrolloTecnico: preset.jornadas.dev,
+        jornadasEnsamblajeTaller: preset.jornadas.ens,
+        jornadasInstalacionObra: preset.jornadas.inst,
+      })
+
+      if (nuevoEspacio) {
+        await Promise.all(
+          preset.items.map((it) =>
+            store.items.crear({
+              varianteId: nuevoEspacio.id,
+              catalogoId: null,
+              nombrePersonalizado: it.nombre,
+              cantidad: it.cantidad,
+              precioUnitario: it.precioUnitario,
+              esReferencial: it.esReferencial ?? false,
+            })
+          )
+        )
+      }
+    })
+  }, [guardCrearEspacio, store.espacios, store.items, proyectoId, espaciosBase.length])
 
   const crearEspacio = useCallback(async () => {
     const nombreFinal = nuevoEspacioNombre.trim()
@@ -412,8 +449,68 @@ const EspacioGroupMemo = memo(EspacioGroup)
             >
               + Crear
             </Button>
+            <Button
+              variant="ghost"
+              size="md"
+              className="h-10 text-sm border border-border-subtle hover:border-gold-400 hover:text-gold-600 w-full sm:w-auto"
+              onClick={() => setMostrarPlantillasModal(true)}
+              disabled={creandoEspacio}
+              title="Precargar un espacio prediseñado con sus ítems estándar"
+            >
+              ✨ + Desde Plantilla
+            </Button>
           </div>
         </div>
+
+        {mostrarPlantillasModal && (
+          <Modal
+            open={true}
+            onClose={() => setMostrarPlantillasModal(false)}
+            title="✨ Seleccionar Plantilla de Espacio"
+          >
+            <div className="space-y-4">
+              <p className="text-xs text-text-muted">
+                Elige un espacio prediseñado para insertar en tu cotización. Se precargarán automáticamente sus módulos base, cantidades y jornadas estimadas.
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 max-h-[65vh] overflow-y-auto p-1">
+                {PRESETS_ESPACIOS.map((preset) => (
+                  <div
+                    key={preset.id}
+                    className="flex flex-col justify-between rounded border border-border-subtle bg-bg-paper p-3 hover:border-gold-400 hover:shadow-xs transition-all"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{preset.icono}</span>
+                        <h4 className="text-xs font-bold text-text-heading">{preset.nombre}</h4>
+                      </div>
+                      <p className="mt-1 text-[11px] text-text-muted leading-relaxed">
+                        {preset.descripcion}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <span className="rounded bg-bg-alt px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
+                          {preset.items.length} módulos incluidos
+                        </span>
+                        <span className="rounded bg-bg-alt px-1.5 py-0.5 text-[10px] text-text-muted">
+                          Jornadas: {preset.jornadas.dev}d dev / {preset.jornadas.ens}d ens / {preset.jornadas.inst}d inst
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-border-subtle flex justify-end">
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onClick={() => void aplicarPreset(preset)}
+                        disabled={creandoEspacio}
+                      >
+                        Insertar Espacio
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Modal>
+        )}
         {Array.from(gruposPorNombre.entries()).map(([nombreEspacio, variantes]) => (
           <EspacioGroupMemo
             key={nombreEspacio}
@@ -1119,6 +1216,12 @@ function VarianteContenido({
   const [modoBusquedaItem, setModoBusquedaItem] = useState<'off' | 'normal' | 'referencial'>('off')
   const [mostrarDetalles, setMostrarDetalles] = useState(false)
   const [modalItemId, setModalItemId] = useState<string | null>(null)
+  const [creandoItemLibre, setCreandoItemLibre] = useState(false)
+  const [itemLibreNombre, setItemLibreNombre] = useState('')
+  const [itemLibreCantidad, setItemLibreCantidad] = useState('1')
+  const [itemLibrePrecio, setItemLibrePrecio] = useState('0')
+  const [itemLibreEsRef, setItemLibreEsRef] = useState(false)
+
   const artefactosList = store.artefactos.porEspacio(espacio.id)
   const { guard: guardCrearItem, isPending: creandoItem } = usePendingGuard()
   const { guard: guardCrearItemReferencial, isPending: creandoItemReferencial } = usePendingGuard()
@@ -1145,14 +1248,25 @@ function VarianteContenido({
       <div className="border-t border-border-subtle pt-3">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Ítems</p>
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={() => setModoBusquedaItem('normal')}
-            aria-label="Buscar en catálogo"
-          >
-            + Buscar
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => { setCreandoItemLibre(true); setItemLibreEsRef(false); }}
+              className="text-xs border border-border-subtle hover:border-gold-400"
+              title="Agregar ítem especial o a medida sin SKU de catálogo"
+            >
+              + Ítem Libre
+            </Button>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setModoBusquedaItem('normal')}
+              aria-label="Buscar en catálogo"
+            >
+              + Buscar
+            </Button>
+          </div>
         </div>
 
         {itemsContractuales.length === 0 && modoBusquedaItem !== 'normal' && (
@@ -1190,7 +1304,7 @@ function VarianteContenido({
                 )
                 setModoBusquedaItem('off')
               })}
-              onCreateNew={() => { window.location.href = `/erp/catalogo?source=cotizador&proyectoId=${proyectoId}`; setModoBusquedaItem('off') }}
+              onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(false); setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
@@ -1329,7 +1443,7 @@ function VarianteContenido({
                 )
                 setModoBusquedaItem('off')
               })}
-              onCreateNew={() => { window.location.href = `/erp/catalogo?source=cotizador&proyectoId=${proyectoId}`; setModoBusquedaItem('off') }}
+              onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(true); setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
@@ -1629,8 +1743,104 @@ function VarianteContenido({
           </div>
         </div>
 
-      {modalProd && (
-        <ItemDescriptorModal producto={modalProd} onClose={() => setModalItemId(null)} />
+      {modalItem && (
+        <ItemEditorModal
+          item={modalItem}
+          producto={modalProd}
+          catalogo={catalogo}
+          onClose={() => setModalItemId(null)}
+          onSave={async (cambios) => {
+            await store.items.actualizar(modalItem.id, cambios)
+          }}
+          onReemplazarProducto={async (nuevoProducto, mantenerPrecioActual) => {
+            const nuevoPrecio = mantenerPrecioActual
+              ? modalItem.precioUnitario
+              : (nuevoProducto.precioPublico ?? modalItem.precioUnitario)
+            await store.items.actualizar(modalItem.id, {
+              catalogoId: nuevoProducto.id,
+              nombrePersonalizado: null,
+              precioUnitario: nuevoPrecio,
+            })
+          }}
+          onEliminar={async () => {
+            await store.items.eliminar(modalItem.id)
+          }}
+        />
+      )}
+
+      {creandoItemLibre && (
+        <Modal
+          open={true}
+          onClose={() => setCreandoItemLibre(false)}
+          title={itemLibreEsRef ? 'Agregar Ítem Referencial a Medida' : 'Agregar Ítem a Medida (Sin Catálogo)'}
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-text-muted">
+              Crea un ítem a la medida para este espacio sin salir de la cotización.
+            </p>
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">
+                Descripción o Nombre del Ítem *
+              </label>
+              <input
+                type="text"
+                value={itemLibreNombre}
+                onChange={(e) => setItemLibreNombre(e.target.value)}
+                placeholder="Ej: Módulo especial a medida"
+                className="w-full rounded border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">Cantidad</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={itemLibreCantidad}
+                  onChange={(e) => setItemLibreCantidad(e.target.value)}
+                  className="w-full rounded border border-border-subtle bg-bg-paper px-2.5 py-1.5 font-mono text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">Precio Unitario (COP)</label>
+                <MoneyInput
+                  value={itemLibrePrecio}
+                  onChange={setItemLibrePrecio}
+                  className="w-full text-xs"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
+              <Button variant="ghost" size="md" onClick={() => setCreandoItemLibre(false)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                disabled={!itemLibreNombre.trim()}
+                onClick={async () => {
+                  const total = String(parseNum(itemLibreCantidad) * parseNum(itemLibrePrecio))
+                  await store.items.crear({
+                    varianteId: espacio.id,
+                    catalogoId: null,
+                    nombrePersonalizado: itemLibreNombre.trim(),
+                    cantidad: itemLibreCantidad,
+                    precioUnitario: itemLibrePrecio,
+                    totalLinea: total,
+                    esReferencial: itemLibreEsRef,
+                  })
+                  setCreandoItemLibre(false)
+                  setItemLibreNombre('')
+                  setItemLibreCantidad('1')
+                  setItemLibrePrecio('0')
+                }}
+              >
+                + Agregar a Cotización
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   )
@@ -1826,19 +2036,22 @@ function FormDetallesEspacio({
   const [nombreEspacio, setNombreEspacio] = useState(espacio.nombreEspacio)
   const [nombreVariante, setNombreVariante] = useState(espacio.nombreVariante)
   const [descripcion, setDescripcion] = useState(espacio.descripcion ?? '')
-  const [colores, setColores] = useState((espacio.colores as string[]).join(', '))
+  const [colores, setColores] = useState<(AcabadoItem | string)[]>(() => {
+    if (Array.isArray(espacio.colores)) {
+      return espacio.colores as (AcabadoItem | string)[]
+    }
+    return []
+  })
   const [fotosEspacio, setFotosEspacio] = useState<string[]>(espacio.fotosEspacio)
   const [fotosDisenio, setFotosDisenio] = useState<string[]>(espacio.fotosDisenio)
   const [fotosReferencia, setFotosReferencia] = useState<string[]>(espacio.fotosReferencia)
-
-  const dividir = (texto: string): string[] => texto.split(',').map(s => s.trim()).filter(Boolean)
 
   const handleGuardar = useCallback(async () => {
     await store.espacios.actualizar(espacio.id, {
       nombreEspacio: nombreEspacio.trim(),
       nombreVariante: nombreVariante.trim(),
       descripcion: descripcion.trim() || null,
-      colores: dividir(colores),
+      colores,
       fotosEspacio,
       fotosDisenio,
       fotosReferencia,
@@ -1862,7 +2075,7 @@ function FormDetallesEspacio({
         </label>
       </div>
 
-      {/* Selector de imágenes — arriba, con miniaturas (pedido de auditoría: más visible que un campo de texto al final) */}
+      {/* Selector de imágenes — arriba, con miniaturas y controles de reordenamiento */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <ImagePicker label="Fotos del espacio" value={fotosEspacio} onChange={setFotosEspacio} />
         <ImagePicker label="Fotos de diseño" value={fotosDisenio} onChange={setFotosDisenio} />
@@ -1880,10 +2093,13 @@ function FormDetallesEspacio({
         La variante activa se controla desde el header del espacio, junto al ícono de ojo y el tab con punto verde.
       </p>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] text-text-muted">Colores (separados por coma)</span>
-        <input type="text" value={colores} onChange={(e) => setColores(e.target.value)} className={inputCls} placeholder="Ej: Roble natural, Blanco" />
-      </label>
+      {/* Selector visual de acabados de catálogo (ZU_04) */}
+      <AcabadoPicker
+        label="Colores y Acabados de la Variante"
+        acabadosDisponibles={store.catalogoAcabados.listar()}
+        value={colores}
+        onChange={setColores}
+      />
 
       <div className="flex items-center gap-2 pt-1">
         <button

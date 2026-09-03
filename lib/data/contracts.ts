@@ -977,7 +977,7 @@ export interface DataStore {
   items: {
     porVariante(varianteId: string): ItemVariante[]
     crear(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante>
-    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>): Promise<ItemVariante | null>
+    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>): Promise<ItemVariante | null>
     eliminar(id: string): Promise<boolean>
   }
   artefactos: {

@@ -315,12 +315,27 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
    - **Vía A (Técnica / Escala):** Arquitectura de stores por dominio memoizados para soportar 100 cotizadores/vendedores concurrentes sin re-renders globales.
    - **Vía B (Rediseño Ergonómico y Usabilidad Comercial Subsistema por Subsistema):** En cada subsistema migrado, **se audita la pantalla real, se formulan recomendaciones de usabilidad en campo y se optimizan sus pantallas**, aplicando los mismos protocolos disciplinados del arnés (`disenio_pxx.md`, registro de decisiones, minimalismo y evolución documental limpia).
 
-### Hoja de Ruta de Fases ZU Pendientes:
-- **`ZU_04` (Usabilidad Comercial y UI del Cotizador):** `ItemEditorModal` (reemplazo in-situ, edición granular, hard-delete en borrador), eliminación de espacio en cabecera de grupo, corrección de batch en `ImagePicker` (`Promise.all`), `AcabadoPicker` tipado contra `catalogo_acabados`, layouts `+ Desde Plantilla` para precargar cocina/closet estándar, e ítems libres a medida. *(Documento base: `ZU_04_pln_ui_usabilidad_comercial.md`)*.
+### Hoja de Ruta de Fases ZU:
+- **`ZU_04` (Usabilidad Comercial y UI del Cotizador):** ✅ **COMPLETADA (2026-09-03)**. `ItemEditorModal`, reordenamiento y multi-upload de fotos, `AcabadoPicker`, `+ Desde Plantilla`, ítem libre y Hard-Delete en borrador.
 - **`ZU_05` (Bloque Comercial — Kanban P-01 + Pipeline P-02):** `useComercialStore` + `ComercialSincronizador`, romper re-render de 9 columnas con `useSelectProyectosColumna`, precomputación de estadísticas $O(P \times E \times I)$ en hidratador, mover tarjeta optimista en < 16ms y rediseño ergonómico del tablero. *(Documento base: `ZU_05_pln_bloque_comercial.md`)*.
 - **`ZU_06` (Bloque Finanzas):** `useFinanzasStore` + auditoría ergonómica de Caja P-21, Obligaciones P-22 y Cuentas de Cobro P-23.
 - **`ZU_07` (Bloque Taller y Calidad):** `useTallerStore` / `useCalidadStore` + optimización de Fila de Taller P-16 y Gate de Calidad P-17.
 - **`ZU_08` (Bloque Compras y Almacén):** `useComprasStore` + ergonomía de Órdenes de Compra P-13 y Recepción P-14.
 - **`ZU_09` (Retiro de DataStore Legacy):** Deprecación de `useDataStore()` con `getVersion()` global.
 - **`ZU_10` (Hardening y Benchmark de Concurrencia):** Pruebas de estrés mecánico validando 100 cotizadores simultáneos sin degradación.
+
+---
+
+## ✅ FASE ZU_04 COMPLETADA — Usabilidad Comercial y Esteroides del Cotizador (2026-09-03)
+
+**Registro de checkpoint (aprobado por Supervisor e implementado en código real).** Se completaron todas las capacidades de usabilidad comercial en el cotizador (`[proyectoId]/page.tsx`):
+
+1. **Reordenamiento y Multi-Upload en `ImagePicker`:** Carga paralela con `Promise.all` corrigiendo el bug de *stale closure*; controles interactivos `◀` / `▶` e indicador visual de posición (`#1`, `#2`...) para ordenar las fotos de diseño/espacio/referencia con persistencia reactiva.
+2. **`ItemEditorModal` con Reemplazo *In-Situ*:** Nuevo editor modal que permite sustituir el producto de catálogo conservando cantidades y notas, conmutador de precios ("mantener actual" vs "adoptar nuevo de catálogo"), edición granular y botón directo de borrado.
+3. **`AcabadoPicker` Conectado a BD:** Eliminación del campo de texto CSV; selector visual con swatches de color (`colorHex`), texturas HD (`imagenTexturaUrl`), familia y soporte para tonos libres.
+4. **Hard-Delete en Borrador (Cero Registros Fantasma):** `eliminarItemAction` ejecuta borrado físico (`DELETE`) si el proyecto está en borrador (sin contrato ni BOM); solo aplica soft-delete si hay contrato firmado o producción técnica. Reflejado de inmediato en la caché local de `drizzle-impl.ts`.
+5. **Layouts / Presets (`+ Desde Plantilla`):** Catálogo estático en `lib/catalogos/presets-espacios.ts` con 5 configuraciones arquitectónicas típicas (Cocina Lineal, Cocina en L, Closet, Baño flotante, Panel TV) que precargan espacio, módulos y jornadas en 1 clic.
+6. **Ítem Libre / A Medida:** Posibilidad de cotizar ítems especiales sin catálogo directamente desde la interfaz sin desviar al usuario a `/erp/catalogo`.
+- **Verificación Mecánica:** `npx tsc --noEmit` exit 0; `useCotizadorStore.test.ts` OK; `eslint` 0 errores.
+
 

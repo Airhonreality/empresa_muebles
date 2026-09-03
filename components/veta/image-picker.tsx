@@ -49,40 +49,82 @@ export function ImagePicker({
     onChange([...value, limpio]);
   }, [value, onChange, multiple]);
 
-  const agregarArchivo = useCallback(async (file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    
-    if (uploadToR2) {
-      try {
-        setIsUploading(true);
-        const url = await uploadFileToR2(file, r2Prefix);
-        agregar(url);
-      } catch (error) {
-        console.error("Error al subir a R2:", error);
-        // Fallback a previsualización local si falla la subida
-        agregar(URL.createObjectURL(file));
-      } finally {
-        setIsUploading(false);
+  const agregarArchivosLote = useCallback(async (files: File[]) => {
+    const imagenes = files.filter((f) => f.type.startsWith("image/"));
+    if (imagenes.length === 0) return;
+
+    if (!multiple) {
+      const file = imagenes[0];
+      if (uploadToR2) {
+        try {
+          setIsUploading(true);
+          const url = await uploadFileToR2(file, r2Prefix);
+          onChange([url]);
+        } catch (error) {
+          console.error("Error al subir a R2:", error);
+          onChange([URL.createObjectURL(file)]);
+        } finally {
+          setIsUploading(false);
+        }
+      } else {
+        onChange([URL.createObjectURL(file)]);
       }
-    } else {
-      // Previsualización local (comportamiento original)
-      agregar(URL.createObjectURL(file));
+      return;
     }
-  }, [agregar, uploadToR2, r2Prefix]);
+
+    setIsUploading(true);
+    try {
+      const nuevasUrls = await Promise.all(
+        imagenes.map(async (file) => {
+          if (uploadToR2) {
+            try {
+              return await uploadFileToR2(file, r2Prefix);
+            } catch (error) {
+              console.error("Error al subir a R2:", error);
+              return URL.createObjectURL(file);
+            }
+          }
+          return URL.createObjectURL(file);
+        })
+      );
+      const combinadas = Array.from(new Set([...value, ...nuevasUrls]));
+      onChange(combinadas);
+    } finally {
+      setIsUploading(false);
+    }
+  }, [value, onChange, multiple, uploadToR2, r2Prefix]);
 
   const quitar = (url: string) => onChange(value.filter((v) => v !== url));
+
+  const mover = (deIndex: number, aIndex: number) => {
+    if (aIndex < 0 || aIndex >= value.length) return;
+    const copia = [...value];
+    const [item] = copia.splice(deIndex, 1);
+    copia.splice(aIndex, 0, item);
+    onChange(copia);
+  };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
-    Array.from(e.dataTransfer.files).forEach(agregarArchivo);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      void agregarArchivosLote(files);
+    }
     const texto = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
     if (texto) agregar(texto);
   };
 
   const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
-    const archivo = Array.from(e.clipboardData.items).find((it) => it.type.startsWith("image/"))?.getAsFile();
-    if (archivo) { agregarArchivo(archivo); return; }
+    const archivos = Array.from(e.clipboardData.items)
+      .filter((it) => it.type.startsWith("image/"))
+      .map((it) => it.getAsFile())
+      .filter((f): f is File => f !== null);
+
+    if (archivos.length > 0) {
+      void agregarArchivosLote(archivos);
+      return;
+    }
     const texto = e.clipboardData.getData("text");
     if (texto) agregar(texto);
   };
@@ -103,16 +145,44 @@ export function ImagePicker({
         }`}
       >
         {value.length > 0 && !hideGrid && (
-          <div className={multiple ? "grid grid-cols-4 gap-2 mb-2 sm:grid-cols-6" : "mb-2 flex justify-center"}>
-            {value.map((url) => (
+          <div className={multiple ? "grid grid-cols-3 gap-2 mb-2 sm:grid-cols-4 md:grid-cols-6" : "mb-2 flex justify-center"}>
+            {value.map((url, idx) => (
               <div key={url} className={`group relative aspect-square overflow-hidden rounded-sm border border-border-subtle bg-bg-paper ${multiple ? "" : "w-24"}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob: temporales, no assets estáticos optimizables */}
                 <img src={url} alt="" className="h-full w-full object-cover" />
+                
+                {/* Controles de reordenamiento e índice */}
+                {multiple && value.length > 1 && (
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between bg-black/70 px-1 py-0.5 opacity-90 transition-opacity group-hover:opacity-100">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => mover(idx, idx - 1)}
+                      className="px-1 text-[11px] font-bold text-white transition-colors hover:text-gold-400 disabled:opacity-20"
+                      title="Mover antes"
+                      aria-label="Mover imagen antes"
+                    >
+                      ◀
+                    </button>
+                    <span className="font-mono text-[10px] text-white/90 font-medium">#{idx + 1}</span>
+                    <button
+                      type="button"
+                      disabled={idx === value.length - 1}
+                      onClick={() => mover(idx, idx + 1)}
+                      className="px-1 text-[11px] font-bold text-white transition-colors hover:text-gold-400 disabled:opacity-20"
+                      title="Mover después"
+                      aria-label="Mover imagen después"
+                    >
+                      ▶
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => quitar(url)}
                   aria-label="Quitar imagen"
-                  className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-xs leading-none text-white opacity-0 transition-opacity duration-fast group-hover:opacity-100"
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs leading-none text-white opacity-0 transition-opacity duration-fast group-hover:opacity-100 hover:bg-red-600"
                 >
                   ×
                 </button>
@@ -122,7 +192,7 @@ export function ImagePicker({
         )}
         {(multiple || value.length === 0) && (
           <p className="text-center text-xs text-text-muted">
-            Arrastrá una imagen, pegala (Ctrl+V) o agregá un link abajo
+            Arrastrá una o varias imágenes, pegalas (Ctrl+V) o agregá un link abajo
           </p>
         )}
       </div>
@@ -153,7 +223,11 @@ export function ImagePicker({
            accept="image/*"
            multiple={multiple}
            className="hidden"
-           onChange={(e) => { Array.from(e.target.files ?? []).forEach(agregarArchivo); e.target.value = ""; }}
+           onChange={(e) => {
+             const files = Array.from(e.target.files ?? []);
+             if (files.length > 0) void agregarArchivosLote(files);
+             e.target.value = "";
+           }}
            disabled={isUploading}
          />
          <button

@@ -296,7 +296,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       eliminar: async (id) => {
         const ok = await core.eliminarItemAction(id)
         if (ok) {
-          data = { ...data, items: data.items.map((i) => (i.id === id ? { ...i, anulado: true, updatedAt: new Date().toISOString() } : i)) }
+          data = { ...data, items: data.items.filter((i) => i.id !== id) }
           notify()
         }
         return ok

@@ -347,7 +347,7 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
 
 export async function actualizarItemAction(
   id: string,
-  partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>
+  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>
 ): Promise<ItemVariante | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, id))
@@ -364,8 +364,51 @@ export async function actualizarItemAction(
 }
 
 export async function eliminarItemAction(id: string): Promise<boolean> {
-  const [actualizado] = await db.update(s.itemsVariante).set({ anulado: true, updatedAt: new Date().toISOString() }).where(eq(s.itemsVariante.id, id)).returning()
-  return Boolean(actualizado)
+  return db.transaction(async (tx) => {
+    const [item] = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, id))
+    if (!item) return false
+
+    // Verificar si el ítem está referenciado en BOM (producción)
+    const [bom] = await tx
+      .select({ id: s.bomMaterial.id })
+      .from(s.bomMaterial)
+      .where(eq(s.bomMaterial.itemVarianteId, id))
+      .limit(1)
+
+    // Verificar si el proyecto padre ya tiene contrato emitido
+    let tieneContrato = false
+    const [variante] = await tx
+      .select({ proyectoId: s.espacioVariantes.proyectoId })
+      .from(s.espacioVariantes)
+      .where(eq(s.espacioVariantes.id, item.varianteId))
+      .limit(1)
+
+    if (variante?.proyectoId) {
+      const [contrato] = await tx
+        .select({ id: s.contratos.id })
+        .from(s.contratos)
+        .where(eq(s.contratos.proyectoId, variante.proyectoId))
+        .limit(1)
+      tieneContrato = Boolean(contrato)
+    }
+
+    if (bom || tieneContrato) {
+      // Soft delete si hay contrato o BOM (auditoría / trazabilidad)
+      const [actualizado] = await tx
+        .update(s.itemsVariante)
+        .set({ anulado: true, updatedAt: new Date().toISOString() })
+        .where(eq(s.itemsVariante.id, id))
+        .returning()
+      return Boolean(actualizado)
+    }
+
+    // Hard delete en borrador (cero registros fantasmas en Neon)
+    const [eliminado] = await tx
+      .delete(s.itemsVariante)
+      .where(eq(s.itemsVariante.id, id))
+      .returning({ id: s.itemsVariante.id })
+    return Boolean(eliminado)
+  })
 }
 
 /**
