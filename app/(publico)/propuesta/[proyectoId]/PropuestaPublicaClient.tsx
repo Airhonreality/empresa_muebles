@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { ArrowDown, Building2, Expand, LayoutGrid, MapPin } from 'lucide-react'
 import { Button } from '@/components/veta/button'
@@ -278,6 +278,22 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
     document.getElementById('contenido-propuesta')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  // ── Receptor BroadcastChannel para modo presentación (ZN-004) ──
+  const seccionRefs = useRef<Record<string, HTMLElement | null>>({})
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return
+    const canal = new BroadcastChannel(`presentacion-${proyecto.id}`)
+    canal.onmessage = (ev: MessageEvent<{ tipo: string; espacioId: string }>) => {
+      if (ev.data?.tipo === 'ir_a') {
+        setEspacioActivoId(ev.data.espacioId)
+        setVarianteSeleccionadaId(null)
+        const el = seccionRefs.current[ev.data.espacioId]
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+    return () => canal.close()
+  }, [proyecto.id])
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_var(--color-bg-alt)_0%,_var(--color-bg-paper)_40%,_var(--color-bg-paper)_100%)]">
       {/* HeaderPropuesta — sticky (top-16: se acopla debajo del header de AppShell, h-16) */}
@@ -333,6 +349,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
             {espaciosActivos.map((esp, index) => (
               <button
                 key={esp.id}
+                ref={(el) => { seccionRefs.current[esp.id] = el }}
                 type="button"
                 onClick={() => {
                   setEspacioActivoId(esp.id)

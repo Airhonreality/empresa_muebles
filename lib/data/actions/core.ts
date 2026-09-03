@@ -564,3 +564,28 @@ export async function crearContratoAction(data: { proyectoId: string; codigoCont
     return nuevo as unknown as Contrato
   })
 }
+
+// ── F-08-ext · Modo Presentación Comercial — Server Action (ZN-004) ──────
+/**
+ * Crea una nota de reunión vinculada a un proyecto.
+ * Append-only: las notas no se editan ni se eliminan (audit trail comercial).
+ */
+export async function crearNotaReunionAction(data: {
+  proyectoId: string
+  espacioVarianteId?: string | null
+  categoria: import('@/lib/data/contracts').CategoriaNotaReunion
+  contenido: string
+  creadoPor?: string | null
+}): Promise<import('@/lib/data/contracts').NotaReunion> {
+  const [nota] = await db
+    .insert(s.notasReunion)
+    .values({
+      proyectoId: data.proyectoId,
+      espacioVarianteId: data.espacioVarianteId ?? null,
+      categoria: data.categoria,
+      contenido: data.contenido.trim(),
+      creadoPor: data.creadoPor ?? null,
+    })
+    .returning()
+  return nota as unknown as import('@/lib/data/contracts').NotaReunion
+}

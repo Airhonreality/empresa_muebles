@@ -14,7 +14,7 @@
 // de inmediato el registro PRINCIPAL devuelto por el Action; los registros secundarios llegan con
 // el siguiente ciclo de polling (≤4s), no instantáneamente. Es una degradación aceptada explícita,
 // no un bug — ver plan_f10_migracion.md §3.1d.
-import type { DataStore, Proyecto } from './contracts'
+import type { DataStore, Proyecto, NotaReunion } from './contracts'
 import type { StoreSnapshot } from './snapshot'
 import { coincide } from '../search/normalizar'
 import { masRecientePrimero } from './orden'
@@ -1095,6 +1095,14 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         data = { ...data, bitacoraArticulos: upsert(data.bitacoraArticulos, r) }
         notify()
         return r
+      },
+    },
+
+    // --- F-08-ext: Notas de reunión comercial (ZN-004) ---
+    notasReunion: {
+      porProyecto: (_proyectoId: string): NotaReunion[] => [],
+      crear: async (values) => {
+        return core.crearNotaReunionAction(values)
       },
     },
 

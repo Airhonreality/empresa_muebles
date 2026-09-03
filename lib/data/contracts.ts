@@ -929,6 +929,24 @@ export interface UsuarioMock {
   rol: string
 }
 
+// ── F-08-ext · Modo Presentación Comercial (ZN-004) ──────────────────────
+export type CategoriaNotaReunion =
+  | 'requisito_cliente'
+  | 'cambio_diseno'
+  | 'cambio_presupuesto'
+  | 'acuerdo'
+  | 'libre'
+
+export interface NotaReunion {
+  id: string
+  proyectoId: string
+  espacioVarianteId: string | null
+  categoria: CategoriaNotaReunion
+  contenido: string
+  creadoPor: string | null
+  createdAt: string
+}
+
 export interface DataStore {
   proyectos: {
     listar(): Proyecto[]
@@ -1345,6 +1363,18 @@ export interface DataStore {
     publicados(): BitacoraArticulo[]
     porSlug(slug: string): BitacoraArticulo | undefined
     crear(data: Partial<BitacoraArticulo> & { slug: string; titulo: string; contenidoLargo: string }): Promise<BitacoraArticulo>
+  }
+
+  // --- F-08-ext: Notas de reunión comercial (ZN-004) ---
+  notasReunion: {
+    porProyecto(proyectoId: string): NotaReunion[]
+    crear(data: {
+      proyectoId: string
+      espacioVarianteId?: string | null
+      categoria: CategoriaNotaReunion
+      contenido: string
+      creadoPor?: string | null
+    }): Promise<NotaReunion>
   }
 
   /** Contrato de reactividad (M-07). Se suscribe a cualquier mutación del store. Devuelve la función de desuscripción. */

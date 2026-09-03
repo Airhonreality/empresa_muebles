@@ -15,7 +15,8 @@ import { Modal } from '@/components/veta/modal'
 import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-espacios'
 import { ContratoModal } from '../ContratoModal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
-import { useDataStore, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
+import { ModalPresentador } from '@/components/veta/ModalPresentador'
+import { useDataStore, generarSlides, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
 import { useSelectPorVariante } from '@/lib/data/stores/selectors'
 import { useCotizadorStore } from '@/lib/data/stores/useCotizadorStore'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
@@ -165,6 +166,7 @@ export default function CotizadorPage() {
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
+  const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
   const [nuevoEspacioNombre, setNuevoEspacioNombre] = useState('')
   const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
   const { guard: guardCrearEspacio, isPending: creandoEspacio } = usePendingGuard()
@@ -377,6 +379,17 @@ const EspacioGroupMemo = memo(EspacioGroup)
 
             <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => setMostrarEditarProyecto(true)}>Editar datos</Button>
             <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>Propuesta pública</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => {
+                window.open(`/propuesta/${proyecto.id}`, '_blank', 'noopener')
+                setModalPresentacionAbierto(true)
+              }}
+            >
+              ▶ Presentar
+            </Button>
             <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/erp/cotizador/${proyecto.id}?readonly=true`, '_blank')}>Solo lectura</Button>
             <Button variant="primary" size="md" className="h-7 px-3 text-xs" onClick={() => setMostrarContratoModal(true)}>Generar Contrato</Button>
             {proyecto.estado === 'activa' && (
@@ -664,6 +677,24 @@ const EspacioGroupMemo = memo(EspacioGroup)
             clientes={store.clientes.listar()}
             onClose={() => setMostrarEditarProyecto(false)}
             onSaved={() => setMostrarEditarProyecto(false)}
+          />
+        )}
+
+        {/* Modo Presentación Comercial (ZN-004 / F-08-ext) */}
+        {modalPresentacionAbierto && proyecto && (
+          <ModalPresentador
+            proyectoId={proyecto.id}
+            slides={generarSlides(
+              proyecto,
+              cliente ?? null,
+              espaciosBase,
+              espaciosBase.flatMap((esp) => store.items.porVariante(esp.id)),
+              catalogo,
+            )}
+            onCrearNota={async (data) => {
+              await store.notasReunion.crear(data)
+            }}
+            onCerrar={() => setModalPresentacionAbierto(false)}
           />
         )}
       </div>

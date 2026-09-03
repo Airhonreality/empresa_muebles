@@ -9,6 +9,7 @@ import type {
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
+  NotaReunion,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
@@ -2630,6 +2631,24 @@ export function createMockStore(): DataStore {
         bitacoraArticulos.push(nuevo)
         notify()
         return nuevo
+      },
+    },
+
+    // --- F-08-ext: Notas de reunión comercial (ZN-004) ---
+    notasReunion: {
+      porProyecto(_proyectoId: string): NotaReunion[] {
+        return []
+      },
+      async crear(data): Promise<NotaReunion> {
+        return {
+          id: `mock-nota-${Date.now()}`,
+          proyectoId: data.proyectoId,
+          espacioVarianteId: data.espacioVarianteId ?? null,
+          categoria: data.categoria,
+          contenido: data.contenido,
+          creadoPor: data.creadoPor ?? null,
+          createdAt: new Date().toISOString(),
+        }
       },
     },
 

@@ -44,4 +44,8 @@ export type {
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, BitacoraCategoria, Testimonio, AtributoTecnico,
   CatalogoEspacioArquitectonico,
+  CategoriaNotaReunion, NotaReunion,
 } from './contracts'
+
+export { generarSlides } from './presentacion'
+export type { TipoSlide } from './presentacion'

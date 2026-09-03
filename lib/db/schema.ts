@@ -1602,3 +1602,28 @@ export const bitacoraArticulos = pgTable("bitacora_articulos", {
 		}),
 	}
 });
+
+// F-08-ext · Modo presentación comercial — notas capturadas durante la reunión (ZN-004)
+export const notasReunion = pgTable("notas_reunion", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  proyectoId: uuid("proyecto_id").notNull(),
+  espacioVarianteId: uuid("espacio_variante_id"),   // null = nota del proyecto general
+  categoria: categoriaNotaReunion().notNull(),
+  contenido: text().notNull(),
+  creadoPor: uuid("creado_por"),                    // personaId del comercial (nullable para flexibilidad)
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+  // Sin updatedAt — las notas son inmutables (audit trail)
+}, (table) => {
+  return {
+    notasReunionProyectoIdFk: foreignKey({
+      columns: [table.proyectoId],
+      foreignColumns: [proyectos.id],
+      name: "notas_reunion_proyecto_id_proyectos_id_fk"
+    }),
+    notasReunionEspacioVarianteIdFk: foreignKey({
+      columns: [table.espacioVarianteId],
+      foreignColumns: [espacioVariantes.id],
+      name: "notas_reunion_espacio_variante_id_espacio_variantes_id_fk"
+    }),
+  }
+});

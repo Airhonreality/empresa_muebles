@@ -1,8 +1,8 @@
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
 import Link, { type LinkProps } from "next/link";
 
-type Variant = "primary" | "secondary" | "ghost" | "destructive" | "icon";
-type Size = "md" | "lg";
+type Variant = "primary" | "secondary" | "ghost" | "destructive" | "icon" | "outline";
+type Size = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -25,6 +25,7 @@ function ButtonSpinner() {
 const BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-sm font-medium transition-all duration-fast cursor-pointer select-none focus-visible:shadow-ring-focus disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]";
 const BUTTON_SIZES: Record<Size, string> = {
+  sm: "h-8 px-2.5 text-xs",
   md: "min-h-[44px] h-11 px-3 text-sm",
   lg: "h-12 px-4 text-base",
 };
@@ -32,6 +33,7 @@ const BUTTON_VARIANTS: Record<Variant, string> = {
   primary: "bg-btn-primary-bg text-btn-primary-text hover:bg-gold-700 hover:shadow-md",
   secondary:
     "bg-bg-raised text-text-primary border border-border-default hover:border-border-strong hover:bg-bg-alt",
+  outline: "bg-transparent text-text-primary border border-border-default hover:bg-bg-alt",
   ghost: "text-text-muted hover:text-text-primary hover:bg-bg-alt",
   destructive: "bg-btn-danger-bg text-btn-danger-text hover:opacity-90 hover:shadow-md",
   icon: "bg-bg-raised text-text-muted border border-border-subtle hover:text-text-primary hover:bg-bg-alt",
