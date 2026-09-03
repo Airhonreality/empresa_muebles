@@ -235,3 +235,17 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 - Ningún agente corre la app (`npm run dev`) ni prueba flujos de escritura mientras `DATABASE_URL` apunte a la Neon de producción compartida.
 - **El código de las PoC del Diamante 4 (PoC 1/2/3/3.1, t-098/t-099) es prueba de concepto de estética/tokens/interacción únicamente.** Ninguna referencia puede citarlo como evidencia de que una pantalla de negocio "existe" o está aprobada — la única fuente de aprobación de pantalla es un `disenio_PXX.md`/`disenio_FXX.md` con checkpoint del Supervisor (decisión 2026-08-08).
 - **Matryoshka por línea de trabajo (2026-08-08):** `nucleo/` es la verdad de negocio compartida; cada línea (`lineas/<nombre>/`) tiene su propio progreso, plan, y archivo histórico. Ver `lineas/_plantilla/LEEME.md` para abrir una línea nueva.
+
+## ✅ FASE 0 ZUSTAND APROBADA — rama feature, sin tocar dev (2026-09-02, ZN-001)
+
+**Registro de hallazgo/checkpoint (Acción 3 aprobada por Supervisor).** Tras dos rechazaciones del dictamen previo (10 errores de compilación en `useCotizadorStore.ts`), se re-hizo la Fase 0 de la línea de arquitectura zustand (`arnes/lineas/ola7/tecnico/zustand-migration/`):
+
+- **Plan ZN-001** (`PLAN_ZN-001.md`, aprobado por Javier) — Fase 0 corregida: store Zustand 5 **solo lectura**, import **named** (`import { create } from 'zustand'`), fuente única de tipos (`CotizadorState` de `types.ts`), selectors reactivos con `useShallow`, **cero `any`**, sin optimistic (eso es Fase 2). Archivos de la rama:
+  - `lib/data/stores/types.ts` (fuente única + `cotizadorInitialState()`)
+  - `lib/data/stores/useCotizadorStore.ts` (estado `CotizadorState`, acciones `hidratar`/`avisarCambio`/`resetear`)
+  - `lib/data/stores/selectors.ts` (`useSelectPorVariante`/`useSelectTotales`/`useSelectProductoMap`/`useSelectJornadasMap`/`useSelectGruposExpandidos`, tipados, sin `any`)
+  - `lib/data/stores/useCotizadorStore.test.ts` (verificación ejecutable, patrón node:assert + tsx)
+- **QA independiente: APROBADO.** Agente QA distinto del ejecutor verificó con evidencia mecánica: `npx tsc --noEmit` exit 0 (baseline previo 10 errores); test del store OK con placeholder de `DATABASE_URL`; `npx eslint lib/data/stores` 0 errores; `.env.local` real no tocado (`git status` limpio, `env.local.bak_pooler` eliminado); cotizador existente NO modificado (`git diff HEAD --stat -- "app/**"` vacío — Fase 0 solo crea archivos nuevos); cero `any`; import named confirmado; State usa `CotizadorState` como fuente única.
+- **Limpieza:** eliminados todos los `tsc-*.txt` (basura del dev previo) y `env.local.bak_pooler` de la raíz. `.env.local` real intacto.
+- **Commit:** `8b45988` `feat(arquitectura-zustand): fase 0 — stores zustand por dominio (solo lectura)` — **en la rama `feature/arquitectura-zustand-100-cotizadores`, NO en `dev` ni `main`.** La rama feature queda aislada: el cotizador real en `dev` no fue tocado (garantía de negocio).
+- **Pendiente:** Fase 1 de ZU_03 (migrar `[proyectoId]/page.tsx` a los stores, selectors en UI) — fuera de este checkpoint; requiere su propio plan aprobado. `package.json`/`package-lock.json` llevan la dep `zustand@^5.0.15` (modificación del dev previo, requerida por el código nuevo).
