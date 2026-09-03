@@ -10,6 +10,34 @@ import type { ProductoCatalogo } from '../contracts'
 import { useCotizadorStore } from './useCotizadorStore'
 
 /**
+ * Obtener todos los espacios del proyecto (slice del cotizador).
+ * Requiere que el puente (CotizadorSincronizador) haya hidratado `espacios`.
+ */
+export const useSelectEspacios = () => {
+  const espacios = useCotizadorStore(useShallow((state) => state.espacios))
+  return useMemo(() => espacios, [espacios])
+}
+
+/**
+ * Obtener el catálogo de productos (para productMap en la cotización).
+ * Requiere que el puente haya hidratado `catalogo`.
+ */
+export const useSelectCatalogo = () => {
+  const catalogo = useCotizadorStore(useShallow((state) => state.catalogo))
+  return useMemo(() => catalogo, [catalogo])
+}
+
+/**
+ * Obtener los parámetros del sistema (tarifas de jornadas, parámetros financieros, etc.).
+ * Requiere que el puente haya hidratado `parametros`.
+ */
+export const useSelectParametros = () => {
+  const parametros = useCotizadorStore(useShallow((state) => state.parametros))
+  return useMemo(() => parametros, [parametros])
+}
+
+
+/**
  * Obtener los items de una variante específica, excluyendo anulados.
  * Solo re-renderiza cuando cambia la referencia de `items` del store.
  */

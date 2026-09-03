@@ -15,6 +15,10 @@ export interface CotizadorState {
   jornadasMap: Record<string, { dev: string; ens: string; inst: string }>
   /** Estado de grupos expandidos */
   gruposExpandidos: Set<string>
+  /** Catálogo de productos (lectura para productMap en la cotización) */
+  catalogo: ProductoCatalogo[]
+  /** Parámetros del sistema (contratos tarifas jornadas, etc.) */
+  parametros: Parametro[]
   /** Flag de carga/pending */
   isPending: {
     crearEspacio: boolean
@@ -49,6 +53,8 @@ export const cotizadorInitialState = (): CotizadorState => ({
   espacios: [],
   jornadasMap: {},
   gruposExpandidos: new Set(),
+  catalogo: [],
+  parametros: [],
   isPending: {
     crearEspacio: false,
     crearItem: false,

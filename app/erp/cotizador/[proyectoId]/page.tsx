@@ -13,6 +13,7 @@ import { ItemDescriptorModal } from '@/components/veta/item-descriptor-modal'
 import { ContratoModal } from '../ContratoModal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { useDataStore, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
+import { useSelectPorVariante } from '@/lib/data/stores/selectors'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -196,19 +197,22 @@ export default function CotizadorPage() {
     (espacioId: string, campo: keyof JornadasTuple, valor: string) => {
       // POC-10#1: solo numérico decimal simple (evita NaN silencioso en totales)
       if (!/^[0-9]*\.?[0-9]*$/.test(valor)) return
-      setJornadasMap((prev) => {
-        const current = prev[espacioId] ?? { dev: '0', ens: '0', inst: '0' }
-        const nuevo = { ...current, [campo]: valor }
-        // El updater de setState debe ser síncrono; la escritura real corre aparte.
-        store.espacios.actualizarJornadas(espacioId, {
+      // El updater de setState debe ser puro (sin side-effects); calculamos el
+      // nuevo valor con el estado del closure (dependencia [jornadasMap]) y la
+      // escritura real al DataStore corre FUERA del updater — así no se dispara
+      // "Cannot update X while rendering Y" por el notify() del Server Action.
+      const current = jornadasMap[espacioId] ?? { dev: '0', ens: '0', inst: '0' }
+      const nuevo = { ...current, [campo]: valor }
+      setJornadasMap((prev) => ({ ...prev, [espacioId]: nuevo }))
+      store.espacios
+        .actualizarJornadas(espacioId, {
           jornadasDesarrolloTecnico: nuevo.dev,
           jornadasEnsamblajeTaller: nuevo.ens,
           jornadasInstalacionObra: nuevo.inst,
-        }).catch((err) => console.error('No se pudo guardar jornadas', err))
-        return { ...prev, [espacioId]: nuevo }
-      })
+        })
+        .catch((err) => console.error('No se pudo guardar jornadas', err))
     },
-    [store],
+    [store, jornadasMap],
   )
 
   if (!proyecto) {
@@ -810,9 +814,10 @@ function EspacioGroup({
   const [mostrarMenuDuplicar, setMostrarMenuDuplicar] = useState(false)
 
   // El total del header refleja siempre la variante ACTIVA (la que cuenta),
-  // no la que se esté mirando en ese momento — cambiar de tab para comparar
-  // no debe mover el número que ve el resto de la pantalla.
-  const totalGrupo = store.items.porVariante(varianteActiva.id)
+  // no la que se estǸ mirando en ese momento �?" cambiar de tab para comparar
+  // no debe mover el nǧmero que ve el resto de la pantalla.
+  const itemsActivos = useSelectPorVariante(varianteActiva.id)
+  const totalGrupo = itemsActivos
     .filter((it) => !it.esReferencial)
     .reduce((s, it) => s + parseNum(it.totalLinea), 0)
 
@@ -1017,12 +1022,13 @@ function VarianteContenido({
   proyectoId: string
 }) {
   const store = useDataStore()
-  const items = store.items.porVariante(espacio.id)
+  // Lectura de items desde el store Zustand (puente hidratado desde el DataStore).
+  const items = useSelectPorVariante(espacio.id)
+  const productMap = new Map(catalogo.map((p) => [p.id, p]))
   const itemsContractuales = items.filter((it) => !it.esReferencial)
   const itemsReferenciales = items.filter((it) => it.esReferencial)
   const subtotalItems = itemsContractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
   const totalReferencial = itemsReferenciales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
-  const productMap = new Map(catalogo.map((p) => [p.id, p]))
 
   const [mostrarFormArtefacto, setMostrarFormArtefacto] = useState(false)
   const [editarArtefactoId, setEditarArtefactoId] = useState<string | null>(null)

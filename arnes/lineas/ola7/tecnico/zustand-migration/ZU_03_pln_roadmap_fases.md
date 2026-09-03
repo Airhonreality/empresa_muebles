@@ -123,7 +123,7 @@ Mejorar la arquitectura del data layer para soportar 100 cotizadores simultáneo
 
 ---
 
-## Fase 8: Pruebas a Escala (S7-S8)
+## Fase 7: Pruebas a Escala (S7-S8)
 
 | Entregable | Descripción |
 |------------|-------------|
