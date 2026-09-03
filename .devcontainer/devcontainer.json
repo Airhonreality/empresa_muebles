@@ -1,0 +1,22 @@
+{
+  "name": "Empresa Muebles V3",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+  "forwardEnv": [
+    "DATABASE_URL",
+    "DATABASE_URL_DEV_LOCAL",
+    "DATABASE_URL_V3_PREVIEW",
+    "DATABASE_URL_LEGACY",
+    "NEON_API_KEY",
+    "SESSION_SECRET",
+    "VERCEL_OIDC_TOKEN",
+    "NOTION_API_KEY",
+    "CF_R2_ACCESS_KEY_ID",
+    "CF_R2_SECRET_ACCESS_KEY"
+  ],
+  "postCreateCommand": "bash scripts/setup-secrets.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["github.codespaces", "github.vscode-pull-request-github"]
+    }
+  }
+}
