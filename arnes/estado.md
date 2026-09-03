@@ -249,3 +249,20 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 - **Limpieza:** eliminados todos los `tsc-*.txt` (basura del dev previo) y `env.local.bak_pooler` de la raíz. `.env.local` real intacto.
 - **Commit:** `8b45988` `feat(arquitectura-zustand): fase 0 — stores zustand por dominio (solo lectura)` — **en la rama `feature/arquitectura-zustand-100-cotizadores`, NO en `dev` ni `main`.** La rama feature queda aislada: el cotizador real en `dev` no fue tocado (garantía de negocio).
 - **Pendiente:** Fase 1 de ZU_03 (migrar `[proyectoId]/page.tsx` a los stores, selectors en UI) — fuera de este checkpoint; requiere su propio plan aprobado. `package.json`/`package-lock.json` llevan la dep `zustand@^5.0.15` (modificación del dev previo, requerida por el código nuevo).
+
+---
+
+## ✅ FASE 1 ZUSTAND COMPLETADA — puente de sincronización + migración de reads (2026-09-03, ZN-002)
+
+**Registro de checkpoint (aprobado por Supervisor, QA runtime de Javier en navegador).** La Fase 1 de la línea zustand se ejecutó y fue **aprobada por el Supervisor tras QA runtime manual contra `dev-local`** (el cotizador real se cargó, creó items, cambió cantidades/precios, jornadas y tabs de variante sin crash ni dato desincronizado).
+
+- **Plan ZN-002** (`PLAN_ZN-002.md`) — Fase 1 combinada: primero se resolvió el **modelo de sincronización** (la pieza que el roadmap omitía) y con eso se migró la pantalla del cotizador. Hallazgo determinante: las escrituras del `DataStore` en modo drizzle **ya son "await Server Action + aplicar caché + notify()"** (`drizzle-impl.ts:1-24`), por lo que el store Zustand **NO reimplementa Server Actions** — es una capa de lectura memoizada alimentada del mismo DataStore vía un puente.
+- **Puente de sincronización:**
+  - `lib/data/stores/hidratador.ts` — función pura que mapea el `DataStore` → `CotizadorState` (items, espacios, jornadasMap, catalogo, parametros para un `proyectoId`).
+  - `lib/data/stores/CotizadorSincronizador.tsx` — componente `'use client'` que se suscribe a `useDataStore()` y rehidrata `useCotizadorStore` en cada cambio de versión. No reimplementa escrituras: la reactividad multi-usuario (long-poll + BroadcastChannel, M-07b) se preserva intacta porque el puente usa la misma suscripción del page.
+  - `app/erp/cotizador/[proyectoId]/layout.tsx` — monta el puente una sola vez para todo el subárbol.
+- **Migración del page.tsx (43 líneas, mínima invasión):** solo se migraron los bloques de LECTURA pesada a selectores (`useSelectPorVariante` en `EspacioGroup` y `VarianteContenido`). Las **escrituras se conservan intactas** (`store.espacios.crear`, `store.proyectos.*`, `store.items.*` siguen pasando por el DataStore real → Server Actions + Neon). `tsc` 0 errores, eslint 0 errores, store test OK, 43 líneas de diff.
+- **Fix adicional (Error 2, side-effect en render):** `actualizarJornadas()` se llamaba dentro del updater de `setJornadasMap` (prohibido). Corregido: el nuevo valor se calcula con el closure (`jornadasMap` ahora en deps) y la escritura al DataStore corre **fuera del updater**. Mismo comportamiento optimista + persistencia, sin "Cannot update while rendering".
+- **Limpieza de inconsistencias (hecha por Supervisor):** eliminadas de `disenio_p04_cotizador.md` las referencias a `ZU_04_pln_ui_usabilidad_comercial.md` (plan **NO aprobado**, fuera de zona de ZN-002) y de `ZU_03` el bloque de "Conexión de secuencia" hacia ese plan. Corregida la numeración de roadmap: "Fase 8" → "Fase 7" (había salto 6→8).
+- **Commit:** `5a26843` `feat(zustand): fase 1 - puente sincronizacion + migracion de reads del cotizador (ZN-002)` — **en la rama `feature/arquitectura-zustand-100-cotizadores`, sin merge a `dev` ni `main`.**
+- **Pendiente:** Fase 2 de ZU_03 (acciones optimistic + `eliminarVariante()`/rename + React.memo/productMap useMemo). El archivo `arnes/lineas/ola7/tecnico/zustand-migration/ZU_04_pln_ui_usabilidad_comercial.md` quedó en el working tree como **untracked NO autorizado** — requiere revisión/aprobación del Supervisor antes de incorporarse a cualquier commit.
