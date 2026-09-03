@@ -48,6 +48,8 @@ export const tipoCambioContrato = pgEnum("tipo_cambio_contrato", ['adicional', '
 export const shopCategoria = pgEnum("shop_categoria", ['Cocinas', 'Closets', 'Estudios', 'Comedores', 'Baños'])
 export const origenObligacion = pgEnum("origen_obligacion", ['contrato_hito', 'proveedor', 'diseno_3d', 'nomina', 'comision', 'arriendo'])
 export const rolCanonico = pgEnum("rol_canonico", ['admin', 'comercial', 'desarrollador', 'compras', 'taller', 'finanzas', 'supervisora_qa'])
+// F-08-ext · Modo presentación comercial (ZN-004)
+export const categoriaNotaReunion = pgEnum("categoria_nota_reunion", ['requisito_cliente', 'cambio_diseno', 'cambio_presupuesto', 'acuerdo', 'libre'])
 
 
 // ── F0 · Cimientos — identidad, roles y auditoría ────────────────────────
