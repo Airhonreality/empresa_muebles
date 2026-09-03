@@ -278,4 +278,49 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 3. **Merge a `dev`:** rama `feature/arquitectura-zustand-100-cotizadores` → `dev` (`--no-ff`). Solo trajo 2 commits de docs (PLAN_ZN-003 + ZU_05 + ZU_03 update). El código de Fase 0 y Fase 1 ya estaba en `dev` (commits `789f9a8` y `2440b7c`). `npx tsc --noEmit` exit 0 tras el merge. `dev` = Production Branch de Vercel, por lo que estos docs ahora están en el historial de despliegue.
 
 - **Commits:** `d1bfd17` (PLAN_ZN-003 blindado), `b864fd7` (ZU_05 + ZU_03), merge commit en `dev`.
-- **Pendiente inmediato:** ejecutar Fase 2 del cotizador (ZN-003: prerequisito §0 + optimistic + P3/P4/P6/P7) y/o Bloque Comercial (ZU_05).
+
+---
+
+## ✅ FASE 2 ZUSTAND COMPLETADA — Mutaciones Optimistas, Revert, P3/P4/P6/P7 (2026-09-03, ZN-003)
+
+**Registro de checkpoint (aprobado por Supervisor).** Se completó e integró la Fase 2 de Zustand en el Cotizador (`[proyectoId]/page.tsx`):
+
+- **Plan ZN-003** (`PLAN_ZN-003.md`) ejecutado y verificado mecánicamente:
+  1. **T.1 (Types):** `CotizadorActions` extendido con 4 firmas atómicas (`crearItemOptimistic`, `actualizarItemOptimistic`, `eliminarVariante`, `renombrarVariante`) sin ningún `any`.
+  2. **T.2 (Snapshot + Revert):** `useCotizadorStore.ts` guarda snapshot del estado previo de items/espacios, muta inmediatamente (< 16ms en UI) e invoca la Server Action con rollback automático al snapshot previo si la persistencia falla.
+  3. **T.3 (Guardia de Integridad en Servidor):** `eliminarEspacioAction` (`core.ts:395`) implementa un **Clean Delete con Guardia de Integridad**: verifica si la variante tiene BOM en `bom_material` o módulos en `modulos`. Si existen, rechaza con `VarianteNoEliminableError` (no se borran variantes que entraron a producción técnica); si no existen (variantes preliminares de cotización), ejecuta borrado atómico en cascada (`artefactos → items → espacio_variantes`). Expuesto en `contracts.ts`, `drizzle-impl.ts` y `mock-store.ts`.
+  4. **T.4 (UI page.tsx):**
+     - **P6:** `productMap` envuelto en `useMemo(() => new Map(...), [catalogo])`.
+     - **P7:** `EspacioGroupMemo = memo(EspacioGroup)` protegiendo re-renders cruzados entre espacios.
+     - **P3:** Botón `×` en pestañas inactivas para eliminar variante llamando a `eliminarVarianteUI`.
+     - **P4:** Modo edición de nombre inline en pestaña con botón de lápiz, guardando con `Enter`/`onBlur`.
+     - **Optimismo en ítems:** `crearItemOptimistic` conectado a las búsquedas de `SmartSearch` para contractuales y referenciales.
+  5. **T.5 (Tests unitarios):** 6 tests en `useCotizadorStore.test.ts` pasando al 100% con placeholder de DB.
+- **Verificación Mecánica:** `npx tsc --noEmit` exit 0; `useCotizadorStore.test.ts` OK; `eslint` 0 errores.
+- **Commits en `dev`:**
+  - `06ab415` `feat(zustand): fase 2 - mutaciones optimistas, revert, eliminar/renombrar variante y memoizacion (ZN-003)`
+  - `49c5fdb` `docs(zustand): ZU_04 plan maestro de usabilidad comercial y ui del cotizador post-fase 2`
+
+---
+
+## 🧭 DECISIÓN ESTRATÉGICA DE NEGOCIO: EVALUACIÓN DE CAMPO DEL ERP (2/10) Y PROPÓSITO DUAL DE LA LÍNEA ZUSTAND
+
+**Fecha de registro:** 2026-09-03  
+**Decisión canónica del Supervisor (Javier):**
+
+1. **Diagnóstico de Campo del ERP en Producción:**  
+   Tras varios días de operación en el dominio real por parte del equipo comercial y operativo, el diseño inicial de pantallas F-XXX fue puesto a prueba bajo fuego real. **El veredicto de usabilidad en campo es de 2/10** (fricción en carga de ítems, registros fantasma por soft-deletes ciegos, inputs enterrados, rigidez en tabs de variantes, falta de atajos para plantillas típicas y navegación destructiva que interrumpe reuniones comerciales).
+2. **Propósito Dual de la Línea Zustand (`zustand-migration/` / serie `ZU`):**  
+   La línea de Zustand deja de ser únicamente una refactorización técnica de estado y se formaliza como una **estrategia combinada de dos vías**:
+   - **Vía A (Técnica / Escala):** Arquitectura de stores por dominio memoizados para soportar 100 cotizadores/vendedores concurrentes sin re-renders globales.
+   - **Vía B (Rediseño Ergonómico y Usabilidad Comercial Subsistema por Subsistema):** En cada subsistema migrado, **se audita la pantalla real, se formulan recomendaciones de usabilidad en campo y se optimizan sus pantallas**, aplicando los mismos protocolos disciplinados del arnés (`disenio_pxx.md`, registro de decisiones, minimalismo y evolución documental limpia).
+
+### Hoja de Ruta de Fases ZU Pendientes:
+- **`ZU_04` (Usabilidad Comercial y UI del Cotizador):** `ItemEditorModal` (reemplazo in-situ, edición granular, hard-delete en borrador), eliminación de espacio en cabecera de grupo, corrección de batch en `ImagePicker` (`Promise.all`), `AcabadoPicker` tipado contra `catalogo_acabados`, layouts `+ Desde Plantilla` para precargar cocina/closet estándar, e ítems libres a medida. *(Documento base: `ZU_04_pln_ui_usabilidad_comercial.md`)*.
+- **`ZU_05` (Bloque Comercial — Kanban P-01 + Pipeline P-02):** `useComercialStore` + `ComercialSincronizador`, romper re-render de 9 columnas con `useSelectProyectosColumna`, precomputación de estadísticas $O(P \times E \times I)$ en hidratador, mover tarjeta optimista en < 16ms y rediseño ergonómico del tablero. *(Documento base: `ZU_05_pln_bloque_comercial.md`)*.
+- **`ZU_06` (Bloque Finanzas):** `useFinanzasStore` + auditoría ergonómica de Caja P-21, Obligaciones P-22 y Cuentas de Cobro P-23.
+- **`ZU_07` (Bloque Taller y Calidad):** `useTallerStore` / `useCalidadStore` + optimización de Fila de Taller P-16 y Gate de Calidad P-17.
+- **`ZU_08` (Bloque Compras y Almacén):** `useComprasStore` + ergonomía de Órdenes de Compra P-13 y Recepción P-14.
+- **`ZU_09` (Retiro de DataStore Legacy):** Deprecación de `useDataStore()` con `getVersion()` global.
+- **`ZU_10` (Hardening y Benchmark de Concurrencia):** Pruebas de estrés mecánico validando 100 cotizadores simultáneos sin degradación.
+
