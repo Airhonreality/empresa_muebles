@@ -266,3 +266,16 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 - **Limpieza de inconsistencias (hecha por Supervisor):** eliminadas de `disenio_p04_cotizador.md` las referencias a `ZU_04_pln_ui_usabilidad_comercial.md` (plan **NO aprobado**, fuera de zona de ZN-002) y de `ZU_03` el bloque de "Conexión de secuencia" hacia ese plan. Corregida la numeración de roadmap: "Fase 8" → "Fase 7" (había salto 6→8).
 - **Commit:** `5a26843` `feat(zustand): fase 1 - puente sincronizacion + migracion de reads del cotizador (ZN-002)` — **en la rama `feature/arquitectura-zustand-100-cotizadores`, sin merge a `dev` ni `main`.**
 - **Pendiente:** Fase 2 de ZU_03 (acciones optimistic + `eliminarVariante()`/rename + React.memo/productMap useMemo). El archivo `arnes/lineas/ola7/tecnico/zustand-migration/ZU_04_pln_ui_usabilidad_comercial.md` quedó en el working tree como **untracked NO autorizado** — requiere revisión/aprobación del Supervisor antes de incorporarse a cualquier commit.
+
+---
+
+## ✅ MERGE A DEV + PLANES BLINDADOS (2026-09-03, ZN-003/ZU-05)
+
+**Registro de checkpoint (merge + planificación blindada).** Se completaron 3 operaciones en un solo ciclo:
+
+1. **PLAN_ZN-003 blindado** (`PLAN_ZN-003.md`): se identificó que `espacios` NO tiene `eliminar` en `contracts.ts` (línea 955-969), ni `core.eliminarEspacioAction` en `core.ts`, ni implementación en `drizzle-impl.ts`/`mock-store.ts`. Se agregó **prerequisito §0** que bloquea P3 (`eliminarVariante`) hasta crear la Server Action con transacción (artefactos → items → espacio). También se aclaró que `renombrarVariante` usa `espacios.actualizar` existente (soporta `nombreVariante`). Criterios de aceptación divididos en Pre-P3 y Post-implementación.
+2. **ZU_05 blindado** (`ZU_05_pln_bloque_comercial.md`): se verificó el código real del kanban (`comercial/page.tsx:69-79` = 9 columnas, `:376-386` = bottleneck O(P×E×I), `:141` = `ProjectCard` sin `React.memo`, `:402-404` = `handleTransition` bloqueante). Se agregó: mecanismo de rollback explícito (snapshot → restore), distinción `cotizador/page.tsx` (reads migran) vs `cotizador/new/page.tsx` (escrituras permanecen en `useDataStore()`), sección de tests (7 casos), criterios de aceptación verificables.
+3. **Merge a `dev`:** rama `feature/arquitectura-zustand-100-cotizadores` → `dev` (`--no-ff`). Solo trajo 2 commits de docs (PLAN_ZN-003 + ZU_05 + ZU_03 update). El código de Fase 0 y Fase 1 ya estaba en `dev` (commits `789f9a8` y `2440b7c`). `npx tsc --noEmit` exit 0 tras el merge. `dev` = Production Branch de Vercel, por lo que estos docs ahora están en el historial de despliegue.
+
+- **Commits:** `d1bfd17` (PLAN_ZN-003 blindado), `b864fd7` (ZU_05 + ZU_03), merge commit en `dev`.
+- **Pendiente inmediato:** ejecutar Fase 2 del cotizador (ZN-003: prerequisito §0 + optimistic + P3/P4/P6/P7) y/o Bloque Comercial (ZU_05).
