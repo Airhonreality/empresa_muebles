@@ -65,7 +65,7 @@ Mejorar la arquitectura del data layer para soportar 100 cotizadores simultáneo
 
 | Entregable | Descripción |
 |------------|-------------|
-| `useComercialStore` | Proyectos, clientes, contratos, hitos |
+| `useComercialStore` | Proyectos, clientes, contratos, hitos (ver [`ZU_05_pln_bloque_comercial.md`](./ZU_05_pln_bloque_comercial.md)) |
 | `useFinanzasStore` | Cajas, obligaciones, movimientos |
 | Migrar kanban comercial | A usar store en lugar de useDataStore global |
 | Migrar finanzas | Cajas y obligaciones |
