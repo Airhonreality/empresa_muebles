@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, memo } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
@@ -14,6 +14,7 @@ import { ContratoModal } from '../ContratoModal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { useDataStore, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
 import { useSelectPorVariante } from '@/lib/data/stores/selectors'
+import { useCotizadorStore } from '@/lib/data/stores/useCotizadorStore'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -220,9 +221,19 @@ export default function CotizadorPage() {
       <div className="mx-auto max-w-4xl px-6 py-16 text-center">
         <p className="text-text-muted">Proyecto no encontrado</p>
         <p className="text-xs font-mono mt-2">{proyectoId}</p>
-      </div>
-    )
-  }
+    </div>
+  )
+}
+
+// P7 (ZN-003): envoltura memoizada. Como EspacioGroup es una función declarada, se usa a
+// través de `EspacioGroupMemo` para que una modificación en una variante/espacio NO re-renderice
+// a los hermanos (además de la suscripción granular por-versión que ya aporta useSelectPorVariante
+// en la Fase 1). Los callbacks (onToggle, onUpdateJornadas), tarifas y catalogo son estables
+// (useCallback/useMemo), condición necesaria para que el shallow-compare de `memo` no se invalide
+// en cada render del padre. `VarianteContenido` no se memoiza: su re-render granular por variante
+// ya lo cubre el selector don-de vive bajo EspacioGroupMemo.
+const EspacioGroupMemo = memo(EspacioGroup)
+
 
   const materialesTotal = espaciosActivos.reduce((sum, esp) => {
     const items = store.items.porVariante(esp.id).filter((it) => !it.esReferencial)
@@ -404,16 +415,16 @@ export default function CotizadorPage() {
           </div>
         </div>
         {Array.from(gruposPorNombre.entries()).map(([nombreEspacio, variantes]) => (
-          <EspacioGroup
+          <EspacioGroupMemo
             key={nombreEspacio}
             nombreEspacio={nombreEspacio}
             variantes={variantes}
             catalogo={catalogo}
             expandido={gruposExpandidos.has(nombreEspacio)}
-            onToggle={() => toggleGrupo(nombreEspacio)}
+            onToggle={toggleGrupo}
             jornadasMap={jornadasMap}
             onUpdateJornadas={actualizarJornadas}
-            tarifas={{ tarifaDev, tarifaAssembly, tarifaInstall }}
+            tarifas={tarifas}
             proyectoId={proyecto.id}
           />
         ))}
@@ -796,7 +807,7 @@ function EspacioGroup({
   nombreEspacio: string
   variantes: EspacioVariante[]
   expandido: boolean
-  onToggle: () => void
+  onToggle: (nombreEspacio: string) => void
   catalogo: ProductoCatalogo[]
   jornadasMap: Record<string, { dev: string; ens: string; inst: string }>
   onUpdateJornadas: (espacioId: string, campo: 'dev' | 'ens' | 'inst', valor: string) => void
@@ -829,13 +840,42 @@ function EspacioGroup({
     setEditandoNombre(false)
   }
 
+  // P4 (ZN-003): renombrado en línea de la variante seleccionada.
+  const [editandoNombreVariante, setEditandoNombreVariante] = useState(false)
+  const [nombreVarianteTemp, setNombreVarianteTemp] = useState('')
+  const iniciarEditarNombreVariante = (v: EspacioVariante) => {
+    setNombreVarianteTemp(v.nombreVariante)
+    setEditandoNombreVariante(true)
+  }
+  const guardarNombreVariante = async (v: EspacioVariante) => {
+    const valor = nombreVarianteTemp.trim()
+    if (valor && valor !== v.nombreVariante) {
+      await useCotizadorStore.getState().renombrarVariante(v.id, valor, () =>
+        store.espacios.actualizar(v.id, { nombreVariante: valor }),
+      )
+    }
+    setEditandoNombreVariante(false)
+  }
+
+  // P3 (ZN-003): eliminación de una variante (solo se ofrece sobre variantes inactivas
+  // y cuando el grupo tiene más de una variante). Persiste vía DataStore con la misma
+  // Guardia de Integridad del servidor; la acción optimista revierte sola si falla.
+  const eliminarVarianteUI = async (v: EspacioVariante) => {
+    if (v.id === varianteActiva.id || variantes.length <= 1) return
+    const ok = await useCotizadorStore.getState().eliminarVariante(v.id, () => store.espacios.eliminar(v.id))
+    if (ok && tabId === v.id) {
+      const restante = variantes.filter((x) => x.id !== v.id)
+      setTabId(restante[0].id)
+    }
+  }
+
   return (
     <div className={`rounded-lg border ${varianteActiva.activa ? 'border-border-subtle' : 'border-border-subtle/50'} bg-bg-raised overflow-hidden`}>
       <div
         role="button"
         tabIndex={0}
-        onClick={onToggle}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() } }}
+        onClick={() => onToggle(nombreEspacio)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(nombreEspacio) } }}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-alt transition-colors duration-fast cursor-pointer"
       >
         <div className="flex items-center gap-2">
@@ -958,19 +998,63 @@ function EspacioGroup({
           {variantes.length > 1 && (
             <div className="flex items-center gap-1 border-t border-border-subtle bg-bg-alt/40 px-4 pt-2 overflow-x-auto">
               {variantes.map((v) => (
-                <button
+                <div
                   key={v.id}
-                  type="button"
-                  onClick={() => setTabId(v.id)}
-                  className={`flex items-center gap-1.5 rounded-t px-3 py-1.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors duration-fast ${
+                  className={`flex items-center gap-1.5 rounded-t px-2 py-1.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors duration-fast min-w-0 ${
                     v.id === tabId
                       ? 'border-gold-500 text-text-heading bg-bg-raised'
                       : 'border-transparent text-text-muted hover:text-text-heading'
                   }`}
                 >
-                  {v.activa && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Variante activa" />}
-                  {v.nombreVariante}
-                </button>
+                  {editandoNombreVariante && v.id === tabId ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      value={nombreVarianteTemp}
+                      onChange={(e) => setNombreVarianteTemp(e.target.value)}
+                      onBlur={() => void guardarNombreVariante(v)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); void guardarNombreVariante(v) }
+                        if (e.key === 'Escape') setEditandoNombreVariante(false)
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-28 rounded border border-gold-400 bg-bg-paper px-1 py-0.5 text-xs text-text-heading focus:outline-none"
+                      aria-label="Nombre de la variante"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { setTabId(v.id); if (v.id !== tabId) setEditandoNombreVariante(false) }}
+                      className="flex items-center gap-1.5 min-w-0"
+                      title={v.nombreVariante}
+                    >
+                      {v.activa && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Variante activa" />}
+                      <span className="truncate">{v.nombreVariante}</span>
+                      {v.id === tabId && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); iniciarEditarNombreVariante(v) }}
+                          className="text-text-muted hover:text-gold-500 shrink-0"
+                          aria-label="Renombrar variante"
+                          title="Renombrar variante"
+                        >
+                          &#9998;
+                        </button>
+                      )}
+                      {v.id !== tabId && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void eliminarVarianteUI(v) }}
+                          className="text-text-muted hover:text-red-500 shrink-0"
+                          aria-label={`Eliminar variante ${v.nombreVariante}`}
+                          title="Eliminar variante"
+                        >
+                          &times;
+                        </button>
+                      )}
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -1024,7 +1108,7 @@ function VarianteContenido({
   const store = useDataStore()
   // Lectura de items desde el store Zustand (puente hidratado desde el DataStore).
   const items = useSelectPorVariante(espacio.id)
-  const productMap = new Map(catalogo.map((p) => [p.id, p]))
+  const productMap = useMemo(() => new Map(catalogo.map((p) => [p.id, p])), [catalogo])
   const itemsContractuales = items.filter((it) => !it.esReferencial)
   const itemsReferenciales = items.filter((it) => it.esReferencial)
   const subtotalItems = itemsContractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
@@ -1080,13 +1164,30 @@ function VarianteContenido({
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
               onSelect={(producto) => guardCrearItem(async () => {
-                await store.items.crear({
-                  varianteId: espacio.id,
-                  catalogoId: producto.id,
-                  cantidad: '1',
-                  precioUnitario: producto.precioPublico ?? '0',
-                  nombrePersonalizado: null,
-                })
+                // Fase 2 (ZN-003): optimismo — la fila aparece de inmediato (sin esperar
+                // la latencia de red) y la Server Action persiste en background con revert
+                // automático si el servidor rechaza la escritura.
+                await useCotizadorStore.getState().crearItemOptimistic(
+                  {
+                    varianteId: espacio.id,
+                    catalogoId: producto.id,
+                    nombrePersonalizado: null,
+                    cantidad: '1',
+                    precioUnitario: producto.precioPublico ?? '0',
+                    anulado: false,
+                    esReferencial: false,
+                    fuenteReferencial: null,
+                    grupoReferencial: null,
+                  },
+                  () =>
+                    store.items.crear({
+                      varianteId: espacio.id,
+                      catalogoId: producto.id,
+                      cantidad: '1',
+                      precioUnitario: producto.precioPublico ?? '0',
+                      nombrePersonalizado: null,
+                    }),
+                )
                 setModoBusquedaItem('off')
               })}
               onCreateNew={() => { window.location.href = `/erp/catalogo?source=cotizador&proyectoId=${proyectoId}`; setModoBusquedaItem('off') }}
@@ -1204,14 +1305,28 @@ function VarianteContenido({
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
               onSelect={(producto) => guardCrearItemReferencial(async () => {
-                await store.items.crear({
-                  varianteId: espacio.id,
-                  catalogoId: producto.id,
-                  cantidad: '1',
-                  precioUnitario: producto.precioPublico ?? '0',
-                  nombrePersonalizado: null,
-                  esReferencial: true,
-                })
+                await useCotizadorStore.getState().crearItemOptimistic(
+                  {
+                    varianteId: espacio.id,
+                    catalogoId: producto.id,
+                    nombrePersonalizado: null,
+                    cantidad: '1',
+                    precioUnitario: producto.precioPublico ?? '0',
+                    anulado: false,
+                    esReferencial: true,
+                    fuenteReferencial: null,
+                    grupoReferencial: null,
+                  },
+                  () =>
+                    store.items.crear({
+                      varianteId: espacio.id,
+                      catalogoId: producto.id,
+                      cantidad: '1',
+                      precioUnitario: producto.precioPublico ?? '0',
+                      nombrePersonalizado: null,
+                      esReferencial: true,
+                    }),
+                )
                 setModoBusquedaItem('off')
               })}
               onCreateNew={() => { window.location.href = `/erp/catalogo?source=cotizador&proyectoId=${proyectoId}`; setModoBusquedaItem('off') }}

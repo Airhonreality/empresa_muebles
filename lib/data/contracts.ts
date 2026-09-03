@@ -966,6 +966,13 @@ export interface DataStore {
     duplicar(id: string, opciones: { vacio: boolean; nuevoNombreEspacio?: string }): Promise<EspacioVariante | null>
     /** Marca esta variante como la activa de su grupo (mismo nombreEspacio) y desactiva a las demás. Solo una variante activa por grupo cuenta para totales/contrato. */
     marcarActiva(id: string): Promise<EspacioVariante | null>
+    /**
+     * ZN-003 · P3: elimina una variante con Clean Delete protegido por Guardia de
+     * Integridad (rechaza variantes que ya entraron a producción: con BOM o módulos).
+     * Cascada: artefactos → ítems → espacio_variantes. Lanza `VarianteNoEliminableError`
+     * si la guardia falla; retorna false si la variante no existe.
+     */
+    eliminar(id: string): Promise<boolean>
   }
   items: {
     porVariante(varianteId: string): ItemVariante[]

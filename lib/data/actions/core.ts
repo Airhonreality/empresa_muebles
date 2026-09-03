@@ -368,6 +368,59 @@ export async function eliminarItemAction(id: string): Promise<boolean> {
   return Boolean(actualizado)
 }
 
+/**
+ * Error de negocio para eliminaciones de variantes rechazadas por la Guardia de
+ * Integridad (ZN-003): no se borran variantes que ya entraron a producción
+ * (tienen BOM en `bom_material` o módulos propios en `modulos`).
+ */
+export class VarianteNoEliminableError extends Error {
+  constructor(motivo: string) {
+    super(motivo)
+    this.name = 'VarianteNoEliminableError'
+  }
+}
+
+/**
+ * ZN-003 · P3: elimina una variante con Clean Delete protegido por Guardia de
+ * Integridad. En una sola transacción:
+ *  1. Verifica si algún ítem de la variante tiene BOM en `bom_material`
+ *     (`itemVarianteId` apuntando a esos ítems) o si la variante tiene módulos
+ *     propios en `modulos` (`espacioVarianteId`). Si existe alguna fila, LANZA
+ *     `VarianteNoEliminableError` (variante ya entró a producción) y la
+ *     transacción no toca nada.
+ *  2. Si la guardia pasa (cotizaciones comerciales / variantes de comparación),
+ *     hace cascada transaccional: borra `espacios_artefactos`, luego
+ *     `items_variante` de esa variante, y por último `espacio_variantes`.
+ * @returns true si la fila de `espacio_variantes` existía y fue eliminada.
+ */
+export async function eliminarEspacioAction(id: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const items = await tx.select({ id: s.itemsVariante.id }).from(s.itemsVariante).where(eq(s.itemsVariante.varianteId, id))
+
+    if (items.length > 0) {
+      const idsItems = items.map((it) => it.id)
+      const bomVinculado = await tx.select({ id: s.bomMaterial.id }).from(s.bomMaterial).where(inArray(s.bomMaterial.itemVarianteId, idsItems))
+      if (bomVinculado.length > 0) {
+        throw new VarianteNoEliminableError(
+          'Esta variante ya tiene lista de materiales (BOM) y no puede eliminarse: cuenta en producción.',
+        )
+      }
+    }
+
+    const modulosVinculados = await tx.select({ id: s.modulos.id }).from(s.modulos).where(eq(s.modulos.espacioVarianteId, id))
+    if (modulosVinculados.length > 0) {
+      throw new VarianteNoEliminableError(
+        'Esta variante tiene módulos asociados y no puede eliminarse: cuenta en producción.',
+      )
+    }
+
+    await tx.delete(s.espaciosArtefactos).where(eq(s.espaciosArtefactos.espacioVarianteId, id))
+    await tx.delete(s.itemsVariante).where(eq(s.itemsVariante.varianteId, id))
+    const [eliminado] = await tx.delete(s.espacioVariantes).where(eq(s.espacioVariantes.id, id)).returning({ id: s.espacioVariantes.id })
+    return Boolean(eliminado)
+  })
+}
+
 export async function crearArtefactoAction(data: Partial<EspacioArtefacto> & { espacioVarianteId: string; categoria: EspacioArtefacto['categoria'] }): Promise<EspacioArtefacto> {
   const [nuevo] = await db.insert(s.espaciosArtefactos).values({
     espacioVarianteId: data.espacioVarianteId,

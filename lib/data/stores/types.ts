@@ -29,6 +29,48 @@ export interface CotizadorState {
   version: number
 }
 
+/**
+ * Acciones de mutación optimista del cotizador (Fase 2 · ZN-003).
+ * Cada acción aplica el cambio en el estado local de Zustand de inmediato
+ * (< 16ms), delega la persistencia real a `persistir` (Server Action del
+ * DataStore) y, si esta falla, restaura automáticamente el snapshot previo.
+ * Ninguna firma usa `any`.
+ */
+export interface CotizadorActions {
+  /** Reemplaza el estado completo (hidratación desde DataStoreProvider o mock-store). */
+  hidratar: (estado: Partial<CotizadorState>) => void
+  /** Incrementa `version` para invalidar suscripciones por versión. */
+  avisarCambio: () => void
+  /** Restaura el estado inicial. */
+  resetear: () => void
+
+  /** Inserta un ítem temporal optimista; al resolver se reemplaza por el ítem confirmado del servidor. */
+  crearItemOptimistic: (
+    itemData: Omit<ItemVariante, 'id' | 'createdAt' | 'updatedAt' | 'totalLinea'>,
+    persistir: () => Promise<ItemVariante>,
+  ) => Promise<ItemVariante>
+
+  /** Actualiza un ítem de forma optimista; true si la persistencia resolvió. */
+  actualizarItemOptimistic: (
+    id: string,
+    cambios: Partial<ItemVariante>,
+    persistir: () => Promise<ItemVariante | null>,
+  ) => Promise<boolean>
+
+  /** Elimina una variante (y sus ítems) de forma optimista con rollback en error. */
+  eliminarVariante: (
+    id: string,
+    persistir: () => Promise<boolean>,
+  ) => Promise<boolean>
+
+  /** Renombra una variante de forma optimista con rollback en error. */
+  renombrarVariante: (
+    id: string,
+    nuevoNombre: string,
+    persistir: () => Promise<EspacioVariante | null>,
+  ) => Promise<boolean>
+}
+
 export interface ComercialState {
   proyectos: Proyecto[]
   clientes: Cliente[]

@@ -535,6 +535,16 @@ export function createMockStore(): DataStore {
         notify()
         return espacios.find(e => e.id === id) ?? null
       },
+      async eliminar(id: string): Promise<boolean> {
+        const idxEsp = espacios.findIndex(e => e.id === id)
+        if (idxEsp === -1) return false
+        espacios.splice(idxEsp, 1)
+        for (let i = items.length - 1; i >= 0; i--) {
+          if (items[i].varianteId === id) items.splice(i, 1)
+        }
+        notify()
+        return true
+      },
     },
 
     items: {

@@ -266,6 +266,18 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         }
         return r
       },
+      eliminar: async (id) => {
+        const ok = await core.eliminarEspacioAction(id)
+        if (ok) {
+          data = {
+            ...data,
+            espacios: data.espacios.filter((e) => e.id !== id),
+            items: data.items.filter((i) => i.varianteId !== id),
+          }
+          notify()
+        }
+        return ok
+      },
     },
 
     items: {
