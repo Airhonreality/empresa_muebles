@@ -129,7 +129,7 @@ export const ProjectCard = React.memo(ProjectCardComponent, (prev, next) => {
 ### B) `KanbanColumna` como Componente Aislado
 Actualmente las columnas se pintan en un `.map()` dentro de la página principal. Se extrae a un componente `KanbanColumna` que consume `useSelectProyectosColumna(col.key)`. Así, cada columna se suscribe a su propia rebanada de datos.
 
-### C) Optimismo en `handleTransition`
+### C) Optimismo en `handleTransition` con Rollback Real
 ```typescript
 const handleTransition = async (proyectoId: string, nuevoEstado: EstadoProyecto) => {
   await store.moverProyectoOptimistic(
@@ -140,6 +140,14 @@ const handleTransition = async (proyectoId: string, nuevoEstado: EstadoProyecto)
 };
 ```
 La tarjeta salta inmediatamente a la columna destino. Si la red falla, vuelve a su columna de origen y emite un toast de error.
+
+**Mecanismo de rollback:** `moverProyectoOptimistic` guarda snapshot de `proyectos` antes de mutar. En `catch`, restaura el snapshot completo de proyectos y incrementa `version` para forzar re-render. El proyecto vuelve a su columna original porque `columnData` se recalcula con el estado restaurado.
+
+### D) `cotizador/page.tsx` (Pipeline de Cotizaciones)
+Este archivo usa `useDataStore()` para `proyectos.listar()` y `clientes.listar()` (reads) — se migra a `useComercialStore` con los mismos selectores del kanban. La búsqueda (`useSmartSearch`) se conecta al selector de proyectos filtrados.
+
+### E) `cotizador/new/page.tsx` (Nueva Cotización)
+**Las escrituras (`store.proyectos.crear()`, `store.clientes.crear()`) permanecen en `useDataStore()`** — el DataStore sigue siendo la fuente de verdad para mutaciones. Solo se migra la read de `clientes.listar()` a `useComercialStore` para consistencia.
 
 ---
 
@@ -154,6 +162,32 @@ La tarjeta salta inmediatamente a la columna destino. Si la red falla, vuelve a 
 4. **Paso 4 (Conexión UI):**  
    - Montar `ComercialSincronizador` en layout comercial.
    - Migrar `app/erp/comercial/page.tsx` a los selectores granulares.
-   - Migrar `app/erp/cotizador/page.tsx` para leer proyectos desde `useComercialStore`.
+   - Migrar `app/erp/cotizador/page.tsx` (reads) para leer proyectos desde `useComercialStore`.
+   - **NO migrar** `app/erp/cotizador/new/page.tsx` — las escrituras (`proyectos.crear`, `clientes.crear`) permanecen en `useDataStore()`.
 5. **Paso 5 (QA Mecánico y Runtime):**  
    `npx tsc --noEmit` exit 0, tests OK, verificación en navegador arrastrando/transicionando tarjetas.
+
+---
+
+## 7. Pruebas Unitarias (`useComercialStore.test.ts`)
+
+1. `test: hidratar carga proyectos y precomputa projectStats`
+2. `test: useSelectProyectosColumna retorna solo proyectos de esa columna`
+3. `test: useSelectProyectosColumna aplica filtro de búsqueda`
+4. `test: useSelectStats retorna O(1) desde el diccionario precomputado`
+5. `test: moverProyectoOptimistic cambia estado local inmediatamente`
+6. `test: moverProyectoOptimistic revierte si persistir() falla`
+7. `test: crearProyectoOptimistic agrega proyecto al store`
+
+---
+
+## 8. Criterios de Aceptación
+
+- [ ] `npx tsc --noEmit` exit 0.
+- [ ] `useComercialStore.test.ts` ejecutado con éxito.
+- [ ] `npx eslint lib/data/stores/comercial/` exit 0.
+- [ ] Verificación runtime: arrastrar tarjeta de "Lead" a "Propuesta" → salta instantáneamente, no hay flash de estado anterior.
+- [ ] Verificación runtime: simular error de red (DevTools offline) → tarjeta vuelve a columna original + toast de error.
+- [ ] Verificación runtime: solo las columnas afectadas por el cambio re-renderizan (confirmable con React DevTools Profiler).
+- [ ] `cotizador/page.tsx` lee proyectos de `useComercialStore`, no de `useDataStore()`.
+- [ ] `cotizador/new/page.tsx` sigue usando `useDataStore()` para escrituras.
