@@ -212,6 +212,15 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
   const [espacioActivoId, setEspacioActivoId] = useState<string | null>(null)
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState<string | null>(null)
   const [zoom, setZoom] = useState<{ imagenes: GalleryImage[]; index: number } | null>(null)
+  const [tituloHeaderVisible, setTituloHeaderVisible] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setTituloHeaderVisible(window.scrollY > 250)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const itemsPorVariante = (varianteId: string): ItemVariante[] => todosLosItems.filter((it) => it.varianteId === varianteId)
 
@@ -243,22 +252,31 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
     espacioActualVariantes[0] ??
     null
 
-  // Calcular totales de TODOS los espacios activos (para resumen financiero general)
+  // Calcular totales (para resumen financiero general)
+  // Proyectar: si el usuario está viendo una variante alternativa en el espacio actual,
+  // el resumen financiero global (Sidebar) debe reflejar ese escenario "What If".
   let materialesTotal = 0
   let moDev = 0
   let moEns = 0
   let moInst = 0
-  const itemsPorEspacio = new Map<string, { contractuales: ItemVariante[]; referenciales: ItemVariante[] }>()
-  espaciosActivos.forEach((esp) => {
+  
+  const espaciosProyectados = Array.from(grupos.entries()).map(([nombre, variantes]) => {
+    if (espacioActual && nombre === espacioActual.nombreEspacio && varianteActual) {
+      return varianteActual
+    }
+    return variantes.find((v) => v.activa) ?? variantes[0]
+  })
+
+  espaciosProyectados.forEach((esp) => {
     const items = itemsPorVariante(esp.id)
     const contractuales = items.filter((it) => !it.esReferencial)
-    const referenciales = items.filter((it) => it.esReferencial)
-    itemsPorEspacio.set(esp.id, { contractuales, referenciales })
+    
     materialesTotal += contractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
     moDev += parseNum(esp.jornadasDesarrolloTecnico) * tarifaDev
     moEns += parseNum(esp.jornadasEnsamblajeTaller) * tarifaAssembly
     moInst += parseNum(esp.jornadasInstalacionObra) * tarifaInstall
   })
+  
   const moTotal = moDev + moEns + moInst
 
   const costosOperativos = parseNum(proyecto.costosOperativos)
@@ -299,7 +317,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
       {/* HeaderPropuesta — sticky (top-16: se acopla debajo del header de AppShell, h-16) */}
       <header className="sticky top-16 z-header bg-bg-paper/90 backdrop-blur-xl border-b border-border-subtle print:static print:bg-transparent">
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div>
+          <div className={`transition-all duration-500 ease-out ${tituloHeaderVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
             <p className="text-[10px] uppercase tracking-[0.2em] text-gold-500">Propuesta</p>
             <h1 className="font-display text-2xl font-semibold text-text-heading mt-0.5">{proyecto.nombreProyecto}</h1>
           </div>
@@ -348,7 +366,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
             <button
               type="button"
               onClick={scrollToContenido}
-              className="mt-9 inline-flex min-h-12 items-center gap-2.5 rounded-full border-2 border-gold-400 px-6 text-sm font-semibold text-gold-700 transition-colors duration-base hover:bg-gold-400 hover:text-white"
+              className="mt-6 inline-flex min-h-12 items-center gap-2.5 rounded-full border-2 border-gold-400 px-6 text-sm font-semibold text-gold-700 transition-colors duration-base hover:bg-gold-400 hover:text-white"
             >
               Ver propuesta <ArrowDown size={18} />
             </button>

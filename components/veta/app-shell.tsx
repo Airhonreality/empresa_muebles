@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Phone, Clock, LayoutGrid, Images, UserCircle, Home } from 'lucide-react';
@@ -22,6 +23,8 @@ const navigation = [
 
 export function AppShell({ children, precio3dFormatted }: { children: React.ReactNode, precio3dFormatted: string }) {
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
+  const pathname = usePathname();
+  const isPropuestaView = pathname?.startsWith('/propuesta/');
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-100">
@@ -38,7 +41,7 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
                     <strong className="font-bold text-text-heading">Veta</strong>{' '}
                     <span className="font-medium text-gold-600 font-serif italic">Dorada</span>
                   </span>
-                  <p className="text-[10px] text-text-muted font-light mt-0.5">
+                  <p className="text-[10px] text-text-muted font-light mt-0.5 tracking-wide">
                     Carpintería Arquitectónica & Ebanistería a la Medida
                   </p>
                 </div>
@@ -46,11 +49,13 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
             </div>
 
             {/* 2. Centro: Enlaces de Navegación (Centrados) */}
-            <nav className="hidden md:flex flex-[2] items-center justify-center gap-8" aria-label="Navegación principal">
-              {navigation.filter(item => item.href !== '/cuenta').map((item) => (
-                <NavItem key={item.href} {...item} />
-              ))}
-            </nav>
+            {!isPropuestaView && (
+              <nav className="hidden md:flex flex-[2] items-center justify-center gap-8" aria-label="Navegación principal">
+                {navigation.filter(item => item.href !== '/cuenta').map((item) => (
+                  <NavItem key={item.href} {...item} />
+                ))}
+              </nav>
+            )}
 
             {/* 3. Derecha: Acciones (Botón y Login) */}
             <div className="hidden md:flex flex-1 items-center justify-end gap-5">
@@ -118,7 +123,7 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
                   <strong className="font-bold text-text-heading">Veta</strong>{' '}
                   <span className="font-medium text-gold-600 font-serif italic">Dorada</span>
                 </span>
-                <p className="text-xs text-text-muted font-light mt-0.5">
+                <p className="text-xs text-text-muted font-light mt-0.5 tracking-wide">
                   Carpintería Arquitectónica & Ebanistería a la Medida
                 </p>
               </div>
