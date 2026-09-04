@@ -399,7 +399,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
                   <p className="text-xs uppercase tracking-wide text-text-muted mt-1">{varianteActual.nombreVariante}</p>
                 </div>
                 {(() => {
-                  const espTotal = itemsPorEspacio.get(varianteActual.id)?.contractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0) ?? 0
+                  const espTotal = contractualesActuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
                   const espMo =
                     parseNum(varianteActual.jornadasDesarrolloTecnico) * tarifaDev +
                     parseNum(varianteActual.jornadasEnsamblajeTaller) * tarifaAssembly +
