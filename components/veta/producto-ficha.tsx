@@ -57,7 +57,7 @@ export function ProductoFicha({ data, onZoom, className }: ProductoFichaProps) {
     <div className={`flex flex-col gap-4 ${className ?? ''}`}>
       <GalleryRail fotos={fotos} etiqueta="Producto" aspectRatio="4 / 3" onZoom={onZoom} />
 
-      <div className="flex flex-col gap-2 border-t border-[var(--color-border-brand)]/30 pt-4">
+      <div className={`flex flex-col gap-2 ${fotos.length > 0 ? 'border-t border-[var(--color-border-brand)]/30 pt-4' : ''}`}>
         <h2 className="font-display text-2xl leading-tight text-[var(--color-text-primary)]">
           {data.descripcion || 'Producto sin descripción'}
         </h2>

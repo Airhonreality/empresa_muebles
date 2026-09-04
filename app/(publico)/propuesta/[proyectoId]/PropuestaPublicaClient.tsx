@@ -419,22 +419,34 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
                 </div>
               )}
 
-              {/* Dos carriles visuales: Diseño (60%) + Referencia (40%) */}
-              {((varianteActual.fotosDisenio as string[]).filter(Boolean).length > 0 ||
-                (varianteActual.fotosReferencia as string[]).filter(Boolean).length > 0) && (
-                <div className="grid grid-cols-1 sm:grid-cols-[60%_40%] gap-4">
-                  <GalleryRail
-                    fotos={toGalleryImages(varianteActual.fotosDisenio, varianteActual.nombreEspacio)}
-                    etiqueta="Diseño"
-                    onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
-                  />
-                  <GalleryRail
-                    fotos={toGalleryImages(varianteActual.fotosReferencia, varianteActual.nombreEspacio)}
-                    etiqueta="Referencia"
-                    onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
-                  />
-                </div>
-              )}
+              {/* Carriles visuales: Diseño y/o Referencia (sin campos vacíos que contaminen el layout) */}
+              {(() => {
+                const fotosDisenio = toGalleryImages(varianteActual.fotosDisenio, varianteActual.nombreEspacio)
+                const fotosReferencia = toGalleryImages(varianteActual.fotosReferencia, varianteActual.nombreEspacio)
+                const tieneDisenio = fotosDisenio.length > 0
+                const tieneReferencia = fotosReferencia.length > 0
+
+                if (!tieneDisenio && !tieneReferencia) return null
+
+                return (
+                  <div className={tieneDisenio && tieneReferencia ? 'grid grid-cols-1 sm:grid-cols-[60%_40%] gap-4' : 'w-full'}>
+                    {tieneDisenio && (
+                      <GalleryRail
+                        fotos={fotosDisenio}
+                        etiqueta="Diseño"
+                        onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
+                      />
+                    )}
+                    {tieneReferencia && (
+                      <GalleryRail
+                        fotos={fotosReferencia}
+                        etiqueta="Referencia"
+                        onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
+                      />
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* SelectorVariantes */}
               {espacioActualVariantes.length > 1 && (

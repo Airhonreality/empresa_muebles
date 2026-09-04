@@ -10,6 +10,9 @@ import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
   ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial,
 } from '../contracts'
+// VarianteNoEliminableError vive en errors.ts (no en 'use server':
+// Next.js prohíbe exportar clases desde archivos 'use server').
+import { VarianteNoEliminableError } from '../errors'
 
 export async function actualizarEstadoProyectoAction(id: string, estado: string): Promise<Proyecto | null> {
   return db.transaction(async (tx) => {
@@ -411,17 +414,6 @@ export async function eliminarItemAction(id: string): Promise<boolean> {
   })
 }
 
-/**
- * Error de negocio para eliminaciones de variantes rechazadas por la Guardia de
- * Integridad (ZN-003): no se borran variantes que ya entraron a producción
- * (tienen BOM en `bom_material` o módulos propios en `modulos`).
- */
-export class VarianteNoEliminableError extends Error {
-  constructor(motivo: string) {
-    super(motivo)
-    this.name = 'VarianteNoEliminableError'
-  }
-}
 
 /**
  * ZN-003 · P3: elimina una variante con Clean Delete protegido por Guardia de

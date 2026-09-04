@@ -49,3 +49,4 @@ export type {
 
 export { generarSlides } from './presentacion'
 export type { TipoSlide } from './presentacion'
+export { VarianteNoEliminableError } from './errors'

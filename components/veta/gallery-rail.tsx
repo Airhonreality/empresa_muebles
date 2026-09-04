@@ -16,6 +16,8 @@ interface GalleryRailProps {
   aspectRatio?: string
   /** Si se pasa, la imagen principal es clicable y dispara el zoom con (imágenes, índice). */
   onZoom?: (imagenes: GalleryImage[], index: number) => void
+  /** Fallback personalizado si no hay imágenes. Si se omite, no renderiza nada para no contaminar el layout. */
+  fallbackVacio?: React.ReactNode
   className?: string
 }
 
@@ -23,7 +25,7 @@ interface GalleryRailProps {
    Reemplaza el `GaleriaCarril` local de F-08 y alimenta la `ProductoFicha` del
    catálogo. Un solo carrusel sirve a ERP y a la propuesta del cliente.
    No usa Math.random para ids: consume useId() (regla de hidratación del arnés). */
-export function GalleryRail({ fotos, etiqueta, aspectRatio = '4 / 3', onZoom, className }: GalleryRailProps) {
+export function GalleryRail({ fotos, etiqueta, aspectRatio = '4 / 3', onZoom, fallbackVacio, className }: GalleryRailProps) {
   const [activo, setActivo] = useState(0)
   const baseId = useId()
   const total = fotos.length
@@ -37,14 +39,7 @@ export function GalleryRail({ fotos, etiqueta, aspectRatio = '4 / 3', onZoom, cl
   )
 
   if (total === 0) {
-    return (
-      <div
-        className={`flex items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-brand)] bg-[var(--color-bg-paper)] text-sm text-[var(--color-text-primary)] opacity-70 ${className ?? ''}`}
-        style={{ aspectRatio }}
-      >
-        <span>{etiqueta ? `${etiqueta} · sin imágenes` : 'Sin imágenes'}</span>
-      </div>
-    )
+    return fallbackVacio ? <>{fallbackVacio}</> : null
   }
 
   const actual = fotos[activo]

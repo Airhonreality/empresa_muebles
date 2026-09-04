@@ -36,10 +36,10 @@ export function ItemDescriptorModal({ producto, onClose }: ItemDescriptorModalPr
   const titulo = producto.descripcion || producto.sku
   return (
     <Modal open={true} onClose={onClose} title={titulo}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="sm:w-1/2">
-          {producto.imagenUrl ? (
-            // unoptimized: URLs mock/blob temporales en el cotizador
+      <div className={`flex flex-col gap-4 ${producto.imagenUrl ? 'sm:flex-row sm:items-start' : ''}`}>
+        {producto.imagenUrl && (
+          <div className="sm:w-1/2">
+            {/* unoptimized: URLs mock/blob temporales en el cotizador */}
             <Image
               src={producto.imagenUrl}
               alt={producto.descripcion}
@@ -48,14 +48,10 @@ export function ItemDescriptorModal({ producto, onClose }: ItemDescriptorModalPr
               unoptimized
               className="aspect-[4/3] w-full rounded-sm border border-border-subtle object-cover"
             />
-          ) : (
-            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-sm border border-border-subtle bg-bg-alt text-xs text-text-muted">
-              Sin imagen
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="sm:w-1/2 space-y-2 text-sm">
+        <div className={`${producto.imagenUrl ? 'sm:w-1/2' : 'w-full'} space-y-2 text-sm`}>
           <p className="font-mono text-xs text-text-muted">{producto.sku}</p>
           <p className="font-semibold text-text-heading">{producto.descripcion}</p>
           {producto.categoriaComercial ? (

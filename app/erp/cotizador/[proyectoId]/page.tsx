@@ -704,8 +704,19 @@ const EspacioGroupMemo = memo(EspacioGroup)
         <Button variant="ghost" size="md" className="h-10 px-4 text-xs font-semibold flex-1" onClick={() => setMostrarEditarProyecto(true)}>
           Editar
         </Button>
+        <Button
+          variant="outline"
+          size="md"
+          className="h-10 px-4 text-xs font-semibold flex-1"
+          onClick={() => {
+            window.open(`/propuesta/${proyecto.id}`, '_blank', 'noopener')
+            setModalPresentacionAbierto(true)
+          }}
+        >
+          ▶ Presentar
+        </Button>
         <Button variant="primary" size="md" className="h-10 px-4 text-xs font-semibold flex-1" onClick={() => setMostrarContratoModal(true)}>
-          Generar Contrato
+          Contrato
         </Button>
       </div>
     </div>
