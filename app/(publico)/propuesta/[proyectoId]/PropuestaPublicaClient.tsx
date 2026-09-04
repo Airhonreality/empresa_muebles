@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import { ArrowDown, Building2, Expand, LayoutGrid, MapPin } from 'lucide-react'
 import { Button } from '@/components/veta/button'
@@ -222,18 +222,21 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const itemsPorVariante = (varianteId: string): ItemVariante[] => todosLosItems.filter((it) => it.varianteId === varianteId)
+  const itemsPorVariante = useCallback((varianteId: string): ItemVariante[] => todosLosItems.filter((it) => it.varianteId === varianteId), [todosLosItems])
 
   // Solo la variante activa de cada espacio entra a la propuesta — igual regla
   // que el cotizador: alternativas de comparación no son objeto de contrato.
-  const grupos = new Map<string, EspacioVariante[]>()
-  espaciosBase.forEach((e) => {
-    const arr = grupos.get(e.nombreEspacio) ?? []
-    arr.push(e)
-    grupos.set(e.nombreEspacio, arr)
-  })
+  const grupos = useMemo(() => {
+    const map = new Map<string, EspacioVariante[]>()
+    espaciosBase.forEach((e) => {
+      const arr = map.get(e.nombreEspacio) ?? []
+      arr.push(e)
+      map.set(e.nombreEspacio, arr)
+    })
+    return map
+  }, [espaciosBase])
 
-  const espaciosActivos = Array.from(grupos.values()).map((variantes) => variantes.find((v) => v.activa) ?? variantes[0])
+  const espaciosActivos = useMemo(() => Array.from(grupos.values()).map((variantes) => variantes.find((v) => v.activa) ?? variantes[0]), [grupos])
 
   // Inicializa espacioActivoId si está vacío
   const espacioIdActual = espacioActivoId ?? espaciosActivos[0]?.id ?? null
@@ -255,37 +258,52 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
   // Calcular totales (para resumen financiero general)
   // Proyectar: si el usuario está viendo una variante alternativa en el espacio actual,
   // el resumen financiero global (Sidebar) debe reflejar ese escenario "What If".
-  let materialesTotal = 0
-  let moDev = 0
-  let moEns = 0
-  let moInst = 0
-  
-  const espaciosProyectados = Array.from(grupos.entries()).map(([nombre, variantes]) => {
-    if (espacioActual && nombre === espacioActual.nombreEspacio && varianteActual) {
-      return varianteActual
-    }
-    return variantes.find((v) => v.activa) ?? variantes[0]
-  })
+  // [Axioma de Información]: Memoizado para no re-ejecutar N x M iteraciones en cada scroll event.
+  const { materialesTotal, moTotal, subtotal, total, iva, costosOperativos, imprevistos } = useMemo(() => {
+    let mTotal = 0
+    let moDev = 0
+    let moEns = 0
+    let moInst = 0
 
-  espaciosProyectados.forEach((esp) => {
-    const items = itemsPorVariante(esp.id)
-    const contractuales = items.filter((it) => !it.esReferencial)
+    const espaciosProyectados = Array.from(grupos.entries()).map(([nombre, variantes]) => {
+      if (espacioActual && nombre === espacioActual.nombreEspacio && varianteActual) {
+        return varianteActual
+      }
+      return variantes.find((v) => v.activa) ?? variantes[0]
+    })
+
+    espaciosProyectados.forEach((esp) => {
+      const items = itemsPorVariante(esp.id)
+      const contractuales = items.filter((it) => !it.esReferencial)
+      
+      mTotal += contractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
+      moDev += parseNum(esp.jornadasDesarrolloTecnico) * tarifaDev
+      moEns += parseNum(esp.jornadasEnsamblajeTaller) * tarifaAssembly
+      moInst += parseNum(esp.jornadasInstalacionObra) * tarifaInstall
+    })
+
+    const mOperativos = parseNum(proyecto.costosOperativos)
+    const mImprevistos = parseNum(proyecto.imprevistosInstalacion)
+    const mDescuento = parseNum(proyecto.descuentoComercial)
+    const mAjuste = parseNum(proyecto.ajusteArbitrario)
     
-    materialesTotal += contractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
-    moDev += parseNum(esp.jornadasDesarrolloTecnico) * tarifaDev
-    moEns += parseNum(esp.jornadasEnsamblajeTaller) * tarifaAssembly
-    moInst += parseNum(esp.jornadasInstalacionObra) * tarifaInstall
-  })
-  
-  const moTotal = moDev + moEns + moInst
-
-  const costosOperativos = parseNum(proyecto.costosOperativos)
-  const imprevistos = parseNum(proyecto.imprevistosInstalacion)
-  const descuento = parseNum(proyecto.descuentoComercial)
-  const ajuste = parseNum(proyecto.ajusteArbitrario)
-  const subtotal = materialesTotal + moTotal + costosOperativos + imprevistos - descuento + ajuste
-  const iva = proyecto.aplicaIva ? Math.round(subtotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
-  const total = subtotal + iva
+    const moT = moDev + moEns + moInst
+    const sTotal = mTotal + moT + mOperativos + mImprevistos - mDescuento + mAjuste
+    const mIva = proyecto.aplicaIva ? Math.round(sTotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
+    
+    return {
+      materialesTotal: mTotal,
+      moTotal: moT,
+      costosOperativos: mOperativos,
+      imprevistos: mImprevistos,
+      subtotal: sTotal,
+      iva: mIva,
+      total: sTotal + mIva
+    }
+  }, [
+    grupos, espacioActual, varianteActual, itemsPorVariante, 
+    tarifaDev, tarifaAssembly, tarifaInstall, proyecto
+  ])
 
   // Datos de la variante actual para mostrar en la sección del espacio
   const itemsVarianteActual = varianteActual ? itemsPorVariante(varianteActual.id) : []
