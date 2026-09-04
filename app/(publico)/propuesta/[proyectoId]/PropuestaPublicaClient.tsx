@@ -303,9 +303,23 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
             <p className="text-[10px] uppercase tracking-[0.2em] text-gold-500">Propuesta</p>
             <h1 className="font-display text-2xl font-semibold text-text-heading mt-0.5">{proyecto.nombreProyecto}</h1>
           </div>
-          <Button variant="primary" size="md" onClick={() => window.print()}>
-            Guardar como PDF
-          </Button>
+          <div className="flex items-center gap-2 print:hidden">
+            <button
+              onClick={() => {
+                window.open(
+                  `/erp/cotizador/${proyecto.id}?presentar=1`,
+                  'presentador',
+                  'width=900,height=680,left=100,top=100,menubar=no,toolbar=no,location=no,status=no'
+                )
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-gold-400/50 px-4 py-2 text-sm font-medium text-gold-700 hover:bg-gold-50 transition-colors"
+            >
+              ▶ Presentar
+            </button>
+            <Button variant="primary" size="md" onClick={() => window.print()}>
+              Guardar como PDF
+            </Button>
+          </div>
         </div>
       </header>
 

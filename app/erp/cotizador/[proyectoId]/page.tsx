@@ -167,6 +167,15 @@ export default function CotizadorPage() {
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
   const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
+
+  // Auto-abrir modo presentación si la URL tiene ?presentar=1
+  // (disparado desde el botón "▶ Presentar" en la propuesta pública)
+  useEffect(() => {
+    if (searchParams.get('presentar') === '1') {
+      setModalPresentacionAbierto(true)
+    }
+  }, [searchParams])
+
   const [nuevoEspacioNombre, setNuevoEspacioNombre] = useState('')
   const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
   const { guard: guardCrearEspacio, isPending: creandoEspacio } = usePendingGuard()
