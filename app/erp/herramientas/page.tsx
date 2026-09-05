@@ -326,6 +326,8 @@ export default function HerramientasPage() {
             value={form.fotoUrl}
             onChange={(v) => handleChange('fotoUrl', v)}
             multiple={false}
+            uploadToR2
+            r2Prefix="herramientas"
           />
           <label className="flex flex-col gap-1">
             <span className="text-xs text-text-muted">Proveedor sugerido</span>

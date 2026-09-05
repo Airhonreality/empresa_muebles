@@ -231,6 +231,11 @@ export async function actualizarClienteAction(
   return (actualizado as unknown as Cliente) ?? null
 }
 
+function sanitizarUrlsFotos(urls?: string[] | null): string[] | undefined {
+  if (!urls) return undefined;
+  return urls.filter((u) => typeof u === "string" && !u.startsWith("blob:"));
+}
+
 export async function crearEspacioAction(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante> {
   return db.transaction(async (tx) => {
     let orden = data.orden
@@ -238,6 +243,7 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
       const existentes = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, data.proyectoId))
       orden = existentes.length
     }
+
     const [nuevo] = await tx.insert(s.espacioVariantes).values({
       proyectoId: data.proyectoId,
       nombreEspacio: data.nombreEspacio,
@@ -251,9 +257,9 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
       jornadasEnsamblajeTaller: data.jornadasEnsamblajeTaller ?? '0',
       jornadasInstalacionObra: data.jornadasInstalacionObra ?? '0',
       colores: data.colores ?? [],
-      fotosEspacio: data.fotosEspacio ?? [],
-      fotosDisenio: data.fotosDisenio ?? [],
-      fotosReferencia: data.fotosReferencia ?? [],
+      fotosEspacio: sanitizarUrlsFotos(data.fotosEspacio) ?? [],
+      fotosDisenio: sanitizarUrlsFotos(data.fotosDisenio) ?? [],
+      fotosReferencia: sanitizarUrlsFotos(data.fotosReferencia) ?? [],
     }).returning()
     return nuevo as unknown as EspacioVariante
   })
@@ -271,7 +277,11 @@ export async function actualizarEspacioAction(
   id: string,
   partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
 ): Promise<EspacioVariante | null> {
-  const [actualizado] = await db.update(s.espacioVariantes).set(partial).where(eq(s.espacioVariantes.id, id)).returning()
+  const sanitized = { ...partial };
+  if (sanitized.fotosEspacio) sanitized.fotosEspacio = sanitizarUrlsFotos(sanitized.fotosEspacio) ?? [];
+  if (sanitized.fotosDisenio) sanitized.fotosDisenio = sanitizarUrlsFotos(sanitized.fotosDisenio) ?? [];
+  if (sanitized.fotosReferencia) sanitized.fotosReferencia = sanitizarUrlsFotos(sanitized.fotosReferencia) ?? [];
+  const [actualizado] = await db.update(s.espacioVariantes).set(sanitized).where(eq(s.espacioVariantes.id, id)).returning()
   return (actualizado as unknown as EspacioVariante) ?? null
 }
 

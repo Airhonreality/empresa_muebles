@@ -10,85 +10,177 @@ export interface ImagePickerProps {
   className?: string;
   /** false = una sola imagen (reemplaza en vez de acumular). Default true. */
   multiple?: boolean;
-  /** Habilitar subida automática a Cloudflare R2. Default: false (solo previsualización local). */
+  /** Habilitar subida automática a Cloudflare R2. Default: true (almacenamiento permanente en CDN). */
   uploadToR2?: boolean;
-  /** Prefijo para la clave en R2 (ej: 'portafolio/', 'cotizador/'). Default: 'portafolio'. */
+  /** Prefijo para la clave en R2 (ej: 'catalogo/', 'cotizador/disenio'). Default: 'general'. */
   r2Prefix?: string;
   /** Oculta la grilla interna de previsualización (útil si el componente padre renderiza su propia grilla). Default: false. */
   hideGrid?: boolean;
 }
 
+/**
+ * Pre-comprime imágenes en el navegador si superan 3 MB o 2560px de resolución.
+ * Esto evita chocar con el límite innegociable de 4.5 MB de Vercel Serverless Functions
+ * cuando los usuarios suben fotos de cámaras/celulares modernos (que pesan 8-20 MB).
+ */
+async function prepareImageForUpload(file: File): Promise<File> {
+  // Si pesa menos de 3 MB, dejar pasar directamente sin re-procesar en canvas
+  if (file.size <= 3 * 1024 * 1024) {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      resolve(file);
+      return;
+    }
+
+    const img = document.createElement("img");
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        const MAX_DIM = 2560;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const cleanName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+            const compressedFile = new File([blob], cleanName, {
+              type: "image/webp",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          "image/webp",
+          0.90
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 /* Primitiva ImagePicker (D4) — ÚNICO input de imagen del proyecto, por
    consistencia (pantallas privadas y públicas). Grid de miniaturas +
    arrastrar/pegar/URL en un solo control.
-   - Si uploadToR2=true: sube automáticamente a Cloudflare R2 y usa URLs permanentes.
-   - Si uploadToR2=false: usa URL.createObjectURL para previsualización local (mock).
-   Tokens de border-border-subtle/focus:shadow-ring-focus, mismo patrón que
-   input-field.tsx. */
+   - Por defecto sube SIEMPRE a Cloudflare R2 para garantizar persistencia y CDN permanente.
+   - NUNCA genera URLs blob: locales para base de datos (evita que se dañen a los 5 minutos). */
 export function ImagePicker({
   label,
   value,
   onChange,
   className = "",
   multiple = true,
-  uploadToR2 = false,
-  r2Prefix = "portafolio",
+  uploadToR2 = true, // CANÓNICO: Siempre subir a R2 por defecto
+  r2Prefix = "general",
   hideGrid = false,
 }: ImagePickerProps) {
   const id = useId();
   const [urlDraft, setUrlDraft] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const agregar = useCallback((url: string) => {
     const limpio = url.trim();
     if (!limpio) return;
+    if (limpio.startsWith("blob:")) {
+      setUploadError("No se permiten URLs temporales de tipo blob:. Sube la imagen usando el botón Examinar o Arrastrar.");
+      return;
+    }
+    setUploadError(null);
     if (!multiple) { onChange([limpio]); return; }
     if (value.includes(limpio)) return;
     onChange([...value, limpio]);
   }, [value, onChange, multiple]);
 
+  const subirArchivo = async (archivoCrudo: File): Promise<string> => {
+    const archivoOptimizado = await prepareImageForUpload(archivoCrudo);
+    const formData = new FormData();
+    formData.append("file", archivoOptimizado);
+    formData.append("prefix", r2Prefix);
+    return await uploadFileToR2(formData);
+  };
+
   const agregarArchivosLote = useCallback(async (files: File[]) => {
     const imagenes = files.filter((f) => f.type.startsWith("image/"));
     if (imagenes.length === 0) return;
 
-    if (!multiple) {
-      const file = imagenes[0];
-      if (uploadToR2) {
-        try {
-          setIsUploading(true);
-          const url = await uploadFileToR2(file, r2Prefix);
-          onChange([url]);
-        } catch (error) {
-          console.error("Error al subir a R2:", error);
-          onChange([URL.createObjectURL(file)]);
-        } finally {
-          setIsUploading(false);
-        }
-      } else {
-        onChange([URL.createObjectURL(file)]);
-      }
-      return;
-    }
-
+    setUploadError(null);
     setIsUploading(true);
+
     try {
-      const nuevasUrls = await Promise.all(
-        imagenes.map(async (file) => {
-          if (uploadToR2) {
-            try {
-              return await uploadFileToR2(file, r2Prefix);
-            } catch (error) {
-              console.error("Error al subir a R2:", error);
-              return URL.createObjectURL(file);
-            }
+      if (!multiple) {
+        const file = imagenes[0];
+        if (uploadToR2) {
+          try {
+            const url = await subirArchivo(file);
+            onChange([url]);
+          } catch (error) {
+            console.error("Error al subir a R2:", error);
+            setUploadError(`Error al subir a Cloudflare R2: ${error instanceof Error ? error.message : "Fallo en la conexión"}`);
           }
-          return URL.createObjectURL(file);
-        })
-      );
-      const combinadas = Array.from(new Set([...value, ...nuevasUrls]));
-      onChange(combinadas);
+        } else {
+          onChange([URL.createObjectURL(file)]);
+        }
+        return;
+      }
+
+      const nuevasUrls: string[] = [];
+      const errores: string[] = [];
+
+      for (const file of imagenes) {
+        if (uploadToR2) {
+          try {
+            const url = await subirArchivo(file);
+            nuevasUrls.push(url);
+          } catch (error) {
+            console.error("Error al subir a R2:", error);
+            errores.push(`${file.name}: ${error instanceof Error ? error.message : "Fallo al subir a R2"}`);
+          }
+        } else {
+          nuevasUrls.push(URL.createObjectURL(file));
+        }
+      }
+
+      if (errores.length > 0) {
+        setUploadError(`No se pudieron subir ${errores.length} imagen(es): ${errores.join(", ")}`);
+      }
+
+      if (nuevasUrls.length > 0) {
+        const combinadas = Array.from(new Set([...value, ...nuevasUrls]));
+        onChange(combinadas);
+      }
     } finally {
       setIsUploading(false);
     }
@@ -230,15 +322,20 @@ export function ImagePicker({
            }}
            disabled={isUploading}
          />
-         <button
-           type="button"
-           onClick={() => inputRef.current?.click()}
-           className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt disabled:opacity-50"
-           disabled={isUploading}
-         >
-           {isUploading ? "Subiendo..." : "Examinar"}
-         </button>
-       </div>
-    </div>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt disabled:opacity-50"
+            disabled={isUploading}
+          >
+            {isUploading ? "Subiendo a R2..." : "Examinar"}
+          </button>
+        </div>
+        {uploadError && (
+          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-1.5 mt-1" role="alert">
+            {uploadError}
+          </p>
+        )}
+     </div>
   );
 }

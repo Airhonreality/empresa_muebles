@@ -198,6 +198,8 @@ export default function PersonaPerfilPage() {
                 value={formData.fotoUrl}
                 onChange={(v) => setFormData({ ...formData, fotoUrl: v })}
                 multiple={false}
+                uploadToR2
+                r2Prefix="equipo"
               />
 
               {/* Nombre */}

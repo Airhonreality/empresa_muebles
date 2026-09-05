@@ -3,37 +3,87 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { optimizeImage, inferContextFromPrefix } from "./optimize";
 
-// Inicializar cliente de R2 (Cloudflare R2 es compatible con S3 SDK)
-const r2Client = new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.CF_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.CF_R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.CF_R2_SECRET_ACCESS_KEY!,
-  },
-});
+let cachedR2Client: S3Client | null = null;
 
-const BUCKET_NAME = process.env.CF_R2_BUCKET_NAME!;
-const PUBLIC_DOMAIN = process.env.CF_R2_PUBLIC_DOMAIN || `https://${BUCKET_NAME}.r2.cloudflarestorage.com`;
+function getR2Context(): { client: S3Client; bucket: string; publicDomain: string } {
+  const accountId = process.env.CF_R2_ACCOUNT_ID;
+  const accessKeyId = process.env.CF_R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.CF_R2_SECRET_ACCESS_KEY;
+  const bucket = process.env.CF_R2_BUCKET_NAME || "veta-dorada";
+
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    throw new Error(
+      `Credenciales incompletas de Cloudflare R2 en runtime: ` +
+      `ACCOUNT_ID=${accountId ? "OK" : "FALTA"}, ` +
+      `ACCESS_KEY=${accessKeyId ? "OK" : "FALTA"}, ` +
+      `SECRET=${secretAccessKey ? "OK" : "FALTA"}`
+    );
+  }
+
+  if (!cachedR2Client) {
+    cachedR2Client = new S3Client({
+      region: "auto",
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+  }
+
+  // Fallback canónico seguro: el dominio público r2.dev de Veta de Oro.
+  // Nunca debe apuntar al endpoint privado r2.cloudflarestorage.com porque requiere credenciales S3 y no es público.
+  const configuredDomain = process.env.CF_R2_PUBLIC_DOMAIN;
+  const publicDomain = (configuredDomain && !configuredDomain.includes("r2.cloudflarestorage.com"))
+    ? configuredDomain.replace(/\/$/, "")
+    : "https://pub-ce098e41ccfb4f699b43c40e3e668d44.r2.dev";
+
+  return { client: cachedR2Client, bucket, publicDomain };
+}
 
 /**
- * Sube un archivo a Cloudflare R2 y devuelve su URL pública.
- * @param file - Archivo a subir (debe ser una imagen).
- * @param prefix - Prefijo para la clave en R2 (ej: 'portafolio/', 'cotizador/').
- * @returns URL pública del archivo subido.
+ * Sube un archivo a Cloudflare R2 y devuelve su URL pública permanente.
+ * @param input - FormData conteniendo 'file' y opcionalmente 'prefix', o directamente un objeto File.
+ * @param prefixParam - Prefijo de carpeta en R2 si no se pasa en FormData (ej: 'catalogo', 'cotizador/disenio').
+ * @returns URL pública permanente en R2.
  */
-export async function uploadFileToR2(file: File, prefix: string = "portafolio"): Promise<string> {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Solo se permiten archivos de imagen");
+export async function uploadFileToR2(
+  input: FormData | File,
+  prefixParam: string = "portafolio"
+): Promise<string> {
+  let file: File;
+  let prefix = prefixParam;
+
+  if (typeof FormData !== "undefined" && input instanceof FormData) {
+    const formFile = input.get("file");
+    if (!formFile || !(formFile instanceof File)) {
+      throw new Error("No se proporcionó ningún archivo en el formulario");
+    }
+    file = formFile;
+    const formPrefix = input.get("prefix");
+    if (typeof formPrefix === "string" && formPrefix.trim()) {
+      prefix = formPrefix.trim();
+    }
+  } else if (input instanceof File) {
+    file = input;
+  } else {
+    throw new Error("Formato de entrada no válido para la subida de imagen");
   }
+
+  if (!file.type || !file.type.startsWith("image/")) {
+    throw new Error("Solo se permiten archivos de imagen válidos (JPG, PNG, WebP, etc.)");
+  }
+
+  // Limpiar el prefijo de slashes redundantes
+  const cleanPrefix = prefix.replace(/^\/+|\/+$/g, "");
 
   const arrayBuffer = await file.arrayBuffer();
   const rawBuffer = Buffer.from(arrayBuffer);
   
   // Inferir el contexto (hero, general, logo, avatar) a partir de la carpeta destino
-  const context = inferContextFromPrefix(prefix);
+  const context = inferContextFromPrefix(cleanPrefix);
   
-  // Procesar la imagen con sharp
+  // Procesar la imagen con sharp (optimización, respeto de orientación EXIF, conversión WebP)
   const { data: optimizedBuffer, contentType } = await optimizeImage(rawBuffer, file.type, context);
 
   const timestamp = Date.now();
@@ -46,19 +96,21 @@ export async function uploadFileToR2(file: File, prefix: string = "portafolio"):
     sanitizedName = sanitizedName.replace(/\.[^/.]+$/, "") + ".webp";
   }
 
-  const key = `${prefix}/${timestamp}-${sanitizedName}`;
+  const key = `${cleanPrefix}/${timestamp}-${sanitizedName}`;
 
-  await r2Client.send(
+  const { client, bucket, publicDomain } = getR2Context();
+
+  await client.send(
     new PutObjectCommand({
-      Bucket: BUCKET_NAME,
+      Bucket: bucket,
       Key: key,
       Body: optimizedBuffer,
       ContentType: contentType,
-      CacheControl: "public, max-age=31536000", // Cache de 1 año
+      CacheControl: "public, max-age=31536000, immutable", // Cache de 1 año en Cloudflare edge
     })
   );
 
-  return `${PUBLIC_DOMAIN}/${key}`;
+  return `${publicDomain}/${key}`;
 }
 
 /**
@@ -66,9 +118,10 @@ export async function uploadFileToR2(file: File, prefix: string = "portafolio"):
  * @param key - Clave del archivo en R2 (sin el prefijo de URL).
  */
 export async function deleteFileFromR2(key: string): Promise<void> {
-  await r2Client.send(
+  const { client, bucket } = getR2Context();
+  await client.send(
     new DeleteObjectCommand({
-      Bucket: BUCKET_NAME,
+      Bucket: bucket,
       Key: key,
     })
   );

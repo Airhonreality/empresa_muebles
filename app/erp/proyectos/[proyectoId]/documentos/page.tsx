@@ -235,6 +235,8 @@ export default function DocumentosPage() {
                 value={imagenes}
                 onChange={setImagenes}
                 multiple={false}
+                uploadToR2
+                r2Prefix="documentos"
               />
               <div className="flex justify-end pt-2">
                 <Button

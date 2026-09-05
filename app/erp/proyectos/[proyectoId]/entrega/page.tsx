@@ -118,7 +118,7 @@ export default function EntregaPage() {
                 className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
               />
             </label>
-            <ImagePicker label="Fotos de entrega" value={fotos} onChange={setFotos} />
+            <ImagePicker label="Fotos de entrega" value={fotos} onChange={setFotos} uploadToR2 r2Prefix="entrega" />
 
             {error && (
               <div className="rounded border border-red-300 bg-red-50/80 p-3 text-sm text-red-700">

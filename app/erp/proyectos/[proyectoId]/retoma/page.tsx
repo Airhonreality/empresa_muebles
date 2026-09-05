@@ -131,6 +131,8 @@ export default function RetomaPage() {
             value={fotos}
             onChange={setFotos}
             multiple={true}
+            uploadToR2
+            r2Prefix="retoma"
           />
         </div>
 

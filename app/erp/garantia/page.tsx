@@ -184,7 +184,7 @@ export default function GarantiaPage() {
                 className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
               />
             </label>
-            <ImagePicker label="Fotos (máx 5)" value={reporteFotos} onChange={setReporteFotos} />
+            <ImagePicker label="Fotos (máx 5)" value={reporteFotos} onChange={setReporteFotos} uploadToR2 r2Prefix="garantia" />
 
             {reporteError && (
               <div className="rounded border border-red-300 bg-red-50/80 p-3 text-sm text-red-700">

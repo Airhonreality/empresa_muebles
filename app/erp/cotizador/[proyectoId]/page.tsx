@@ -1975,7 +1975,7 @@ function FormArtefacto({
           />
         </label>
       </div>
-      <ImagePicker label="Foto (opcional)" value={fotoUrl} onChange={setFotoUrl} multiple={false} />
+      <ImagePicker label="Foto (opcional)" value={fotoUrl} onChange={setFotoUrl} multiple={false} uploadToR2 r2Prefix="cotizador/items" />
       <div className="flex items-center gap-2 pt-1">
         <button
           type="button"
@@ -2053,7 +2053,7 @@ function FormArtefactoEdicion({
           />
         </label>
       </div>
-      <ImagePicker label="Foto" value={fotoUrl} onChange={setFotoUrl} multiple={false} />
+      <ImagePicker label="Foto" value={fotoUrl} onChange={setFotoUrl} multiple={false} uploadToR2 r2Prefix="cotizador/items" />
       <div className="flex items-center gap-2 pt-1">
         <button
           type="button"
@@ -2128,9 +2128,9 @@ function FormDetallesEspacio({
 
       {/* Selector de imágenes — arriba, con miniaturas y controles de reordenamiento */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <ImagePicker label="Fotos del espacio" value={fotosEspacio} onChange={setFotosEspacio} />
-        <ImagePicker label="Fotos de diseño" value={fotosDisenio} onChange={setFotosDisenio} />
-        <ImagePicker label="Fotos de referencia" value={fotosReferencia} onChange={setFotosReferencia} />
+        <ImagePicker label="Fotos del espacio" value={fotosEspacio} onChange={setFotosEspacio} uploadToR2 r2Prefix="cotizador/espacio" />
+        <ImagePicker label="Fotos de diseño" value={fotosDisenio} onChange={setFotosDisenio} uploadToR2 r2Prefix="cotizador/disenio" />
+        <ImagePicker label="Fotos de referencia" value={fotosReferencia} onChange={setFotosReferencia} uploadToR2 r2Prefix="cotizador/referencia" />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
