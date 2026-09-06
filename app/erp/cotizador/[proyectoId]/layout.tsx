@@ -1,17 +1,19 @@
 // Layout del cotizador de un proyecto: monta el puente de sincronización
-// Zustand ↔ DataStore una sola vez para todo el subárbol (Fase 1, ZN-002).
+// TangStack Query en el subárbol (B4, plan_cotizador_tanstack_query.md). El seed
+// inicial sale del DataStore SSR (layout /erp → fetchSnapshotAction) y cada versión
+// global invalida SOLO la query escopada ['cotizador', proyectoId].
 'use client'
 
 import { useParams } from 'next/navigation'
 import type { ReactNode } from 'react'
-import { CotizadorSincronizador } from '@/lib/data/stores/CotizadorSincronizador'
+import { CotizadorSnapBridge } from '@/lib/data/queries/CotizadorSnapBridge'
 
 export default function CotizadorProyectoLayout({ children }: { children: ReactNode }) {
   const params = useParams<{ proyectoId: string }>()
   const proyectoId = params.proyectoId
   return (
     <>
-      <CotizadorSincronizador proyectoId={proyectoId} />
+      <CotizadorSnapBridge proyectoId={proyectoId} />
       {children}
     </>
   )

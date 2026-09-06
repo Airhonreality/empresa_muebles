@@ -16,9 +16,9 @@ import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-es
 import { ContratoModal } from '../ContratoModal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
-import { useDataStore, generarSlides, type DataStore, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
-import { useSelectPorVariante } from '@/lib/data/stores/selectors'
-import { useCotizadorStore } from '@/lib/data/stores/useCotizadorStore'
+import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
+import { CotizadorCompatProvider, useCotizadorCompat, type CotizadorCompatStore } from '@/lib/data/queries/cotizador-compat'
+import { eliminarProyectoAction, crearNotaReunionAction } from '@/lib/data/actions/core'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -68,7 +68,7 @@ interface TarifasMO {
   tarifaInstall: number
 }
 
-function derivarTarifas(store: DataStore): TarifasMO {
+function derivarTarifas(store: Pick<CotizadorCompatStore, 'parametros'>): TarifasMO {
   const parametros = obtenerParametrosJornadas(store)
   const hora = (rol: keyof ParametrosJornadas['valorHoraPorRol']) => parseNum(parametros.valorHoraPorRol[rol])
   return {
@@ -88,7 +88,7 @@ function buildJornadasMap(espacios: EspacioVariante[]): Record<string, JornadasT
   return map
 }
 
-function obtenerParametrosJornadas(store: DataStore): ParametrosJornadas {
+function obtenerParametrosJornadas(store: Pick<CotizadorCompatStore, 'parametros'>): ParametrosJornadas {
   const p = (k: string) => store.parametros.obtenerPorClave(k)?.valorTexto ?? store.parametros.obtenerPorClave(k)?.valorNumeric ?? null
   return {
     valorHoraPorRol: {
@@ -104,21 +104,27 @@ function obtenerParametrosJornadas(store: DataStore): ParametrosJornadas {
 
 export default function CotizadorPage() {
   const params = useParams()
-  const searchParams = useSearchParams()
   const proyectoId = params.proyectoId as string
+  return (
+    <CotizadorCompatProvider proyectoId={proyectoId}>
+      <CotizadorPageInner proyectoId={proyectoId} />
+    </CotizadorCompatProvider>
+  )
+}
+
+function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
+  const searchParams = useSearchParams()
   // P-03 (detalle solo lectura): misma ruta que P-04, activada por ?readonly=true
   // (disenio_p03_detalle_solo_lectura.md R8/CA-14). No hay sesión con rol real
   // todavía (F10 mock) — el auto-routing por rol (R2/CA-15/CA-16) queda diferido
   // hasta que exista un sistema de sesión de staff; por ahora es explícito por query param.
   const readonly = searchParams.get('readonly') === 'true'
   const router = useRouter()
-  const store = useDataStore()
-  const version = store.getVersion()
+  const { store, cargando } = useCotizadorCompat()
 
   const proyecto = store.proyectos.obtenerPorId(proyectoId)
   const cliente = proyecto?.clienteId ? store.clientes.obtenerPorId(proyecto.clienteId) : undefined
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const espaciosBase = useMemo(() => proyecto ? store.espacios.porProyecto(proyecto.id) : [], [proyecto, store, version])
+  const espaciosBase = useMemo(() => proyecto ? store.espacios.porProyecto(proyecto.id) : [], [proyecto, store])
   const catalogo = store.catalogo.listar()
 
   // Un mismo "espacio" (nombreEspacio) puede tener varias variantes alternativas
@@ -145,8 +151,7 @@ export default function CotizadorPage() {
   const contrato = proyecto ? store.contratos.porProyecto(proyecto.id) : undefined
   const hitosList = contrato ? store.hitos.porContrato(contrato.id) : []
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const tarifas = useMemo(() => derivarTarifas(store), [store, version])
+  const tarifas = useMemo(() => derivarTarifas(store), [store])
   const { tarifaDev, tarifaAssembly, tarifaInstall } = tarifas
 
   const [jornadasMap, setJornadasMap] = useState<Record<string, JornadasTuple>>(() =>
@@ -264,6 +269,14 @@ export default function CotizadorPage() {
     [store, jornadasMap],
   )
 
+  if (cargando) {
+    return (
+      <div className="mx-auto max-w-4xl px-6 py-16 text-center">
+        <p className="text-text-muted">Cargando cotización…</p>
+      </div>
+    )
+  }
+
   if (!proyecto) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-16 text-center">
@@ -275,11 +288,10 @@ export default function CotizadorPage() {
 
 // P7 (ZN-003): envoltura memoizada. Como EspacioGroup es una función declarada, se usa a
 // través de `EspacioGroupMemo` para que una modificación en una variante/espacio NO re-renderice
-// a los hermanos (además de la suscripción granular por-versión que ya aporta useSelectPorVariante
-// en la Fase 1). Los callbacks (onToggle, onUpdateJornadas), tarifas y catalogo son estables
+// a los hermanos. Los callbacks (onToggle, onUpdateJornadas), tarifas y catalogo son estables
 // (useCallback/useMemo), condición necesaria para que el shallow-compare de `memo` no se invalide
-// en cada render del padre. `VarianteContenido` no se memoiza: su re-render granular por variante
-// ya lo cubre el selector don-de vive bajo EspacioGroupMemo.
+// en cada render del padre. El re-render por cambio de datos lo dispara el contexto del
+// CotizadorCompatProvider (snapshot TanStack Query) que EspacioGroup consume.
 const EspacioGroupMemo = memo(EspacioGroup)
 
 
@@ -406,7 +418,7 @@ const EspacioGroupMemo = memo(EspacioGroup)
                 variant="ghost" size="md" className="h-7 px-2 text-xs text-red-500 hover:text-red-600"
                 onClick={async () => {
                   if (window.confirm(`¿Eliminar la cotización "${proyecto.nombreProyecto}"?`)) {
-                    const ok = await store.proyectos.eliminar(proyecto.id)
+                    const ok = await eliminarProyectoAction(proyecto.id)
                     if (ok) router.push('/erp/cotizador')
                   }
                 }}
@@ -701,7 +713,7 @@ const EspacioGroupMemo = memo(EspacioGroup)
               catalogo,
             )}
             onCrearNota={async (data) => {
-              await store.notasReunion.crear(data)
+              await crearNotaReunionAction(data)
             }}
             onCerrar={() => setModalPresentacionAbierto(false)}
           />
@@ -759,12 +771,12 @@ function VistaSoloLectura({
   iva,
   total,
 }: {
-  proyecto: NonNullable<ReturnType<DataStore['proyectos']['obtenerPorId']>>
-  cliente: ReturnType<DataStore['clientes']['obtenerPorId']>
+  proyecto: NonNullable<ReturnType<CotizadorCompatStore['proyectos']['obtenerPorId']>>
+  cliente: ReturnType<CotizadorCompatStore['clientes']['obtenerPorId']>
   espaciosActivos: EspacioVariante[]
-  store: DataStore
-  contrato: ReturnType<DataStore['contratos']['porProyecto']>
-  hitosList: ReturnType<DataStore['hitos']['porContrato']>
+  store: CotizadorCompatStore
+  contrato: ReturnType<CotizadorCompatStore['contratos']['porProyecto']>
+  hitosList: ReturnType<CotizadorCompatStore['hitos']['porContrato']>
   tarifas: TarifasMO
   materialesTotal: number
   moDev: number
@@ -962,7 +974,7 @@ function EspacioGroup({
   tarifas: { tarifaDev: number; tarifaAssembly: number; tarifaInstall: number }
   proyectoId: string
 }) {
-  const store = useDataStore()
+  const { store } = useCotizadorCompat()
   const varianteActiva = variantes.find((v) => v.activa) ?? variantes[0]
   const [tabId, setTabId] = useState(varianteActiva.id)
   const variante = variantes.find((v) => v.id === tabId) ?? varianteActiva
@@ -975,7 +987,7 @@ function EspacioGroup({
   // El total del header refleja siempre la variante ACTIVA (la que cuenta),
   // no la que se estǸ mirando en ese momento �?" cambiar de tab para comparar
   // no debe mover el nǧmero que ve el resto de la pantalla.
-  const itemsActivos = useSelectPorVariante(varianteActiva.id)
+  const itemsActivos = store.items.porVariante(varianteActiva.id)
   const totalGrupo = itemsActivos
     .filter((it) => !it.esReferencial)
     .reduce((s, it) => s + parseNum(it.totalLinea), 0)
@@ -998,9 +1010,7 @@ function EspacioGroup({
   const guardarNombreVariante = async (v: EspacioVariante) => {
     const valor = nombreVarianteTemp.trim()
     if (valor && valor !== v.nombreVariante) {
-      await useCotizadorStore.getState().renombrarVariante(v.id, valor, () =>
-        store.espacios.actualizar(v.id, { nombreVariante: valor }),
-      )
+      await store.espacios.actualizar(v.id, { nombreVariante: valor })
     }
     setEditandoNombreVariante(false)
   }
@@ -1010,7 +1020,7 @@ function EspacioGroup({
   // Guardia de Integridad del servidor; la acción optimista revierte sola si falla.
   const eliminarVarianteUI = async (v: EspacioVariante) => {
     if (v.id === varianteActiva.id || variantes.length <= 1) return
-    const ok = await useCotizadorStore.getState().eliminarVariante(v.id, () => store.espacios.eliminar(v.id))
+    const ok = await store.espacios.eliminar(v.id)
     if (ok && tabId === v.id) {
       const restante = variantes.filter((x) => x.id !== v.id)
       setTabId(restante[0].id)
@@ -1253,9 +1263,9 @@ function VarianteContenido({
   tarifas: { tarifaDev: number; tarifaAssembly: number; tarifaInstall: number }
   proyectoId: string
 }) {
-  const store = useDataStore()
-  // Lectura de items desde el store Zustand (puente hidratado desde el DataStore).
-  const items = useSelectPorVariante(espacio.id)
+  const { store } = useCotizadorCompat()
+  // Lectura de items desde el snapshot TanStack Query (B2, plan_cotizador_tanstack_query.md).
+  const items = store.items.porVariante(espacio.id)
   const productMap = useMemo(() => new Map(catalogo.map((p) => [p.id, p])), [catalogo])
   const itemsContractuales = items.filter((it) => !it.esReferencial)
   const itemsReferenciales = items.filter((it) => it.esReferencial)
@@ -1274,8 +1284,6 @@ function VarianteContenido({
   const [itemLibreEsRef, setItemLibreEsRef] = useState(false)
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
-  const { guard: guardCrearItem, isPending: creandoItem } = usePendingGuard()
-  const { guard: guardCrearItemReferencial, isPending: creandoItemReferencial } = usePendingGuard()
 
   const modalItem = modalItemId ? items.find((i) => i.id === modalItemId) : undefined
   const modalProd = modalItem?.catalogoId ? productMap.get(modalItem.catalogoId) : undefined
@@ -1328,41 +1336,27 @@ function VarianteContenido({
           <div className="mb-3">
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-              onSelect={(producto) => guardCrearItem(async () => {
-                // Fase 2 (ZN-003): optimismo — la fila aparece de inmediato (sin esperar
-                // la latencia de red) y la Server Action persiste en background con revert
-                // automático si el servidor rechaza la escritura.
-                await useCotizadorStore.getState().crearItemOptimistic(
-                  {
-                    varianteId: espacio.id,
-                    catalogoId: producto.id,
-                    nombrePersonalizado: null,
-                    cantidad: '1',
-                    precioUnitario: producto.precioPublico ?? '0',
-                    anulado: false,
-                    esReferencial: false,
-                    fuenteReferencial: null,
-                    grupoReferencial: null,
-                  },
-                  () =>
-                    store.items.crear({
-                      varianteId: espacio.id,
-                      catalogoId: producto.id,
-                      cantidad: '1',
-                      precioUnitario: producto.precioPublico ?? '0',
-                      nombrePersonalizado: null,
-                    }),
-                )
+              onSelect={(producto) => {
+                // B2 (plan_cotizador_tanstack_query.md): mutation optimista con id cliente
+                // (DEC-1) — la fila aparece al instante y persiste en background; sin
+                // usePendingGuard para permitir encadenar (T2) y sin fila temporal (T1).
+                void store.items.crear({
+                  varianteId: espacio.id,
+                  catalogoId: producto.id,
+                  nombrePersonalizado: null,
+                  cantidad: '1',
+                  precioUnitario: producto.precioPublico ?? '0',
+                  esReferencial: false,
+                })
                 setModoBusquedaItem('off')
-              })}
+              }}
               onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(false); setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
               contexto="cotizador-items"
             />
-            {creandoItem && <p className="mt-1 text-xs text-text-muted">Agregando ítem...</p>}
-            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2" disabled={creandoItem}>
+            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2">
               Cancelar
             </Button>
           </div>
@@ -1469,39 +1463,24 @@ function VarianteContenido({
           <div className="mb-3">
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-              onSelect={(producto) => guardCrearItemReferencial(async () => {
-                await useCotizadorStore.getState().crearItemOptimistic(
-                  {
-                    varianteId: espacio.id,
-                    catalogoId: producto.id,
-                    nombrePersonalizado: null,
-                    cantidad: '1',
-                    precioUnitario: producto.precioPublico ?? '0',
-                    anulado: false,
-                    esReferencial: true,
-                    fuenteReferencial: null,
-                    grupoReferencial: null,
-                  },
-                  () =>
-                    store.items.crear({
-                      varianteId: espacio.id,
-                      catalogoId: producto.id,
-                      cantidad: '1',
-                      precioUnitario: producto.precioPublico ?? '0',
-                      nombrePersonalizado: null,
-                      esReferencial: true,
-                    }),
-                )
+              onSelect={(producto) => {
+                void store.items.crear({
+                  varianteId: espacio.id,
+                  catalogoId: producto.id,
+                  nombrePersonalizado: null,
+                  cantidad: '1',
+                  precioUnitario: producto.precioPublico ?? '0',
+                  esReferencial: true,
+                })
                 setModoBusquedaItem('off')
-              })}
+              }}
               onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(true); setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
               contexto="cotizador-items"
             />
-            {creandoItemReferencial && <p className="mt-1 text-xs text-text-muted">Agregando ítem...</p>}
-            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2" disabled={creandoItemReferencial}>
+            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2">
               Cancelar
             </Button>
           </div>
@@ -1871,14 +1850,12 @@ function VarianteContenido({
                 size="md"
                 disabled={!itemLibreNombre.trim()}
                 onClick={async () => {
-                  const total = String(parseNum(itemLibreCantidad) * parseNum(itemLibrePrecio))
                   await store.items.crear({
                     varianteId: espacio.id,
                     catalogoId: null,
                     nombrePersonalizado: itemLibreNombre.trim(),
                     cantidad: itemLibreCantidad,
                     precioUnitario: itemLibrePrecio,
-                    totalLinea: total,
                     esReferencial: itemLibreEsRef,
                   })
                   setCreandoItemLibre(false)
@@ -1906,7 +1883,7 @@ function FormArtefacto({
   onGuardado: () => void
   onCancelar: () => void
 }) {
-  const store = useDataStore()
+  const { store } = useCotizadorCompat()
   const [categoria, setCategoria] = useState<EspacioArtefacto['categoria']>('determinante')
   const [tipo, setTipo] = useState('')
   const [dimensiones, setDimensiones] = useState('')
@@ -2006,7 +1983,7 @@ function FormArtefactoEdicion({
   onGuardado: () => void
   onCancelar: () => void
 }) {
-  const store = useDataStore()
+  const { store } = useCotizadorCompat()
   const [dimensiones, setDimensiones] = useState(artefacto.dimensionesMm ?? '')
   const [tipo, setTipo] = useState(artefacto.tipoSpecifique ?? '')
   const [ubicacion, setUbicacion] = useState(artefacto.ubicacion ?? '')
@@ -2083,7 +2060,7 @@ function FormDetallesEspacio({
   onGuardado: () => void
   onCancelar: () => void
 }) {
-  const store = useDataStore()
+  const { store } = useCotizadorCompat()
   const [nombreEspacio, setNombreEspacio] = useState(espacio.nombreEspacio)
   const [nombreVariante, setNombreVariante] = useState(espacio.nombreVariante)
   const [descripcion, setDescripcion] = useState(espacio.descripcion ?? '')
