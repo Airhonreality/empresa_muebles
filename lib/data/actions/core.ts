@@ -367,6 +367,9 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
     precioUnitario,
     totalLinea: String(num(data.cantidad) * num(precioUnitario)),
     anulado: data.anulado ?? false,
+    esReferencial: data.esReferencial ?? false,
+    fuenteReferencial: data.fuenteReferencial ?? null,
+    grupoReferencial: data.grupoReferencial ?? null,
   }).onConflictDoNothing({ target: s.itemsVariante.id }).returning()
 
   if (!nuevo) {
@@ -487,7 +490,10 @@ export async function eliminarEspacioAction(id: string): Promise<boolean> {
 }
 
 export async function crearArtefactoAction(data: Partial<EspacioArtefacto> & { espacioVarianteId: string; categoria: EspacioArtefacto['categoria'] }): Promise<EspacioArtefacto> {
+  // DEC-8 (plan_cotizador_tanstack_query.md): mismo contrato idempotente que crearItemAction/
+  // crearEspacioAction — id opcional cliente-generado + onConflictDoNothing ante reintentos.
   const [nuevo] = await db.insert(s.espaciosArtefactos).values({
+    id: data.id,
     espacioVarianteId: data.espacioVarianteId,
     categoria: data.categoria,
     dimensionesMm: data.dimensionesMm ?? null,
@@ -497,7 +503,14 @@ export async function crearArtefactoAction(data: Partial<EspacioArtefacto> & { e
     requiereVerificacion: data.requiereVerificacion ?? true,
     validadoPor: data.validadoPor ?? null,
     validadoEn: data.validadoEn ?? null,
-  }).returning()
+  }).onConflictDoNothing({ target: s.espaciosArtefactos.id }).returning()
+
+  if (!nuevo) {
+    if (!data.id) throw new Error('crearArtefactoAction: conflicto de id sin id de entrada')
+    const [existente] = await db.select().from(s.espaciosArtefactos).where(eq(s.espaciosArtefactos.id, data.id))
+    if (existente) return existente as unknown as EspacioArtefacto
+    throw new Error('crearArtefactoAction: conflicto de id sin fila existente')
+  }
   return nuevo as unknown as EspacioArtefacto
 }
 

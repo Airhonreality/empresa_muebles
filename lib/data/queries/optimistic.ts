@@ -100,6 +100,10 @@ export interface InputEspacioOptimista {
   tipoEspacio?: string | null
   descripcion?: string | null
   orden?: number
+  visibleEnPropuestaPublica?: boolean
+  jornadasDesarrolloTecnico?: string
+  jornadasEnsamblajeTaller?: string
+  jornadasInstalacionObra?: string
 }
 
 export function construirEspacioOptimista(input: InputEspacioOptimista, orden: number): EspacioVariante {
@@ -111,11 +115,11 @@ export function construirEspacioOptimista(input: InputEspacioOptimista, orden: n
     tipoEspacio: input.tipoEspacio ?? null,
     descripcion: input.descripcion ?? null,
     activa: true,
-    visibleEnPropuestaPublica: true,
+    visibleEnPropuestaPublica: input.visibleEnPropuestaPublica ?? true,
     orden,
-    jornadasDesarrolloTecnico: '0',
-    jornadasEnsamblajeTaller: '0',
-    jornadasInstalacionObra: '0',
+    jornadasDesarrolloTecnico: input.jornadasDesarrolloTecnico ?? '0',
+    jornadasEnsamblajeTaller: input.jornadasEnsamblajeTaller ?? '0',
+    jornadasInstalacionObra: input.jornadasInstalacionObra ?? '0',
     colores: [],
     fotosEspacio: [],
     fotosDisenio: [],
