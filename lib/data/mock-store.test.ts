@@ -227,6 +227,31 @@ await test('items: crear/actualizar/eliminar -> round-trip completo', async () =
   assert.equal(store.items.porVariante(esp.id).length, 0)
 })
 
+await test('DEC-1: items.crear con id cliente dos veces -> una sola fila (idempotente)', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'X' })
+  const esp = await store.espacios.crear({ proyectoId: p.id, nombreEspacio: 'Cocina' })
+  const id = 'it-idempotente-001'
+  const a = await store.items.crear({ id, varianteId: esp.id, catalogoId: null, cantidad: '1' })
+  const b = await store.items.crear({ id, varianteId: esp.id, catalogoId: null, cantidad: '2' })
+  assert.equal(a.id, id)
+  assert.equal(b.id, id)
+  assert.equal(b.cantidad, '1', 'el reintento debe devolver la fila existente, no sobrescribir')
+  assert.equal(store.items.porVariante(esp.id).length, 1)
+})
+
+await test('DEC-7: espacios.crear con id cliente dos veces -> una sola fila (idempotente)', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'X' })
+  const id = 'esp-idempotente-001'
+  const a = await store.espacios.crear({ id, proyectoId: p.id, nombreEspacio: 'Cocina' })
+  const b = await store.espacios.crear({ id, proyectoId: p.id, nombreEspacio: 'Cocina' })
+  assert.equal(a.id, id)
+  assert.equal(b.id, id)
+  assert.equal(store.espacios.porProyecto(p.id).length, 1)
+  assert.equal(store.espacios.porProyecto(p.id)[0].nombreEspacio, 'Cocina')
+})
+
 await test('artefactos: crear/actualizar -> round-trip', async () => {
   const store = createMockStore()
   const p = await store.proyectos.crear({ nombreProyecto: 'X' })

@@ -417,8 +417,13 @@ export function createMockStore(): DataStore {
         return espacios.filter(e => e.proyectoId === proyectoId)
       },
       async crear(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante> {
+        // DEC-7 (2026-09-05): id opcional cliente-generado; idempotente — reintento con el
+        // mismo id devuelve la fila existente (espejo del onConflictDoNothing del server action).
+        const id = data.id ?? generateId('esp')
+        const existente = espacios.find((e) => e.id === id)
+        if (existente) return existente
         const nuevo: EspacioVariante = {
-          id: generateId('esp'),
+          id,
           proyectoId: data.proyectoId,
           nombreEspacio: data.nombreEspacio,
           nombreVariante: data.nombreVariante ?? 'Inicial',
@@ -556,9 +561,14 @@ export function createMockStore(): DataStore {
         return items.filter(i => i.varianteId === varianteId && !i.anulado)
       },
       async crear(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante> {
+        // DEC-1 (2026-09-05): id opcional cliente-generado; idempotente — reintento con el
+        // mismo id devuelve la fila existente (espejo del onConflictDoNothing del server action).
+        const id = data.id ?? generateId('it')
+        const existente = items.find((i) => i.id === id)
+        if (existente) return existente
         const precioUnitario = data.precioUnitario ?? '0'
         const nuevo: ItemVariante = {
-          id: generateId('it'),
+          id,
           varianteId: data.varianteId,
           catalogoId: data.catalogoId,
           nombrePersonalizado: data.nombrePersonalizado ?? null,

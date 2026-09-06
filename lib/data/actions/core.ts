@@ -244,7 +244,10 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
       orden = existentes.length
     }
 
+    // DEC-7 (2026-09-05, plan_cotizador_tanstack_query.md): mismo contrato idempotente que
+    // crearItemAction — id opcional cliente-generado + onConflictDoNothing ante reintentos.
     const [nuevo] = await tx.insert(s.espacioVariantes).values({
+      id: data.id,
       proyectoId: data.proyectoId,
       nombreEspacio: data.nombreEspacio,
       nombreVariante: data.nombreVariante ?? 'Inicial',
@@ -260,8 +263,13 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
       fotosEspacio: sanitizarUrlsFotos(data.fotosEspacio) ?? [],
       fotosDisenio: sanitizarUrlsFotos(data.fotosDisenio) ?? [],
       fotosReferencia: sanitizarUrlsFotos(data.fotosReferencia) ?? [],
-    }).returning()
-    return nuevo as unknown as EspacioVariante
+    }).onConflictDoNothing({ target: s.espacioVariantes.id }).returning()
+
+    if (nuevo) return nuevo as unknown as EspacioVariante
+    if (!data.id) throw new Error('crearEspacioAction: conflicto de id sin id de entrada')
+    const [existente] = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, data.id))
+    if (existente) return existente as unknown as EspacioVariante
+    throw new Error('crearEspacioAction: conflicto de id sin fila existente')
   })
 }
 
@@ -346,7 +354,12 @@ export async function marcarActivaEspacioAction(id: string): Promise<EspacioVari
 
 export async function crearItemAction(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante> {
   const precioUnitario = data.precioUnitario ?? '0'
+  // DEC-1 (2026-09-05, plan_cotizador_tanstack_query.md): id opcional cliente-generado
+  // (crypto.randomUUID()) para la mutation optimista de TanStack Query. onConflictDoNothing
+  // hace que un reintento con el mismo id (retry de red, doble-submit, re-run del onMutate)
+  // sea idempotente en vez de duplicar la línea — mismo patrón que crearProyectoAction.
   const [nuevo] = await db.insert(s.itemsVariante).values({
+    id: data.id,
     varianteId: data.varianteId,
     catalogoId: data.catalogoId,
     nombrePersonalizado: data.nombrePersonalizado ?? null,
@@ -354,7 +367,14 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
     precioUnitario,
     totalLinea: String(num(data.cantidad) * num(precioUnitario)),
     anulado: data.anulado ?? false,
-  }).returning()
+  }).onConflictDoNothing({ target: s.itemsVariante.id }).returning()
+
+  if (!nuevo) {
+    if (!data.id) throw new Error('crearItemAction: conflicto de id sin id de entrada')
+    const [existente] = await db.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, data.id))
+    if (existente) return existente as unknown as ItemVariante
+    throw new Error('crearItemAction: conflicto de id sin fila existente')
+  }
   return nuevo as unknown as ItemVariante
 }
 
