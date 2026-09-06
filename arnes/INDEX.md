@@ -44,7 +44,7 @@ Dashboard corto: en qué fase está cada línea activa, ahora mismo. El detalle 
 - `plan_f4.md`..`plan_f7.md` — hallazgos y decisiones compiladas por fase.
 - `destilacion_f3_publico.md` — fuente activa de F-08 (propuesta pública), no archivar hasta que se construya.
 - **`pantallas/`** — diseños F2–F7 (`PLANTILLA_PANTALLA.md` + todos los `disenio_PXX.md`/`disenio_FXX.md`).
-- **`tecnico/`** — salidas de datos F0/F1/F8/F9, no son pantallas (`plan_t-074.md`, `plan_t-075.md`, `plan_t-080.md`, `PLANTILLA_HARDENING.md`, `PLANTILLA_QA.md`, `m06_capa_tecnica_transversal.md`, `m07_capa_reactividad.md`). **`checklist_progreso_pantallas.md` — Definición de Hecho obligatoria para toda tarea de pantalla/datos de F10 (B2 en adelante). El Iniciador la lee antes de planificar cualquier tarea de este tipo, no solo cuando el humano la menciona.** `plan_f10_migracion.md` — fuente única de verdad de F10 (migración de datos + persistencia + reactividad). `m07b_reactividad_multiusuario.md` — decisión vigente de reactividad cross-usuario (long-polling + `LISTEN`/`NOTIFY`), extiende M-07 y reemplaza el mecanismo de polling corto fijo descrito en `plan_f10_migracion.md` §3.1d.
+- **`tecnico/`** — salidas de datos F0/F1/F8/F9, no son pantallas (`plan_t-074.md`, `plan_t-075.md`, `plan_t-080.md`, `PLANTILLA_HARDENING.md`, `PLANTILLA_QA.md`, `m06_capa_tecnica_transversal.md`, `m07_capa_reactividad.md`). **`checklist_progreso_pantallas.md` — Definición de Hecho obligatoria para toda tarea de pantalla/datos de F10 (B2 en adelante). El Iniciador la lee antes de planificar cualquier tarea de este tipo, no solo cuando el humano la menciona.** `plan_f10_migracion.md` — fuente única de verdad de F10 (migración de datos + persistencia + reactividad). `m07b_reactividad_multiusuario.md` — decisión vigente de reactividad cross-usuario (long-polling + `LISTEN`/`NOTIFY`), extiende M-07 y reemplaza el mecanismo de polling corto fijo descrito en `plan_f10_migracion.md` §3.1d. **Decisión vigente del server-state del ERP (2026-09-05): TanStack Query** (cache + mutation optimista), zustand solo para estado local de UI, sitio público con RSC + Server Actions; ver `estado.md` §"DECISIÓN DE ARQUITECTURA CORREGIDA" — sustituye la Vía A de `zustand-migration/`. **Plan de migración del cotizador:** `tecnico/plan_cotizador_tanstack_query.md` (creado 2026-09-05, pendiente de aprobación Supervisor).
 - **`archivo/`** — histórico: rondas de preguntas a Javier, diamante2 discover/define, pasadas P2-P8/C1-C6, trazabilidad punto-0, metodología OLA_6/7, Tercer input humano (diferido). Se lee para entender cómo se llegó a una decisión, no para decidir.
 
 Detalle de pantallas por fase (cita rápida, el archivo vive en `pantallas/`):
@@ -61,6 +61,13 @@ Detalle de pantallas por fase (cita rápida, el archivo vive en `pantallas/`):
 - `plan_seo_2026.md` — **subsistema SEO integral (2026-08-08).** Indexación total, JSON-LD por tipo, imágenes 5 niveles, robots/llms.txt, Core Web Vitals, reglas anti-invención.
 - `archivo/` — `destilacion_docs_veta.md` ("segundo input": DOCS VETA DORADA — marca/SEO/tono), `marco_estrategia_mercado.md`.
 - `contenido/` — **copy exacto y estructura de secciones por pantalla pública (2026-08-09).** Espejo 1:1 con `ola7/pantallas/disenio_FXX.md`. Insumo cerrado de contenido para que el Iniciador del bucle F-web destile sin inventar copy. Sigue `PLANTILLA_CONTENIDO.md` (7 bloques).
+
+#### 3.c `lineas/ui-slots/` — capa de composición y estados de interfaz (tipado de slots UI)
+
+- `fundamento_teorico_ui_slots.md` — entrada teórica (doctrina "Composición + estados semánticos", hallazgos H1–H6).
+- `plan_ui-slots.md` — fuente única de la línea (fases 1–4).
+- `estado_ui-slots.md` — progreso de la línea.
+- **Regla:** `ZU_05`..`ZU_08` (Vía B de la línea Zustand) quedan bloqueadas para rediseño ergonómico hasta el contrato mínimo de esta línea.
 
 ### 4. arnes/roles/
 Contratos de los 5 roles (orquestador, iniciador, código, QA, supervisor). Compartido por todas las líneas — se lee al arranque de cada sesión (`AGENTS.md` paso 4), no es archivo histórico.

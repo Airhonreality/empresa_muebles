@@ -1,8 +1,16 @@
 # ZU_03: Roadmap Faseado (8 Fases)
 
+## ⛔ SUPERACIÓN (2026-09-05) — la Vía A se sustituye
+
+**La capa de server-state del ERP (cotizador y bloques `ZU_05`..`ZU_08`) se resuelve con TanStack Query** (cache escopada por `queryKey` + mutations optimistas `onMutate`/rollback), **no** con stores memoizados como capa de datos. Zustand queda para estado local de UI. El objetivo "100 cotizadores" sigue siendo válido; cambia el mecanismo (TanStack Query lo resuelve por construcción con cache escopada). Los planes `ZN-002`/`ZN-003` documentan cómo se implementó la solución previa (qué código existe y por qué se migra); **no son la referencia del mecanismo vigente.** Decisión canónica: `arnes/estado.md`, sección "DECISIÓN DE ARQUITECTURA CORREGIDA (2026-09-05)". La Vía B (rediseño ergonómico bajo `ui-slots`) sigue vigente.
+
 ## Objetivo General
 
 Mejorar la arquitectura del data layer para soportar 100 cotizadores simultáneos, sin detener el cotizador en producción.
+
+## Prerrequisito transversal (insertado por la línea `ui-slots`, 2026-09-05)
+
+**Vía B (rediseño ergonómico) consume el sistema de composición y estados de interfaz de la línea `ui-slots`.** Las fases de este roadmap que migran la UI de un subsistema (Fase 3: Comercial/Finanzas; Fase 4: Taller/Calidad/Almacén/Garantía) y sus planes `ZU_05`..`ZU_08` **quedan bloqueadas para comenzar el rediseño ergonómico de cada bloque** hasta que `ui-slots` entregue su contrato mínimo (taxonomía momento→slot + primitivas core). Referencia: `arnes/lineas/ui-slots/plan_ui-slots.md`.
 
 ## Fase 0: Estructurar Stores (S1)
 

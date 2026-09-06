@@ -1,6 +1,8 @@
 # M-07 — Contrato de reactividad del subsistema de datos mock
 
-**Fecha:** 2026-08-09 · **Estado:** aprobado (checkpoint Supervisor, decisión en línea) · **Fase:** F10 · **Riesgo:** medio
+**Fecha:** 2026-08-09 · **Estado:** ~~aprobado~~ **PARCIALMENTE SUPERADO (2026-09-05)** · **Fase:** F10 · **Riesgo:** medio
+
+> **REVOCACIÓN (2026-09-05, checkpoint Supervisor):** el "no se adoptó React Query/SWR" de §3 se **revoca** para el server-state del ERP — se adopta **TanStack Query** como capa de estado de servidor en cliente (cache por `queryKey` + mutations optimistas). Zustand queda degradado a estado local de UI. El contrato de reactividad del store mock (§1–§2: `useDataStore()`/`notify()`) **sigue vigente para `DATA_IMPL=mock`**. Decisión canónica: `arnes/estado.md`, sección "DECISIÓN DE ARQUITECTURA CORREGIDA (2026-09-05)".
 
 **Por qué existe este archivo:** `registro_hallazgos_poc4.md` (POC-10#2, POC-10#4) decidió el 2026-08-09 que "el data layer mock DEBE ser reactivo... regla cosificada en M-07" — pero M-07 nunca se creó como artefacto. La decisión quedó en prosa, sin dónde aterrizar, y el síntoma ("mutar y no se refleja en pantalla") se replicó en cada pantalla nueva de B1 (items, artefactos, kanban, y por último el renombrado de `nombreEspacio`, que llevó ~10 vueltas de debugging porque nadie tenía un chequeo mecánico que confirmara si la causa era el store o la UI). Este archivo cierra ese ciclo: la regla existe, tiene código que la implementa, y tiene un test que la prueba.
 
@@ -32,7 +34,7 @@
 
 ## 3. Qué NO se hizo (y por qué)
 
-- **No se adoptó Zustand/React Query/SWR.** `useSyncExternalStore` es React puro (0 deps), resuelve el síntoma actual completo, y respeta la restricción del Diamante 4 de no añadir librerías sin checkpoint. Si al migrar a `DATA_IMPL=drizzle` el patrón síncrono deja de alcanzar (datos que vienen de una API real, con latencia), se reevalúa entonces — no antes.
+- **[REVOCADO 2026-09-05] No se adoptó Zustand/React Query/SWR.** ... Si al migrar a `DATA_IMPL=drizzle` el patrón síncrono deja de alcanzar (datos que vienen de una API real, con latencia), se reevalúa entonces — no antes. → **Se reevaluó y la premisa se confirmó en campo:** el patrón síncrono no alcanza (filas pisadas, ~5 s/interacción). Decisión vigente: **TanStack Query** para el server-state del ERP (ver `estado.md` §"DECISIÓN DE ARQUITECTURA CORREGIDA"). Esta bala queda como registro del criterio mal descartado.
 - **No se dividió en hooks por dominio** (`useProyectos()`, `useEspacios()`, etc.). Un solo `useDataStore()` cubre las ~6 pantallas actuales sin la complejidad de mantener 8 hooks separados. Si el árbol de componentes crece lo suficiente para que el re-render global importe por rendimiento, se particiona entonces.
 - **No se tocó `PLANTILLA_PANTALLA.md`/`PLANTILLA_QA.md`.** Esas plantillas gobiernan la banda de diseño F0–F9 (ya cerrada) y las verificaciones de gates a nivel DB — un concern distinto al patrón de código del prototipo mock de F10. La referencia viva para pantallas nuevas de F10 es este archivo + `plan_f10_migracion.md` §1.2.
 

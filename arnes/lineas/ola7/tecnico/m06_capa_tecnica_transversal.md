@@ -130,7 +130,7 @@
 | **Descripción** | Hook que hace polling a `/api/pulse?namespace=X` para detectar cambios por SHA. Cuando el SHA cambia, refetcha los datos de `/api/vault?namespace=X` y actualiza el store de Zustand. Pausa el polling cuando la pestaña está oculta para ahorrar API quota. |
 | **Ubicación legacy** | `src/hooks/useSyncPulse.ts:1-84` |
 | **Equivalente en repo nuevo** | No |
-| **Recomendación** | **Reemplazar** — El repo nuevo no tiene API de polling ni Zustand. En su lugar, usar React Query / SWR o el patrón de server components con revalidación automática de Next.js. |
+| **Recomendación** | **Reemplazar** — El repo nuevo no tiene API de polling ni Zustand. En su lugar, usar React Query / SWR o el patrón de server components con revalidación automática de Next.js. ▶ **VALIDADA (2026-09-05):** TanStack Query adoptado para el server-state del ERP; sitio público queda con RSC + Server Actions (revalidación). Ver `estado.md` §"DECISIÓN DE ARQUITECTURA CORREGIDA". |
 
 ### A.11 usePublicReadModelPulse (Public Data Polling)
 

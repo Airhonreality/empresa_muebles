@@ -17,6 +17,13 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 
 **Consecuencia operativa:** `scripts/migrate-core.ts` tiene un `TRUNCATE ... CASCADE` sobre `proyectos`/`espacio_variantes`/`items_variante`/`productos_catalogo`/`clientes` al inicio, pensado para poder re-correrse libremente contra una base de prueba. **Ya no se puede re-correr contra `ep-muddy-cherry-at5j2mz7` bajo ninguna circunstancia** — borraría los 62 contratos, todos los proyectos editados esta semana, y cualquier fix de código que dependa de datos reales (ej. el fix de mano-de-obra de esta misma sesión). El script fue actualizado con un guard duro que lo bloquea por completo (ver comentario en el archivo) hasta que alguien lo revise a propósito. Pendiente: decidir si `v3-preview` se re-nombra formalmente a lo que realmente es (ej. tratarla como `dev-local`/producción V3), y reconciliar qué pasó con la branch `dev-local` real (¿tiene datos, o quedó vacía cuando todo el trabajo real se fue por accidente a `v3-preview`?) — no verificado en esta sesión.
 
+**✅ DIAGNÓSTICO DE IMÁGENES DEL ERP QUE "SE CAEN" — CAUSA RAIZ: URLs `blob:` PERSISTIDAS EN LA DB, NO ES R2 (2026-09-05, Solicitud Javier sobre 'Cocina integral - Verde olivo').** Javier reportó que las imágenes de diseño subidas por el ERP funcionaban unas horas y luego morían, repetidamente. Diagnóstico mecánico (S3 API + lectura directa de Neon V3_PREVIEW, no suposición):
+- **Causa:** las URLs guardadas en `fotosDisenio` de la variante `29ad0e91` (proyecto `0e79c0fa` Cocina integral - Verde olivo) son **`blob:https://www.vetadeoro.co/...`** — URLs de memoria del navegador que mueren con la pestaña/sesión. El bucket R2 está sano: las **154 URLs r2.dev únicas de toda la DB responden 200** (`Cache-Control: immutable`); en `cotizador/` solo existe la prueba `test-image.webp`. Nadie borra nada en R2.
+- **Por qué ocurrió (cadena completa):** commit `649d6da` (F10) creó el `ImagePicker` con `uploadToR2=false` por defecto y `URL.createObjectURL` porque "F10 sigue siendo mock sin storage real" (decisión registrada en `registro_hallazgos_poc4.md`). Cuando llegó R2 (`c952c00`) se habilitó pantalla por pantalla pasando el prop explícito (solo catálogo/portafolio) y el default quedó en `false`. En `HEAD`, `lib/data/actions/core.ts` guardaba `fotosEspacio/fotosDisenio/fotosReferencia` **sin filtrar** → las blob pasaban a la DB tal cual. El cotizador nunca recibió `uploadToR2` en HEAD → todas sus subidas eran blob.
+- **Alcance del daño en V3_PREVIEW:** 7 blob en Verde olivo (`fotosDisenio`); 4 blob en portafolio "Cocina poliuretano N. — Rosales" (`galeria_portafolio_url`, aún sin publicar); 1 blob en `productos_catalogo` "Alacena piso techo" (AUTO-000045, `imagen_url`); 1 blob en `renders_conceptuales` "Cocina_de_lujo_bogota". Más 5 espacios con URLs `/api/assets/...` (legacy Agnostic, no R2). Las blob **no son recuperables** — nunca existieron en R2.
+- **Fix ya en working tree (sin commitear hasta hoy):** `image-picker.tsx` → default `uploadToR2=true` (CANÓNICO) + bloqueo explícito de `blob:` + optimización en el navegador y `sharp`; `core.ts` → `sanitizarUrlsFotos()` en `crear/actualizarEspacioAction`; todas las pantallas del ERP (`cotizador/[proyectoId]`, `garantia`, `entrega`, `equipo`, `herramientas`, `documentos`, `retoma`) ahora pasan `uploadToR2` con `r2Prefix` propio. `next.config.ts` ya tenía `bodySizeLimit: 10mb`.
+- **Pendiente:** (1) commit + push a `dev` del fix (este mismo día); (2) **re-subir manualmente** las 4 filas dañadas (blob no recuperable); (3) hallazgo vecino aparte: `reportar-garantia-modal.tsx` guarda `fotosUrls=[]` con `TODO "Subir fotos a R2"` → el reporte de garantía P-20 queda **sin fotos** siempre — tarea nueva, no cubierta por este fix.
+
 **Banda F0–F9 CERRADA** (2026-08-08, checkpoint Supervisor). Todos los planes de diseño aprobados; QA documental pasó 10/10 conditions; 17 pantallas alineadas a PLANTILLA_PANTALLA; 5 gates con predicados; glosario H07 completo.
 
 **🚀 AJUSTES PRE-LANZAMIENTO WEB PÚBLICA (2026-08-22).** Sitio web público **100% listo estructuralmente para lanzamiento inminente y cambio de DNS**. Se ejecutaron 4 ajustes vitales de pre-lanzamiento:
@@ -235,6 +242,24 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 - Ningún agente corre la app (`npm run dev`) ni prueba flujos de escritura mientras `DATABASE_URL` apunte a la Neon de producción compartida.
 - **El código de las PoC del Diamante 4 (PoC 1/2/3/3.1, t-098/t-099) es prueba de concepto de estética/tokens/interacción únicamente.** Ninguna referencia puede citarlo como evidencia de que una pantalla de negocio "existe" o está aprobada — la única fuente de aprobación de pantalla es un `disenio_PXX.md`/`disenio_FXX.md` con checkpoint del Supervisor (decisión 2026-08-08).
 - **Matryoshka por línea de trabajo (2026-08-08):** `nucleo/` es la verdad de negocio compartida; cada línea (`lineas/<nombre>/`) tiene su propio progreso, plan, y archivo histórico. Ver `lineas/_plantilla/LEEME.md` para abrir una línea nueva.
+- **Server-state del ERP: TanStack Query; zustand solo para estado local de UI; sitio público: RSC + Server Actions (2026-09-05).** Corrige M-07 §3 y la Vía A de la línea zustand — detalle en la sección "DECISIÓN DE ARQUITECTURA CORREGIDA".
+
+## 🔴 DECISIÓN DE ARQUITECTURA CORREGIDA — TanStack Query como capa server-state del ERP (2026-09-05)
+
+**Checkpoint Supervisor (Javier).** Corrige M-07 §3 ("no se adoptó React Query/SWR") y **sustituye la Vía A de `zustand-migration/`** como solución de server-state en cliente para el ERP. El patrón síncrono — DataStore global + puente `CotizadorSincronizador` + rehidratación por reemplazo de `items[]` — no alcanza para edición concurrente.
+
+**Evidencia que disparó la corrección (2026-09-05, en campo):** esperas perceptibles (~5 s entre interacciones), filas fantasma que al confirmar la creación se sobreescriben al default (la cantidad editada durante el vuelo se pierde al pisar el `temp-*` con la fila confirmada), imposibilidad de encadenar agregados (el modal queda bloqueado mientras la Server Action vuela), y 1 caso observado de 3 filas revertidas. El cuello no es la acción (`crearItemAction` es un insert de ~ms) sino el round-trip completo + re-render global + reemplazo por snapshot en cada confirmación.
+
+**Nueva decisión vigente (aplica a todas las líneas):**
+- **Server-state del ERP → TanStack Query.** Cache escopada por `queryKey` + mutations optimistas `onMutate`/rollback + invalidación selectiva. Primer frente: el cotizador.
+- **Zustand → estado local de UI** (modal, expansión, interacción). NO es capa de datos.
+- **Sitio público → Server Components + Server Actions + revalidación** (sin librería client-data; SEO intacto).
+- **Cero cambios de modelo:** schema Drizzle, Neon, gates y las Server Actions actuales se conservan — TanStack Query actúa como capa de cliente sobre las mismas Server Actions (fetchers). La recomendación de `m06` A.12 ("usar React Query / SWR") queda validada.
+- El puente `CotizadorSincronizador` y el optimismo staged (snapshot+revert de ZN-003) **se desmontan** al migrar el cotizador; los selectores `useSelectPorVariante` consumidos se reasientan sobre la cache de TanStack Query.
+
+**Próxima acción registrada:** plan de implementación del cotizador con TanStack Query **creado** en `arnes/lineas/ola7/tecnico/plan_cotizador_tanstack_query.md` (2026-09-05) — incluye fases A/B/C, archivos, matriz de evaluación T1–T10 y 4 decisiones abiertas para checkpoint Supervisor (DEC-1 id cliente idempotente, DEC-1b bloqueo de edición, DEC-7 idempotencia de variantes, DEC-2 provider ERP-wide). **Pendiente de aprobación antes de ejecutar.**
+
+---
 
 ## ✅ FASE 0 ZUSTAND APROBADA — rama feature, sin tocar dev (2026-09-02, ZN-001)
 
@@ -254,6 +279,8 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 
 ## ✅ FASE 1 ZUSTAND COMPLETADA — puente de sincronización + migración de reads (2026-09-03, ZN-002)
 
+> **SUPERADO (2026-09-05):** el mecanismo del puente (rehidratación por reemplazo de `items[]`) es la causa raíz de las filas pisadas en campo y **se retira** al migrar el cotizador a TanStack Query — ver "DECISIÓN DE ARQUITECTURA CORREGIDA". Este registro queda como historia de cómo se llegó ahí y de qué código desmontar.
+
 **Registro de checkpoint (aprobado por Supervisor, QA runtime de Javier en navegador).** La Fase 1 de la línea zustand se ejecutó y fue **aprobada por el Supervisor tras QA runtime manual contra `dev-local`** (el cotizador real se cargó, creó items, cambió cantidades/precios, jornadas y tabs de variante sin crash ni dato desincronizado).
 
 - **Plan ZN-002** (`PLAN_ZN-002.md`) — Fase 1 combinada: primero se resolvió el **modelo de sincronización** (la pieza que el roadmap omitía) y con eso se migró la pantalla del cotizador. Hallazgo determinante: las escrituras del `DataStore` en modo drizzle **ya son "await Server Action + aplicar caché + notify()"** (`drizzle-impl.ts:1-24`), por lo que el store Zustand **NO reimplementa Server Actions** — es una capa de lectura memoizada alimentada del mismo DataStore vía un puente.
@@ -265,7 +292,7 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 - **Fix adicional (Error 2, side-effect en render):** `actualizarJornadas()` se llamaba dentro del updater de `setJornadasMap` (prohibido). Corregido: el nuevo valor se calcula con el closure (`jornadasMap` ahora en deps) y la escritura al DataStore corre **fuera del updater**. Mismo comportamiento optimista + persistencia, sin "Cannot update while rendering".
 - **Limpieza de inconsistencias (hecha por Supervisor):** eliminadas de `disenio_p04_cotizador.md` las referencias a `ZU_04_pln_ui_usabilidad_comercial.md` (plan **NO aprobado**, fuera de zona de ZN-002) y de `ZU_03` el bloque de "Conexión de secuencia" hacia ese plan. Corregida la numeración de roadmap: "Fase 8" → "Fase 7" (había salto 6→8).
 - **Commit:** `5a26843` `feat(zustand): fase 1 - puente sincronizacion + migracion de reads del cotizador (ZN-002)` — **en la rama `feature/arquitectura-zustand-100-cotizadores`, sin merge a `dev` ni `main`.**
-- **Pendiente:** Fase 2 de ZU_03 (acciones optimistic + `eliminarVariante()`/rename + React.memo/productMap useMemo). El archivo `arnes/lineas/ola7/tecnico/zustand-migration/ZU_04_pln_ui_usabilidad_comercial.md` quedó en el working tree como **untracked NO autorizado** — requiere revisión/aprobación del Supervisor antes de incorporarse a cualquier commit.
+- **Pendiente:** ~~Fase 2 de ZU_03 (acciones optimistic + `eliminarVariante()`/rename + React.memo/productMap useMemo)~~ — **no aplica como estaba prevista (2026-09-05):** el optimismo pasa a TanStack Query (`onMutate`/rollback), zustand queda para estado local de UI (ver "DECISIÓN DE ARQUITECTURA CORREGIDA"). El archivo `arnes/lineas/ola7/tecnico/zustand-migration/ZU_04_pln_ui_usabilidad_comercial.md` quedó en el working tree como **untracked NO autorizado** — requiere revisión/aprobación del Supervisor antes de incorporarse a cualquier commit.
 
 ---
 
@@ -282,6 +309,8 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 ---
 
 ## ✅ FASE 2 ZUSTAND COMPLETADA — Mutaciones Optimistas, Revert, P3/P4/P6/P7 (2026-09-03, ZN-003)
+
+> **SUPERADO (2026-09-05):** este optimismo staged (snapshot + revert dentro de `useCotizadorStore`) es el que pisa las ediciones de `temp-*` al confirmar contra el servidor — **pasa a mutations optimistas de TanStack Query** (ver "DECISIÓN DE ARQUITECTURA CORREGIDA"). Las habilidades P3/P4/P6/P7 y el Clean Delete con guardia (T.3) siguen vigentes: solo cambia el mecanismo de staging.
 
 **Registro de checkpoint (aprobado por Supervisor).** Se completó e integró la Fase 2 de Zustand en el Cotizador (`[proyectoId]/page.tsx`):
 
@@ -312,7 +341,7 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
    Tras varios días de operación en el dominio real por parte del equipo comercial y operativo, el diseño inicial de pantallas F-XXX fue puesto a prueba bajo fuego real. **El veredicto de usabilidad en campo es de 2/10** (fricción en carga de ítems, registros fantasma por soft-deletes ciegos, inputs enterrados, rigidez en tabs de variantes, falta de atajos para plantillas típicas y navegación destructiva que interrumpe reuniones comerciales).
 2. **Propósito Dual de la Línea Zustand (`zustand-migration/` / serie `ZU`):**  
    La línea de Zustand deja de ser únicamente una refactorización técnica de estado y se formaliza como una **estrategia combinada de dos vías**:
-   - **Vía A (Técnica / Escala):** Arquitectura de stores por dominio memoizados para soportar 100 cotizadores/vendedores concurrentes sin re-renders globales.
+   - **Vía A (Técnica / Escala):** ~~Arquitectura de stores por dominio memoizados para soportar 100 cotizadores/vendedores concurrentes~~ — **SUSTITUIDA (2026-09-05):** la escala concurrente se resuelve con **TanStack Query** (cache escopada por `queryKey` + mutations optimistas), zustand queda para estado local de UI (ver "DECISIÓN DE ARQUITECTURA CORREGIDA").
    - **Vía B (Rediseño Ergonómico y Usabilidad Comercial Subsistema por Subsistema):** En cada subsistema migrado, **se audita la pantalla real, se formulan recomendaciones de usabilidad en campo y se optimizan sus pantallas**, aplicando los mismos protocolos disciplinados del arnés (`disenio_pxx.md`, registro de decisiones, minimalismo y evolución documental limpia).
 
 ### Hoja de Ruta de Fases ZU:
@@ -323,6 +352,7 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 - **`ZU_08` (Bloque Compras y Almacén):** `useComprasStore` + ergonomía de Órdenes de Compra P-13 y Recepción P-14.
 - **`ZU_09` (Retiro de DataStore Legacy):** Deprecación de `useDataStore()` con `getVersion()` global.
 - **`ZU_10` (Hardening y Benchmark de Concurrencia):** Pruebas de estrés mecánico validando 100 cotizadores simultáneos sin degradación.
+- **Prerrequisito transversal (2026-09-05): Vía B consume `ui-slots`.** La capa de composición y estados de interfaz (línea `ui-slots`, abierta 2026-09-05) es **prerrequisito de bloqueo** para las fases de rediseño ergonómico `ZU_05`..`ZU_08`: cada subsistema migrado se rediseña consumiendo el contrato mínimo de esa línea (taxonomía momento→slot + primitivas core), no recomponiendo estructura a mano. Ver `lineas/ui-slots/plan_ui-slots.md`.
 
 ---
 
@@ -337,5 +367,18 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
 5. **Layouts / Presets (`+ Desde Plantilla`):** Catálogo estático en `lib/catalogos/presets-espacios.ts` con 5 configuraciones arquitectónicas típicas (Cocina Lineal, Cocina en L, Closet, Baño flotante, Panel TV) que precargan espacio, módulos y jornadas en 1 clic.
 6. **Ítem Libre / A Medida:** Posibilidad de cotizar ítems especiales sin catálogo directamente desde la interfaz sin desviar al usuario a `/erp/catalogo`.
 - **Verificación Mecánica:** `npx tsc --noEmit` exit 0; `useCotizadorStore.test.ts` OK; `eslint` 0 errores.
+
+---
+
+## ✅ LÍNEA `ui-slots` ABIERTA — capa de composición y estados de interfaz (2026-09-05)
+
+**Registro de checkpoint (aprobado por Supervisor).** Se abrió la línea `ui-slots` como **prerrequisito de la Vía B de la línea Zustand** (rediseño ergonómico subsistema por subsistema):
+
+- **Fundamento teórico:** `arnes/lineas/ui-slots/fundamento_teorico_ui_slots.md` importa los hallazgos de la literatura sobre el "no sé qué" de consistencia: (H1) tokens ≠ estructura, falta la capa Template/composición (Atomic Design; Pennylane 2025); (H2) layout organisms / "User Flow System" (Pennylane; Seek 2026); (H3) semantic contract — separar valor de intención (ttoss 2026); (H4) taxonomía de estados de momento (first use/loading/empty/partial/error/success; atekian 2026 + patrones de gobierno); (H5) layout primitives / ritmo (Every Layout); (H6) gobernanza anti-expansión. **Doctrina adoptada: "Composición + estados semánticos".**
+- **Línea nueva:** `estado_ui-slots.md`, `plan_ui-slots.md` (fases 1: inventario/taxonomía, 2: primitivas core, 3: piloto Cotizador, 4: contrato a `nucleo/` propuesto), `archivo/`.
+- **Registro:** fila en `REGISTRO_LINEAS.md`, sección en `INDEX.md`, bloqueo transversal declarado en este archivo (ver §Decisión ZU) y cross-reference en `ZU_03_pln_roadmap_fases.md`.
+- **Bloqueo:** `ZU_05`..`ZU_08` no comienzan su rediseño ergonómico hasta el contrato mínimo de `ui-slots`.
+- **Piloto:** `/erp/cotizador` — slot de alerta "N cotizaciones sin enviar" (estado `activa`), chips de filtro (Todas/Sin enviar/Negociación/Propuesta), columna "Envío" en tabla, `EmptyState` reutilizable. Primitivas nuevas: `components/veta/alert-slot.tsx`, `components/veta/empty-state.tsx`.
+- **Verificación Mecánica del piloto:** `npx tsc --noEmit` exit 0; `npx eslint .` 0 errores; `npx next build` sin errores (los fails de conexión a DB son esperados en páginas que consultan datos).
 
 
