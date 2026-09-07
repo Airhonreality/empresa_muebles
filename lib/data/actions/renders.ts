@@ -25,7 +25,7 @@ export async function actualizarRenderConceptualAction(
   partial: Partial<Pick<RenderConceptual, 'tipoEspacio' | 'imagenUrl' | 'titulo' | 'visible' | 'orden'>>
 ): Promise<RenderConceptual | null> {
   const sanitized = { ...partial };
-  if (partial.imagenUrl !== undefined) sanitized.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl);
+  if (partial.imagenUrl !== undefined) sanitized.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl) ?? '';
   const [actualizado] = await db.update(s.rendersConceptuales).set(sanitized).where(eq(s.rendersConceptuales.id, id)).returning()
   return (actualizado as unknown as RenderConceptual) ?? null
 }
