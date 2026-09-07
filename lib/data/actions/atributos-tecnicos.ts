@@ -5,6 +5,7 @@
 import { eq, count } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
+import { sanitizarUrlIndividual } from '@/lib/r2/sanitize'
 import type { AtributoTecnico } from '../contracts'
 
 export async function crearAtributoTecnicoAction(data: { tipoEspacio: string; titulo: string; cuerpo: string; badge?: string | null; imagenUrl?: string | null }): Promise<AtributoTecnico> {
@@ -14,7 +15,7 @@ export async function crearAtributoTecnicoAction(data: { tipoEspacio: string; ti
     titulo: data.titulo,
     cuerpo: data.cuerpo,
     badge: data.badge ?? null,
-    imagenUrl: data.imagenUrl ?? null,
+    imagenUrl: data.imagenUrl ? sanitizarUrlIndividual(data.imagenUrl) : null,
     visible: true,
     orden: value,
   }).returning()
@@ -25,7 +26,9 @@ export async function actualizarAtributoTecnicoAction(
   id: string,
   partial: Partial<Pick<AtributoTecnico, 'tipoEspacio' | 'titulo' | 'cuerpo' | 'badge' | 'imagenUrl' | 'visible' | 'orden'>>
 ): Promise<AtributoTecnico | null> {
-  const [actualizado] = await db.update(s.atributosTecnicos).set(partial).where(eq(s.atributosTecnicos.id, id)).returning()
+  const sanitized = { ...partial };
+  if (partial.imagenUrl !== undefined) sanitized.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl);
+  const [actualizado] = await db.update(s.atributosTecnicos).set(sanitized).where(eq(s.atributosTecnicos.id, id)).returning()
   return (actualizado as unknown as AtributoTecnico) ?? null
 }
 

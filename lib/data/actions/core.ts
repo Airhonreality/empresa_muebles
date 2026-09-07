@@ -5,6 +5,7 @@
 import { eq, and, ne, inArray, or } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
+import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import { num } from './mappers'
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
@@ -229,11 +230,6 @@ export async function actualizarClienteAction(
     .set({ ...partial, updatedAt: new Date().toISOString() })
     .where(eq(s.clientes.id, id)).returning()
   return (actualizado as unknown as Cliente) ?? null
-}
-
-function sanitizarUrlsFotos(urls?: string[] | null): string[] | undefined {
-  if (!urls) return undefined;
-  return urls.filter((u) => typeof u === "string" && !u.startsWith("blob:"));
 }
 
 export async function crearEspacioAction(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante> {
@@ -534,8 +530,8 @@ export async function crearProductoCatalogoAction(data: Partial<ProductoCatalogo
     const stockActual = data.stockActual ?? 0
     if (stockActual < 0) return null
     const publicadoWeb = data.publicadoWeb ?? false
-    const imagenUrl = data.imagenUrl ?? null
-    const galeriaImagenesUrl = data.galeriaImagenesUrl ?? []
+    const imagenUrl = sanitizarUrlIndividual(data.imagenUrl)
+    const galeriaImagenesUrl = sanitizarUrlsFotos(data.galeriaImagenesUrl) ?? []
     // R5 (t-139): publicar exige precioPublico + (imagenUrl OR galería no vacía).
     if (publicadoWeb && (!precioPublico || !(imagenUrl || galeriaImagenesUrl.length > 0))) return null
     const [nuevo] = await tx.insert(s.productosCatalogo).values({
@@ -553,6 +549,8 @@ export async function actualizarProductoCatalogoAction(id: string, partial: Part
     const [actual] = await tx.select().from(s.productosCatalogo).where(eq(s.productosCatalogo.id, id))
     if (!actual) return null
     const actualizado = { ...actual, ...partial }
+    if (partial.imagenUrl !== undefined) actualizado.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl)
+    if (partial.galeriaImagenesUrl !== undefined) actualizado.galeriaImagenesUrl = sanitizarUrlsFotos(partial.galeriaImagenesUrl) ?? []
     if (actualizado.sku) {
       const conflicto = await tx.select().from(s.productosCatalogo).where(and(eq(s.productosCatalogo.sku, actualizado.sku), ne(s.productosCatalogo.id, id)))
       if (conflicto.length > 0) return null

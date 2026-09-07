@@ -4,6 +4,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
+import { sanitizarUrlIndividual } from '@/lib/r2/sanitize'
 import type {
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
@@ -76,7 +77,7 @@ export async function crearCategoriaAction(data: { nombre: string; tipo: string;
 
 export async function crearProductoTiendaAction(data: Partial<ProductoTienda> & { catalogoId: string; valorTienda: string }): Promise<ProductoTienda> {
   const [nuevo] = await db.insert(s.productosTienda).values({
-    catalogoId: data.catalogoId, descripcionDiseno: data.descripcionDiseno ?? null, imagenPrincipalUrl: data.imagenPrincipalUrl ?? null,
+    catalogoId: data.catalogoId, descripcionDiseno: data.descripcionDiseno ?? null, imagenPrincipalUrl: data.imagenPrincipalUrl ? sanitizarUrlIndividual(data.imagenPrincipalUrl) : null,
     categoria: data.categoria ?? 'Cocinas', visibleEnTienda: data.visibleEnTienda ?? false, valorTienda: data.valorTienda,
     inventarioDisponible: data.inventarioDisponible ?? 0, calificacionPromedio: data.calificacionPromedio != null ? String(data.calificacionPromedio) : null,
   }).returning()
@@ -84,7 +85,9 @@ export async function crearProductoTiendaAction(data: Partial<ProductoTienda> & 
 }
 
 export async function actualizarProductoTiendaAction(id: string, partial: Partial<Pick<ProductoTienda, 'descripcionDiseno' | 'imagenPrincipalUrl' | 'categoria' | 'visibleEnTienda' | 'valorTienda' | 'inventarioDisponible'>>): Promise<ProductoTienda | null> {
-  const [actualizado] = await db.update(s.productosTienda).set({ ...partial, updatedAt: new Date().toISOString() }).where(eq(s.productosTienda.id, id)).returning()
+  const seguro = { ...partial };
+  if (seguro.imagenPrincipalUrl !== undefined) seguro.imagenPrincipalUrl = sanitizarUrlIndividual(seguro.imagenPrincipalUrl);
+  const [actualizado] = await db.update(s.productosTienda).set({ ...seguro, updatedAt: new Date().toISOString() }).where(eq(s.productosTienda.id, id)).returning()
   if (!actualizado) return null
   return { ...actualizado, calificacionPromedio: actualizado.calificacionPromedio ? Number(actualizado.calificacionPromedio) : null } as unknown as ProductoTienda
 }
@@ -101,7 +104,7 @@ export async function eliminarProductoTiendaComponenteAction(id: string): Promis
 export async function crearCatalogoAcabadoAction(data: Partial<CatalogoAcabado> & { nombre: string }): Promise<CatalogoAcabado> {
   const [nuevo] = await db.insert(s.catalogoAcabados).values({
     nombre: data.nombre, familia: data.familia ?? null, color: data.color ?? null, colorHex: data.colorHex ?? null,
-    textura: data.textura ?? null, precioDiferencial: data.precioDiferencial ?? null, imagenTexturaUrl: data.imagenTexturaUrl ?? null,
+    textura: data.textura ?? null, precioDiferencial: data.precioDiferencial ?? null, imagenTexturaUrl: data.imagenTexturaUrl ? sanitizarUrlIndividual(data.imagenTexturaUrl) : null,
   }).returning()
   return nuevo as unknown as CatalogoAcabado
 }
@@ -115,7 +118,7 @@ export async function crearCatalogoProductoAcabadoAction(data: { productoCatalog
 
 export async function crearAcabadoMuestraAction(data: { acabadoId: string; imagenMuestraUrl?: string | null; disponibleWeb?: boolean }): Promise<AcabadoMuestra> {
   const [nuevo] = await db.insert(s.acabadosMuestras).values({
-    acabadoId: data.acabadoId, imagenMuestraUrl: data.imagenMuestraUrl ?? null, disponibleWeb: data.disponibleWeb ?? true,
+    acabadoId: data.acabadoId, imagenMuestraUrl: data.imagenMuestraUrl ? sanitizarUrlIndividual(data.imagenMuestraUrl) : null, disponibleWeb: data.disponibleWeb ?? true,
   }).returning()
   return nuevo as unknown as AcabadoMuestra
 }

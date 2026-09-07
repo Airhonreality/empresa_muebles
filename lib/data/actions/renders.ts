@@ -5,13 +5,14 @@
 import { eq, count } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
+import { sanitizarUrlIndividual } from '@/lib/r2/sanitize'
 import type { RenderConceptual } from '../contracts'
 
 export async function crearRenderConceptualAction(data: { tipoEspacio: string; imagenUrl: string; titulo?: string | null }): Promise<RenderConceptual> {
   const [{ value }] = await db.select({ value: count() }).from(s.rendersConceptuales)
   const [nuevo] = await db.insert(s.rendersConceptuales).values({
     tipoEspacio: data.tipoEspacio,
-    imagenUrl: data.imagenUrl,
+    imagenUrl: sanitizarUrlIndividual(data.imagenUrl) ?? '',
     titulo: data.titulo ?? null,
     visible: true,
     orden: value,
@@ -23,7 +24,9 @@ export async function actualizarRenderConceptualAction(
   id: string,
   partial: Partial<Pick<RenderConceptual, 'tipoEspacio' | 'imagenUrl' | 'titulo' | 'visible' | 'orden'>>
 ): Promise<RenderConceptual | null> {
-  const [actualizado] = await db.update(s.rendersConceptuales).set(partial).where(eq(s.rendersConceptuales.id, id)).returning()
+  const sanitized = { ...partial };
+  if (partial.imagenUrl !== undefined) sanitized.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl);
+  const [actualizado] = await db.update(s.rendersConceptuales).set(sanitized).where(eq(s.rendersConceptuales.id, id)).returning()
   return (actualizado as unknown as RenderConceptual) ?? null
 }
 

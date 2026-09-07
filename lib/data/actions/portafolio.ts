@@ -8,6 +8,7 @@ import type {
   Portafolio, Testimonio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto, BitacoraArticulo,
 } from '../contracts'
 import { generarSlugPortafolioBase } from '@/lib/utils/portafolio-slug'
+import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 
 // Lectura server-side para páginas públicas (SSR/generateMetadata) que corren fuera de
 // <DataStoreProvider> (no hay React ni useDataStore() disponible ahí). Réplica del patrón
@@ -46,8 +47,8 @@ export async function crearPortafolioAction(data: Partial<Portafolio> & { titulo
     const [nuevo] = await tx.insert(s.portafolio).values({
       proyectoId: data.proyectoId, titulo: data.titulo, descripcionComercial: data.descripcionComercial ?? null,
       categoriaEspacio: data.categoriaEspacio, espacioVarianteId: data.espacioVarianteId ?? null, materialesDestacados: data.materialesDestacados ?? [],
-      precioReferencial: data.precioReferencial ?? null, imagenPortafolioUrl: data.imagenPortafolioUrl ?? null,
-      galeriaPortafolioUrl: data.galeriaPortafolioUrl ?? [], barrio: data.barrio ?? null, tipoProyecto: data.tipoProyecto ?? null,
+      precioReferencial: data.precioReferencial ?? null, imagenPortafolioUrl: data.imagenPortafolioUrl ? sanitizarUrlIndividual(data.imagenPortafolioUrl) : null,
+      galeriaPortafolioUrl: sanitizarUrlsFotos(data.galeriaPortafolioUrl) ?? [], barrio: data.barrio ?? null, tipoProyecto: data.tipoProyecto ?? null,
       publicado: data.publicado ?? false, destacado: data.destacado ?? false, orden, slug,
     }).returning()
     return nuevo as unknown as Portafolio
@@ -62,6 +63,8 @@ export async function actualizarPortafolioAction(
   // (el spread de un Partial no lo bloquea TypeScript en tiempo de ejecución), se descarta acá.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { slug: _slugIgnorado, ...seguro } = partial as typeof partial & { slug?: string }
+  if (seguro.imagenPortafolioUrl !== undefined) seguro.imagenPortafolioUrl = sanitizarUrlIndividual(seguro.imagenPortafolioUrl)
+  if (seguro.galeriaPortafolioUrl !== undefined) seguro.galeriaPortafolioUrl = sanitizarUrlsFotos(seguro.galeriaPortafolioUrl) ?? []
   const [actualizado] = await db.update(s.portafolio).set({ ...seguro, updatedAt: new Date().toISOString() }).where(eq(s.portafolio.id, id)).returning()
   return (actualizado as unknown as Portafolio) ?? null
 }
@@ -119,7 +122,7 @@ export async function crearBitacoraArticuloAction(data: Partial<BitacoraArticulo
   const now = new Date().toISOString()
   const [nuevo] = await db.insert(s.bitacoraArticulos).values({
     slug: data.slug, titulo: data.titulo, extracto: data.extracto ?? '', contenidoLargo: data.contenidoLargo,
-    categoria: data.categoria ?? 'casos_estudio', imagenPortada: data.imagenPortada ?? null,
+    categoria: data.categoria ?? 'casos_estudio', imagenPortada: data.imagenPortada ? sanitizarUrlIndividual(data.imagenPortada) : null,
     fechaPublicacion: data.fechaPublicacion ?? now, autorId: data.autorId ?? null,
     proyectoRelacionadoId: data.proyectoRelacionadoId ?? null, publicado: data.publicado ?? false,
   }).returning()

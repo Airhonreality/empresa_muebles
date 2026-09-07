@@ -4,6 +4,7 @@
 import { eq, and, desc } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
+import { sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import { P24, rangoInstalacionValido, dentroGarantiaContractual } from '@/lib/modules/f4f5f6/gates'
 import type {
   OrdenTrabajo, TipoOrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, OrigenReproceso,
@@ -123,7 +124,7 @@ export async function generarActaEntregaAction(proyectoId: string, data?: { holg
     if (!instalada) return null
     const [nuevo] = await tx.insert(s.actasEntrega).values({
       proyectoId, pdfUrl: `https://r2.mock/actas/${proyectoId}.pdf`, estado: 'generada',
-      holguraOperativaDias: data?.holguraOperativaDias ?? 12, fotos: data?.fotos ?? [], observaciones: data?.observaciones ?? null,
+      holguraOperativaDias: data?.holguraOperativaDias ?? 12, fotos: sanitizarUrlsFotos(data?.fotos) ?? [], observaciones: data?.observaciones ?? null,
     }).returning()
     return nuevo as unknown as ActaEntrega
   })
@@ -150,7 +151,7 @@ export async function reportarCasoGarantiaAction(data: { proyectoId: string; mod
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.select().from(s.proyectos).where(eq(s.proyectos.id, data.proyectoId))
     if (!proyecto || proyecto.estado !== 'entregado') return null
-    const fotos = data.fotos ?? []
+    const fotos = sanitizarUrlsFotos(data.fotos) ?? []
     if (fotos.length > 5) return null
     const historial = await tx.select().from(s.proyectosEstadosHistorial).where(and(
       eq(s.proyectosEstadosHistorial.proyectoId, data.proyectoId), eq(s.proyectosEstadosHistorial.estadoNuevo, 'entregado'),

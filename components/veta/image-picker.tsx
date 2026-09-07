@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useId, useRef, useState, type DragEvent, type ClipboardEvent } from "react";
-import { uploadFileToR2 } from "@/lib/r2/upload";
+import { uploadFileToR2, clonarUrlAR2 } from "@/lib/r2/upload";
+import { esUrlR2 } from "@/lib/r2/sanitize";
 
 export interface ImagePickerProps {
   label: string;
@@ -111,7 +112,7 @@ export function ImagePicker({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const agregar = useCallback((url: string) => {
+  const agregar = useCallback(async (url: string) => {
     const limpio = url.trim();
     if (!limpio) return;
     if (limpio.startsWith("blob:")) {
@@ -119,10 +120,25 @@ export function ImagePicker({
       return;
     }
     setUploadError(null);
-    if (!multiple) { onChange([limpio]); return; }
-    if (value.includes(limpio)) return;
-    onChange([...value, limpio]);
-  }, [value, onChange, multiple]);
+
+    let destino = limpio;
+    if (uploadToR2 && !esUrlR2(limpio)) {
+      setIsUploading(true);
+      try {
+        destino = await clonarUrlAR2(limpio, r2Prefix);
+      } catch (error) {
+        console.error("Error al clonar URL a R2:", error);
+        setUploadError(`No se pudo clonar la imagen a R2: ${error instanceof Error ? error.message : "Fallo en la conexión"}`);
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
+    if (!multiple) { onChange([destino]); return; }
+    if (value.includes(destino)) return;
+    onChange([...value, destino]);
+  }, [value, onChange, multiple, uploadToR2, r2Prefix]);
 
   const subirArchivo = async (archivoCrudo: File): Promise<string> => {
     const archivoOptimizado = await prepareImageForUpload(archivoCrudo);
@@ -204,7 +220,7 @@ export function ImagePicker({
       void agregarArchivosLote(files);
     }
     const texto = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
-    if (texto) agregar(texto);
+    if (texto) void agregar(texto);
   };
 
   const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
@@ -218,7 +234,7 @@ export function ImagePicker({
       return;
     }
     const texto = e.clipboardData.getData("text");
-    if (texto) agregar(texto);
+    if (texto) void agregar(texto);
   };
 
   return (
@@ -295,7 +311,7 @@ export function ImagePicker({
            value={urlDraft}
            onChange={(e) => setUrlDraft(e.target.value)}
            onKeyDown={(e) => {
-             if (e.key === "Enter") { e.preventDefault(); agregar(urlDraft); setUrlDraft(""); }
+             if (e.key === "Enter") { e.preventDefault(); void agregar(urlDraft); setUrlDraft(""); }
            }}
            placeholder="https://..."
            className="min-h-[36px] flex-1 rounded-sm border border-border-subtle bg-bg-paper px-2 text-xs text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
@@ -303,12 +319,12 @@ export function ImagePicker({
          />
          <button
            type="button"
-           onClick={() => { agregar(urlDraft); setUrlDraft(""); }}
+           onClick={() => { void agregar(urlDraft); setUrlDraft(""); }}
            className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt disabled:opacity-50"
            disabled={isUploading}
-         >
-           + URL
-         </button>
+          >
+            {isUploading ? "Clonando a R2..." : "+ URL"}
+          </button>
          <input
            ref={inputRef}
            type="file"

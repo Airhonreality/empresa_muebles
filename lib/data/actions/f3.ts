@@ -8,6 +8,7 @@ import * as s from '@/lib/db/schema'
 import { P18, P33, derivarDesenlace, derivarReduccionComision } from '@/lib/modules/f3/gates'
 import { puedeEmitirVeredictoCalidad, transicionModuloValida } from '@/lib/modules/f4f5f6/gates'
 import { registrarAuditLog } from '@/lib/auth/audit'
+import { sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import type {
   Cronograma, CronogramaEtapa, LineaCronograma, EtapaCronograma, DesfaseCronograma, CausaDesfase,
   CheckProduccion, DesenlaceCheck, NovedadCritica, EstadoNovedadCritica, ComunicacionProgreso,
@@ -215,13 +216,14 @@ export async function guardarRetomaAction(proyectoId: string, data: { medidas?: 
     const anomalia = data.anomaliaDetectada ?? existente?.anomaliaDetectada ?? false
     let retoma: typeof s.retomas.$inferSelect
     if (existente) {
+      const fotos = sanitizarUrlsFotos(data.fotos) ?? existente.fotos
       const [actualizada] = await tx.update(s.retomas).set({
-        medidas: data.medidas ?? existente.medidas, fotos: data.fotos ?? existente.fotos, anomaliaDetectada: anomalia, updatedAt: new Date().toISOString(),
+        medidas: data.medidas ?? existente.medidas, fotos, anomaliaDetectada: anomalia, updatedAt: new Date().toISOString(),
       }).where(eq(s.retomas.id, existente.id)).returning()
       retoma = actualizada
     } else {
       const [nueva] = await tx.insert(s.retomas).values({
-        proyectoId, medidas: data.medidas ?? null, fotos: data.fotos ?? [], anomaliaDetectada: anomalia,
+        proyectoId, medidas: data.medidas ?? null, fotos: sanitizarUrlsFotos(data.fotos) ?? [], anomaliaDetectada: anomalia,
       }).returning()
       retoma = nueva
     }

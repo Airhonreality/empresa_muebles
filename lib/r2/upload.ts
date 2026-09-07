@@ -3,6 +3,22 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { optimizeImage, inferContextFromPrefix } from "./optimize";
 
+const MAX_CLONE_SIZE_BYTES = 5 * 1024 * 1024;
+const CLONE_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+  Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+};
+
+function isHttpUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 let cachedR2Client: S3Client | null = null;
 
 function getR2Context(): { client: S3Client; bucket: string; publicDomain: string } {
@@ -41,6 +57,39 @@ function getR2Context(): { client: S3Client; bucket: string; publicDomain: strin
   return { client: cachedR2Client, bucket, publicDomain };
 }
 
+function buildKey(prefix: string, fileName: string, contentType: string): string {
+  const cleanPrefix = prefix.replace(/^\/+|\/+$/g, "");
+  let sanitizedName = fileName
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9._-]/g, "");
+  if (contentType === "image/webp" && !sanitizedName.endsWith(".webp")) {
+    sanitizedName = sanitizedName.replace(/\.[^/.]+$/, "") + ".webp";
+  }
+  return `${cleanPrefix}/${Date.now()}-${sanitizedName}`;
+}
+
+async function persistBufferToR2(opts: { rawBuffer: Buffer; mime: string; prefix: string; fileName: string }): Promise<string> {
+  const { rawBuffer, mime, prefix, fileName } = opts;
+
+  const context = inferContextFromPrefix(prefix);
+  const { data: optimizedBuffer, contentType } = await optimizeImage(rawBuffer, mime, context);
+
+  const key = buildKey(prefix, fileName, contentType);
+  const { client, bucket, publicDomain } = getR2Context();
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: optimizedBuffer,
+      ContentType: contentType,
+      CacheControl: "public, max-age=31536000, immutable",
+    })
+  );
+
+  return `${publicDomain}/${key}`;
+}
+
 /**
  * Sube un archivo a Cloudflare R2 y devuelve su URL pública permanente.
  * @param input - FormData conteniendo 'file' y opcionalmente 'prefix', o directamente un objeto File.
@@ -74,43 +123,51 @@ export async function uploadFileToR2(
     throw new Error("Solo se permiten archivos de imagen válidos (JPG, PNG, WebP, etc.)");
   }
 
-  // Limpiar el prefijo de slashes redundantes
-  const cleanPrefix = prefix.replace(/^\/+|\/+$/g, "");
-
   const arrayBuffer = await file.arrayBuffer();
   const rawBuffer = Buffer.from(arrayBuffer);
-  
-  // Inferir el contexto (hero, general, logo, avatar) a partir de la carpeta destino
-  const context = inferContextFromPrefix(cleanPrefix);
-  
-  // Procesar la imagen con sharp (optimización, respeto de orientación EXIF, conversión WebP)
-  const { data: optimizedBuffer, contentType } = await optimizeImage(rawBuffer, file.type, context);
 
-  const timestamp = Date.now();
-  // Al cambiar formato a webp, asegurarse de cambiar la extensión si es necesario
-  let sanitizedName = file.name
-    .replace(/\s+/g, "_")
-    .replace(/[^a-zA-Z0-9._-]/g, "");
-    
-  if (contentType === "image/webp" && !sanitizedName.endsWith(".webp")) {
-    sanitizedName = sanitizedName.replace(/\.[^/.]+$/, "") + ".webp";
+  return (await persistBufferToR2({ rawBuffer, mime: file.type, prefix, fileName: file.name }));
+}
+
+/**
+ * Clona una imagen remota (URL de un sitio externo) a Cloudflare R2 y devuelve su URL
+ * pública permanente. Es la base de la "ley R2": toda referencia externa pasa por acá
+ * antes de persistirse en la DB, para que la whitelist sea efectivamente estricta.
+ * Porta el mecanismo legacy `persistAsset` de `main` (SmartImageInput/rehost).
+ */
+export async function clonarUrlAR2(sourceUrl: string, prefixParam: string = "general"): Promise<string> {
+  const source = sourceUrl.trim();
+  if (!isHttpUrl(source)) {
+    throw new Error("La URL debe usar el protocolo http o https.");
   }
 
-  const key = `${cleanPrefix}/${timestamp}-${sanitizedName}`;
+  const response = await fetch(source, { redirect: "follow", headers: CLONE_HEADERS });
+  if (!response.ok) {
+    throw new Error(`No se pudo descargar la imagen (HTTP ${response.status}).`);
+  }
 
-  const { client, bucket, publicDomain } = getR2Context();
+  const mime = (response.headers.get("content-type") || "application/octet-stream").split(";")[0].trim();
+  if (!mime.startsWith("image/")) {
+    const hint = mime.startsWith("text/html")
+      ? "La URL apunta a una página web, no a una imagen. Copia el enlace directo (clic derecho sobre la imagen → \"Copiar dirección de imagen\")."
+      : `El contenido de la URL es '${mime}', no una imagen.`;
+    throw new Error(hint);
+  }
 
-  await client.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: optimizedBuffer,
-      ContentType: contentType,
-      CacheControl: "public, max-age=31536000, immutable", // Cache de 1 año en Cloudflare edge
-    })
-  );
+  const rawBuffer = Buffer.from(await response.arrayBuffer());
+  if (rawBuffer.byteLength > MAX_CLONE_SIZE_BYTES) {
+    throw new Error(`La imagen supera el límite de ${MAX_CLONE_SIZE_BYTES / 1024 / 1024} MB.`);
+  }
 
-  return `${publicDomain}/${key}`;
+  let sourceName = "imagen";
+  try {
+    const base = new URL(source).pathname.split("/").pop() ?? "imagen";
+    if (base) sourceName = base;
+  } catch {
+    // sourceURL ya validada http/https; no debería fallar
+  }
+
+  return persistBufferToR2({ rawBuffer, mime, prefix: prefixParam, fileName: sourceName });
 }
 
 /**
