@@ -259,7 +259,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
   // Proyectar: si el usuario está viendo una variante alternativa en el espacio actual,
   // el resumen financiero global (Sidebar) debe reflejar ese escenario "What If".
   // [Axioma de Información]: Memoizado para no re-ejecutar N x M iteraciones en cada scroll event.
-  const { materialesTotal, moTotal, subtotal, total, iva, costosOperativos, imprevistos } = useMemo(() => {
+  const { materialesTotal, moDev, moEns, moInst, moTotal, subtotal, total, iva, costosOperativos, imprevistos, descuento, ajuste } = useMemo(() => {
     let mTotal = 0
     let moDev = 0
     let moEns = 0
@@ -293,9 +293,14 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
     
     return {
       materialesTotal: mTotal,
+      moDev,
+      moEns,
+      moInst,
       moTotal: moT,
       costosOperativos: mOperativos,
       imprevistos: mImprevistos,
+      descuento: mDescuento,
+      ajuste: mAjuste,
       subtotal: sTotal,
       iva: mIva,
       total: sTotal + mIva
