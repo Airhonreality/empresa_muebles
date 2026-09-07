@@ -70,7 +70,7 @@ El supuesto "las URLs de imágenes de sitios externos pasaban por un proceso aut
 - Aplicarla en las 11 Server Actions de escritura listadas en §3.
 
 ### F2 — Clonado automático URL→R2 (código)
-- `lib/r2/upload.ts`: nueva Server Action `clonarUrlAR2(url, prefix)`: `fetch(url, { headers de navegador })` → valida contenido imagen → `optimizeImage` (sharp) → `PutObject` en R2 → devuelve `pub-...r2.dev/...`.
+- `lib/r2/upload.ts`: nueva Server Action `clonarUrlAR2(url, prefix)`: `fetch(url, { headers de navegador })` → valida contenido imagen → `optimizeImage` (sharp) → `PutObject` en R2 → devuelve `pub-...r2.dev/...`. **Devuelve `CloneResult` (`{ok,url}|{ok:false,error}`) — NUNCA lanza**: en producción Next.js reemplaza cualquier mensaje de un throw en una Server Action por el texto opaco "An error occurred in the Server Components render", ocultando la causa real (verificado 2026-09-07).
 - `components/veta/image-picker.tsx`: en `agregar(url)` — si `esUrlR2(url)` se añade directo; si es URL http externa se **clona a R2** en segundo plano (estado "Clonando a R2...") y se añade la URL resultante; si falla → error + no se guarda (rechazo mínimo).
 
 ### F3 — Saneamiento de la DB viva (v3-preview) — requiere Node + credenciales R2 `[SOLO_HUMANO]`

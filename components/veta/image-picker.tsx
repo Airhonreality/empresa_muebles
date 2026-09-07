@@ -125,7 +125,12 @@ export function ImagePicker({
     if (uploadToR2 && !esUrlR2(limpio)) {
       setIsUploading(true);
       try {
-        destino = await clonarUrlAR2(limpio, r2Prefix);
+        const resultado = await clonarUrlAR2(limpio, r2Prefix);
+        if (!resultado.ok) {
+          setUploadError(resultado.error);
+          return;
+        }
+        destino = resultado.url;
       } catch (error) {
         console.error("Error al clonar URL a R2:", error);
         setUploadError(`No se pudo clonar la imagen a R2: ${error instanceof Error ? error.message : "Fallo en la conexión"}`);

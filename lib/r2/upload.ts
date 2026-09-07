@@ -134,40 +134,64 @@ export async function uploadFileToR2(
  * pública permanente. Es la base de la "ley R2": toda referencia externa pasa por acá
  * antes de persistirse en la DB, para que la whitelist sea efectivamente estricta.
  * Porta el mecanismo legacy `persistAsset` de `main` (SmartImageInput/rehost).
+ *
+ * Devuelve un resultado estructurado en vez de lanzar: en producción Next.js reemplaza
+ * cualquier mensaje de un throw en una Server Action por "An error occurred in the Server
+ * Components render" (ocultando la causa real). Con { ok: false, error } el usuario y
+ * el log ven el motivo real.
  */
-export async function clonarUrlAR2(sourceUrl: string, prefixParam: string = "general"): Promise<string> {
-  const source = sourceUrl.trim();
-  if (!isHttpUrl(source)) {
-    throw new Error("La URL debe usar el protocolo http o https.");
-  }
+export type CloneResult =
+  | { ok: true; url: string }
+  | { ok: false; url: null; error: string };
 
-  const response = await fetch(source, { redirect: "follow", headers: CLONE_HEADERS });
-  if (!response.ok) {
-    throw new Error(`No se pudo descargar la imagen (HTTP ${response.status}).`);
-  }
-
-  const mime = (response.headers.get("content-type") || "application/octet-stream").split(";")[0].trim();
-  if (!mime.startsWith("image/")) {
-    const hint = mime.startsWith("text/html")
-      ? "La URL apunta a una página web, no a una imagen. Copia el enlace directo (clic derecho sobre la imagen → \"Copiar dirección de imagen\")."
-      : `El contenido de la URL es '${mime}', no una imagen.`;
-    throw new Error(hint);
-  }
-
-  const rawBuffer = Buffer.from(await response.arrayBuffer());
-  if (rawBuffer.byteLength > MAX_CLONE_SIZE_BYTES) {
-    throw new Error(`La imagen supera el límite de ${MAX_CLONE_SIZE_BYTES / 1024 / 1024} MB.`);
-  }
-
-  let sourceName = "imagen";
+export async function clonarUrlAR2(sourceUrl: string, prefixParam: string = "general"): Promise<CloneResult> {
   try {
-    const base = new URL(source).pathname.split("/").pop() ?? "imagen";
-    if (base) sourceName = base;
-  } catch {
-    // sourceURL ya validada http/https; no debería fallar
-  }
+    const source = sourceUrl.trim();
+    if (!isHttpUrl(source)) {
+      return { ok: false, url: null, error: "La URL debe usar el protocolo http o https." };
+    }
 
-  return persistBufferToR2({ rawBuffer, mime, prefix: prefixParam, fileName: sourceName });
+    const response = await fetch(source, { redirect: "follow", headers: CLONE_HEADERS });
+    if (!response.ok) {
+      return {
+        ok: false,
+        url: null,
+        error: `La imagen no respondió (HTTP ${response.status}). La URL puede estar expirada o muerte.`,
+      };
+    }
+
+    const mime = (response.headers.get("content-type") || "application/octet-stream").split(";")[0].trim();
+    if (!mime.startsWith("image/")) {
+      const hint = mime.startsWith("text/html")
+        ? "La URL apunta a una página web, no a una imagen. Copia el enlace directo (clic derecho sobre la imagen → \"Copiar dirección de imagen\")."
+        : `El contenido de la URL es '${mime}', no una imagen.`;
+      return { ok: false, url: null, error: hint };
+    }
+
+    const rawBuffer = Buffer.from(await response.arrayBuffer());
+    if (rawBuffer.byteLength > MAX_CLONE_SIZE_BYTES) {
+      return {
+        ok: false,
+        url: null,
+        error: `La imagen supera el límite de ${MAX_CLONE_SIZE_BYTES / 1024 / 1024} MB.`,
+      };
+    }
+
+    let sourceName = "imagen";
+    try {
+      const base = new URL(source).pathname.split("/").pop() ?? "imagen";
+      if (base) sourceName = base;
+    } catch {
+      // sourceURL ya validada http/https; no debería fallar
+    }
+
+    const url = await persistBufferToR2({ rawBuffer, mime, prefix: prefixParam, fileName: sourceName });
+    return { ok: true, url };
+  } catch (error) {
+    console.error("[clonarUrlAR2]", error);
+    const msg = error instanceof Error ? error.message : "Fallo en la conexión con el sitio de origen.";
+    return { ok: false, url: null, error: `No se pudo clonar la imagen: ${msg}` };
+  }
 }
 
 /**
