@@ -99,34 +99,41 @@ async function persistBufferToR2(opts: { rawBuffer: Buffer; mime: string; prefix
 export async function uploadFileToR2(
   input: FormData | File,
   prefixParam: string = "portafolio"
-): Promise<string> {
-  let file: File;
-  let prefix = prefixParam;
+): Promise<CloneResult> {
+  try {
+    let file: File;
+    let prefix = prefixParam;
 
-  if (typeof FormData !== "undefined" && input instanceof FormData) {
-    const formFile = input.get("file");
-    if (!formFile || !(formFile instanceof File)) {
-      throw new Error("No se proporcionó ningún archivo en el formulario");
+    if (typeof FormData !== "undefined" && input instanceof FormData) {
+      const formFile = input.get("file");
+      if (!formFile || !(formFile instanceof File)) {
+        return { ok: false, url: null, error: "No se proporcionó ningún archivo en el formulario" };
+      }
+      file = formFile;
+      const formPrefix = input.get("prefix");
+      if (typeof formPrefix === "string" && formPrefix.trim()) {
+        prefix = formPrefix.trim();
+      }
+    } else if (input instanceof File) {
+      file = input;
+    } else {
+      return { ok: false, url: null, error: "Formato de entrada no válido para la subida de imagen" };
     }
-    file = formFile;
-    const formPrefix = input.get("prefix");
-    if (typeof formPrefix === "string" && formPrefix.trim()) {
-      prefix = formPrefix.trim();
+
+    if (!file.type || !file.type.startsWith("image/")) {
+      return { ok: false, url: null, error: "Solo se permiten archivos de imagen válidos (JPG, PNG, WebP, etc.)" };
     }
-  } else if (input instanceof File) {
-    file = input;
-  } else {
-    throw new Error("Formato de entrada no válido para la subida de imagen");
+
+    const arrayBuffer = await file.arrayBuffer();
+    const rawBuffer = Buffer.from(arrayBuffer);
+
+    const url = await persistBufferToR2({ rawBuffer, mime: file.type, prefix, fileName: file.name });
+    return { ok: true, url };
+  } catch (error) {
+    console.error("[uploadFileToR2]", error);
+    const msg = error instanceof Error ? error.message : "Fallo al conectar con Cloudflare R2";
+    return { ok: false, url: null, error: `No se pudo subir la imagen: ${msg}` };
   }
-
-  if (!file.type || !file.type.startsWith("image/")) {
-    throw new Error("Solo se permiten archivos de imagen válidos (JPG, PNG, WebP, etc.)");
-  }
-
-  const arrayBuffer = await file.arrayBuffer();
-  const rawBuffer = Buffer.from(arrayBuffer);
-
-  return (await persistBufferToR2({ rawBuffer, mime: file.type, prefix, fileName: file.name }));
 }
 
 /**

@@ -238,11 +238,14 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
 
   const espaciosActivos = useMemo(() => Array.from(grupos.values()).map((variantes) => variantes.find((v) => v.activa) ?? variantes[0]), [grupos])
 
-  // Inicializa espacioActivoId si está vacío
+  // Inicializa espacioActivoId la primera vez que hay espacios (useEffect para no mutar en render)
+  useEffect(() => {
+    if (espacioActivoId === null && espaciosActivos.length > 0) {
+      setEspacioActivoId(espaciosActivos[0].id)
+    }
+  }, [espacioActivoId, espaciosActivos])
+
   const espacioIdActual = espacioActivoId ?? espaciosActivos[0]?.id ?? null
-  if (espacioActivoId === null && espaciosActivos.length > 0) {
-    setEspacioActivoId(espaciosActivos[0].id)
-  }
 
   // Obtener todas las variantes del espacio actual (para selector de variantes)
   const espacioActual = espaciosActivos.find((e) => e.id === espacioIdActual)

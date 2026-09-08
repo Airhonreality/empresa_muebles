@@ -150,7 +150,11 @@ export function ImagePicker({
     const formData = new FormData();
     formData.append("file", archivoOptimizado);
     formData.append("prefix", r2Prefix);
-    return await uploadFileToR2(formData);
+    const resultado = await uploadFileToR2(formData);
+    if (!resultado.ok) {
+      throw new Error(resultado.error);
+    }
+    return resultado.url;
   };
 
   const agregarArchivosLote = useCallback(async (files: File[]) => {

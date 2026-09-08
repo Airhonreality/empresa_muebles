@@ -21,7 +21,13 @@ async function main() {
     } as any as File;
 
     console.log("Subiendo a R2 con prefijo 'home' (contexto 'hero')...");
-    const url = await uploadFileToR2(fileMock, "home");
+    const resultado = await uploadFileToR2(fileMock, "home");
+    
+    if (!resultado.ok) {
+      console.error("Error al subir:", resultado.error);
+      return;
+    }
+    const url = resultado.url;
     
     console.log("==================================================");
     console.log("¡Éxito! URL pública generada:");
