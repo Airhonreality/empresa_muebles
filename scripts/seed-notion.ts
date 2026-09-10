@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { generarCodigoCotizacion, formatearFechaDiaria } from '../lib/data/codigos-cotizacion';
 
 const notionApiKey = process.env.NOTION_API_KEY;
 if (!notionApiKey) throw new Error("Falta NOTION_API_KEY en .env.local");
@@ -129,6 +130,7 @@ async function run() {
     if (!dbProj) {
       console.log(`Insertando proyecto: ${nombre}`);
       const inserted = await db.insert(proyectos).values({
+        codigo: generarCodigoCotizacion(new Date(), currentDbProyectos.length + 1),
         nombreProyecto: nombre,
         direccionObra: direccion,
         clienteId: dbClienteId || null,

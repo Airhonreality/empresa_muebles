@@ -2,11 +2,12 @@
 // Server Actions del cluster núcleo: proyectos, clientes, espacios, items, artefactos,
 // catálogo, parámetros, contratos. Porta 1:1 la lógica de lib/data/mock-store.ts (73/73
 // tests) a Drizzle/Postgres real. Ver plan_f10_migracion.md §3.1d.
-import { eq, and, ne, inArray, or } from 'drizzle-orm'
+import { eq, and, ne, inArray, or, like } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import { num } from './mappers'
+import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
   ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial,
@@ -173,35 +174,60 @@ export async function crearProyectoAction(data: Partial<Proyecto> & { nombreProy
   // 2026-08-20, plan "optimistic create"): si no viene, Postgres sigue usando defaultRandom()
   // igual que antes. onConflictDoNothing hace que un reintento con el mismo id (retry de red,
   // o un doble-submit que se coló pese a usePendingGuard) sea idempotente en vez de duplicar.
-  const [nuevo] = await db.insert(s.proyectos).values({
-    id: data.id,
-    nombreProyecto: data.nombreProyecto,
-    estado: (data.estado as EstadoProyecto) ?? 'activa',
-    tipoProyecto: (data.tipoProyecto as 'personalizado' | 'producto_fijo') ?? 'personalizado',
-    direccionObra: data.direccionObra ?? null,
-    costosOperativos: data.costosOperativos ?? '0',
-    imprevistosInstalacion: data.imprevistosInstalacion ?? '0',
-    descuentoComercial: data.descuentoComercial ?? '0',
-    ajusteArbitrario: data.ajusteArbitrario ?? '0',
-    aplicaIva: data.aplicaIva ?? false,
-    porcentajeIva: data.porcentajeIva ?? '19',
-    garantiaAnios: data.garantiaAnios ?? 2,
-    diasEntregaEstimados: data.diasEntregaEstimados ?? null,
-    descripcionSemantica: data.descripcionSemantica ?? null,
-    clienteId: data.clienteId ?? null,
-    comercialId: data.comercialId ?? null,
-    verificadorId: data.verificadorId ?? null,
-    fechaEntradaDesarrollo: data.fechaEntradaDesarrollo ?? null,
-    comercialVendedorId: data.comercialVendedorId ?? null,
-  }).onConflictDoNothing({ target: s.proyectos.id }).returning()
+  //
+  // t-150: el codigo COT-AAAA-MM-DD-NN se genera SIEMPRE en el server (nunca acepta el del
+  // cliente). Cuenta las cotizaciones del día (prefijo COT-AAAA-MM-DD) + 1 como secuencia.
+  // Como dos creaciones simultáneas podrían calcular el mismo número, el insert se reintenta
+  // unas veces si choca con la constraint única (código error Postgres 23505).
+  for (let intento = 0; intento < 5; intento++) {
+    const codigo = await siguienteCodigoCotizacion()
+    try {
+      const [nuevo] = await db.insert(s.proyectos).values({
+        id: data.id,
+        codigo,
+        nombreProyecto: data.nombreProyecto,
+        estado: (data.estado as EstadoProyecto) ?? 'activa',
+        tipoProyecto: (data.tipoProyecto as 'personalizado' | 'producto_fijo') ?? 'personalizado',
+        direccionObra: data.direccionObra ?? null,
+        costosOperativos: data.costosOperativos ?? '0',
+        imprevistosInstalacion: data.imprevistosInstalacion ?? '0',
+        descuentoComercial: data.descuentoComercial ?? '0',
+        ajusteArbitrario: data.ajusteArbitrario ?? '0',
+        aplicaIva: data.aplicaIva ?? false,
+        porcentajeIva: data.porcentajeIva ?? '19',
+        garantiaAnios: data.garantiaAnios ?? 2,
+        diasEntregaEstimados: data.diasEntregaEstimados ?? null,
+        descripcionSemantica: data.descripcionSemantica ?? null,
+        clienteId: data.clienteId ?? null,
+        comercialId: data.comercialId ?? null,
+        verificadorId: data.verificadorId ?? null,
+        fechaEntradaDesarrollo: data.fechaEntradaDesarrollo ?? null,
+        comercialVendedorId: data.comercialVendedorId ?? null,
+      }).onConflictDoNothing({ target: s.proyectos.id }).returning()
 
-  if (!nuevo) {
-    if (!data.id) throw new Error('crearProyectoAction: conflicto de id sin id de entrada')
-    const [existente] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, data.id))
-    if (existente) return existente as unknown as Proyecto
-    throw new Error('crearProyectoAction: conflicto de id sin fila existente')
+      if (!nuevo) {
+        if (!data.id) throw new Error('crearProyectoAction: conflicto de id sin id de entrada')
+        const [existente] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, data.id))
+        if (existente) return existente as unknown as Proyecto
+        throw new Error('crearProyectoAction: conflicto de id sin fila existente')
+      }
+      return nuevo as unknown as Proyecto
+    } catch (err) {
+      // Violación de la constraint única del codigo (código con el que se generó ya tomado por
+      // otra creación simultánea): reintentar con la secuencia siguiente.
+      if (err instanceof Error && /23505/.test(err.message)) continue
+      throw err
+    }
   }
-  return nuevo as unknown as Proyecto
+  throw new Error('crearProyectoAction: no se pudo asignar un codigo único tras 5 intentos')
+}
+
+/** t-150: cuenta las cotizaciones de HOY (prefijo `COT-AAAA-MM-DD`) y devuelve la siguiente secuencia. */
+async function siguienteCodigoCotizacion(): Promise<string> {
+  const hoy = new Date()
+  const prefijo = prefijoCodigoFecha(hoy)
+  const rows = await db.select({ codigo: s.proyectos.codigo }).from(s.proyectos).where(like(s.proyectos.codigo, `${prefijo}%`))
+  return generarCodigoCotizacion(hoy, rows.length + 1)
 }
 
 export async function historialEstadoAction(proyectoId: string): Promise<ProyectosEstadosHistorial[]> {

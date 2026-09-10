@@ -12,6 +12,8 @@ export type EstadoProyecto =
 
 export interface Proyecto {
   id: string
+  /** t-150: código amigable COT-AAAA-MM-DD-NN — único, generado en el server (jamás del cliente). */
+  codigo: string
   nombreProyecto: string
   estado: EstadoProyecto
   tipoProyecto: string

@@ -247,6 +247,7 @@ export function createMockStore(): DataStore {
       async crear(data: Partial<Proyecto> & { nombreProyecto: string }): Promise<Proyecto> {
         const nuevo: Proyecto = {
           id: generateId('proj'),
+          codigo: data.codigo ?? `COT-${new Date().toISOString().slice(0, 10)}-${String(proyectos.length + 1).padStart(3, '0')}`,
           nombreProyecto: data.nombreProyecto,
           estado: (data.estado as EstadoProyecto ?? 'activa'),
           tipoProyecto: data.tipoProyecto ?? 'personalizado',

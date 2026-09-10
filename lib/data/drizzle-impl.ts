@@ -72,6 +72,9 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
     const ahora = new Date().toISOString()
     return {
       id,
+      // t-150: placeholder — el codigo real COT-... lo asigna el server (crearProyectoAction);
+      // esta fila optimista se reemplaza con la respuesta del server cuando resuelve.
+      codigo: values.codigo ?? '',
       nombreProyecto: values.nombreProyecto,
       estado: values.estado ?? 'activa',
       tipoProyecto: values.tipoProyecto ?? 'personalizado',

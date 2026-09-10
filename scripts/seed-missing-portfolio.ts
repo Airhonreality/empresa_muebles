@@ -9,6 +9,7 @@ import { db, client } from '../lib/db/client';
 import { clientes, proyectos, portafolio } from '../lib/db/schema';
 import { eq, like } from 'drizzle-orm';
 import crypto from 'crypto';
+import { generarCodigoCotizacion } from '../lib/data/codigos-cotizacion';
 
 const SOURCE_DIR = 'C:\\Users\\javir\\Pictures\\FOTOGRAFIA Y VIDEO VETA DORADAA DORADA';
 const s3 = new S3Client({
@@ -49,7 +50,7 @@ async function getOrCreateProyecto(clienteId: string, nombreP: string) {
 
   const id = crypto.randomUUID();
   await db.insert(proyectos).values({
-    id, clienteId, nombreProyecto: nombreP, estado: 'entregado'
+    id, codigo: generarCodigoCotizacion(new Date(), 1), clienteId, nombreProyecto: nombreP, estado: 'entregado'
   });
   return id;
 }

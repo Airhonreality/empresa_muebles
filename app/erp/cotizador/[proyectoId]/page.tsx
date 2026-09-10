@@ -346,6 +346,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         <div className="flex items-center justify-between gap-x-4">
           {/* Proyecto + cliente + estado */}
           <div className="min-w-0 flex flex-1 items-center gap-3">
+            <span className="hidden sm:inline text-xs font-mono text-gold-600 shrink-0">{proyecto.codigo}</span>
             <h1 className="font-display text-lg sm:text-base font-semibold text-text-heading truncate" title={proyecto.nombreProyecto}>
               {proyecto.nombreProyecto}
             </h1>

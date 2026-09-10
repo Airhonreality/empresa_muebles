@@ -1,0 +1,40 @@
+{
+  "id": "t-150",
+  "titulo": "Código amigable de cotización (COT-AAAA-MM-DD-XX) para distinguir proyectos homónimos",
+  "intencion_negocio": "Javier no puede diferenciar cotizaciones porque el id es un UUID invisible en la UI y muchos proyectos se llaman igual (ej. 'Cocina integral') o no tienen nombre de cliente. Pide un código legible tipo COT-AAAA-MM-DD-XX que permita distinguir una cotización de otra con solo mirarla.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/db/schema.ts",
+    "lib/data/contracts.ts",
+    "lib/data/codigos-cotizacion.ts",
+    "lib/data/codigos-cotizacion.test.ts",
+    "lib/data/actions/core.ts",
+    "lib/data/drizzle-impl.ts",
+    "lib/data/mock-store.ts",
+    "lib/data/fixtures.ts",
+    "app/erp/cotizador/page.tsx",
+    "app/erp/cotizador/[proyectoId]/page.tsx",
+    "scripts/apply-codigo-cotizacion.ts",
+    "arnes/estado.md"
+  ],
+  "criterios_aceptacion": [
+    "`npx tsc --noEmit` limpio y `npx eslint` sin errores nuevos",
+    "Tests de codigos-cotizacion (formato COT-AAAA-MM-DD-NN, padding, parseo de secuencia) en verde",
+    "crearProyectoAction genera el codigo en el server (nunca del cliente) con secuencial por día basado en la fecha del server",
+    "El codigo queda visible en el listado del cotizador y en el header del detalle, y es buscable en el campo de búsqueda",
+    "La columna proyectos.codigo existe con backfill de las filas existentes y constraint único (aplicada a la base real de producción 2026-09-10)",
+    "El optimistic create muestra placeholder y se reemplaza con el codigo real cuando responde el server",
+    "Desvío aprobado en ejecución: secuencial a mínimo 3 dígitos (día real con 112 cotizaciones; lpad de 2 trunca ≥100)"
+  ],
+  "plan_ref": "arnes/tareas/t-150.json",
+  "estado": "en_ejecucion",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado 2026-09-10 (Javier: formato COT-AAAA-MM-DD-XX, generación server-side; ejecución introdujo desvío documentado a 3 dígitos mínimo)",
+    "fecha": "2026-09-10"
+  },
+  "creada_en": "2026-09-10T18:00:00Z",
+  "cerrada_en": null
+}

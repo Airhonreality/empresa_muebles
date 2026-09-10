@@ -648,6 +648,10 @@ export const productosCatalogo = pgTable("productos_catalogo", {
 
 export const proyectos = pgTable("proyectos", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
+	// t-150: código amigable COT-AAAA-MM-DD-NN (fecha + secuencial diario, generado en el server action).
+	// Único por cotización para distinguir proyectos homónimos en la UI. Las filas previas se rellenan
+	// con backfill en scripts/apply-codigo-cotizacion.ts.
+	codigo: text("codigo").notNull().unique(),
 	clienteId: uuid("cliente_id"),
 	comercialId: uuid("comercial_id"),
 	nombreProyecto: text("nombre_proyecto").notNull(),

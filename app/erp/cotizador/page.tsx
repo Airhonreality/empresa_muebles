@@ -51,6 +51,7 @@ export default function CotizadorIndexPage() {
   const { query, setQuery, resultado: proyectosBuscados } = useSmartSearch({
     items: pipeline,
     getCampos: (p) => [
+      p.codigo,
       p.nombreProyecto,
       p.clienteNombre ?? '',
       p.direccionObra ?? '',
@@ -101,7 +102,10 @@ export default function CotizadorIndexPage() {
               <div className="rounded-lg border border-border-subtle bg-bg-raised p-4 shadow-xs transition-all duration-soft hover:border-gold-400 hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-text-heading">{proj.nombreProyecto}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-medium text-gold-600">{proj.codigo}</span>
+                      <p className="text-sm font-medium text-text-heading">{proj.nombreProyecto}</p>
+                    </div>
                     <p className="mt-0.5 text-xs text-text-muted">
                       {proj.clienteNombre ?? 'Sin cliente'} · {proj.diasEntregaEstimados} días · {proj.tipoProyecto === 'producto_fijo' ? 'Producto fijo' : 'Personalizado'}
                     </p>

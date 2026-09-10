@@ -22,6 +22,7 @@ import postgres from 'postgres'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { randomUUID } from 'node:crypto'
 import * as schema from '../lib/db/schema'
+import { generarCodigoCotizacion } from '../lib/data/codigos-cotizacion'
 
 const legacyUrl = process.env.DATABASE_URL_LEGACY
 const previewUrl = process.env.DATABASE_URL_V3_PREVIEW
@@ -146,7 +147,7 @@ async function main() {
   const proyectosLegacy = await fetchNamespace('proyectos')
   const proyectoIdMap = new Map<string, string>()
   let sinNombreCount = 0
-  const proyectosInsert = proyectosLegacy.map((r) => {
+  const proyectosInsert = proyectosLegacy.map((r, idx) => {
     const nuevoId = randomUUID()
     proyectoIdMap.set(r.id, nuevoId)
     const nombre = s(r.data.nombre_proyecto)
@@ -154,6 +155,7 @@ async function main() {
     const clienteLegacyId = s(r.data.cliente_id)
     return {
       id: nuevoId,
+      codigo: generarCodigoCotizacion(new Date(), idx + 1),
       clienteId: clienteLegacyId ? clienteIdMap.get(clienteLegacyId) ?? null : null,
       nombreProyecto: nombre ?? '(sin nombre)',
       direccionObra: s(r.data.direccion_obra),
