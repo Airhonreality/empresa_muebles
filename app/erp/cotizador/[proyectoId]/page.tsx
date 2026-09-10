@@ -286,15 +286,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   )
 }
 
-// P7 (ZN-003): envoltura memoizada. Como EspacioGroup es una función declarada, se usa a
-// través de `EspacioGroupMemo` para que una modificación en una variante/espacio NO re-renderice
-// a los hermanos. Los callbacks (onToggle, onUpdateJornadas), tarifas y catalogo son estables
-// (useCallback/useMemo), condición necesaria para que el shallow-compare de `memo` no se invalide
-// en cada render del padre. El re-render por cambio de datos lo dispara el contexto del
-// CotizadorCompatProvider (snapshot TanStack Query) que EspacioGroup consume.
-const EspacioGroupMemo = memo(EspacioGroup)
-
-
   const materialesTotal = espaciosActivos.reduce((sum, esp) => {
     const items = store.items.porVariante(esp.id).filter((it) => !it.esReferencial)
     return sum + items.reduce((s, it) => s + parseNum(it.totalLinea), 0)
@@ -1243,6 +1234,15 @@ function EspacioGroup({
     </div>
   )
 }
+
+// P7 (ZN-003): envoltura memoizada. Como EspacioGroup es una función declarada, se usa a
+// través de `EspacioGroupMemo` para que una modificación en una variante/espacio NO re-renderice
+// a los hermanos. Los callbacks (onToggle, onUpdateJornadas), tarifas y catalogo son estables
+// (useCallback/useMemo), condición necesaria para que el shallow-compare de `memo` no se invalide
+// en cada render del padre. El re-render por cambio de datos lo dispara el contexto del
+// CotizadorCompatProvider (snapshot TanStack Query) que EspacioGroup consume. Definido a nivel
+// de módulo (no dentro de render) para que React no lo redeclare en cada render del padre.
+const EspacioGroupMemo = memo(EspacioGroup)
 
 /**
  * Contenido de UNA variante (la seleccionada en las tabs del EspacioGroup).

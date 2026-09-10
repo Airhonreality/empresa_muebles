@@ -1,0 +1,27 @@
+{
+  "id": "t-149",
+  "nombre": "Cotizador: re-renders/foco/evapción de filas — corrección de reactividad (long-poll + mutation optimista)",
+  "descripcion": "Auditoría técnica (2026-09-10) de dos síntomas de UX en el cotizador `/erp/**` en producción: (S1) el alta/edición optimista de un ítem corta el foco/valor de otro ítem en curso cuando aterriza un refetch (propio o eco del long-poll); (S2) la pestaña/variante elegida en una tarjeta multi-variante vuelve sola a la variante activa cada pocos segundos. Documento fuente: `arnes/lineas/ola7/tecnico/plan_renders_cotizador_reactividad.md` — diagnostica 5 hipótesis (H1-H5) y 8 hallazgos de auditoría (F1-F8) con evidencia de código línea por línea, todos verificados contra `dev` en esta tarea (ver plan_ref). Continuación de `plan_cotizador_tanstack_query.md` (DEC-1/2/3/7/8 ya aprobadas y codeadas, no se tocan) y de `m07b_reactividad_multiusuario.md` (F10, long-poll).",
+  "objetivo": "Que el checkpoint del Supervisor sobre las 6 decisiones propuestas (PDEC-A..F: quitar invalidación redundante de onSettled, gate+debounce en CotizadorSnapBridge, capa de fusión de pendientes, tabId inmune a remontes, mover memo(EspacioGroup) a scope de módulo + estabilizar props, invalidación escopada por tabla) quede registrado y trazable antes de que un Iniciador convierta el plan en código ejecutable.",
+  "prioridad": "Media-alta",
+  "estado": "Parcialmente implementada (2026-09-10) — Fases 0.1/1.1/1.2/1.3/2.2 codeadas por agente Haiku, revisadas diff-por-diff y re-verificadas de forma independiente (tsc/eslint/optimistic.test.ts 19/19/check memo), sin commit/push todavía. Pendiente: validación runtime manual (VA-1/VA-2/VA-3, requiere npm run dev + React Profiler en navegador real) y decisión sobre Fases 0.2/2.1/3/4 (no implementadas en esta pasada, ver detalle en plan_ref y estado.md).",
+  "tipo": "correccion_comportamiento_ui_reactividad",
+  "riesgo": "medio-alto",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado parcialmente 2026-09-10 (\"listo implementa\") — cubre Fases 0.1/1.1/1.2/1.3/2.2; Fases 0.2/2.1/3/4 siguen sin checkpoint",
+    "fecha": "2026-09-10"
+  },
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_renders_cotizador_reactividad.md",
+  "criterios_de_aceptacion": [
+    "S1 y S2 no reproducibles según VA-1/VA-2/VA-3 del plan_ref",
+    "Cero regresiones en multi-usuario: un cambio de otro usuario/pestaña sigue llegando ≤4s (contrato de m07b_reactividad_multiusuario.md T5)",
+    "Tests de fusionarPendientes en verde (incluidos casos (d)/(e) de §1.3 del plan_ref); tsc/eslint limpios",
+    "No se toca main, legacy-agnostic-backup ni el flujo de corte de producción (AGENTS.md)",
+    "Las DEC-1/DEC-2/DEC-3/DEC-7/DEC-8 aprobadas permanecen intactas",
+    "memo(EspacioGroup) a nivel de módulo (VA-4) y cero montajes/remontes de EspacioGroup en Profiler durante los flujos de VA-1/VA-3",
+    "duplicarEspacio y los eliminares sin reconciliar conservan invalidación propia que bypasea el gate de PDEC-B (o ganan reconciliación)"
+  ],
+  "relacionado": ["plan_cotizador_tanstack_query.md", "m07b_reactividad_multiusuario.md"],
+  "fecha_creacion": "2026-09-10"
+}

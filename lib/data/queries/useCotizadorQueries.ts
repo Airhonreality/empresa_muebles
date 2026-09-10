@@ -7,7 +7,7 @@
 // propagación cross-usuario sigue por la DB trigger → snap bridge invalida ['cotizador', id].
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import {
   crearItemAction,
   actualizarItemAction,
@@ -45,6 +45,10 @@ import {
   type InputArtefactoOptimista,
   type InputEspacioOptimista,
   type InputItemOptimista,
+  fusionarPendientes,
+  registrarItemPendiente,
+  liberarItemPendiente,
+  obtenerItemsPendientes,
 } from './optimistic'
 import type { CotizadorSnapshot } from './types'
 import type { EspacioArtefacto, EspacioVariante, ItemVariante, Proyecto } from '../contracts'
@@ -52,11 +56,17 @@ import type { EspacioArtefacto, EspacioVariante, ItemVariante, Proyecto } from '
 export function useCotizadorSnapshot(proyectoId: string) {
   return useQuery<CotizadorSnapshot>({
     queryKey: cotizadorKeys.detalle(proyectoId),
-    queryFn: () => obtenerSnapshotCotizadorAction(proyectoId),
+    queryFn: async () => {
+      const snap = await obtenerSnapshotCotizadorAction(proyectoId)
+      return fusionarPendientes(snap, obtenerItemsPendientes(proyectoId))
+    },
     // Config de DEC-2 (ERP-wide): datos colaborativos siempre frescos; el long-poll manda.
     staleTime: 0,
     refetchOnWindowFocus: false,
     retry: 1,
+    // Un refetch que momentáneamente no trae data (p.ej. tras GC de cache) NO debe vaciar la
+    // pantalla — se queda con los datos anteriores hasta que llegan los nuevos.
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -64,20 +74,35 @@ interface ContextoMutacion {
   previous?: CotizadorSnapshot
 }
 
+interface OpcionesMutationOpt<TVars> {
+  /** Se llama dentro de onMutate, después de aplicar el optimismo — para registries externos (Fase 1.3). */
+  onMutateExtra?: (vars: TVars) => void
+  /** Se llama dentro de onSettled, antes de decidir si invalidar. */
+  onSettledExtra?: (vars: TVars) => void
+  /** Mutations sin `reconciliar` (eliminar*, duplicarEspacio) necesitan invalidar SIEMPRE al
+   * asentar, sin depender del gate/debounce de CotizadorSnapBridge — si no, su resultado puede
+   * no aparecer nunca en pantalla (no hay optimismo real que lo muestre). */
+  invalidarSiempre?: boolean
+}
+
 function useMutationOpt<TVars, TResult>(
   proyectoId: string,
   mutationFn: (vars: TVars) => Promise<TResult>,
   aplicarOptimista: (snapshot: CotizadorSnapshot, vars: TVars) => CotizadorSnapshot,
   reconciliar?: (snapshot: CotizadorSnapshot, result: TResult) => CotizadorSnapshot,
+  opciones?: OpcionesMutationOpt<TVars>,
 ) {
   const qc = useQueryClient()
   const queryKey = cotizadorKeys.detalle(proyectoId)
   return useMutation<TResult, Error, TVars, ContextoMutacion>({
+    // Permite a CotizadorSnapBridge filtrar "¿hay mutations de ESTA pantalla en vuelo?" (Fase 1.2).
+    mutationKey: queryKey,
     mutationFn,
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey })
       const previous = qc.getQueryData<CotizadorSnapshot>(queryKey)
       if (previous) qc.setQueryData<CotizadorSnapshot>(queryKey, aplicarOptimista(previous, vars))
+      opciones?.onMutateExtra?.(vars)
       return { previous }
     },
     onError: (_err, _vars, ctx) => {
@@ -88,9 +113,13 @@ function useMutationOpt<TVars, TResult>(
         qc.setQueryData<CotizadorSnapshot>(queryKey, (cur) => (cur ? reconciliar(cur, result) : cur))
       }
     },
-    onSettled: () => {
-      // invalidación selectiva escopada (~10 SELECTs); jamás el snapshot completo (T4).
-      void qc.invalidateQueries({ queryKey })
+    onSettled: (_result, _err, vars) => {
+      opciones?.onSettledExtra?.(vars)
+      // Se quita la invalidación redundante por defecto (Fase 1.1): la correctitud local ya la
+      // da onSuccess/reconciliar; la propagación multi-usuario la da el puente
+      // (NOTIFY -> version++ -> CotizadorSnapBridge). Solo las mutations sin reconciliar
+      // (eliminar*/duplicarEspacio) piden invalidarSiempre para no depender del gate del puente.
+      if (opciones?.invalidarSiempre) void qc.invalidateQueries({ queryKey })
     },
   })
 }
@@ -114,6 +143,10 @@ export function useCrearItemMutation(proyectoId: string) {
       }),
     (snap, input) => agregarItem(snap, construirItemOptimista(input)),
     (snap, r) => upsertItem(snap, r),
+    {
+      onMutateExtra: (input) => registrarItemPendiente(proyectoId, construirItemOptimista(input)),
+      onSettledExtra: (input) => liberarItemPendiente(proyectoId, input.id),
+    },
   )
 }
 
@@ -134,6 +167,8 @@ export function useEliminarItemMutation(proyectoId: string) {
     proyectoId,
     ({ id }) => eliminarItemAction(id),
     (snap, { id }) => eliminarItem(snap, id),
+    undefined,
+    { invalidarSiempre: true },
   )
 }
 
@@ -187,6 +222,8 @@ export function useEliminarEspacioMutation(proyectoId: string) {
     proyectoId,
     ({ id }) => eliminarEspacioAction(id),
     (snap, { id }) => eliminarEspacio(snap, id),
+    undefined,
+    { invalidarSiempre: true },
   )
 }
 
@@ -208,6 +245,8 @@ export function useDuplicarEspacioMutation(proyectoId: string) {
     proyectoId,
     ({ id, opciones }) => duplicarEspacioAction(id, opciones),
     (snap) => snap,
+    undefined,
+    { invalidarSiempre: true },
   )
 }
 

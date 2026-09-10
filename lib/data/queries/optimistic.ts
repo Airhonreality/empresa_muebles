@@ -251,3 +251,37 @@ export function upsertArtefacto(snapshot: CotizadorSnapshot, artefacto: EspacioA
     : snapshot.artefactos.map((a) => (a.id === artefacto.id ? artefacto : a))
   return { ...snapshot, artefactos }
 }
+
+// --- Fase 1.3 (PDEC-C): overlay de filas optimistas en vuelo ---
+// Un refetch que aterriza mientras una fila optimista sigue sin confirmar NUNCA debe hacerla
+// desaparecer de la UI (evapción, causa de S1). Este registro vive fuera de React (módulo),
+// se alimenta en onMutate de useCrearItemMutation y se drena en onSettled.
+const pendientesItemsPorProyecto = new Map<string, Map<string, ItemVariante>>()
+
+export function registrarItemPendiente(proyectoId: string, item: ItemVariante): void {
+  let mapa = pendientesItemsPorProyecto.get(proyectoId)
+  if (!mapa) {
+    mapa = new Map()
+    pendientesItemsPorProyecto.set(proyectoId, mapa)
+  }
+  mapa.set(item.id, item)
+}
+
+export function liberarItemPendiente(proyectoId: string, itemId: string): void {
+  pendientesItemsPorProyecto.get(proyectoId)?.delete(itemId)
+}
+
+export function obtenerItemsPendientes(proyectoId: string): ItemVariante[] {
+  const mapa = pendientesItemsPorProyecto.get(proyectoId)
+  return mapa ? [...mapa.values()] : []
+}
+
+/** Función pura: overlay de filas optimistas en vuelo sobre el snapshot del servidor. Si el
+ * servidor ya trae la fila (por id), gana el servidor. Si no, se conserva la optimista. */
+export function fusionarPendientes(snapshot: CotizadorSnapshot, pendientes: ItemVariante[]): CotizadorSnapshot {
+  if (pendientes.length === 0) return snapshot
+  const idsServidor = new Set(snapshot.items.map((i) => i.id))
+  const faltantes = pendientes.filter((it) => !idsServidor.has(it.id))
+  if (faltantes.length === 0) return snapshot
+  return { ...snapshot, items: [...snapshot.items, ...faltantes] }
+}

@@ -3,9 +3,10 @@
 //  1) Seed: en el 1er montaje siembra la cache TanStack con el snapshot que ya trajo el
 //     DataStore del layout SSR (cero flash, sin fetching extra).
 //  2) Reactividad multi-usuario: en cada version++ global (store.subscribe vía
-//     useDataStore) invalida SOLO la query escopada ['cotizador', proyectoId] (~10
-//     SELECTs) — nunca el snapshot de 64 tablas. Es lo único que queda del long-poll en
-//     esta pantalla. Reactividad cross-usuario ≤4s preservada (T5).
+//     useDataStore) agenda una invalidación de la query escopada ['cotizador', proyectoId] (~10
+//     SELECTs) con coalescencia trailing ~500ms + gate que NO invalida si hay mutations de esta
+//     pantalla en vuelo. Es lo único que queda del long-poll en esta pantalla. Reactividad
+//     cross-usuario ≤4s preservada (T5).
 'use client'
 
 import { useEffect } from 'react'
@@ -49,9 +50,19 @@ export function CotizadorSnapBridge({ proyectoId }: { proyectoId: string }) {
     if (seed) qc.setQueryData<CotizadorSnapshot>(queryKey, seed)
   }, [qc, queryKey, store, proyectoId])
 
-  // Cada versión global invalida la query escopada (identidad de datos deduplica renders).
+  // Cada versión global agenda una invalidación de la query escopada, con dos guardas:
+  // (1) coalescencia trailing ~500ms — una ráfaga de version++ dispara un solo refetch;
+  // (2) gate: si hay mutations de ESTA pantalla en vuelo (por mutationKey), NO invalida —
+  // el propio onSuccess/reconciliar de la mutation ya mantiene la cache correcta, e invalidar
+  // acá arriesga pisar una fila optimista con una foto vieja del servidor. Se re-chequea el
+  // gate JUSTO al disparar (no solo al agendar) porque una mutation puede empezar/terminar
+  // durante la ventana del debounce.
   useEffect(() => {
-    void qc.invalidateQueries({ queryKey })
+    const timer = setTimeout(() => {
+      if (qc.isMutating({ mutationKey: queryKey }) > 0) return
+      void qc.invalidateQueries({ queryKey })
+    }, 500)
+    return () => clearTimeout(timer)
   }, [qc, queryKey, version, proyectoId])
 
   return null

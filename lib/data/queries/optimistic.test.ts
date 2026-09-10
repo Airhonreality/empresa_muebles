@@ -7,7 +7,7 @@ import {
   agregarArtefacto, agregarEspacio, agregarItem, actualizarArtefacto, actualizarEspacio,
   actualizarItem, actualizarProyecto, calcularTotalLinea, construirArtefactoOptimista,
   construirItemOptimista, eliminarEspacio, eliminarItem,
-  marcarEspacioActiva, upsertEspacio, upsertItem,
+  marcarEspacioActiva, upsertEspacio, upsertItem, fusionarPendientes,
 } from './optimistic'
 import type { ItemVariante, EspacioVariante } from '../contracts'
 
@@ -184,6 +184,24 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
     assert.equal(snap.artefactos.length, 1)
     snap = actualizarArtefacto(snap, 'art-1', { ubicacion: 'Bajo mesón' })
     assert.equal(snap.artefactos[0].ubicacion, 'Bajo mesón')
+  })
+
+  await test('fusionarPendientes: fila optimista ausente del servidor se conserva', () => {
+    const snap = fusionarPendientes(baseSnapshot({ items: [item('it-servidor')] }), [item('it-pendiente')])
+    assert.equal(snap.items.length, 2)
+    assert.ok(snap.items.some((i) => i.id === 'it-pendiente'))
+  })
+
+  await test('fusionarPendientes: si el servidor ya trae la fila, gana el servidor (no duplica)', () => {
+    const snap = fusionarPendientes(baseSnapshot({ items: [item('it-1', { cantidad: '9' })] }), [item('it-1', { cantidad: '1' })])
+    assert.equal(snap.items.length, 1)
+    assert.equal(snap.items[0].cantidad, '9', 'la versión del servidor gana sobre la pendiente')
+  })
+
+  await test('fusionarPendientes: sin pendientes, devuelve el mismo snapshot (no-op)', () => {
+    const base = baseSnapshot({ items: [item('it-1')] })
+    const snap = fusionarPendientes(base, [])
+    assert.equal(snap, base, 'debe ser el mismo objeto, no una copia')
   })
 
   console.log(`\n${pasadas} pruebas pasadas`)
