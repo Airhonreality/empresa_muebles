@@ -6,16 +6,31 @@ import { Modal } from '@/components/veta/modal'
 import { Button } from '@/components/veta/button'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { MoneyInput } from '@/components/veta/money-input'
-import type { ItemVariante, ProductoCatalogo } from '@/lib/data'
+import type { GrupoItem, ItemVariante, ProductoCatalogo } from '@/lib/data'
 
 interface ItemEditorModalProps {
   item: ItemVariante
   producto: ProductoCatalogo | undefined
   catalogo: ProductoCatalogo[]
+  /** t-157 (2026-09-10): grupos/subgrupos disponibles en el espacio de este ítem, para asignarlo. */
+  grupos: GrupoItem[]
   onClose: () => void
   onSave: (cambios: Partial<ItemVariante>) => Promise<void>
   onReemplazarProducto: (nuevoProducto: ProductoCatalogo, mantenerPrecioActual: boolean) => Promise<void>
   onEliminar: () => Promise<void>
+}
+
+/** Nombre "Grupo › Subgrupo" para que el select se lea sin ambigüedad cuando hay anidamiento. */
+function rutaGrupo(grupo: GrupoItem, porId: Map<string, GrupoItem>): string {
+  const partes: string[] = [grupo.nombre]
+  let actual = grupo
+  while (actual.padreId) {
+    const padre = porId.get(actual.padreId)
+    if (!padre) break
+    partes.unshift(padre.nombre)
+    actual = padre
+  }
+  return partes.join(' › ')
 }
 
 function parseNum(s: string | null | undefined): number {
@@ -37,6 +52,7 @@ export function ItemEditorModal({
   item,
   producto,
   catalogo,
+  grupos,
   onClose,
   onSave,
   onReemplazarProducto,
@@ -53,6 +69,9 @@ export function ItemEditorModal({
   const [esReferencial, setEsReferencial] = useState(item.esReferencial)
   // Requerimiento Supervisor 2026-09-10: comentario libre por ítem, visible en la propuesta pública.
   const [comentario, setComentario] = useState(item.comentario ?? '')
+  // t-157 (2026-09-10): grupo/subgrupo al que pertenece este ítem dentro de su espacio.
+  const [grupoItemId, setGrupoItemId] = useState(item.grupoItemId ?? '')
+  const gruposPorId = new Map(grupos.map((g) => [g.id, g]))
 
   // Reemplazo
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoCatalogo | null>(null)
@@ -72,6 +91,7 @@ export function ItemEditorModal({
         precioUnitario,
         esReferencial,
         comentario: comentario.trim() || null,
+        grupoItemId: grupoItemId || null,
       })
       onClose()
     } finally {
@@ -230,6 +250,24 @@ export function ItemEditorModal({
                   placeholder="Ej: Incluye herrajes de cierre suave"
                 />
               </div>
+
+              {grupos.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-text-muted mb-1">
+                    Grupo (dentro de este espacio)
+                  </label>
+                  <select
+                    value={grupoItemId}
+                    onChange={(e) => setGrupoItemId(e.target.value)}
+                    className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                  >
+                    <option value="">Sin grupo</option>
+                    {grupos.map((g) => (
+                      <option key={g.id} value={g.id}>{rutaGrupo(g, gruposPorId)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 

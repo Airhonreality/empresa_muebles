@@ -48,6 +48,7 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     catalogoAcabados, catalogoProductoAcabados, acabadosMuestras,
     portafolio, rendersConceptuales, atributosTecnicos, catalogosEspaciosArquitectonicos, modulosArtefactos, bitacoraArticulos, testimonios,
     itemsOrdenCompra, recepcionesMaterial, herramientas, documentosProyecto,
+    gruposItem,
   ] = await Promise.all([
     db.select().from(s.proyectos),
     db.select().from(s.clientes),
@@ -106,6 +107,7 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     db.select().from(s.recepcionesMaterial),
     db.select().from(s.herramientas),
     db.select().from(s.documentosProyecto),
+    db.select().from(s.gruposItem),
   ])
 
   const version = await fetchVersionTokenAction()
@@ -186,5 +188,6 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     recepcionesMaterial: recepcionesMaterial as StoreSnapshot['recepcionesMaterial'],
     herramientas: herramientas as StoreSnapshot['herramientas'],
     documentosProyecto: documentosProyecto as StoreSnapshot['documentosProyecto'],
+    gruposItem: gruposItem as StoreSnapshot['gruposItem'],
   }
 }

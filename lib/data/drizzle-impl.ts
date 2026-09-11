@@ -80,6 +80,7 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       tipoProyecto: values.tipoProyecto ?? 'personalizado',
       direccionObra: values.direccionObra ?? null,
       costosOperativos: values.costosOperativos ?? '0',
+      costosLogisticos: values.costosLogisticos ?? '0',
       imprevistosInstalacion: values.imprevistosInstalacion ?? '0',
       descuentoComercial: values.descuentoComercial ?? '0',
       ajusteArbitrario: values.ajusteArbitrario ?? '0',
@@ -300,6 +301,36 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         const ok = await core.eliminarItemAction(id)
         if (ok) {
           data = { ...data, items: data.items.filter((i) => i.id !== id) }
+          notify()
+        }
+        return ok
+      },
+    },
+
+    // Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo →
+    // Ítems, tabla NUEVA y SEPARADA de `modulos` (producción).
+    gruposItem: {
+      porEspacio: (espacioVarianteId) => data.gruposItem.filter((g) => g.espacioVarianteId === espacioVarianteId),
+      crear: async (espacioVarianteId, nombre, padreId) => {
+        const r = await core.crearGrupoItemAction(espacioVarianteId, nombre, padreId ?? null)
+        data = { ...data, gruposItem: upsert(data.gruposItem, r) }
+        notify()
+        return r
+      },
+      actualizar: async (id, cambios) => {
+        const r = await core.actualizarGrupoItemAction(id, cambios)
+        if (r) { data = { ...data, gruposItem: upsert(data.gruposItem, r) }; notify() }
+        return r
+      },
+      eliminar: async (id) => {
+        const ok = await core.eliminarGrupoItemAction(id)
+        if (ok) {
+          data = {
+            ...data,
+            gruposItem: data.gruposItem.filter((g) => g.id !== id),
+            // Espejo local del reasigno server-side: los ítems de este grupo pasan a "sin grupo".
+            items: data.items.map((i) => (i.grupoItemId === id ? { ...i, grupoItemId: null } : i)),
+          }
           notify()
         }
         return ok

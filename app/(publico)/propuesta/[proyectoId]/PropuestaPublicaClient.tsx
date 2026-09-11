@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, type ReactElement } from 'react'
 import Image from 'next/image'
 import { ArrowDown, Building2, Expand, LayoutGrid, MapPin } from 'lucide-react'
 import { Button } from '@/components/veta/button'
 import { MetaItem } from '@/components/veta/meta-item'
 import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { GalleryRail } from '@/components/veta/gallery-rail'
-import type { EspacioVariante, ItemVariante } from '@/lib/data'
+import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 
 // F-08 Propuesta pública (disenio_F08_propuesta_publica.md). Ruta simplificada
@@ -210,9 +210,67 @@ function DetalleTecnico({
   )
 }
 
+// t-157 (2026-09-10): agrupa visualmente los ítems de "Qué incluye" por su grupo/subgrupo
+// (árbol Espacio → Grupo → Subgrupo → Ítems). Sin grupos creados para el espacio, el render
+// es idéntico a la grilla plana de siempre — la agrupación es puramente aditiva.
+function renderItemsAgrupados(
+  items: ItemVariante[],
+  grupos: GrupoItem[],
+  catalogoPorId: Record<string, CatalogoItemPublico>,
+  onZoom: (imagenes: GalleryImage[], index: number) => void,
+): ReactElement {
+  const gruposRaiz = grupos.filter((g) => !g.padreId).sort((a, b) => a.orden - b.orden)
+  const hijosDe = (padreId: string) => grupos.filter((g) => g.padreId === padreId).sort((a, b) => a.orden - b.orden)
+  const itemsDelGrupo = (grupoId: string) => items.filter((it) => it.grupoItemId === grupoId)
+  const itemsSinGrupo = items.filter((it) => !it.grupoItemId)
+  const hayGrupos = grupos.length > 0
+
+  const grid = (lista: ItemVariante[]): ReactElement => (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {lista.map((item) => (
+        <ItemCard
+          key={item.id}
+          item={item}
+          producto={item.catalogoId ? catalogoPorId[item.catalogoId] : undefined}
+          onZoom={onZoom}
+        />
+      ))}
+    </div>
+  )
+
+  const renderGrupoNodo = (grupo: GrupoItem, nivel: number): ReactElement => {
+    const propios = itemsDelGrupo(grupo.id)
+    const hijos = hijosDe(grupo.id)
+    return (
+      <div key={grupo.id} className="mb-5 last:mb-0" style={{ marginLeft: nivel * 16 }}>
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-gold-600 mb-2">{grupo.nombre}</h4>
+        {propios.length > 0 && grid(propios)}
+        {hijos.map((h) => renderGrupoNodo(h, nivel + 1))}
+      </div>
+    )
+  }
+
+  if (!hayGrupos) return grid(items)
+
+  return (
+    <>
+      {gruposRaiz.map((g) => renderGrupoNodo(g, 0))}
+      {itemsSinGrupo.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Sin grupo</h4>
+          {grid(itemsSinGrupo)}
+        </div>
+      )}
+    </>
+  )
+}
+
 export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData }) {
   const { proyecto, espacios: espaciosBase, items: todosLosItems, catalogoPorId, contrato, hitos: hitosList, tarifas } = data
   const { tarifaDev, tarifaAssembly, tarifaInstall } = tarifas
+  // Fallback []: snapshots publicados ANTES de t-157 (2026-09-10) no tienen esta clave —
+  // sin esto, un link de propuesta ya compartido con un cliente real rompería al abrirse.
+  const gruposItemTodos = data.gruposItem ?? []
 
   const [espacioActivoId, setEspacioActivoId] = useState<string | null>(null)
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState<string | null>(null)
@@ -267,7 +325,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
   // Proyectar: si el usuario está viendo una variante alternativa en el espacio actual,
   // el resumen financiero global (Sidebar) debe reflejar ese escenario "What If".
   // [Axioma de Información]: Memoizado para no re-ejecutar N x M iteraciones en cada scroll event.
-  const { materialesTotal, moDev, moEns, moInst, moTotal, subtotal, total, iva, costosOperativos, imprevistos, descuento, ajuste } = useMemo(() => {
+  const { materialesTotal, moDev, moEns, moInst, moTotal, subtotal, total, iva, costosOperativos, costosLogisticos, imprevistos, descuento, ajuste } = useMemo(() => {
     let mTotal = 0
     let moDev = 0
     let moEns = 0
@@ -291,14 +349,15 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
     })
 
     const mOperativos = parseNum(proyecto.costosOperativos)
+    const mLogisticos = parseNum(proyecto.costosLogisticos)
     const mImprevistos = parseNum(proyecto.imprevistosInstalacion)
     const mDescuento = parseNum(proyecto.descuentoComercial)
     const mAjuste = parseNum(proyecto.ajusteArbitrario)
-    
+
     const moT = moDev + moEns + moInst
-    const sTotal = mTotal + moT + mOperativos + mImprevistos - mDescuento + mAjuste
+    const sTotal = mTotal + moT + mOperativos + mLogisticos + mImprevistos - mDescuento + mAjuste
     const mIva = proyecto.aplicaIva ? Math.round(sTotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
-    
+
     return {
       materialesTotal: mTotal,
       moDev,
@@ -306,6 +365,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
       moInst,
       moTotal: moT,
       costosOperativos: mOperativos,
+      costosLogisticos: mLogisticos,
       imprevistos: mImprevistos,
       descuento: mDescuento,
       ajuste: mAjuste,
@@ -322,6 +382,12 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
   const itemsVarianteActual = varianteActual ? itemsPorVariante(varianteActual.id) : []
   const contractualesActuales = itemsVarianteActual.filter((it) => !it.esReferencial)
   const referencialesActuales = itemsVarianteActual.filter((it) => it.esReferencial)
+
+  // t-157 (2026-09-10): grupos/subgrupos de ESTE espacio — "Qué incluye" se agrupa
+  // visualmente por ellos cuando existen; sin ninguno, el render es idéntico al de antes.
+  const gruposDelEspacioActual = varianteActual
+    ? gruposItemTodos.filter((g) => g.espacioVarianteId === varianteActual.id)
+    : []
 
   const scrollToContenido = () => {
     document.getElementById('contenido-propuesta')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -534,22 +600,17 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
                 </div>
               )}
 
-              {/* Qué incluye — ítems siempre visibles con imagen (ver nota de refinamiento arriba) */}
+              {/* Qué incluye — ítems siempre visibles con imagen (ver nota de refinamiento arriba).
+                  t-157 (2026-09-10): si el espacio tiene grupos/subgrupos, los ítems se agrupan
+                  visualmente bajo su nombre; sin ninguno, el render es la grilla plana de siempre. */}
               <section>
                 <div className="flex items-baseline justify-between gap-4">
                   <h3 className="font-display text-xl text-text-heading">Qué incluye</h3>
                   <span className="text-xs text-text-muted">{contractualesActuales.length} items</span>
                 </div>
                 {contractualesActuales.length > 0 ? (
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {contractualesActuales.map((item) => (
-                      <ItemCard
-                        key={item.id}
-                        item={item}
-                        producto={item.catalogoId ? catalogoPorId[item.catalogoId] : undefined}
-                        onZoom={(imagenes, index) => setZoom({ imagenes, index })}
-                      />
-                    ))}
+                  <div className="mt-4">
+                    {renderItemsAgrupados(contractualesActuales, gruposDelEspacioActual, catalogoPorId, (imagenes, index) => setZoom({ imagenes, index }))}
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-text-muted">El alcance detallado se confirmará con el equipo comercial.</p>
@@ -579,6 +640,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
               {moEns > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
               {moInst > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
               {costosOperativos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos operativos</span><span className="font-mono">{formatCOP(costosOperativos)}</span></div>}
+                {costosLogisticos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos logísticos</span><span className="font-mono">{formatCOP(costosLogisticos)}</span></div>}
               {imprevistos > 0 && <div className="flex justify-between"><span className="text-text-muted">Imprevistos</span><span className="font-mono">{formatCOP(imprevistos)}</span></div>}
               {descuento > 0 && <div className="flex justify-between"><span className="text-text-muted">Descuento</span><span className="font-mono text-red-600">−{formatCOP(descuento)}</span></div>}
               {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{ajuste > 0 ? '+' : '−'}{formatCOP(Math.abs(ajuste))}</span></div>}
@@ -622,6 +684,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
                 {moEns > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
                 {moInst > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
                 {costosOperativos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos operativos</span><span className="font-mono">{formatCOP(costosOperativos)}</span></div>}
+                {costosLogisticos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos logísticos</span><span className="font-mono">{formatCOP(costosLogisticos)}</span></div>}
                 {imprevistos > 0 && <div className="flex justify-between"><span className="text-text-muted">Imprevistos</span><span className="font-mono">{formatCOP(imprevistos)}</span></div>}
                 {descuento > 0 && <div className="flex justify-between"><span className="text-text-muted">Descuento</span><span className="font-mono text-red-600">−{formatCOP(descuento)}</span></div>}
                 {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{ajuste > 0 ? '+' : '−'}{formatCOP(Math.abs(ajuste))}</span></div>}

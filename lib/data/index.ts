@@ -45,6 +45,7 @@ export type {
   BitacoraArticulo, BitacoraCategoria, Testimonio, AtributoTecnico,
   CatalogoEspacioArquitectonico,
   CategoriaNotaReunion, NotaReunion,
+  GrupoItem,
 } from './contracts'
 
 export { generarSlides } from './presentacion'

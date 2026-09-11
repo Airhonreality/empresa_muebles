@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect, memo } from 'react'
+import { useState, useMemo, useCallback, useEffect, memo, type ReactElement } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
@@ -18,7 +18,7 @@ import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-es
 import { ContratoModal } from '../ContratoModal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
-import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto } from '@/lib/data'
+import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem } from '@/lib/data'
 import { CotizadorCompatProvider, useCotizadorCompat, type CotizadorCompatStore } from '@/lib/data/queries/cotizador-compat'
 import { eliminarProyectoAction, crearNotaReunionAction } from '@/lib/data/actions/core'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
@@ -314,10 +314,11 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const moTotal = moDev + moEns + moInst
 
   const costosOperativos = parseNum(proyecto.costosOperativos)
+  const costosLogisticos = parseNum(proyecto.costosLogisticos)
   const imprevistos = parseNum(proyecto.imprevistosInstalacion)
   const descuento = parseNum(proyecto.descuentoComercial)
   const ajuste = parseNum(proyecto.ajusteArbitrario)
-  const subtotal = materialesTotal + moTotal + costosOperativos + imprevistos - descuento + ajuste
+  const subtotal = materialesTotal + moTotal + costosOperativos + costosLogisticos + imprevistos - descuento + ajuste
   const iva = proyecto.aplicaIva ? Math.round(subtotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
   const total = subtotal + iva
 
@@ -337,6 +338,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         moInst={moInst}
         moTotal={moTotal}
         costosOperativos={costosOperativos}
+        costosLogisticos={costosLogisticos}
         imprevistos={imprevistos}
         descuento={descuento}
         ajuste={ajuste}
@@ -636,6 +638,12 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
               <span className="font-mono text-text-heading">{formatCOP(costosOperativos)}</span>
             </div>
           )}
+          {costosLogisticos > 0 && (
+            <div className="flex justify-between">
+              <span className="text-text-muted">Costos Logísticos</span>
+              <span className="font-mono text-text-heading">{formatCOP(costosLogisticos)}</span>
+            </div>
+          )}
           {imprevistos > 0 && (
             <div className="flex justify-between">
               <span className="text-text-muted">Imprevistos</span>
@@ -782,6 +790,7 @@ function VistaSoloLectura({
   moInst,
   moTotal,
   costosOperativos,
+  costosLogisticos,
   imprevistos,
   descuento,
   ajuste,
@@ -802,6 +811,7 @@ function VistaSoloLectura({
   moInst: number
   moTotal: number
   costosOperativos: number
+  costosLogisticos: number
   imprevistos: number
   descuento: number
   ajuste: number
@@ -843,6 +853,7 @@ function VistaSoloLectura({
         />
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-text-muted sm:grid-cols-4">
           <span>Costos operativos: {formatCOP(costosOperativos)}</span>
+          <span>Costos logísticos: {formatCOP(costosLogisticos)}</span>
           <span>Imprevistos: {formatCOP(imprevistos)}</span>
           <span className={descuento > 0 ? 'text-red-600' : ''}>Descuento: {formatCOP(descuento)}</span>
           <span>IVA: {proyecto.aplicaIva ? `Sí (${proyecto.porcentajeIva}%)` : 'No'}</span>
@@ -1305,6 +1316,14 @@ function VarianteContenido({
   const subtotalItems = itemsContractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
   const totalReferencial = itemsReferenciales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
 
+  // t-157 (2026-09-10): árbol Espacio → Grupo → Subgrupo → Ítems. Los grupos son opcionales —
+  // sin ninguno creado, el render de abajo es idéntico al de antes (lista plana).
+  const grupos = store.gruposItem.porEspacio(espacio.id)
+  const gruposRaiz = grupos.filter((g) => !g.padreId).sort((a, b) => a.orden - b.orden)
+  const hijosDe = (padreId: string) => grupos.filter((g) => g.padreId === padreId).sort((a, b) => a.orden - b.orden)
+  const itemsDelGrupo = (grupoId: string) => itemsContractuales.filter((it) => it.grupoItemId === grupoId)
+  const itemsSinGrupo = itemsContractuales.filter((it) => !it.grupoItemId)
+
   const [mostrarFormArtefacto, setMostrarFormArtefacto] = useState(false)
   const [editarArtefactoId, setEditarArtefactoId] = useState<string | null>(null)
   const [modoBusquedaItem, setModoBusquedaItem] = useState<'off' | 'normal' | 'referencial'>('off')
@@ -1315,6 +1334,9 @@ function VarianteContenido({
   const [itemLibreCantidad, setItemLibreCantidad] = useState('1')
   const [itemLibrePrecio, setItemLibrePrecio] = useState('0')
   const [itemLibreEsRef, setItemLibreEsRef] = useState(false)
+  // t-157: undefined = form cerrado; null = crear grupo raíz; string = crear subgrupo bajo ese id.
+  const [creandoGrupoPadreId, setCreandoGrupoPadreId] = useState<string | null | undefined>(undefined)
+  const [nombreNuevoGrupo, setNombreNuevoGrupo] = useState('')
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
 
@@ -1344,6 +1366,15 @@ function VarianteContenido({
             <Button
               variant="ghost"
               size="md"
+              onClick={() => { setCreandoGrupoPadreId(null); setNombreNuevoGrupo('') }}
+              className="text-xs border border-border-subtle hover:border-gold-400"
+              title="Agrupar ítems de este espacio (Grupo → Subgrupo → Ítems)"
+            >
+              + Grupo
+            </Button>
+            <Button
+              variant="ghost"
+              size="md"
               onClick={() => { setCreandoItemLibre(true); setItemLibreEsRef(false); }}
               className="text-xs border border-border-subtle hover:border-gold-400"
               title="Agregar ítem especial o a medida sin SKU de catálogo"
@@ -1360,6 +1391,32 @@ function VarianteContenido({
             </Button>
           </div>
         </div>
+
+        {creandoGrupoPadreId === null && (
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              type="text"
+              autoFocus
+              value={nombreNuevoGrupo}
+              onChange={(e) => setNombreNuevoGrupo(e.target.value)}
+              placeholder="Nombre del grupo (ej: Cocina alta, Módulos bajos)"
+              className="flex-1 rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+            />
+            <Button
+              variant="primary"
+              size="md"
+              disabled={!nombreNuevoGrupo.trim()}
+              onClick={async () => {
+                await store.gruposItem.crear(espacio.id, nombreNuevoGrupo.trim(), null)
+                setCreandoGrupoPadreId(undefined)
+                setNombreNuevoGrupo('')
+              }}
+            >
+              Crear
+            </Button>
+            <Button variant="ghost" size="md" onClick={() => setCreandoGrupoPadreId(undefined)}>Cancelar</Button>
+          </div>
+        )}
 
         {itemsContractuales.length === 0 && modoBusquedaItem !== 'normal' && (
           <p className="text-sm text-text-muted py-2 italic">Sin ítems en esta variante.</p>
@@ -1395,7 +1452,8 @@ function VarianteContenido({
           </div>
         )}
 
-        {itemsContractuales.map((item) => {
+        {(() => {
+          const renderItemRow = (item: ItemVariante) => {
           const prod = item.catalogoId ? productMap.get(item.catalogoId) : undefined
           const cantidadNum = parseNum(item.cantidad)
           const precioNum = parseNum(item.precioUnitario)
@@ -1469,7 +1527,87 @@ function VarianteContenido({
               </div>
             </div>
           )
-        })}
+          }
+
+          // t-157: nodo de grupo/subgrupo — se llama a sí mismo para los subgrupos (recursión
+          // libre, sin límite de profundidad, igual que `modulos.padreId` pero en tabla separada).
+          const renderGrupoNodo = (grupo: GrupoItem, nivel: number): ReactElement => {
+            const hijos = hijosDe(grupo.id)
+            const itemsPropios = itemsDelGrupo(grupo.id)
+            return (
+              <div key={grupo.id} className="mb-2" style={{ marginLeft: nivel * 16 }}>
+                <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-2 py-1.5 border border-border-subtle/60">
+                  <span className="text-xs font-semibold text-text-heading truncate">📁 {grupo.nombre}</span>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setCreandoGrupoPadreId(grupo.id); setNombreNuevoGrupo('') }}
+                      className="text-[11px] text-gold-600 hover:text-gold-700 px-1.5 py-0.5 rounded transition-colors duration-fast"
+                    >
+                      + Subgrupo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const ok = await store.gruposItem.eliminar(grupo.id)
+                        if (!ok) window.alert('No se puede eliminar: este grupo tiene subgrupos dentro. Elimínalos primero.')
+                      }}
+                      aria-label={`Eliminar grupo ${grupo.nombre}`}
+                      title="Eliminar grupo (los ítems dentro pasan a 'Sin grupo')"
+                      className="text-text-muted hover:text-red-500 px-1.5 py-0.5 rounded"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+                {creandoGrupoPadreId === grupo.id && (
+                  <div className="flex items-center gap-2 mt-2 ml-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={nombreNuevoGrupo}
+                      onChange={(e) => setNombreNuevoGrupo(e.target.value)}
+                      placeholder="Nombre del subgrupo"
+                      className="flex-1 rounded-sm border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-brand focus:outline-none"
+                    />
+                    <Button
+                      variant="primary"
+                      size="md"
+                      disabled={!nombreNuevoGrupo.trim()}
+                      onClick={async () => {
+                        await store.gruposItem.crear(espacio.id, nombreNuevoGrupo.trim(), grupo.id)
+                        setCreandoGrupoPadreId(undefined)
+                        setNombreNuevoGrupo('')
+                      }}
+                    >
+                      Crear
+                    </Button>
+                    <Button variant="ghost" size="md" onClick={() => setCreandoGrupoPadreId(undefined)}>Cancelar</Button>
+                  </div>
+                )}
+                <div className="pl-2 mt-1">
+                  {itemsPropios.map(renderItemRow)}
+                  {hijos.map((h) => renderGrupoNodo(h, nivel + 1))}
+                </div>
+              </div>
+            )
+          }
+
+          const hayGrupos = grupos.length > 0
+
+          return (
+            <>
+              {gruposRaiz.map((g) => renderGrupoNodo(g, 0))}
+              {hayGrupos && itemsSinGrupo.length > 0 && (
+                <div className="mt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted mb-1">Sin grupo</p>
+                  {itemsSinGrupo.map(renderItemRow)}
+                </div>
+              )}
+              {!hayGrupos && itemsContractuales.map(renderItemRow)}
+            </>
+          )
+        })()}
       </div>
 
       {/* Presupuesto Adicional (Referenciales) — D-09b: reubicado justo debajo de Ítems (2026-08-10, decisión
@@ -1811,6 +1949,7 @@ function VarianteContenido({
           item={modalItem}
           producto={modalProd}
           catalogo={catalogo}
+          grupos={grupos}
           onClose={() => setModalItemId(null)}
           onSave={async (cambios) => {
             await store.items.actualizar(modalItem.id, cambios)

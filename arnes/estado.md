@@ -51,6 +51,26 @@ Este archivo se lee al arrancar cualquier sesión. Es un dashboard corto: en qu�
   - **Pendiente real:** el Iniciador debe convertir ambas decisiones en plan de código ejecutable; `t-156` además requiere el checkpoint de schema de AGENTS.md (distinto del checkpoint de diseño ya dado) antes de tocar `lib/db/schema.ts`.
 - Ledger: `arnes/tareas/t-151.json`..`t-156.json`.
 
+## 🔴 INCIDENTE DE PRODUCCIÓN — `column "comentario" does not exist`, causado por el push de t-151..t-156 (2026-09-10)
+
+**Confirmado con `vercel logs` real contra el deploy `dpl_bxwLS3bumQ1qn42yEwuuqWhCMp8a` (production, `empresa-muebles-vl37`).** El push de la sección anterior agregó `items_variante.comentario` a `lib/db/schema.ts` — Drizzle genera el `SELECT` incluyendo esa columna automáticamente para CUALQUIER query sobre `itemsVariante`, y la migración (`drizzle/v3/0014_propuestas_versiones_item_comentario.sql`) **nunca se aplicó a la base de datos real de producción**. Resultado: **`/erp/cotizador/[proyectoId]` (GET y POST) rompe por completo** — código `42703` de Postgres, `errorMissingColumn` — para cualquier proyecto, apenas se despliega el código. Exactamente el mismo patrón que el incidente de `atributos_tecnicos` del 2026-08-28, a pesar de que ese precedente estaba documentado y se diseñó un fallback — el fallback cubría "tabla `propuestas_versiones` sin filas", no "columna `comentario` inexistente en una tabla que Drizzle consulta siempre por completo" (son dos mecanismos de fallo distintos, no se puede defender con el mismo parche).
+
+**El agente NO puede aplicar la migración a producción — bloqueado por el clasificador de seguridad del sandbox al intentar `vercel env pull --environment=production`** (mismo bloqueo institucional que en el incidente de agosto, funcionando como debía). Verificado: `vercel whoami` confirma sesión autenticada (`hgarciagonzalezsas-1694`) con acceso real al proyecto `empresa-muebles-vl37` — el acceso existe, la escritura contra producción está bloqueada a propósito.
+
+**🔴 ACCIÓN INMEDIATA REQUERIDA DEL SUPERVISOR (el sitio ERP está caído para el equipo comercial hasta que esto se corra):**
+
+```bash
+# Con DATABASE_URL apuntando a la base de PRODUCCIÓN real (Vercel → Settings → Environment Variables → Production)
+npx drizzle-kit migrate
+```
+
+Esto aplica, en orden, las 3 migraciones escritas a mano que quedaron pendientes en esta sesión (todas aditivas, ninguna destructiva):
+- `0014_propuestas_versiones_item_comentario.sql` — **la que corrige el incidente actual** (tabla `propuestas_versiones` + `items_variante.comentario`).
+- `0015_grupos_item.sql` — árbol de agrupación de ítems (`t-157`).
+- `0016_costos_logisticos.sql` — parámetro financiero nuevo (`t-158`).
+
+**Lección para el próximo agente que toque `lib/db/schema.ts` en este repo:** agregar una columna a una tabla que Drizzle consulta con `SELECT *`-equivalente (todo el repo usa ese patrón) es **indistinguible en riesgo de agregar una tabla nueva** — ambas rompen producción de inmediato si el código se despliega antes que la migración. El fallback defensivo (código que sigue funcionando sin la fila/tabla) NO protege contra una columna faltante en una tabla que SÍ existe y SÍ se consulta siempre. **La única defensa real es la secuencia correcta: migrar producción ANTES o en el mismo instante que se despliega el código que depende del cambio de schema — nunca después.**
+
 **✅ t-154/t-155/t-156 EJECUTADAS EN CÓDIGO + PUSH A `dev` (2026-09-10, checkpoint explícito de Javier: "aprobado todo... finaliza con push").** Continuación directa de la entrada anterior — la decisión de diseño se convirtió en código real, por 2 agentes en paralelo (Sonnet) más integración final del Orquestador, todo re-verificado de forma independiente (no solo el reporte de los agentes):
 - **`components/veta/entity-header.tsx` + `entity-actions-bar.tsx`** (nuevos) aplicados a `cotizador/[proyectoId]/page.tsx` (reemplaza header+2 barras de acciones duplicadas por una sola fuente de verdad, responsive resuelto con menú "⋮" en mobile — **corrige t-151 de raíz, por construcción**) y a `proyectos/[proyectoId]/page.tsx` (metadata, sin acciones inventadas). Incluye `+ Nueva cotización` (pedido mid-tarea de Javier, navega a `/erp/cotizador/new` sin salir de la pantalla).
 - **`propuestas_versiones`** (tabla nueva, insert-only) + `publicarPropuestaAction`/`obtenerEstadoPublicacionPropuestaAction` + botón dinámico "Publicar"/"Crear nueva versión" con timestamp humano en el header del cotizador + tabs de versiones en el portal cliente. `obtenerPropuestaPublicaAction` cae a consulta en vivo si no hay ninguna versión aún — **evita a propósito repetir el incidente de `atributos_tecnicos` del 2026-08-28** (desplegar código que depende de una tabla/fila que la migración todavía no creó).

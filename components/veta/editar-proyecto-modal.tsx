@@ -35,6 +35,7 @@ export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: Ed
     descripcionSemantica: proyecto.descripcionSemantica ?? '',
     diasEntregaEstimados: proyecto.diasEntregaEstimados ?? '',
     costosOperativos: aDigitos(proyecto.costosOperativos),
+    costosLogisticos: aDigitos(proyecto.costosLogisticos),
     imprevistosInstalacion: aDigitos(proyecto.imprevistosInstalacion),
     descuentoComercial: aDigitos(proyecto.descuentoComercial),
     ajusteArbitrario: aDigitos(proyecto.ajusteArbitrario),
@@ -51,6 +52,7 @@ export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: Ed
       descripcionSemantica: form.descripcionSemantica.trim() || null,
       diasEntregaEstimados: form.diasEntregaEstimados ? Number(form.diasEntregaEstimados) : null,
       costosOperativos: form.costosOperativos || '0',
+      costosLogisticos: form.costosLogisticos || '0',
       imprevistosInstalacion: form.imprevistosInstalacion || '0',
       descuentoComercial: form.descuentoComercial || '0',
       ajusteArbitrario: form.ajusteArbitrario || '0',
@@ -149,6 +151,11 @@ export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: Ed
               label="Costos operativos"
               value={form.costosOperativos}
               onChange={(v) => set('costosOperativos', v)}
+            />
+            <MoneyInput
+              label="Costos logísticos (transporte)"
+              value={form.costosLogisticos}
+              onChange={(v) => set('costosLogisticos', v)}
             />
             <MoneyInput
               label="Imprevistos de instalación"

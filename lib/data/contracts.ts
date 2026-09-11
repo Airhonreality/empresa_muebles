@@ -19,6 +19,8 @@ export interface Proyecto {
   tipoProyecto: string
   direccionObra: string | null
   costosOperativos: string
+  /** Costo operativo "helper": logística y transporte (2026-09-10, pedido del Supervisor). */
+  costosLogisticos: string
   imprevistosInstalacion: string
   descuentoComercial: string
   ajusteArbitrario: string
@@ -87,8 +89,27 @@ export interface ItemVariante {
   /** Comentario libre por ítem (requerimiento Supervisor 2026-09-10), editable desde el
    * cotizador y visible en el slot de ese ítem en la propuesta pública. */
   comentario: string | null
+  /** t-157 (2026-09-10): grupo/subgrupo de `grupos_item` al que pertenece este ítem dentro de
+   * su espacio. null = sin grupo (agrupación opcional, no obligatoria). NUNCA relacionado con
+   * `modulos` (producción) — ver comentario de `GrupoItem` abajo. */
+  grupoItemId: string | null
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * t-157 (2026-09-10): agrupación de ítems de COTIZACIÓN dentro de un espacio — árbol
+ * Espacio → Grupo → Subgrupo → Ítems. Recursiva vía `padreId` (mismo patrón que `Modulo`),
+ * pero un concepto NUEVO y SEPARADO de `Modulo`: `Modulo` es de PRODUCCIÓN (taller/calidad/
+ * garantía, post-contrato); `GrupoItem` es de COTIZACIÓN (pre-contrato, vive en
+ * `app/erp/cotizador/`). Cero relación entre los dos — ver arnes/tareas/t-157.json.
+ */
+export interface GrupoItem {
+  id: string
+  espacioVarianteId: string
+  nombre: string
+  padreId: string | null
+  orden: number
 }
 
 export interface ProductoCatalogo {
@@ -977,7 +998,7 @@ export interface DataStore {
     /** P-12 (D-15): designa el verificador único del proyecto (= comercial vendedor, I-035). Setea verificadorId y comercialVendedorId con el mismo valor. */
     actualizarVerificador(id: string, verificadorId: string): Promise<Proyecto | null>
     /** t-143: edición flexible de datos maestros de la cotización — nombre, cliente, tipo, obra, descripción semántica, días de entrega y ajustes financieros (costos, imprevistos, descuento, ajuste). */
-    actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null>
+    actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null>
     crear(data: Partial<Proyecto> & { nombreProyecto: string }): Promise<Proyecto>
     /** Elimina una cotización en estado lead (`activa`) con todos sus datos asociados.
      * Rechaza si el proyecto no está en `activa` o si ya tiene contrato. Retorna true si borró. */
@@ -1016,7 +1037,21 @@ export interface DataStore {
   items: {
     porVariante(varianteId: string): ItemVariante[]
     crear(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante>
-    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>): Promise<ItemVariante | null>
+    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>>): Promise<ItemVariante | null>
+    eliminar(id: string): Promise<boolean>
+  }
+  // --- Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo → Ítems ---
+  gruposItem: {
+    porEspacio(espacioVarianteId: string): GrupoItem[]
+    crear(espacioVarianteId: string, nombre: string, padreId?: string | null): Promise<GrupoItem>
+    actualizar(id: string, cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden'>>): Promise<GrupoItem | null>
+    /**
+     * Decisión de diseño (t-157): bloquea con `false` si el grupo tiene subgrupos hijos
+     * (evita huérfanos recursivos silenciosos — habría que decidir qué hacer con los nietos).
+     * Si no tiene subgrupos pero sí ítems asignados directamente, los reasigna a "sin grupo"
+     * (`grupoItemId = null`) y luego borra el grupo — la agrupación es opcional, así que perder
+     * el grupo nunca debe perder el ítem.
+     */
     eliminar(id: string): Promise<boolean>
   }
   artefactos: {

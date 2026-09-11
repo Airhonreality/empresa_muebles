@@ -3,7 +3,7 @@
 // server actions sin efectos secundarios (no 'use client' ni 'use server').
 import type {
   Proyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
-  ProductoCatalogo, Parametro, Contrato, HitoPago, CatalogoAcabado,
+  ProductoCatalogo, Parametro, Contrato, HitoPago, CatalogoAcabado, GrupoItem,
 } from '../contracts'
 
 /** Snapshot escopado del cotizador: NADA de las ~64 tablas del fetchSnapshotAction()
@@ -21,4 +21,6 @@ export interface CotizadorSnapshot {
   catalogoAcabados: CatalogoAcabado[]
   contrato: Contrato | null
   hitos: HitoPago[]
+  /** t-157 (2026-09-10): grupos de ítems de cotización (árbol Espacio → Grupo → Subgrupo → Ítems). */
+  gruposItem: GrupoItem[]
 }

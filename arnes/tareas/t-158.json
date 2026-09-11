@@ -1,0 +1,32 @@
+{
+  "id": "t-158",
+  "nombre": "Cotizador: nuevo parámetro financiero 'Costos logísticos' (helper de transporte)",
+  "descripcion": "Pedido de Javier (2026-09-10, mid-sesión): agregar un costo operativo adicional tipo 'helper' — logística y transporte — como parámetro financiero de la cotización, al mismo nivel que 'Costos operativos' ya existente.",
+  "objetivo": "proyectos.costosLogisticos existe, es editable desde EditarProyectoModal, se suma al subtotal/total tanto en el cotizador como en la propuesta pública (en vivo y versionada, ya que ambas leen el objeto Proyecto completo).",
+  "prioridad": "Media",
+  "estado": "EJECUTADA en código (2026-09-10) por el Orquestador directamente (cambio acotado, mismo patrón que costosOperativos ya existente en 8 archivos). Migración escrita a mano (`drizzle/v3/0016_costos_logisticos.sql`, columna aditiva nullable con default '0'). tsc/eslint/next build limpios. 🔴 NO APLICADA a ninguna base de datos real todavía.",
+  "tipo": "feature_datos_schema_ui_cotizador",
+  "riesgo": "medio",
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": "Pedido explícito y ya implementado en la misma sesión que lo pidió — checkpoint implícito del Supervisor.",
+    "fecha": "2026-09-10"
+  },
+  "plan_ref": null,
+  "archivos_afectados": [
+    "lib/db/schema.ts (proyectos.costosLogisticos)",
+    "drizzle/v3/0016_costos_logisticos.sql",
+    "lib/data/contracts.ts, mock-store.ts, drizzle-impl.ts, fixtures.ts, actions/core.ts",
+    "components/veta/editar-proyecto-modal.tsx (MoneyInput nuevo)",
+    "app/erp/cotizador/[proyectoId]/page.tsx (fórmula de subtotal + display, incluida VistaSoloLectura)",
+    "app/(publico)/propuesta/[proyectoId]/PropuestaPublicaClient.tsx (fórmula de subtotal + display x2)"
+  ],
+  "criterios_de_aceptacion": [
+    "Campo editable en el modal de edición de proyecto",
+    "Se suma correctamente al subtotal/total en cotizador y propuesta pública",
+    "Solo se muestra en el desglose si es > 0 (mismo patrón que los demás costos)",
+    "tsc/eslint/build limpios"
+  ],
+  "relacionado": ["t-156"],
+  "fecha_creacion": "2026-09-10"
+}

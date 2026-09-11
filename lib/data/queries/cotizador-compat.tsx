@@ -23,11 +23,14 @@ import {
   useEliminarEspacioMutation,
   useEliminarItemMutation,
   useMarcarEspacioActivaMutation,
+  useCrearGrupoItemMutation,
+  useActualizarGrupoItemMutation,
+  useEliminarGrupoItemMutation,
 } from './useCotizadorQueries'
 import type { InputArtefactoOptimista, InputEspacioOptimista, InputItemOptimista } from './optimistic'
 import type {
   CatalogoAcabado, Cliente, Contrato, EspacioArtefacto, EspacioVariante,
-  HitoPago, ItemVariante, Parametro, ProductoCatalogo, Proyecto,
+  GrupoItem, HitoPago, ItemVariante, Parametro, ProductoCatalogo, Proyecto,
 } from '../contracts'
 
 /** API consumible por la pantalla (cliente de `useDataStore()` devenido en TanStack Query).
@@ -56,7 +59,14 @@ export interface CotizadorCompatStore {
   items: {
     porVariante(varianteId: string): ItemVariante[]
     crear(input: Omit<InputItemOptimista, 'id'>): Promise<ItemVariante>
-    actualizar(id: string, patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>): Promise<ItemVariante | null>
+    actualizar(id: string, patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>>): Promise<ItemVariante | null>
+    eliminar(id: string): Promise<boolean>
+  }
+  // --- Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo → Ítems ---
+  gruposItem: {
+    porEspacio(espacioVarianteId: string): GrupoItem[]
+    crear(espacioVarianteId: string, nombre: string, padreId?: string | null): Promise<GrupoItem>
+    actualizar(id: string, cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden'>>): Promise<GrupoItem | null>
     eliminar(id: string): Promise<boolean>
   }
   artefactos: {
@@ -95,6 +105,9 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
   const actualizarParametrosFinancieros = useActualizarParametrosFinancierosMutation(proyectoId)
   const crearArtefacto = useCrearArtefactoMutation(proyectoId)
   const actualizarArtefacto = useActualizarArtefactoMutation(proyectoId)
+  const crearGrupoItem = useCrearGrupoItemMutation(proyectoId)
+  const actualizarGrupoItem = useActualizarGrupoItemMutation(proyectoId)
+  const eliminarGrupoItem = useEliminarGrupoItemMutation(proyectoId)
 
   const value = useMemo<CotizadorCompatContexto>(() => {
     const d = data ?? {
@@ -102,6 +115,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
       espacios: [] as EspacioVariante[], items: [] as ItemVariante[],
       artefactos: [] as EspacioArtefacto[], catalogo: [] as ProductoCatalogo[],
       catalogoAcabados: [] as CatalogoAcabado[], contrato: null, hitos: [] as HitoPago[],
+      gruposItem: [] as GrupoItem[],
     }
     return {
       proyectoId,
@@ -136,6 +150,12 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
           crear: (input) => crearArtefacto.mutateAsync({ ...input, id: crypto.randomUUID() }),
           actualizar: (id, patch) => actualizarArtefacto.mutateAsync({ id, patch }),
         },
+        gruposItem: {
+          porEspacio: (espacioVarianteId) => d.gruposItem.filter((g) => g.espacioVarianteId === espacioVarianteId),
+          crear: (espacioVarianteId, nombre, padreId) => crearGrupoItem.mutateAsync({ espacioVarianteId, nombre, padreId: padreId ?? null }),
+          actualizar: (id, cambios) => actualizarGrupoItem.mutateAsync({ id, cambios }),
+          eliminar: (id) => eliminarGrupoItem.mutateAsync({ id }),
+        },
         catalogo: { listar: () => d.catalogo },
         catalogoAcabados: { listar: () => d.catalogoAcabados },
         parametros: { obtenerPorClave: (clave) => d.parametros.find((p) => p.clave === clave) },
@@ -149,6 +169,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
     crearEspacio, actualizarEspacio, eliminarEspacio, marcarEspacioActiva,
     actualizarJornadas, duplicarEspacio, actualizarParametrosFinancieros,
     crearArtefacto, actualizarArtefacto,
+    crearGrupoItem, actualizarGrupoItem, eliminarGrupoItem,
   ])
 
   return <CotizadorCompatContext.Provider value={value}>{children}</CotizadorCompatContext.Provider>

@@ -14,7 +14,7 @@ import type {
   Proyecto, EspacioVariante, ItemVariante, Contrato, HitoPago,
   ObligacionPendiente, MovimientoFinanciero, ComunicacionProgreso,
   Instalacion, ActaEntrega, CasoGarantia, Modulo, Cliente,
-  Testimonio, AtributoTecnico, PropuestaVersion,
+  Testimonio, AtributoTecnico, PropuestaVersion, GrupoItem,
 } from '../contracts'
 
 export interface FotoGaleriaEspacio {
@@ -224,6 +224,9 @@ export interface PropuestaPublicaData {
   contrato: Contrato | null
   hitos: HitoPago[]
   tarifas: { tarifaDev: number; tarifaAssembly: number; tarifaInstall: number }
+  /** t-157 (2026-09-10): grupos/subgrupos de todos los espacios del proyecto — permite
+   * renderizar los ítems de "Qué incluye" agrupados por su grupoItemId con nombre legible. */
+  gruposItem: GrupoItem[]
 }
 
 
@@ -240,6 +243,9 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
     const varianteIds = espacios.map((e) => e.id)
     const items = varianteIds.length
       ? await db.select().from(s.itemsVariante).where(and(inArray(s.itemsVariante.varianteId, varianteIds), eq(s.itemsVariante.anulado, false)))
+      : []
+    const gruposItem = varianteIds.length
+      ? await db.select().from(s.gruposItem).where(inArray(s.gruposItem.espacioVarianteId, varianteIds))
       : []
 
     const catalogoIds = [...new Set(items.map((it) => it.catalogoId).filter((id): id is string => Boolean(id)))]
@@ -287,6 +293,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
         tarifaAssembly: valorCarp,
         tarifaInstall: valorAux,
       },
+      gruposItem: gruposItem as unknown as GrupoItem[],
     }
   }
 
@@ -298,6 +305,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
 
   const espacios = store.espacios.porProyecto(proyectoId)
   const items = espacios.flatMap((e) => store.items.porVariante(e.id))
+  const gruposItem = espacios.flatMap((e) => store.gruposItem.porEspacio(e.id))
   const catalogoPorId: Record<string, CatalogoItemPublico> = {}
   for (const it of items) {
     if (!it.catalogoId || catalogoPorId[it.catalogoId]) continue
@@ -323,6 +331,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
       tarifaAssembly: valorCarp,
       tarifaInstall: valorAux,
     },
+    gruposItem,
   }
 }
 

@@ -30,6 +30,7 @@ function baseSnapshot(overrides = {}): CotizadorSnapshot {
     catalogoAcabados: [],
     contrato: null,
     hitos: [],
+    gruposItem: [],
     ...overrides,
   }
 }
@@ -48,6 +49,7 @@ function item(id: string, overrides: Partial<ItemVariante> = {}): ItemVariante {
     fuenteReferencial: null,
     grupoReferencial: null,
     comentario: null,
+    grupoItemId: null,
     createdAt: '2026-09-05T00:00:00Z',
     updatedAt: '2026-09-05T00:00:00Z',
     ...overrides,

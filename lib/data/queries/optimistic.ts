@@ -25,6 +25,8 @@ export interface InputItemOptimista {
   grupoReferencial?: string | null
   /** Comentario libre por ítem (requerimiento Supervisor 2026-09-10), visible en la propuesta pública. */
   comentario?: string | null
+  /** t-157 (2026-09-10): grupo/subgrupo de `grupos_item` al que pertenece este ítem. */
+  grupoItemId?: string | null
 }
 
 export function construirItemOptimista(input: InputItemOptimista): ItemVariante {
@@ -43,6 +45,7 @@ export function construirItemOptimista(input: InputItemOptimista): ItemVariante 
     fuenteReferencial: input.fuenteReferencial ?? null,
     grupoReferencial: input.grupoReferencial ?? null,
     comentario: input.comentario ?? null,
+    grupoItemId: input.grupoItemId ?? null,
     createdAt: ahora,
     updatedAt: ahora,
   }
@@ -56,7 +59,7 @@ export function agregarItem(snapshot: CotizadorSnapshot, item: ItemVariante): Co
 export function actualizarItem(
   snapshot: CotizadorSnapshot,
   itemId: string,
-  patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>,
+  patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>>,
 ): CotizadorSnapshot {
   if (!snapshot.items.some((i) => i.id === itemId)) return snapshot
   const ahora = new Date().toISOString()

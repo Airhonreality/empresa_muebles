@@ -21,6 +21,9 @@ import {
   crearArtefactoAction,
   actualizarArtefactoAction,
   duplicarEspacioAction,
+  crearGrupoItemAction,
+  actualizarGrupoItemAction,
+  eliminarGrupoItemAction,
 } from '@/lib/data/actions/core'
 import { obtenerSnapshotCotizadorAction } from '@/lib/data/actions/lecturas-cotizador'
 import {
@@ -56,7 +59,7 @@ import {
   obtenerItemsPendientes,
 } from './optimistic'
 import type { CotizadorSnapshot } from './types'
-import type { EspacioArtefacto, EspacioVariante, ItemVariante, Proyecto } from '../contracts'
+import type { EspacioArtefacto, EspacioVariante, GrupoItem, ItemVariante, Proyecto } from '../contracts'
 
 export function useCotizadorSnapshot(proyectoId: string) {
   return useQuery<CotizadorSnapshot>({
@@ -158,7 +161,7 @@ export function useCrearItemMutation(proyectoId: string) {
 
 export function useActualizarItemMutation(proyectoId: string) {
   return useMutationOpt<
-    { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>> },
+    { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>> },
     ItemVariante | null
   >(
     proyectoId,
@@ -300,6 +303,45 @@ export function useActualizarArtefactoMutation(proyectoId: string) {
     ({ id, patch }) => actualizarArtefactoAction(id, patch),
     (snap, { id, patch }) => actualizarArtefacto(snap, id, patch),
     (snap, r) => (r ? upsertArtefacto(snap, r) : snap),
+  )
+}
+
+// --- Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo →
+// Ítems. Igual que duplicarEspacio arriba: no trivialmente optimizable con un merge local
+// simple (ids server-generados, reordenamiento de hermanos), así que se resuelve con
+// invalidación selectiva del snapshot en vez de un aplicarOptimista real — consistente con el
+// resto del cluster de "escrituras poco frecuentes" del cotizador.
+
+export function useCrearGrupoItemMutation(proyectoId: string) {
+  return useMutationOpt<{ espacioVarianteId: string; nombre: string; padreId: string | null }, GrupoItem>(
+    proyectoId,
+    ({ espacioVarianteId, nombre, padreId }) => crearGrupoItemAction(espacioVarianteId, nombre, padreId),
+    (snap) => snap,
+    undefined,
+    { invalidarSiempre: true },
+  )
+}
+
+export function useActualizarGrupoItemMutation(proyectoId: string) {
+  return useMutationOpt<
+    { id: string; cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden'>> },
+    GrupoItem | null
+  >(
+    proyectoId,
+    ({ id, cambios }) => actualizarGrupoItemAction(id, cambios),
+    (snap) => snap,
+    undefined,
+    { invalidarSiempre: true },
+  )
+}
+
+export function useEliminarGrupoItemMutation(proyectoId: string) {
+  return useMutationOpt<{ id: string }, boolean>(
+    proyectoId,
+    ({ id }) => eliminarGrupoItemAction(id),
+    (snap) => snap,
+    undefined,
+    { invalidarSiempre: true },
   )
 }
 

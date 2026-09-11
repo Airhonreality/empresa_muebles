@@ -35,6 +35,8 @@ export function mapSnapshotCotizadorDesdeStore(store: DataStore, proyectoId: str
     catalogoAcabados: store.catalogoAcabados.listar(),
     contrato,
     hitos: contrato ? store.hitos.porContrato(contrato.id) : [],
+    // t-157 (2026-09-10): grupos de ítems de cotización (árbol Espacio → Grupo → Subgrupo → Ítems).
+    gruposItem: espacios.flatMap((e) => store.gruposItem.porEspacio(e.id)),
   }
 }
 

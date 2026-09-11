@@ -9,7 +9,7 @@ import type {
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
-  NotaReunion, PropuestaVersion,
+  NotaReunion, PropuestaVersion, GrupoItem,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
@@ -119,6 +119,10 @@ export function createMockStore(): DataStore {
   // Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — t-156). Insert-only,
   // arranca vacío: sin fixtures porque se genera en runtime al publicar, nunca se siembra.
   const propuestasVersionesArr: PropuestaVersion[] = []
+
+  // Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo →
+  // Ítems. Arranca vacío: sin fixtures, la agrupación es opcional y nueva.
+  const gruposItemArr: GrupoItem[] = []
 
   // F4 dominios (compras: recepción, herramientas — P-13/P-14/P-15)
   const itemsOrdenCompra: ItemOrdenCompra[] = deepClone(ITEMS_ORDEN_COMPRA)
@@ -238,7 +242,7 @@ export function createMockStore(): DataStore {
         notify()
         return proyectos[idx]
       },
-      async actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null> {
+      async actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null> {
         const idx = proyectos.findIndex(p => p.id === id)
         if (idx === -1) return null
         proyectos[idx] = { ...proyectos[idx], ...partial, updatedAt: new Date().toISOString() }
@@ -257,6 +261,7 @@ export function createMockStore(): DataStore {
           tipoProyecto: data.tipoProyecto ?? 'personalizado',
           direccionObra: data.direccionObra ?? null,
           costosOperativos: data.costosOperativos ?? '0',
+          costosLogisticos: data.costosLogisticos ?? '0',
           imprevistosInstalacion: data.imprevistosInstalacion ?? '0',
           descuentoComercial: data.descuentoComercial ?? '0',
           ajusteArbitrario: data.ajusteArbitrario ?? '0',
@@ -586,6 +591,7 @@ export function createMockStore(): DataStore {
           fuenteReferencial: data.fuenteReferencial ?? null,
           grupoReferencial: data.grupoReferencial ?? null,
           comentario: data.comentario ?? null,
+          grupoItemId: data.grupoItemId ?? null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
@@ -593,7 +599,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      async actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>): Promise<ItemVariante | null> {
+      async actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>>): Promise<ItemVariante | null> {
         const idx = items.findIndex(i => i.id === id)
         if (idx === -1) return null
         const actualizado = { ...items[idx], ...partial }
@@ -2623,6 +2629,52 @@ export function createMockStore(): DataStore {
         propuestasVersionesArr.push(nueva)
         notify()
         return nueva
+      },
+    },
+
+    // Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo →
+    // Ítems, tabla NUEVA y SEPARADA de `modulos` (producción). Ver comentario de GrupoItem
+    // en contracts.ts.
+    gruposItem: {
+      porEspacio(espacioVarianteId: string): GrupoItem[] {
+        return gruposItemArr
+          .filter(g => g.espacioVarianteId === espacioVarianteId)
+          .slice()
+          .sort((a, b) => a.orden - b.orden)
+      },
+      async crear(espacioVarianteId: string, nombre: string, padreId: string | null = null): Promise<GrupoItem> {
+        const hermanos = gruposItemArr.filter(g => g.espacioVarianteId === espacioVarianteId && g.padreId === padreId)
+        const nuevo: GrupoItem = {
+          id: generateId('grp'),
+          espacioVarianteId,
+          nombre,
+          padreId,
+          orden: hermanos.length,
+        }
+        gruposItemArr.push(nuevo)
+        notify()
+        return nuevo
+      },
+      async actualizar(id: string, cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden'>>): Promise<GrupoItem | null> {
+        const idx = gruposItemArr.findIndex(g => g.id === id)
+        if (idx === -1) return null
+        gruposItemArr[idx] = { ...gruposItemArr[idx], ...cambios }
+        notify()
+        return gruposItemArr[idx]
+      },
+      // Decisión t-157: bloquea si tiene subgrupos hijos (evita huérfanos recursivos); si solo
+      // tiene ítems propios, los reasigna a "sin grupo" antes de borrar — ver contracts.ts.
+      async eliminar(id: string): Promise<boolean> {
+        const idx = gruposItemArr.findIndex(g => g.id === id)
+        if (idx === -1) return false
+        const tieneSubgrupos = gruposItemArr.some(g => g.padreId === id)
+        if (tieneSubgrupos) return false
+        items.forEach((it, i) => {
+          if (it.grupoItemId === id) items[i] = { ...it, grupoItemId: null, updatedAt: new Date().toISOString() }
+        })
+        gruposItemArr.splice(idx, 1)
+        notify()
+        return true
       },
     },
 

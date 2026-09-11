@@ -309,6 +309,11 @@ export const itemsVariante = pgTable("items_variante", {
 	// editable desde el cotizador, visible en el slot de ese ítem en la propuesta pública
 	// (tanto snapshot versionado como fallback en vivo). Aditiva, nullable — no rompe nada existente.
 	comentario: text(),
+	// t-157 (2026-09-10): agrupación de ítems dentro de un espacio (Espacio → Grupo → Subgrupo →
+	// Ítems). Nullable a propósito — un ítem sin grupo sigue siendo válido, la agrupación es
+	// opcional. FK a `grupos_item` (tabla nueva, ver más abajo) — NUNCA a `modulos` (producción,
+	// post-contrato): mezclar esos dos ciclos de vida es justo lo que este cambio evita.
+	grupoItemId: uuid("grupo_item_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {
@@ -322,6 +327,35 @@ export const itemsVariante = pgTable("items_variante", {
 			columns: [table.catalogoId],
 			foreignColumns: [productosCatalogo.id],
 			name: "items_variante_catalogo_id_productos_catalogo_id_fk"
+		}),
+		itemsVarianteGrupoItemIdFk: foreignKey({
+			columns: [table.grupoItemId],
+			foreignColumns: [gruposItem.id],
+			name: "items_variante_grupo_item_id_grupos_item_id_fk"
+		}),
+	}
+});
+
+// t-157 (2026-09-10): agrupación de ítems de cotización dentro de un espacio (Espacio → Grupo →
+// Subgrupo → Ítems). Recursiva vía padreId — mismo patrón que `modulos` de abajo — pero tabla
+// NUEVA y SEPARADA: `modulos` es un concepto de PRODUCCIÓN (taller/calidad/garantía,
+// post-contrato); `grupos_item` es de COTIZACIÓN (pre-contrato). Cero relación de FK o de
+// código entre las dos — decisión explícita de Javier 2026-09-10 (ver arnes/tareas/t-157.json)
+// para no repetir la conflación de ciclos de vida que D-16 ya identificó como riesgo.
+export const gruposItem = pgTable("grupos_item", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	espacioVarianteId: uuid("espacio_variante_id").notNull(),
+	nombre: text().notNull(),
+	padreId: uuid("padre_id"),
+	orden: integer().default(0).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		gruposItemEspacioVarianteIdFk: foreignKey({
+			columns: [table.espacioVarianteId], foreignColumns: [espacioVariantes.id], name: "grupos_item_espacio_variante_id_espacio_variantes_id_fk"
+		}),
+		gruposItemPadreIdFk: foreignKey({
+			columns: [table.padreId], foreignColumns: [table.id], name: "grupos_item_padre_id_grupos_item_id_fk"
 		}),
 	}
 });
@@ -662,6 +696,8 @@ export const proyectos = pgTable("proyectos", {
 	direccionObra: text("direccion_obra"),
 	estado: estadoProyecto().default('activa').notNull(),
 	costosOperativos: numeric("costos_operativos", { precision: 14, scale:  2 }).default('0'),
+	// Costo operativo "helper": logística y transporte (2026-09-10, pedido del Supervisor).
+	costosLogisticos: numeric("costos_logisticos", { precision: 14, scale:  2 }).default('0'),
 	imprevistosInstalacion: numeric("imprevistos_instalacion", { precision: 14, scale:  2 }).default('0'),
 	descuentoComercial: numeric("descuento_comercial", { precision: 14, scale:  2 }).default('0'),
 	ajusteArbitrario: numeric("ajuste_arbitrario", { precision: 14, scale:  2 }).default('0'),

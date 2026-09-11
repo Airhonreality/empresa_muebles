@@ -74,6 +74,7 @@ export const useCotizadorStore = create<CotizadorStore>((set, get) => {
         fuenteReferencial: itemData.fuenteReferencial ?? null,
         grupoReferencial: itemData.grupoReferencial ?? null,
         comentario: itemData.comentario ?? null,
+        grupoItemId: itemData.grupoItemId ?? null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }

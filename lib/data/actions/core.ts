@@ -2,7 +2,7 @@
 // Server Actions del cluster núcleo: proyectos, clientes, espacios, items, artefactos,
 // catálogo, parámetros, contratos. Porta 1:1 la lógica de lib/data/mock-store.ts (73/73
 // tests) a Drizzle/Postgres real. Ver plan_f10_migracion.md §3.1d.
-import { eq, and, ne, inArray, or, like } from 'drizzle-orm'
+import { eq, and, ne, inArray, or, like, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
@@ -10,7 +10,7 @@ import { num } from './mappers'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
-  ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial,
+  ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial, GrupoItem,
 } from '../contracts'
 // VarianteNoEliminableError vive en errors.ts (no en 'use server':
 // Next.js prohíbe exportar clases desde archivos 'use server').
@@ -161,7 +161,7 @@ export async function actualizarVerificadorAction(id: string, verificadorId: str
 // (estado vía kanban, IVA/garantía vía actualizarParametrosFinancieros) quedan fuera.
 export async function actualizarProyectoAction(
   id: string,
-  partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
+  partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
 ): Promise<Proyecto | null> {
   const [actualizado] = await db.update(s.proyectos)
     .set({ ...partial, tipoProyecto: partial.tipoProyecto as 'personalizado' | 'producto_fijo' | undefined, updatedAt: new Date().toISOString() })
@@ -190,6 +190,7 @@ export async function crearProyectoAction(data: Partial<Proyecto> & { nombreProy
         tipoProyecto: (data.tipoProyecto as 'personalizado' | 'producto_fijo') ?? 'personalizado',
         direccionObra: data.direccionObra ?? null,
         costosOperativos: data.costosOperativos ?? '0',
+        costosLogisticos: data.costosLogisticos ?? '0',
         imprevistosInstalacion: data.imprevistosInstalacion ?? '0',
         descuentoComercial: data.descuentoComercial ?? '0',
         ajusteArbitrario: data.ajusteArbitrario ?? '0',
@@ -393,6 +394,7 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
     fuenteReferencial: data.fuenteReferencial ?? null,
     grupoReferencial: data.grupoReferencial ?? null,
     comentario: data.comentario ?? null,
+    grupoItemId: data.grupoItemId ?? null,
   }).onConflictDoNothing({ target: s.itemsVariante.id }).returning()
 
   if (!nuevo) {
@@ -406,7 +408,7 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
 
 export async function actualizarItemAction(
   id: string,
-  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>
+  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>>
 ): Promise<ItemVariante | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, id))
@@ -466,6 +468,55 @@ export async function eliminarItemAction(id: string): Promise<boolean> {
       .delete(s.itemsVariante)
       .where(eq(s.itemsVariante.id, id))
       .returning({ id: s.itemsVariante.id })
+    return Boolean(eliminado)
+  })
+}
+
+// --- Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo →
+// Ítems. Tabla NUEVA y SEPARADA de `modulos` (producción) — ver comentario de GrupoItem en
+// contracts.ts y de gruposItem en lib/db/schema.ts.
+
+export async function crearGrupoItemAction(espacioVarianteId: string, nombre: string, padreId: string | null = null): Promise<GrupoItem> {
+  return db.transaction(async (tx) => {
+    const hermanos = await tx.select().from(s.gruposItem).where(
+      padreId
+        ? and(eq(s.gruposItem.espacioVarianteId, espacioVarianteId), eq(s.gruposItem.padreId, padreId))
+        : and(eq(s.gruposItem.espacioVarianteId, espacioVarianteId), isNull(s.gruposItem.padreId))
+    )
+    const [nuevo] = await tx.insert(s.gruposItem).values({
+      espacioVarianteId,
+      nombre,
+      padreId,
+      orden: hermanos.length,
+    }).returning()
+    return nuevo as unknown as GrupoItem
+  })
+}
+
+export async function actualizarGrupoItemAction(
+  id: string,
+  cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden'>>
+): Promise<GrupoItem | null> {
+  const [actualizado] = await db.update(s.gruposItem).set(cambios).where(eq(s.gruposItem.id, id)).returning()
+  return (actualizado as unknown as GrupoItem) ?? null
+}
+
+/**
+ * Decisión de diseño (t-157): bloquea con `false` si el grupo tiene subgrupos hijos (evita
+ * huérfanos recursivos silenciosos). Si no tiene subgrupos pero sí ítems asignados
+ * directamente, los reasigna a "sin grupo" (`grupoItemId = null`) antes de borrar — la
+ * agrupación es opcional, así que perder el grupo nunca debe perder el ítem.
+ */
+export async function eliminarGrupoItemAction(id: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [grupo] = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.id, id))
+    if (!grupo) return false
+
+    const [subgrupo] = await tx.select({ id: s.gruposItem.id }).from(s.gruposItem).where(eq(s.gruposItem.padreId, id)).limit(1)
+    if (subgrupo) return false
+
+    await tx.update(s.itemsVariante).set({ grupoItemId: null, updatedAt: new Date().toISOString() }).where(eq(s.itemsVariante.grupoItemId, id))
+    const [eliminado] = await tx.delete(s.gruposItem).where(eq(s.gruposItem.id, id)).returning({ id: s.gruposItem.id })
     return Boolean(eliminado)
   })
 }
