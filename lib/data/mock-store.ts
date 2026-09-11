@@ -2601,8 +2601,11 @@ export function createMockStore(): DataStore {
       },
     },
 
-    // Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — t-156). Insert-only:
-    // no hay actualizar()/eliminar() a propósito, mismo espíritu que auth.usuarioActual().
+    // Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — t-156). Insert-only
+    // en `crear` (nunca update: cada fila es un snapshot inmutable). `eliminar` SÍ existe
+    // (2026-09-11, control de versiones amigable) — quitar una versión de prueba no reescribe
+    // ninguna fila existente, solo la retira; "la vigente" sigue siendo MAX(version) de lo que
+    // quede (DP6 intacto).
     propuestasVersiones: {
       listarPorProyecto(proyectoId: string): PropuestaVersion[] {
         return propuestasVersionesArr
@@ -2615,13 +2618,14 @@ export function createMockStore(): DataStore {
         if (deProyecto.length === 0) return null
         return deProyecto.reduce((max, v) => (v.version > max.version ? v : max))
       },
-      async crear(proyectoId: string, snapshotJson: unknown, publicadaPorId: string | null): Promise<PropuestaVersion> {
+      async crear(proyectoId: string, snapshotJson: unknown, publicadaPorId: string | null, nombre?: string | null): Promise<PropuestaVersion> {
         const existentes = propuestasVersionesArr.filter(v => v.proyectoId === proyectoId)
         const version = existentes.length > 0 ? Math.max(...existentes.map(v => v.version)) + 1 : 1
         const nueva: PropuestaVersion = {
           id: generateId('propversion'),
           proyectoId,
           version,
+          nombre: nombre ?? null,
           snapshotJson,
           publicadaEn: new Date().toISOString(),
           publicadaPorId,
@@ -2629,6 +2633,13 @@ export function createMockStore(): DataStore {
         propuestasVersionesArr.push(nueva)
         notify()
         return nueva
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const idx = propuestasVersionesArr.findIndex(v => v.id === id)
+        if (idx === -1) return false
+        propuestasVersionesArr.splice(idx, 1)
+        notify()
+        return true
       },
     },
 

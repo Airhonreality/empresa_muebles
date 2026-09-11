@@ -42,9 +42,13 @@ export function ParametrosFinancierosModal({ proyecto, onClose, onSaved }: Param
   });
 
   const guardar = async () => {
+    // porcentaje_iva es numeric(5,2) en el schema: el valor absoluto debe quedar bajo 1000
+    // (2026-09-11: incidente real en producción — "numeric field overflow" al guardar sin
+    // este tope, el input no bloqueaba escribir un valor fuera de rango).
+    const ivaClamp = Math.min(Math.max(Number(form.porcentajeIva) || 0, 0), 100)
     await store.proyectos.actualizarParametrosFinancieros(proyecto.id, {
       aplicaIva: form.aplicaIva,
-      porcentajeIva: form.porcentajeIva || '19',
+      porcentajeIva: String(ivaClamp || 19),
       garantiaAnios: Number(form.garantiaAnios) || 0,
       costosOperativos: form.costosOperativos || '0',
       costosLogisticos: form.costosLogisticos || '0',
@@ -87,6 +91,7 @@ export function ParametrosFinancierosModal({ proyecto, onClose, onSaved }: Param
                 value={form.porcentajeIva}
                 onChange={(v) => set('porcentajeIva', v)}
                 min={0}
+                max={100}
                 step={0.5}
               />
               <NumberInput

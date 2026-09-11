@@ -46,6 +46,7 @@ export type {
   CatalogoEspacioArquitectonico,
   CategoriaNotaReunion, NotaReunion,
   GrupoItem,
+  PropuestaVersion,
 } from './contracts'
 
 export { generarSlides } from './presentacion'

@@ -26,7 +26,8 @@ import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finan
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import { useDebouncedInput } from '@/lib/hooks/useDebouncedInput'
-import { useEstadoPublicacionPropuesta, usePublicarPropuestaMutation } from '@/lib/data/queries/useCotizadorQueries'
+import { useEstadoPublicacionPropuesta } from '@/lib/data/queries/useCotizadorQueries'
+import { VersionesPropuestaModal } from '@/components/veta/versiones-propuesta-modal'
 import { formatRelativeDate } from '@/lib/utils/format'
 
 /* Wrapper local para el input de "Grupo referencial": vive dentro de un `.map()`, así que el hook
@@ -129,7 +130,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   // t-156: hooks incondicionales (usan la prop proyectoId, no proyecto.id — proyecto
   // puede no existir aún) para no violar rules-of-hooks contra el early-return de `readonly`.
   const { data: estadoPublicacion } = useEstadoPublicacionPropuesta(proyectoId)
-  const publicarPropuesta = usePublicarPropuestaMutation(proyectoId)
 
   const proyecto = store.proyectos.obtenerPorId(proyectoId)
   const cliente = proyecto?.clienteId ? store.clientes.obtenerPorId(proyecto.clienteId) : undefined
@@ -181,6 +181,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [mostrarParametrosFinancieros, setMostrarParametrosFinancieros] = useState(false)
   const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(false)
+  const [mostrarVersionesPropuesta, setMostrarVersionesPropuesta] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
   const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
 
@@ -375,11 +376,10 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       onClick: () => window.open(`/propuesta/${proyecto.id}`, '_blank'),
     },
     {
-      id: 'publicar-propuesta',
+      id: 'versiones-propuesta',
       label: estadoPublicacion?.tieneVersionPublicada ? 'Crear nueva versión' : 'Publicar',
       variant: 'primary',
-      loading: publicarPropuesta.isPending,
-      onClick: () => publicarPropuesta.mutate(),
+      onClick: () => setMostrarVersionesPropuesta(true),
     },
     {
       id: 'solo-lectura',
@@ -437,10 +437,10 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             </Badge>
           }
         />
-        <div className="flex items-center justify-end gap-2 border-t border-border-subtle px-4 py-2 sm:py-1.5 overflow-x-auto">
+        <div className="flex items-center justify-end gap-2 border-t border-border-subtle px-4 py-2 sm:py-1.5">
           {estadoPublicacion?.tieneVersionPublicada && estadoPublicacion.publicadaEn && (
-            <span className="hidden sm:inline text-xs text-text-muted shrink-0 mr-auto" title="Última vez que el cliente vio una versión publicada de esta propuesta">
-              v{estadoPublicacion.ultimaVersion} · publicada {formatRelativeDate(estadoPublicacion.publicadaEn)}
+            <span className="hidden sm:inline text-xs text-text-muted shrink-0 mr-auto truncate" title="Última vez que el cliente vio una versión publicada de esta propuesta">
+              v{estadoPublicacion.ultimaVersion}{estadoPublicacion.ultimoNombre ? ` · ${estadoPublicacion.ultimoNombre}` : ''} · publicada {formatRelativeDate(estadoPublicacion.publicadaEn)}
             </span>
           )}
           <EntityActionsBar actions={accionesCotizador} />
@@ -768,6 +768,15 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             proyecto={proyecto}
             onClose={() => setMostrarParametrosFinancieros(false)}
             onSaved={() => setMostrarParametrosFinancieros(false)}
+          />
+        )}
+
+        {/* Control de versiones de la propuesta pública (2026-09-11): preview sin guardar,
+            nombre libre por versión, eliminar versiones de prueba. */}
+        {mostrarVersionesPropuesta && (
+          <VersionesPropuestaModal
+            proyectoId={proyecto.id}
+            onClose={() => setMostrarVersionesPropuesta(false)}
           />
         )}
 

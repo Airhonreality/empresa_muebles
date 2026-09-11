@@ -1,5 +1,10 @@
 import type { Metadata } from 'next'
-import { obtenerPropuestaPublicaAction } from '@/lib/data/actions/public'
+import {
+  obtenerPropuestaPublicaAction,
+  previsualizarPropuestaPublicaAction,
+  obtenerVersionPropuestaPorNumeroAction,
+  type PropuestaPublicaData,
+} from '@/lib/data/actions/public'
 import { PropuestaPublicaClient } from './PropuestaPublicaClient'
 
 // Server Component (auditoría 2026-08-15, A4): antes 'use client' con useDataStore() (leía el
@@ -20,11 +25,31 @@ export const metadata: Metadata = {
 
 interface PageProps {
   params: Promise<{ proyectoId: string }>
+  searchParams: Promise<{ preview?: string; version?: string }>
 }
 
-export default async function PropuestaPublicaPage({ params }: PageProps) {
+export default async function PropuestaPublicaPage({ params, searchParams }: PageProps) {
   const { proyectoId } = await params
-  const data = await obtenerPropuestaPublicaAction(proyectoId)
+  const sp = await searchParams
+
+  // Control de versiones amigable (2026-09-11): el empleado necesita ver "cómo quedaría" sin
+  // ensuciar el histórico (preview, nunca se guarda) o revisar una versión pasada puntual
+  // (version=N) antes de decidir si la elimina — sin esto, la única vista posible era siempre
+  // "la última publicada", que no alcanza para el flujo de control de calidad pedido.
+  let data: PropuestaPublicaData | null
+  let banner: 'preview' | { version: number } | null = null
+
+  if (sp.preview === '1' || sp.preview === 'true') {
+    data = await previsualizarPropuestaPublicaAction(proyectoId)
+    banner = 'preview'
+  } else if (sp.version) {
+    const version = Number(sp.version)
+    const fila = Number.isFinite(version) ? await obtenerVersionPropuestaPorNumeroAction(proyectoId, version) : null
+    data = fila ? (fila.snapshotJson as PropuestaPublicaData) : null
+    if (fila) banner = { version: fila.version }
+  } else {
+    data = await obtenerPropuestaPublicaAction(proyectoId)
+  }
 
   if (!data) {
     return (
@@ -34,5 +59,15 @@ export default async function PropuestaPublicaPage({ params }: PageProps) {
     )
   }
 
-  return <PropuestaPublicaClient data={data} />
+  const bannerNode = banner === 'preview' ? (
+    <div className="bg-gold-500/90 px-4 py-2 text-center text-xs font-semibold text-white print:hidden">
+      🔍 Vista previa — cambios sin publicar. El cliente NO ve esto todavía.
+    </div>
+  ) : banner && typeof banner === 'object' ? (
+    <div className="bg-bg-alt px-4 py-2 text-center text-xs font-semibold text-text-heading border-b border-border-subtle print:hidden">
+      📌 Viendo la versión {banner.version} del histórico — puede no ser la versión vigente.
+    </div>
+  ) : undefined
+
+  return <PropuestaPublicaClient data={data} banner={bannerNode} />
 }

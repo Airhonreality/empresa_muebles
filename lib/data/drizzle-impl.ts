@@ -1156,6 +1156,12 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
           'lib/data/actions/public.ts habla con Drizzle directamente (ver comentario arriba).'
         )
       },
+      eliminar: async () => {
+        throw new Error(
+          'propuestasVersiones.eliminar no está cableado en drizzle-impl.ts a propósito — ' +
+          'lib/data/actions/public.ts habla con Drizzle directamente (ver comentario arriba).'
+        )
+      },
     },
 
     auth: {

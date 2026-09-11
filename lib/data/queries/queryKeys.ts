@@ -12,4 +12,5 @@ export const cotizadorKeys = {
 // items/espacios, cambia solo cuando alguien le da "Publicar"/"Crear nueva versión".
 export const propuestaVersionKeys = {
   estadoPublicacion: (proyectoId: string) => ['propuesta-publicacion', proyectoId] as const,
+  listado: (proyectoId: string) => ['propuesta-versiones', proyectoId] as const,
 } as const

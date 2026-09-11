@@ -29,8 +29,11 @@ import { obtenerSnapshotCotizadorAction } from '@/lib/data/actions/lecturas-coti
 import {
   obtenerEstadoPublicacionPropuestaAction,
   publicarPropuestaAction,
+  listarVersionesPropuestaAction,
+  eliminarVersionPropuestaAction,
   type EstadoPublicacionPropuesta,
 } from '@/lib/data/actions/public'
+import type { PropuestaVersion } from '@/lib/data'
 import { cotizadorKeys, propuestaVersionKeys } from './queryKeys'
 import {
   agregarArtefacto,
@@ -359,14 +362,41 @@ export function useEstadoPublicacionPropuesta(proyectoId: string) {
   })
 }
 
-/** Congela un snapshot nuevo (botón "Publicar"/"Crear nueva versión"). Al asentar, invalida
- * el estado de publicación para que el botón y el timestamp se actualicen solos. No toca
+/** Congela un snapshot nuevo (botón "Publicar"/"Crear nueva versión"). Acepta un nombre libre
+ * opcional (2026-09-11, control de versiones amigable — ej. "Ajuste post-reunión") en vez de
+ * depender solo del número de versión. Al asentar, invalida el estado de publicación y el
+ * listado para que el botón, el timestamp y la lista de versiones se actualicen solos. No toca
  * cotizadorKeys.detalle — publicar no cambia nada del snapshot editable. */
 export function usePublicarPropuestaMutation(proyectoId: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => publicarPropuestaAction(proyectoId),
+    mutationFn: (nombre?: string | null) => publicarPropuestaAction(proyectoId, undefined, nombre ?? null),
     onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId) })
+      void qc.invalidateQueries({ queryKey: propuestaVersionKeys.listado(proyectoId) })
+    },
+  })
+}
+
+/** Histórico completo de versiones publicadas (orden ascendente v1, v2, v3...) — alimenta el
+ * modal de control de versiones (2026-09-11). */
+export function useVersionesPropuesta(proyectoId: string) {
+  return useQuery<PropuestaVersion[]>({
+    queryKey: propuestaVersionKeys.listado(proyectoId),
+    queryFn: () => listarVersionesPropuestaAction(proyectoId),
+  })
+}
+
+/** Elimina una versión de prueba del histórico (2026-09-11: pedido explícito de Javier — las
+ * versiones de prueba pueden contaminar el histórico que ve el cliente final). Invalida listado
+ * Y estado de publicación: si se borró la última, el botón/timestamp deben reflejar la anterior
+ * (o volver a "Publicar" si no queda ninguna). */
+export function useEliminarVersionPropuestaMutation(proyectoId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (versionId: string) => eliminarVersionPropuestaAction(versionId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: propuestaVersionKeys.listado(proyectoId) })
       void qc.invalidateQueries({ queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId) })
     },
   })

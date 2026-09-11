@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, useMemo, type ReactElement } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, type ReactElement, type ReactNode } from 'react'
 import Image from 'next/image'
 import { ArrowDown, Building2, Expand, LayoutGrid, MapPin } from 'lucide-react'
 import { Button } from '@/components/veta/button'
@@ -265,7 +265,7 @@ function renderItemsAgrupados(
   )
 }
 
-export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData }) {
+export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublicaData; banner?: ReactNode }) {
   const { proyecto, espacios: espaciosBase, items: todosLosItems, catalogoPorId, contrato, hitos: hitosList, tarifas } = data
   const { tarifaDev, tarifaAssembly, tarifaInstall } = tarifas
   // Fallback []: snapshots publicados ANTES de t-157 (2026-09-10) no tienen esta clave —
@@ -411,6 +411,7 @@ export function PropuestaPublicaClient({ data }: { data: PropuestaPublicaData })
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_var(--color-bg-alt)_0%,_var(--color-bg-paper)_40%,_var(--color-bg-paper)_100%)]">
+      {banner}
       {/* HeaderPropuesta — sticky (top-16: se acopla debajo del header de AppShell, h-16) */}
       <header className="sticky top-16 z-header bg-bg-paper/90 backdrop-blur-xl border-b border-border-subtle print:static print:bg-transparent">
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-wrap items-center justify-between gap-4">

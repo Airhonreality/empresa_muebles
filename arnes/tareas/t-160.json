@@ -1,0 +1,39 @@
+{
+  "id": "t-160",
+  "nombre": "Propuesta pública: preview sin publicar + control de versiones amigable (nombre/eliminar) + fix de recorte del menú de acciones + fix de overflow numérico en % IVA",
+  "descripcion": "Javier reportó (2026-09-11): (1) el menú '⋮' de acciones del cotizador se veía recortado con scroll interno en vez de flotar como popover; (2) pidió una opción de 'preview' de la propuesta pública que genere una vista temporal sin publicar nada; (3) pidió poder ponerle nombre a cada nueva versión al crearla; (4) pidió poder eliminar versiones, porque las de prueba pueden contaminar el histórico que ve el cliente final; (5) mientras se probaba el módulo de Parámetros Financieros nuevo (t-159), un input de % IVA sin tope produjo un incidente real en producción ('numeric field overflow', columna porcentaje_iva es numeric(5,2)).",
+  "objetivo": "El menú de acciones se ve completo sin recortes. Existe un botón 'Preview sin guardar' que abre /propuesta/[id]?preview=1 con los datos EN VIVO sin tocar propuestas_versiones. El flujo de publicar pide un nombre opcional. Existe un modal de 'Control de versiones' que lista el histórico (con nombre), permite ver cualquier versión puntual (/propuesta/[id]?version=N) y eliminarla. El campo % IVA no puede volver a causar un overflow, ni desde el cliente ni desde el servidor.",
+  "prioridad": "Alta",
+  "estado": "EJECUTADA (2026-09-11) por el Orquestador. (1) Causa del recorte: `overflow-x-auto` en la fila de acciones del header hacía que overflow-y también computara a 'auto' (spec CSS), recortando el dropdown absolutamente posicionado — eliminado, ya no hace falta con la fila de acciones reducida (t-159). (2) `previsualizarPropuestaPublicaAction` (alias directo de construirSnapshotPropuestaPublica, sin insertar fila) + `?preview=1` en la página pública. (3) `propuestas_versiones.nombre` (columna nueva, migración 0017) + `publicarPropuestaAction`/`crear` aceptan nombre opcional. (4) `eliminarVersionPropuestaAction` (drizzle: DELETE; mock: array.splice) + `obtenerVersionPropuestaPorNumeroAction` + `?version=N` en la página pública + banners de contexto ('vista previa'/'viendo versión N'). Todo consolidado en components/veta/versiones-propuesta-modal.tsx, reemplaza el botón de un solo clic. (5) Confirmado con `vercel logs` real: la migración de t-156/t-158/t-159 (0014-0016) SÍ se aplicó a producción (cero errores de columna/tabla faltante) — el único error activo era el overflow de IVA, corregido con `max=100` en el input (cliente) + clamp server-side en actualizarParametrosFinancierosAction (defensa que no se puede saltar). tsc/eslint/next build limpios.",
+  "tipo": "feature_ui_control_versiones_fix_bug_produccion",
+  "riesgo": "medio (nueva columna de schema, mismo patrón de migración manual ya usado)",
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": "Pedido explícito, ejecutado en la misma sesión.",
+    "fecha": "2026-09-11"
+  },
+  "plan_ref": null,
+  "archivos_afectados": [
+    "lib/db/schema.ts (propuestas_versiones.nombre)",
+    "drizzle/v3/0017_propuestas_versiones_nombre.sql",
+    "lib/data/contracts.ts, mock-store.ts, drizzle-impl.ts, index.ts (PropuestaVersion.nombre + eliminar())",
+    "lib/data/actions/public.ts (previsualizarPropuestaPublicaAction, eliminarVersionPropuestaAction, obtenerVersionPropuestaPorNumeroAction, publicarPropuestaAction+nombre)",
+    "lib/data/actions/core.ts (clamp server-side de porcentajeIva)",
+    "lib/data/queries/queryKeys.ts, useCotizadorQueries.ts (useVersionesPropuesta, useEliminarVersionPropuestaMutation)",
+    "components/veta/versiones-propuesta-modal.tsx (nuevo)",
+    "components/veta/parametros-financieros-modal.tsx (max=100 + clamp en % IVA)",
+    "components/veta/entity-actions-bar.tsx (sin cambios de código en esta tarea, el fix fue quitar overflow-x-auto del contenedor en la página)",
+    "app/erp/cotizador/[proyectoId]/page.tsx",
+    "app/(publico)/propuesta/[proyectoId]/page.tsx, PropuestaPublicaClient.tsx (banner + searchParams)"
+  ],
+  "criterios_de_aceptacion": [
+    "El menú '⋮' se ve completo, sin scroll interno ni recorte",
+    "Preview no inserta fila en propuestas_versiones (verificado: llama directo a construirSnapshotPropuestaPublica)",
+    "Crear versión con nombre lo persiste y se ve en el listado y en el timestamp del header",
+    "Eliminar una versión la retira del listado sin afectar las demás; si era la última, la vigente pasa a ser la siguiente más alta",
+    "% IVA no puede guardarse fuera de [0,100] ni desde el input ni server-side",
+    "tsc/eslint/build limpios"
+  ],
+  "relacionado": ["t-156", "t-159"],
+  "fecha_creacion": "2026-09-11"
+}

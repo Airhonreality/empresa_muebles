@@ -145,7 +145,15 @@ export async function actualizarParametrosFinancierosAction(
   id: string,
   partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
 ): Promise<Proyecto | null> {
-  const [actualizado] = await db.update(s.proyectos).set({ ...partial, updatedAt: new Date().toISOString() }).where(eq(s.proyectos.id, id)).returning()
+  // porcentaje_iva es numeric(5,2) — un valor fuera de [0,100] rompe la constraint de Postgres
+  // con "numeric field overflow" (incidente real en producción, 2026-09-11, causado por un
+  // input sin tope en el cliente). Server-side es la defensa que no se puede saltar.
+  const datos = { ...partial }
+  if (datos.porcentajeIva !== undefined) {
+    const n = Math.min(Math.max(Number(datos.porcentajeIva) || 0, 0), 100)
+    datos.porcentajeIva = String(n)
+  }
+  const [actualizado] = await db.update(s.proyectos).set({ ...datos, updatedAt: new Date().toISOString() }).where(eq(s.proyectos.id, id)).returning()
   return (actualizado as unknown as Proyecto) ?? null
 }
 

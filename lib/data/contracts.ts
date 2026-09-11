@@ -923,6 +923,9 @@ export interface PropuestaVersion {
   id: string
   proyectoId: string
   version: number
+  /** Nombre libre opcional (ej. "Ajuste post-reunión") — control de versiones más amigable
+   * para el empleado (2026-09-11), para no depender solo del número de versión. */
+  nombre: string | null
   /** PropuestaPublicaData serializado — tipado unknown acá para no acoplar contracts.ts a
    * lib/data/actions/public.ts; el caller hace el cast. */
   snapshotJson: unknown
@@ -1440,7 +1443,12 @@ export interface DataStore {
     /** null si el proyecto nunca fue publicado bajo este mecanismo (ver fallback en obtenerPropuestaPublicaAction). */
     obtenerUltima(proyectoId: string): PropuestaVersion | null
     /** Calcula version = MAX(version)+1 (o 1 si es la primera) internamente. */
-    crear(proyectoId: string, snapshotJson: unknown, publicadaPorId: string | null): Promise<PropuestaVersion>
+    crear(proyectoId: string, snapshotJson: unknown, publicadaPorId: string | null, nombre?: string | null): Promise<PropuestaVersion>
+    /** Elimina una versión puntual (2026-09-11: control de versiones amigable — permite
+     * limpiar versiones de prueba que podrían contaminar el histórico final). `false` si
+     * el id no existe. Eliminar la última versión hace que la anterior pase a ser "la
+     * vigente" (MAX(version) restante); eliminar todas revierte al fallback en vivo. */
+    eliminar(id: string): Promise<boolean>
   }
 
   /** Contrato de reactividad (M-07). Se suscribe a cualquier mutación del store. Devuelve la función de desuscripción. */

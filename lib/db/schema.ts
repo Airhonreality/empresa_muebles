@@ -1594,6 +1594,9 @@ export const propuestasVersiones = pgTable("propuestas_versiones", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	proyectoId: uuid("proyecto_id").notNull(),
 	version: integer().notNull(),
+	// 2026-09-11: nombre libre opcional para distinguir versiones (ej. "Ajuste post-reunión",
+	// "Prueba interna") — control de versiones más amigable para el empleado (pedido Javier).
+	nombre: text("nombre"),
 	snapshotJson: jsonb("snapshot_json").notNull(),
 	publicadaEn: timestamp("publicada_en", { mode: 'string' }).defaultNow().notNull(),
 	publicadaPorId: uuid("publicada_por_id"),

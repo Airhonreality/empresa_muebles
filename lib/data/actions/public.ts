@@ -234,6 +234,14 @@ export interface PropuestaPublicaData {
 // axiomática 2026-09-10, Decisión 2, FR5/DP5) para que publicarPropuestaAction reutilice
 // EXACTAMENTE la misma lógica de cálculo/query al congelar un snapshot: cero lógica de negocio
 // nueva, misma regla que hoy sirve la vista en vivo.
+// Preview sin publicar (2026-09-11, control de versiones amigable): abre exactamente el
+// mismo cálculo que "Publicar" construiría, pero SIN insertar ninguna fila en
+// propuestas_versiones — para que el empleado vea cómo quedaría antes de decidir si vale la
+// pena crear una versión nueva (y evita ensuciar el histórico con versiones de prueba).
+export async function previsualizarPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
+  return construirSnapshotPropuestaPublica(proyectoId)
+}
+
 async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<PropuestaPublicaData | null> {
   if (DATA_IMPL() === 'drizzle') {
     const [proyecto] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId)).limit(1)
@@ -361,12 +369,35 @@ export async function listarVersionesPropuestaAction(proyectoId: string): Promis
   return getDataStore().propuestasVersiones.listarPorProyecto(proyectoId)
 }
 
+// "Ver" una versión puntual del histórico (2026-09-11, control de versiones) — a diferencia de
+// obtenerPropuestaPublicaAction (siempre la última), esto sirve cualquier versión pasada por su
+// número, para que el empleado pueda revisar/comparar antes de decidir si la elimina.
+export async function obtenerVersionPropuestaPorNumeroAction(proyectoId: string, version: number): Promise<PropuestaVersion | null> {
+  const todas = await listarVersionesPropuestaAction(proyectoId)
+  return todas.find((v) => v.version === version) ?? null
+}
+
+// Elimina una versión puntual (2026-09-11, control de versiones amigable): las versiones de
+// prueba pueden contaminar el histórico que ve el cliente final — se permite retirarlas. No
+// reescribe ninguna otra fila (insert-only sigue intacto para las que quedan); "la vigente"
+// vuelve a ser MAX(version) de lo que sobreviva (DP6), o el fallback en vivo si se borran todas.
+export async function eliminarVersionPropuestaAction(id: string): Promise<boolean> {
+  if (DATA_IMPL() === 'drizzle') {
+    const eliminadas = await db.delete(s.propuestasVersiones).where(eq(s.propuestasVersiones.id, id)).returning()
+    return eliminadas.length > 0
+  }
+  const { getDataStore } = await import('@/lib/data/store')
+  return getDataStore().propuestasVersiones.eliminar(id)
+}
+
 export interface EstadoPublicacionPropuesta {
   /** false si nunca se publicó bajo este mecanismo — el botón del cotizador debe decir "Publicar". */
   tieneVersionPublicada: boolean
   ultimaVersion: number | null
   /** ISO timestamp de la última publicación, para mostrar la fecha humana junto al botón. */
   publicadaEn: string | null
+  /** Nombre de la última versión, si el empleado le puso uno (2026-09-11). */
+  ultimoNombre: string | null
 }
 
 // Estado para el botón dinámico del cotizador (punto 8 del encargo): label "Publicar" vs.
@@ -377,6 +408,7 @@ export async function obtenerEstadoPublicacionPropuestaAction(proyectoId: string
     tieneVersionPublicada: ultima !== null,
     ultimaVersion: ultima?.version ?? null,
     publicadaEn: ultima?.publicadaEn ?? null,
+    ultimoNombre: ultima?.nombre ?? null,
   }
 }
 
@@ -387,7 +419,7 @@ export async function obtenerEstadoPublicacionPropuestaAction(proyectoId: string
 // publicadaPorId se resuelve server-side de la cookie de sesión (mismo patrón que
 // lib/data/actions/lecturas-cotizador.ts) — no se confía en un id mandado por el cliente; el
 // parámetro queda como escape hatch explícito para tests/scripts.
-export async function publicarPropuestaAction(proyectoId: string, publicadaPorId?: string | null): Promise<PropuestaVersion> {
+export async function publicarPropuestaAction(proyectoId: string, publicadaPorId?: string | null, nombre?: string | null): Promise<PropuestaVersion> {
   const snapshot = await construirSnapshotPropuestaPublica(proyectoId)
   if (!snapshot) throw new Error(`No se pudo publicar: el proyecto ${proyectoId} no existe`)
 
@@ -397,6 +429,8 @@ export async function publicarPropuestaAction(proyectoId: string, publicadaPorId
     publicadaPorId = sesion?.usuarioId ?? null
   }
 
+  const nombreLimpio = nombre?.trim() || null
+
   if (DATA_IMPL() === 'drizzle') {
     return db.transaction(async (tx) => {
       const existentes = await tx.select().from(s.propuestasVersiones).where(eq(s.propuestasVersiones.proyectoId, proyectoId))
@@ -404,6 +438,7 @@ export async function publicarPropuestaAction(proyectoId: string, publicadaPorId
       const [nueva] = await tx.insert(s.propuestasVersiones).values({
         proyectoId,
         version,
+        nombre: nombreLimpio,
         snapshotJson: snapshot as unknown as Record<string, unknown>,
         publicadaPorId: publicadaPorId ?? null,
       }).returning()
@@ -412,7 +447,7 @@ export async function publicarPropuestaAction(proyectoId: string, publicadaPorId
   }
 
   const { getDataStore } = await import('@/lib/data/store')
-  return getDataStore().propuestasVersiones.crear(proyectoId, snapshot, publicadaPorId ?? null)
+  return getDataStore().propuestasVersiones.crear(proyectoId, snapshot, publicadaPorId ?? null, nombreLimpio)
 }
 
 // Reescrita (decisión axiomática 2026-09-10, Decisión 2): antes consultaba el proyecto EN VIVO
