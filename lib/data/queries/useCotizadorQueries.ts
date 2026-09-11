@@ -7,7 +7,8 @@
 // propagación cross-usuario sigue por la DB trigger → snap bridge invalida ['cotizador', id].
 'use client'
 
-import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useMutationOptGenerico, upsertPorId, eliminarPorId } from './factory'
 import {
   crearItemAction,
   actualizarItemAction,
@@ -81,65 +82,11 @@ export function useCotizadorSnapshot(proyectoId: string) {
   })
 }
 
-interface ContextoMutacion {
-  previous?: CotizadorSnapshot
-}
-
-interface OpcionesMutationOpt<TVars> {
-  /** Se llama dentro de onMutate, después de aplicar el optimismo — para registries externos (Fase 1.3). */
-  onMutateExtra?: (vars: TVars) => void
-  /** Se llama dentro de onSettled, antes de decidir si invalidar. */
-  onSettledExtra?: (vars: TVars) => void
-  /** Mutations sin `reconciliar` (eliminar*, duplicarEspacio) necesitan invalidar SIEMPRE al
-   * asentar, sin depender del gate/debounce de CotizadorSnapBridge — si no, su resultado puede
-   * no aparecer nunca en pantalla (no hay optimismo real que lo muestre). */
-  invalidarSiempre?: boolean
-}
-
-function useMutationOpt<TVars, TResult>(
-  proyectoId: string,
-  mutationFn: (vars: TVars) => Promise<TResult>,
-  aplicarOptimista: (snapshot: CotizadorSnapshot, vars: TVars) => CotizadorSnapshot,
-  reconciliar?: (snapshot: CotizadorSnapshot, result: TResult) => CotizadorSnapshot,
-  opciones?: OpcionesMutationOpt<TVars>,
-) {
-  const qc = useQueryClient()
-  const queryKey = cotizadorKeys.detalle(proyectoId)
-  return useMutation<TResult, Error, TVars, ContextoMutacion>({
-    // Permite a CotizadorSnapBridge filtrar "¿hay mutations de ESTA pantalla en vuelo?" (Fase 1.2).
-    mutationKey: queryKey,
-    mutationFn,
-    onMutate: async (vars) => {
-      await qc.cancelQueries({ queryKey })
-      const previous = qc.getQueryData<CotizadorSnapshot>(queryKey)
-      if (previous) qc.setQueryData<CotizadorSnapshot>(queryKey, aplicarOptimista(previous, vars))
-      opciones?.onMutateExtra?.(vars)
-      return { previous }
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.previous) qc.setQueryData<CotizadorSnapshot>(queryKey, ctx.previous)
-    },
-    onSuccess: (result, _vars, ctx) => {
-      if (ctx?.previous && reconciliar && result !== null && result !== undefined) {
-        qc.setQueryData<CotizadorSnapshot>(queryKey, (cur) => (cur ? reconciliar(cur, result) : cur))
-      }
-    },
-    onSettled: (_result, _err, vars) => {
-      opciones?.onSettledExtra?.(vars)
-      // Se quita la invalidación redundante por defecto (Fase 1.1): la correctitud local ya la
-      // da onSuccess/reconciliar; la propagación multi-usuario la da el puente
-      // (NOTIFY -> version++ -> CotizadorSnapBridge). Solo las mutations sin reconciliar
-      // (eliminar*/duplicarEspacio) piden invalidarSiempre para no depender del gate del puente.
-      if (opciones?.invalidarSiempre) void qc.invalidateQueries({ queryKey })
-    },
-  })
-}
-
 // --- Items (B2) ---
 
 export function useCrearItemMutation(proyectoId: string) {
-  return useMutationOpt<InputItemOptimista, ItemVariante>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, InputItemOptimista, ItemVariante>(
+    cotizadorKeys.detalle(proyectoId),
     (input) =>
       crearItemAction({
         id: input.id,
@@ -163,11 +110,12 @@ export function useCrearItemMutation(proyectoId: string) {
 }
 
 export function useActualizarItemMutation(proyectoId: string) {
-  return useMutationOpt<
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
     { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>> },
     ItemVariante | null
   >(
-    proyectoId,
+    cotizadorKeys.detalle(proyectoId),
     ({ id, patch }) => actualizarItemAction(id, patch),
     (snap, { id, patch }) => actualizarItem(snap, id, patch),
     (snap, r) => (r ? upsertItem(snap, r) : snap),
@@ -175,8 +123,8 @@ export function useActualizarItemMutation(proyectoId: string) {
 }
 
 export function useEliminarItemMutation(proyectoId: string) {
-  return useMutationOpt<{ id: string }, boolean>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, { id: string }, boolean>(
+    cotizadorKeys.detalle(proyectoId),
     ({ id }) => eliminarItemAction(id),
     (snap, { id }) => eliminarItem(snap, id),
     undefined,
@@ -187,8 +135,8 @@ export function useEliminarItemMutation(proyectoId: string) {
 // --- Espacios / variantes (B3) ---
 
 export function useCrearEspacioMutation(proyectoId: string) {
-  return useMutationOpt<InputEspacioOptimista, EspacioVariante>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, InputEspacioOptimista, EspacioVariante>(
+    cotizadorKeys.detalle(proyectoId),
     (input) =>
       crearEspacioAction({
         id: input.id,
@@ -209,11 +157,12 @@ export function useCrearEspacioMutation(proyectoId: string) {
 }
 
 export function useActualizarEspacioMutation(proyectoId: string) {
-  return useMutationOpt<
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
     { id: string; patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>> },
     EspacioVariante | null
   >(
-    proyectoId,
+    cotizadorKeys.detalle(proyectoId),
     ({ id, patch }) => actualizarEspacioAction(id, patch),
     (snap, { id, patch }) => actualizarEspacio(snap, id, patch),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
@@ -221,8 +170,8 @@ export function useActualizarEspacioMutation(proyectoId: string) {
 }
 
 export function useMarcarEspacioActivaMutation(proyectoId: string) {
-  return useMutationOpt<{ id: string }, EspacioVariante | null>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, { id: string }, EspacioVariante | null>(
+    cotizadorKeys.detalle(proyectoId),
     ({ id }) => marcarActivaEspacioAction(id),
     (snap, { id }) => marcarEspacioActiva(snap, id),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
@@ -230,8 +179,8 @@ export function useMarcarEspacioActivaMutation(proyectoId: string) {
 }
 
 export function useEliminarEspacioMutation(proyectoId: string) {
-  return useMutationOpt<{ id: string }, boolean>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, { id: string }, boolean>(
+    cotizadorKeys.detalle(proyectoId),
     ({ id }) => eliminarEspacioAction(id),
     (snap, { id }) => eliminarEspacio(snap, id),
     undefined,
@@ -240,11 +189,12 @@ export function useEliminarEspacioMutation(proyectoId: string) {
 }
 
 export function useActualizarJornadasMutation(proyectoId: string) {
-  return useMutationOpt<
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
     { id: string; jornadas: { jornadasDesarrolloTecnico: string; jornadasEnsamblajeTaller: string; jornadasInstalacionObra: string } },
     EspacioVariante | null
   >(
-    proyectoId,
+    cotizadorKeys.detalle(proyectoId),
     ({ id, jornadas }) => actualizarJornadasAction(id, jornadas),
     (snap, { id, jornadas }) => actualizarJornadas(snap, id, jornadas),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
@@ -253,8 +203,8 @@ export function useActualizarJornadasMutation(proyectoId: string) {
 
 export function useDuplicarEspacioMutation(proyectoId: string) {
   // Duplicar no es trivialmente optimizable (ids clonados nuevos); refetch selectivo.
-  return useMutationOpt<{ id: string; opciones: { vacio: boolean; nuevoNombreEspacio?: string } }, EspacioVariante | null>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, { id: string; opciones: { vacio: boolean; nuevoNombreEspacio?: string } }, EspacioVariante | null>(
+    cotizadorKeys.detalle(proyectoId),
     ({ id, opciones }) => duplicarEspacioAction(id, opciones),
     (snap) => snap,
     undefined,
@@ -265,11 +215,12 @@ export function useDuplicarEspacioMutation(proyectoId: string) {
 // --- Proyecto (parámetros financieros / renombres, B3) ---
 
 export function useActualizarParametrosFinancierosMutation(proyectoId: string) {
-  return useMutationOpt<
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
     { id: string; partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>> },
     Proyecto | null
   >(
-    proyectoId,
+    cotizadorKeys.detalle(proyectoId),
     ({ id, partial }) => actualizarParametrosFinancierosAction(id, partial),
     (snap, { id, partial }) => actualizarProyecto(snap, id, partial),
     (snap, r) => (r ? upsertProyecto(snap, r) : snap),
@@ -279,8 +230,8 @@ export function useActualizarParametrosFinancierosMutation(proyectoId: string) {
 // --- Artefactos (B3) ---
 
 export function useCrearArtefactoMutation(proyectoId: string) {
-  return useMutationOpt<InputArtefactoOptimista, EspacioArtefacto>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, InputArtefactoOptimista, EspacioArtefacto>(
+    cotizadorKeys.detalle(proyectoId),
     (input) =>
       crearArtefactoAction({
         id: input.id,
@@ -298,11 +249,12 @@ export function useCrearArtefactoMutation(proyectoId: string) {
 }
 
 export function useActualizarArtefactoMutation(proyectoId: string) {
-  return useMutationOpt<
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
     { id: string; patch: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'fotoUrl'>> },
     EspacioArtefacto | null
   >(
-    proyectoId,
+    cotizadorKeys.detalle(proyectoId),
     ({ id, patch }) => actualizarArtefactoAction(id, patch),
     (snap, { id, patch }) => actualizarArtefacto(snap, id, patch),
     (snap, r) => (r ? upsertArtefacto(snap, r) : snap),
@@ -316,8 +268,8 @@ export function useActualizarArtefactoMutation(proyectoId: string) {
 // resto del cluster de "escrituras poco frecuentes" del cotizador.
 
 export function useCrearGrupoItemMutation(proyectoId: string) {
-  return useMutationOpt<{ espacioVarianteId: string; nombre: string; padreId: string | null }, GrupoItem>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, { espacioVarianteId: string; nombre: string; padreId: string | null }, GrupoItem>(
+    cotizadorKeys.detalle(proyectoId),
     ({ espacioVarianteId, nombre, padreId }) => crearGrupoItemAction(espacioVarianteId, nombre, padreId),
     (snap) => snap,
     undefined,
@@ -326,11 +278,12 @@ export function useCrearGrupoItemMutation(proyectoId: string) {
 }
 
 export function useActualizarGrupoItemMutation(proyectoId: string) {
-  return useMutationOpt<
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
     { id: string; cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden'>> },
     GrupoItem | null
   >(
-    proyectoId,
+    cotizadorKeys.detalle(proyectoId),
     ({ id, cambios }) => actualizarGrupoItemAction(id, cambios),
     (snap) => snap,
     undefined,
@@ -339,8 +292,8 @@ export function useActualizarGrupoItemMutation(proyectoId: string) {
 }
 
 export function useEliminarGrupoItemMutation(proyectoId: string) {
-  return useMutationOpt<{ id: string }, boolean>(
-    proyectoId,
+  return useMutationOptGenerico<CotizadorSnapshot, { id: string }, boolean>(
+    cotizadorKeys.detalle(proyectoId),
     ({ id }) => eliminarGrupoItemAction(id),
     (snap) => snap,
     undefined,
@@ -368,14 +321,31 @@ export function useEstadoPublicacionPropuesta(proyectoId: string) {
  * listado para que el botón, el timestamp y la lista de versiones se actualicen solos. No toca
  * cotizadorKeys.detalle — publicar no cambia nada del snapshot editable. */
 export function usePublicarPropuestaMutation(proyectoId: string) {
+  const queryKey = propuestaVersionKeys.listado(proyectoId)
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (nombre?: string | null) => publicarPropuestaAction(proyectoId, undefined, nombre ?? null),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId) })
-      void qc.invalidateQueries({ queryKey: propuestaVersionKeys.listado(proyectoId) })
+  return useMutationOptGenerico<PropuestaVersion[], string | undefined, PropuestaVersion>(
+    queryKey,
+    (nombre) => publicarPropuestaAction(proyectoId, undefined, nombre ?? null),
+    (lista, nombre) => {
+      const maxVersion = lista.reduce((max, v) => Math.max(max, v.version), 0)
+      const optimista: PropuestaVersion = {
+        id: `temp-version-${Date.now()}`,
+        proyectoId,
+        version: maxVersion + 1,
+        nombre: nombre?.trim() || null,
+        snapshotJson: {},
+        publicadaEn: new Date().toISOString(),
+        publicadaPorId: null,
+      }
+      return upsertPorId(lista, optimista)
     },
-  })
+    (lista, real) => upsertPorId(lista.filter((v) => !v.id.startsWith('temp-version-')), real),
+    {
+      onSettledExtra: () => {
+        void qc.invalidateQueries({ queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId) })
+      },
+    },
+  )
 }
 
 /** Histórico completo de versiones publicadas (orden ascendente v1, v2, v3...) — alimenta el
@@ -392,12 +362,18 @@ export function useVersionesPropuesta(proyectoId: string) {
  * Y estado de publicación: si se borró la última, el botón/timestamp deben reflejar la anterior
  * (o volver a "Publicar" si no queda ninguna). */
 export function useEliminarVersionPropuestaMutation(proyectoId: string) {
+  const queryKey = propuestaVersionKeys.listado(proyectoId)
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (versionId: string) => eliminarVersionPropuestaAction(versionId),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: propuestaVersionKeys.listado(proyectoId) })
-      void qc.invalidateQueries({ queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId) })
+  return useMutationOptGenerico<PropuestaVersion[], string, boolean>(
+    queryKey,
+    (id) => eliminarVersionPropuestaAction(id),
+    (lista, id) => eliminarPorId(lista, id),
+    undefined,
+    {
+      invalidarSiempre: true,
+      onSettledExtra: () => {
+        void qc.invalidateQueries({ queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId) })
+      },
     },
-  })
+  )
 }

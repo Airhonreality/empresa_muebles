@@ -6,7 +6,7 @@
 // filtraba client-side sobre datos de TODOS los clientes/proyectos, ya presentes en el HTML/RSC
 // payload. Acá cada función trae por SQL solo lo que la página necesita. Mismo patrón dual
 // DATA_IMPL ya establecido en lib/data/actions/portafolio.ts.
-import { eq, and, or, inArray, desc } from 'drizzle-orm'
+import { eq, and, or, inArray, desc, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import type {
@@ -244,22 +244,45 @@ export async function previsualizarPropuestaPublicaAction(proyectoId: string): P
 
 async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<PropuestaPublicaData | null> {
   if (DATA_IMPL() === 'drizzle') {
-    const [proyecto] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId)).limit(1)
+    // Ronda 1: queries independientes
+    const [proyectoResult, espaciosResult, contratoRowResult, parametrosRowsResult] = await Promise.all([
+      db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId)).limit(1),
+      db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyectoId)),
+      db.select().from(s.contratos).where(eq(s.contratos.proyectoId, proyectoId)).limit(1),
+      db.select().from(s.parametros).where(inArray(s.parametros.clave, ['valor_hora_desarrollador', 'valor_hora_carpintero', 'valor_hora_auxiliar'])),
+    ])
+
+    const [proyecto] = proyectoResult
     if (!proyecto) return null
 
-    const espacios = await db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyectoId))
+    const espacios = espaciosResult
     const varianteIds = espacios.map((e) => e.id)
-    const items = varianteIds.length
-      ? await db.select().from(s.itemsVariante).where(and(inArray(s.itemsVariante.varianteId, varianteIds), eq(s.itemsVariante.anulado, false)))
-      : []
-    const gruposItem = varianteIds.length
-      ? await db.select().from(s.gruposItem).where(inArray(s.gruposItem.espacioVarianteId, varianteIds))
-      : []
+    const [contratoRow] = contratoRowResult
+    const parametrosRows = parametrosRowsResult
 
+    // Ronda 2: queries que dependen de Ronda 1
+    const [itemsResult, gruposItemResult, hitosResult] = await Promise.all([
+      varianteIds.length
+        ? db.select().from(s.itemsVariante).where(and(inArray(s.itemsVariante.varianteId, varianteIds), eq(s.itemsVariante.anulado, false)))
+        : Promise.resolve([]),
+      varianteIds.length
+        ? db.select().from(s.gruposItem).where(inArray(s.gruposItem.espacioVarianteId, varianteIds))
+        : Promise.resolve([]),
+      contratoRow
+        ? db.select().from(s.hitosPago).where(eq(s.hitosPago.contratoId, contratoRow.id))
+        : Promise.resolve([]),
+    ])
+
+    const items = itemsResult
+    const gruposItem = gruposItemResult
+    const hitos = hitosResult
+
+    // Ronda 3: query de catálogo (depende de items de Ronda 2)
     const catalogoIds = [...new Set(items.map((it) => it.catalogoId).filter((id): id is string => Boolean(id)))]
     const catalogoRows = catalogoIds.length
       ? await db.select().from(s.productosCatalogo).where(inArray(s.productosCatalogo.id, catalogoIds))
       : []
+
     const catalogoPorId: Record<string, CatalogoItemPublico> = {}
     for (const c of catalogoRows) {
       catalogoPorId[c.id] = {
@@ -271,13 +294,6 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
       }
     }
 
-    const [contratoRow] = await db.select().from(s.contratos).where(eq(s.contratos.proyectoId, proyectoId)).limit(1)
-    const hitos = contratoRow
-      ? await db.select().from(s.hitosPago).where(eq(s.hitosPago.contratoId, contratoRow.id))
-      : []
-
-    const clavesTarifa = ['valor_hora_desarrollador', 'valor_hora_carpintero', 'valor_hora_auxiliar']
-    const parametrosRows = await db.select().from(s.parametros).where(inArray(s.parametros.clave, clavesTarifa))
     const valorPorClave = (clave: string): number => {
       const p = parametrosRows.find((r) => r.clave === clave)
       const n = Number(p?.valorNumeric ?? p?.valorTexto)
@@ -433,8 +449,11 @@ export async function publicarPropuestaAction(proyectoId: string, publicadaPorId
 
   if (DATA_IMPL() === 'drizzle') {
     return db.transaction(async (tx) => {
-      const existentes = await tx.select().from(s.propuestasVersiones).where(eq(s.propuestasVersiones.proyectoId, proyectoId))
-      const version = existentes.length > 0 ? Math.max(...existentes.map((v) => v.version)) + 1 : 1
+      const [{ maxVersion }] = await tx
+        .select({ maxVersion: sql<number | null>`max(${s.propuestasVersiones.version})` })
+        .from(s.propuestasVersiones)
+        .where(eq(s.propuestasVersiones.proyectoId, proyectoId))
+      const version = (maxVersion ?? 0) + 1
       const [nueva] = await tx.insert(s.propuestasVersiones).values({
         proyectoId,
         version,
