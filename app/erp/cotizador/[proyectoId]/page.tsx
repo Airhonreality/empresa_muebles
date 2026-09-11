@@ -180,6 +180,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [mostrarParametrosFinancieros, setMostrarParametrosFinancieros] = useState(false)
+  const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
   const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
 
@@ -366,12 +367,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       label: 'Editar datos',
       variant: 'secondary',
       onClick: () => setMostrarEditarProyecto(true),
-    },
-    {
-      id: 'parametros-financieros',
-      label: '$ Parámetros financieros',
-      variant: 'secondary',
-      onClick: () => setMostrarParametrosFinancieros(true),
     },
     {
       id: 'propuesta-publica',
@@ -604,67 +599,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         </div>
       </section>
 
-      {/* Grand Totals */}
-      <section className="mt-8 rounded-lg border border-border-subtle bg-bg-paper p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-4">Resumen de Cotización</h2>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-text-muted">Materiales</span>
-            <span className="font-mono text-text-heading">{formatCOP(materialesTotal)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-text-muted">Mano de Obra</span>
-            <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
-          </div>
-          {costosOperativos > 0 && (
-            <div className="flex justify-between">
-              <span className="text-text-muted">Costos Operativos</span>
-              <span className="font-mono text-text-heading">{formatCOP(costosOperativos)}</span>
-            </div>
-          )}
-          {costosLogisticos > 0 && (
-            <div className="flex justify-between">
-              <span className="text-text-muted">Costos Logísticos</span>
-              <span className="font-mono text-text-heading">{formatCOP(costosLogisticos)}</span>
-            </div>
-          )}
-          {imprevistos > 0 && (
-            <div className="flex justify-between">
-              <span className="text-text-muted">Imprevistos</span>
-              <span className="font-mono text-text-heading">{formatCOP(imprevistos)}</span>
-            </div>
-          )}
-          {descuento > 0 && (
-            <div className="flex justify-between text-red-600">
-              <span>Descuento</span>
-              <span className="font-mono">&minus;{formatCOP(descuento)}</span>
-            </div>
-          )}
-          {ajuste !== 0 && (
-            <div className="flex justify-between">
-              <span className="text-text-muted">Ajuste</span>
-              <span className="font-mono text-text-heading">{formatCOP(ajuste)}</span>
-            </div>
-          )}
-          <hr className="border-border-subtle" />
-          <div className="flex justify-between font-semibold">
-            <span className="text-text-heading">Subtotal</span>
-            <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
-          </div>
-          {iva > 0 && (
-            <div className="flex justify-between">
-              <span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span>
-              <span className="font-mono text-text-heading">{formatCOP(iva)}</span>
-            </div>
-          )}
-          <hr className="border-border-subtle" />
-          <div className="flex justify-between text-lg font-semibold">
-            <span className="text-text-heading">Total</span>
-            <span className="font-mono text-brand">{formatCOP(total)}</span>
-          </div>
-        </div>
-      </section>
-
       {/* Contrato */}
       {contrato && (
         <section className="mt-6 rounded-lg border border-border-subtle bg-bg-raised p-6">
@@ -706,6 +640,101 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
            </div>
           </section>
          )}
+
+      {/*
+        Footer compacto del cotizador (2026-09-11, pedido de Javier con boceto anotado):
+        el resumen financiero completo vivía a media página (había que scrollear para verlo)
+        y "Parámetros financieros" era un botón más entre 9 en el header, contribuyendo al
+        desborde de esa fila. Ambos se consolidan acá: total siempre visible sin scroll,
+        desglose completo disponible con un toque, y el único punto de entrada a
+        Parámetros Financieros. bottom-14 en mobile dice espacio al tab-bar del ERP
+        (erp-shell.tsx, h-14 fijo abajo); en desktop (md:) no hay tab-bar, así que baja a 0.
+      */}
+      <div className="sticky bottom-14 md:bottom-0 z-30 -mx-6 mt-8 border-t border-border-subtle bg-bg-raised shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.08)]">
+        {mostrarDesgloseFooter && (
+          <div className="max-h-[50vh] overflow-y-auto border-b border-border-subtle px-4 py-4 sm:px-6">
+            <div className="mx-auto max-w-5xl space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-text-muted">Materiales</span>
+                <span className="font-mono text-text-heading">{formatCOP(materialesTotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-muted">Mano de Obra</span>
+                <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
+              </div>
+              {costosOperativos > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Costos Operativos</span>
+                  <span className="font-mono text-text-heading">{formatCOP(costosOperativos)}</span>
+                </div>
+              )}
+              {costosLogisticos > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Costos Logísticos</span>
+                  <span className="font-mono text-text-heading">{formatCOP(costosLogisticos)}</span>
+                </div>
+              )}
+              {imprevistos > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Imprevistos</span>
+                  <span className="font-mono text-text-heading">{formatCOP(imprevistos)}</span>
+                </div>
+              )}
+              {descuento > 0 && (
+                <div className="flex justify-between text-red-600">
+                  <span>Descuento</span>
+                  <span className="font-mono">&minus;{formatCOP(descuento)}</span>
+                </div>
+              )}
+              {ajuste !== 0 && (
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Ajuste</span>
+                  <span className="font-mono text-text-heading">{formatCOP(ajuste)}</span>
+                </div>
+              )}
+              <hr className="border-border-subtle" />
+              <div className="flex justify-between font-semibold">
+                <span className="text-text-heading">Subtotal</span>
+                <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
+              </div>
+              {iva > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span>
+                  <span className="font-mono text-text-heading">{formatCOP(iva)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
+          <button
+            type="button"
+            onClick={() => setMostrarDesgloseFooter((v) => !v)}
+            className="flex min-w-0 items-center gap-2 text-left"
+            aria-expanded={mostrarDesgloseFooter}
+            aria-label="Ver desglose de la cotización"
+          >
+            <span className="shrink-0 text-text-muted text-xs">{mostrarDesgloseFooter ? '▼' : '▲'}</span>
+            <span className="truncate text-xs text-text-muted">
+              Subtotal <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
+            </span>
+            <span className="hidden shrink-0 text-sm font-semibold sm:inline">
+              <span className="text-text-heading">Total</span> <span className="font-mono text-brand">{formatCOP(total)}</span>
+            </span>
+          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="font-mono text-sm font-semibold text-brand sm:hidden">{formatCOP(total)}</span>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => setMostrarParametrosFinancieros(true)}
+              className="h-8 whitespace-nowrap px-2.5 text-xs"
+            >
+              $ Parámetros financieros
+            </Button>
+          </div>
+        </div>
+      </div>
 
         {/* Modal Generar Contrato */}
         {mostrarContratoModal && proyecto && (
