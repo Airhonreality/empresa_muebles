@@ -1504,6 +1504,20 @@ function VarianteContenido({
                 </div>
                 {/* Acciones */}
                 <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0">
+                  {/* Antes solo se podía abrir el editor completo (comentario, grupo, reemplazar
+                      producto) haciendo click en la miniatura — sin ninguna señal visual de que
+                      fuera clickeable. Ícono explícito para que no quede escondido. */}
+                  <button
+                    type="button"
+                    onClick={() => setModalItemId(item.id)}
+                    aria-label="Editar ítem (comentario, grupo, reemplazar producto)"
+                    title="Editar ítem (comentario, grupo, reemplazar producto)"
+                    className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M11.5 2.5a1.5 1.5 0 0 1 2 2L5 13l-3 1 1-3z" strokeLinejoin="round" strokeLinecap="round" />
+                    </svg>
+                  </button>
                   <button
                     type="button"
                     onClick={() => actualizarItem(item.id, 'esReferencial', true)}
@@ -1725,6 +1739,17 @@ function VarianteContenido({
                     </div>
                     {/* Acciones */}
                     <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0">
+                      <button
+                        type="button"
+                        onClick={() => setModalItemId(item.id)}
+                        aria-label="Editar ítem (comentario, grupo, reemplazar producto)"
+                        title="Editar ítem (comentario, grupo, reemplazar producto)"
+                        className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M11.5 2.5a1.5 1.5 0 0 1 2 2L5 13l-3 1 1-3z" strokeLinejoin="round" strokeLinecap="round" />
+                        </svg>
+                      </button>
                       <button
                         type="button"
                         onClick={() => actualizarItem(item.id, 'esReferencial', false)}
