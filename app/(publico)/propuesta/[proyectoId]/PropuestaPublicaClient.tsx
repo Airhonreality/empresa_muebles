@@ -274,6 +274,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
 
   const [espacioActivoId, setEspacioActivoId] = useState<string | null>(null)
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState<string | null>(null)
+  const [tipoImagenActivo, setTipoImagenActivo] = useState<'espacio' | 'disenio' | 'referencia'>('espacio')
   const [zoom, setZoom] = useState<{ imagenes: GalleryImage[]; index: number } | null>(null)
   const [tituloHeaderVisible, setTituloHeaderVisible] = useState(false)
 
@@ -325,7 +326,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
   // Proyectar: si el usuario está viendo una variante alternativa en el espacio actual,
   // el resumen financiero global (Sidebar) debe reflejar ese escenario "What If".
   // [Axioma de Información]: Memoizado para no re-ejecutar N x M iteraciones en cada scroll event.
-  const { materialesTotal, moDev, moEns, moInst, moTotal, subtotal, total, iva, costosOperativos, costosLogisticos, imprevistos, descuento, ajuste } = useMemo(() => {
+  const { materialesTotal, moDev, moEns, moInst, moTotal, subtotal, total, iva, costosOperativos, imprevistos, descuento, ajuste } = useMemo(() => {
     let mTotal = 0
     let moDev = 0
     let moEns = 0
@@ -349,13 +350,12 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
     })
 
     const mOperativos = parseNum(proyecto.costosOperativos)
-    const mLogisticos = parseNum(proyecto.costosLogisticos)
     const mImprevistos = parseNum(proyecto.imprevistosInstalacion)
     const mDescuento = parseNum(proyecto.descuentoComercial)
     const mAjuste = parseNum(proyecto.ajusteArbitrario)
 
     const moT = moDev + moEns + moInst
-    const sTotal = mTotal + moT + mOperativos + mLogisticos + mImprevistos - mDescuento + mAjuste
+    const sTotal = mTotal + moT + mOperativos + mImprevistos - mDescuento + mAjuste
     const mIva = proyecto.aplicaIva ? Math.round(sTotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
 
     return {
@@ -365,7 +365,6 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
       moInst,
       moTotal: moT,
       costosOperativos: mOperativos,
-      costosLogisticos: mLogisticos,
       imprevistos: mImprevistos,
       descuento: mDescuento,
       ajuste: mAjuste,
@@ -549,31 +548,52 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 </div>
               )}
 
-              {/* Carriles visuales: Diseño y/o Referencia (sin campos vacíos que contaminen el layout) */}
+              {/* Carril visual con tabs por tipo de foto del espacio: Espacio actual / Diseño / Referencia.
+                  Antes solo se mostraban Diseño y Referencia lado a lado — fotosEspacio (fotos del
+                  espacio real del cliente) nunca llegaba a la propuesta pública. Los tabs sin fotos
+                  no se muestran (sin campos vacíos que contaminen el layout). */}
               {(() => {
-                const fotosDisenio = toGalleryImages(varianteActual.fotosDisenio, varianteActual.nombreEspacio)
-                const fotosReferencia = toGalleryImages(varianteActual.fotosReferencia, varianteActual.nombreEspacio)
-                const tieneDisenio = fotosDisenio.length > 0
-                const tieneReferencia = fotosReferencia.length > 0
+                const tiposImagen = (
+                  [
+                    { key: 'espacio', etiqueta: 'Espacio actual', fotos: varianteActual.fotosEspacio },
+                    { key: 'disenio', etiqueta: 'Diseño', fotos: varianteActual.fotosDisenio },
+                    { key: 'referencia', etiqueta: 'Referencia', fotos: varianteActual.fotosReferencia },
+                  ] as const
+                )
+                  .map((t) => ({ ...t, fotos: toGalleryImages(t.fotos, varianteActual.nombreEspacio) }))
+                  .filter((t) => t.fotos.length > 0)
 
-                if (!tieneDisenio && !tieneReferencia) return null
+                if (tiposImagen.length === 0) return null
+
+                const activo = tiposImagen.find((t) => t.key === tipoImagenActivo) ?? tiposImagen[0]
 
                 return (
-                  <div className={tieneDisenio && tieneReferencia ? 'grid grid-cols-1 sm:grid-cols-[60%_40%] gap-4' : 'w-full'}>
-                    {tieneDisenio && (
-                      <GalleryRail
-                        fotos={fotosDisenio}
-                        etiqueta="Diseño"
-                        onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
-                      />
+                  <div>
+                    {tiposImagen.length > 1 && (
+                      <div className="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="Tipo de imagen del ambiente">
+                        {tiposImagen.map((t) => (
+                          <button
+                            key={t.key}
+                            type="button"
+                            role="tab"
+                            aria-selected={activo.key === t.key}
+                            onClick={() => setTipoImagenActivo(t.key)}
+                            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-fast ${
+                              activo.key === t.key
+                                ? 'bg-gold-500 text-white'
+                                : 'bg-bg-raised border border-border-subtle text-text-heading hover:border-border-brand'
+                            }`}
+                          >
+                            {t.etiqueta}
+                          </button>
+                        ))}
+                      </div>
                     )}
-                    {tieneReferencia && (
-                      <GalleryRail
-                        fotos={fotosReferencia}
-                        etiqueta="Referencia"
-                        onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
-                      />
-                    )}
+                    <GalleryRail
+                      fotos={activo.fotos}
+                      etiqueta={activo.etiqueta}
+                      onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
+                    />
                   </div>
                 )
               })()}
@@ -641,7 +661,6 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
               {moEns > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
               {moInst > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
               {costosOperativos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos operativos</span><span className="font-mono">{formatCOP(costosOperativos)}</span></div>}
-                {costosLogisticos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos logísticos</span><span className="font-mono">{formatCOP(costosLogisticos)}</span></div>}
               {imprevistos > 0 && <div className="flex justify-between"><span className="text-text-muted">Imprevistos</span><span className="font-mono">{formatCOP(imprevistos)}</span></div>}
               {descuento > 0 && <div className="flex justify-between"><span className="text-text-muted">Descuento</span><span className="font-mono text-red-600">−{formatCOP(descuento)}</span></div>}
               {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{ajuste > 0 ? '+' : '−'}{formatCOP(Math.abs(ajuste))}</span></div>}
@@ -685,7 +704,6 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 {moEns > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
                 {moInst > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
                 {costosOperativos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos operativos</span><span className="font-mono">{formatCOP(costosOperativos)}</span></div>}
-                {costosLogisticos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos logísticos</span><span className="font-mono">{formatCOP(costosLogisticos)}</span></div>}
                 {imprevistos > 0 && <div className="flex justify-between"><span className="text-text-muted">Imprevistos</span><span className="font-mono">{formatCOP(imprevistos)}</span></div>}
                 {descuento > 0 && <div className="flex justify-between"><span className="text-text-muted">Descuento</span><span className="font-mono text-red-600">−{formatCOP(descuento)}</span></div>}
                 {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{ajuste > 0 ? '+' : '−'}{formatCOP(Math.abs(ajuste))}</span></div>}

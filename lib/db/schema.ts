@@ -695,9 +695,11 @@ export const proyectos = pgTable("proyectos", {
 	nombreProyecto: text("nombre_proyecto").notNull(),
 	direccionObra: text("direccion_obra"),
 	estado: estadoProyecto().default('activa').notNull(),
+	// Cubre operación general Y logística/transporte (2026-09-11: se consolidó en un solo
+	// campo — "costos operativos" y "costos logísticos" eran conceptualmente el mismo balde,
+	// tener dos campos separados era redundante y confuso, no una necesidad real de negocio).
+	// La columna "costos_logisticos" (creada 2026-09-10) queda huérfana en la DB, sin uso.
 	costosOperativos: numeric("costos_operativos", { precision: 14, scale:  2 }).default('0'),
-	// Costo operativo "helper": logística y transporte (2026-09-10, pedido del Supervisor).
-	costosLogisticos: numeric("costos_logisticos", { precision: 14, scale:  2 }).default('0'),
 	imprevistosInstalacion: numeric("imprevistos_instalacion", { precision: 14, scale:  2 }).default('0'),
 	descuentoComercial: numeric("descuento_comercial", { precision: 14, scale:  2 }).default('0'),
 	ajusteArbitrario: numeric("ajuste_arbitrario", { precision: 14, scale:  2 }).default('0'),

@@ -18,9 +18,9 @@ export interface Proyecto {
   estado: EstadoProyecto
   tipoProyecto: string
   direccionObra: string | null
+  /** Cubre operación general Y logística/transporte (consolidado 2026-09-11: eran conceptos
+   * redundantes en dos campos separados, no una necesidad real de dos números distintos). */
   costosOperativos: string
-  /** Costo operativo "helper": logística y transporte (2026-09-10, pedido del Supervisor). */
-  costosLogisticos: string
   imprevistosInstalacion: string
   descuentoComercial: string
   ajusteArbitrario: string
@@ -997,7 +997,7 @@ export interface DataStore {
     listar(): Proyecto[]
     obtenerPorId(id: string): Proyecto | undefined
     actualizarEstado(id: string, estado: string): Promise<Proyecto | null>
-    actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null>
+    actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null>
     /** P-12 (D-15): designa el verificador único del proyecto (= comercial vendedor, I-035). Setea verificadorId y comercialVendedorId con el mismo valor. */
     actualizarVerificador(id: string, verificadorId: string): Promise<Proyecto | null>
     /** t-143: edición flexible de datos maestros de la cotización — nombre, cliente, tipo, obra, descripción semántica, días de entrega y ajustes financieros (costos, imprevistos, descuento, ajuste). */

@@ -143,7 +143,7 @@ export async function eliminarProyectoAction(id: string): Promise<boolean> {
 
 export async function actualizarParametrosFinancierosAction(
   id: string,
-  partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
+  partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
 ): Promise<Proyecto | null> {
   // porcentaje_iva es numeric(5,2) — un valor fuera de [0,100] rompe la constraint de Postgres
   // con "numeric field overflow" (incidente real en producción, 2026-09-11, causado por un
@@ -198,7 +198,6 @@ export async function crearProyectoAction(data: Partial<Proyecto> & { nombreProy
         tipoProyecto: (data.tipoProyecto as 'personalizado' | 'producto_fijo') ?? 'personalizado',
         direccionObra: data.direccionObra ?? null,
         costosOperativos: data.costosOperativos ?? '0',
-        costosLogisticos: data.costosLogisticos ?? '0',
         imprevistosInstalacion: data.imprevistosInstalacion ?? '0',
         descuentoComercial: data.descuentoComercial ?? '0',
         ajusteArbitrario: data.ajusteArbitrario ?? '0',

@@ -150,10 +150,12 @@ await test('proyectos: actualizar (t-143) permite renombrar y editar datos maest
   assert.equal(await store.proyectos.actualizar('id-inexistente', { nombreProyecto: 'Z' }), null)
 })
 
-// 2026-09-11: costosOperativos/costosLogisticos/imprevistosInstalacion/descuentoComercial/
-// ajusteArbitrario se consolidaron en actualizarParametrosFinancieros (junto con
-// aplicaIva/porcentajeIva/garantiaAnios) — módulo único de parametrización financiera de
-// la cotización, en vez de repartidos entre `actualizar` y los inputs sueltos del header.
+// 2026-09-11: costosOperativos/imprevistosInstalacion/descuentoComercial/ajusteArbitrario se
+// consolidaron en actualizarParametrosFinancieros (junto con aplicaIva/porcentajeIva/
+// garantiaAnios) — módulo único de parametrización financiera de la cotización, en vez de
+// repartidos entre `actualizar` y los inputs sueltos del header. (costosLogisticos, agregado
+// y luego retirado el mismo día: era conceptualmente redundante con costosOperativos — un
+// solo campo de "costos operativos" ya cubre logística/transporte.)
 await test('proyectos: actualizarParametrosFinancieros consolida impuestos/costos/descuentos', async () => {
   const store = createMockStore()
   const p = await store.proyectos.crear({ nombreProyecto: 'Cotización financiera', tipoProyecto: 'personalizado' })
@@ -163,7 +165,6 @@ await test('proyectos: actualizarParametrosFinancieros consolida impuestos/costo
     porcentajeIva: '19',
     garantiaAnios: 3,
     costosOperativos: '500000',
-    costosLogisticos: '80000',
     imprevistosInstalacion: '30000',
     descuentoComercial: '200000',
     ajusteArbitrario: '10000',
@@ -173,7 +174,6 @@ await test('proyectos: actualizarParametrosFinancieros consolida impuestos/costo
   assert.equal(actualizado.porcentajeIva, '19')
   assert.equal(actualizado.garantiaAnios, 3)
   assert.equal(actualizado.costosOperativos, '500000')
-  assert.equal(actualizado.costosLogisticos, '80000')
   assert.equal(actualizado.imprevistosInstalacion, '30000')
   assert.equal(actualizado.descuentoComercial, '200000')
   assert.equal(actualizado.ajusteArbitrario, '10000')

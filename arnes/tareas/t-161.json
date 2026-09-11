@@ -1,0 +1,32 @@
+{
+  "id": "t-161",
+  "nombre": "Fix real: costos operativos no se sumaban al total + consolidación de campos redundantes (costosOperativos = costosLogisticos)",
+  "descripcion": "Javier reportó dos problemas en la misma frase: (1) 'costos operativos no se están sumando a la cotización final', y (2) 'creaste 2 campos redundantes, operativos = logísticos'. Investigación encontró la CAUSA RAÍZ real del (1): `ParametrosFinancierosModal` (t-159) escribía a través de `useDataStore()` (store GLOBAL, polling-based) en vez del store escopado de la pantalla (`useCotizadorCompat()`, TanStack Query) — el dato SÍ se guardaba correctamente en Neon, pero la pantalla del cotizador lee `proyecto` de un snapshot cacheado distinto (`['cotizador', proyectoId]`) que nunca se invalidaba con esa escritura, y solo se refrescaba cuando el long-poll (hasta 4s, y a veces con más retraso percibido) alcanzaba a sincronizar. Esto viola una regla explícita ya registrada en `arnes/estado.md` ('antes de reintroducir useDataStore()/getVersion() en el cotizador, revisar esta sección — el mecanismo vigente es TanStack Query') — se reintrodujo por accidente en un componente nuevo. Además, al hacerlo, se descubrió que `useActualizarParametrosFinancierosMutation` y `CotizadorCompatStore.proyectos.actualizarParametrosFinancieros` NUNCA se habían ensanchado más allá de `aplicaIva/porcentajeIva/garantiaAnios` — el ensanche de t-159 solo tocó contracts.ts/mock-store.ts/actions/core.ts, dejando la capa de compat/queries del cotizador desalineada (hubiera fallado en compilar si el modal hubiera intentado usarla, lo cual es justo lo que la ausencia de ese cableado dejó pasar sin detectar). Sobre (2): Javier tiene razón — 'Costos operativos' y 'Costos logísticos' (agregado hace unas horas en t-158) eran conceptualmente el mismo balde de costo, dos campos casi idénticos en el formulario sin necesidad real de negocio.",
+  "objetivo": "Guardar Parámetros Financieros actualiza el subtotal/total de la pantalla al instante (optimista, sin esperar el poll). Existe un solo campo 'Costos operativos (incluye logística y transporte)', no dos.",
+  "prioridad": "Crítica",
+  "estado": "EJECUTADA (2026-09-11) por el Orquestador. (A) ParametrosFinancierosModal reescrito para recibir `onGuardar` inyectado por el caller (dependency injection) en vez de importar useDataStore() internamente — el cotizador page ahora le pasa `store.proyectos.actualizarParametrosFinancieros` del store ESCOPADO (useCotizadorCompat), que además aplica el patch de forma OPTIMISTA (useMutationOpt, actualiza el snapshot local antes de esperar confirmación del servidor) — mejor que invalidar-y-esperar. (B) Pick types ensanchados donde realmente faltaba: useActualizarParametrosFinancierosMutation (useCotizadorQueries.ts) y CotizadorCompatStore.proyectos.actualizarParametrosFinancieros (cotizador-compat.tsx) — antes solo tenían aplicaIva/porcentajeIva/garantiaAnios, ahora incluyen los 4 costos/descuentos. (C) costosLogisticos retirado por completo de la aplicación: schema.ts (columna queda huérfana en la DB, sin DROP — no destructivo), contracts.ts, mock-store.ts, drizzle-impl.ts, actions/core.ts, fixtures.ts (13 filas), mock-store.test.ts, ParametrosFinancierosModal, cotizador/[proyectoId]/page.tsx (fórmula + display x2 + VistaSoloLectura), PropuestaPublicaClient.tsx (fórmula + display x2). 'Costos operativos' releído como concepto único que ya cubre logística/transporte (relabel en el input). tsc/eslint/build/tests limpios. Sin migración nueva — no se tocó ninguna columna existente, solo se dejó de usar una.",
+  "tipo": "fix_bug_critico_arquitectura_consolidacion_campos",
+  "riesgo": "alto (bug de arquitectura de datos, silenciosamente reintrodujo un patrón ya prohibido explícitamente en el arnés)",
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": "Bug reportado y corregido en la misma sesión.",
+    "fecha": "2026-09-11"
+  },
+  "plan_ref": null,
+  "archivos_afectados": [
+    "components/veta/parametros-financieros-modal.tsx (onGuardar inyectado, campo único)",
+    "app/erp/cotizador/[proyectoId]/page.tsx (pasa el store escopado correcto, fórmula/display sin costosLogisticos)",
+    "lib/data/queries/useCotizadorQueries.ts, cotizador-compat.tsx (Pick ensanchado — la desalineación real)",
+    "lib/data/queries/optimistic.ts (ya estaba correcto, verificado)",
+    "lib/db/schema.ts, contracts.ts, mock-store.ts, drizzle-impl.ts, actions/core.ts, fixtures.ts, mock-store.test.ts (retiro de costosLogisticos)",
+    "app/(publico)/propuesta/[proyectoId]/PropuestaPublicaClient.tsx (retiro de costosLogisticos)"
+  ],
+  "criterios_de_aceptacion": [
+    "Guardar Parámetros Financieros refleja el nuevo subtotal/total en la misma pantalla sin esperar ni recargar",
+    "Un solo campo de costo operativo en el formulario, no dos",
+    "tsc/eslint/build limpios, tests de mock-store en verde (salvo el fallo preexistente y ajeno de f3-portafolio)",
+    "Regla del arnés respetada: cero useDataStore()/getVersion() nuevos en componentes montados dentro del cotizador"
+  ],
+  "relacionado": ["t-158", "t-159"],
+  "fecha_creacion": "2026-09-11"
+}

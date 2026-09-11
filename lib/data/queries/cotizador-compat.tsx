@@ -40,7 +40,7 @@ export interface CotizadorCompatStore {
     obtenerPorId(id: string): Proyecto | undefined
     actualizarParametrosFinancieros(
       id: string,
-      partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios'>>,
+      partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>,
     ): Promise<Proyecto | null>
   }
   clientes: {

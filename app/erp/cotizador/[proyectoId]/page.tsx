@@ -318,11 +318,10 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const moTotal = moDev + moEns + moInst
 
   const costosOperativos = parseNum(proyecto.costosOperativos)
-  const costosLogisticos = parseNum(proyecto.costosLogisticos)
   const imprevistos = parseNum(proyecto.imprevistosInstalacion)
   const descuento = parseNum(proyecto.descuentoComercial)
   const ajuste = parseNum(proyecto.ajusteArbitrario)
-  const subtotal = materialesTotal + moTotal + costosOperativos + costosLogisticos + imprevistos - descuento + ajuste
+  const subtotal = materialesTotal + moTotal + costosOperativos + imprevistos - descuento + ajuste
   const iva = proyecto.aplicaIva ? Math.round(subtotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
   const total = subtotal + iva
 
@@ -342,7 +341,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         moInst={moInst}
         moTotal={moTotal}
         costosOperativos={costosOperativos}
-        costosLogisticos={costosLogisticos}
         imprevistos={imprevistos}
         descuento={descuento}
         ajuste={ajuste}
@@ -668,12 +666,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
                   <span className="font-mono text-text-heading">{formatCOP(costosOperativos)}</span>
                 </div>
               )}
-              {costosLogisticos > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Costos Logísticos</span>
-                  <span className="font-mono text-text-heading">{formatCOP(costosLogisticos)}</span>
-                </div>
-              )}
               {imprevistos > 0 && (
                 <div className="flex justify-between">
                   <span className="text-text-muted">Imprevistos</span>
@@ -761,11 +753,16 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         )}
 
         {/* Módulo consolidado de parametrización financiera (2026-09-11): impuestos,
-            garantía, costos operativos/logísticos, imprevistos, descuento, ajuste — todo
-            en un solo lugar discoverable, en vez de repartido entre el header y "Editar datos". */}
+            garantía, costos operativos, imprevistos, descuento, ajuste — todo en un solo
+            lugar discoverable, en vez de repartido entre el header y "Editar datos".
+            onGuardar usa el store escopado de ESTA pantalla (useCotizadorCompat), no el
+            useDataStore() global — de lo contrario el subtotal no se actualiza al guardar
+            (bug real reportado por Javier 2026-09-11: escribía en Neon correctamente, pero
+            la pantalla seguía leyendo el snapshot TanStack Query viejo hasta el próximo poll). */}
         {mostrarParametrosFinancieros && (
           <ParametrosFinancierosModal
             proyecto={proyecto}
+            onGuardar={(partial) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, partial)}
             onClose={() => setMostrarParametrosFinancieros(false)}
             onSaved={() => setMostrarParametrosFinancieros(false)}
           />
@@ -823,7 +820,6 @@ function VistaSoloLectura({
   moInst,
   moTotal,
   costosOperativos,
-  costosLogisticos,
   imprevistos,
   descuento,
   ajuste,
@@ -844,7 +840,6 @@ function VistaSoloLectura({
   moInst: number
   moTotal: number
   costosOperativos: number
-  costosLogisticos: number
   imprevistos: number
   descuento: number
   ajuste: number
@@ -886,7 +881,6 @@ function VistaSoloLectura({
         />
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-text-muted sm:grid-cols-4">
           <span>Costos operativos: {formatCOP(costosOperativos)}</span>
-          <span>Costos logísticos: {formatCOP(costosLogisticos)}</span>
           <span>Imprevistos: {formatCOP(imprevistos)}</span>
           <span className={descuento > 0 ? 'text-red-600' : ''}>Descuento: {formatCOP(descuento)}</span>
           <span>IVA: {proyecto.aplicaIva ? `Sí (${proyecto.porcentajeIva}%)` : 'No'}</span>

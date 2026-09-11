@@ -222,7 +222,7 @@ export function createMockStore(): DataStore {
         notify()
         return proyectos[idx]
       },
-      async actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null> {
+      async actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null> {
         const idx = proyectos.findIndex(p => p.id === id)
         if (idx === -1) return null
         proyectos[idx] = { ...proyectos[idx], ...partial, updatedAt: new Date().toISOString() }
@@ -261,7 +261,6 @@ export function createMockStore(): DataStore {
           tipoProyecto: data.tipoProyecto ?? 'personalizado',
           direccionObra: data.direccionObra ?? null,
           costosOperativos: data.costosOperativos ?? '0',
-          costosLogisticos: data.costosLogisticos ?? '0',
           imprevistosInstalacion: data.imprevistosInstalacion ?? '0',
           descuentoComercial: data.descuentoComercial ?? '0',
           ajusteArbitrario: data.ajusteArbitrario ?? '0',

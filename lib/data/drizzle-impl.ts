@@ -80,7 +80,6 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       tipoProyecto: values.tipoProyecto ?? 'personalizado',
       direccionObra: values.direccionObra ?? null,
       costosOperativos: values.costosOperativos ?? '0',
-      costosLogisticos: values.costosLogisticos ?? '0',
       imprevistosInstalacion: values.imprevistosInstalacion ?? '0',
       descuentoComercial: values.descuentoComercial ?? '0',
       ajusteArbitrario: values.ajusteArbitrario ?? '0',

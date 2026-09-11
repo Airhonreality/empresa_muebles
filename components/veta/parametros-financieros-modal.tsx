@@ -4,11 +4,23 @@ import { useState } from "react";
 import { Button } from "@/components/veta/button";
 import { NumberInput } from "@/components/veta/number-input";
 import { MoneyInput } from "@/components/veta/money-input";
-import { useDataStore, type Proyecto } from "@/lib/data";
+import type { Proyecto } from "@/lib/data";
 import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
+
+export type ParametrosFinancieros = Partial<
+  Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>
+>;
 
 export interface ParametrosFinancierosModalProps {
   proyecto: Proyecto;
+  /** Inyectado por el caller (2026-09-11, corrección de bug real): este modal vive DENTRO del
+   * cotizador, cuya pantalla lee `proyecto` de un snapshot TanStack Query escopado
+   * (`useCotizadorCompat`), no del `useDataStore()` global. Escribir por el store equivocado
+   * guardaba el dato en Neon correctamente pero la pantalla no se enteraba hasta que el
+   * long-poll (hasta 4s) alcanzara a invalidar — se veía como "el costo no se está sumando".
+   * Recibir la función de escritura por prop deja que cada pantalla inyecte el store correcto
+   * en vez de que el modal adivine cuál usar. */
+  onGuardar: (partial: ParametrosFinancieros) => Promise<unknown>;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -21,13 +33,16 @@ function aDigitos(val: string | null | undefined): string {
  * Módulo consolidado de parametrización final del costo de la cotización (2026-09-11,
  * pedido explícito del Supervisor: "un módulo que controle impuestos, costos operativos,
  * descuentos, etc."). Antes estos campos vivían repartidos entre inputs sueltos en el
- * header (Garantía/IVA) y el modal genérico "Editar datos" (los 5 costos) — sin ningún
- * lugar único, discoverable, dedicado a la parametrización financiera. Todo pasa ahora por
- * `store.proyectos.actualizarParametrosFinancieros` (única puerta de escritura para estos
- * campos, ver lib/data/contracts.ts).
+ * header (Garantía/IVA) y el modal genérico "Editar datos" (los costos) — sin ningún
+ * lugar único, discoverable, dedicado a la parametrización financiera.
+ *
+ * Nota (2026-09-11, mismo día): "Costos logísticos" existió unas horas como campo separado
+ * de "Costos operativos" — Javier señaló que eran conceptualmente el mismo balde (un solo
+ * número de costo operativo, que YA cubre logística/transporte) y que dos campos casi
+ * idénticos en el formulario era redundante y confuso, no una necesidad real de negocio.
+ * Se retiró; "Costos operativos" es el único campo.
  */
-export function ParametrosFinancierosModal({ proyecto, onClose, onSaved }: ParametrosFinancierosModalProps) {
-  const store = useDataStore();
+export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSaved }: ParametrosFinancierosModalProps) {
   const { guard: guardGuardar, isPending: guardando } = usePendingGuard();
 
   const [form, setForm] = useState({
@@ -35,7 +50,6 @@ export function ParametrosFinancierosModal({ proyecto, onClose, onSaved }: Param
     porcentajeIva: aDigitos(proyecto.porcentajeIva) || '19',
     garantiaAnios: String(proyecto.garantiaAnios ?? 2),
     costosOperativos: aDigitos(proyecto.costosOperativos),
-    costosLogisticos: aDigitos(proyecto.costosLogisticos),
     imprevistosInstalacion: aDigitos(proyecto.imprevistosInstalacion),
     descuentoComercial: aDigitos(proyecto.descuentoComercial),
     ajusteArbitrario: aDigitos(proyecto.ajusteArbitrario),
@@ -46,12 +60,11 @@ export function ParametrosFinancierosModal({ proyecto, onClose, onSaved }: Param
     // (2026-09-11: incidente real en producción — "numeric field overflow" al guardar sin
     // este tope, el input no bloqueaba escribir un valor fuera de rango).
     const ivaClamp = Math.min(Math.max(Number(form.porcentajeIva) || 0, 0), 100)
-    await store.proyectos.actualizarParametrosFinancieros(proyecto.id, {
+    await onGuardar({
       aplicaIva: form.aplicaIva,
       porcentajeIva: String(ivaClamp || 19),
       garantiaAnios: Number(form.garantiaAnios) || 0,
       costosOperativos: form.costosOperativos || '0',
-      costosLogisticos: form.costosLogisticos || '0',
       imprevistosInstalacion: form.imprevistosInstalacion || '0',
       descuentoComercial: form.descuentoComercial || '0',
       ajusteArbitrario: form.ajusteArbitrario || '0',
@@ -105,17 +118,12 @@ export function ParametrosFinancierosModal({ proyecto, onClose, onSaved }: Param
           </div>
 
           <div>
-            <p className="text-xs font-medium text-text-muted mb-2">Costos operativos, descuentos y ajustes</p>
+            <p className="text-xs font-medium text-text-muted mb-2">Costos, descuentos y ajustes</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <MoneyInput
-                label="Costos operativos"
+                label="Costos operativos (incluye logística y transporte)"
                 value={form.costosOperativos}
                 onChange={(v) => set('costosOperativos', v)}
-              />
-              <MoneyInput
-                label="Costos logísticos (transporte)"
-                value={form.costosLogisticos}
-                onChange={(v) => set('costosLogisticos', v)}
               />
               <MoneyInput
                 label="Imprevistos de instalación"

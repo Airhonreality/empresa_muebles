@@ -266,7 +266,7 @@ export function useDuplicarEspacioMutation(proyectoId: string) {
 
 export function useActualizarParametrosFinancierosMutation(proyectoId: string) {
   return useMutationOpt<
-    { id: string; partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios'>> },
+    { id: string; partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>> },
     Proyecto | null
   >(
     proyectoId,
