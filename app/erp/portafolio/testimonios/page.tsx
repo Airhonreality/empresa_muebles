@@ -7,7 +7,8 @@ import { useMemo, useState } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { Busqueda } from '@/components/veta/busqueda'
-import { useDataStore, type Testimonio } from '@/lib/data'
+import type { Testimonio } from '@/lib/data'
+import { useTestimonios, useCrearTestimonioMutation, useActualizarTestimonioMutation, usePublicarTestimonioMutation, useDespublicarTestimonioMutation } from '@/lib/data/queries/useTestimoniosQueries'
 import { coincide } from '@/lib/search/normalizar'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
@@ -168,15 +169,16 @@ function FormularioTestimonio({
 }
 
 export default function TestimoniosAdminPage() {
-  const store = useDataStore()
-  const version = store.getVersion()
+  const { data: testimonios = [] } = useTestimonios()
+  const crear = useCrearTestimonioMutation()
+  const actualizar = useActualizarTestimonioMutation()
+  const publicar = usePublicarTestimonioMutation()
+  const despublicar = useDespublicarTestimonioMutation()
+
   const [busqueda, setBusqueda] = useState('')
   const [filtroPublicado, setFiltroPublicado] = useState<'' | 'publicado' | 'sin_publicar'>('')
   const [creando, setCreando] = useState(false)
   const [editandoId, setEditandoId] = useState<string | null>(null)
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const testimonios = useMemo(() => store.testimonios.listar(), [store, version])
 
   const filtrados = useMemo(() => {
     let resultado = testimonios
@@ -211,7 +213,7 @@ export default function TestimoniosAdminPage() {
         <div className="mb-6">
           <FormularioTestimonio
             onSubmit={(data) => {
-              void store.testimonios.crear(data)
+              void crear.mutateAsync(data)
               setCreando(false)
             }}
             onCancelar={() => setCreando(false)}
@@ -253,7 +255,7 @@ export default function TestimoniosAdminPage() {
                   <FormularioTestimonio
                     inicial={edicion}
                     onSubmit={(data) => {
-                      void store.testimonios.actualizar(t.id, data)
+                      void actualizar.mutateAsync({ id: t.id, patch: data })
                       setEditandoId(null)
                     }}
                     onCancelar={() => setEditandoId(null)}
@@ -278,10 +280,10 @@ export default function TestimoniosAdminPage() {
                       <Button variant="secondary" size="md" onClick={() => setEditandoId(t.id)}>
                         Editar
                       </Button>
-                      <Button variant="primary" size="md" onClick={() => void store.testimonios.publicar(t.id)}>
+                      <Button variant="primary" size="md" onClick={() => void publicar.mutateAsync(t.id)}>
                         Publicar
                       </Button>
-                      <Button variant="ghost" size="md" onClick={() => void store.testimonios.despublicar(t.id)}>
+                      <Button variant="ghost" size="md" onClick={() => void despublicar.mutateAsync(t.id)}>
                         Despublicar
                       </Button>
                     </div>

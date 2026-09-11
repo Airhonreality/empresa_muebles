@@ -14,3 +14,8 @@ export const propuestaVersionKeys = {
   estadoPublicacion: (proyectoId: string) => ['propuesta-publicacion', proyectoId] as const,
   listado: (proyectoId: string) => ['propuesta-versiones', proyectoId] as const,
 } as const
+
+// Testimonios (Fase 2, primer piloto de migración fuera del DataStore legacy).
+export const testimoniosKeys = {
+  listado: ['testimonios'] as const,
+} as const

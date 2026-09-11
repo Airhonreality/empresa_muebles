@@ -1,7 +1,7 @@
 'use server'
 // Server Actions del cluster F-03 (portafolio de proyectos) + testimonios + módulos-artefactos + F-15 (bitácora).
 // Porta 1:1 la lógica de lib/data/mock-store.ts. Ver plan_f10_migracion.md §3.1d.
-import { eq, count } from 'drizzle-orm'
+import { eq, count, desc } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import type {
@@ -84,6 +84,14 @@ export async function despublicarPortafolioAction(id: string): Promise<Portafoli
 export async function eliminarPortafolioAction(id: string): Promise<boolean> {
   await db.delete(s.portafolio).where(eq(s.portafolio.id, id))
   return true
+}
+
+// Lectura completa para el admin de testimonios (migración TanStack Query, Fase 2): a diferencia
+// de listarTestimoniosPublicadosAction (solo publicados, para el sitio público), esta trae TODOS
+// — publicados y sin publicar — porque la pantalla de gestión necesita verlos todos para curarlos.
+export async function listarTestimoniosAction(): Promise<Testimonio[]> {
+  const rows = await db.select().from(s.testimonios).orderBy(desc(s.testimonios.createdAt))
+  return rows as unknown as Testimonio[]
 }
 
 export async function crearTestimonioAction(data: Partial<Testimonio> & { contenido: string }): Promise<Testimonio> {
