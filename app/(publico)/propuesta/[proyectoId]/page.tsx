@@ -63,10 +63,6 @@ export default async function PropuestaPublicaPage({ params, searchParams }: Pag
     <div className="bg-gold-500/90 px-4 py-2 text-center text-xs font-semibold text-white print:hidden">
       🔍 Vista previa — cambios sin publicar. El cliente NO ve esto todavía.
     </div>
-  ) : banner && typeof banner === 'object' ? (
-    <div className="bg-bg-alt px-4 py-2 text-center text-xs font-semibold text-text-heading border-b border-border-subtle print:hidden">
-      📌 Viendo la versión {banner.version} del histórico — puede no ser la versión vigente.
-    </div>
   ) : undefined
 
   return <PropuestaPublicaClient data={data} banner={bannerNode} />
