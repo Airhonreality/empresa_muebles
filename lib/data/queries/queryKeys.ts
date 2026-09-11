@@ -19,3 +19,8 @@ export const propuestaVersionKeys = {
 export const testimoniosKeys = {
   listado: ['testimonios'] as const,
 } as const
+
+// Galería / renders conceptuales (Fase 2, segunda pantalla migrada fuera del DataStore legacy).
+export const rendersConceptualesKeys = {
+  listado: ['renders-conceptuales'] as const,
+} as const

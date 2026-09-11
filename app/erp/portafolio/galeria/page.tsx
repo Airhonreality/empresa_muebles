@@ -7,16 +7,15 @@ import { useMemo, useState } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { Button, LinkButton } from '@/components/veta/button'
 import { ImagePicker } from '@/components/veta/image-picker'
-import { useDataStore } from '@/lib/data'
+import { useRendersConceptuales, useCrearRenderConceptualMutation, useActualizarRenderConceptualMutation, useEliminarRenderConceptualMutation } from '@/lib/data/queries/useGaleriaQueries'
 import { TIPOS_ESPACIO, labelTipoEspacio } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 export default function GaleriaEspaciosPage() {
-  const store = useDataStore()
-  const version = store.getVersion()
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const renders = useMemo(() => store.renderesConceptuales.listar(), [store, version])
+  const { data: renders = [] } = useRendersConceptuales()
+  const crearRender = useCrearRenderConceptualMutation()
+  const actualizarRender = useActualizarRenderConceptualMutation()
+  const eliminarRender = useEliminarRenderConceptualMutation()
 
   const [tipoEspacio, setTipoEspacio] = useState('')
   const [imagenUrl, setImagenUrl] = useState('')
@@ -33,7 +32,7 @@ export default function GaleriaEspaciosPage() {
     setIsSaving(true)
     setError(null)
     try {
-      await store.renderesConceptuales.crear({ tipoEspacio, imagenUrl, titulo: titulo || null })
+      await crearRender.mutateAsync({ tipoEspacio, imagenUrl, titulo: titulo || null })
       setTipoEspacio('')
       setImagenUrl('')
       setTitulo('')
@@ -142,7 +141,7 @@ export default function GaleriaEspaciosPage() {
                             variant="ghost"
                             size="md"
                             className="h-7 px-2 text-xs"
-                            onClick={() => void store.renderesConceptuales.actualizar(r.id, { visible: !r.visible })}
+                            onClick={() => void actualizarRender.mutateAsync({ id: r.id, patch: { visible: !r.visible } })}
                           >
                             {r.visible ? 'Ocultar' : 'Mostrar'}
                           </Button>
@@ -150,7 +149,7 @@ export default function GaleriaEspaciosPage() {
                             variant="ghost"
                             size="md"
                             className="h-7 px-2 text-xs text-red-600"
-                            onClick={() => void store.renderesConceptuales.eliminar(r.id)}
+                            onClick={() => void eliminarRender.mutateAsync(r.id)}
                           >
                             Eliminar
                           </Button>
