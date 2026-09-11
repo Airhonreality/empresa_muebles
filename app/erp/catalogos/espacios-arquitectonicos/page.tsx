@@ -4,10 +4,11 @@
 // espacios/productos — es INDEPENDIENTE de las 7 categorías de landing (TIPOS_ESPACIO).
 // Crear un espacio aquí jamás genera una landing pública.
 import { useMemo, useState, type ChangeEvent } from 'react'
-import { useDataStore, type CatalogoEspacioArquitectonico } from '@/lib/data'
+import type { CatalogoEspacioArquitectonico } from '@/lib/data'
 import { Button, LinkButton } from '@/components/veta/button'
 import { Badge } from '@/components/veta/badge'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { useCatalogoEspacios, useCrearCatalogoEspacioMutation, useActualizarCatalogoEspacioMutation, useEliminarCatalogoEspacioMutation } from '@/lib/data/queries/useCatalogoEspaciosQueries'
 
 const UNIDADES: { valor: CatalogoEspacioArquitectonico['unidadBase']; label: string }[] = [
   { valor: 'metro_lineal', label: 'Metro lineal (ml)' },
@@ -27,7 +28,6 @@ const VACIO = {
 }
 
 export default function CatalogoEspaciosArquitectonicosPage() {
-  const store = useDataStore()
   const { guard: guardGuardar, isPending: guardando } = usePendingGuard()
   const [busqueda, setBusqueda] = useState('')
   const [form, setForm] = useState(VACIO)
@@ -35,7 +35,10 @@ export default function CatalogoEspaciosArquitectonicosPage() {
   const [error, setError] = useState<string | null>(null)
   const [exito, setExito] = useState<string | null>(null)
 
-  const catalogo = store.catalogosEspaciosArquitectonicos.listar()
+  const { data: catalogo = [] } = useCatalogoEspacios()
+  const crearCatalogoEspacio = useCrearCatalogoEspacioMutation()
+  const actualizarCatalogoEspacio = useActualizarCatalogoEspacioMutation()
+  const eliminarCatalogoEspacio = useEliminarCatalogoEspacioMutation()
 
   const filas = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
@@ -102,10 +105,10 @@ export default function CatalogoEspaciosArquitectonicosPage() {
     }
     try {
       if (editandoId) {
-        await store.catalogosEspaciosArquitectonicos.actualizar(editandoId, datos)
+        await actualizarCatalogoEspacio.mutateAsync({ id: editandoId, patch: datos })
         setExito('Espacio actualizado.')
       } else {
-        await store.catalogosEspaciosArquitectonicos.crear(datos)
+        await crearCatalogoEspacio.mutateAsync(datos)
         setExito('Espacio creado.')
       }
       setForm(VACIO); setEditandoId(null)
@@ -237,7 +240,7 @@ export default function CatalogoEspaciosArquitectonicosPage() {
                     <Button variant="destructive" size="md"
                       onClick={() => guardGuardar(async () => {
                         if (confirm(`Eliminar ${c.codigo} · ${c.nombre}?`)) {
-                          await store.catalogosEspaciosArquitectonicos.eliminar(c.id)
+                          await eliminarCatalogoEspacio.mutateAsync(c.id)
                         }
                       })}
                       disabled={guardando}>Eliminar</Button>

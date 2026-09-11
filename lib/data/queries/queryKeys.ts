@@ -24,3 +24,8 @@ export const testimoniosKeys = {
 export const rendersConceptualesKeys = {
   listado: ['renders-conceptuales'] as const,
 } as const
+
+// Catálogo de espacios arquitectónicos (Fase 2).
+export const catalogoEspaciosKeys = {
+  listado: ['catalogo-espacios-arquitectonicos'] as const,
+} as const
