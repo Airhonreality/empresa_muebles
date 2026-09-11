@@ -1,0 +1,29 @@
+{
+  "id": "t-152",
+  "nombre": "Listado de cotizaciones: ordenar por última edición + mostrar timestamp humano",
+  "descripcion": "Auditoría de Javier (2026-09-10, punto 1). Hoy `app/erp/cotizador/page.tsx:100-136` no muestra ningún timestamp en las tarjetas, y el orden viene de `store.proyectos.listar()` -> `masRecientePrimero()` (`lib/data/orden.ts:7-16`), que ordena por `createdAt DESC` y solo cae a `updatedAt` si no hay `createdAt` — es decir, hoy el listado NO refleja última edición. `updatedAt` sí existe en el modelo (`lib/db/schema.ts:674`).",
+  "objetivo": "Cada slot del listado de cotizaciones se ordena por `updatedAt` descendente y muestra un timestamp humano ('hace 3 horas' / fecha absoluta) de esa última edición.",
+  "prioridad": "Media-alta",
+  "estado": "Ejecutada por agente Haiku (2026-09-10) con el alcance recomendado (ordenamiento client-side en cotizador/page.tsx, lib/data/orden.ts NO tocado) y re-verificada de forma independiente: git diff --stat confirma que orden.ts y comercial/page.tsx quedaron intactos, tsc --noEmit limpio, eslint 0 errores. Timestamp humano vía nuevo helper lib/utils/format.ts::formatRelativeDate(). Sin commit/push. Pendiente: QA visual de Javier.",
+  "tipo": "cambio_comportamiento_listado",
+  "riesgo": "medio",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": null,
+    "fecha": null,
+    "motivo": "orden.ts::masRecientePrimero() es compartida — la usan tanto app/erp/cotizador/page.tsx como (potencialmente) app/erp/comercial/page.tsx (kanban). Reordenar la función compartida podría cambiar el orden del kanban sin que se haya pedido. Recomendación del Orquestador: NO tocar orden.ts; ordenar client-side solo en cotizador/page.tsx por updatedAt, dejando el kanban intacto. Pendiente confirmación de Javier de que esta acotación es la deseada."
+  },
+  "plan_ref": null,
+  "archivos_afectados_estimados": [
+    "app/erp/cotizador/page.tsx",
+    "posible helper nuevo de formato de timestamp humano en lib/ (reusar si ya existe uno para 'días en estado' del kanban, comercial/page.tsx:188/281)"
+  ],
+  "criterios_de_aceptacion": [
+    "Las tarjetas del listado de cotizador aparecen ordenadas por updatedAt DESC",
+    "Cada tarjeta muestra un timestamp legible de última edición (relativo + absoluto al hover/tooltip, mismo patrón ya diseñado en disenio_p01_kanban_comercial.md líneas 92-93/171/204-205/234 para 'Actualizado')",
+    "El kanban comercial (app/erp/comercial/page.tsx) no cambia su orden ni comportamiento actual",
+    "tsc --noEmit y eslint limpios"
+  ],
+  "relacionado": ["t-153 (edición inline de metadata en el mismo slot)", "disenio_p01_kanban_comercial.md"],
+  "fecha_creacion": "2026-09-10"
+}

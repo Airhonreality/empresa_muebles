@@ -23,7 +23,12 @@ import {
   duplicarEspacioAction,
 } from '@/lib/data/actions/core'
 import { obtenerSnapshotCotizadorAction } from '@/lib/data/actions/lecturas-cotizador'
-import { cotizadorKeys } from './queryKeys'
+import {
+  obtenerEstadoPublicacionPropuestaAction,
+  publicarPropuestaAction,
+  type EstadoPublicacionPropuesta,
+} from '@/lib/data/actions/public'
+import { cotizadorKeys, propuestaVersionKeys } from './queryKeys'
 import {
   agregarArtefacto,
   agregarEspacio,
@@ -140,6 +145,7 @@ export function useCrearItemMutation(proyectoId: string) {
         esReferencial: input.esReferencial,
         fuenteReferencial: input.fuenteReferencial,
         grupoReferencial: input.grupoReferencial,
+        comentario: input.comentario,
       }),
     (snap, input) => agregarItem(snap, construirItemOptimista(input)),
     (snap, r) => upsertItem(snap, r),
@@ -152,7 +158,7 @@ export function useCrearItemMutation(proyectoId: string) {
 
 export function useActualizarItemMutation(proyectoId: string) {
   return useMutationOpt<
-    { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>> },
+    { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>> },
     ItemVariante | null
   >(
     proyectoId,
@@ -295,4 +301,31 @@ export function useActualizarArtefactoMutation(proyectoId: string) {
     (snap, { id, patch }) => actualizarArtefacto(snap, id, patch),
     (snap, r) => (r ? upsertArtefacto(snap, r) : snap),
   )
+}
+
+// --- Propuesta versionada (decisión axiomática 2026-09-10, Decisión 2 — t-156) ---
+// Nodo de cache independiente del snapshot del cotizador (propuestaVersionKeys, no cotizadorKeys):
+// publicar no toca items/espacios, solo agrega una fila en propuestas_versiones.
+
+/** Estado del botón dinámico del header: label "Publicar" (nunca se publicó) vs. "Crear nueva
+ * versión" (ya existe al menos una), más el timestamp humano de la última publicación. */
+export function useEstadoPublicacionPropuesta(proyectoId: string) {
+  return useQuery<EstadoPublicacionPropuesta>({
+    queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId),
+    queryFn: () => obtenerEstadoPublicacionPropuestaAction(proyectoId),
+    staleTime: 0,
+  })
+}
+
+/** Congela un snapshot nuevo (botón "Publicar"/"Crear nueva versión"). Al asentar, invalida
+ * el estado de publicación para que el botón y el timestamp se actualicen solos. No toca
+ * cotizadorKeys.detalle — publicar no cambia nada del snapshot editable. */
+export function usePublicarPropuestaMutation(proyectoId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => publicarPropuestaAction(proyectoId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId) })
+    },
+  })
 }

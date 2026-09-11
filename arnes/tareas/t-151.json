@@ -1,0 +1,27 @@
+{
+  "id": "t-151",
+  "nombre": "Cotizador: botón 'Propuesta pública' invisible en responsive/mobile",
+  "descripcion": "Auditoría de Javier (2026-09-10, punto 4) confirmó el bug: `app/erp/cotizador/[proyectoId]/page.tsx:362` envuelve el bloque de acciones de escritorio (incluye 'Propuesta pública' línea 394, 'Solo lectura' línea 406 y 'Eliminar' líneas 408-418) en `hidden sm:flex` — por debajo de 640px ese bloque completo desaparece. La barra alternativa de mobile (`:716`, `sm:hidden fixed bottom-14 ...`) solo replica 3 de los 6 botones ('Editar' :717, '▶ Presentar' :720-730, 'Contrato' :731-733); nadie agregó ahí 'Propuesta pública'. Resultado: en mobile no hay ninguna forma de abrir la vista pública desde el cotizador.",
+  "objetivo": "Que el botón 'Propuesta pública' (y, a evaluar, 'Solo lectura') esté accesible también en la barra de acciones de mobile, sin romper el layout existente de esa barra fija.",
+  "prioridad": "Alta (bug de UX bloqueante para uso en campo desde celular)",
+  "estado": "Ejecutada por agente Haiku (2026-09-10) y re-verificada de forma independiente por el Orquestador: botón agregado a la barra mobile (app/erp/cotizador/[proyectoId]/page.tsx, diff de 10 líneas), tsc --noEmit limpio, eslint 0 errores (2 warnings preexistentes ajenos). Sin commit/push. Pendiente: QA visual de Javier en npm run dev.",
+  "tipo": "correccion_ui_responsive",
+  "riesgo": "bajo",
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": null,
+    "fecha": null
+  },
+  "plan_ref": "Ver brief de ejecución en el reporte de orquestación 2026-09-10 (sin archivo dedicado — cambio de un solo componente, un solo archivo)",
+  "archivos_afectados": [
+    "app/erp/cotizador/[proyectoId]/page.tsx"
+  ],
+  "criterios_de_aceptacion": [
+    "En viewport <640px, existe un control visible para abrir /propuesta/[proyectoId] (mismo window.open('_blank') que la versión desktop)",
+    "La barra fija de mobile (bottom-14) no rompe su layout ni tapa contenido al agregar el control",
+    "No se modifica ningún otro botón/lógica del header desktop (hidden sm:flex intacto)",
+    "tsc --noEmit y eslint limpios en el archivo tocado"
+  ],
+  "relacionado": ["t-154 (rediseño de header, resolverá esto de raíz al unificar acciones desktop/mobile)"],
+  "fecha_creacion": "2026-09-10"
+}

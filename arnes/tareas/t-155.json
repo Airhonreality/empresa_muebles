@@ -1,0 +1,31 @@
+{
+  "id": "t-155",
+  "nombre": "Aplicar el Header de entidad (t-154) al Cotizador y al menos una pantalla más (Proyecto)",
+  "descripcion": "Una vez aprobado el diseño de t-154, reemplazar el header ad-hoc de `app/erp/cotizador/[proyectoId]/page.tsx:342-421` (y su variante de solo-lectura `:796-819`) por el componente agnóstico, y aplicarlo también a `app/erp/proyectos/[proyectoId]/page.tsx:526-547` para demostrar que el módulo es realmente agnóstico a la pantalla (pedido explícito de Javier, punto 2: 'podría usarse también en la pantalla de proyecto').",
+  "objetivo": "Cotizador y Proyecto comparten el mismo patrón visual/estructural de header+acciones; el bug de t-151 (botón invisible en mobile) queda resuelto de raíz por construcción, no por parche.",
+  "prioridad": "Alta",
+  "estado": "EJECUTADA (2026-09-10). Cotizador: header+acciones reemplazados por EntityHeader/EntityActionsBar (incluye '+ Nueva cotización', pedido mid-tarea del Supervisor, y el botón dinámico Publicar/Crear nueva versión de t-156). Proyecto: EntityHeader aplicado a la metadata (sin EntityActionsBar — esa pantalla no tenía acciones reales que mover, documentado en el código en vez de inventarlas). Re-verificado de forma independiente: tsc --noEmit limpio, eslint 0 errores (2 warnings preexistentes ajenos). El bug de t-151 (barra mobile con solo 3 de 6 botones) queda resuelto por construcción, no por parche.",
+  "tipo": "refactor_ui_consumo_modulo_nuevo",
+  "riesgo": "medio-alto",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": null,
+    "fecha": null,
+    "motivo": "Toca la pantalla de mayor uso diario del equipo comercial (cotizador) en `dev`, que es producción real. Requiere verificación mecánica completa (tsc/eslint/build) más QA visual de Javier antes de dar por cerrada, igual que el resto de refactors de pantalla en este arnés."
+  },
+  "plan_ref": null,
+  "archivos_afectados_estimados": [
+    "app/erp/cotizador/[proyectoId]/page.tsx",
+    "app/erp/proyectos/[proyectoId]/page.tsx",
+    "components/veta/entity-header.tsx",
+    "components/veta/entity-actions-bar.tsx"
+  ],
+  "criterios_de_aceptacion": [
+    "Ambas pantallas usan el mismo componente de header, con solo las acciones/metadata específicas variando por props",
+    "Ya no existe hidden sm:flex ocultando acciones completas sin equivalente mobile (resuelve t-151 sin parche puntual)",
+    "tsc --noEmit, eslint y next build limpios",
+    "QA visual de Javier en npm run dev antes de commit/push (push a dev = producción real, ver AGENTS.md)"
+  ],
+  "relacionado": ["t-154", "t-151"],
+  "fecha_creacion": "2026-09-10"
+}

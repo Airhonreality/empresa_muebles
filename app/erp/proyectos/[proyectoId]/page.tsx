@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { LinkButton } from '@/components/veta/button'
+import { EntityHeader } from '@/components/veta/entity-header'
 import {
   useDataStore,
   type ActaEntrega,
@@ -522,29 +523,25 @@ export default function ProyectoHubPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex-1">
-            <h1 className="font-display text-3xl font-semibold text-text-heading">
-              {proyecto.nombreProyecto}
-            </h1>
-            {cliente && (
-              <p className="text-sm text-text-muted mt-2">
-                Cliente: {cliente.nombre}
-              </p>
-            )}
-            {proyecto.direccionObra && (
-              <p className="text-xs text-text-muted mt-1">Ubicación: {proyecto.direccionObra}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge tone={estadoBadgeTone(proyecto.estado)} dot>
-              {estadoLabels[proyecto.estado] || proyecto.estado}
-            </Badge>
-          </div>
-        </div>
-      </header>
+      {/* Header — EntityHeader (t-155, decision_axiomatica_2026-09-10 Decisión 1).
+          Esta pantalla no tiene acciones de header hoy (las "Ir a X" de abajo son
+          navegación de sección, no acciones de entidad) — se omite EntityActionsBar
+          a propósito en vez de inventar acciones que no existen. */}
+      <EntityHeader
+        variant="stacked"
+        titulo={proyecto.nombreProyecto}
+        subtitulo={
+          <>
+            {cliente && <p>Cliente: {cliente.nombre}</p>}
+            {proyecto.direccionObra && <p className="text-xs mt-1">Ubicación: {proyecto.direccionObra}</p>}
+          </>
+        }
+        badges={
+          <Badge tone={estadoBadgeTone(proyecto.estado)} dot>
+            {estadoLabels[proyecto.estado] || proyecto.estado}
+          </Badge>
+        }
+      />
 
       {/* Timeline de Gates derivado: E-18, E-21, E-23, E-24, E-25, E-26 + transversales E-33/E-20 */}
       <section className="mb-8">

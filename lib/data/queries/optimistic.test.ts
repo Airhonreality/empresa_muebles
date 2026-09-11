@@ -47,6 +47,7 @@ function item(id: string, overrides: Partial<ItemVariante> = {}): ItemVariante {
     esReferencial: false,
     fuenteReferencial: null,
     grupoReferencial: null,
+    comentario: null,
     createdAt: '2026-09-05T00:00:00Z',
     updatedAt: '2026-09-05T00:00:00Z',
     ...overrides,

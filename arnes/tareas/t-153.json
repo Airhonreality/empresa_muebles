@@ -1,0 +1,29 @@
+{
+  "id": "t-153",
+  "nombre": "Listado de cotizaciones: editar metadata del proyecto desde el slot (ícono → modal)",
+  "descripcion": "Auditoría de Javier (2026-09-10, punto 1). Hoy la única forma de editar metadata del proyecto (nombre, cliente, dirección, tipo) es entrar al detalle y abrir `components/veta/editar-proyecto-modal.tsx` (montado solo en `app/erp/cotizador/[proyectoId]/page.tsx:687-694` y `:717-719`). El listado (`app/erp/cotizador/page.tsx:100-136`) no tiene ningún ícono de edición — solo un botón 'Eliminar' condicional (líneas 117-131).",
+  "objetivo": "Cada slot del listado tiene un ícono de edición que abre el mismo EditarProyectoModal ya existente, sin navegar al detalle, y persiste el cambio en el proyecto correspondiente.",
+  "prioridad": "Media",
+  "estado": "Ejecutada por agente Haiku (2026-09-10), serializada después de t-152 en el mismo archivo. Re-verificado de forma independiente: EditarProyectoModal se reutiliza sin cambios (props proyecto/clientes/onClose/onSaved coinciden exactamente con la interfaz existente en components/veta/editar-proyecto-modal.tsx; el modal usa useDataStore() directo, sin depender de contexto exclusivo del detalle, por lo que montarlo en el listado es seguro). tsc --noEmit limpio, eslint 0 errores. Sin commit/push. Pendiente: QA visual de Javier.",
+  "tipo": "feature_ui_reutilizacion_componente",
+  "riesgo": "bajo-medio",
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": null,
+    "fecha": null
+  },
+  "plan_ref": null,
+  "archivos_afectados_estimados": [
+    "app/erp/cotizador/page.tsx",
+    "components/veta/editar-proyecto-modal.tsx (reutilizar, no reescribir salvo que hoy asuma que solo vive en el detalle — verificar props/contexto antes de montar en listado)"
+  ],
+  "criterios_de_aceptacion": [
+    "Ícono de edición visible en cada tarjeta del listado",
+    "Click abre EditarProyectoModal con los datos del proyecto de esa tarjeta precargados",
+    "Guardar actualiza la tarjeta sin recargar la página completa (usa la misma vía de invalidación que el detalle)",
+    "No rompe el flujo de edición existente desde el detalle",
+    "tsc --noEmit y eslint limpios"
+  ],
+  "relacionado": ["t-152 (mismo archivo/slot, serializar: t-152 primero, t-153 después)"],
+  "fecha_creacion": "2026-09-10"
+}

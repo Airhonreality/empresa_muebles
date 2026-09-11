@@ -56,7 +56,7 @@ export interface CotizadorCompatStore {
   items: {
     porVariante(varianteId: string): ItemVariante[]
     crear(input: Omit<InputItemOptimista, 'id'>): Promise<ItemVariante>
-    actualizar(id: string, patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>): Promise<ItemVariante | null>
+    actualizar(id: string, patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>): Promise<ItemVariante | null>
     eliminar(id: string): Promise<boolean>
   }
   artefactos: {

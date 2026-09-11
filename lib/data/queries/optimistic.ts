@@ -23,6 +23,8 @@ export interface InputItemOptimista {
   esReferencial?: boolean
   fuenteReferencial?: ItemVariante['fuenteReferencial']
   grupoReferencial?: string | null
+  /** Comentario libre por ítem (requerimiento Supervisor 2026-09-10), visible en la propuesta pública. */
+  comentario?: string | null
 }
 
 export function construirItemOptimista(input: InputItemOptimista): ItemVariante {
@@ -40,6 +42,7 @@ export function construirItemOptimista(input: InputItemOptimista): ItemVariante 
     esReferencial: input.esReferencial ?? false,
     fuenteReferencial: input.fuenteReferencial ?? null,
     grupoReferencial: input.grupoReferencial ?? null,
+    comentario: input.comentario ?? null,
     createdAt: ahora,
     updatedAt: ahora,
   }
@@ -53,7 +56,7 @@ export function agregarItem(snapshot: CotizadorSnapshot, item: ItemVariante): Co
 export function actualizarItem(
   snapshot: CotizadorSnapshot,
   itemId: string,
-  patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>,
+  patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>,
 ): CotizadorSnapshot {
   if (!snapshot.items.some((i) => i.id === itemId)) return snapshot
   const ahora = new Date().toISOString()

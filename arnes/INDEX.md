@@ -62,12 +62,9 @@ Detalle de pantallas por fase (cita rápida, el archivo vive en `pantallas/`):
 - `archivo/` — `destilacion_docs_veta.md` ("segundo input": DOCS VETA DORADA — marca/SEO/tono), `marco_estrategia_mercado.md`.
 - `contenido/` — **copy exacto y estructura de secciones por pantalla pública (2026-08-09).** Espejo 1:1 con `ola7/pantallas/disenio_FXX.md`. Insumo cerrado de contenido para que el Iniciador del bucle F-web destile sin inventar copy. Sigue `PLANTILLA_CONTENIDO.md` (7 bloques).
 
-#### 3.c `lineas/ui-slots/` — capa de composición y estados de interfaz (tipado de slots UI)
+#### 3.c `lineas/ui-slots/` — ⛔ CANCELADA (2026-09-10), nunca tuvo archivos
 
-- `fundamento_teorico_ui_slots.md` — entrada teórica (doctrina "Composición + estados semánticos", hallazgos H1–H6).
-- `plan_ui-slots.md` — fuente única de la línea (fases 1–4).
-- `estado_ui-slots.md` — progreso de la línea.
-- **Regla:** `ZU_05`..`ZU_08` (Vía B de la línea Zustand) quedan bloqueadas para rediseño ergonómico hasta el contrato mínimo de esta línea.
+Esta sección describía una línea con doctrina y 4 archivos como si existiera. Verificado 2026-09-10 (`find` + `git log --all`, todas las ramas): `arnes/lineas/ui-slots/` **nunca se escribió** — cero archivos, cero commits. Decisión axiomática de reemplazo en `arnes/lineas/ola7/tecnico/decision_axiomatica_2026-09-10_header_entidad_y_versionado_propuesta.md`: el alcance completo (taxonomía de estados, contrato a `nucleo/`) queda cancelado por sobre-ingeniería; se sustituye por dos primitivas puntuales (`entity-header.tsx`/`entity-actions-bar.tsx`, ver `arnes/tareas/t-154.json`/`t-155.json`). El piloto real que sí se construyó (`alert-slot.tsx`, `empty-state.tsx`, chips de filtro en `/erp/cotizador`) se conserva. **Regla actualizada:** `ZU_05`..`ZU_08` quedan bloqueadas hasta que `t-154`/`t-155` entreguen esas dos primitivas aplicadas en ≥2 pantallas — no hasta un "contrato mínimo" de una línea que nunca existió.
 
 ### 4. arnes/roles/
 Contratos de los 5 roles (orquestador, iniciador, código, QA, supervisor). Compartido por todas las líneas — se lee al arranque de cada sesión (`AGENTS.md` paso 4), no es archivo histórico.

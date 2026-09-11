@@ -4,6 +4,8 @@ import { useState, useMemo, useCallback, useEffect, memo } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { EntityHeader } from '@/components/veta/entity-header'
+import { EntityActionsBar, type EntityAction } from '@/components/veta/entity-actions-bar'
 import { MoneyInput } from '@/components/veta/money-input'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
@@ -23,6 +25,8 @@ import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finan
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import { useDebouncedInput } from '@/lib/hooks/useDebouncedInput'
+import { useEstadoPublicacionPropuesta, usePublicarPropuestaMutation } from '@/lib/data/queries/useCotizadorQueries'
+import { formatRelativeDate } from '@/lib/utils/format'
 
 /* Wrapper local para el input de "Grupo referencial": vive dentro de un `.map()`, así que el hook
    no puede llamarse directamente en el callback del map (violaría Rules of Hooks) -- por eso se
@@ -121,6 +125,10 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const readonly = searchParams.get('readonly') === 'true'
   const router = useRouter()
   const { store, cargando } = useCotizadorCompat()
+  // t-156: hooks incondicionales (usan la prop proyectoId, no proyecto.id — proyecto
+  // puede no existir aún) para no violar rules-of-hooks contra el early-return de `readonly`.
+  const { data: estadoPublicacion } = useEstadoPublicacionPropuesta(proyectoId)
+  const publicarPropuesta = usePublicarPropuestaMutation(proyectoId)
 
   const proyecto = store.proyectos.obtenerPorId(proyectoId)
   const cliente = proyecto?.clienteId ? store.clientes.obtenerPorId(proyecto.clienteId) : undefined
@@ -339,86 +347,124 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
     )
   }
 
+  // EntityActionsBar (t-155, decision_axiomatica_2026-09-10 Decisión 1): reemplaza la
+  // barra desktop + la barra mobile duplicada (bug t-151, que solo mostraba 3 de 6
+  // botones en mobile) por una sola fuente de verdad de acciones.
+  const accionesCotizador: EntityAction[] = [
+    {
+      id: 'nueva-cotizacion',
+      label: '+ Nueva cotización',
+      variant: 'secondary',
+      onClick: () => router.push('/erp/cotizador/new'),
+    },
+    {
+      id: 'editar-datos',
+      label: 'Editar datos',
+      variant: 'secondary',
+      onClick: () => setMostrarEditarProyecto(true),
+    },
+    {
+      id: 'propuesta-publica',
+      label: 'Propuesta pública',
+      variant: 'secondary',
+      onClick: () => window.open(`/propuesta/${proyecto.id}`, '_blank'),
+    },
+    {
+      id: 'publicar-propuesta',
+      label: estadoPublicacion?.tieneVersionPublicada ? 'Crear nueva versión' : 'Publicar',
+      variant: 'primary',
+      loading: publicarPropuesta.isPending,
+      onClick: () => publicarPropuesta.mutate(),
+    },
+    {
+      id: 'solo-lectura',
+      label: 'Solo lectura',
+      variant: 'secondary',
+      onClick: () => window.open(`/erp/cotizador/${proyecto.id}?readonly=true`, '_blank'),
+    },
+    {
+      id: 'presentar',
+      label: '▶ Presentar',
+      variant: 'primary',
+      onClick: () => {
+        window.open(`/propuesta/${proyecto.id}`, '_blank', 'noopener')
+        setModalPresentacionAbierto(true)
+      },
+    },
+    {
+      id: 'generar-contrato',
+      label: 'Generar Contrato',
+      variant: 'primary',
+      onClick: () => setMostrarContratoModal(true),
+    },
+    {
+      id: 'eliminar',
+      label: 'Eliminar',
+      variant: 'destructive',
+      hidden: proyecto.estado !== 'activa',
+      onClick: async () => {
+        if (window.confirm(`¿Eliminar la cotización "${proyecto.nombreProyecto}"?`)) {
+          const ok = await eliminarProyectoAction(proyecto.id)
+          if (ok) router.push('/erp/cotizador')
+        }
+      },
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-5xl">
       {/* Header — Ultra Compacto, sticky (disenio_p04_cotizador.md §5.1) */}
-      <header className="sticky top-0 z-10 bg-bg-raised px-4 py-3 sm:py-2 border-b border-border-subtle shadow-sm">
-        <div className="flex items-center justify-between gap-x-4">
-          {/* Proyecto + cliente + estado */}
-          <div className="min-w-0 flex flex-1 items-center gap-3">
-            <span className="hidden sm:inline text-xs font-mono text-gold-600 shrink-0">{proyecto.codigo}</span>
-            <h1 className="font-display text-lg sm:text-base font-semibold text-text-heading truncate" title={proyecto.nombreProyecto}>
-              {proyecto.nombreProyecto}
-            </h1>
-            {cliente && (
-              <span className="hidden sm:inline text-xs text-text-muted truncate">· {cliente.nombre}</span>
-            )}
-            <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
-              {proyecto.estado}
-            </Badge>
-          </div>
-
-          {/* Acciones de escritorio (ocultas en móvil) */}
-          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-            {/* Garantía */}
-            <label className="flex items-center gap-1.5 shrink-0 mr-2">
-              <span className="text-xs text-text-muted">Garantía</span>
-              <input
-                type="number"
-                min={0}
-                max={20}
-                value={proyecto.garantiaAnios}
-                onChange={async (e) => {
-                  const n = Number(e.target.value)
-                  await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { garantiaAnios: Number.isFinite(n) ? n : 0 })
-                }}
-                className="w-12 rounded border border-border-subtle bg-bg-paper px-1.5 py-1 text-xs font-mono focus:border-gold-400 focus:outline-none"
-              />
-              <span className="text-xs text-text-muted">años</span>
-            </label>
-
-            {/* IVA */}
-            <div className="flex items-center gap-1.5 shrink-0 mr-2">
-              <label className="flex items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  checked={proyecto.aplicaIva}
-                  onChange={async (e) => await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { aplicaIva: e.target.checked })}
-                  className="rounded border border-border-subtle cursor-pointer"
-                />
-                <span className="text-xs font-medium text-text-heading">IVA</span>
-              </label>
-            </div>
-
-            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => setMostrarEditarProyecto(true)}>Editar datos</Button>
-            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>Propuesta pública</Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => {
-                window.open(`/propuesta/${proyecto.id}`, '_blank', 'noopener')
-                setModalPresentacionAbierto(true)
+      <EntityHeader
+        sticky
+        codigo={proyecto.codigo}
+        titulo={proyecto.nombreProyecto}
+        subtitulo={cliente ? `· ${cliente.nombre}` : undefined}
+        badges={
+          <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
+            {proyecto.estado}
+          </Badge>
+        }
+      >
+        {/* Controles de edición inline (Garantía/IVA) -- NO son acciones, quedan fuera
+            de EntityActionsBar por instrucción explícita (decision_axiomatica...). */}
+        <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+          <label className="flex items-center gap-1.5 shrink-0 mr-2">
+            <span className="text-xs text-text-muted">Garantía</span>
+            <input
+              type="number"
+              min={0}
+              max={20}
+              value={proyecto.garantiaAnios}
+              onChange={async (e) => {
+                const n = Number(e.target.value)
+                await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { garantiaAnios: Number.isFinite(n) ? n : 0 })
               }}
-            >
-              ▶ Presentar
-            </Button>
-            <Button variant="ghost" size="md" className="h-7 px-2 text-xs" onClick={() => window.open(`/erp/cotizador/${proyecto.id}?readonly=true`, '_blank')}>Solo lectura</Button>
-            <Button variant="primary" size="md" className="h-7 px-3 text-xs" onClick={() => setMostrarContratoModal(true)}>Generar Contrato</Button>
-            {proyecto.estado === 'activa' && (
-              <Button
-                variant="ghost" size="md" className="h-7 px-2 text-xs text-red-500 hover:text-red-600"
-                onClick={async () => {
-                  if (window.confirm(`¿Eliminar la cotización "${proyecto.nombreProyecto}"?`)) {
-                    const ok = await eliminarProyectoAction(proyecto.id)
-                    if (ok) router.push('/erp/cotizador')
-                  }
-                }}
-              >Eliminar</Button>
-            )}
+              className="w-12 rounded border border-border-subtle bg-bg-paper px-1.5 py-1 text-xs font-mono focus:border-gold-400 focus:outline-none"
+            />
+            <span className="text-xs text-text-muted">años</span>
+          </label>
+
+          <div className="flex items-center gap-1.5 shrink-0 mr-2">
+            <label className="flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={proyecto.aplicaIva}
+                onChange={async (e) => await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { aplicaIva: e.target.checked })}
+                className="rounded border border-border-subtle cursor-pointer"
+              />
+              <span className="text-xs font-medium text-text-heading">IVA</span>
+            </label>
           </div>
         </div>
-      </header>
+
+        {estadoPublicacion?.tieneVersionPublicada && estadoPublicacion.publicadaEn && (
+          <span className="hidden sm:inline text-xs text-text-muted shrink-0 mr-2" title="Última vez que el cliente vio una versión publicada de esta propuesta">
+            v{estadoPublicacion.ultimaVersion} · publicada {formatRelativeDate(estadoPublicacion.publicadaEn)}
+          </span>
+        )}
+
+        <EntityActionsBar actions={accionesCotizador} />
+      </EntityHeader>
 
       {/* Contenido scrolleable */}
       <div className="px-6 py-6">
@@ -712,26 +758,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         )}
       </div>
 
-      {/* Mobile Bottom Sticky Bar for Actions */}
-      <div className="sm:hidden fixed bottom-14 left-0 right-0 z-40 bg-bg-raised border-t border-border-subtle p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex items-center justify-between gap-2 pb-safe">
-        <Button variant="ghost" size="md" className="h-10 px-4 text-xs font-semibold flex-1" onClick={() => setMostrarEditarProyecto(true)}>
-          Editar
-        </Button>
-        <Button
-          variant="outline"
-          size="md"
-          className="h-10 px-4 text-xs font-semibold flex-1"
-          onClick={() => {
-            window.open(`/propuesta/${proyecto.id}`, '_blank', 'noopener')
-            setModalPresentacionAbierto(true)
-          }}
-        >
-          ▶ Presentar
-        </Button>
-        <Button variant="primary" size="md" className="h-10 px-4 text-xs font-semibold flex-1" onClick={() => setMostrarContratoModal(true)}>
-          Contrato
-        </Button>
-      </div>
     </div>
   )
 }
@@ -793,22 +819,28 @@ function VistaSoloLectura({
       </div>
 
       {/* HeaderProyectoDisplay */}
-      <header className="mb-6 rounded-lg border border-border-subtle bg-bg-raised p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-text-heading">{proyecto.nombreProyecto}</h1>
-            {cliente && (
-              <p className="text-sm text-text-muted mt-1">{cliente.nombre} · {cliente.telefono ?? 's/tel'} · {cliente.email ?? 's/email'}</p>
-            )}
-            {proyecto.direccionObra && <p className="text-xs text-text-muted mt-1">{proyecto.direccionObra}</p>}
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
-              {proyecto.estado}
-            </Badge>
-            <Badge tone="neutral">{proyecto.tipoProyecto}</Badge>
-          </div>
-        </div>
+      <div className="mb-6 rounded-lg border border-border-subtle bg-bg-raised p-5">
+        <EntityHeader
+          variant="stacked"
+          className=""
+          titulo={proyecto.nombreProyecto}
+          subtitulo={
+            <>
+              {cliente && (
+                <p>{cliente.nombre} · {cliente.telefono ?? 's/tel'} · {cliente.email ?? 's/email'}</p>
+              )}
+              {proyecto.direccionObra && <p className="text-xs mt-1">{proyecto.direccionObra}</p>}
+            </>
+          }
+          badges={
+            <>
+              <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
+                {proyecto.estado}
+              </Badge>
+              <Badge tone="neutral">{proyecto.tipoProyecto}</Badge>
+            </>
+          }
+        />
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-text-muted sm:grid-cols-4">
           <span>Costos operativos: {formatCOP(costosOperativos)}</span>
           <span>Imprevistos: {formatCOP(imprevistos)}</span>
@@ -816,7 +848,7 @@ function VistaSoloLectura({
           <span>IVA: {proyecto.aplicaIva ? `Sí (${proyecto.porcentajeIva}%)` : 'No'}</span>
           <span>Garantía: {proyecto.garantiaAnios} años</span>
         </div>
-      </header>
+      </div>
 
       {/* EspacioCardReadOnly + ItemRowDisplay */}
       <section className="mb-6 space-y-3">

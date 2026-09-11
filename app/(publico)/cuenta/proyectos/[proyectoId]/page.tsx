@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { requireSesionCliente } from '@/lib/auth/session'
-import { obtenerProyectoClienteAction } from '@/lib/data/actions/public'
+import { obtenerProyectoClienteAction, listarVersionesPropuestaAction } from '@/lib/data/actions/public'
 import { ProyectoDetalleCliente } from './proyecto-detalle-cliente'
 
 // F-07 Portal Cliente — Detalle de proyecto.
@@ -19,11 +19,21 @@ export default async function ProyectoDetallePage({ params }: PageProps) {
   if (!clienteId) redirect('/cuenta/login')
 
   const { proyectoId } = await params
-  const data = await obtenerProyectoClienteAction(proyectoId, clienteId)
+  const [data, versionesPropuesta] = await Promise.all([
+    obtenerProyectoClienteAction(proyectoId, clienteId),
+    listarVersionesPropuestaAction(proyectoId),
+  ])
 
   if (!data) {
     notFound()
   }
 
-  return <ProyectoDetalleCliente proyectoId={proyectoId} clienteId={clienteId} data={data} />
+  return (
+    <ProyectoDetalleCliente
+      proyectoId={proyectoId}
+      clienteId={clienteId}
+      data={data}
+      versionesPropuesta={versionesPropuesta}
+    />
+  )
 }

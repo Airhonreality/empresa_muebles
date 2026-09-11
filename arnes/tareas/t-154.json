@@ -1,0 +1,31 @@
+{
+  "id": "t-154",
+  "nombre": "Diseño de módulo agnóstico 'Header de entidad' + submódulo 'Acciones contextuales' (resucita la línea ui-slots, nunca escrita)",
+  "descripcion": "Auditoría de Javier (2026-09-10, puntos 2 y 2.1) más hallazgo del Orquestador: `arnes/estado.md:403-411` e `INDEX.md:65-70` describen una línea `ui-slots` (doctrina 'Composición + estados semánticos', hallazgos H1-H6, declarada PRERREQUISITO de bloqueo de ZU_05..ZU_08) como si existiera — pero `arnes/lineas/ui-slots/` NUNCA se escribió (verificado con find + git log --all sobre todas las ramas: cero archivos, cero commits). El 'piloto' narrado (alert-slot, chips de filtro, EmptyState en /erp/cotizador) sí se construyó, pero no cubre ningún header de metadata genérico. Diagnóstico de código confirma la queja de Javier: 3 headers de detalle de entidad completamente distintos y ad-hoc — `cotizador/[proyectoId]/page.tsx:342-421` (sticky, compacto, 6 botones sueltos sin agrupar), `proyectos/[proyectoId]/page.tsx:526-547` (grande, apilado, sin sticky), `compras/[ordenCompraId]/page.tsx:170-178` (simple con 'volver'), más un cuarto patrón interno (`VistaSoloLectura`, cotizador/[proyectoId]/page.tsx:796-819). Ninguno reutiliza nada de components/veta/ (no existe ningún 'EntityHeader'/'PageHeader' hoy).",
+  "objetivo": "Un componente de header de entidad reutilizable (metadata + botón de edición que abre form modal) y un submódulo de 'acciones contextuales' (estructura de barra de acciones común: agrupación semántica de publicar/editar/eliminar/presentar u otras según la pantalla) que consuma los tokens del Diamante 4 y sea consumible por Cotizador, Proyecto y cualquier pantalla futura de detalle de entidad — sin reabrir la deuda de 3+ headers distintos.",
+  "prioridad": "Alta (deuda de consistencia visual transversal, bloquea además ZU_05..ZU_08 que ya dependían de esto)",
+  "estado": "EJECUTADA (2026-09-10) por agente Sonnet, re-verificada de forma independiente por el Orquestador: components/veta/entity-header.tsx + entity-actions-bar.tsx construidos (metadata pura + acciones agrupadas por variant, responsive resuelto en un solo lugar — colapso a menú '⋮' en mobile, sin segunda barra duplicada). tsc --noEmit y eslint 0 errores confirmados de forma independiente. Sin commit/push hasta que t-155/t-156 cerraran también (ver esos tickets) — van juntos en el mismo push.",
+  "tipo": "diseño_arquitectura_ui_transversal",
+  "riesgo": "alto",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": null,
+    "fecha": null,
+    "motivo": "Mutación de un patrón transversal que tocará múltiples pantallas y que otras 4 fases (ZU_05..ZU_08) ya declararon como prerrequisito de bloqueo. AGENTS.md exige diseño con checkpoint del Supervisor antes de codificar cualquier pantalla ('ninguna pantalla se diseña con estilo improvisado').",
+    "resuelto": "2026-09-10 — Javier autorizó explícitamente aplicar diseño axiomático para cerrar el alcance ('apliquemos el diseño axiomático para definir las decisiones finales'). Alcance acotado a EntityHeader+EntityActionsBar puntual, ver plan_ref. Este es el checkpoint de DISEÑO; falta el de plan de código del Iniciador."
+  },
+  "plan_ref": "arnes/lineas/ola7/tecnico/decision_axiomatica_2026-09-10_header_entidad_y_versionado_propuesta.md",
+  "archivos_afectados_estimados": [
+    "arnes/lineas/ui-slots/ (a crear desde cero — hoy no existe ningún archivo)",
+    "arnes/lineas/ola7/pantallas/disenio_entity_header.md (nuevo, o extensión de disenio_p04_cotizador.md)",
+    "components/veta/entity-header.tsx (nuevo, código — fase posterior a t-155)",
+    "components/veta/entity-actions-bar.tsx (nuevo, código — fase posterior)"
+  ],
+  "criterios_de_aceptacion": [
+    "Documento de diseño aprobado por Javier antes de cualquier código",
+    "El diseño resuelve explícitamente: agrupación semántica de acciones (edición de negocio vs navegación vs destructivas), comportamiento responsive único (sin una segunda barra completamente distinta para mobile con botones faltantes — corrige de raíz t-151), y cómo el submódulo de acciones varía su contenido por pantalla sin duplicar estructura",
+    "El diseño cita explícitamente los tokens D4 a reutilizar (arnes/lineas/ola7/archivo/diamante4_metodologia.md)"
+  ],
+  "relacionado": ["t-151", "t-155", "ZU_05..ZU_08 (estado.md líneas 372-385, prerrequisito transversal)"],
+  "fecha_creacion": "2026-09-10"
+}

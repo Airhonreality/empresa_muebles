@@ -44,7 +44,7 @@
 
 | # | Regla | Validación |
 |---|---|---|
-| R1 | Propuesta = snapshot inmutable del proyecto (lectura-only) | Servidor: GET sin mutación |
+| R1 | Propuesta = snapshot inmutable del proyecto (lectura-only) | Servidor: GET sin mutación — **CONFIRMADO vigente 2026-09-10** (decisión axiomática, `arnes/lineas/ola7/tecnico/decision_axiomatica_2026-09-10_header_entidad_y_versionado_propuesta.md`): esta regla nunca se implementó; el código real hoy consulta en vivo (`t-031`, ahora superado). Mecanismo concreto: tabla `propuestas_versiones` insert-only, ver `t-156`. |
 | R2 | Snapshot proyecta solo campos públicos: sin `id` interno, `costo`, `margen`, `proveedor_id` | Server projection |
 | R3 | MO: tarifas calculadas en runtime desde `parametros` (C1). No se almacenan en snapshot | Servidor |
 | R4 | Civil estimate: agrupado por `grupo_referencial`, badge "Referencial", no suma al total contractual | Servidor + UI |

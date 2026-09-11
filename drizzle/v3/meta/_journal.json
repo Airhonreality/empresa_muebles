@@ -99,6 +99,13 @@
       "when": 1787350000000,
       "tag": "0013_portafolio_nullable_y_catalogo_espacios",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789430000000,
+      "tag": "0014_propuestas_versiones_item_comentario",
+      "breakpoints": true
     }
   ]
 }

@@ -105,6 +105,11 @@ function ItemCard({ item, producto, onZoom }: ItemCardProps) {
           {formatQty(item.cantidad)} {unidad}
           {precioUnitario > 0 ? <> · {formatCOP(precioUnitario)} c/u</> : null}
         </p>
+        {/* Comentario libre por ítem (requerimiento Supervisor 2026-09-10) — discreto, no
+            interfiere con precio/cantidad ni con el total a la derecha. */}
+        {item.comentario && (
+          <p className="mt-0.5 text-xs italic text-text-muted/80">{item.comentario}</p>
+        )}
       </div>
       {total > 0 && (
         <div className="shrink-0 self-center text-right">

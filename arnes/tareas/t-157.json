@@ -1,0 +1,34 @@
+{
+  "id": "t-157",
+  "nombre": "Cotizador: árbol Espacio → Grupo → Subgrupo → Ítems (agrupación de ítems dentro de un espacio)",
+  "descripcion": "Pedido de Javier (2026-09-10, mid-sesión): la cotización debería verse como un árbol de espacios/módulos/sub-módulos/ítems — hoy los ítems (`items_variante`) cuelgan planos directo de `espacio_variantes`, sin ningún nivel de agrupación intermedio. Investigación del Orquestador encontró que YA EXISTE una tabla `modulos` en el schema (`lib/db/schema.ts:1040`) — pero es un concepto de PRODUCCIÓN (recursiva vía `padreId`, usada por `taller`, `calidad`, `garantía` y el dashboard de proyecto; se crea después del contrato, nunca en `app/erp/cotizador/`). Conectar los ítems de cotización a esa misma tabla mezclaría dos ciclos de vida distintos (cotización = antes del contrato; `modulos` = trazabilidad de fabricación/garantía después) — el mismo tipo de conflación que este proyecto ya evitó a propósito antes (ARCH-012, portafolio/espacio) y que reabriría el problema ya diferido D-16 ('gates por proyecto vs. por nodo', backlog_auditoria_pantallas.md).",
+  "objetivo": "Un vendedor puede crear grupos (y subgrupos, anidamiento libre) dentro de un espacio de la cotización, asignar ítems a esos grupos, y la propuesta pública muestra los ítems agrupados por su grupo/subgrupo — usando un concepto NUEVO y separado de `modulos` (producción), para no colisionar de vocabulario ni de ciclo de vida.",
+  "prioridad": "Alta (pedido explícito y repetido de Javier)",
+  "estado": "Registrada, sin ejecutar todavía — decisión de nomenclatura ya tomada por Javier ('Grupo', tabla `grupos_item`, separada de `modulos`). Empieza como siguiente tanda inmediatamente después del push de t-151..t-156.",
+  "tipo": "feature_datos_schema_ui_cotizador",
+  "riesgo": "alto",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "Javier resolvió la pregunta de nomenclatura 2026-09-10: tabla nueva `grupos_item` (recursiva vía padreId, igual que `modulos` pero para cotización), NO reutilizar `modulos`. Falta el checkpoint de schema propiamente dicho sobre la migración concreta (regla dura de AGENTS.md), antes de tocar lib/db/schema.ts.",
+    "fecha": "2026-09-10"
+  },
+  "plan_ref": null,
+  "archivos_afectados_estimados": [
+    "lib/db/schema.ts (tabla grupos_item: id, espacioVarianteId FK, nombre, padreId self-FK recursivo, orden; items_variante gana grupoItemId nullable FK)",
+    "drizzle/v3/NNNN_*.sql (migración aditiva — CUIDADO: repetir el método manual de t-156 si drizzle-kit generate sigue bloqueado por el choque 0010/0011, que sigue sin resolverse de raíz)",
+    "lib/data/contracts.ts, mock-store.ts, drizzle-impl.ts, fixtures.ts (CRUD de grupos_item, mismo patrón dual)",
+    "lib/data/actions/core.ts (crear/renombrar/reordenar/eliminar grupo, asignar ítem a grupo)",
+    "app/erp/cotizador/[proyectoId]/page.tsx (UI de árbol: crear grupo/subgrupo dentro de un espacio, drag o selector para asignar ítems)",
+    "lib/data/actions/public.ts::construirSnapshotPropuestaPublica (agrupar items por grupoItemId al armar el snapshot, incluyendo jerarquía de subgrupos)",
+    "app/(publico)/propuesta/[proyectoId]/PropuestaPublicaClient.tsx (render agrupado por grupo/subgrupo en vez de lista plana)"
+  ],
+  "criterios_de_aceptacion": [
+    "Un espacio puede tener 0..N grupos, cada grupo puede tener 0..N subgrupos (recursión libre, igual patrón que modulos.padreId pero en tabla separada)",
+    "Un ítem pertenece a 0 o 1 grupo (grupoItemId nullable — ítems sin grupo siguen siendo válidos, agrupación es opcional no obligatoria)",
+    "La propuesta pública (snapshot Y fallback en vivo) muestra los ítems agrupados visualmente por su grupo/subgrupo",
+    "Cero relación de FK o de código entre grupos_item y modulos (tablas y dominios completamente separados)",
+    "tsc/eslint limpios, migración generada o escrita a mano según el estado del choque 0010/0011"
+  ],
+  "relacionado": ["t-154", "t-155", "t-156", "backlog_auditoria_pantallas.md (D-16, gates por proyecto vs. por nodo — precedente de por qué no se conflate con modulos)"],
+  "fecha_creacion": "2026-09-10"
+}

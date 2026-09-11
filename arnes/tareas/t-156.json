@@ -1,0 +1,38 @@
+{
+  "id": "t-156",
+  "nombre": "Versionado real de la propuesta pública: publicar/nueva versión, snapshot congelado, logs por tabs para el cliente",
+  "descripcion": "Auditoría de Javier (2026-09-10, punto 3) + hallazgo del Orquestador: existe una CONTRADICCIÓN sin resolver entre 3 fuentes. (a) `disenio_F08_propuesta_publica.md` (2026-08-07, regla R1): 'Propuesta = snapshot inmutable del proyecto (lectura-only)'. (b) `estado_ola7.md:426` (t-031, 2026-08-02): 'La versión nueva no tiene snapshot: consulta el proyecto en vivo... no puede mostrar un total viejo por diseño' — literalmente lo opuesto. (c) Diseño histórico archivado (`archivo/pasadas/d3_schema_a1_1_contextos.md:82`, `d3_schema_a1_5_datos.md:117`) SÍ proponía una tabla `cotizaciones` con `version`/`estado`/`snapshotProyecto` (jsonb)/`publicadaAt`, identificó el riesgo P3-07 ('snapshot congelado vs. proyecto vivo editándose — dos versiones del mismo dato sin relación declarada') y pidió 'una política de versión' que quedó sin resolver — esa tabla nunca llegó al diseño vigente. El código real hoy confirma (b): `obtenerPropuestaPublicaAction` (`lib/data/actions/public.ts:230-323`) hace SELECT en vivo en cada request; 'enviar' es solo `actualizarEstadoProyectoAction` (`lib/data/actions/core.ts:19-39`) cambiando `proyectos.estado`, registrado en `proyectosEstadosHistorial` (historial de ESTADOS, no de contenido). No existe ninguna tabla de snapshot/versión de propuesta en `lib/db/schema.ts` hoy.",
+  "objetivo": "Al hacer clic en 'Publicar' (primera vez) o 'Crear nueva versión' (siguientes), se congela un snapshot con timestamp humano; la vista pública sirve SIEMPRE el último snapshot publicado, no el proyecto en vivo; ediciones posteriores no se reflejan hasta la próxima publicación; el portal del cliente muestra las versiones publicadas anteriores como tabs/logs.",
+  "prioridad": "Alta (pedido explícito y detallado de Javier, con lógica de negocio clara: control de cambios frente al cliente)",
+  "estado": "EJECUTADA en código (2026-09-10, checkpoint explícito de Javier: 'aprobado todo... finaliza con push'). Tabla propuestas_versiones + fallback a consulta en vivo cuando no hay versión (evita repetir el incidente de atributos_tecnicos del 2026-08-28) + botón dinámico cableado en el cotizador + tabs de versiones en portal cliente, todo re-verificado de forma independiente (tsc/eslint limpios). Migración escrita a mano en drizzle/v3/0014_propuestas_versiones_item_comentario.sql (drizzle-kit generate seguía bloqueado por el choque de snapshots 0010/0011, mismo método ya usado para 0012_atributos_tecnicos: SQL + entrada de journal a mano, sin tocar el historial roto). PENDIENTE REAL, NO EJECUTADO POR EL AGENTE (bloqueado a propósito, requiere credenciales/decisión humana): aplicar la migración contra la base de datos real. Comando exacto para Javier: `npx drizzle-kit migrate` (con DATABASE_URL apuntando a producción) — debe correrse cuanto antes tras el push, aunque el fallback evita que la app rompa mientras tanto.",
+  "tipo": "feature_datos_schema_logica_negocio",
+  "riesgo": "alto",
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": null,
+    "fecha": null,
+    "motivo": "(1) Mutación de schema (tabla nueva de versiones/snapshots) — checkpoint obligatorio por AGENTS.md, TODAVÍA PENDIENTE (distinto del checkpoint de diseño). (2) Cambia el comportamiento de la vista pública real que clientes reales pueden estar viendo hoy en producción (dev=producción) — riesgo de negocio si un cliente pierde visibilidad de un cambio que esperaba ver.",
+    "resuelto_parcialmente": "2026-09-10 — la contradicción de diseño (F-08 vs t-031 vs P3-07) queda resuelta axiomáticamente: F-08 R1 confirmado vigente, t-031 marcado superado, P3-07 cerrado. Ver plan_ref. PENDIENTE: checkpoint de schema propiamente dicho, sobre la migración concreta que el Iniciador escriba."
+  },
+  "plan_ref": "arnes/lineas/ola7/tecnico/decision_axiomatica_2026-09-10_header_entidad_y_versionado_propuesta.md",
+  "archivos_afectados": [
+    "lib/db/schema.ts (tabla propuestasVersiones + items_variante.comentario, ver t-156-comentario)",
+    "drizzle/v3/0014_propuestas_versiones_item_comentario.sql (migración escrita a mano)",
+    "lib/data/actions/public.ts (construirSnapshotPropuestaPublica extraída, publicarPropuestaAction, listarVersionesPropuestaAction, obtenerEstadoPublicacionPropuestaAction, obtenerPropuestaPublicaAction con fallback)",
+    "lib/data/queries/queryKeys.ts, useCotizadorQueries.ts (useEstadoPublicacionPropuesta, usePublicarPropuestaMutation)",
+    "app/erp/cotizador/[proyectoId]/page.tsx (botón dinámico cableado + timestamp humano de última publicación)",
+    "app/(publico)/cuenta/proyectos/[proyectoId]/page.tsx + proyecto-detalle-cliente.tsx (PropuestaVersionesTabs)",
+    "arnes/lineas/ola7/pantallas/disenio_F08_propuesta_publica.md (corregido), arnes/lineas/ola7/estado_ola7.md:426 (t-031 marcado SUPERADO)"
+  ],
+  "criterios_de_aceptacion": [
+    "Plan de Iniciador declara explícitamente el modelo de datos y resuelve la contradicción F-08 vs t-031 vs diseño histórico archivado, con checkpoint de Javier antes de migrar",
+    "Editar el proyecto después de publicar NO cambia lo que ve el cliente hasta la siguiente publicación",
+    "Botón cambia su label/estado según haya o no una versión ya publicada ('Publicar' primera vez, 'Crear nueva versión' después)",
+    "Timestamp humano de última publicación visible en el header del cotizador",
+    "Cliente ve tabs/listado de versiones publicadas anteriores en su portal",
+    "Migración aditiva, sin tocar datos de proyectos.estado existentes; verificada contra dev-local antes de production",
+    "tsc/eslint/build limpios + prueba manual de publicar→editar→verificar que la vista pública no cambió→nueva versión→verificar que sí cambió"
+  ],
+  "relacionado": ["disenio_F08_propuesta_publica.md", "estado_ola7.md t-031", "archivo/pasadas/d3_schema_a1_1_contextos.md", "archivo/pasadas/d3_schema_a1_5_datos.md"],
+  "fecha_creacion": "2026-09-10"
+}

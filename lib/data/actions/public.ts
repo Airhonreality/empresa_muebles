@@ -6,7 +6,7 @@
 // filtraba client-side sobre datos de TODOS los clientes/proyectos, ya presentes en el HTML/RSC
 // payload. Acá cada función trae por SQL solo lo que la página necesita. Mismo patrón dual
 // DATA_IMPL ya establecido en lib/data/actions/portafolio.ts.
-import { eq, and, or, inArray } from 'drizzle-orm'
+import { eq, and, or, inArray, desc } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import type {
@@ -14,7 +14,7 @@ import type {
   Proyecto, EspacioVariante, ItemVariante, Contrato, HitoPago,
   ObligacionPendiente, MovimientoFinanciero, ComunicacionProgreso,
   Instalacion, ActaEntrega, CasoGarantia, Modulo, Cliente,
-  Testimonio, AtributoTecnico,
+  Testimonio, AtributoTecnico, PropuestaVersion,
 } from '../contracts'
 
 export interface FotoGaleriaEspacio {
@@ -227,7 +227,11 @@ export interface PropuestaPublicaData {
 }
 
 
-export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
+// Arma los datos de la propuesta pública — extraído de obtenerPropuestaPublicaAction (decisión
+// axiomática 2026-09-10, Decisión 2, FR5/DP5) para que publicarPropuestaAction reutilice
+// EXACTAMENTE la misma lógica de cálculo/query al congelar un snapshot: cero lógica de negocio
+// nueva, misma regla que hoy sirve la vista en vivo.
+async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<PropuestaPublicaData | null> {
   if (DATA_IMPL() === 'drizzle') {
     const [proyecto] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId)).limit(1)
     if (!proyecto) return null
@@ -320,6 +324,102 @@ export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise
       tarifaInstall: valorAux,
     },
   }
+}
+
+// --- Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — cierra t-156) ---
+// Insert-only, nunca update — ver comentario de lib/db/schema.ts sobre por qué esto NO repite
+// el bug del legacy (snapshot_json mutable desincronizado entre sí).
+
+async function obtenerUltimaVersionPropuesta(proyectoId: string): Promise<PropuestaVersion | null> {
+  if (DATA_IMPL() === 'drizzle') {
+    const [row] = await db.select().from(s.propuestasVersiones)
+      .where(eq(s.propuestasVersiones.proyectoId, proyectoId))
+      .orderBy(desc(s.propuestasVersiones.version))
+      .limit(1)
+    return (row as unknown as PropuestaVersion) ?? null
+  }
+  const { getDataStore } = await import('@/lib/data/store')
+  return getDataStore().propuestasVersiones.obtenerUltima(proyectoId)
+}
+
+// Portal cliente (punto 7 del encargo): histórico completo, orden ascendente (v1, v2, v3...).
+export async function listarVersionesPropuestaAction(proyectoId: string): Promise<PropuestaVersion[]> {
+  if (DATA_IMPL() === 'drizzle') {
+    const rows = await db.select().from(s.propuestasVersiones).where(eq(s.propuestasVersiones.proyectoId, proyectoId))
+    return (rows as unknown as PropuestaVersion[]).slice().sort((a, b) => a.version - b.version)
+  }
+  const { getDataStore } = await import('@/lib/data/store')
+  return getDataStore().propuestasVersiones.listarPorProyecto(proyectoId)
+}
+
+export interface EstadoPublicacionPropuesta {
+  /** false si nunca se publicó bajo este mecanismo — el botón del cotizador debe decir "Publicar". */
+  tieneVersionPublicada: boolean
+  ultimaVersion: number | null
+  /** ISO timestamp de la última publicación, para mostrar la fecha humana junto al botón. */
+  publicadaEn: string | null
+}
+
+// Estado para el botón dinámico del cotizador (punto 8 del encargo): label "Publicar" vs.
+// "Crear nueva versión" + timestamp humano de la última publicación.
+export async function obtenerEstadoPublicacionPropuestaAction(proyectoId: string): Promise<EstadoPublicacionPropuesta> {
+  const ultima = await obtenerUltimaVersionPropuesta(proyectoId)
+  return {
+    tieneVersionPublicada: ultima !== null,
+    ultimaVersion: ultima?.version ?? null,
+    publicadaEn: ultima?.publicadaEn ?? null,
+  }
+}
+
+// Congela un snapshot nuevo (botón "Publicar"/"Crear nueva versión" del cotizador). Reusa
+// construirSnapshotPropuestaPublica — el MISMO cálculo que la vista en vivo — y calcula
+// version = MAX(version)+1 (o 1 si es la primera), igual al patrón ya usado en
+// lib/data/actions/f3.ts (crearSchemaAction) para otras tablas versionadas del repo.
+// publicadaPorId se resuelve server-side de la cookie de sesión (mismo patrón que
+// lib/data/actions/lecturas-cotizador.ts) — no se confía en un id mandado por el cliente; el
+// parámetro queda como escape hatch explícito para tests/scripts.
+export async function publicarPropuestaAction(proyectoId: string, publicadaPorId?: string | null): Promise<PropuestaVersion> {
+  const snapshot = await construirSnapshotPropuestaPublica(proyectoId)
+  if (!snapshot) throw new Error(`No se pudo publicar: el proyecto ${proyectoId} no existe`)
+
+  if (publicadaPorId === undefined) {
+    const { requireSesionEmpleado } = await import('@/lib/auth/session')
+    const sesion = await requireSesionEmpleado()
+    publicadaPorId = sesion?.usuarioId ?? null
+  }
+
+  if (DATA_IMPL() === 'drizzle') {
+    return db.transaction(async (tx) => {
+      const existentes = await tx.select().from(s.propuestasVersiones).where(eq(s.propuestasVersiones.proyectoId, proyectoId))
+      const version = existentes.length > 0 ? Math.max(...existentes.map((v) => v.version)) + 1 : 1
+      const [nueva] = await tx.insert(s.propuestasVersiones).values({
+        proyectoId,
+        version,
+        snapshotJson: snapshot as unknown as Record<string, unknown>,
+        publicadaPorId: publicadaPorId ?? null,
+      }).returning()
+      return nueva as unknown as PropuestaVersion
+    })
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  return getDataStore().propuestasVersiones.crear(proyectoId, snapshot, publicadaPorId ?? null)
+}
+
+// Reescrita (decisión axiomática 2026-09-10, Decisión 2): antes consultaba el proyecto EN VIVO
+// en cada request. Ahora sirve siempre el último snapshot publicado.
+// FALLBACK OBLIGATORIO a la consulta en vivo cuando no existe ninguna fila en
+// propuestas_versiones para este proyecto: hay links de propuesta pública YA COMPARTIDOS con
+// clientes reales que nunca van a tener una versión bajo este mecanismo nuevo (nadie le dio
+// "Publicar" porque no existía). Sin este fallback esos links existentes se romperían el día
+// que este código se despliegue (requisito de negocio explícito del encargo de t-156, mismo
+// patrón de riesgo que el incidente de atributos_tecnicos sin datos, 2026-08-28). Una vez que
+// exista al menos una versión publicada para un proyecto, se sirve siempre esa última versión
+// — nunca más en vivo para ese proyecto.
+export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
+  const ultima = await obtenerUltimaVersionPropuesta(proyectoId)
+  if (ultima) return ultima.snapshotJson as PropuestaPublicaData
+  return construirSnapshotPropuestaPublica(proyectoId)
 }
 
 // --- Portal cliente (F-07, /cuenta/**) — escopado por clienteId/proyectoId, no el snapshot global ---

@@ -25,6 +25,7 @@ function item(id: string, varianteId: string, anulado = false) {
     esReferencial: false,
     fuenteReferencial: null,
     grupoReferencial: null,
+    comentario: null,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   }
@@ -107,6 +108,7 @@ const itm = (id: string, varianteId: string): ItemVariante => ({
   esReferencial: false,
   fuenteReferencial: null,
   grupoReferencial: null,
+  comentario: null,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 })
@@ -214,6 +216,7 @@ async function testCrearItemOptimisticConfirmado() {
       esReferencial: false,
       fuenteReferencial: null,
       grupoReferencial: null,
+      comentario: null,
     },
     () => Promise.resolve(confirmado),
   )
@@ -256,6 +259,7 @@ async function testCrearItemOptimisticRevert() {
         esReferencial: false,
         fuenteReferencial: null,
         grupoReferencial: null,
+        comentario: null,
       },
       () => Promise.reject(new Error('red caída')),
     )

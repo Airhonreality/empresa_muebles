@@ -84,6 +84,9 @@ export interface ItemVariante {
   esReferencial: boolean
   fuenteReferencial: 'electrodomestico' | 'obra_civil' | 'servicio_tercero' | 'otro' | null
   grupoReferencial: string | null
+  /** Comentario libre por ítem (requerimiento Supervisor 2026-09-10), editable desde el
+   * cotizador y visible en el slot de ese ítem en la propuesta pública. */
+  comentario: string | null
   createdAt: string
   updatedAt: string
 }
@@ -890,6 +893,22 @@ export interface Testimonio {
   updatedAt: string
 }
 
+// --- Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — cierra t-156) ---
+// Insert-only, nunca update: cada fila es un snapshot JSONB inmutable de PropuestaPublicaData
+// (lib/data/actions/public.ts) tal como se veía al momento de publicar. `version` + `proyectoId`
+// es la relación declarada (DP6) — "la vigente" es siempre MAX(version), sin campo booleano
+// `esActual` que pueda quedar en dos filas a la vez.
+export interface PropuestaVersion {
+  id: string
+  proyectoId: string
+  version: number
+  /** PropuestaPublicaData serializado — tipado unknown acá para no acoplar contracts.ts a
+   * lib/data/actions/public.ts; el caller hace el cast. */
+  snapshotJson: unknown
+  publicadaEn: string
+  publicadaPorId: string | null
+}
+
 export type TipoModuloArtefacto = 'imagen' | 'plano_armado' | 'orden_armado' | 'modelo_3d'
 export type FuenteModuloArtefacto = 'heredado_catalogo' | 'dedicado_proyecto'
 
@@ -997,7 +1016,7 @@ export interface DataStore {
   items: {
     porVariante(varianteId: string): ItemVariante[]
     crear(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante>
-    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>): Promise<ItemVariante | null>
+    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>): Promise<ItemVariante | null>
     eliminar(id: string): Promise<boolean>
   }
   artefactos: {
@@ -1377,6 +1396,16 @@ export interface DataStore {
       contenido: string
       creadoPor?: string | null
     }): Promise<NotaReunion>
+  }
+
+  // --- Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — cierra t-156) ---
+  propuestasVersiones: {
+    /** Orden ascendente (v1, v2, v3...) — histórico completo para las tabs del portal cliente. */
+    listarPorProyecto(proyectoId: string): PropuestaVersion[]
+    /** null si el proyecto nunca fue publicado bajo este mecanismo (ver fallback en obtenerPropuestaPublicaAction). */
+    obtenerUltima(proyectoId: string): PropuestaVersion | null
+    /** Calcula version = MAX(version)+1 (o 1 si es la primera) internamente. */
+    crear(proyectoId: string, snapshotJson: unknown, publicadaPorId: string | null): Promise<PropuestaVersion>
   }
 
   /** Contrato de reactividad (M-07). Se suscribe a cualquier mutación del store. Devuelve la función de desuscripción. */

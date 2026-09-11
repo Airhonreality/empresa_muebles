@@ -1109,6 +1109,24 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
 
+    // Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — t-156). Mismo
+    // patrón de "salta el proxy" que notasReunion arriba: lib/data/actions/public.ts
+    // (obtenerPropuestaPublicaAction/publicarPropuestaAction/listarVersionesPropuestaAction)
+    // habla con Drizzle directamente en su propio branch DATA_IMPL==='drizzle' — nunca pasa por
+    // useDataStore(). getDataStore() (de donde sale la implementación mock de este módulo)
+    // lanza a propósito bajo DATA_IMPL='drizzle', así que este bloque nunca se ejecuta en
+    // producción real; existe solo para cumplir el contrato estructural de DataStore.
+    propuestasVersiones: {
+      listarPorProyecto: () => [],
+      obtenerUltima: () => null,
+      crear: async () => {
+        throw new Error(
+          'propuestasVersiones.crear no está cableado en drizzle-impl.ts a propósito — ' +
+          'lib/data/actions/public.ts habla con Drizzle directamente (ver comentario arriba).'
+        )
+      },
+    },
+
     auth: {
       usuarioActual: () => data.usuario,
     },

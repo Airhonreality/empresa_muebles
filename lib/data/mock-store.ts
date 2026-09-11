@@ -9,7 +9,7 @@ import type {
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
-  NotaReunion,
+  NotaReunion, PropuestaVersion,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
@@ -115,6 +115,10 @@ export function createMockStore(): DataStore {
   const testimonios: Testimonio[] = []
   const renders: RenderConceptual[] = []
   const atributosTecnicos: AtributoTecnico[] = []
+
+  // Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — t-156). Insert-only,
+  // arranca vacío: sin fixtures porque se genera en runtime al publicar, nunca se siembra.
+  const propuestasVersionesArr: PropuestaVersion[] = []
 
   // F4 dominios (compras: recepción, herramientas — P-13/P-14/P-15)
   const itemsOrdenCompra: ItemOrdenCompra[] = deepClone(ITEMS_ORDEN_COMPRA)
@@ -581,6 +585,7 @@ export function createMockStore(): DataStore {
           esReferencial: data.esReferencial ?? false,
           fuenteReferencial: data.fuenteReferencial ?? null,
           grupoReferencial: data.grupoReferencial ?? null,
+          comentario: data.comentario ?? null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
@@ -588,7 +593,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      async actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>): Promise<ItemVariante | null> {
+      async actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario'>>): Promise<ItemVariante | null> {
         const idx = items.findIndex(i => i.id === id)
         if (idx === -1) return null
         const actualizado = { ...items[idx], ...partial }
@@ -2587,6 +2592,37 @@ export function createMockStore(): DataStore {
         testimonios[idx] = { ...testimonios[idx], publicado: false, updatedAt: new Date().toISOString() }
         notify()
         return testimonios[idx]
+      },
+    },
+
+    // Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — t-156). Insert-only:
+    // no hay actualizar()/eliminar() a propósito, mismo espíritu que auth.usuarioActual().
+    propuestasVersiones: {
+      listarPorProyecto(proyectoId: string): PropuestaVersion[] {
+        return propuestasVersionesArr
+          .filter(v => v.proyectoId === proyectoId)
+          .slice()
+          .sort((a, b) => a.version - b.version)
+      },
+      obtenerUltima(proyectoId: string): PropuestaVersion | null {
+        const deProyecto = propuestasVersionesArr.filter(v => v.proyectoId === proyectoId)
+        if (deProyecto.length === 0) return null
+        return deProyecto.reduce((max, v) => (v.version > max.version ? v : max))
+      },
+      async crear(proyectoId: string, snapshotJson: unknown, publicadaPorId: string | null): Promise<PropuestaVersion> {
+        const existentes = propuestasVersionesArr.filter(v => v.proyectoId === proyectoId)
+        const version = existentes.length > 0 ? Math.max(...existentes.map(v => v.version)) + 1 : 1
+        const nueva: PropuestaVersion = {
+          id: generateId('propversion'),
+          proyectoId,
+          version,
+          snapshotJson,
+          publicadaEn: new Date().toISOString(),
+          publicadaPorId,
+        }
+        propuestasVersionesArr.push(nueva)
+        notify()
+        return nueva
       },
     },
 

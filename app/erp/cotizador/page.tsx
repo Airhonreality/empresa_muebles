@@ -1,12 +1,14 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Button, LinkButton } from '@/components/veta/button'
 import { Badge } from '@/components/veta/badge'
 import { Busqueda } from '@/components/veta/busqueda'
-import { useDataStore } from '@/lib/data'
+import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
+import { useDataStore, type Proyecto } from '@/lib/data'
 import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
+import { formatRelativeDate } from '@/lib/utils/format'
 
 const PIPELINE_ESTADOS = ['activa', 'enviada', 'negociacion', 'en_contrato', 'retoma', 'pre_produccion', 'produccion']
 
@@ -35,6 +37,10 @@ export default function CotizadorIndexPage() {
   const proyectos = store.proyectos.listar()
   const clientes = store.clientes.listar()
 
+  // Estado para el modal de edición
+  const [mostrarEditarModal, setMostrarEditarModal] = useState(false)
+  const [proyectoEditando, setProyectoEditando] = useState<Proyecto | null>(null)
+
   const eliminarProyecto = async (proj: { id: string; nombreProyecto: string }) => {
     if (window.confirm(`¿Eliminar la cotización "${proj.nombreProyecto}"? Solo se pueden eliminar cotizaciones en estado Lead. Esta acción borra todos sus datos y no se puede deshacer.`)) {
       await store.proyectos.eliminar(proj.id)
@@ -48,8 +54,17 @@ export default function CotizadorIndexPage() {
       .map((p) => ({ ...p, clienteNombre: clienteMap.get(p.clienteId ?? '')?.nombre }))
   }, [proyectos, clientes])
 
+  // Reordenar por updatedAt descendente (más reciente primero)
+  const pipelineSorted = useMemo(() => {
+    return [...pipeline].sort((a, b) => {
+      const dateA = new Date(a.updatedAt).getTime()
+      const dateB = new Date(b.updatedAt).getTime()
+      return dateB - dateA
+    })
+  }, [pipeline])
+
   const { query, setQuery, resultado: proyectosBuscados } = useSmartSearch({
-    items: pipeline,
+    items: pipelineSorted,
     getCampos: (p) => [
       p.codigo,
       p.nombreProyecto,
@@ -101,7 +116,7 @@ export default function CotizadorIndexPage() {
             <Link key={proj.id} href={`/erp/cotizador/${proj.id}`}>
               <div className="rounded-lg border border-border-subtle bg-bg-raised p-4 shadow-xs transition-all duration-soft hover:border-gold-400 hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-medium text-gold-600">{proj.codigo}</span>
                       <p className="text-sm font-medium text-text-heading">{proj.nombreProyecto}</p>
@@ -109,8 +124,26 @@ export default function CotizadorIndexPage() {
                     <p className="mt-0.5 text-xs text-text-muted">
                       {proj.clienteNombre ?? 'Sin cliente'} · {proj.diasEntregaEstimados} días · {proj.tipoProyecto === 'producto_fijo' ? 'Producto fijo' : 'Personalizado'}
                     </p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      Editado: {formatRelativeDate(proj.updatedAt)}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      className="h-6 min-h-0 px-2 text-gold-600 hover:text-gold-700 hover:bg-bg-alt"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setProyectoEditando(proj)
+                        setMostrarEditarModal(true)
+                      }}
+                      title="Editar proyecto"
+                      aria-label="Editar proyecto"
+                    >
+                      ✏️
+                    </Button>
                     <Badge tone={ESTADO_TONE[proj.estado] ?? 'neutral'} dot>
                       {ESTADO_LABEL[proj.estado] ?? proj.estado}
                     </Badge>
@@ -135,6 +168,22 @@ export default function CotizadorIndexPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {/* Modal Editar proyecto */}
+      {mostrarEditarModal && proyectoEditando && (
+        <EditarProyectoModal
+          proyecto={proyectoEditando}
+          clientes={clientes}
+          onClose={() => {
+            setMostrarEditarModal(false)
+            setProyectoEditando(null)
+          }}
+          onSaved={() => {
+            setMostrarEditarModal(false)
+            setProyectoEditando(null)
+          }}
+        />
       )}
     </div>
   )

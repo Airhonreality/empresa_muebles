@@ -6,6 +6,9 @@ import { Badge } from '@/components/veta/badge'
 import { ReportarGarantiaModal } from '@/components/veta/reportar-garantia-modal'
 import type { EstadoProyecto } from '@/lib/data'
 import type { ProyectoClienteDetalle } from '@/lib/data/actions/public'
+import type { PropuestaVersion } from '@/lib/data/contracts'
+import type { PropuestaPublicaData } from '@/lib/data/actions/public'
+import { PropuestaPublicaClient } from '@/app/(publico)/propuesta/[proyectoId]/PropuestaPublicaClient'
 
 // F-07 Portal Cliente — Detalle de proyecto (ProyectoDetalleCliente).
 // Auditoría 2026-08-15 (A5): ya no consume useDataStore() — recibe los datos ya escopados a
@@ -78,9 +81,56 @@ interface ProyectoDetalleClienteProps {
   proyectoId: string
   clienteId: string
   data: ProyectoClienteDetalle
+  /** Histórico de versiones publicadas (decisión axiomática 2026-09-10, Decisión 2 — t-156),
+   * orden ascendente. Vacío si el proyecto nunca fue publicado bajo este mecanismo. */
+  versionesPropuesta: PropuestaVersion[]
 }
 
-export function ProyectoDetalleCliente({ proyectoId, clienteId, data }: ProyectoDetalleClienteProps) {
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
+/** Tabs de versiones publicadas — cada tab reusa PropuestaPublicaClient (el mismo componente de
+ * render que /propuesta/[proyectoId]), alimentado con el snapshotJson de esa versión en vez de
+ * datos en vivo (FR4/DP4 de la decisión axiomática). Por defecto se abre la más reciente. */
+function PropuestaVersionesTabs({ versiones }: { versiones: PropuestaVersion[] }) {
+  const [seleccionada, setSeleccionada] = useState(versiones.length - 1)
+
+  if (versiones.length === 0) return null
+
+  return (
+    <section className="mb-8">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-3">Propuesta</h2>
+      {versiones.length > 1 && (
+        <div role="tablist" className="mb-4 flex flex-wrap gap-2 border-b border-border-subtle pb-2">
+          {versiones.map((v, i) => (
+            <button
+              key={v.id}
+              role="tab"
+              aria-selected={i === seleccionada}
+              onClick={() => setSeleccionada(i)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                i === seleccionada
+                  ? 'bg-brand text-white'
+                  : 'bg-bg-raised text-text-muted hover:text-text-heading'
+              }`}
+            >
+              Versión {v.version} · {formatDateTime(v.publicadaEn)}
+            </button>
+          ))}
+        </div>
+      )}
+      {versiones.length === 1 && (
+        <p className="mb-4 text-xs text-text-muted">Publicada el {formatDateTime(versiones[0].publicadaEn)}</p>
+      )}
+      <div className="overflow-hidden rounded-lg border border-border-subtle">
+        <PropuestaPublicaClient data={versiones[seleccionada].snapshotJson as PropuestaPublicaData} />
+      </div>
+    </section>
+  )
+}
+
+export function ProyectoDetalleCliente({ proyectoId, clienteId, data, versionesPropuesta }: ProyectoDetalleClienteProps) {
   const [garantiaEnviado, setGarantiaEnviado] = useState(false)
   const {
     proyecto, espacios, contrato, obligaciones, movimientos,
@@ -146,6 +196,9 @@ export function ProyectoDetalleCliente({ proyectoId, clienteId, data }: Proyecto
           </div>
         </section>
       )}
+
+      {/* Propuesta (versionada, decisión axiomática 2026-09-10 Decisión 2) */}
+      <PropuestaVersionesTabs versiones={versionesPropuesta} />
 
       {/* Ambientes */}
       {espacios.length > 0 && (

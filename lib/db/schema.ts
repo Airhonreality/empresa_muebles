@@ -305,6 +305,10 @@ export const itemsVariante = pgTable("items_variante", {
 	esReferencial: boolean("es_referencial").default(false).notNull(),
 	fuenteReferencial: fuenteReferencial("fuente_referencial"),
 	grupoReferencial: text("grupo_referencial"),
+	// Requerimiento del Supervisor (2026-09-10, sumado a t-156): comentario libre por ítem,
+	// editable desde el cotizador, visible en el slot de ese ítem en la propuesta pública
+	// (tanto snapshot versionado como fallback en vivo). Aditiva, nullable — no rompe nada existente.
+	comentario: text(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {
@@ -1541,6 +1545,31 @@ export const testimonios = pgTable("testimonios", {
 		testimoniosProyectoIdFk: foreignKey({
 			columns: [table.proyectoId], foreignColumns: [proyectos.id], name: "testimonios_proyecto_id_proyectos_id_fk"
 		}),
+	}
+});
+
+// Propuestas versionadas (decisión axiomática 2026-09-10, Decisión 2 — cierra t-156).
+// Insert-only, nunca update: cada fila es un snapshot JSONB completo e inmutable de lo que el
+// cliente vio al momento de publicar. `version` + `proyectoId` es la relación declarada (DP6);
+// "la vigente" es siempre MAX(version), sin campo booleano `esActual` que pueda quedar en dos
+// filas a la vez. Cierra por construcción la clase de bug del legacy (unit_price/total
+// desincronizados DENTRO de un mismo snapshot mutable) sin repetir consulta en vivo (t-031).
+export const propuestasVersiones = pgTable("propuestas_versiones", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	proyectoId: uuid("proyecto_id").notNull(),
+	version: integer().notNull(),
+	snapshotJson: jsonb("snapshot_json").notNull(),
+	publicadaEn: timestamp("publicada_en", { mode: 'string' }).defaultNow().notNull(),
+	publicadaPorId: uuid("publicada_por_id"),
+}, (table) => {
+	return {
+		propuestasVersionesProyectoIdFk: foreignKey({
+			columns: [table.proyectoId], foreignColumns: [proyectos.id], name: "propuestas_versiones_proyecto_id_proyectos_id_fk"
+		}),
+		propuestasVersionesPublicadaPorIdFk: foreignKey({
+			columns: [table.publicadaPorId], foreignColumns: [usuarios.id], name: "propuestas_versiones_publicada_por_id_usuarios_id_fk"
+		}),
+		propuestasVersionesProyectoIdVersionUnique: unique("propuestas_versiones_proyecto_id_version_unique").on(table.proyectoId, table.version),
 	}
 });
 
