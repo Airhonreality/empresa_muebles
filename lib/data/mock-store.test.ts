@@ -140,18 +140,44 @@ await test('proyectos: actualizar (t-143) permite renombrar y editar datos maest
     tipoProyecto: 'producto_fijo',
     direccionObra: 'Cra 15 #123-45, Bogotá',
     diasEntregaEstimados: 45,
-    costosOperativos: '500000',
-    descuentoComercial: '200000',
   })
   assert.ok(actualizado)
   assert.equal(actualizado.nombreProyecto, 'Nombre Nuevo')
   assert.equal(actualizado.tipoProyecto, 'producto_fijo')
   assert.equal(actualizado.direccionObra, 'Cra 15 #123-45, Bogotá')
   assert.equal(actualizado.diasEntregaEstimados, 45)
-  assert.equal(actualizado.costosOperativos, '500000')
-  assert.equal(actualizado.descuentoComercial, '200000')
   assert.equal(actualizado.estado, 'activa', 'actualizar datos no debe tocar el estado')
   assert.equal(await store.proyectos.actualizar('id-inexistente', { nombreProyecto: 'Z' }), null)
+})
+
+// 2026-09-11: costosOperativos/costosLogisticos/imprevistosInstalacion/descuentoComercial/
+// ajusteArbitrario se consolidaron en actualizarParametrosFinancieros (junto con
+// aplicaIva/porcentajeIva/garantiaAnios) — módulo único de parametrización financiera de
+// la cotización, en vez de repartidos entre `actualizar` y los inputs sueltos del header.
+await test('proyectos: actualizarParametrosFinancieros consolida impuestos/costos/descuentos', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'Cotización financiera', tipoProyecto: 'personalizado' })
+
+  const actualizado = await store.proyectos.actualizarParametrosFinancieros(p.id, {
+    aplicaIva: true,
+    porcentajeIva: '19',
+    garantiaAnios: 3,
+    costosOperativos: '500000',
+    costosLogisticos: '80000',
+    imprevistosInstalacion: '30000',
+    descuentoComercial: '200000',
+    ajusteArbitrario: '10000',
+  })
+  assert.ok(actualizado)
+  assert.equal(actualizado.aplicaIva, true)
+  assert.equal(actualizado.porcentajeIva, '19')
+  assert.equal(actualizado.garantiaAnios, 3)
+  assert.equal(actualizado.costosOperativos, '500000')
+  assert.equal(actualizado.costosLogisticos, '80000')
+  assert.equal(actualizado.imprevistosInstalacion, '30000')
+  assert.equal(actualizado.descuentoComercial, '200000')
+  assert.equal(actualizado.ajusteArbitrario, '10000')
+  assert.equal(actualizado.nombreProyecto, 'Cotización financiera', 'no debe tocar campos de identidad')
 })
 
 await test('clientes: crear -> listar lo incluye', async () => {

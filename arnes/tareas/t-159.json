@@ -1,0 +1,31 @@
+{
+  "id": "t-159",
+  "nombre": "Cotizador: rediseño de header (metadata invisible) + módulo consolidado de Parámetros Financieros",
+  "descripcion": "Javier reportó (con captura de pantalla, 2026-09-11) que el header del cotizador no mostraba la metadata (código/título/cliente) — se veía apretada casi a cero, con la sensación de 'un módulo legacy superpuesto'. Diagnóstico: el header comprimía TODO en una sola fila flex sin wrap (EntityHeader compact con children = Garantía + IVA + timestamp + EntityActionsBar de 7 botones), forzando el título (flex-1, min-w-0) a casi desaparecer frente a los controles de ancho fijo (shrink-0). Javier también reportó no encontrar el parámetro de costos operativos 'por ningún lado' y pidió un módulo dedicado que consolide impuestos/costos/descuentos.",
+  "objetivo": "El header muestra la metadata siempre visible (fila propia) y las acciones en una fila separada debajo, dentro del mismo contenedor sticky. Los campos financieros (IVA%, aplicaIva, garantía, costosOperativos, costosLogisticos, imprevistosInstalacion, descuentoComercial, ajusteArbitrario) quedan consolidados en un único punto de escritura (`store.proyectos.actualizarParametrosFinancieros`) y un único modal dedicado y discoverable (`ParametrosFinancierosModal`, acción '$ Parámetros financieros' en el EntityActionsBar).",
+  "prioridad": "Alta",
+  "estado": "EJECUTADA (2026-09-11) directamente por el Orquestador. Cambios: (1) header reestructurado en 2 filas dentro de un wrapper sticky único — EntityHeader (solo metadata, sin children) + fila de acciones separada; (2) Garantía/IVA inline eliminados del header; (3) nuevo componente components/veta/parametros-financieros-modal.tsx; (4) Pick de `actualizarParametrosFinancieros` ensanchado (contracts.ts/mock-store.ts/core.ts) a incluir los 5 costos, además de aplicaIva/porcentajeIva/garantiaAnios que ya tenía; (5) Pick de `actualizar`/`actualizarProyectoAction` angostado de vuelta a solo campos de identidad (nombreProyecto/clienteId/tipoProyecto/direccionObra/descripcionSemantica/diasEntregaEstimados); (6) EditarProyectoModal despojado de los 5 MoneyInput de costos (se movieron al módulo nuevo). tsc/eslint/next build limpios; test de mock-store.test.ts actualizado y en verde (único fallo restante es el preexistente 'f3-portafolio: publicados()', ajeno).",
+  "tipo": "refactor_ui_layout_consolidacion_datos",
+  "riesgo": "medio",
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": "Pedido explícito y corregido en la misma sesión que lo reportó.",
+    "fecha": "2026-09-11"
+  },
+  "plan_ref": null,
+  "archivos_afectados": [
+    "app/erp/cotizador/[proyectoId]/page.tsx",
+    "components/veta/parametros-financieros-modal.tsx (nuevo)",
+    "components/veta/editar-proyecto-modal.tsx",
+    "lib/data/contracts.ts, mock-store.ts, actions/core.ts",
+    "lib/data/mock-store.test.ts"
+  ],
+  "criterios_de_aceptacion": [
+    "Código/título/cliente/badge de estado siempre visibles, sin comprimirse por las acciones",
+    "Ningún control financiero suelto en el header — todo entra por 'Parámetros financieros'",
+    "actualizarParametrosFinancieros es la única puerta de escritura para IVA/garantía/costos/descuentos/ajuste",
+    "tsc/eslint/build limpios, tests de mock-store en verde salvo el fallo preexistente documentado"
+  ],
+  "relacionado": ["t-154", "t-155", "t-158"],
+  "fecha_creacion": "2026-09-11"
+}

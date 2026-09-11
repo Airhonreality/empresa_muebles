@@ -143,7 +143,7 @@ export async function eliminarProyectoAction(id: string): Promise<boolean> {
 
 export async function actualizarParametrosFinancierosAction(
   id: string,
-  partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios'>>
+  partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
 ): Promise<Proyecto | null> {
   const [actualizado] = await db.update(s.proyectos).set({ ...partial, updatedAt: new Date().toISOString() }).where(eq(s.proyectos.id, id)).returning()
   return (actualizado as unknown as Proyecto) ?? null
@@ -161,7 +161,7 @@ export async function actualizarVerificadorAction(id: string, verificadorId: str
 // (estado vía kanban, IVA/garantía vía actualizarParametrosFinancieros) quedan fuera.
 export async function actualizarProyectoAction(
   id: string,
-  partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
+  partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados'>>
 ): Promise<Proyecto | null> {
   const [actualizado] = await db.update(s.proyectos)
     .set({ ...partial, tipoProyecto: partial.tipoProyecto as 'personalizado' | 'producto_fijo' | undefined, updatedAt: new Date().toISOString() })

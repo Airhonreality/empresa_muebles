@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/veta/button";
 import { InputField } from "@/components/veta/input-field";
-import { MoneyInput } from "@/components/veta/money-input";
 import { useDataStore, type Proyecto, type Cliente } from "@/lib/data";
 import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
 
@@ -19,10 +18,6 @@ export interface EditarProyectoModalProps {
   onSaved: () => void;
 }
 
-function aDigitos(val: string | null | undefined): string {
-  return (val ?? '').replace(/[^\d]/g, '')
-}
-
 export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: EditarProyectoModalProps) {
   const store = useDataStore();
   const { guard: guardGuardar, isPending: guardando } = usePendingGuard();
@@ -34,11 +29,6 @@ export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: Ed
     direccionObra: proyecto.direccionObra ?? '',
     descripcionSemantica: proyecto.descripcionSemantica ?? '',
     diasEntregaEstimados: proyecto.diasEntregaEstimados ?? '',
-    costosOperativos: aDigitos(proyecto.costosOperativos),
-    costosLogisticos: aDigitos(proyecto.costosLogisticos),
-    imprevistosInstalacion: aDigitos(proyecto.imprevistosInstalacion),
-    descuentoComercial: aDigitos(proyecto.descuentoComercial),
-    ajusteArbitrario: aDigitos(proyecto.ajusteArbitrario),
   });
 
   const guardar = async () => {
@@ -51,11 +41,6 @@ export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: Ed
       direccionObra: form.direccionObra.trim() || null,
       descripcionSemantica: form.descripcionSemantica.trim() || null,
       diasEntregaEstimados: form.diasEntregaEstimados ? Number(form.diasEntregaEstimados) : null,
-      costosOperativos: form.costosOperativos || '0',
-      costosLogisticos: form.costosLogisticos || '0',
-      imprevistosInstalacion: form.imprevistosInstalacion || '0',
-      descuentoComercial: form.descuentoComercial || '0',
-      ajusteArbitrario: form.ajusteArbitrario || '0',
     })
     onSaved()
   }
@@ -146,33 +131,9 @@ export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: Ed
             placeholder="Ej: 45"
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <MoneyInput
-              label="Costos operativos"
-              value={form.costosOperativos}
-              onChange={(v) => set('costosOperativos', v)}
-            />
-            <MoneyInput
-              label="Costos logísticos (transporte)"
-              value={form.costosLogisticos}
-              onChange={(v) => set('costosLogisticos', v)}
-            />
-            <MoneyInput
-              label="Imprevistos de instalación"
-              value={form.imprevistosInstalacion}
-              onChange={(v) => set('imprevistosInstalacion', v)}
-            />
-            <MoneyInput
-              label="Descuento comercial"
-              value={form.descuentoComercial}
-              onChange={(v) => set('descuentoComercial', v)}
-            />
-            <MoneyInput
-              label="Ajuste arbitrario"
-              value={form.ajusteArbitrario}
-              onChange={(v) => set('ajusteArbitrario', v)}
-            />
-          </div>
+          {/* Costos/impuestos/descuentos se movieron a ParametrosFinancierosModal
+              (2026-09-11, consolidación pedida por el Supervisor) — este modal queda
+              solo con datos de identidad/descripción del proyecto. */}
         </div>
 
         <div className="mt-6 flex justify-end gap-3">

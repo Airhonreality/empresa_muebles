@@ -222,7 +222,7 @@ export function createMockStore(): DataStore {
         notify()
         return proyectos[idx]
       },
-      async actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios'>>): Promise<Proyecto | null> {
+      async actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null> {
         const idx = proyectos.findIndex(p => p.id === id)
         if (idx === -1) return null
         proyectos[idx] = { ...proyectos[idx], ...partial, updatedAt: new Date().toISOString() }
@@ -242,7 +242,7 @@ export function createMockStore(): DataStore {
         notify()
         return proyectos[idx]
       },
-      async actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null> {
+      async actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados'>>): Promise<Proyecto | null> {
         const idx = proyectos.findIndex(p => p.id === id)
         if (idx === -1) return null
         proyectos[idx] = { ...proyectos[idx], ...partial, updatedAt: new Date().toISOString() }

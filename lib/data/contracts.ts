@@ -994,11 +994,11 @@ export interface DataStore {
     listar(): Proyecto[]
     obtenerPorId(id: string): Proyecto | undefined
     actualizarEstado(id: string, estado: string): Promise<Proyecto | null>
-    actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios'>>): Promise<Proyecto | null>
+    actualizarParametrosFinancieros(id: string, partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null>
     /** P-12 (D-15): designa el verificador único del proyecto (= comercial vendedor, I-035). Setea verificadorId y comercialVendedorId con el mismo valor. */
     actualizarVerificador(id: string, verificadorId: string): Promise<Proyecto | null>
     /** t-143: edición flexible de datos maestros de la cotización — nombre, cliente, tipo, obra, descripción semántica, días de entrega y ajustes financieros (costos, imprevistos, descuento, ajuste). */
-    actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados' | 'costosOperativos' | 'costosLogisticos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>): Promise<Proyecto | null>
+    actualizar(id: string, partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados'>>): Promise<Proyecto | null>
     crear(data: Partial<Proyecto> & { nombreProyecto: string }): Promise<Proyecto>
     /** Elimina una cotización en estado lead (`activa`) con todos sus datos asociados.
      * Rechaza si el proyecto no está en `activa` o si ya tiene contrato. Retorna true si borró. */

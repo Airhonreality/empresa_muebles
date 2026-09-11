@@ -17,6 +17,7 @@ import { Modal } from '@/components/veta/modal'
 import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-espacios'
 import { ContratoModal } from '../ContratoModal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
+import { ParametrosFinancierosModal } from '@/components/veta/parametros-financieros-modal'
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
 import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem } from '@/lib/data'
 import { CotizadorCompatProvider, useCotizadorCompat, type CotizadorCompatStore } from '@/lib/data/queries/cotizador-compat'
@@ -178,6 +179,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   )
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
+  const [mostrarParametrosFinancieros, setMostrarParametrosFinancieros] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
   const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
 
@@ -366,6 +368,12 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       onClick: () => setMostrarEditarProyecto(true),
     },
     {
+      id: 'parametros-financieros',
+      label: '$ Parámetros financieros',
+      variant: 'secondary',
+      onClick: () => setMostrarParametrosFinancieros(true),
+    },
+    {
       id: 'propuesta-publica',
       label: 'Propuesta pública',
       variant: 'secondary',
@@ -415,58 +423,34 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
 
   return (
     <div className="mx-auto max-w-5xl">
-      {/* Header — Ultra Compacto, sticky (disenio_p04_cotizador.md §5.1) */}
-      <EntityHeader
-        sticky
-        codigo={proyecto.codigo}
-        titulo={proyecto.nombreProyecto}
-        subtitulo={cliente ? `· ${cliente.nombre}` : undefined}
-        badges={
-          <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
-            {proyecto.estado}
-          </Badge>
-        }
-      >
-        {/* Controles de edición inline (Garantía/IVA) -- NO son acciones, quedan fuera
-            de EntityActionsBar por instrucción explícita (decision_axiomatica...). */}
-        <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-          <label className="flex items-center gap-1.5 shrink-0 mr-2">
-            <span className="text-xs text-text-muted">Garantía</span>
-            <input
-              type="number"
-              min={0}
-              max={20}
-              value={proyecto.garantiaAnios}
-              onChange={async (e) => {
-                const n = Number(e.target.value)
-                await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { garantiaAnios: Number.isFinite(n) ? n : 0 })
-              }}
-              className="w-12 rounded border border-border-subtle bg-bg-paper px-1.5 py-1 text-xs font-mono focus:border-gold-400 focus:outline-none"
-            />
-            <span className="text-xs text-text-muted">años</span>
-          </label>
-
-          <div className="flex items-center gap-1.5 shrink-0 mr-2">
-            <label className="flex items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={proyecto.aplicaIva}
-                onChange={async (e) => await store.proyectos.actualizarParametrosFinancieros(proyecto.id, { aplicaIva: e.target.checked })}
-                className="rounded border border-border-subtle cursor-pointer"
-              />
-              <span className="text-xs font-medium text-text-heading">IVA</span>
-            </label>
-          </div>
+      {/*
+        Header en dos filas, sticky como unidad (2026-09-11: rediseño tras hallazgo de
+        Javier — la fila única anterior forzaba metadata (código/título/cliente) a
+        comprimirse casi a cero para hacerle espacio a Garantía+IVA+timestamp+7 botones,
+        todo en un solo `flex` sin wrap. Garantía/IVA se movieron al módulo consolidado
+        de Parámetros Financieros (ver acción 'parametros-financieros' abajo), y las
+        acciones pasan a su propia fila para que el título SIEMPRE tenga su espacio.
+      */}
+      <div className="sticky top-0 z-10 bg-bg-raised shadow-sm">
+        <EntityHeader
+          codigo={proyecto.codigo}
+          titulo={proyecto.nombreProyecto}
+          subtitulo={cliente ? `· ${cliente.nombre}` : undefined}
+          badges={
+            <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
+              {proyecto.estado}
+            </Badge>
+          }
+        />
+        <div className="flex items-center justify-end gap-2 border-t border-border-subtle px-4 py-2 sm:py-1.5 overflow-x-auto">
+          {estadoPublicacion?.tieneVersionPublicada && estadoPublicacion.publicadaEn && (
+            <span className="hidden sm:inline text-xs text-text-muted shrink-0 mr-auto" title="Última vez que el cliente vio una versión publicada de esta propuesta">
+              v{estadoPublicacion.ultimaVersion} · publicada {formatRelativeDate(estadoPublicacion.publicadaEn)}
+            </span>
+          )}
+          <EntityActionsBar actions={accionesCotizador} />
         </div>
-
-        {estadoPublicacion?.tieneVersionPublicada && estadoPublicacion.publicadaEn && (
-          <span className="hidden sm:inline text-xs text-text-muted shrink-0 mr-2" title="Última vez que el cliente vio una versión publicada de esta propuesta">
-            v{estadoPublicacion.ultimaVersion} · publicada {formatRelativeDate(estadoPublicacion.publicadaEn)}
-          </span>
-        )}
-
-        <EntityActionsBar actions={accionesCotizador} />
-      </EntityHeader>
+      </div>
 
       {/* Contenido scrolleable */}
       <div className="px-6 py-6">
@@ -744,6 +728,17 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             clientes={store.clientes.listar()}
             onClose={() => setMostrarEditarProyecto(false)}
             onSaved={() => setMostrarEditarProyecto(false)}
+          />
+        )}
+
+        {/* Módulo consolidado de parametrización financiera (2026-09-11): impuestos,
+            garantía, costos operativos/logísticos, imprevistos, descuento, ajuste — todo
+            en un solo lugar discoverable, en vez de repartido entre el header y "Editar datos". */}
+        {mostrarParametrosFinancieros && (
+          <ParametrosFinancierosModal
+            proyecto={proyecto}
+            onClose={() => setMostrarParametrosFinancieros(false)}
+            onSaved={() => setMostrarParametrosFinancieros(false)}
           />
         )}
 
