@@ -13,7 +13,7 @@ export interface ContratoModalProps {
   espacios: EspacioVariante[];
   itemsPorEspacio: Map<string, ItemVariante[]>;
   catalogo: ProductoCatalogo[];
-  manoDeObra: number;
+  valorTotalCotizacion: number;
   onClose: () => void;
   onSaved: (contrato: Contrato) => void;
 }
@@ -41,16 +41,28 @@ type FormContrato = {
   especificacionesDesmonte: string;
 };
 
-export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, catalogo, manoDeObra, onClose, onSaved }: ContratoModalProps) {
+export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, catalogo, valorTotalCotizacion, onClose, onSaved }: ContratoModalProps) {
   const store = useDataStore();
   const productMap = useMemo(() => new Map(catalogo.map((p) => [p.id, p])), [catalogo]);
   const { guard: guardCrearContrato, isPending: creandoContrato } = usePendingGuard();
+
+  // Estado del formulario de datos del contratante — editable in situ (persistido al guardar).
+  const [clienteForm, setClienteForm] = useState({
+    nombre: cliente?.nombre ?? '',
+    documento: cliente?.documento ?? '',
+    telefono: cliente?.telefono ?? '',
+    email: cliente?.email ?? '',
+    domicilio: cliente?.domicilio ?? '',
+  });
+  const setClienteCampo = (campo: keyof typeof clienteForm, valor: string) => {
+    setClienteForm((prev) => ({ ...prev, [campo]: valor }));
+  };
 
   // Estado del formulario
   const [form, setForm] = useState<FormContrato>({
     codigoContrato: `CTR-${new Date().getFullYear()}-${String(proyecto.id).slice(-4).toUpperCase()}`,
     fechaContrato: new Date().toISOString().slice(0, 10),
-    valorTotal: calcularValorTotal(espacios, itemsPorEspacio, manoDeObra).toString(),
+    valorTotal: valorTotalCotizacion.toString(),
     plazoEjecucionTexto: proyecto.diasEntregaEstimados ? `${Math.floor(proyecto.diasEntregaEstimados / 7)} a ${Math.ceil(proyecto.diasEntregaEstimados / 7)}` : '4 a 5',
     holguraDias: '8',
     garantiaAnios: proyecto.garantiaAnios ?? 2,
@@ -67,16 +79,6 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     { orden: 2, tipo: 'percentage', montoOPorcentaje: '25', razon: 'Al iniciar instalación', fechaLimite: '' },
     { orden: 3, tipo: 'percentage', montoOPorcentaje: '25', razon: 'Contra entrega y acta de satisfacción', fechaLimite: '' },
   ]);
-
-  // Calcular valor total desde espacios/items
-  const valorTotalCalculado = useMemo(() => calcularValorTotal(espacios, itemsPorEspacio, manoDeObra), [espacios, itemsPorEspacio, manoDeObra]);
-
-  // Sincronizar valorTotal si cambia el cálculo
-  useMemo(() => {
-    if (form.valorTotal !== valorTotalCalculado.toString()) {
-      setForm((prev) => ({ ...prev, valorTotal: valorTotalCalculado.toString() }));
-    }
-  }, [valorTotalCalculado, form.valorTotal]);
 
   // Manejar cambios en hitos
   const handleHitoChange = useCallback((index: number, field: keyof HitoLocal, value: string) => {
@@ -192,26 +194,22 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     return false;
   }
 
-  // Calcular valor total desde espacios e items
-  // Incluye la mano de obra por_tiempo (tarifa horaria × jornadas) calculada
-  // en el cotizador y arrastrada al contrato (POC-10#7).
-  function calcularValorTotal(
-    espacios: EspacioVariante[],
-    itemsPorEspacio: Map<string, ItemVariante[]>,
-    manoDeObra: number
-  ): number {
-    // Cálculo base: suma de ítems (módulos / materiales)
-    const totalItems = Array.from(itemsPorEspacio.values()).reduce((sum, items) => {
-      return sum + items.reduce((itemSum, item) => itemSum + (parseFloat(item.totalLinea ?? '0') || 0), 0);
-    }, 0);
-
-    // La mano de obra por tiempo (jornadas × tarifa horaria por rol) ya viene
-    // consolidada desde el cotizador; se suma al valor contractual.
-    return totalItems + manoDeObra;
-  }
-
   // Guardar contrato
   const handleSave = useCallback(async () => {
+    // Persistir la edición del contratante (si hay cliente y cambió algún campo)
+    if (cliente) {
+      const nombre = clienteForm.nombre.trim();
+      if (nombre) {
+        await store.clientes.actualizar(cliente.id, {
+          nombre,
+          documento: clienteForm.documento.trim() || null,
+          telefono: clienteForm.telefono.trim() || null,
+          email: clienteForm.email.trim() || null,
+          domicilio: clienteForm.domicilio.trim() || null,
+        });
+      }
+    }
+
     // Crear hitos
     const hitosData: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[] = hitos.map((h) => ({
       tipo: h.tipo,
@@ -231,10 +229,10 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
       onSaved(contratoCreado);
       onClose();
     }
-  }, [form, hitos, proyecto.id, onSaved, onClose, store]);
+  }, [form, hitos, proyecto.id, onSaved, onClose, store, cliente, clienteForm]);
 
   // Verificar si el formulario es válido
-  const esValido = cliente && parseFloat(form.valorTotal) > 0 && hitosValidos && hitos.length > 0;
+  const esValido = cliente && clienteForm.nombre.trim() && parseFloat(form.valorTotal) > 0 && hitosValidos && hitos.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -257,15 +255,15 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 label="Nombre *"
-                value={cliente?.nombre ?? ''}
-                 onChange={() => {/* TODO: actualizar cliente */}}
+                value={clienteForm.nombre}
+                onChange={(e) => setClienteCampo('nombre', e.target.value)}
                 required
-                error={!cliente?.nombre ? 'Seleccione un cliente' : undefined}
+                error={!clienteForm.nombre.trim() ? 'El nombre es obligatorio' : undefined}
               />
-              <InputField label="Documento" value={cliente?.documento ?? ''} readOnly />
-              <InputField label="Teléfono" value={cliente?.telefono ?? ''} readOnly />
-              <InputField label="Email" value={cliente?.email ?? ''} readOnly />
-              <InputField label="Domicilio" value={cliente?.domicilio ?? ''} readOnly className="col-span-2" />
+              <InputField label="Documento" value={clienteForm.documento} onChange={(e) => setClienteCampo('documento', e.target.value)} />
+              <InputField label="Teléfono" value={clienteForm.telefono} onChange={(e) => setClienteCampo('telefono', e.target.value)} />
+              <InputField label="Email" value={clienteForm.email} onChange={(e) => setClienteCampo('email', e.target.value)} />
+              <InputField label="Domicilio" value={clienteForm.domicilio} onChange={(e) => setClienteCampo('domicilio', e.target.value)} className="col-span-2" />
             </div>
           </section>
 

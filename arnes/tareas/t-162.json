@@ -1,5 +1,5 @@
 {
-  "id": "t-159",
+  "id": "t-162",
   "titulo": "Erradicar mal acoplamiento de fórmulas de totales: solo el cotizador suma/calcula, el resto absorbe el valor final",
   "intencion_negocio": "Javier (2026-09-14): el contrato NO debe recalcular totales. La cotización es la única que suma y calcula (materiales + MO + costos operativos + costos logísticos + imprevistos − descuento + ajuste + IVA); el contrato debe absorber ese valor final como un solo dato de entrada. Si cada pantalla recalcula la fórmula, agregar un campo nuevo al cotizador obliga a actualizar fórmulas en otras partes — acoplamiento innecesario que viola el diseño axiomático. No es momento de resolverlo ahora: queda registrado como tarea + nota para la siguiente sesión.",
   "zona": "logica_negocio",
