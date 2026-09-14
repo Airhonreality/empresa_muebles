@@ -161,6 +161,25 @@ export interface ProyectosEstadosHistorial {
   createdAt: string
 }
 
+export interface DatosContratoNuevo {
+  proyectoId: string
+  codigoContrato: string
+  valorTotal: string
+  fechaContrato?: string | null
+  plazoEjecucionTexto?: string
+  holguraDias?: number
+  garantiaAnios?: number
+  objetoItems?: string | null
+  especificacionesEstructura?: string | null
+  especificacionesHerrajes?: string | null
+  especificacionesMesones?: string | null
+  especificacionesDesmonte?: string | null
+  contratanteDomicilio?: string | null
+  emailAsunto?: string | null
+  emailCuerpo?: string | null
+  hitos?: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[]
+}
+
 export interface Contrato {
   id: string
   proyectoId: string
@@ -1081,7 +1100,7 @@ export interface DataStore {
    }
   contratos: {
     porProyecto(proyectoId: string): Contrato | undefined
-    crear(data: { proyectoId: string; codigoContrato: string; valorTotal: string; hitos: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[] }): Promise<Contrato>
+    crear(data: DatosContratoNuevo): Promise<Contrato>
   }
   hitos: {
     porContrato(contratoId: string): HitoPago[]

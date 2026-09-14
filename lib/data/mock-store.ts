@@ -9,7 +9,7 @@ import type {
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
-  NotaReunion, PropuestaVersion, GrupoItem,
+  NotaReunion, PropuestaVersion, GrupoItem, DatosContratoNuevo,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
@@ -778,31 +778,32 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Contrato | undefined {
         return contratos.find(c => c.proyectoId === proyectoId)
       },
-       async crear(data: { proyectoId: string; codigoContrato: string; valorTotal: string; hitos: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[] }): Promise<Contrato> {
+       async crear(data: DatosContratoNuevo): Promise<Contrato> {
         const id = generateId('ctr')
          const nuevo: Contrato = {
            id,
            proyectoId: data.proyectoId,
            codigoContrato: data.codigoContrato,
-           fechaContrato: new Date().toISOString().slice(0, 10),
+           fechaContrato: data.fechaContrato ?? new Date().toISOString().slice(0, 10),
            valorTotal: data.valorTotal,
            estado: 'borrador',
-           garantiaAnios: 2,
-           plazoEjecucionTexto: '4 a 5',
-           holguraDias: 8,
-           objetoItems: null,
-           especificacionesEstructura: null,
-           especificacionesHerrajes: null,
-           especificacionesMesones: null,
-           especificacionesDesmonte: null,
-           contratanteDomicilio: null,
-           emailAsunto: null,
-           emailCuerpo: null,
+           garantiaAnios: data.garantiaAnios ?? 2,
+           plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
+           holguraDias: data.holguraDias ?? 8,
+           objetoItems: data.objetoItems ?? null,
+           especificacionesEstructura: data.especificacionesEstructura ?? null,
+           especificacionesHerrajes: data.especificacionesHerrajes ?? null,
+           especificacionesMesones: data.especificacionesMesones ?? null,
+           especificacionesDesmonte: data.especificacionesDesmonte ?? null,
+           contratanteDomicilio: data.contratanteDomicilio ?? null,
+           emailAsunto: data.emailAsunto ?? null,
+           emailCuerpo: data.emailCuerpo ?? null,
            createdAt: new Date().toISOString(),
            updatedAt: new Date().toISOString(),
          }
         contratos.push(nuevo)
-        data.hitos.forEach((h, i) => {
+        const hitosNuevos = data.hitos ?? []
+        hitosNuevos.forEach((h, i) => {
           hitos.push({
             id: generateId('hito'),
             contratoId: id,

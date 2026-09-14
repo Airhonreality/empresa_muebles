@@ -221,7 +221,17 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     const contratoCreado = await store.contratos.crear({
       proyectoId: proyecto.id,
       codigoContrato: form.codigoContrato,
+      fechaContrato: form.fechaContrato,
       valorTotal: form.valorTotal,
+      plazoEjecucionTexto: form.plazoEjecucionTexto,
+      holguraDias: parseInt(form.holguraDias) || 8,
+      garantiaAnios: form.garantiaAnios,
+      objetoItems: form.objetoItems.trim() || null,
+      especificacionesEstructura: form.especificacionesEstructura.trim() || null,
+      especificacionesHerrajes: form.especificacionesHerrajes.trim() || null,
+      especificacionesMesones: form.especificacionesMesones.trim() || null,
+      especificacionesDesmonte: form.especificacionesDesmonte.trim() || null,
+      contratanteDomicilio: clienteForm.domicilio.trim() || null,
       hitos: hitosData,
     });
 

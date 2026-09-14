@@ -20,7 +20,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col bg-surface-100 pb-14 md:pb-0">
       <div className="flex flex-1 flex-col md:flex-row">
         {/* Sidebar */}
-        <div className="hidden md:block">
+        <div className="hidden md:block print:hidden">
           <ErpSidebar />
         </div>
 
@@ -31,7 +31,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
           </main>
 
           {/* Footer */}
-          <footer className="border-t border-border-subtle bg-bg-paper hidden md:block">
+          <footer className="border-t border-border-subtle bg-bg-paper hidden md:block print:hidden">
             <div className="mx-auto px-6 py-4 text-center text-xs text-text-muted">
               ERP Hermanos García González S.A.S. · Datos de prueba
             </div>
@@ -40,7 +40,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
       </div>
       
       {/* Mobile Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-bg-raised border-t border-border-subtle h-14 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-bg-raised border-t border-border-subtle h-14 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] print:hidden">
         <Link href="/erp/comercial" className="p-2 text-text-muted hover:text-gold-500 flex flex-col items-center gap-1">
           <Briefcase className="w-5 h-5" />
           <span className="text-[10px] font-medium">Comercial</span>

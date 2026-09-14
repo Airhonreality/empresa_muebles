@@ -669,13 +669,26 @@ export async function actualizarParametroAction(clave: string, datos: Partial<Pa
   }
 }
 
-export async function crearContratoAction(data: { proyectoId: string; codigoContrato: string; valorTotal: string; hitos: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[] }): Promise<Contrato> {
+export async function crearContratoAction(data: import('@/lib/data/contracts').DatosContratoNuevo): Promise<Contrato> {
   return db.transaction(async (tx) => {
     const [nuevo] = await tx.insert(s.contratos).values({
       proyectoId: data.proyectoId, codigoContrato: data.codigoContrato, valorTotal: data.valorTotal,
+      fechaContrato: data.fechaContrato ?? null,
+      plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
+      holguraDias: data.holguraDias ?? 8,
+      garantiaAnios: data.garantiaAnios ?? 2,
+      objetoItems: data.objetoItems ?? null,
+      especificacionesEstructura: data.especificacionesEstructura ?? null,
+      especificacionesHerrajes: data.especificacionesHerrajes ?? null,
+      especificacionesMesones: data.especificacionesMesones ?? null,
+      especificacionesDesmonte: data.especificacionesDesmonte ?? null,
+      contratanteDomicilio: data.contratanteDomicilio ?? null,
+      emailAsunto: data.emailAsunto ?? null,
+      emailCuerpo: data.emailCuerpo ?? null,
     }).returning()
-    if (data.hitos.length > 0) {
-      await tx.insert(s.hitosPago).values(data.hitos.map((h, i) => ({
+    const hitos = data.hitos ?? []
+    if (hitos.length > 0) {
+      await tx.insert(s.hitosPago).values(hitos.map((h, i) => ({
         contratoId: nuevo.id, orden: i, tipo: h.tipo, montoOPorcentaje: h.monto, razon: h.razon,
       })))
     }

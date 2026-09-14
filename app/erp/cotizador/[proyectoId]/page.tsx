@@ -603,6 +603,12 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           <h3 className="font-semibold text-text-heading">Contrato · {contrato.codigoContrato}</h3>
           <p className="text-sm text-text-muted mt-1">Valor total: <span className="font-mono font-medium">{formatCOP(parseNum(contrato.valorTotal))}</span> · Estado: {contrato.estado}</p>
 
+          <div className="mt-3 flex items-center gap-2">
+            <Button variant="primary" size="md" onClick={() => window.open(`/erp/cotizador/${proyecto.id}/contrato`, '_blank')}>
+              Ver PDF del Contrato
+            </Button>
+          </div>
+
           {contrato.objetoItems && (
             <div className="mt-4">
               <p className="text-xs font-semibold uppercase text-text-muted">Objeto</p>
@@ -967,9 +973,9 @@ function VistaSoloLectura({
                 ))}
               </div>
             )}
-            {contrato.estado === 'firmado' && (
+            {contrato && (
               <div className="mt-4">
-                <Button variant="ghost" size="md" onClick={() => window.open(`/propuesta/${proyecto.id}`, '_blank')}>
+                <Button variant="ghost" size="md" onClick={() => window.open(`/erp/cotizador/${proyecto.id}/contrato`, '_blank')}>
                   Ver PDF
                 </Button>
               </div>

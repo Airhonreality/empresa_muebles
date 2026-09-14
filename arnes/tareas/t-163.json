@@ -1,0 +1,37 @@
+{
+  "id": "t-163",
+  "titulo": "PDF del contrato de fabricación e instalación: página imprimible Veta Dorada + persistencia de campos ricos del contrato",
+  "intencion_negocio": "Javier (2026-09-14) pidió poder descargar/imprimir el contrato generado en el cotizador. Decisión del Supervisor: (1) mecanismo = página imprimible + window.print() (mismo patrón que la propuesta pública), NO PDF binario; (2) primero persistir los campos ricos del contrato. La plantilla visual es el PDF de cliente facilitado (Veta de Oro → Veta Dorada) `/home/airhon/Escritorio/Contrato de fabricacion e instalacion - Alberts Jamit Enríquez Chenas VF.pdf`, que coincide con la plantilla del sistema legacy (`legacy-agnostic-backup:src/server/scripts/exportar_contrato_pdf.js` + firma `public/firma_representante.png`). Hoy el modal captura plazo/holgura/garantía/objeto/especificaciones pero contrato.crear persiste solo proyectoId/codigoContrato/valorTotal+hitos; el resto se rellena con defaults.",
+  "zona": "contratos",
+  "tipo": "funcionalidad_contratos",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "app/erp/cotizador/ContratoModal.tsx (enviar campos ricos a contratos.crear)",
+    "lib/data/contracts.ts (firma de contratos.crear + interface DatosContratoNuevo)",
+    "lib/data/mock-store.ts (contratos.crear con campos ricos)",
+    "lib/data/actions/core.ts (crearContratoAction con campos ricos)",
+    "lib/data/drizzle-impl.ts (interfaz contratos.crear passthrough)",
+    "app/erp/cotizador/[proyectoId]/contrato/page.tsx (NUEVA: página imprimible del contrato, plantilla Veta Dorada)",
+    "app/erp/cotizador/[proyectoId]/page.tsx (enlace 'Ver PDF del contrato' a la página imprimible)",
+    "public/firma_representante.png (NUEVO: firma del representante legal, extraída de legacy-agnostic-backup)"
+  ],
+  "criterios_aceptacion": [
+    "Guardar un contrato desde el modal persiste TODOS sus campos ricos: fechaContrato, plazoEjecucionTexto, holguraDias, garantiaAnios, objetoItems, especificacionesEstructura/Herrajes/Mesones/Desmonte",
+    "La página imprimible del contrato renderiza la plantilla Veta Dorada completa (partes contratantes, consideraciones, 7 cláusulas, medios de pago, firmas con imagen de la firma) con los datos reales del contrato + hitos 50/25/25 calculados desde valorTotal",
+    "El botón 'Guardar como PDF' imprime solo el documento (window.print()) sin la barra de acciones",
+    "tsc/eslint limpios",
+    "El contrato absorbe el valorTotal de la cotización sin recalcular (ver t-162)"
+  ],
+  "plan_ref": null,
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": "2026-09-14"
+  },
+  "estado": "creada",
+  "creada_en": "2026-09-14T00:00:00Z",
+  "cerrada_en": null
+}
