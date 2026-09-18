@@ -6,6 +6,7 @@ import { Modal } from '@/components/veta/modal'
 import { Button } from '@/components/veta/button'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { MoneyInput } from '@/components/veta/money-input'
+import { ImagePicker } from '@/components/veta/image-picker'
 import type { GrupoItem, ItemVariante, ProductoCatalogo } from '@/lib/data'
 
 interface ItemEditorModalProps {
@@ -48,6 +49,45 @@ function formatCOP(amount: number): string {
   }).format(amount)
 }
 
+/* Iconos SVG hardcodeados (patrón del proyecto: sin librería de iconos, inline y stroke=currentColor). */
+function IconoEditar() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    </svg>
+  )
+}
+
+function IconoReemplazo() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 12a9 9 0 0 0-15.5-6.3L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 15.5 6.3L21 16" />
+      <path d="M21 21v-5h-5" />
+    </svg>
+  )
+}
+
+function IconoEliminar() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  )
+}
+
+const FUENTES_REFERENCIALES = [
+  { valor: 'electrodomestico', etiqueta: 'Electrodoméstico' },
+  { valor: 'obra_civil', etiqueta: 'Obra civil' },
+  { valor: 'servicio_tercero', etiqueta: 'Servicio de tercero' },
+  { valor: 'otro', etiqueta: 'Otro' },
+] as const
+
 export function ItemEditorModal({
   item,
   producto,
@@ -67,10 +107,17 @@ export function ItemEditorModal({
   const [cantidad, setCantidad] = useState(item.cantidad)
   const [precioUnitario, setPrecioUnitario] = useState(item.precioUnitario)
   const [esReferencial, setEsReferencial] = useState(item.esReferencial)
+  // Referencial: fuente + grupo (schema items_variante.fuente_referencial / grupo_referencial).
+  const [fuenteReferencial, setFuenteReferencial] = useState<ItemVariante['fuenteReferencial']>(
+    item.fuenteReferencial ?? null
+  )
+  const [grupoReferencial, setGrupoReferencial] = useState(item.grupoReferencial ?? '')
   // Requerimiento Supervisor 2026-09-10: comentario libre por ítem, visible en la propuesta pública.
   const [comentario, setComentario] = useState(item.comentario ?? '')
   // t-157 (2026-09-10): grupo/subgrupo al que pertenece este ítem dentro de su espacio.
   const [grupoItemId, setGrupoItemId] = useState(item.grupoItemId ?? '')
+  // Reinicio modal 2026-09-18: foto propia del ítem (precedencia sobre imagen de catálogo).
+  const [fotoUrl, setFotoUrl] = useState(item.fotoUrl ?? '')
   const gruposPorId = new Map(grupos.map((g) => [g.id, g]))
 
   // Reemplazo
@@ -90,8 +137,11 @@ export function ItemEditorModal({
         cantidad,
         precioUnitario,
         esReferencial,
+        fuenteReferencial: esReferencial ? (fuenteReferencial || null) : null,
+        grupoReferencial: esReferencial ? (grupoReferencial.trim() || null) : null,
         comentario: comentario.trim() || null,
         grupoItemId: grupoItemId || null,
+        fotoUrl: fotoUrl.trim() || null,
       })
       onClose()
     } finally {
@@ -137,7 +187,10 @@ export function ItemEditorModal({
               : 'border-transparent text-text-muted hover:text-text-heading'
           }`}
         >
-          ✏️ Detalles y Edición
+          <span className="inline-flex items-center gap-1.5">
+            <IconoEditar />
+            Detalles y Edición
+          </span>
         </button>
         <button
           type="button"
@@ -148,33 +201,65 @@ export function ItemEditorModal({
               : 'border-transparent text-text-muted hover:text-text-heading'
           }`}
         >
-          🔄 Reemplazar por Otro SKU
+          <span className="inline-flex items-center gap-1.5">
+            <IconoReemplazo />
+            Reemplazar por Otro SKU
+          </span>
         </button>
       </div>
 
       {modo === 'edicion' ? (
         <div className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            {/* Imagen del Producto */}
-            <div className="sm:w-1/3">
-              {producto?.imagenUrl ? (
-                <Image
-                  src={producto.imagenUrl}
-                  alt={producto.descripcion || 'Producto'}
-                  width={320}
-                  height={240}
-                  unoptimized
-                  className="aspect-[4/3] w-full rounded-sm border border-border-subtle object-cover shadow-xs"
+            {/* Imagen propia del Ítem (editable) + referencia de catálogo */}
+            <div className="sm:w-1/3 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">
+                  Imagen del ítem
+                </label>
+                <ImagePicker
+                  label="Foto propia del ítem"
+                  value={fotoUrl ? [fotoUrl] : []}
+                  onChange={(v) => setFotoUrl(v[0] ?? '')}
+                  multiple={false}
+                  r2Prefix="cotizador/items/"
+                  hideGrid={true}
                 />
-              ) : (
-                <div className="flex aspect-[4/3] w-full items-center justify-center rounded-sm border border-border-subtle bg-bg-alt text-xs text-text-muted">
-                  Sin imagen de catálogo
+                {fotoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob temporales
+                  <img
+                    src={fotoUrl}
+                    alt="Foto del ítem"
+                    className="mt-1 aspect-[4/3] w-full rounded-sm border border-border-subtle object-cover shadow-xs"
+                  />
+                )}
+              </div>
+
+              {producto && (
+                <div className="flex items-center gap-2 rounded-sm border border-border-subtle bg-bg-alt/40 p-1.5">
+                  {producto.imagenUrl ? (
+                    <Image
+                      src={producto.imagenUrl}
+                      alt=""
+                      width={48}
+                      height={36}
+                      unoptimized
+                      className="aspect-[4/3] h-9 w-12 shrink-0 rounded-sm object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-12 shrink-0 items-center justify-center rounded-sm bg-bg-paper text-[10px] text-text-muted">
+                      Sin img
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] font-medium text-text-heading">
+                      Catálogo: {producto.descripcion}
+                    </p>
+                    {producto.sku && (
+                      <p className="font-mono text-[10px] text-text-muted">SKU: {producto.sku}</p>
+                    )}
+                  </div>
                 </div>
-              )}
-              {producto?.sku && (
-                <p className="mt-1 text-center font-mono text-[11px] text-text-muted">
-                  SKU: {producto.sku}
-                </p>
               )}
             </div>
 
@@ -238,6 +323,43 @@ export function ItemEditorModal({
                 </label>
               </div>
 
+              {esReferencial && (
+                <div className="space-y-2 rounded-sm border border-border-subtle bg-bg-alt/30 p-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-text-muted mb-1">
+                        Fuente referencial
+                      </label>
+                      <select
+                        value={fuenteReferencial ?? ''}
+                        onChange={(e) => setFuenteReferencial((e.target.value || null) as ItemVariante['fuenteReferencial'])}
+                        className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                      >
+                        <option value="">Sin especificar</option>
+                        {FUENTES_REFERENCIALES.map((f) => (
+                          <option key={f.valor} value={f.valor}>{f.etiqueta}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-text-muted mb-1">
+                        Grupo referencial
+                      </label>
+                      <input
+                        type="text"
+                        value={grupoReferencial}
+                        onChange={(e) => setGrupoReferencial(e.target.value)}
+                        placeholder="Ej: Obra Civil / Ventanas"
+                        className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-text-muted">
+                    No suma a Grand Totals ni al objeto de contrato — inversión estimada con terceros.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-medium text-text-muted mb-1">
                   Comentario (visible para el cliente en la propuesta)
@@ -279,7 +401,11 @@ export function ItemEditorModal({
               disabled={eliminando || guardando}
               className="rounded px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
             >
-              {eliminando ? 'Eliminando...' : '🗑️ Eliminar Ítem'}
+              {eliminando ? 'Eliminando...' :
+                <span className="inline-flex items-center gap-1.5">
+                  <IconoEliminar />
+                  Eliminar Ítem
+                </span>}
             </button>
             <div className="flex gap-2">
               <Button variant="ghost" size="md" onClick={onClose} disabled={guardando}>

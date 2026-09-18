@@ -22,6 +22,17 @@ import { longPollVersionAction } from './actions/longpoll'
 
 const DataStoreContext = createContext<DataStore | null>(null)
 
+// F1 (invalidación escopada por tabla): el bridge del cotizador necesita saber QUÉ tablas
+// dispararon el último version++ para invalidar SOLO los queries escopados a ellas. El
+// long-poll ahora devuelve las tablas del NOTIFY (payload "tabla:op" del trigger 0004);
+// acá se propagan junto con el snapshot, tanto al aplicar localmente como por BroadcastChannel
+// a las pestañas hermanas.
+export interface StoreChangeInfo {
+  tablas: string[]
+  at: number
+}
+const StoreChangeContext = createContext<StoreChangeInfo>({ tablas: [], at: 0 })
+
 const LEADER_LOCK_NAME = 'veta-erp-longpoll-leader'
 const BROADCAST_CHANNEL_NAME = 'veta_erp_reactividad'
 const IDLE_TIMEOUT_MS = 12 * 60 * 1000 // 12 min sin actividad humana (ninguna pestaña) -> pausa
@@ -29,7 +40,7 @@ const ACTIVITY_BROADCAST_THROTTLE_MS = 5000
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel', 'scroll'] as const
 
 type BroadcastMessage =
-  | { type: 'snapshot'; snapshot: StoreSnapshot }
+  | { type: 'snapshot'; snapshot: StoreSnapshot; tablas: string[] }
   | { type: 'activity'; at: number }
 
 function sleep(ms: number): Promise<void> {
@@ -52,6 +63,10 @@ export function DataStoreProvider({
     return { store: createMockStore(), applySnapshot: () => {} }
   })
   const versionRef = useRef<string>(initialSnapshot?.version ?? '0')
+  const [storeChange, setStoreChange] = useState<StoreChangeInfo>(() => ({
+    tablas: initialSnapshot ? [] : [],
+    at: 0,
+  }))
 
   useEffect(() => {
     if (mode !== 'drizzle') return
@@ -63,14 +78,15 @@ export function DataStoreProvider({
 
     const channel = 'BroadcastChannel' in window ? new BroadcastChannel(BROADCAST_CHANNEL_NAME) : null
 
-    function applyRemoteSnapshot(snapshot: StoreSnapshot): void {
+    function applyRemoteSnapshot(snapshot: StoreSnapshot, tablas: string[]): void {
       if (cancelled || snapshot.version === versionRef.current) return
       versionRef.current = snapshot.version
       handle.applySnapshot(snapshot)
+      setStoreChange({ tablas, at: Date.now() })
     }
 
-    function broadcastSnapshot(snapshot: StoreSnapshot): void {
-      channel?.postMessage({ type: 'snapshot', snapshot } satisfies BroadcastMessage)
+    function broadcastSnapshot(snapshot: StoreSnapshot, tablas: string[]): void {
+      channel?.postMessage({ type: 'snapshot', snapshot, tablas } satisfies BroadcastMessage)
     }
 
     function onLocalActivity(): void {
@@ -90,7 +106,7 @@ export function DataStoreProvider({
       channel.onmessage = (event: MessageEvent<BroadcastMessage>) => {
         const msg = event.data
         if (msg.type === 'snapshot') {
-          applyRemoteSnapshot(msg.snapshot)
+          applyRemoteSnapshot(msg.snapshot, msg.tablas)
         } else if (msg.type === 'activity' && msg.at > lastActivityAt) {
           lastActivityAt = msg.at
         }
@@ -109,7 +125,10 @@ export function DataStoreProvider({
         if (cancelled) return
         versionRef.current = snapshot.version
         handle.applySnapshot(snapshot)
-        broadcastSnapshot(snapshot)
+        // catchUp no tiene payload de NOTIFY (nunca hubo uno) → tablas desconocidas = []
+        // (el bridge las trata como "relevante", comportamiento conservador sin punto ciego).
+        setStoreChange({ tablas: [], at: Date.now() })
+        broadcastSnapshot(snapshot, [])
       } catch (err) {
         console.error('Catch-up de reactividad falló, se reintenta en el próximo ciclo', err)
       }
@@ -155,7 +174,10 @@ export function DataStoreProvider({
             if (cancelled) return
             versionRef.current = snapshot.version
             handle.applySnapshot(snapshot)
-            broadcastSnapshot(snapshot)
+            // F1: se propagan las tablas del NOTIFY (payload "tabla:op") para que cada
+            // pestaña invalide solo sus queries escopados — no un refetch global.
+            setStoreChange({ tablas: result.tablas, at: Date.now() })
+            broadcastSnapshot(snapshot, result.tablas)
           }
           // Si !result.changed, el long-poll volvió por timeout sin cambios reales: se
           // reabre de inmediato, sin esperar nada adicional.
@@ -195,7 +217,11 @@ export function DataStoreProvider({
     }
   }, [mode, handle])
 
-  return <DataStoreContext.Provider value={handle.store}>{children}</DataStoreContext.Provider>
+  return (
+    <DataStoreContext.Provider value={handle.store}>
+      <StoreChangeContext.Provider value={storeChange}>{children}</StoreChangeContext.Provider>
+    </DataStoreContext.Provider>
+  )
 }
 
 export function useDataStoreContext(): DataStore {
@@ -204,4 +230,10 @@ export function useDataStoreContext(): DataStore {
     throw new Error('useDataStore() se llamó fuera de <DataStoreProvider>. Envolvé el árbol en app/layout.tsx.')
   }
   return store
+}
+
+/** F1: lee la última señal de cambio del bus global (tablas del NOTIFY + timestamp). El
+ * cotizador la usa para invalidar SOLO el server-state escopado a esas tablas. */
+export function useStoreChange(): StoreChangeInfo {
+  return useContext(StoreChangeContext)
 }

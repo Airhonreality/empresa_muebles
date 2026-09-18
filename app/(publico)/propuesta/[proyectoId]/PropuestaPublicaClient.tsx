@@ -530,7 +530,11 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
               </div>
 
               {varianteActual.descripcion && (
-                <p className="-mt-6 max-w-prose text-sm leading-6 text-text-muted">{varianteActual.descripcion}</p>
+                <blockquote className="-mt-6 max-w-2xl border-l-2 border-gold-400 pl-5">
+                  <p className="font-display text-lg leading-relaxed text-text-heading whitespace-pre-line first-letter:font-medium">
+                    {varianteActual.descripcion}
+                  </p>
+                </blockquote>
               )}
 
               {/* Colores */}

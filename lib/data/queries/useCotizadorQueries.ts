@@ -112,7 +112,7 @@ export function useCrearItemMutation(proyectoId: string) {
 export function useActualizarItemMutation(proyectoId: string) {
   return useMutationOptGenerico<
     CotizadorSnapshot,
-    { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>> },
+    { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>> },
     ItemVariante | null
   >(
     cotizadorKeys.detalle(proyectoId),
@@ -240,7 +240,9 @@ export function useCrearArtefactoMutation(proyectoId: string) {
         dimensionesMm: input.dimensionesMm,
         tipoSpecifique: input.tipoSpecifique,
         ubicacion: input.ubicacion,
-        fotoUrl: input.fotoUrl,
+        descripcion: input.descripcion,
+        fotoUrls: input.fotoUrls,
+        archivosUrls: input.archivosUrls,
         requiereVerificacion: input.requiereVerificacion,
       }),
     (snap, input) => agregarArtefacto(snap, construirArtefactoOptimista(input)),
@@ -251,7 +253,7 @@ export function useCrearArtefactoMutation(proyectoId: string) {
 export function useActualizarArtefactoMutation(proyectoId: string) {
   return useMutationOptGenerico<
     CotizadorSnapshot,
-    { id: string; patch: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'fotoUrl'>> },
+    { id: string; patch: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'descripcion' | 'fotoUrls' | 'archivosUrls'>> },
     EspacioArtefacto | null
   >(
     cotizadorKeys.detalle(proyectoId),

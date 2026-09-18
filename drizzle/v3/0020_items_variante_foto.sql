@@ -1,0 +1,1 @@
+ALTER TABLE "items_variante" ADD COLUMN "foto_url" text;

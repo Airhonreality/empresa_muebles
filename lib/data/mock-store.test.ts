@@ -835,14 +835,20 @@ await test('p27 catalogo.actualizar: publicar exige precioPublico + imagenUrl (R
 
 await test('p27 catalogo: round-trip galeriaImagenesUrl (crear -> leer -> actualizar -> leer) [t-139]', async () => {
   const store = createMockStore()
-  const creado = (await store.catalogo.crear({ sku: 'RT-1', descripcion: 'Round trip', unidadMedida: 'ud', precioPublico: '100', imagenUrl: 'https://x/portada.jpg', galeriaImagenesUrl: ['https://x/g1.jpg'] }))!
+const creado = (await store.catalogo.crear({ sku: 'RT-1', descripcion: 'Round trip', unidadMedida: 'ud', precioPublico: '100', imagenUrl: 'https://x/portada.jpg', galeriaImagenesUrl: ['https://x/g1.jpg'], camposPersonalizados: [{ clave: 'Número de aperturas', valor: '2' }], fichaTecnicaUrls: ['https://r2.mock/catalogo/ficha-rt-1.pdf'] }))!
   assert.deepEqual(creado.galeriaImagenesUrl, ['https://x/g1.jpg'])
+  assert.deepEqual(creado.camposPersonalizados, [{ clave: 'Número de aperturas', valor: '2' }])
+  assert.deepEqual(creado.fichaTecnicaUrls, ['https://r2.mock/catalogo/ficha-rt-1.pdf'])
   assert.deepEqual(store.catalogo.obtenerPorId(creado.id)!.galeriaImagenesUrl, ['https://x/g1.jpg'])
+  assert.deepEqual(store.catalogo.obtenerPorId(creado.id)!.camposPersonalizados, [{ clave: 'Número de aperturas', valor: '2' }])
 
-  const actualizado = (await store.catalogo.actualizar(creado.id, { galeriaImagenesUrl: ['https://x/g2.jpg', 'https://x/g3.jpg'] }))!
+  const actualizado = (await store.catalogo.actualizar(creado.id, { galeriaImagenesUrl: ['https://x/g2.jpg', 'https://x/g3.jpg'], camposPersonalizados: [{ clave: 'Módulo elástico', valor: '0.45' }, { clave: 'Peso unitario', valor: '28 kg' }], fichaTecnicaUrls: ['https://r2.mock/catalogo/ficha-rt-1-v2.pdf', 'https://r2.mock/catalogo/plano-rt-1.dwg'] }))!
   assert.deepEqual(actualizado!.galeriaImagenesUrl, ['https://x/g2.jpg', 'https://x/g3.jpg'])
-  assert.equal(actualizado!.imagenUrl, 'https://x/portada.jpg', 'actualizar solo la galería no debe tocar imagenUrl')
+  assert.deepEqual(actualizado!.camposPersonalizados, [{ clave: 'Módulo elástico', valor: '0.45' }, { clave: 'Peso unitario', valor: '28 kg' }])
+  assert.deepEqual(actualizado!.fichaTecnicaUrls, ['https://r2.mock/catalogo/ficha-rt-1-v2.pdf', 'https://r2.mock/catalogo/plano-rt-1.dwg'])
+
   assert.equal(store.catalogo.obtenerPorId(creado.id)!.galeriaImagenesUrl.length, 2)
+  assert.equal(store.catalogo.obtenerPorId(creado.id)!.camposPersonalizados.length, 2)
 })
 
 await test('p27 catalogo.buscar: búsqueda resiliente (tildes, tokens AND, fuzzy Opción A) [t-141]', () => {

@@ -10,8 +10,9 @@ import { MoneyInput } from '@/components/veta/money-input'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
+import { FilePicker } from '@/components/veta/file-picker'
 import { ProductoFicha, type ProductoFichaData } from '@/components/veta/producto-ficha'
-import { useDataStore, type ProductoCatalogo } from '@/lib/data'
+import { useDataStore, type ProductoCatalogo, type CampoPersonalizadoProducto } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatCOP(amount: number): string {
@@ -48,6 +49,8 @@ interface ProductoForm {
   precioPublico: string
   stockActual: string
   imagenes: string[]
+  fichaTecnicaUrls: string[]
+  camposPersonalizados: CampoPersonalizadoProducto[]
   categoriaComercial: string
   proveedorId: string
   publicadoWeb: boolean
@@ -64,6 +67,8 @@ const EMPTY_FORM: ProductoForm = {
   precioPublico: '',
   stockActual: '0',
   imagenes: [],
+  fichaTecnicaUrls: [],
+  camposPersonalizados: [],
   categoriaComercial: '',
   proveedorId: '',
   publicadoWeb: false,
@@ -81,6 +86,8 @@ function formFromProducto(p: ProductoCatalogo): ProductoForm {
     precioPublico: p.precioPublico ?? '',
     stockActual: String(p.stockActual),
     imagenes: [p.imagenUrl, ...(p.galeriaImagenesUrl ?? [])].filter(Boolean) as string[],
+    fichaTecnicaUrls: p.fichaTecnicaUrls ?? [],
+    camposPersonalizados: p.camposPersonalizados ?? [],
     categoriaComercial: p.categoriaComercial ?? '',
     proveedorId: p.proveedorId ?? '',
     publicadoWeb: p.publicadoWeb,
@@ -103,6 +110,8 @@ function fichaDesdeForm(form: ProductoForm): ProductoFichaData {
     publicadoWeb: form.publicadoWeb,
     imagenUrl: form.imagenes[0] ?? null,
     galeriaImagenesUrl: form.imagenes.slice(1),
+    fichaTecnicaUrls: form.fichaTecnicaUrls,
+    camposPersonalizados: form.camposPersonalizados,
   }
 }
 
@@ -173,6 +182,21 @@ function CatalogoPageContent() {
     setForm((prev) => ({ ...prev, [campo]: valor }))
   }, [])
 
+  const setCampoPersonalizado = (idx: number, patch: Partial<CampoPersonalizadoProducto>) => {
+    setForm((prev) => ({
+      ...prev,
+      camposPersonalizados: prev.camposPersonalizados.map((c, i) => (i === idx ? { ...c, ...patch } : c)),
+    }))
+  }
+
+  const agregarCampoPersonalizado = () => {
+    setForm((prev) => ({ ...prev, camposPersonalizados: [...prev.camposPersonalizados, { clave: '', valor: '' }] }))
+  }
+
+  const quitarCampoPersonalizado = (idx: number) => {
+    setForm((prev) => ({ ...prev, camposPersonalizados: prev.camposPersonalizados.filter((_, i) => i !== idx) }))
+  }
+
   const validarForm = (): string | null => {
     if (!form.descripcion.trim()) return 'La descripción es obligatoria'
     if (!form.sku.trim()) return 'El SKU es obligatorio'
@@ -213,6 +237,8 @@ function CatalogoPageContent() {
       proveedorId: form.proveedorId || null,
       imagenUrl: form.imagenes[0] ?? null,
       galeriaImagenesUrl: form.imagenes.slice(1),
+      fichaTecnicaUrls: form.fichaTecnicaUrls,
+      camposPersonalizados: form.camposPersonalizados,
       categoriaComercial: form.categoriaComercial.trim() || null,
       publicadoWeb: form.publicadoWeb,
       proyectoOrigenId: form.proyectoOrigenId || null,
@@ -462,6 +488,59 @@ function CatalogoPageContent() {
                   uploadToR2
                   r2Prefix="catalogo/"
                 />
+
+                {/* 2026-09-17: ficha técnica del producto — imagenes y/o documentos PDF/DWG
+                    (las sube el FilePicker a R2; el server action valida R2-only). */}
+                <FilePicker
+                  label="Ficha técnica (imagen o archivo PDF/DWG...)"
+                  value={form.fichaTecnicaUrls}
+                  onChange={(v) => setCampo('fichaTecnicaUrls', v)}
+                  multiple={true}
+                  r2Prefix="catalogo/ficha-tecnica/"
+                />
+
+                {/* Campos personalizados libres clave+valor (2026-09-17). */}
+                <div className="space-y-2 rounded-sm border border-border-subtle bg-bg-alt/30 px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-text-muted">Campos personalizados</span>
+                    <button
+                      type="button"
+                      onClick={agregarCampoPersonalizado}
+                      className="text-xs text-gold-700 transition-colors duration-fast hover:underline"
+                    >
+                      + Agregar campo
+                    </button>
+                  </div>
+                  {form.camposPersonalizados.length === 0 && (
+                    <p className="text-xs text-text-muted italic">
+                      Sin campos. Ej. &quot;número de aperturas&quot; {'\u2192'} &quot;60000&quot;, &quot;módulo elástico&quot; {'\u2192'} &quot;0.42&quot;.
+                    </p>
+                  )}
+                  {form.camposPersonalizados.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        value={c.clave}
+                        onChange={(e) => setCampoPersonalizado(i, { clave: e.target.value })}
+                        placeholder="Clave (ej. Número de aperturas)"
+                        className="min-w-0 flex-[3] min-h-[40px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-sm text-text-heading focus:border-brand focus:shadow-ring-focus focus:outline-none"
+                      />
+                      <input
+                        value={c.valor}
+                        onChange={(e) => setCampoPersonalizado(i, { valor: e.target.value })}
+                        placeholder="Valor (ej. 60000)"
+                        className="min-w-0 flex-[2] min-h-[40px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-sm text-text-heading focus:border-brand focus:shadow-ring-focus focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => quitarCampoPersonalizado(i)}
+                        aria-label="Quitar campo"
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs leading-none text-text-muted transition-colors duration-fast hover:bg-red-600 hover:text-white"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
                 <label className="flex items-center justify-between rounded-sm border border-border-subtle bg-bg-alt/30 px-3 py-2">
                   <span className="text-sm font-medium text-text-muted">Publicado en web</span>
                   <button

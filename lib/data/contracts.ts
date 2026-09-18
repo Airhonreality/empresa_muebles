@@ -93,6 +93,9 @@ export interface ItemVariante {
    * su espacio. null = sin grupo (agrupación opcional, no obligatoria). NUNCA relacionado con
    * `modulos` (producción) — ver comentario de `GrupoItem` abajo. */
   grupoItemId: string | null
+  /** Foto propia del ítem (editable desde el cotizador, 2026-09-18). Tiene precedencia sobre la
+   * imagen del ProductoCatalogo vinculado. Se guarda en R2 (`cotizador/items/`). */
+  fotoUrl: string | null
   createdAt: string
   updatedAt: string
 }
@@ -112,6 +115,11 @@ export interface GrupoItem {
   orden: number
 }
 
+export interface CampoPersonalizadoProducto {
+  clave: string
+  valor: string
+}
+
 export interface ProductoCatalogo {
   id: string
   sku: string
@@ -127,6 +135,13 @@ export interface ProductoCatalogo {
    * de la ficha de presentación. Patrón idéntico a `Portafolio.galeriaPortafolioUrl`
    * y `EspacioVariante.fotosEspacio` (array de URLs). La portada sigue siendo `imagenUrl`. */
   galeriaImagenesUrl: string[]
+  /** Catálogo P-27 (2026-09-17): atributos técnicos libres clave+valor por producto
+   * (ej. "número de aperturas" -> "60000", "módulo elástico" -> "0.42"). El valor se
+   * guarda como string para admitir números y texto. Se edita en la ficha del catálogo. */
+  camposPersonalizados: CampoPersonalizadoProducto[]
+  /** Catálogo P-27: ficha técnica del producto — 1+ URLs a R2 (imágenes y/o archivos
+   * PDF/DWG/DOCX...). Patrón idéntico a `EspacioArtefacto.archivosUrls`. */
+  fichaTecnicaUrls: string[]
   /** P-27: modelo 3D del producto (diseño-desarrollo, POC-09). */
   modelo3dUrl: string | null
   categoriaComercial: string | null
@@ -434,7 +449,12 @@ export interface EspacioArtefacto {
   dimensionesMm: string | null
   tipoSpecifique: string | null
   ubicacion: string | null
-  fotoUrl: string | null
+  /** Descripción libre del artefacto (notas técnicas, aclaraciones, condiciones de instalación). */
+  descripcion: string | null
+  /** Colección de imágenes del artefacto (una o varias al tiempo, orden = orden de galería). */
+  fotoUrls: string[]
+  /** Colección de archivos asociados: fichas técnicas en PDF, planos, especificaciones (subidos a R2). */
+  archivosUrls: string[]
   requiereVerificacion: boolean
   validadoPor: string | null
   validadoEn: string | null
@@ -1059,7 +1079,7 @@ export interface DataStore {
   items: {
     porVariante(varianteId: string): ItemVariante[]
     crear(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante>
-    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>>): Promise<ItemVariante | null>
+    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>>): Promise<ItemVariante | null>
     eliminar(id: string): Promise<boolean>
   }
   // --- Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo → Ítems ---
@@ -1079,7 +1099,7 @@ export interface DataStore {
   artefactos: {
     porEspacio(espacioVarianteId: string): EspacioArtefacto[]
     crear(data: Partial<EspacioArtefacto> & { espacioVarianteId: string; categoria: EspacioArtefacto['categoria'] }): Promise<EspacioArtefacto>
-    actualizar(id: string, partial: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'fotoUrl'>>): Promise<EspacioArtefacto | null>
+    actualizar(id: string, partial: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'descripcion' | 'fotoUrls' | 'archivosUrls'>>): Promise<EspacioArtefacto | null>
   }
   catalogo: {
     listar(): ProductoCatalogo[]

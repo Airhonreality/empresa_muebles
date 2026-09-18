@@ -4,6 +4,8 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 import { optimizeImage, inferContextFromPrefix } from "./optimize";
 
 const MAX_CLONE_SIZE_BYTES = 5 * 1024 * 1024;
+/** Límite para archivos genéricos (fichas técnicas, planos, PDFs). Debajo del bodySizeLimit de 10 MB de next.config. */
+const MAX_ARCHIVO_SIZE_BYTES = 8 * 1024 * 1024;
 const CLONE_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
@@ -133,6 +135,61 @@ export async function uploadFileToR2(
     console.error("[uploadFileToR2]", error);
     const msg = error instanceof Error ? error.message : "Fallo al conectar con Cloudflare R2";
     return { ok: false, url: null, error: `No se pudo subir la imagen: ${msg}` };
+  }
+}
+
+/**
+ * Sube un archivo genérico (PDF, planos, ficheros técnicos, etc.) a Cloudflare R2
+ * y devuelve su URL pública permanente. No pasa por sharp/optimización de imagen:
+ * el binario original se persiste tal cual, solo con su Content-Type real
+ * (ej. application/pdf) y caché inmutable. Complementa a ImagePicker para los
+ * campos de cotización que necesitan fichas técnicas además de fotos.
+ * @param input - FormData conteniendo 'file' y opcionalmente 'prefix', o directamente un objeto File.
+ * @param prefixParam - Prefijo de carpeta en R2 (ej: 'cotizador/artefactos/archivos').
+ * @returns URL pública permanente en R2.
+ */
+export async function uploadArchivoToR2(
+  input: FormData | File,
+  prefixParam: string = "archivos"
+): Promise<CloneResult> {
+  try {
+    let file: File;
+    let prefix = prefixParam;
+
+    if (typeof FormData !== "undefined" && input instanceof FormData) {
+      const formFile = input.get("file");
+      if (!formFile || !(formFile instanceof File)) {
+        return { ok: false, url: null, error: "No se proporcionó ningún archivo en el formulario" };
+      }
+      file = formFile;
+      const formPrefix = input.get("prefix");
+      if (typeof formPrefix === "string" && formPrefix.trim()) {
+        prefix = formPrefix.trim();
+      }
+    } else if (input instanceof File) {
+      file = input;
+    } else {
+      return { ok: false, url: null, error: "Formato de entrada no válido para la subida de archivo" };
+    }
+
+    if (!file.name.trim()) {
+      return { ok: false, url: null, error: "El archivo no tiene nombre" };
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    if (arrayBuffer.byteLength > MAX_ARCHIVO_SIZE_BYTES) {
+      return { ok: false, url: null, error: `El archivo supera el límite de ${MAX_ARCHIVO_SIZE_BYTES / 1024 / 1024} MB` };
+    }
+
+    const rawBuffer = Buffer.from(arrayBuffer);
+    const mime = file.type || "application/octet-stream";
+
+    const url = await persistBufferToR2({ rawBuffer, mime, prefix, fileName: file.name });
+    return { ok: true, url };
+  } catch (error) {
+    console.error("[uploadArchivoToR2]", error);
+    const msg = error instanceof Error ? error.message : "Fallo al conectar con Cloudflare R2";
+    return { ok: false, url: null, error: `No se pudo subir el archivo: ${msg}` };
   }
 }
 

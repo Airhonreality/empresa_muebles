@@ -50,6 +50,7 @@ function item(id: string, overrides: Partial<ItemVariante> = {}): ItemVariante {
     grupoReferencial: null,
     comentario: null,
     grupoItemId: null,
+    fotoUrl: null,
     createdAt: '2026-09-05T00:00:00Z',
     updatedAt: '2026-09-05T00:00:00Z',
     ...overrides,
@@ -182,11 +183,19 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
   })
 
   await test('artefactos: agregar/actualizar round-trip optimista', () => {
-    const creado = construirArtefactoOptimista({ id: 'art-1', espacioVarianteId: 'esp-1', categoria: 'electrodomestico', tipoSpecifique: 'Horno' })
+    const creado = construirArtefactoOptimista({
+      id: 'art-1', espacioVarianteId: 'esp-1', categoria: 'electrodomestico', tipoSpecifique: 'Horno',
+      descripcion: 'Horno de empotrar 60cm', fotoUrls: ['https://r2.dev/a.jpg', 'https://r2.dev/b.jpg'],
+      archivosUrls: ['https://r2.dev/ficha.pdf'],
+    })
     let snap = agregarArtefacto(baseSnapshot(), creado)
     assert.equal(snap.artefactos.length, 1)
-    snap = actualizarArtefacto(snap, 'art-1', { ubicacion: 'Bajo mesón' })
+    assert.deepEqual(snap.artefactos[0].fotoUrls, ['https://r2.dev/a.jpg', 'https://r2.dev/b.jpg'])
+    assert.deepEqual(snap.artefactos[0].archivosUrls, ['https://r2.dev/ficha.pdf'])
+    assert.equal(snap.artefactos[0].descripcion, 'Horno de empotrar 60cm')
+    snap = actualizarArtefacto(snap, 'art-1', { ubicacion: 'Bajo mesón', fotoUrls: ['https://r2.dev/c.jpg'] })
     assert.equal(snap.artefactos[0].ubicacion, 'Bajo mesón')
+    assert.deepEqual(snap.artefactos[0].fotoUrls, ['https://r2.dev/c.jpg'])
   })
 
   await test('fusionarPendientes: fila optimista ausente del servidor se conserva', () => {

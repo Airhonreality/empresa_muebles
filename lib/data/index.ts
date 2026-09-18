@@ -10,6 +10,7 @@ import { useDataStoreContext } from './DataStoreProvider'
 export { getDataStore } from './store'
 export { SHOP_CATEGORIAS } from './contracts'
 export { DataStoreProvider } from './DataStoreProvider'
+export { useStoreChange } from './DataStoreProvider'
 
 /**
  * Contrato de reactividad (M-07, ver arnes/lineas/ola7/tecnico/m07_capa_reactividad.md).
@@ -28,7 +29,7 @@ export function useDataStore(): DataStore {
 }
 
 export type {
-  DataStore, Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto, ProductoCatalogo,
+  DataStore, Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto, ProductoCatalogo, CampoPersonalizadoProducto,
   Parametro, Contrato, HitoPago, UsuarioMock, TransicionesProyecto, ProyectosEstadosHistorial,
   Cronograma, CronogramaEtapa, LineaCronograma, EtapaCronograma, DesfaseCronograma, CausaDesfase,
   CheckProduccion, DesenlaceCheck, NovedadCritica, EstadoNovedadCritica, ComunicacionProgreso,

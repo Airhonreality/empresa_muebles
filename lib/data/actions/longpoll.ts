@@ -20,6 +20,11 @@ export interface LongPollResult {
   // volver a comparar `version` contra nada. false = se agotó el tiempo de espera sin novedad.
   changed: boolean
   version: string
+  // Tablas de negocio que dispararon NOTIFY en este ciclo (payload "tabla:op" del trigger
+  // 0004). Vacío si el ciclo se resolvió por timeout o por el atajo de versión al
+  // suscribirse (ocasiones en que NO hay payload). El consumidor lo usa para invalidar
+  // SOLO los queries escopados a esas tablas (F1: fin del refetch global sobre el cotizador).
+  tablas: string[]
 }
 
 /**
@@ -30,11 +35,16 @@ export interface LongPollResult {
  * esperar si algo ya cambió antes de suscribirse. La señal de verdad es `changed`: cuando es
  * true fue un NOTIFY real (o el atajo lo detectó), y el llamador debe refrescar sin condicionarlo
  * a comparar versiones — la comparación de versión NO alcanza para decidir esto por sí sola.
+ * `tablas` (emitidas por el trigger en el payload, ej. "items_variante:UPDATE") permite al
+ * llamador invalidar con precisión el server-state que realmente tocó el cambio.
  */
 export async function longPollVersionAction(clientVersion: string): Promise<LongPollResult> {
   return new Promise((resolve, reject) => {
     let settled = false
     let unlistenFn: (() => void) | undefined
+    // Tablas notificadas en este ciclo. El trigger emite "TG_TABLE_NAME:TG_OP" por notify;
+    // si llegan varios NOTIFY coalescidos antes de que el ciclo cierre, se acumulan todas.
+    const tablas = new Set<string>()
 
     const timer = setTimeout(() => {
       void finish(false)
@@ -51,14 +61,17 @@ export async function longPollVersionAction(clientVersion: string): Promise<Long
       }
       try {
         const version = await fetchVersionTokenAction()
-        resolve({ changed, version })
+        resolve({ changed, version, tablas: [...tablas] })
       } catch (err) {
         reject(err instanceof Error ? err : new Error(String(err)))
       }
     }
 
     client
-      .listen('veta_changes', () => {
+      .listen('veta_changes', (payload: string) => {
+        // payload del trigger 0004: "TG_TABLE_NAME:TG_OP" (ej. "items_variante:UPDATE").
+        const tabla = payload?.split(':')[0]
+        if (tabla) tablas.add(tabla)
         void finish(true)
       })
       .then(async (sub) => {

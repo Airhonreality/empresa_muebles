@@ -10,6 +10,7 @@ import { MoneyInput } from '@/components/veta/money-input'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
+import { FilePicker } from '@/components/veta/file-picker'
 import { ItemMiniatura } from '@/components/veta/item-miniatura'
 import { ItemEditorModal } from '@/components/veta/item-editor-modal'
 import { AcabadoPicker, type AcabadoItem } from '@/components/veta/acabado-picker'
@@ -1051,6 +1052,7 @@ function EspacioGroup({
   const [editandoNombre, setEditandoNombre] = useState(false)
   const [nombreTemp, setNombreTemp] = useState(nombreEspacio)
   const [mostrarMenuDuplicar, setMostrarMenuDuplicar] = useState(false)
+  const [eliminandoEspacio, setEliminandoEspacio] = useState(false)
 
   // El total del header refleja siempre la variante ACTIVA (la que cuenta),
   // no la que se estǸ mirando en ese momento �?" cambiar de tab para comparar
@@ -1095,6 +1097,29 @@ function EspacioGroup({
     }
   }
 
+  // Eliminación a nivel de ESPACIO (grupo completo): el caso que la UI no cubría —
+  // la variante única (que además es la activa) no tenía forma de eliminarse. Borra
+  // todas las variantes del grupo en cascada (artefactos → items → variante). La
+  // Guardia de Integridad del servidor (BOM/módulos en producción) cae en el primer
+  // variante que la incumpla; el resto del grupo no se toca y se informa el motivo.
+  const eliminarEspacioGrupo = async () => {
+    if (eliminandoEspacio) return
+    const cantidad = variantes.length
+    const plural = cantidad > 1 ? `sus ${cantidad} variantes, ` : ''
+    if (!window.confirm(`¿Eliminar el espacio "${nombreEspacio}"? Se borrarán ${plural}todos sus ítems, artefactos y fotos. Esta acción no se puede deshacer.`)) return
+    setEliminandoEspacio(true)
+    try {
+      for (const v of variantes) {
+        await store.espacios.eliminar(v.id)
+      }
+    } catch (err) {
+      const razon = err instanceof Error ? err.message : 'Motivo desconocido.'
+      window.alert(`No se pudo eliminar todo el espacio: ${razon}`)
+    } finally {
+      setEliminandoEspacio(false)
+    }
+  }
+
   return (
     <div className={`rounded-lg border ${varianteActiva.activa ? 'border-border-subtle' : 'border-border-subtle/50'} bg-bg-raised overflow-hidden`}>
       <div
@@ -1133,6 +1158,19 @@ function EspacioGroup({
                   <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5 8.5-8.5z" strokeLinejoin="round" strokeLinecap="round" />
                 </svg>
               </span>
+              <button
+                type="button"
+                disabled={eliminandoEspacio}
+                onClick={(e) => { e.stopPropagation(); void eliminarEspacioGrupo() }}
+                className="p-0.5 rounded text-text-muted hover:text-red-500 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label={`Eliminar ${nombreEspacio}`}
+                title="Eliminar espacio (todas sus variantes, ítems y artefactos)"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
+                </svg>
+              </button>
             </span>
           )}
           <select
@@ -1495,7 +1533,7 @@ function VarianteContenido({
             <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 sm:gap-2">
-                  <ItemMiniatura producto={prod} onClick={() => setModalItemId(item.id)} />
+                  <ItemMiniatura producto={prod} fotoUrl={item.fotoUrl} onClick={() => setModalItemId(item.id)} />
                   <div className="flex flex-col min-w-0">
                     <span className="text-text-heading text-base sm:text-sm font-medium sm:font-normal truncate">
                       {item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem sin catálogo'}
@@ -1715,7 +1753,7 @@ function VarianteContenido({
                 <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-1 last:pb-0 last:border-0">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 sm:gap-2">
-                      <ItemMiniatura producto={prod} onClick={() => setModalItemId(item.id)} />
+                      <ItemMiniatura producto={prod} fotoUrl={item.fotoUrl} onClick={() => setModalItemId(item.id)} />
                       <span className="w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full bg-gold-500 flex-shrink-0" title="Referencial" />
                       <div className="flex flex-col min-w-0">
                         <span className="text-text-heading text-base sm:text-sm font-medium sm:font-normal truncate">
@@ -1914,6 +1952,9 @@ function VarianteContenido({
 
         {artefactosList.map((artefacto) => {
           const editando = editarArtefactoId === artefacto.id
+          const numFotos = artefacto.fotoUrls?.length ?? 0
+          const numArchivos = artefacto.archivosUrls?.length ?? 0
+          const artefactoConExtras = Boolean(artefacto.descripcion) || numFotos > 0 || numArchivos > 0
           return (
             <div key={artefacto.id} className="border-b border-border-subtle/50 pb-2 last:pb-0 last:border-0">
               {editando ? (
@@ -1923,6 +1964,7 @@ function VarianteContenido({
                   onCancelar={() => setEditarArtefactoId(null)}
                 />
               ) : (
+                <>
                 <div
                   className="flex items-start justify-between text-sm cursor-pointer hover:bg-bg-alt/50 rounded px-2 py-1 -mx-2 transition-colors duration-fast"
                   onClick={() => setEditarArtefactoId(artefacto.id)}
@@ -1952,6 +1994,12 @@ function VarianteContenido({
                     {artefacto.dimensionesMm && (
                       <span className="text-xs text-text-muted font-mono">{artefacto.dimensionesMm}</span>
                     )}
+                    {numFotos > 0 && (
+                      <span className="text-[10px] font-mono text-text-muted" title="Fotos">{numFotos} foto(s)</span>
+                    )}
+                    {numArchivos > 0 && (
+                      <span className="text-[10px] font-mono text-text-muted" title="Archivos">{numArchivos} archivo(s)</span>
+                    )}
                     {artefacto.requiereVerificacion ? (
                       <Badge tone="warning">Pendiente</Badge>
                     ) : (
@@ -1959,6 +2007,47 @@ function VarianteContenido({
                     )}
                   </div>
                 </div>
+                {artefactoConExtras && (
+                  <div className="-mx-2 mt-0.5 space-y-1 rounded bg-bg-alt/30 px-2 py-1">
+                    {artefacto.descripcion && (
+                      <p className="text-xs text-text-muted line-clamp-2">{artefacto.descripcion}</p>
+                    )}
+                    {numFotos > 0 && (
+                      <div className="flex items-center gap-1">
+                        {artefacto.fotoUrls.slice(0, 8).map((url) => (
+                          <div key={url} className="h-10 w-10 overflow-hidden rounded-sm border border-border-subtle bg-bg-paper">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- miniaturas de artefacto en el listado del cotizador */}
+                            <img src={url} alt="" className="h-full w-full object-cover" />
+                          </div>
+                        ))}
+                        {numFotos > 8 && (
+                          <span className="text-[10px] font-mono text-text-muted">+{numFotos - 8}</span>
+                        )}
+                      </div>
+                    )}
+                    {numArchivos > 0 && (
+                      <div className="flex flex-wrap items-center gap-1">
+                        {artefacto.archivosUrls.slice(0, 3).map((url) => (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            title={url}
+                            className="rounded-sm bg-gold-500/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-gold-700 transition-colors duration-fast hover:bg-gold-500/25"
+                          >
+                            {extensionArchivoUrl(url)}
+                          </a>
+                        ))}
+                        {numArchivos > 3 && (
+                          <span className="text-[10px] font-mono text-text-muted">+{numArchivos - 3}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                </>
               )}
             </div>
           )
@@ -2104,6 +2193,16 @@ function VarianteContenido({
   )
 }
 
+function extensionArchivoUrl(url: string): string {
+  try {
+    const base = decodeURIComponent(new URL(url).pathname.split('/').pop() ?? '').replace(/^\d+-/, '')
+    const ext = base.split('.').pop()
+    return ext && ext !== base ? ext.slice(0, 8).toUpperCase() : 'FILE'
+  } catch {
+    return 'FILE'
+  }
+}
+
 function FormArtefacto({
   espacioId,
   onGuardado,
@@ -2118,7 +2217,9 @@ function FormArtefacto({
   const [tipo, setTipo] = useState('')
   const [dimensiones, setDimensiones] = useState('')
   const [ubicacion, setUbicacion] = useState('')
-  const [fotoUrl, setFotoUrl] = useState<string[]>([])
+  const [descripcion, setDescripcion] = useState('')
+  const [fotoUrls, setFotoUrls] = useState<string[]>([])
+  const [archivosUrls, setArchivosUrls] = useState<string[]>([])
   const { guard: guardCrearArtefacto, isPending: creandoArtefacto } = usePendingGuard()
 
   const handleGuardar = useCallback(async () => {
@@ -2129,10 +2230,12 @@ function FormArtefacto({
       tipoSpecifique: tipo.trim(),
       dimensionesMm: dimensiones.trim() || null,
       ubicacion: ubicacion.trim() || null,
-      fotoUrl: fotoUrl[0] ?? null,
+      descripcion: descripcion.trim() || null,
+      fotoUrls,
+      archivosUrls,
     })
     onGuardado()
-  }, [espacioId, categoria, tipo, dimensiones, ubicacion, fotoUrl, store, onGuardado])
+  }, [espacioId, categoria, tipo, dimensiones, ubicacion, descripcion, fotoUrls, archivosUrls, store, onGuardado])
 
   return (
     <div className="space-y-2 rounded border border-border-subtle bg-bg-paper p-3">
@@ -2182,7 +2285,19 @@ function FormArtefacto({
           />
         </label>
       </div>
-      <ImagePicker label="Foto (opcional)" value={fotoUrl} onChange={setFotoUrl} multiple={false} uploadToR2 r2Prefix="cotizador/items" />
+      <label className="flex flex-col gap-1">
+        <span className="text-[11px] text-text-muted">Descripción (opcional)</span>
+        <textarea
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          rows={2}
+          className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+          placeholder="Notas técnicas, condiciones de instalación, referencias..."
+        />
+      </label>
+      <ImagePicker label="Fotos (una o varias)" value={fotoUrls} onChange={setFotoUrls} uploadToR2 r2Prefix="cotizador/artefactos" />
+      <FilePicker label="Fichas técnicas / archivos (PDF, planos...)" value={archivosUrls} onChange={setArchivosUrls} accept=".pdf,.dwg,.dxf,.doc,.docx,.xls,.xlsx,.zip"
+        r2Prefix="cotizador/artefactos/archivos" />
       <div className="flex items-center gap-2 pt-1">
         <button
           type="button"
@@ -2217,17 +2332,21 @@ function FormArtefactoEdicion({
   const [dimensiones, setDimensiones] = useState(artefacto.dimensionesMm ?? '')
   const [tipo, setTipo] = useState(artefacto.tipoSpecifique ?? '')
   const [ubicacion, setUbicacion] = useState(artefacto.ubicacion ?? '')
-  const [fotoUrl, setFotoUrl] = useState<string[]>(artefacto.fotoUrl ? [artefacto.fotoUrl] : [])
+  const [descripcion, setDescripcion] = useState(artefacto.descripcion ?? '')
+  const [fotoUrls, setFotoUrls] = useState<string[]>(artefacto.fotoUrls ?? [])
+  const [archivosUrls, setArchivosUrls] = useState<string[]>(artefacto.archivosUrls ?? [])
 
   const handleGuardar = useCallback(async () => {
     await store.artefactos.actualizar(artefacto.id, {
       tipoSpecifique: tipo.trim() || null,
       dimensionesMm: dimensiones.trim() || null,
       ubicacion: ubicacion.trim() || null,
-      fotoUrl: fotoUrl[0] ?? null,
+      descripcion: descripcion.trim() || null,
+      fotoUrls,
+      archivosUrls,
     })
     onGuardado()
-  }, [store, artefacto.id, tipo, dimensiones, ubicacion, fotoUrl, onGuardado])
+  }, [store, artefacto.id, tipo, dimensiones, ubicacion, descripcion, fotoUrls, archivosUrls, onGuardado])
 
   return (
     <div className="space-y-2 rounded border border-border-subtle bg-bg-paper p-3">
@@ -2260,7 +2379,19 @@ function FormArtefactoEdicion({
           />
         </label>
       </div>
-      <ImagePicker label="Foto" value={fotoUrl} onChange={setFotoUrl} multiple={false} uploadToR2 r2Prefix="cotizador/items" />
+      <label className="flex flex-col gap-1">
+        <span className="text-[11px] text-text-muted">Descripción</span>
+        <textarea
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          rows={2}
+          className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+          placeholder="Notas técnicas, condiciones de instalación, referencias..."
+        />
+      </label>
+      <ImagePicker label="Fotos (una o varias)" value={fotoUrls} onChange={setFotoUrls} uploadToR2 r2Prefix="cotizador/artefactos" />
+      <FilePicker label="Fichas técnicas / archivos (PDF, planos...)" value={archivosUrls} onChange={setArchivosUrls} accept=".pdf,.dwg,.dxf,.doc,.docx,.xls,.xlsx,.zip"
+        r2Prefix="cotizador/artefactos/archivos" />
       <div className="flex items-center gap-2 pt-1">
         <button
           type="button"

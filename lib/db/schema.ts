@@ -314,6 +314,11 @@ export const itemsVariante = pgTable("items_variante", {
 	// opcional. FK a `grupos_item` (tabla nueva, ver más abajo) — NUNCA a `modulos` (producción,
 	// post-contrato): mezclar esos dos ciclos de vida es justo lo que este cambio evita.
 	grupoItemId: uuid("grupo_item_id"),
+	// Reinicio del modal de edición de ítems (2026-09-18): imagen propia del ítem, editable desde
+	// el cotizador — útil para ítems a medida o referenciales sin catálogo. Tiene precedencia
+	// sobre la imagen del ProductoCatalogo vinculado al renderizar (ItemMiniatura, propuesta).
+	// Nullable: un ítem sin foto hereda la imagen de su producto o muestra placeholder.
+	fotoUrl: text("foto_url"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {
@@ -368,7 +373,9 @@ export const espaciosArtefactos = pgTable("espacios_artefactos", {
 	dimensionesMm: text("dimensiones_mm"),
 	tipoSpecifique: text("tipo_specifique"),
 	ubicacion: text(),
-	fotoUrl: text("foto_url"),
+	descripcion: text(),
+	fotoUrls: text("foto_urls").array().notNull().default([]),
+	archivosUrls: text("archivos_urls").array().notNull().default([]),
 	requiereVerificacion: boolean("requiere_verificacion").default(false).notNull(),
 	validadoPor: uuid("validado_por"),
 	validadoEn: timestamp("validado_en", { mode: 'string' }),
@@ -658,6 +665,13 @@ export const productosCatalogo = pgTable("productos_catalogo", {
 	// t-139 (2026-08-15): galería multi-imagen para el slider de la ficha de
 	// presentación. Patrón de galeria_portafolio_url / fotos_espacio (jsonb array).
 	galeriaImagenesUrl: jsonb("galeria_imagenes_url").default([]).notNull(),
+	// 2026-09-17: campos personalizados libres por producto — lista JSON clave+valor
+	// (ej. "número de aperturas" -> "60000", "módulo elástico" -> "0.42"). El valor se
+	// guarda como string para admitir tanto números como texto.
+	camposPersonalizados: jsonb("campos_personalizados").default([]).notNull(),
+	// 2026-09-17: ficha técnica del producto — 1+ URLs en R2 (imágenes y/o archivos
+	// PDF/DWG/DOCX...). Patrón idéntico a EspacioArtefacto.archivosUrls.
+	fichaTecnicaUrls: jsonb("ficha_tecnica_urls").default([]).notNull(),
 	// F10 (2026-08-13): renombrado modelo3DUrl -> modelo3dUrl (contracts.ts usa 'd' minúscula).
 	modelo3dUrl: text("modelo_3d_url"),
 	categoriaComercial: text("categoria_comercial"),

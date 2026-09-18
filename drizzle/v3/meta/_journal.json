@@ -127,6 +127,27 @@
       "when": 1789460000000,
       "tag": "0017_propuestas_versiones_nombre",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789470000000,
+      "tag": "0018_artefactos_fotos_archivos_descripcion",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789480000000,
+      "tag": "0019_catalogo_campos_ficha_tecnica",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789490000000,
+      "tag": "0020_items_variante_foto",
+      "breakpoints": true
     }
   ]
 }

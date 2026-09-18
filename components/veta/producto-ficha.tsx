@@ -14,6 +14,10 @@ export interface ProductoFichaData {
   publicadoWeb?: boolean
   imagenUrl?: string | null
   galeriaImagenesUrl?: string[]
+  /** Campos personalizados libres clave+valor (catálogo P-27, 2026-09-17). */
+  camposPersonalizados?: { clave: string; valor: string }[]
+  /** Ficha técnica — URLs a R2 (imágenes y/o archivos PDF/DWG...). */
+  fichaTecnicaUrls?: string[]
 }
 
 interface ProductoFichaProps {
@@ -105,6 +109,33 @@ export function ProductoFicha({ data, onZoom, className }: ProductoFichaProps) {
           )}
         </div>
       </div>
+
+      {(data.camposPersonalizados?.length ?? 0) > 0 && (
+        <ul className="flex flex-col gap-1 border-t border-[var(--color-border-brand)]/30 pt-3">
+          {(data.camposPersonalizados ?? []).map((c) => (
+            <li key={c.clave} className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="text-[var(--color-text-primary)] opacity-70">{c.clave}</span>
+              <span className="text-right font-mono text-[var(--color-border-brand)]">{c.valor}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {(data.fichaTecnicaUrls?.length ?? 0) > 0 && (
+        <div className={`flex flex-wrap gap-1.5 ${(data.camposPersonalizados?.length ?? 0) > 0 ? 'border-t border-[var(--color-border-brand)]/30 pt-3' : ''}`}>
+          {(data.fichaTecnicaUrls ?? []).map((url) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full bg-[var(--color-border-brand)]/10 px-2.5 py-1 text-xs font-medium text-[var(--color-border-brand)] transition-colors duration-fast hover:bg-[var(--color-border-brand)]/20"
+            >
+              Ficha técnica
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

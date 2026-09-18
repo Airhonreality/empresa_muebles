@@ -27,6 +27,8 @@ export interface InputItemOptimista {
   comentario?: string | null
   /** t-157 (2026-09-10): grupo/subgrupo de `grupos_item` al que pertenece este ítem. */
   grupoItemId?: string | null
+  /** Foto propia del ítem (2026-09-18), R2 `cotizador/items/`. Nullable. */
+  fotoUrl?: string | null
 }
 
 export function construirItemOptimista(input: InputItemOptimista): ItemVariante {
@@ -46,6 +48,7 @@ export function construirItemOptimista(input: InputItemOptimista): ItemVariante 
     grupoReferencial: input.grupoReferencial ?? null,
     comentario: input.comentario ?? null,
     grupoItemId: input.grupoItemId ?? null,
+    fotoUrl: input.fotoUrl ?? null,
     createdAt: ahora,
     updatedAt: ahora,
   }
@@ -59,7 +62,7 @@ export function agregarItem(snapshot: CotizadorSnapshot, item: ItemVariante): Co
 export function actualizarItem(
   snapshot: CotizadorSnapshot,
   itemId: string,
-  patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>>,
+  patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>>,
 ): CotizadorSnapshot {
   if (!snapshot.items.some((i) => i.id === itemId)) return snapshot
   const ahora = new Date().toISOString()
@@ -209,7 +212,9 @@ export interface InputArtefactoOptimista {
   dimensionesMm?: string | null
   tipoSpecifique?: string | null
   ubicacion?: string | null
-  fotoUrl?: string | null
+  descripcion?: string | null
+  fotoUrls?: string[]
+  archivosUrls?: string[]
   requiereVerificacion?: boolean
 }
 
@@ -222,7 +227,9 @@ export function construirArtefactoOptimista(input: InputArtefactoOptimista): Esp
     dimensionesMm: input.dimensionesMm ?? null,
     tipoSpecifique: input.tipoSpecifique ?? null,
     ubicacion: input.ubicacion ?? null,
-    fotoUrl: input.fotoUrl ?? null,
+    descripcion: input.descripcion ?? null,
+    fotoUrls: input.fotoUrls ?? [],
+    archivosUrls: input.archivosUrls ?? [],
     requiereVerificacion: input.requiereVerificacion ?? true,
     validadoPor: null,
     validadoEn: null,
@@ -239,7 +246,7 @@ export function agregarArtefacto(snapshot: CotizadorSnapshot, artefacto: Espacio
 export function actualizarArtefacto(
   snapshot: CotizadorSnapshot,
   artefactoId: string,
-  patch: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'fotoUrl'>>,
+  patch: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'descripcion' | 'fotoUrls' | 'archivosUrls'>>,
 ): CotizadorSnapshot {
   if (!snapshot.artefactos.some((a) => a.id === artefactoId)) return snapshot
   return {

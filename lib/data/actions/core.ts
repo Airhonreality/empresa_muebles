@@ -6,7 +6,7 @@ import { eq, and, ne, inArray, or, like, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
-import { num } from './mappers'
+import { num, sanitizarCamposPersonalizados } from './mappers'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
@@ -402,6 +402,7 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
     grupoReferencial: data.grupoReferencial ?? null,
     comentario: data.comentario ?? null,
     grupoItemId: data.grupoItemId ?? null,
+    fotoUrl: data.fotoUrl ? (sanitizarUrlsFotos([data.fotoUrl])?.[0] ?? null) : null,
   }).onConflictDoNothing({ target: s.itemsVariante.id }).returning()
 
   if (!nuevo) {
@@ -415,7 +416,7 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
 
 export async function actualizarItemAction(
   id: string,
-  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId'>>
+  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>>
 ): Promise<ItemVariante | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, id))
@@ -424,6 +425,7 @@ export async function actualizarItemAction(
     const precioUnitario = partial.precioUnitario ?? actual.precioUnitario
     const [actualizado] = await tx.update(s.itemsVariante).set({
       ...partial,
+      fotoUrl: partial.fotoUrl !== undefined ? (partial.fotoUrl ? (sanitizarUrlsFotos([partial.fotoUrl])?.[0] ?? null) : null) : undefined,
       totalLinea: String(num(cantidad) * num(precioUnitario)),
       updatedAt: new Date().toISOString(),
     }).where(eq(s.itemsVariante.id, id)).returning()
@@ -580,7 +582,9 @@ export async function crearArtefactoAction(data: Partial<EspacioArtefacto> & { e
     dimensionesMm: data.dimensionesMm ?? null,
     tipoSpecifique: data.tipoSpecifique ?? null,
     ubicacion: data.ubicacion ?? null,
-    fotoUrl: data.fotoUrl ?? null,
+    descripcion: data.descripcion ?? null,
+    fotoUrls: sanitizarUrlsFotos(data.fotoUrls) ?? [],
+    archivosUrls: sanitizarUrlsFotos(data.archivosUrls, { permitirExternas: false }) ?? [],
     requiereVerificacion: data.requiereVerificacion ?? true,
     validadoPor: data.validadoPor ?? null,
     validadoEn: data.validadoEn ?? null,
@@ -597,9 +601,12 @@ export async function crearArtefactoAction(data: Partial<EspacioArtefacto> & { e
 
 export async function actualizarArtefactoAction(
   id: string,
-  partial: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'fotoUrl'>>
+  partial: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'descripcion' | 'fotoUrls' | 'archivosUrls'>>
 ): Promise<EspacioArtefacto | null> {
-  const [actualizado] = await db.update(s.espaciosArtefactos).set({ ...partial, updatedAt: new Date().toISOString() }).where(eq(s.espaciosArtefactos.id, id)).returning()
+  const sanitizado = { ...partial }
+  if (sanitizado.fotoUrls !== undefined) sanitizado.fotoUrls = sanitizarUrlsFotos(sanitizado.fotoUrls) ?? []
+  if (sanitizado.archivosUrls !== undefined) sanitizado.archivosUrls = sanitizarUrlsFotos(sanitizado.archivosUrls, { permitirExternas: false }) ?? []
+  const [actualizado] = await db.update(s.espaciosArtefactos).set({ ...sanitizado, updatedAt: new Date().toISOString() }).where(eq(s.espaciosArtefactos.id, id)).returning()
   return (actualizado as unknown as EspacioArtefacto) ?? null
 }
 
@@ -617,11 +624,15 @@ export async function crearProductoCatalogoAction(data: Partial<ProductoCatalogo
     const publicadoWeb = data.publicadoWeb ?? false
     const imagenUrl = sanitizarUrlIndividual(data.imagenUrl)
     const galeriaImagenesUrl = sanitizarUrlsFotos(data.galeriaImagenesUrl) ?? []
+    const camposPersonalizados = sanitizarCamposPersonalizados(data.camposPersonalizados)
+    // Ficha técnica: solo URLs de R2 (ley R2) — las sube el FilePicker al bucket.
+    const fichaTecnicaUrls = sanitizarUrlsFotos(data.fichaTecnicaUrls, { permitirExternas: false }) ?? []
     // R5 (t-139): publicar exige precioPublico + (imagenUrl OR galería no vacía).
     if (publicadoWeb && (!precioPublico || !(imagenUrl || galeriaImagenesUrl.length > 0))) return null
     const [nuevo] = await tx.insert(s.productosCatalogo).values({
       sku: data.sku, descripcion: data.descripcion, tipo: data.tipo ?? null, unidadMedida: data.unidadMedida,
       precioDirecto, precioPublico, stockActual, proveedorId: data.proveedorId ?? null, imagenUrl, galeriaImagenesUrl,
+      camposPersonalizados, fichaTecnicaUrls,
       modelo3dUrl: data.modelo3dUrl ?? null, categoriaComercial: data.categoriaComercial ?? null,
       publicadoWeb, proyectoOrigenId: data.proyectoOrigenId ?? null, anulado: false,
     }).returning()
@@ -634,8 +645,25 @@ export async function actualizarProductoCatalogoAction(id: string, partial: Part
     const [actual] = await tx.select().from(s.productosCatalogo).where(eq(s.productosCatalogo.id, id))
     if (!actual) return null
     const actualizado = { ...actual, ...partial }
-    if (partial.imagenUrl !== undefined) actualizado.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl)
-    if (partial.galeriaImagenesUrl !== undefined) actualizado.galeriaImagenesUrl = sanitizarUrlsFotos(partial.galeriaImagenesUrl) ?? []
+    // Sanitización efectiva: el .set() final usa setData (no el partial crudo) para que la
+    // ley R2 / URLs externas no se puedan colar por el spread (bug latent corregido 2026-09-17).
+    const setData: Partial<typeof actualizado> = { ...partial, updatedAt: new Date().toISOString() }
+    if (partial.imagenUrl !== undefined) {
+      setData.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl)
+      actualizado.imagenUrl = setData.imagenUrl
+    }
+    if (partial.galeriaImagenesUrl !== undefined) {
+      setData.galeriaImagenesUrl = sanitizarUrlsFotos(partial.galeriaImagenesUrl) ?? []
+      actualizado.galeriaImagenesUrl = setData.galeriaImagenesUrl
+    }
+    if (partial.camposPersonalizados !== undefined) {
+      setData.camposPersonalizados = sanitizarCamposPersonalizados(partial.camposPersonalizados)
+      actualizado.camposPersonalizados = setData.camposPersonalizados
+    }
+    if (partial.fichaTecnicaUrls !== undefined) {
+      setData.fichaTecnicaUrls = sanitizarUrlsFotos(partial.fichaTecnicaUrls, { permitirExternas: false }) ?? []
+      actualizado.fichaTecnicaUrls = setData.fichaTecnicaUrls
+    }
     if (actualizado.sku) {
       const conflicto = await tx.select().from(s.productosCatalogo).where(and(eq(s.productosCatalogo.sku, actualizado.sku), ne(s.productosCatalogo.id, id)))
       if (conflicto.length > 0) return null
@@ -646,7 +674,7 @@ export async function actualizarProductoCatalogoAction(id: string, partial: Part
     if ((actualizado.stockActual ?? 0) < 0) return null
     const galeriaLen = Array.isArray(actualizado.galeriaImagenesUrl) ? actualizado.galeriaImagenesUrl.length : 0
     if (actualizado.publicadoWeb && (!actualizado.precioPublico || !(actualizado.imagenUrl || galeriaLen > 0))) return null
-    const [row] = await tx.update(s.productosCatalogo).set({ ...partial, updatedAt: new Date().toISOString() }).where(eq(s.productosCatalogo.id, id)).returning()
+    const [row] = await tx.update(s.productosCatalogo).set(setData).where(eq(s.productosCatalogo.id, id)).returning()
     return row as unknown as ProductoCatalogo
   })
 }
