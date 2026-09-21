@@ -214,6 +214,7 @@ export interface CatalogoItemPublico {
   imagenUrl: string | null
   galeriaImagenesUrl: string[]
   sku: string
+  camposPersonalizados?: Array<{ clave: string; valor: string }>
 }
 
 export interface PropuestaPublicaData {
@@ -291,6 +292,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
         imagenUrl: c.imagenUrl,
         galeriaImagenesUrl: (c.galeriaImagenesUrl as string[] | null) ?? [],
         sku: c.sku,
+        camposPersonalizados: (c.camposPersonalizados as Array<{ clave: string; valor: string }> | null) ?? [],
       }
     }
 
@@ -338,6 +340,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
       catalogoPorId[it.catalogoId] = {
         descripcion: c.descripcion, unidadMedida: c.unidadMedida, imagenUrl: c.imagenUrl,
         galeriaImagenesUrl: c.galeriaImagenesUrl ?? [], sku: c.sku,
+        camposPersonalizados: c.camposPersonalizados ?? [],
       }
     }
   }

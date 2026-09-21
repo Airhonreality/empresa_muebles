@@ -47,11 +47,6 @@ export function ProductSheetModal({ item, producto, onClose }: ProductSheetModal
         {/* Header Sticky */}
         <header className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-border-subtle bg-bg-raised">
           <div className="flex-1">
-            {producto?.sku && (
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gold-600 mb-1">
-                {producto.sku}
-              </p>
-            )}
             <h2 className="font-display text-2xl font-semibold text-text-heading">{nombre}</h2>
           </div>
           <button
@@ -165,7 +160,7 @@ export function ProductSheetModal({ item, producto, onClose }: ProductSheetModal
                     Cantidad
                   </p>
                   <p className="text-lg font-semibold text-text-heading">
-                    {Number(item.cantidad).toLocaleString('es-CO', { maximumFractionDigits: 2 })} {unidad}
+                    {Number(item.cantidad).toLocaleString('es-CO', { maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 {totalLinea > 0 && (
@@ -181,30 +176,24 @@ export function ProductSheetModal({ item, producto, onClose }: ProductSheetModal
               </div>
             </div>
 
-            {/* Información Técnica */}
-            <div className="border-b border-border-subtle pb-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gold-600 mb-4">
-                Información Técnica
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {producto?.sku && (
-                  <div className="p-3 bg-surface rounded-md border border-border-subtle">
-                    <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-1">
-                      SKU
-                    </p>
-                    <p className="text-sm font-mono text-text-heading">{producto.sku}</p>
-                  </div>
-                )}
-                {unidad && (
-                  <div className="p-3 bg-surface rounded-md border border-border-subtle">
-                    <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-1">
-                      Unidad
-                    </p>
-                    <p className="text-sm text-text-heading">{unidad}</p>
-                  </div>
-                )}
+            {/* Campos Personalizados del Producto */}
+            {producto?.camposPersonalizados && producto.camposPersonalizados.length > 0 && (
+              <div className="border-b border-border-subtle pb-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gold-600 mb-4">
+                  Especificaciones
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {producto.camposPersonalizados.map((campo) => (
+                    <div key={campo.clave} className="p-3 bg-surface rounded-md border border-border-subtle">
+                      <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-1">
+                        {campo.clave}
+                      </p>
+                      <p className="text-sm text-text-heading">{campo.valor}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Comentario del Ítem */}
             {item.comentario && (
