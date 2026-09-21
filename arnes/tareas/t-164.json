@@ -1,0 +1,35 @@
+{
+  "id": "t-164",
+  "titulo": "Tapar el hoyo de validación runtime: incorporar Zod en el borde de escritura (Server Actions) + manifest derivado para edición agéntica segura",
+  "intencion_negocio": "Hoyo descubierto el 2026-09-18 en la sesión sobre edición agéntica segura de producción (discusión agente ↔ Supervisor sobre cómo debe el agente leer/editar la DB de producción con un protocolo seguro). Diagnóstico: las server actions de escritura del ERP confían en tipos TS puro que DESAPARECEN en runtime — no hay zod ni safeParse en ninguna acción (evidencia: `actualizarEspacioAction` recibe `Partial<Pick<EspacioVariante, ...>>` en lib/data/actions/core.ts:314-317, `actualizarClienteAction` en :259-261, `actualizarJornadasAction` en :306-308; `rg safeParse` en lib/ = 0 capacidad runtime). En Next.js cada server action es un endpoint HTTP: un payload malformado entra crudo al `update` sin ser rechazado — superficie de red abierta. Además, para que el agente edite con seguridad, el input del comando debe validarse en runtime contra un schema; zod da schema (runtime) + tipo (compile-time, vía z.infer) en UNA sola fuente — el 'manifest' de campos editables que discutimos se deriva entonces de los schemas en vez de duplicarse. Es necesario taparlo: es la puerta por la que entraría un payload inválido sin rechazo y el cimiento del protocolo de edición agéntica.",
+  "zona": "datos",
+  "tipo": "hardening_validacion_runtime",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/data/actions/*.ts (todas las acciones de escritura — borde con runtime hoy sin validación)",
+    "lib/validacion/ (NUEVO: schemas zod por dominio de mutación + wrapper validarEntrada)",
+    "package.json (dependencia zod)",
+    "tests por schema (*.test.ts, patrón node:assert del repo)",
+    "Relacionado (no en este alcance): scripts/crud-erp.ts para protocolo de agente — ver plan §Fase D"
+  ],
+  "criterios_aceptacion": [
+    "Toda server action de escritura en lib/data/actions/* valida su entrada con un schema zod + safeParse al inicio (o tiene excepción documentada explícita en el plan)",
+    "Los tipos usados por las acciones se DERIVAN del schema (z.infer) — cero re-declaración manual de tipos duplicados",
+    "Payload malformado → error claro y consistente en español, sin tocar la DB (no se llega al update)",
+    "Priorización por riesgo: primero cotizador/contratos/dinero, luego resto del ERP, luego tienda pública",
+    "tsc --noEmit, eslint y next build limpios; tests por schema en verde (con placeholder DATABASE_URL)",
+    "No requiere migración de schema ni toques a lib/db/schema.ts (es solo capa de validación de código)"
+  ],
+  "plan_ref": "arnes/lineas/ola7/tecnico/plan_zod_validacion_runtime.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": "2026-09-18"
+  },
+  "estado": "creada",
+  "creada_en": "2026-09-18T00:00:00Z",
+  "cerrada_en": null
+}

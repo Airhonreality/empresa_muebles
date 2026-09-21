@@ -7,6 +7,7 @@ import { Button } from '@/components/veta/button'
 import { MetaItem } from '@/components/veta/meta-item'
 import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { GalleryRail } from '@/components/veta/gallery-rail'
+import { ProductSheetModal } from '@/components/veta/product-sheet-modal'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 
@@ -56,35 +57,29 @@ interface ItemCardProps {
   item: ItemVariante
   producto: CatalogoItemPublico | undefined
   onZoom: (imagenes: GalleryImage[], index: number) => void
+  onDetalle: (item: ItemVariante, producto: CatalogoItemPublico | undefined) => void
 }
 
-function ItemCard({ item, producto, onZoom }: ItemCardProps) {
+function ItemCard({ item, producto, onZoom, onDetalle }: ItemCardProps) {
   const nombre = item.nombrePersonalizado ?? producto?.descripcion ?? 'Ítem'
   const unidad = producto?.unidadMedida || 'unidad'
   const precioUnitario = parseNum(item.precioUnitario)
   const total = parseNum(item.totalLinea)
   const galeria = [producto?.imagenUrl, ...(producto?.galeriaImagenesUrl ?? [])].filter(Boolean) as string[]
   const imagen = galeria[0] ?? null
-  const zoomable = galeria.length > 0
 
   return (
     <div
-      role={zoomable ? 'button' : undefined}
-      tabIndex={zoomable ? 0 : undefined}
-      onClick={zoomable ? () => onZoom(toGalleryImages(galeria, nombre), 0) : undefined}
-      onKeyDown={
-        zoomable
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onZoom(toGalleryImages(galeria, nombre), 0)
-              }
-            }
-          : undefined
-      }
-      className={`group flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-raised p-3 shadow-xs transition-colors duration-fast ${
-        zoomable ? 'cursor-zoom-in hover:border-border-brand' : ''
-      }`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onDetalle(item, producto)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onDetalle(item, producto)
+        }
+      }}
+      className="group flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-raised p-3 shadow-xs transition-colors duration-fast cursor-pointer hover:border-border-brand"
     >
       <div className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-sm bg-bg-alt">
         {imagen ? (
@@ -218,6 +213,7 @@ function renderItemsAgrupados(
   grupos: GrupoItem[],
   catalogoPorId: Record<string, CatalogoItemPublico>,
   onZoom: (imagenes: GalleryImage[], index: number) => void,
+  onDetalle: (item: ItemVariante, producto: CatalogoItemPublico | undefined) => void,
 ): ReactElement {
   const gruposRaiz = grupos.filter((g) => !g.padreId).sort((a, b) => a.orden - b.orden)
   const hijosDe = (padreId: string) => grupos.filter((g) => g.padreId === padreId).sort((a, b) => a.orden - b.orden)
@@ -233,6 +229,7 @@ function renderItemsAgrupados(
           item={item}
           producto={item.catalogoId ? catalogoPorId[item.catalogoId] : undefined}
           onZoom={onZoom}
+          onDetalle={onDetalle}
         />
       ))}
     </div>
@@ -277,6 +274,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
   const [tipoImagenActivo, setTipoImagenActivo] = useState<'espacio' | 'disenio' | 'referencia'>('espacio')
   const [zoom, setZoom] = useState<{ imagenes: GalleryImage[]; index: number } | null>(null)
   const [tituloHeaderVisible, setTituloHeaderVisible] = useState(false)
+  const [itemDetalle, setItemDetalle] = useState<{ item: ItemVariante; producto: CatalogoItemPublico | undefined } | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -635,7 +633,13 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 </div>
                 {contractualesActuales.length > 0 ? (
                   <div className="mt-4">
-                    {renderItemsAgrupados(contractualesActuales, gruposDelEspacioActual, catalogoPorId, (imagenes, index) => setZoom({ imagenes, index }))}
+                    {renderItemsAgrupados(
+                      contractualesActuales,
+                      gruposDelEspacioActual,
+                      catalogoPorId,
+                      (imagenes, index) => setZoom({ imagenes, index }),
+                      (item, producto) => setItemDetalle({ item, producto })
+                    )}
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-text-muted">El alcance detallado se confirmará con el equipo comercial.</p>
@@ -744,6 +748,14 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
           imagenes={zoom.imagenes}
           initialIndex={zoom.index}
           onClose={() => setZoom(null)}
+        />
+      )}
+
+      {itemDetalle && (
+        <ProductSheetModal
+          item={itemDetalle.item}
+          producto={itemDetalle.producto}
+          onClose={() => setItemDetalle(null)}
         />
       )}
     </div>
