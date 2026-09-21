@@ -152,28 +152,38 @@ export function ProductSheetModal({ item, producto, onClose }: ProductSheetModal
               </p>
             </div>
 
-            {/* Cantidad y Total */}
+            {/* Cantidad, Unidad y Total */}
             <div className="border-b border-border-subtle pb-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-surface rounded-md border border-border-subtle">
-                  <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-2">
+                  <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-1">
                     Cantidad
                   </p>
                   <p className="text-lg font-semibold text-text-heading">
                     {Number(item.cantidad).toLocaleString('es-CO', { maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                {totalLinea > 0 && (
+                {unidad && (
                   <div className="p-3 bg-surface rounded-md border border-border-subtle">
-                    <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-2">
-                      Total línea
+                    <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-1">
+                      Unidad
                     </p>
                     <p className="text-lg font-semibold text-text-heading">
-                      {totalLinea.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}
+                      {unidad}
                     </p>
                   </div>
                 )}
               </div>
+              {totalLinea > 0 && (
+                <div className="mt-3 p-3 bg-surface rounded-md border border-border-subtle">
+                  <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-1">
+                    Total línea
+                  </p>
+                  <p className="text-lg font-semibold text-text-heading">
+                    {totalLinea.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Campos Personalizados del Producto */}
