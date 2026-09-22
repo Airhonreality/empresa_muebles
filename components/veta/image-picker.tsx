@@ -3,6 +3,7 @@
 import { useCallback, useId, useRef, useState, type DragEvent, type ClipboardEvent } from "react";
 import { uploadFileToR2, clonarUrlAR2 } from "@/lib/r2/upload";
 import { esUrlR2 } from "@/lib/r2/sanitize";
+import { GalleryOverlay } from "@/components/veta/gallery-lightbox";
 
 export interface ImagePickerProps {
   label: string;
@@ -110,6 +111,7 @@ export function ImagePicker({
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [zoomIndex, setZoomIndex] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const agregar = useCallback(async (url: string) => {
@@ -264,17 +266,25 @@ export function ImagePicker({
         {value.length > 0 && !hideGrid && (
           <div className={multiple ? "grid grid-cols-3 gap-2 mb-2 sm:grid-cols-4 md:grid-cols-6" : "mb-2 flex justify-center"}>
             {value.map((url, idx) => (
-              <div key={url} className={`group relative aspect-square overflow-hidden rounded-sm border border-border-subtle bg-bg-paper ${multiple ? "" : "w-24"}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob: temporales, no assets estáticos optimizables */}
-                <img src={url} alt="" className="h-full w-full object-cover" />
-                
+              <div key={url} className={`group relative aspect-square overflow-hidden rounded-sm border border-border-subtle bg-bg-paper cursor-zoom-in ${multiple ? "" : "w-24"}`}>
+                <button
+                  type="button"
+                  onClick={() => setZoomIndex(idx)}
+                  aria-label={`Ver imagen ${idx + 1} ampliada`}
+                  title="Clic para ampliar"
+                  className="absolute inset-0 h-full w-full"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob: temporales, no assets estáticos optimizables */}
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                </button>
+
                 {/* Controles de reordenamiento e índice */}
                 {multiple && value.length > 1 && (
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between bg-black/70 px-1 py-0.5 opacity-90 transition-opacity group-hover:opacity-100">
                     <button
                       type="button"
                       disabled={idx === 0}
-                      onClick={() => mover(idx, idx - 1)}
+                      onClick={(e) => { e.stopPropagation(); mover(idx, idx - 1); }}
                       className="px-1 text-[11px] font-bold text-white transition-colors hover:text-gold-400 disabled:opacity-20"
                       title="Mover antes"
                       aria-label="Mover imagen antes"
@@ -285,7 +295,7 @@ export function ImagePicker({
                     <button
                       type="button"
                       disabled={idx === value.length - 1}
-                      onClick={() => mover(idx, idx + 1)}
+                      onClick={(e) => { e.stopPropagation(); mover(idx, idx + 1); }}
                       className="px-1 text-[11px] font-bold text-white transition-colors hover:text-gold-400 disabled:opacity-20"
                       title="Mover después"
                       aria-label="Mover imagen después"
@@ -297,7 +307,7 @@ export function ImagePicker({
 
                 <button
                   type="button"
-                  onClick={() => quitar(url)}
+                  onClick={(e) => { e.stopPropagation(); quitar(url); }}
                   aria-label="Quitar imagen"
                   className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs leading-none text-white opacity-0 transition-opacity duration-fast group-hover:opacity-100 hover:bg-red-600"
                 >
@@ -361,6 +371,13 @@ export function ImagePicker({
             {uploadError}
           </p>
         )}
-     </div>
+      {zoomIndex !== null && (
+        <GalleryOverlay
+          imagenes={value.map((url, idx) => ({ url, alt: `${label} ${idx + 1}`, id: `${url}-${idx}` }))}
+          initialIndex={zoomIndex}
+          onClose={() => setZoomIndex(null)}
+        />
+      )}
+    </div>
   );
 }

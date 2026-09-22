@@ -10,6 +10,7 @@ import { MoneyInput } from '@/components/veta/money-input'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
+import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { FilePicker } from '@/components/veta/file-picker'
 import { ItemMiniatura } from '@/components/veta/item-miniatura'
 import { ItemEditorModal } from '@/components/veta/item-editor-modal'
@@ -1397,6 +1398,7 @@ function VarianteContenido({
 
   const [mostrarFormArtefacto, setMostrarFormArtefacto] = useState(false)
   const [editarArtefactoId, setEditarArtefactoId] = useState<string | null>(null)
+  const [zoomFotosArtefacto, setZoomFotosArtefacto] = useState<{ urls: string[]; index: number } | null>(null)
   const [modoBusquedaItem, setModoBusquedaItem] = useState<'off' | 'normal' | 'referencial'>('off')
   const [mostrarDetalles, setMostrarDetalles] = useState(false)
   const [modalItemId, setModalItemId] = useState<string | null>(null)
@@ -2014,11 +2016,18 @@ function VarianteContenido({
                     )}
                     {numFotos > 0 && (
                       <div className="flex items-center gap-1">
-                        {artefacto.fotoUrls.slice(0, 8).map((url) => (
-                          <div key={url} className="h-10 w-10 overflow-hidden rounded-sm border border-border-subtle bg-bg-paper">
+                        {artefacto.fotoUrls.slice(0, 8).map((url, fotoIdx) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setZoomFotosArtefacto({ urls: artefacto.fotoUrls, index: fotoIdx })}
+                            aria-label={`Ver foto ${fotoIdx + 1} del artefacto ampliada`}
+                            title="Clic para ampliar"
+                            className="h-10 w-10 overflow-hidden rounded-sm border border-border-subtle bg-bg-paper cursor-zoom-in transition-opacity hover:opacity-80"
+                          >
                             {/* eslint-disable-next-line @next/next/no-img-element -- miniaturas de artefacto en el listado del cotizador */}
                             <img src={url} alt="" className="h-full w-full object-cover" />
-                          </div>
+                          </button>
                         ))}
                         {numFotos > 8 && (
                           <span className="text-[10px] font-mono text-text-muted">+{numFotos - 8}</span>
@@ -2188,6 +2197,14 @@ function VarianteContenido({
             </div>
           </div>
         </Modal>
+      )}
+
+      {zoomFotosArtefacto && (
+        <GalleryOverlay
+          imagenes={zoomFotosArtefacto.urls.map((url, i) => ({ url, alt: `Foto del artefacto ${i + 1}`, id: `${url}-${i}` }))}
+          initialIndex={zoomFotosArtefacto.index}
+          onClose={() => setZoomFotosArtefacto(null)}
+        />
       )}
     </div>
   )
