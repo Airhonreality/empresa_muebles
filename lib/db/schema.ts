@@ -319,6 +319,18 @@ export const itemsVariante = pgTable("items_variante", {
 	// sobre la imagen del ProductoCatalogo vinculado al renderizar (ItemMiniatura, propuesta).
 	// Nullable: un ítem sin foto hereda la imagen de su producto o muestra placeholder.
 	fotoUrl: text("foto_url"),
+	// Ficha técnica por ítem cotizado (2026-09-22, aprobado por Supervisor): 6 campos
+	// universales como columnas text nullable (valor por cotización, NO por producto) +
+	// campos_personalizados jsonb [{clave, valor}] — mismo patrón que productos_catalogo
+	// (schema.ts:671) para claves por familia (herrajes/vidrio/piedra/nevera). Aditivas:
+	// no rompen filas existentes (null / []).
+	marca: text(),
+	referencia: text(),
+	color: text(),
+	dimensiones: text(),
+	acabado: text(),
+	espesor: text(),
+	camposPersonalizados: jsonb("campos_personalizados").default([]).notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {

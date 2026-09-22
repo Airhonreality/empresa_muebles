@@ -99,6 +99,15 @@ export function useCrearItemMutation(proyectoId: string) {
         fuenteReferencial: input.fuenteReferencial,
         grupoReferencial: input.grupoReferencial,
         comentario: input.comentario,
+        grupoItemId: input.grupoItemId,
+        fotoUrl: input.fotoUrl,
+        marca: input.marca,
+        referencia: input.referencia,
+        color: input.color,
+        dimensiones: input.dimensiones,
+        acabado: input.acabado,
+        espesor: input.espesor,
+        camposPersonalizados: input.camposPersonalizados,
       }),
     (snap, input) => agregarItem(snap, construirItemOptimista(input)),
     (snap, r) => upsertItem(snap, r),
@@ -112,7 +121,7 @@ export function useCrearItemMutation(proyectoId: string) {
 export function useActualizarItemMutation(proyectoId: string) {
   return useMutationOptGenerico<
     CotizadorSnapshot,
-    { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>> },
+    { id: string; patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>> },
     ItemVariante | null
   >(
     cotizadorKeys.detalle(proyectoId),

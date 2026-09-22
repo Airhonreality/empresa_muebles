@@ -105,6 +105,31 @@ function ItemCard({ item, producto, onZoom, onDetalle }: ItemCardProps) {
         {item.comentario && (
           <p className="mt-0.5 text-xs italic text-text-muted/80">{item.comentario}</p>
         )}
+        {/* Ficha técnica del ítem (2026-09-22) — solo campos con dato, en línea discreta. */}
+        {(() => {
+          const pares: Array<[string, string]> = [
+            item.marca ? ['Marca', item.marca] : null,
+            item.referencia ? ['Ref.', item.referencia] : null,
+            item.color ? ['Color', item.color] : null,
+            item.dimensiones ? ['Dim.', item.dimensiones] : null,
+            item.acabado ? ['Acabado', item.acabado] : null,
+            item.espesor ? ['Espesor', item.espesor] : null,
+            ...(item.camposPersonalizados ?? [])
+              .filter((c) => c.clave || c.valor)
+              .map((c): [string, string] => [c.clave, c.valor]),
+          ].filter((p): p is [string, string] => p !== null)
+          if (pares.length === 0) return null
+          return (
+            <p className="mt-1 text-[11px] leading-4 text-text-muted/70">
+              {pares.map(([k, v], i) => (
+                <span key={k}>
+                  {i > 0 && <span className="mx-1 text-border-subtle">·</span>}
+                  <span className="font-medium">{k}:</span> {v}
+                </span>
+              ))}
+            </p>
+          )
+        })()}
       </div>
       {total > 0 && (
         <div className="shrink-0 self-center text-right">

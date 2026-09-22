@@ -403,6 +403,13 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
     comentario: data.comentario ?? null,
     grupoItemId: data.grupoItemId ?? null,
     fotoUrl: data.fotoUrl ? (sanitizarUrlsFotos([data.fotoUrl])?.[0] ?? null) : null,
+    marca: data.marca ?? null,
+    referencia: data.referencia ?? null,
+    color: data.color ?? null,
+    dimensiones: data.dimensiones ?? null,
+    acabado: data.acabado ?? null,
+    espesor: data.espesor ?? null,
+    camposPersonalizados: sanitizarCamposPersonalizados(data.camposPersonalizados),
   }).onConflictDoNothing({ target: s.itemsVariante.id }).returning()
 
   if (!nuevo) {
@@ -416,7 +423,7 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
 
 export async function actualizarItemAction(
   id: string,
-  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>>
+  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>
 ): Promise<ItemVariante | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, id))
@@ -425,6 +432,9 @@ export async function actualizarItemAction(
     const precioUnitario = partial.precioUnitario ?? actual.precioUnitario
     const [actualizado] = await tx.update(s.itemsVariante).set({
       ...partial,
+      ...(partial.camposPersonalizados !== undefined
+        ? { camposPersonalizados: sanitizarCamposPersonalizados(partial.camposPersonalizados) }
+        : {}),
       fotoUrl: partial.fotoUrl !== undefined ? (partial.fotoUrl ? (sanitizarUrlsFotos([partial.fotoUrl])?.[0] ?? null) : null) : undefined,
       totalLinea: String(num(cantidad) * num(precioUnitario)),
       updatedAt: new Date().toISOString(),

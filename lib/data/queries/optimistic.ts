@@ -29,6 +29,15 @@ export interface InputItemOptimista {
   grupoItemId?: string | null
   /** Foto propia del ítem (2026-09-18), R2 `cotizador/items/`. Nullable. */
   fotoUrl?: string | null
+  /** Ficha técnica por ítem (2026-09-22): universales. */
+  marca?: string | null
+  referencia?: string | null
+  color?: string | null
+  dimensiones?: string | null
+  acabado?: string | null
+  espesor?: string | null
+  /** Claves personalizadas por familia (jsonb [{clave, valor}]). */
+  camposPersonalizados?: { clave: string; valor: string }[]
 }
 
 export function construirItemOptimista(input: InputItemOptimista): ItemVariante {
@@ -49,6 +58,13 @@ export function construirItemOptimista(input: InputItemOptimista): ItemVariante 
     comentario: input.comentario ?? null,
     grupoItemId: input.grupoItemId ?? null,
     fotoUrl: input.fotoUrl ?? null,
+    marca: input.marca ?? null,
+    referencia: input.referencia ?? null,
+    color: input.color ?? null,
+    dimensiones: input.dimensiones ?? null,
+    acabado: input.acabado ?? null,
+    espesor: input.espesor ?? null,
+    camposPersonalizados: input.camposPersonalizados ?? [],
     createdAt: ahora,
     updatedAt: ahora,
   }
@@ -62,7 +78,7 @@ export function agregarItem(snapshot: CotizadorSnapshot, item: ItemVariante): Co
 export function actualizarItem(
   snapshot: CotizadorSnapshot,
   itemId: string,
-  patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>>,
+  patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>,
 ): CotizadorSnapshot {
   if (!snapshot.items.some((i) => i.id === itemId)) return snapshot
   const ahora = new Date().toISOString()

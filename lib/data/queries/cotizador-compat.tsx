@@ -59,7 +59,7 @@ export interface CotizadorCompatStore {
   items: {
     porVariante(varianteId: string): ItemVariante[]
     crear(input: Omit<InputItemOptimista, 'id'>): Promise<ItemVariante>
-    actualizar(id: string, patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>>): Promise<ItemVariante | null>
+    actualizar(id: string, patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>): Promise<ItemVariante | null>
     eliminar(id: string): Promise<boolean>
   }
   // --- Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo → Ítems ---

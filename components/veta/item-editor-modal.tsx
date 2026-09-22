@@ -7,7 +7,7 @@ import { Button } from '@/components/veta/button'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { MoneyInput } from '@/components/veta/money-input'
 import { ImagePicker } from '@/components/veta/image-picker'
-import type { GrupoItem, ItemVariante, ProductoCatalogo } from '@/lib/data'
+import type { CampoPersonalizadoProducto, GrupoItem, ItemVariante, ProductoCatalogo } from '@/lib/data'
 
 interface ItemEditorModalProps {
   item: ItemVariante
@@ -118,7 +118,27 @@ export function ItemEditorModal({
   const [grupoItemId, setGrupoItemId] = useState(item.grupoItemId ?? '')
   // Reinicio modal 2026-09-18: foto propia del ítem (precedencia sobre imagen de catálogo).
   const [fotoUrl, setFotoUrl] = useState(item.fotoUrl ?? '')
+  // Ficha técnica por ítem (2026-09-22, aprobado por Supervisor): 6 campos universales + clave/valor.
+  const [marca, setMarca] = useState(item.marca ?? '')
+  const [referencia, setReferencia] = useState(item.referencia ?? '')
+  const [color, setColor] = useState(item.color ?? '')
+  const [dimensiones, setDimensiones] = useState(item.dimensiones ?? '')
+  const [acabado, setAcabado] = useState(item.acabado ?? '')
+  const [espesor, setEspesor] = useState(item.espesor ?? '')
+  const [camposPersonalizados, setCamposPersonalizados] = useState<CampoPersonalizadoProducto[]>(
+    item.camposPersonalizados ?? []
+  )
   const gruposPorId = new Map(grupos.map((g) => [g.id, g]))
+
+  const setCampoPersonalizado = (idx: number, patch: Partial<CampoPersonalizadoProducto>) => {
+    setCamposPersonalizados((prev) => prev.map((c, i) => (i === idx ? { ...c, ...patch } : c)))
+  }
+  const agregarCampoPersonalizado = () => {
+    setCamposPersonalizados((prev) => [...prev, { clave: '', valor: '' }])
+  }
+  const quitarCampoPersonalizado = (idx: number) => {
+    setCamposPersonalizados((prev) => prev.filter((_, i) => i !== idx))
+  }
 
   // Reemplazo
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoCatalogo | null>(null)
@@ -142,6 +162,15 @@ export function ItemEditorModal({
         comentario: comentario.trim() || null,
         grupoItemId: grupoItemId || null,
         fotoUrl: fotoUrl.trim() || null,
+        marca: marca.trim() || null,
+        referencia: referencia.trim() || null,
+        color: color.trim() || null,
+        dimensiones: dimensiones.trim() || null,
+        acabado: acabado.trim() || null,
+        espesor: espesor.trim() || null,
+        camposPersonalizados: camposPersonalizados
+          .map((c) => ({ clave: c.clave.trim(), valor: c.valor.trim() }))
+          .filter((c) => c.clave || c.valor),
       })
       onClose()
     } finally {
@@ -391,6 +420,113 @@ export function ItemEditorModal({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Ficha técnica (2026-09-22): 6 campos universales + claves personalizadas. */}
+          <div className="space-y-2 rounded-sm border border-border-subtle bg-bg-alt/30 px-3 py-2">
+            <span className="block text-xs font-semibold text-text-heading">Ficha técnica</span>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div>
+                <label className="block text-[11px] font-medium text-text-muted mb-1">Marca</label>
+                <input
+                  type="text"
+                  value={marca}
+                  onChange={(e) => setMarca(e.target.value)}
+                  placeholder="Ej: Duratex"
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-text-muted mb-1">Referencia</label>
+                <input
+                  type="text"
+                  value={referencia}
+                  onChange={(e) => setReferencia(e.target.value)}
+                  placeholder="Ej: AUTO-000064"
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-text-muted mb-1">Color</label>
+                <input
+                  type="text"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  placeholder="Ej: Graffo"
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-text-muted mb-1">Dimensiones</label>
+                <input
+                  type="text"
+                  value={dimensiones}
+                  onChange={(e) => setDimensiones(e.target.value)}
+                  placeholder="Ej: 1.20 × 0.60 m"
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-text-muted mb-1">Acabado</label>
+                <input
+                  type="text"
+                  value={acabado}
+                  onChange={(e) => setAcabado(e.target.value)}
+                  placeholder="Ej: RH con cantos rígidos 2 mm"
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-text-muted mb-1">Espesor</label>
+                <input
+                  type="text"
+                  value={espesor}
+                  onChange={(e) => setEspesor(e.target.value)}
+                  placeholder="Ej: 18"
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] font-medium text-text-muted">Campos personalizados</span>
+              <button
+                type="button"
+                onClick={agregarCampoPersonalizado}
+                className="text-xs text-gold-700 transition-colors duration-fast hover:underline"
+              >
+                + Agregar campo
+              </button>
+            </div>
+            {camposPersonalizados.length === 0 && (
+              <p className="text-[11px] text-text-muted italic">
+                Sin campos. Ej. &quot;Ciclo de aperturas&quot; {'\u2192'} &quot;60000&quot;.
+              </p>
+            )}
+            {camposPersonalizados.map((c, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  value={c.clave}
+                  onChange={(e) => setCampoPersonalizado(i, { clave: e.target.value })}
+                  placeholder="Clave (ej. Ciclo de aperturas)"
+                  className="min-w-0 flex-[3] rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+                <input
+                  value={c.valor}
+                  onChange={(e) => setCampoPersonalizado(i, { valor: e.target.value })}
+                  placeholder="Valor (ej. 60000)"
+                  className="min-w-0 flex-[2] rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => quitarCampoPersonalizado(i)}
+                  aria-label="Quitar campo"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs leading-none text-text-muted transition-colors duration-fast hover:bg-red-600 hover:text-white"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
 
           {/* Footer de Acciones */}

@@ -76,6 +76,13 @@ export const useCotizadorStore = create<CotizadorStore>((set, get) => {
         comentario: itemData.comentario ?? null,
         grupoItemId: itemData.grupoItemId ?? null,
         fotoUrl: itemData.fotoUrl ?? null,
+        marca: itemData.marca ?? null,
+        referencia: itemData.referencia ?? null,
+        color: itemData.color ?? null,
+        dimensiones: itemData.dimensiones ?? null,
+        acabado: itemData.acabado ?? null,
+        espesor: itemData.espesor ?? null,
+        camposPersonalizados: itemData.camposPersonalizados ?? [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }

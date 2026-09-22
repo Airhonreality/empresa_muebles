@@ -96,6 +96,19 @@ export interface ItemVariante {
   /** Foto propia del ítem (editable desde el cotizador, 2026-09-18). Tiene precedencia sobre la
    * imagen del ProductoCatalogo vinculado. Se guarda en R2 (`cotizador/items/`). */
   fotoUrl: string | null
+  /** Ficha técnica por ítem cotizado (2026-09-22, aprobado por Supervisor): 6 campos
+   * universales por cotización (NO por producto) — marca, referencia, color, dimensiones,
+   * acabado, espesor. Nullable: null = sin dato para ese ítem. */
+  marca: string | null
+  referencia: string | null
+  color: string | null
+  dimensiones: string | null
+  acabado: string | null
+  espesor: string | null
+  /** Claves personalizadas por familia de ítem (herrajes/vidrio/piedra/nevera) — mismo patrón
+   * que ProductoCatalogo.camposPersonalizados (clave/valor libres). jsonb `[{clave, valor}]`,
+   * default [] NOT NULL. */
+  camposPersonalizados: CampoPersonalizadoProducto[]
   createdAt: string
   updatedAt: string
 }
@@ -1079,7 +1092,7 @@ export interface DataStore {
   items: {
     porVariante(varianteId: string): ItemVariante[]
     crear(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante>
-    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>>): Promise<ItemVariante | null>
+    actualizar(id: string, partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>): Promise<ItemVariante | null>
     eliminar(id: string): Promise<boolean>
   }
   // --- Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo → Ítems ---

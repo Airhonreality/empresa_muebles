@@ -592,6 +592,13 @@ export function createMockStore(): DataStore {
           comentario: data.comentario ?? null,
           grupoItemId: data.grupoItemId ?? null,
           fotoUrl: data.fotoUrl ?? null,
+          marca: data.marca ?? null,
+          referencia: data.referencia ?? null,
+          color: data.color ?? null,
+          dimensiones: data.dimensiones ?? null,
+          acabado: data.acabado ?? null,
+          espesor: data.espesor ?? null,
+          camposPersonalizados: data.camposPersonalizados ?? [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
@@ -599,7 +606,7 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      async actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl'>>): Promise<ItemVariante | null> {
+      async actualizar(id: string, partial: Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>): Promise<ItemVariante | null> {
         const idx = items.findIndex(i => i.id === id)
         if (idx === -1) return null
         const actualizado = { ...items[idx], ...partial }
