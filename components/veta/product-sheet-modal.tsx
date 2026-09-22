@@ -186,6 +186,41 @@ export function ProductSheetModal({ item, producto, onClose }: ProductSheetModal
               )}
             </div>
 
+            {/* Ficha técnica del ítem cotizado (2026-09-22) — misma fuente que la línea
+                discreta de ItemCard en la propuesta. Excluye a propósito SKU y precio
+                directo del catálogo (decisión del Supervisor). Solo campos con dato. */}
+            {(() => {
+              const pares: Array<[string, string]> = [
+                item.marca ? ['Marca', item.marca] : null,
+                item.referencia ? ['Ref.', item.referencia] : null,
+                item.color ? ['Color', item.color] : null,
+                item.dimensiones ? ['Dim.', item.dimensiones] : null,
+                item.acabado ? ['Acabado', item.acabado] : null,
+                item.espesor ? ['Espesor', item.espesor] : null,
+                ...(item.camposPersonalizados ?? [])
+                  .filter((c) => c.clave || c.valor)
+                  .map((c): [string, string] => [c.clave, c.valor]),
+              ].filter((p): p is [string, string] => p !== null)
+              if (pares.length === 0) return null
+              return (
+                <div className="border-b border-border-subtle pb-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gold-600 mb-4">
+                    Ficha técnica
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {pares.map(([k, v]) => (
+                      <div key={k} className="p-3 bg-surface rounded-md border border-border-subtle">
+                        <p className="text-xs uppercase tracking-[0.08em] text-text-muted font-medium mb-1">
+                          {k}
+                        </p>
+                        <p className="text-sm text-text-heading">{v}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+
             {/* Campos Personalizados del Producto */}
             {producto?.camposPersonalizados && producto.camposPersonalizados.length > 0 && (
               <div className="border-b border-border-subtle pb-6">
