@@ -26,11 +26,15 @@ import {
   useCrearGrupoItemMutation,
   useActualizarGrupoItemMutation,
   useEliminarGrupoItemMutation,
+  useActualizarClienteMutation,
+  useCrearContratoMutation,
+  useActualizarContratoMutation,
 } from './useCotizadorQueries'
 import type { InputArtefactoOptimista, InputEspacioOptimista, InputItemOptimista } from './optimistic'
 import type {
   CatalogoAcabado, Cliente, Contrato, EspacioArtefacto, EspacioVariante,
   GrupoItem, HitoPago, ItemVariante, Parametro, ProductoCatalogo, Proyecto,
+  DatosContratoNuevo, DatosContratoEdicion,
 } from '../contracts'
 
 /** API consumible por la pantalla (cliente de `useDataStore()` devenido en TanStack Query).
@@ -46,6 +50,10 @@ export interface CotizadorCompatStore {
   clientes: {
     obtenerPorId(id: string): Cliente | undefined
     listar(): Cliente[]
+    /** t-166: el modal de contrato editaba el cliente por el DataStore global mientras esta
+     *  pantalla lee por el snapshot — el cambio tardaba hasta ≤4s en verse. Ahora escribe por
+     *  el mismo layer que lee. */
+    actualizar(id: string, partial: Partial<Pick<Cliente, 'nombre' | 'documento' | 'telefono' | 'email' | 'domicilio'>>): Promise<Cliente | null>
   }
   espacios: {
     porProyecto(proyectoId: string): EspacioVariante[]
@@ -77,7 +85,13 @@ export interface CotizadorCompatStore {
   catalogo: { listar(): ProductoCatalogo[] }
   catalogoAcabados: { listar(): CatalogoAcabado[] }
   parametros: { obtenerPorClave(clave: string): Parametro | undefined }
-  contratos: { porProyecto(proyectoId: string): Contrato | undefined }
+  contratos: {
+    porProyecto(proyectoId: string): Contrato | undefined
+    /** t-166: alta y edición. Antes solo existía `crear`, con lo que una segunda emisión
+     *  chocaba contra el UNIQUE de `codigo_contrato` sin forma de corregir el contrato. */
+    crear(data: DatosContratoNuevo): Promise<Contrato>
+    actualizar(id: string, data: DatosContratoEdicion): Promise<Contrato | null>
+  }
   hitos: { porContrato(contratoId: string): HitoPago[] }
 }
 
@@ -108,6 +122,9 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
   const crearGrupoItem = useCrearGrupoItemMutation(proyectoId)
   const actualizarGrupoItem = useActualizarGrupoItemMutation(proyectoId)
   const eliminarGrupoItem = useEliminarGrupoItemMutation(proyectoId)
+  const actualizarCliente = useActualizarClienteMutation(proyectoId)
+  const crearContrato = useCrearContratoMutation(proyectoId)
+  const actualizarContrato = useActualizarContratoMutation(proyectoId)
 
   const value = useMemo<CotizadorCompatContexto>(() => {
     const d = data ?? {
@@ -129,6 +146,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
         clientes: {
           obtenerPorId: (id) => d.clientes.find((c) => c.id === id),
           listar: () => d.clientes,
+          actualizar: (id, partial) => actualizarCliente.mutateAsync({ id, partial }),
         },
         espacios: {
           porProyecto: (pid) => d.espacios.filter((e) => e.proyectoId === pid),
@@ -159,7 +177,11 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
         catalogo: { listar: () => d.catalogo },
         catalogoAcabados: { listar: () => d.catalogoAcabados },
         parametros: { obtenerPorClave: (clave) => d.parametros.find((p) => p.clave === clave) },
-        contratos: { porProyecto: (pid) => (d.contrato && d.contrato.proyectoId === pid ? d.contrato : undefined) },
+        contratos: {
+          porProyecto: (pid) => (d.contrato && d.contrato.proyectoId === pid ? d.contrato : undefined),
+          crear: (data) => crearContrato.mutateAsync(data),
+          actualizar: (id, data) => actualizarContrato.mutateAsync({ id, data }),
+        },
         hitos: { porContrato: (contratoId) => d.hitos.filter((h) => h.contratoId === contratoId) },
       },
     }
@@ -170,6 +192,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
     actualizarJornadas, duplicarEspacio, actualizarParametrosFinancieros,
     crearArtefacto, actualizarArtefacto,
     crearGrupoItem, actualizarGrupoItem, eliminarGrupoItem,
+    actualizarCliente, crearContrato, actualizarContrato,
   ])
 
   return <CotizadorCompatContext.Provider value={value}>{children}</CotizadorCompatContext.Provider>

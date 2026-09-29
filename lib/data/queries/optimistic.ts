@@ -4,7 +4,7 @@
 // completo (onError -> setQueryData(previous)). Las reglas replican el contrato del mock/server:
 // totalLinea siempre se re-deriva de cantidad x precio; eliminar ítem es soft-delete (anulado).
 import type { CotizadorSnapshot } from './types'
-import type { ItemVariante, EspacioVariante, EspacioArtefacto, Proyecto } from '../contracts'
+import type { Cliente, Contrato, HitoPagoInput, ItemVariante, EspacioVariante, EspacioArtefacto, Proyecto } from '../contracts'
 
 export function calcularTotalLinea(cantidad: string, precioUnitario: string): string {
   const n = Number(cantidad) * Number(precioUnitario)
@@ -217,6 +217,65 @@ export function actualizarProyecto(
 export function upsertProyecto(snapshot: CotizadorSnapshot, proyecto: Proyecto): CotizadorSnapshot {
   if (snapshot.proyecto && snapshot.proyecto.id === proyecto.id) return { ...snapshot, proyecto }
   return snapshot
+}
+
+// --- Clientes / contrato (t-166) ---
+
+/** Actualización optimista del maestro de cliente. `clientes` viene como lista completa en el
+ *  snapshot, así que el parche se aplica sobre la fila del id y el resto queda intacto. */
+export function actualizarCliente(
+  snapshot: CotizadorSnapshot,
+  clienteId: string,
+  patch: Partial<Pick<Cliente, 'nombre' | 'documento' | 'telefono' | 'email' | 'domicilio'>>,
+): CotizadorSnapshot {
+  const existe = snapshot.clientes.some((c) => c.id === clienteId)
+  if (!existe) return snapshot
+  return {
+    ...snapshot,
+    clientes: snapshot.clientes.map((c) =>
+      c.id === clienteId ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c,
+    ),
+  }
+}
+
+export function upsertCliente(snapshot: CotizadorSnapshot, cliente: Cliente): CotizadorSnapshot {
+  const idx = snapshot.clientes.findIndex((c) => c.id === cliente.id)
+  const clientes = idx === -1
+    ? [...snapshot.clientes, cliente]
+    : snapshot.clientes.map((c) => (c.id === cliente.id ? cliente : c))
+  return { ...snapshot, clientes }
+}
+
+/** Reemplaza el contrato del snapshot por uno recién creado o editado. El snapshot es
+ *  escopado a UN proyecto, así que siempre es uno solo. */
+export function upsertContrato(snapshot: CotizadorSnapshot, contrato: Contrato): CotizadorSnapshot {
+  return { ...snapshot, contrato }
+}
+
+/** Aplica el parche del encabezado y, si viene, REGENERA los hitos con `orden` en base 1
+ *  (mismo criterio que `actualizarContratoAction` y que el mock-store — ver t-166). Los ids
+ *  son sintéticos: los reales llegan con el `reconciliar` de la respuesta del servidor. */
+export function actualizarContrato(
+  snapshot: CotizadorSnapshot,
+  contratoId: string,
+  patch: Partial<Contrato>,
+  hitos?: HitoPagoInput[],
+): CotizadorSnapshot {
+  if (!snapshot.contrato || snapshot.contrato.id !== contratoId) return snapshot
+  const contrato = { ...snapshot.contrato, ...patch, updatedAt: new Date().toISOString() }
+  if (hitos === undefined) return { ...snapshot, contrato }
+  return {
+    ...snapshot,
+    contrato,
+    hitos: hitos.map((h, i) => ({
+      id: `tmp-${contratoId}-${i}`,
+      contratoId,
+      orden: i + 1,
+      tipo: h.tipo,
+      montoOPorcentaje: h.monto,
+      razon: h.razon,
+    })),
+  }
 }
 
 // --- Artefactos ---

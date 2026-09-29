@@ -25,6 +25,9 @@ import {
   crearGrupoItemAction,
   actualizarGrupoItemAction,
   eliminarGrupoItemAction,
+  actualizarClienteAction,
+  crearContratoAction,
+  actualizarContratoAction,
 } from '@/lib/data/actions/core'
 import { obtenerSnapshotCotizadorAction } from '@/lib/data/actions/lecturas-cotizador'
 import {
@@ -41,6 +44,8 @@ import {
   agregarEspacio,
   agregarItem,
   actualizarArtefacto,
+  actualizarCliente,
+  actualizarContrato,
   actualizarEspacio,
   actualizarItem,
   actualizarJornadas,
@@ -51,6 +56,8 @@ import {
   eliminarItem,
   marcarEspacioActiva,
   upsertArtefacto,
+  upsertCliente,
+  upsertContrato,
   upsertEspacio,
   upsertItem,
   upsertProyecto,
@@ -63,7 +70,7 @@ import {
   obtenerItemsPendientes,
 } from './optimistic'
 import type { CotizadorSnapshot } from './types'
-import type { EspacioArtefacto, EspacioVariante, GrupoItem, ItemVariante, Proyecto } from '../contracts'
+import type { EspacioArtefacto, EspacioVariante, GrupoItem, ItemVariante, Proyecto, Cliente, Contrato, DatosContratoNuevo, DatosContratoEdicion } from '../contracts'
 
 export function useCotizadorSnapshot(proyectoId: string) {
   return useQuery<CotizadorSnapshot>({
@@ -313,6 +320,50 @@ export function useEliminarGrupoItemMutation(proyectoId: string) {
 }
 
 // --- Propuesta versionada (decisión axiomática 2026-09-10, Decisión 2 — t-156) ---
+// --- Clientes / contrato (t-166) ---
+//
+// Hasta t-166 el modal de contrato escribía por el DataStore global (drizzle) mientras esta
+// pantalla lee por el snapshot de TanStack: la edición del cliente llegaba a Postgres pero
+// tardaba hasta el siguiente ciclo de long-poll (≤4s) en verse. Estas mutations cierran ese
+// desajuste — escriben y reconcilian contra el MISMO cache que la pantalla lee.
+
+/** Edita el maestro del cliente y lo refleja al instante en la pantalla. */
+export function useActualizarClienteMutation(proyectoId: string) {
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
+    { id: string; partial: Partial<Pick<Cliente, 'nombre' | 'documento' | 'telefono' | 'email' | 'domicilio'>> },
+    Cliente | null
+  >(
+    cotizadorKeys.detalle(proyectoId),
+    ({ id, partial }) => actualizarClienteAction(id, partial),
+    (snap, { id, partial }) => actualizarCliente(snap, id, partial),
+    (snap, r) => (r ? upsertCliente(snap, r) : snap),
+  )
+}
+
+/** Alta de contrato. Sin actualización optimista: el id y el código los genera el servidor
+ *  y no se pueden adivinar, así que hasta la respuesta no hay nada que dibujar. */
+export function useCrearContratoMutation(proyectoId: string) {
+  return useMutationOptGenerico<CotizadorSnapshot, DatosContratoNuevo, Contrato>(
+    cotizadorKeys.detalle(proyectoId),
+    (data) => crearContratoAction(data),
+    (snap) => snap,
+    (snap, r) => upsertContrato(snap, r),
+  )
+}
+
+/** Edición de contrato — la vía que hace posible corregir o reemitir sin chocar con el
+ *  UNIQUE de `codigo_contrato`. El parche optimista incluye los hitos para que el plan de
+ *  pagos del modal no salte al plan viejo mientras viaja la escritura. */
+export function useActualizarContratoMutation(proyectoId: string) {
+  return useMutationOptGenerico<CotizadorSnapshot, { id: string; data: DatosContratoEdicion }, Contrato | null>(
+    cotizadorKeys.detalle(proyectoId),
+    ({ id, data }) => actualizarContratoAction(id, data),
+    (snap, { id, data }) => actualizarContrato(snap, id, data as Partial<Contrato>, data.hitos),
+    (snap, r) => (r ? upsertContrato(snap, r) : snap),
+  )
+}
+
 // Nodo de cache independiente del snapshot del cotizador (propuestaVersionKeys, no cotizadorKeys):
 // publicar no toca items/espacios, solo agrega una fila en propuestas_versiones.
 

@@ -397,8 +397,10 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       },
     },
     {
+      // t-166: la etiqueta refleja si el proyecto ya tiene contrato emitido — el modal hace
+      // UPDATE en ese caso, no un alta nueva.
       id: 'generar-contrato',
-      label: 'Generar Contrato',
+      label: contrato ? 'Editar Contrato' : 'Generar Contrato',
       variant: 'primary',
       onClick: () => setMostrarContratoModal(true),
     },
@@ -736,7 +738,8 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         </div>
       </div>
 
-        {/* Modal Generar Contrato */}
+        {/* Modal Generar / Editar Contrato (t-166): recibe el contrato y sus hitos ya
+            persistidos, para que reabrirlo no arranque de nuevo en los defaults. */}
         {mostrarContratoModal && proyecto && (
           <ContratoModal
             proyecto={proyecto}
@@ -745,6 +748,8 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             itemsPorEspacio={new Map(espaciosActivos.map((esp) => [esp.id, store.items.porVariante(esp.id).filter((it) => !it.esReferencial)]))}
             catalogo={catalogo}
             valorTotalCotizacion={total}
+            contratoExistente={contrato}
+            hitosExistentes={hitosList}
             onClose={() => setMostrarContratoModal(false)}
             onSaved={() => setMostrarContratoModal(false)}
           />

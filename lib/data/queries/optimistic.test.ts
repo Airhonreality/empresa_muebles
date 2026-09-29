@@ -8,8 +8,9 @@ import {
   actualizarItem, actualizarProyecto, calcularTotalLinea, construirArtefactoOptimista,
   construirItemOptimista, eliminarEspacio, eliminarItem,
   marcarEspacioActiva, upsertEspacio, upsertItem, fusionarPendientes,
+  actualizarCliente, upsertCliente, actualizarContrato, upsertContrato,
 } from './optimistic'
-import type { ItemVariante, EspacioVariante } from '../contracts'
+import type { ItemVariante, EspacioVariante, Cliente, Contrato } from '../contracts'
 
 let pasadas = 0
 async function test(nombre: string, fn: () => void | Promise<void>): Promise<void> {
@@ -221,6 +222,86 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
     const base = baseSnapshot({ items: [item('it-1')] })
     const snap = fusionarPendientes(base, [])
     assert.equal(snap, base, 'debe ser el mismo objeto, no una copia')
+  })
+
+  // --- t-166: cliente y contrato ---
+
+  function cliente(id: string, over: Partial<Cliente> = {}): Cliente {
+    return { id, nombre: 'Ana', documento: null, telefono: null, email: null, domicilio: null, ...over } as Cliente
+  }
+
+  function contrato(id: string, over: Partial<Contrato> = {}): Contrato {
+    return {
+      id, proyectoId: 'p1', codigoContrato: 'CTR-1', fechaContrato: '2026-09-29',
+      valorTotal: '1000', estado: 'borrador', garantiaAnios: 2, plazoEjecucionTexto: '4 a 5',
+      holguraDias: 8, objetoItems: null, especificacionesEstructura: null,
+      especificacionesHerrajes: null, especificacionesMesones: null, especificacionesDesmonte: null,
+      contratanteDomicilio: null, emailAsunto: null, emailCuerpo: null,
+      createdAt: '2026-09-01', updatedAt: '2026-09-01', ...over,
+    }
+  }
+
+  await test('t-166 actualizarCliente: parchea solo el cliente indicado', () => {
+    const snap = actualizarCliente(baseSnapshot({ clientes: [cliente('c1'), cliente('c2', { nombre: 'Luis' })] }), 'c1', { telefono: '300' })
+    assert.equal(snap.clientes[0].telefono, '300')
+    assert.equal(snap.clientes[0].nombre, 'Ana', 'no pisa los campos no enviados')
+    assert.equal(snap.clientes[1].telefono, null, 'no toca el resto de la lista')
+  })
+
+  await test('t-166 actualizarCliente: id inexistente no-op (no inventa filas)', () => {
+    const base = baseSnapshot({ clientes: [cliente('c1')] })
+    assert.equal(actualizarCliente(base, 'no-existe', { telefono: '300' }), base)
+  })
+
+  await test('t-166 upsertCliente: inserta si no está y reemplaza si está', () => {
+    const conUno = upsertCliente(baseSnapshot(), cliente('c1'))
+    assert.equal(conUno.clientes.length, 1)
+    const conDos = upsertCliente(conUno, cliente('c2'))
+    assert.equal(conDos.clientes.length, 2)
+    const reemplazado = upsertCliente(conDos, cliente('c1', { nombre: 'Ana María' }))
+    assert.equal(reemplazado.clientes.length, 2, 'no duplica')
+    assert.equal(reemplazado.clientes[0].nombre, 'Ana María')
+  })
+
+  await test('t-166 actualizarContrato: parchea encabezado y regenera hitos en base 1', () => {
+    const base = baseSnapshot({ contrato: contrato('ctr-1') })
+    const snap = actualizarContrato(base, 'ctr-1', { valorTotal: '2500' }, [
+      { tipo: 'percentage', monto: '60', razon: 'Anticipo' },
+      { tipo: 'percentage', monto: '40', razon: 'Entrega' },
+    ])
+    assert.equal(snap.contrato?.valorTotal, '2500')
+    assert.equal(snap.hitos.length, 2)
+    assert.deepEqual(snap.hitos.map((h) => h.orden), [1, 2])
+    assert.equal(snap.hitos[0].montoOPorcentaje, '60')
+  })
+
+  await test('t-166 actualizarContrato: sin `hitos` deja el plan de pagos intacto', () => {
+    const base = baseSnapshot({
+      contrato: contrato('ctr-1'),
+      hitos: [{ id: 'h1', contratoId: 'ctr-1', orden: 1, tipo: 'percentage', montoOPorcentaje: '100', razon: 'Unico' }],
+    })
+    const snap = actualizarContrato(base, 'ctr-1', { valorTotal: '9' })
+    assert.equal(snap.contrato?.valorTotal, '9')
+    assert.equal(snap.hitos.length, 1, 'los hitos sobreviven')
+  })
+
+  await test('t-166 actualizarContrato: si no hay contrato en el snapshot, no-op', () => {
+    const base = baseSnapshot()
+    assert.equal(actualizarContrato(base, 'ctr-1', { valorTotal: '1' }), base)
+  })
+
+  await test('t-166 actualizarContrato: hitos [] deja el plan vacío (borrar todos los hitos)', () => {
+    const base = baseSnapshot({
+      contrato: contrato('ctr-1'),
+      hitos: [{ id: 'h1', contratoId: 'ctr-1', orden: 1, tipo: 'percentage', montoOPorcentaje: '100', razon: 'Unico' }],
+    })
+    assert.equal(actualizarContrato(base, 'ctr-1', { valorTotal: '9' }, []).hitos.length, 0)
+  })
+
+  await test('t-166 upsertContrato: guarda el contrato en el snapshot', () => {
+    const snap = upsertContrato(baseSnapshot(), contrato('ctr-1', { valorTotal: '777' }))
+    assert.equal(snap.contrato?.id, 'ctr-1')
+    assert.equal(snap.contrato?.valorTotal, '777')
   })
 
   console.log(`\n${pasadas} pruebas pasadas`)

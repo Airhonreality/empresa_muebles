@@ -9,10 +9,11 @@ import type {
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
-  NotaReunion, PropuestaVersion, GrupoItem, DatosContratoNuevo,
+  NotaReunion, PropuestaVersion, GrupoItem, DatosContratoNuevo, DatosContratoEdicion,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
+import { generarSkuUnico } from './skus'
 import { masRecientePrimero } from './orden'
 import { generarSlugPortafolioBase } from '../utils/portafolio-slug'
 import { derivarDesenlace, derivarReduccionComision, P18, P33 } from '../modules/f3/gates'
@@ -677,9 +678,10 @@ export function createMockStore(): DataStore {
       obtenerPorId(id: string): ProductoCatalogo | undefined {
         return catalogo.find(c => c.id === id)
       },
-      async crear(data: Partial<ProductoCatalogo> & { sku: string; descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null> {
-        // R1: sku único.
-        if (catalogo.some(c => c.sku === data.sku)) return null
+      async crear(data: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>> & { descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null> {
+        // t-165: SKU autogenerado (abreviatura descripción + YYMMDD + sufijo ante colisión) —
+        // nunca lo manda el cliente; R1 (único) se cumple por construcción.
+        const sku = generarSkuUnico(data.descripcion, new Date(), catalogo.map((c) => c.sku))
         const precioDirecto = data.precioDirecto ?? null
         const precioPublico = data.precioPublico ?? null
         // R3/R4: precios ≥0 y directo ≤ público (cuando ambos existen).
@@ -697,7 +699,7 @@ export function createMockStore(): DataStore {
         const now = new Date().toISOString()
         const nuevo: ProductoCatalogo = {
           id: generateId('cat'),
-          sku: data.sku,
+          sku,
           descripcion: data.descripcion,
           tipo: data.tipo ?? null,
           unidadMedida: data.unidadMedida,
@@ -721,12 +723,11 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      async actualizar(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'createdAt'>>): Promise<ProductoCatalogo | null> {
+      async actualizar(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>>): Promise<ProductoCatalogo | null> {
         const idx = catalogo.findIndex(c => c.id === id)
         if (idx === -1) return null
-        const actualizado = { ...catalogo[idx], ...partial }
-        // R1: sku único (excluyendo el propio registro).
-        if (catalogo.some(c => c.id !== id && c.sku === actualizado.sku)) return null
+        // t-165: SKU inmutable tras la creación — el partial no puede alterarlo.
+        const actualizado = { ...catalogo[idx], ...partial, sku: catalogo[idx].sku }
         if (actualizado.precioDirecto !== null && numDe(actualizado.precioDirecto) < 0) return null
         if (actualizado.precioPublico !== null && numDe(actualizado.precioPublico) < 0) return null
         if (actualizado.precioDirecto !== null && actualizado.precioPublico !== null && numDe(actualizado.precioDirecto) > numDe(actualizado.precioPublico)) return null
@@ -790,7 +791,7 @@ export function createMockStore(): DataStore {
       porProyecto(proyectoId: string): Contrato | undefined {
         return contratos.find(c => c.proyectoId === proyectoId)
       },
-       async crear(data: DatosContratoNuevo): Promise<Contrato> {
+      async crear(data: DatosContratoNuevo): Promise<Contrato> {
         const id = generateId('ctr')
          const nuevo: Contrato = {
            id,
@@ -827,6 +828,49 @@ export function createMockStore(): DataStore {
         })
         notify()
         return nuevo
+      },
+      // t-166: espejo en memoria de `actualizarContratoAction`. Mismo criterio que el
+      // servidor — encabezado y hitos se reescriben juntos, y `orden` se reasigna para
+      // que quitar un hito medio no deje huecos en la numeración.
+      async actualizar(id: string, data: DatosContratoEdicion): Promise<Contrato | null> {
+        const idx = contratos.findIndex(c => c.id === id)
+        if (idx === -1) return null
+        const previo = contratos[idx]
+        const actualizado: Contrato = {
+          ...previo,
+          fechaContrato: data.fechaContrato ?? null,
+          valorTotal: data.valorTotal,
+          garantiaAnios: data.garantiaAnios ?? 2,
+          plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
+          holguraDias: data.holguraDias ?? 8,
+          objetoItems: data.objetoItems ?? null,
+          especificacionesEstructura: data.especificacionesEstructura ?? null,
+          especificacionesHerrajes: data.especificacionesHerrajes ?? null,
+          especificacionesMesones: data.especificacionesMesones ?? null,
+          especificacionesDesmonte: data.especificacionesDesmonte ?? null,
+          contratanteDomicilio: data.contratanteDomicilio ?? null,
+          emailAsunto: data.emailAsunto ?? null,
+          emailCuerpo: data.emailCuerpo ?? null,
+          updatedAt: new Date().toISOString(),
+        }
+        contratos[idx] = actualizado
+        if (data.hitos !== undefined) {
+          for (let i = hitos.length - 1; i >= 0; i--) {
+            if (hitos[i].contratoId === id) hitos.splice(i, 1)
+          }
+          data.hitos.forEach((h, i) => {
+            hitos.push({
+              id: generateId('hito'),
+              contratoId: id,
+              orden: i + 1,
+              tipo: h.tipo,
+              montoOPorcentaje: h.monto,
+              razon: h.razon,
+            })
+          })
+        }
+        notify()
+        return actualizado
       },
     },
 

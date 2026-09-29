@@ -18,6 +18,8 @@ export interface ProductoFichaData {
   camposPersonalizados?: { clave: string; valor: string }[]
   /** Ficha técnica — URLs a R2 (imágenes y/o archivos PDF/DWG...). */
   fichaTecnicaUrls?: string[]
+  /** t-165: metadata "última actualización" (string ya formateado, ej. "hace 2 días"). */
+  actualizadoEn?: string
 }
 
 interface ProductoFichaProps {
@@ -74,6 +76,12 @@ export function ProductoFicha({ data, onZoom, className }: ProductoFichaProps) {
             <>
               <span className="opacity-50">·</span>
               <span>{data.categoriaComercial}</span>
+            </>
+          )}
+          {data.actualizadoEn && (
+            <>
+              <span className="opacity-50">·</span>
+              <span className="opacity-70">Última actualización: {data.actualizadoEn}</span>
             </>
           )}
         </div>

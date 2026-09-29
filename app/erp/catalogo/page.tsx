@@ -13,6 +13,8 @@ import { ImagePicker } from '@/components/veta/image-picker'
 import { FilePicker } from '@/components/veta/file-picker'
 import { ProductoFicha, type ProductoFichaData } from '@/components/veta/producto-ficha'
 import { useDataStore, type ProductoCatalogo, type CampoPersonalizadoProducto } from '@/lib/data'
+import { generarSkuUnico } from '@/lib/data/skus'
+import { formatRelativeDate } from '@/lib/utils/format'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 function formatCOP(amount: number): string {
@@ -97,10 +99,10 @@ function formFromProducto(p: ProductoCatalogo): ProductoForm {
 }
 
 // t-139: la ficha en vivo se alimenta del form (portada = imagenes[0], galería = resto).
-function fichaDesdeForm(form: ProductoForm): ProductoFichaData {
+function fichaDesdeForm(form: ProductoForm, sku: string, actualizadoEn?: string): ProductoFichaData {
   return {
     descripcion: form.descripcion,
-    sku: form.sku,
+    sku,
     unidadMedida: form.unidadMedida,
     precioPublico: form.precioPublico,
     precioDirecto: form.precioDirecto,
@@ -112,6 +114,7 @@ function fichaDesdeForm(form: ProductoForm): ProductoFichaData {
     galeriaImagenesUrl: form.imagenes.slice(1),
     fichaTecnicaUrls: form.fichaTecnicaUrls,
     camposPersonalizados: form.camposPersonalizados,
+    actualizadoEn,
   }
 }
 
@@ -146,6 +149,15 @@ function CatalogoPageContent() {
 
   const productosVisibles = (filtroId ? productos.filter((p) => p.id === filtroId) : productos)
     .filter((p) => !soloTienda || catalogoIdsEnTienda.has(p.id))
+
+  // t-165 (SKU autogenerado): en edición se muestra el SKU congelado del producto real;
+  // en creación, un preview read-only que se recalcula al escribir la descripción.
+  const editandoProducto = editandoId ? productos.find((p) => p.id === editandoId) : null
+  const skuVisible = editandoProducto
+    ? editandoProducto.sku
+    : form.descripcion.trim()
+      ? generarSkuUnico(form.descripcion, new Date(), productos.map((p) => p.sku))
+      : ''
 
   const abrirNuevo = useCallback(() => {
     setEditandoId(null)
@@ -199,11 +211,7 @@ function CatalogoPageContent() {
 
   const validarForm = (): string | null => {
     if (!form.descripcion.trim()) return 'La descripción es obligatoria'
-    if (!form.sku.trim()) return 'El SKU es obligatorio'
     if (!form.unidadMedida.trim()) return 'La unidad es obligatoria'
-    // R1: sku único (excluyendo el producto en edición).
-    const skuExiste = productos.some((p) => p.sku === form.sku.trim() && p.id !== editandoId)
-    if (skuExiste) return 'El SKU ya existe'
     const precioDirecto = parseNum(form.precioDirecto)
     const precioPublico = parseNum(form.precioPublico)
     // R3: precio directo ≤ precio público (si ambos presentes).
@@ -227,7 +235,8 @@ function CatalogoPageContent() {
       return
     }
     const payload = {
-      sku: form.sku.trim(),
+      // t-165: el SKU no se envía — lo genera el server/store en la creación y queda
+      // inmutable en la edición.
       descripcion: form.descripcion.trim(),
       tipo: form.tipo || null,
       unidadMedida: form.unidadMedida.trim(),
@@ -353,6 +362,8 @@ function CatalogoPageContent() {
                     <p className="font-mono text-[11px] text-text-heading">
                       {p.precioPublico ? formatCOP(parseNum(p.precioPublico)) : '—'}
                     </p>
+                    {/* t-165: metadata "última actualización" visible en la tarjeta. */}
+                    <p className="text-[9px] text-text-muted">act. {formatRelativeDate(p.updatedAt)}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-0.5">
                     {p.anulado && <Badge tone="danger" dot>Anulado</Badge>}
@@ -405,12 +416,17 @@ function CatalogoPageContent() {
               {/* Columna 1 — Formulario */}
               <div className="order-2 space-y-3 lg:order-1">
                 <div className="grid grid-cols-2 gap-3">
-                  <InputField
-                    label="SKU"
-                    value={form.sku}
-                    onChange={(e) => setCampo('sku', e.target.value)}
-                    placeholder="Ej. TAB-ROB-18"
-                  />
+                  {/* t-165: SKU autogenerado e inmutable — nunca es un campo editable. */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-text-muted">SKU (autogenerado)</span>
+                    <div
+                      className={`min-h-[44px] rounded-sm border border-dashed border-border-subtle bg-bg-alt/40 px-3 py-2.5 font-mono text-sm text-text-heading ${
+                        skuVisible ? '' : 'text-text-muted'
+                      }`}
+                    >
+                      {skuVisible || 'Se genera al escribir la descripción'}
+                    </div>
+                  </div>
                   <label className="flex flex-col gap-1">
                     <span className="text-xs text-text-muted">Tipo</span>
                     <select
@@ -591,7 +607,13 @@ function CatalogoPageContent() {
               {/* Columna 2 — Ficha de presentación (sticky en desktop, arriba en móvil).
                   Preview en vivo: se actualiza con el estado del form. */}
               <div className="order-1 lg:order-2 lg:sticky lg:top-20">
-                <ProductoFicha data={fichaDesdeForm(form)} />
+                <ProductoFicha
+                  data={fichaDesdeForm(
+                    form,
+                    skuVisible,
+                    editandoProducto ? formatRelativeDate(editandoProducto.updatedAt) : undefined
+                  )}
+                />
               </div>
             </div>
           </div>

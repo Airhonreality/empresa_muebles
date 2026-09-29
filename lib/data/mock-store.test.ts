@@ -313,6 +313,89 @@ await test('contratos: crear -> porProyecto y hitos.porContrato reflejan lo crea
   assert.equal(store.hitos.porContrato(contrato.id).length, 2)
 })
 
+// t-166: el mechanism que hacía falta para CORREGIR un contrato ya emitido. Antes solo había
+// `crear`, y como `codigo_contrato` es UNIQUE y determinista por proyecto, una segunda
+// emisión era imposible: el INSERT moría con 23505 y no había forma de editar.
+await test('t-166 contratos.actualizar: edita encabezado y reemplaza el plan de pagos en sitio', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'X' })
+  const contrato = await store.contratos.crear({
+    proyectoId: p.id,
+    codigoContrato: 'CTR-TEST-166',
+    valorTotal: '1000',
+    plazoEjecucionTexto: '4 a 5',
+    hitos: [
+      { tipo: 'percentage', monto: '50', razon: 'Anticipo' },
+      { tipo: 'percentage', monto: '50', razon: 'Entrega' },
+    ],
+  })
+
+  const actualizado = await store.contratos.actualizar(contrato.id, {
+    valorTotal: '1500',
+    plazoEjecucionTexto: '6 a 7',
+    objetoItems: '- Módulo: 3 ud — Marca: Egger',
+    hitos: [{ tipo: 'percentage', monto: '100', razon: 'Pago único' }],
+  })
+
+  assert.ok(actualizado, 'debe devolver el contrato actualizado')
+  assert.equal(actualizado!.valorTotal, '1500')
+  assert.equal(actualizado!.plazoEjecucionTexto, '6 a 7')
+  assert.equal(actualizado!.objetoItems, '- Módulo: 3 ud — Marca: Egger')
+  // Misma fila: no se crea un contrato nuevo (el UNIQUE lo impediría).
+  assert.equal(actualizado!.id, contrato.id)
+  assert.equal(store.contratos.porProyecto(p.id)?.valorTotal, '1500')
+  // El plan de pagos se REEMPLAZA, no se agrega.
+  const hitos = store.hitos.porContrato(contrato.id)
+  assert.equal(hitos.length, 1)
+  assert.equal(hitos[0].razon, 'Pago único')
+  assert.equal(hitos[0].orden, 1, 'el orden se reasigna en base 1, sin huecos')
+})
+
+await test('t-166 contratos.actualizar: quitar un hito del medio renumera los siguientes', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'X' })
+  const contrato = await store.contratos.crear({
+    proyectoId: p.id,
+    codigoContrato: 'CTR-TEST-166B',
+    valorTotal: '1000',
+    hitos: [
+      { tipo: 'percentage', monto: '30', razon: 'A' },
+      { tipo: 'percentage', monto: '30', razon: 'B' },
+      { tipo: 'percentage', monto: '40', razon: 'C' },
+    ],
+  })
+  await store.contratos.actualizar(contrato.id, {
+    valorTotal: '1000',
+    hitos: [
+      { tipo: 'percentage', monto: '60', razon: 'A' },
+      { tipo: 'percentage', monto: '40', razon: 'C' },
+    ],
+  })
+  const hitos = store.hitos.porContrato(contrato.id).slice().sort((x, y) => x.orden - y.orden)
+  assert.deepEqual(hitos.map((h) => h.orden), [1, 2], 'sin huecos: 1,2 y no 1,3')
+  assert.deepEqual(hitos.map((h) => h.razon), ['A', 'C'])
+})
+
+await test('t-166 contratos.actualizar: sin `hitos` no toca el plan de pagos', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'X' })
+  const contrato = await store.contratos.crear({
+    proyectoId: p.id,
+    codigoContrato: 'CTR-TEST-166C',
+    valorTotal: '1000',
+    hitos: [{ tipo: 'percentage', monto: '100', razon: 'Unico' }],
+  })
+  await store.contratos.actualizar(contrato.id, { valorTotal: '2000' })
+  assert.equal(store.contratos.porProyecto(p.id)?.valorTotal, '2000')
+  assert.equal(store.hitos.porContrato(contrato.id).length, 1, 'los hitos sobreviven')
+})
+
+await test('t-166 contratos.actualizar: id inexistente devuelve null sin reventar', async () => {
+  const store = createMockStore()
+  const r = await store.contratos.actualizar('no-existe', { valorTotal: '1' })
+  assert.equal(r, null)
+})
+
 await test('subscribe: notifica en cada mutación y deja de notificar tras desuscribirse', async () => {
   const store = createMockStore()
   let llamadas = 0
@@ -806,26 +889,34 @@ await test('f2 catalogoAcabados + catalogoProductoAcabados + acabadosMuestras: r
 
 // --- P-27: Catálogo diseño-desarrollo ---
 
-await test('p27 catalogo.crear: rechaza sku duplicado (R1) y precio directo > público (R3)', async () => {
+await test('p27 catalogo.crear: SKU autogenerado único (t-165) y precio directo > público (R3)', async () => {
   const store = createMockStore()
-  assert.equal(await store.catalogo.crear({ sku: 'TAB-ROB-18', descripcion: 'Dup', unidadMedida: 'ud' }), null, 'sku duplicado del fixture')
-  assert.equal(await store.catalogo.crear({ sku: 'NUEVO-1', descripcion: 'X', unidadMedida: 'ud', precioDirecto: '100', precioPublico: '50' }), null, 'directo > público')
+  assert.equal(await store.catalogo.crear({ descripcion: 'X', unidadMedida: 'ud', precioDirecto: '100', precioPublico: '50' }), null, 'directo > público')
 
-  const nuevo = await store.catalogo.crear({ sku: 'NUEVO-2', descripcion: 'Producto nuevo', unidadMedida: 'ud', precioDirecto: '50', precioPublico: '100' })
-  assert.ok(nuevo)
-  assert.equal(nuevo!.anulado, false)
+  const a = await store.catalogo.crear({ descripcion: 'Tablero Roble 18mm', unidadMedida: 'ud', precioDirecto: '50', precioPublico: '100' })
+  assert.ok(a)
+  assert.equal(a!.anulado, false)
+  assert.match(a!.sku, /^TAB-ROB-18M-\d{6}$/, 'sku autogenerado: abreviatura + fecha')
+
+  const b = await store.catalogo.crear({ descripcion: 'Tablero Roble 18mm', unidadMedida: 'ud', precioDirecto: '50', precioPublico: '100' })
+  assert.ok(b)
+  assert.notEqual(a!.sku, b!.sku, 'dos productos iguales no comparten SKU')
+  assert.match(b!.sku, /^(TAB-ROB-18M-\d{6})(-\d+)?$/)
 })
 
-await test('p27 catalogo.actualizar: publicar exige precioPublico + imagenUrl (R5); eliminar es soft-delete (R8)', async () => {
+await test('p27 catalogo.crear+actualizar: SKU inmutable tras creación (t-165)', async () => {
   const store = createMockStore()
-  const nuevo = (await store.catalogo.crear({ sku: 'NUEVO-3', descripcion: 'Sin imagen', unidadMedida: 'ud', precioPublico: '100' }))!
+  const nuevo = (await store.catalogo.crear({ descripcion: 'Sin imagen', unidadMedida: 'ud', precioPublico: '100' }))!
+  assert.match(nuevo.sku, /^IMA-\d{6}$/, '"sin" es stopword -> queda "imagen"')
+  await store.catalogo.actualizar(nuevo.id, { descripcion: 'Renombrado y publicado' })
+  assert.equal(store.catalogo.obtenerPorId(nuevo.id)!.sku, nuevo.sku, 'editar descripción no regenéra el SKU')
   assert.equal(await store.catalogo.actualizar(nuevo.id, { publicadoWeb: true }), null, 'sin imagenUrl no debe poder publicarse')
 
   const publicado = await store.catalogo.actualizar(nuevo.id, { publicadoWeb: true, imagenUrl: 'https://x/img.jpg' })
   assert.equal(publicado!.publicadoWeb, true)
 
-  // t-139 (R5 ampliada): publicar con solo galería (sin imagenUrl) también es válido.
-  const soloGaleria = (await store.catalogo.crear({ sku: 'NUEVO-4', descripcion: 'Con galería', unidadMedida: 'ud', precioPublico: '100', galeriaImagenesUrl: ['https://x/g1.jpg', 'https://x/g2.jpg'] }))!
+  // R5 ampliada (t-139): publicar con solo galería (sin imagenUrl) también es válido.
+  const soloGaleria = (await store.catalogo.crear({ descripcion: 'Con galería', unidadMedida: 'ud', precioPublico: '100', galeriaImagenesUrl: ['https://x/g1.jpg', 'https://x/g2.jpg'] }))!
   const pubGaleria = await store.catalogo.actualizar(soloGaleria.id, { publicadoWeb: true })
   assert.equal(pubGaleria!.publicadoWeb, true, 'publicar con galería y sin imagenUrl debe ser válido')
 
@@ -835,7 +926,8 @@ await test('p27 catalogo.actualizar: publicar exige precioPublico + imagenUrl (R
 
 await test('p27 catalogo: round-trip galeriaImagenesUrl (crear -> leer -> actualizar -> leer) [t-139]', async () => {
   const store = createMockStore()
-const creado = (await store.catalogo.crear({ sku: 'RT-1', descripcion: 'Round trip', unidadMedida: 'ud', precioPublico: '100', imagenUrl: 'https://x/portada.jpg', galeriaImagenesUrl: ['https://x/g1.jpg'], camposPersonalizados: [{ clave: 'Número de aperturas', valor: '2' }], fichaTecnicaUrls: ['https://r2.mock/catalogo/ficha-rt-1.pdf'] }))!
+const creado = (await store.catalogo.crear({ descripcion: 'Round trip', unidadMedida: 'ud', precioPublico: '100', imagenUrl: 'https://x/portada.jpg', galeriaImagenesUrl: ['https://x/g1.jpg'], camposPersonalizados: [{ clave: 'Número de aperturas', valor: '2' }], fichaTecnicaUrls: ['https://r2.mock/catalogo/ficha-rt-1.pdf'] }))!
+  assert.match(creado.sku, /^ROU-TRI-\d{6}$/)
   assert.deepEqual(creado.galeriaImagenesUrl, ['https://x/g1.jpg'])
   assert.deepEqual(creado.camposPersonalizados, [{ clave: 'Número de aperturas', valor: '2' }])
   assert.deepEqual(creado.fichaTecnicaUrls, ['https://r2.mock/catalogo/ficha-rt-1.pdf'])

@@ -411,6 +411,31 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         notify()
         return r
       },
+      // t-166: los hitos SÍ se actualizan en la caché local. La degradación documentada en
+      // la cabecera (los secundarios llegan con el siguiente ciclo de polling) no es
+      // aceptable acá: el modal de contrato acaba de reescribir el plan de pagos y lo
+      // vuelve a leer de esta caché al reabrirse — esperar ≤4s haría que mostrara el
+      // plan viejo, que es justo el bug que t-166 viene a cerrar.
+      actualizar: async (id, values) => {
+        const r = await core.actualizarContratoAction(id, values)
+        if (!r) return null
+        data = { ...data, contratos: upsert(data.contratos, r) }
+        if (values.hitos !== undefined) {
+          // Reemplazo completo, replicando lo que hizo la transacción en el servidor.
+          data = { ...data, hitos: data.hitos.filter((h) => h.contratoId !== id) }
+          const nuevos = values.hitos.map((h, i) => ({
+            id: `tmp-${id}-${i}`,
+            contratoId: id,
+            orden: i + 1,
+            tipo: h.tipo,
+            montoOPorcentaje: h.monto,
+            razon: h.razon,
+          }))
+          if (nuevos.length > 0) data = { ...data, hitos: [...data.hitos, ...nuevos] }
+        }
+        notify()
+        return r
+      },
     },
 
     hitos: {

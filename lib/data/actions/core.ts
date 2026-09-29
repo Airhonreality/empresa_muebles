@@ -8,9 +8,10 @@ import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import { num, sanitizarCamposPersonalizados } from './mappers'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
+import { generarSkuUnico } from '../skus'
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
-  ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial, GrupoItem,
+  ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial, GrupoItem, HitoPagoInput,
 } from '../contracts'
 // VarianteNoEliminableError vive en errors.ts (no en 'use server':
 // Next.js prohíbe exportar clases desde archivos 'use server').
@@ -620,10 +621,12 @@ export async function actualizarArtefactoAction(
   return (actualizado as unknown as EspacioArtefacto) ?? null
 }
 
-export async function crearProductoCatalogoAction(data: Partial<ProductoCatalogo> & { sku: string; descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null> {
+export async function crearProductoCatalogoAction(data: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>> & { descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null> {
   return db.transaction(async (tx) => {
-    const existente = await tx.select().from(s.productosCatalogo).where(eq(s.productosCatalogo.sku, data.sku))
-    if (existente.length > 0) return null
+    // t-165: SKU autogenerado server-side (abreviatura descripción + YYMMDD + sufijo ante
+    // colisión) contra los skus ya existentes — nunca lo manda el cliente.
+    const existentes = await tx.select({ sku: s.productosCatalogo.sku }).from(s.productosCatalogo)
+    const sku = generarSkuUnico(data.descripcion, new Date(), existentes.map((r) => r.sku))
     const precioDirecto = data.precioDirecto ?? null
     const precioPublico = data.precioPublico ?? null
     if (precioDirecto !== null && num(precioDirecto) < 0) return null
@@ -640,7 +643,7 @@ export async function crearProductoCatalogoAction(data: Partial<ProductoCatalogo
     // R5 (t-139): publicar exige precioPublico + (imagenUrl OR galería no vacía).
     if (publicadoWeb && (!precioPublico || !(imagenUrl || galeriaImagenesUrl.length > 0))) return null
     const [nuevo] = await tx.insert(s.productosCatalogo).values({
-      sku: data.sku, descripcion: data.descripcion, tipo: data.tipo ?? null, unidadMedida: data.unidadMedida,
+      sku, descripcion: data.descripcion, tipo: data.tipo ?? null, unidadMedida: data.unidadMedida,
       precioDirecto, precioPublico, stockActual, proveedorId: data.proveedorId ?? null, imagenUrl, galeriaImagenesUrl,
       camposPersonalizados, fichaTecnicaUrls,
       modelo3dUrl: data.modelo3dUrl ?? null, categoriaComercial: data.categoriaComercial ?? null,
@@ -650,14 +653,15 @@ export async function crearProductoCatalogoAction(data: Partial<ProductoCatalogo
   })
 }
 
-export async function actualizarProductoCatalogoAction(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'createdAt'>>): Promise<ProductoCatalogo | null> {
+export async function actualizarProductoCatalogoAction(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>>): Promise<ProductoCatalogo | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.productosCatalogo).where(eq(s.productosCatalogo.id, id))
     if (!actual) return null
-    const actualizado = { ...actual, ...partial }
+    // t-165: SKU inmutable tras la creación — el estado final y el .set() fuerzan el sku original.
+    const actualizado = { ...actual, ...partial, sku: actual.sku }
     // Sanitización efectiva: el .set() final usa setData (no el partial crudo) para que la
     // ley R2 / URLs externas no se puedan colar por el spread (bug latent corregido 2026-09-17).
-    const setData: Partial<typeof actualizado> = { ...partial, updatedAt: new Date().toISOString() }
+    const setData: Partial<typeof actualizado> = { ...partial, sku: actualizado.sku, updatedAt: new Date().toISOString() }
     if (partial.imagenUrl !== undefined) {
       setData.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl)
       actualizado.imagenUrl = setData.imagenUrl
@@ -673,10 +677,6 @@ export async function actualizarProductoCatalogoAction(id: string, partial: Part
     if (partial.fichaTecnicaUrls !== undefined) {
       setData.fichaTecnicaUrls = sanitizarUrlsFotos(partial.fichaTecnicaUrls, { permitirExternas: false }) ?? []
       actualizado.fichaTecnicaUrls = setData.fichaTecnicaUrls
-    }
-    if (actualizado.sku) {
-      const conflicto = await tx.select().from(s.productosCatalogo).where(and(eq(s.productosCatalogo.sku, actualizado.sku), ne(s.productosCatalogo.id, id)))
-      if (conflicto.length > 0) return null
     }
     if (actualizado.precioDirecto !== null && num(actualizado.precioDirecto) < 0) return null
     if (actualizado.precioPublico !== null && num(actualizado.precioPublico) < 0) return null
@@ -707,30 +707,99 @@ export async function actualizarParametroAction(clave: string, datos: Partial<Pa
   }
 }
 
+/** Columnas del contrato que se escriben en alta y en edición. `proyectoId` y
+ *  `codigoContrato` quedan AFUERA a propósito: son inmutables una vez creado el contrato
+ *  (cambiar el código rompería el UNIQUE y la referencia del cliente ya emitido). */
+function columnasContrato(data: {
+  valorTotal: string
+  fechaContrato?: string | null
+  plazoEjecucionTexto?: string
+  holguraDias?: number
+  garantiaAnios?: number
+  objetoItems?: string | null
+  especificacionesEstructura?: string | null
+  especificacionesHerrajes?: string | null
+  especificacionesMesones?: string | null
+  especificacionesDesmonte?: string | null
+  contratanteDomicilio?: string | null
+  emailAsunto?: string | null
+  emailCuerpo?: string | null
+}) {
+  return {
+    valorTotal: data.valorTotal,
+    fechaContrato: data.fechaContrato ?? null,
+    plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
+    holguraDias: data.holguraDias ?? 8,
+    garantiaAnios: data.garantiaAnios ?? 2,
+    objetoItems: data.objetoItems ?? null,
+    especificacionesEstructura: data.especificacionesEstructura ?? null,
+    especificacionesHerrajes: data.especificacionesHerrajes ?? null,
+    especificacionesMesones: data.especificacionesMesones ?? null,
+    especificacionesDesmonte: data.especificacionesDesmonte ?? null,
+    contratanteDomicilio: data.contratanteDomicilio ?? null,
+    emailAsunto: data.emailAsunto ?? null,
+    emailCuerpo: data.emailCuerpo ?? null,
+  }
+}
+
+/** t-166: `orden` en base 1. Antes `crearContratoAction` insertaba `i` (base 0) mientras el
+ *  mock usaba `i + 1` (base 1) — la UI numera los hitos desde 1, así que base 1 es la
+ *  correcta y la divergencia queda cerrada. */
+function filasHitos(contratoId: string, hitos: HitoPagoInput[]) {
+  return hitos.map((h, i) => ({
+    contratoId,
+    orden: i + 1,
+    tipo: h.tipo,
+    montoOPorcentaje: h.monto,
+    razon: h.razon,
+  }))
+}
+
 export async function crearContratoAction(data: import('@/lib/data/contracts').DatosContratoNuevo): Promise<Contrato> {
   return db.transaction(async (tx) => {
-    const [nuevo] = await tx.insert(s.contratos).values({
-      proyectoId: data.proyectoId, codigoContrato: data.codigoContrato, valorTotal: data.valorTotal,
-      fechaContrato: data.fechaContrato ?? null,
-      plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
-      holguraDias: data.holguraDias ?? 8,
-      garantiaAnios: data.garantiaAnios ?? 2,
-      objetoItems: data.objetoItems ?? null,
-      especificacionesEstructura: data.especificacionesEstructura ?? null,
-      especificacionesHerrajes: data.especificacionesHerrajes ?? null,
-      especificacionesMesones: data.especificacionesMesones ?? null,
-      especificacionesDesmonte: data.especificacionesDesmonte ?? null,
-      contratanteDomicilio: data.contratanteDomicilio ?? null,
-      emailAsunto: data.emailAsunto ?? null,
-      emailCuerpo: data.emailCuerpo ?? null,
-    }).returning()
+    const [nuevo] = await tx
+      .insert(s.contratos)
+      .values({ proyectoId: data.proyectoId, codigoContrato: data.codigoContrato, ...columnasContrato(data) })
+      .returning()
     const hitos = data.hitos ?? []
     if (hitos.length > 0) {
-      await tx.insert(s.hitosPago).values(hitos.map((h, i) => ({
-        contratoId: nuevo.id, orden: i, tipo: h.tipo, montoOPorcentaje: h.monto, razon: h.razon,
-      })))
+      await tx.insert(s.hitosPago).values(filasHitos(nuevo.id, hitos))
     }
     return nuevo as unknown as Contrato
+  })
+}
+
+/**
+ * t-166: edita un contrato ya existente — el mecanismo que hacía falta para poder corregir
+ * o reemitir un contrato sin que el segundo guardado fallara por el UNIQUE de
+ * `codigo_contrato` (el código es determinista por proyecto, así que una segunda fila
+ * nunca podía existir).
+ *
+ * Contrato y hitos se escriben en la MISMA transacción: si el plan de pagos quedara a medias
+ * con el encabezado actualizado, el contrato impreso ya no cuadraría con los hitos.
+ * Devuelve `null` si el id no existe.
+ */
+export async function actualizarContratoAction(
+  id: string,
+  data: import('@/lib/data/contracts').DatosContratoEdicion,
+): Promise<Contrato | null> {
+  return db.transaction(async (tx) => {
+    const [actualizado] = await tx
+      .update(s.contratos)
+      .set({ ...columnasContrato(data), updatedAt: new Date().toISOString() })
+      .where(eq(s.contratos.id, id))
+      .returning()
+    if (!actualizado) return null
+
+    if (data.hitos !== undefined) {
+      // Reemplazo completo del plan de pagos: se borra el anterior y se reinserta el nuevo
+      // con `orden` reasignado, para que quitar un hito medio no deje huecos en la numeración.
+      await tx.delete(s.hitosPago).where(eq(s.hitosPago.contratoId, id))
+      if (data.hitos.length > 0) {
+        await tx.insert(s.hitosPago).values(filasHitos(id, data.hitos))
+      }
+    }
+    return actualizado as unknown as Contrato
   })
 }
 

@@ -123,17 +123,15 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
   const totalNeto = parseNum(contrato.valorTotal)
   const fecha = fechaLarga(contrato.fechaContrato)
 
+  // t-166: el objeto se renderiza como elementos React, NO con dangerouslySetInnerHTML.
+  // Antes se concatenaba HTML a mano y se inyectaba sin escapar: el texto se arma con
+  // descripciones de catálogo y `nombrePersonalizado` de los ítems, ambos controlados por
+  // el usuario, así que un `<img onerror=...>` en un nombre de ítem se ejecutaba en el
+  // navegador de quien abría el contrato. React escapa por defecto y el <ul> sale igual.
   const objetoItems = (contrato.objetoItems ?? '')
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l.length > 0)
-
-  let objetoHtml = ''
-  if (objetoItems.length > 0) {
-    objetoHtml = '<ul>' + objetoItems.map((item) => `<li>${item}</li>`).join('') + '</ul>'
-  } else {
-    objetoHtml = '<p>Fabricación e instalación de mobiliario a medida de acuerdo con la propuesta aprobada.</p>'
-  }
 
   // Tabla de pagos: cada hito persistido con su % o monto fijo; el monto COP se deriva
   // del valorTotal absorbido de la cotización (t-162) — nunca se suma material por acá.
@@ -251,7 +249,20 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           El Contratista se obliga a realizar la fabricación e instalación del siguiente mobiliario a medida de acuerdo con los requerimientos técnicos coordinados y validados:
         </p>
 
-        <div dangerouslySetInnerHTML={{ __html: objetoHtml }} />
+        {/* Se conserva el <div> envolvente del markup original: no tiene estilos propios,
+            pero cambiar la estructura del documento firmado no es algo que deba hacer
+            un fix de seguridad sin poder mirarlo impreso. */}
+        <div>
+          {objetoItems.length > 0 ? (
+            <ul>
+              {objetoItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>Fabricación e instalación de mobiliario a medida de acuerdo con la propuesta aprobada.</p>
+          )}
+        </div>
 
         <p className="italic-note">
           Las especificaciones exactas de dimensiones, modulaciones, colores y herrajes corresponden a las descritas y renderizadas en la Propuesta de Diseño aprobada por el Contratante.

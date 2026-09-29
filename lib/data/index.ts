@@ -30,7 +30,7 @@ export function useDataStore(): DataStore {
 
 export type {
   DataStore, Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto, ProductoCatalogo, CampoPersonalizadoProducto,
-  Parametro, Contrato, HitoPago, UsuarioMock, TransicionesProyecto, ProyectosEstadosHistorial,
+  Parametro, Contrato, HitoPago, HitoPagoInput, DatosContratoNuevo, DatosContratoEdicion, UsuarioMock, TransicionesProyecto, ProyectosEstadosHistorial,
   Cronograma, CronogramaEtapa, LineaCronograma, EtapaCronograma, DesfaseCronograma, CausaDesfase,
   CheckProduccion, DesenlaceCheck, NovedadCritica, EstadoNovedadCritica, ComunicacionProgreso,
   SchemaProyecto, EstadoSchema, BomMaterial, OrigenBom, Verificacion, TipoGate, VeredictoGate,

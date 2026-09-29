@@ -189,6 +189,15 @@ export interface ProyectosEstadosHistorial {
   createdAt: string
 }
 
+/** Campos de un hito de pago tal como viaja desde el formulario (sin `orden` ni `id`:
+ *  el orden lo reasigna el servidor al reescribir el plan completo). */
+export interface HitoPagoInput {
+  tipo: 'percentage' | 'fixed'
+  monto: string
+  razon: string
+}
+
+/** t-166: payload de creación de contrato. `proyectoId` es obligatorio solo al crear. */
 export interface DatosContratoNuevo {
   proyectoId: string
   codigoContrato: string
@@ -205,7 +214,29 @@ export interface DatosContratoNuevo {
   contratanteDomicilio?: string | null
   emailAsunto?: string | null
   emailCuerpo?: string | null
-  hitos?: { tipo: 'percentage' | 'fixed'; monto: string; razon: string }[]
+  hitos?: HitoPagoInput[]
+}
+
+/** t-166: payload de edición. NO lleva `proyectoId` ni `codigoContrato` a propósito — la
+ *  edición nunca mueve un contrato de proyecto ni le cambia el código, y dejarlos fuera de
+ *  la firma hace que el compilador lo prohíba en vez de confiar en que nadie los manda. */
+export interface DatosContratoEdicion {
+  valorTotal: string
+  fechaContrato?: string | null
+  plazoEjecucionTexto?: string
+  holguraDias?: number
+  garantiaAnios?: number
+  objetoItems?: string | null
+  especificacionesEstructura?: string | null
+  especificacionesHerrajes?: string | null
+  especificacionesMesones?: string | null
+  especificacionesDesmonte?: string | null
+  contratanteDomicilio?: string | null
+  emailAsunto?: string | null
+  emailCuerpo?: string | null
+  /** t-166: si viene, el plan de pagos se REEMPLAZA por completo (borra los anteriores y
+   *  reinserta estos). Si viene `undefined`, los hitos no se tocan. */
+  hitos?: HitoPagoInput[]
 }
 
 export interface Contrato {
@@ -1118,10 +1149,13 @@ export interface DataStore {
     listar(): ProductoCatalogo[]
     buscar(query: string): ProductoCatalogo[]
     obtenerPorId(id: string): ProductoCatalogo | undefined
-    /** P-27 R1-R6: valida sku único, descripción requerida, precios coherentes (≥0, directo≤público), stock≥0. Retorna null si alguna regla falla. */
-    crear(data: Partial<ProductoCatalogo> & { sku: string; descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null>
-    /** P-27 R1-R6 reaplicadas sobre el estado final; R5: publicadoWeb=true exige precioPublico e imagenUrl. */
-    actualizar(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'createdAt'>>): Promise<ProductoCatalogo | null>
+    /** P-27 R1-R6 + t-165 (SKU autogenerado): el SKU NO se recibe — se genera server-side
+     * (abreviatura de la descripción + YYMMDD del día de guardado + sufijo -N ante colisión).
+     * Valida descripción requerida, precios coherentes (≥0, directo≤público), stock≥0. Retorna null si alguna regla falla. */
+    crear(data: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>> & { descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null>
+    /** P-27 R1-R6 reaplicadas sobre el estado final; R5: publicadoWeb=true exige precioPublico e imagenUrl.
+     * t-165: el SKU es INMUTABLE — no se acepta en el partial (resta de la firma). */
+    actualizar(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>>): Promise<ProductoCatalogo | null>
     /** P-27 #8/R8: soft-delete (anulado=true) — no rompe totales históricos de items_variante existentes. */
     eliminar(id: string): Promise<boolean>
   }
@@ -1134,6 +1168,10 @@ export interface DataStore {
   contratos: {
     porProyecto(proyectoId: string): Contrato | undefined
     crear(data: DatosContratoNuevo): Promise<Contrato>
+    /** t-166: edita un contrato existente (y opcionalmente reemplaza su plan de pagos).
+     *  Devuelve `null` si el contrato no existe — la UI decide si era un alta o una edición
+     *  ANTES de llamar, con `porProyecto`. */
+    actualizar(id: string, data: DatosContratoEdicion): Promise<Contrato | null>
   }
   hitos: {
     porContrato(contratoId: string): HitoPago[]

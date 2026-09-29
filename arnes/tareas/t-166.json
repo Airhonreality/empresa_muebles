@@ -1,0 +1,43 @@
+{
+  "id": "t-166",
+  "titulo": "Contrato editable (corregir sin perder datos) + lista de ítems con ficha técnica y sin SKU",
+  "intencion_negocio": "Javier (2026-09-29) reportó dos cosas en el flujo de 'Generar Contrato' del cotizador: (1) al volver a hacer clic en 'Generar Contrato' —para una segunda versión o una corrección— los datos introducidos se perdieron; (2) pidió quitar el SKU de la lista de ítems y agregar marca, acabado y datos de ficha técnica de cada ítem. Diagnóstico mecánico (no supuesto) del código: (a) `ContratoModal.tsx:50-81` siembra TODO el estado con `useState` solo al montar y NUNCA consulta el contrato existente, así que plazo/garantía/especificaciones/hitos/valor_total vuelven a los defaults en cada reapertura — el modal no tiene modo edición; (b) `contratos.codigo_contrato` es UNIQUE (`schema.ts:198`) y el código es determinista `CTR-<año>-<últimos 4 del proyecto.id>` (`ContratoModal.tsx:63`), mientras `crearContratoAction` (`core.ts:710`) es un INSERT puro y NO existe `contratos.actualizar` en la interfaz del store (`contracts.ts:1136-1140`) → el segundo guardado viola 23505 y, como `handleSave` no tiene try/catch ni estado de error, el fallo es SILENCIOSO (el modal se queda abierto sin hacer nada); (c) el modal escribe por `useDataStore()` (store global drizzle, `ContratoModal.tsx:45`) mientras la pantalla lee por `useCotizadorCompat()` (TanStack, `page.tsx:130`) → la edición del cliente tarda hasta ~4s en reflejarse. Los datos del cliente NO están perdidos: viven en `clientes` y se asocian al proyecto por `proyectos.clienteId`.",
+  "decisiones_supervisor": {
+    "versionado_contrato": "Editar en sitio (UPDATE). Un contrato por proyecto; el modal abre el existente ya cargado. Descartado el versionado con historial (tabla tipo propuestas_versiones, t-156) por simplicidad. SIN migración de schema.",
+    "datos_cliente": "No se crea snapshot del contratante dentro de `contratos`. Se verificó contra la base real que la tabla `contratos` tiene 0 filas —no hay ningún contrato emitido que proteger ante una futura edición del maestro `clientes`—, así que copiar nombre/documento/teléfono/email a columnas nuevas del contrato no aportaría nada hoy. Se conserva la fuente única `clientes` + `proyectos.clienteId`. Se reevalúa cuando exista el primer contrato emitido.",
+    "lista_items": "Solo texto legible en el PDF, sin columna JSONB y sin snapshot estructurado. Se enriquece la línea de cada ítem con marca/acabado/referencia/dimensiones/espesor/campos personalizados y se elimina el SKU.",
+    "botones_modal": "Se distinguen: 'Guardar Borrador' guarda y cierra; 'Generar Contrato' guarda y abre la página imprimible. Si ya existe contrato, el título pasa a 'Editar Contrato'."
+  },
+  "zona": "contratos",
+  "tipo": "bugfix_y_funcionalidad_contratos",
+  "riesgo": "medio",
+  "criterios_aceptacion": [
+    "Con un contrato ya existente, al volver a abrir 'Generar Contrato' el modal aparece con TODOS los campos precargados desde el contrato persistido (fecha, plazo, holgura, garantía, especificaciones, objeto, valor, y los hitos de pago reales ordenados), no con los defaults",
+    "Guardar sobre un contrato existente ACTUALIZA la fila y sus hitos; no crea una fila nueva ni viola el UNIQUE de codigo_contrato",
+    "Un error de persistencia (incluido el 23505) se muestra visiblemente en el modal en vez de fallar en silencio; el modal no se cierra y el estado no queda a medias",
+    "Al guardar, la edición del cliente se refleja de inmediato en la pantalla del cotizador (mismo layer de estado), sin esperar el ciclo de long-poll",
+    "'Generar Contrato' abre la página imprimible del contrato; 'Guardar Borrador' solo guarda y cierra",
+    "La lista de ítems del contrato NO contiene ningún SKU y sí incluye marca, acabado, referencia, dimensiones, espesor y campos personalizados cuando existen",
+    "El texto del objeto NO se inyecta con dangerouslySetInnerHTML sin escapar (React escapa por defecto)",
+    "tsc --noEmit limpio, eslint sin errores nuevos, tests de lib/data/contrato-items.test.ts en verde"
+  ],
+  "hallazgos_colaterales": [
+    "XSS: app/erp/cotizador/[proyectoId]/contrato/page.tsx:254 renderiza contrato.objetoItems con dangerouslySetInnerHTML sin escapar. Ese texto se arma con descripciones de catálogo y nombres personalizados, ambos controlados por el usuario.",
+    "Divergencia mock/real: core.ts:730 inserta hitos con `orden: i` (base 0) mientras mock-store.ts:823 usa `i + 1` (base 1). Se unifica en base 1, que es la que usa la UI.",
+    "'Guardar Borrador' y 'Generar Contrato' ejecutaban literalmente la misma función (ContratoModal.tsx:438-443).",
+    "DERIVA DE ENTORNO (no tocada, requiere decisión del Supervisor): .env.local solo tiene DATABASE_URL definida, apuntando a ep-round-queen-at3nzf87 (aws neon us-east-1), base VACÍA (0 proyectos, 0 clientes, 0 catálogo, 0 contratos). DATABASE_URL_DEV_LOCAL, DATABASE_URL_V3_PREVIEW y DATABASE_URL_LEGACY están presentes pero VACÍAS. arnes/estado.md afirma desde 2026-08-20 que DATABASE_URL apunta a v3-preview (ep-muddy-cherry-at5j2mz7) con 134 proyectos y 62 contratos. La documentación ya no describe la base real."
+  ],
+  "plan_ref": null,
+  "executor": "Orquestador (opencode)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Decisiones de diseño tomadas por Javier 2026-09-29 vía questionnaire. Sin migración de schema, así que no aplica el checkpoint de schema de AGENTS.md.",
+    "fecha": "2026-09-29"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-29T00:00:00Z",
+  "cerrada_en": null
+}
