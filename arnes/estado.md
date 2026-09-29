@@ -467,3 +467,26 @@ Esto aplica, en orden, las 3 migraciones escritas a mano que quedaron pendientes
 - **Limpieza pendiente de referencias cruzadas:** `INDEX.md` §3.c y `ZU_03_pln_roadmap_fases.md:11-13` corregidos en la misma sesión (ya no listan archivos inexistentes ni bloquean contra `plan_ui-slots.md`).
 
 
+
+---
+
+## 🔴 CENSO REAL DE LA BASE DE `DATABASE_URL` (2026-09-29) — corrige la deriva documentada en t-166
+
+**Verificación directa, solo lectura, sobre la URL de `.env.local`.** No es una inferencia: se enumeró `information_schema.tables` y se contó cada tabla.
+
+- **`.env.local` tiene UNA sola URL real**: `DATABASE_URL` → `ep-round-queen-at3nzf87` / base `neondb` / user `neondb_owner`. Conexión OK.
+- `DATABASE_URL_DEV_LOCAL`, `DATABASE_URL_V3_PREVIEW` y `DATABASE_URL_LEGACY` están **presentes pero vacías**. `NEON_API_KEY` y `SESSION_SECRET` también vacías.
+- **70 tablas** en el schema `public`. **Solo 2 tienen datos:** `agnostic_records` (1391 filas) y `parametros` (1 fila).
+- **`productos_catalogo`: 0 filas.** Igual que `proyectos`, `clientes`, `contratos`, `items_variante`, `espacio_variantes`.
+
+**Qué significa.** El schema V3 está completo y migrado, pero **la base no tiene un solo registro de negocio**. Los 1391 `agnostic_records` son el residuo del motor "Agnostic Seed" del legacy (cuyo uso está prohibido en la V3), no datos ya migrados. Esto confirma y amplía el hallazgo de t-166: `arnes/estado.md` afirma desde 2026-08-20 que `DATABASE_URL` apunta a v3-preview (`ep-muddy-cherry-at5j2mz7`) con 134 proyectos y 62 contratos. **Esa afirmación hoy es falsa** — o `.env.local` fue repuntado, o la base v3-preview se perdió, o nunca estuvo en este `.env.local`.
+
+**Consecuencia operativa:** `npm run dev` levanta la app **sin ningún dato**, así que el QA manual de t-166 (abrir proyecto → generar contrato → reabrir precargado) es imposible hasta resolver esto. Ninguna tarea que necesite datos reales puede verificarse. **Requiere decisión del Supervisor:** cuál es la base de trabajo y de qué variables hay que pegar los valores.
+
+## t-167 — SKUs de la migración legacy alineados con t-165 (2026-09-29)
+
+`scripts/migrate-core.ts` sí regeneraba los SKUs de los 278 productos legacy (regla 1 de remediation de su cabecera), pero con un contador placeholder `AUTO-000001` que **ya no cumplía el formato aprobado en t-165** (`AUTO` son 4 letras; `esSkuAutogenerado` exige 1-3). Ahora usa `generarSkuUnico`, con el `created_at` legacy como fecha y resolución de colisiones contra los SKUs ya generados en la misma corrida. Simulado con 9 descripciones legacy (repetidas, vacías, solo-stopwords, con fecha basura): 9 únicos, 9 válidos.
+
+**Corregido de paso un bug propio de t-165:** el fallback de `abreviarDescripcion` era `'PROD'` (4 letras), o sea que su propio validador rechazaba el SKU resultante. Alcanzable con descripción vacía o solo-stopwords. Ahora `'PRD'`, con dos tests que atan el fallback al validador. **Este bug llevaba pusheado en `7999b83` y ningún test lo detectaba**: los tests comparaban contra el string `'PROD'`, nunca contra `esSkuAutogenerado`.
+
+**El script no se ejecutó** y no se escribió en ninguna base: sigue bloqueado por su guard (`CONFIRM_MIGRATE_CORE_DESTRUCTIVE`) y las dos URLs que necesita están vacías.

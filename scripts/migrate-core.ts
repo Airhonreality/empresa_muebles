@@ -23,6 +23,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { randomUUID } from 'node:crypto'
 import * as schema from '../lib/db/schema'
 import { generarCodigoCotizacion } from '../lib/data/codigos-cotizacion'
+import { generarSkuUnico } from '../lib/data/skus'
 
 const legacyUrl = process.env.DATABASE_URL_LEGACY
 const previewUrl = process.env.DATABASE_URL_V3_PREVIEW
@@ -120,15 +121,30 @@ async function main() {
   // ---- productos_catalogo ----
   const catalogoLegacy = await fetchNamespace('productos_catalogo')
   const catalogoIdMap = new Map<string, string>()
-  let skuCounter = 0
+  // t-165: los SKUs de los 278 productos se regeneran con el MISMO generador que usa la UI
+  // (ABREV-YYMMDD[-N]) en vez del contador AUTO-NNNNNN de antes, que ya no cumplía el formato
+  // aprobado (AUTO son 4 letras y el patrón es de 1-3, así que esos SKU no pasaban el validador).
+  // skusTomados se acumula dentro del .map() para que las colisiones entre productos legacy se
+  // resuelvan igual que en la creación por la UI, en vez de confiar en que no se repiten.
+  const skusTomados = new Set<string>()
   const catalogoInsert = catalogoLegacy.map((r) => {
     const nuevoId = randomUUID()
     catalogoIdMap.set(r.id, nuevoId)
-    skuCounter++
+    const descripcion = s(r.data.descripcion) ?? '(sin descripción)'
+    // Fecha del SKU: el created_at legacy si vino (el legacy sí lo tenía aunque el script no lo
+    // migraba); si falta o no parsea, la del día de corrida.
+    const fechaLegacy = s(r.data.created_at)
+    const fecha = fechaLegacy ? new Date(fechaLegacy) : new Date()
+    const sku = generarSkuUnico(
+      descripcion,
+      Number.isNaN(fecha.getTime()) ? new Date() : fecha,
+      skusTomados,
+    )
+    skusTomados.add(sku)
     return {
       id: nuevoId,
-      sku: `AUTO-${String(skuCounter).padStart(6, '0')}`, // regla 1: se regenera para los 278
-      descripcion: s(r.data.descripcion) ?? '(sin descripción)',
+      sku,
+      descripcion,
       tipo: s(r.data.tipo),
       unidadMedida: s(r.data.unidad_medida) ?? 'ud',
       precioDirecto: s(r.data.precio_directo),
@@ -141,7 +157,7 @@ async function main() {
     }
   })
   if (catalogoInsert.length) await db.insert(schema.productosCatalogo).values(catalogoInsert)
-  console.log(`productos_catalogo: ${catalogoInsert.length} migrados (SKU autogenerado para todos)`)
+  console.log(`productos_catalogo: ${catalogoInsert.length} migrados (SKU autogenerado t-165 para todos)`)
 
   // ---- proyectos (SOLO namespace 'proyectos' — 'cotizaciones' se ignora, regla 5) ----
   const proyectosLegacy = await fetchNamespace('proyectos')

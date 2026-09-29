@@ -31,15 +31,20 @@ export function normalizarTokens(descripcion: string): string[] {
 /**
  * Abreviatura de la descripción: hasta 3 tokens significativos (sin stopwords), cada uno
  * con máximo 3 caracteres en mayúsculas. Tokens cortos (acrónimos/dimensiones ≤3 letras,
- * ej. "TV", "18m") pasan completos. Vacío -> "PROD" (fallback, no debería ocurrir:
- * la descripción es obligatoria).
+ * ej. "TV", "18m") pasan completos. Vacío -> "PRD" (fallback, no debería ocurrir: la
+ * descripción es obligatoria).
+ *
+ * El fallback tiene 3 letras a propósito, no 4: `esSkuAutogenerado` exige tokens de 1-3, así
+ * que un "PROD" produciría un SKU que el propio módulo declara inválido. Se alcanza igual con
+ * descripciones que solo contienen stopwords ("de la"), que es el caso que el mockStore y el
+ * formulario no filtran.
  */
 export function abreviarDescripcion(descripcion: string): string {
   const tokens = normalizarTokens(descripcion).filter((t) => !STOPWORDS.has(t))
   const abreviados = tokens.slice(0, MAX_TOKENS).map((t) =>
     t.length <= TOKEN_MAX_LEN ? t.toUpperCase() : t.slice(0, TOKEN_MAX_LEN).toUpperCase()
   )
-  return abreviados.length > 0 ? abreviados.join('-') : 'PROD'
+  return abreviados.length > 0 ? abreviados.join('-') : 'PRD'
 }
 
 /** Fecha en formato SKU `YYMMDD` (trazable y colapsable). Se usa UTC igual que el resto del repo. */

@@ -1,0 +1,37 @@
+{
+  "id": "t-167",
+  "titulo": "Migración legacy: regenerar los 278 SKUs con el generador de t-165 en vez del contador AUTO-NNNNNN",
+  "intencion_negocio": "Javier (2026-09-29) dejó anotado que el requisito es que TODOS los SKUs usen el modelo automático ya aprobado en t-165, y que los SKUs previos (los del legacy) son manuales. Verificado contra el schema y el script de migración que el requisito estaba a medio implementar: el script SÍ regeneraba los SKUs (regla 1 de remediation, cabecera de scripts/migrate-core.ts), pero con un esquema placeholder `AUTO-000001`, `AUTO-000002`... que ya no cumple el formato aprobado en t-165. Los 278 productos del legacy habrían aterrizado con un SKU que el propio validador del módulo rechaza (`AUTO` son 4 letras; el patrón es de 1-3).",
+  "decisiones_supervisor": {
+    "alcance": "Corregir el generador usado por la migración. NO se ejecuta la migración ni se escribe en ninguna base: el script sigue bloqueado por su guard de siempre y las URLs que necesita están vacías.",
+    "fecha_del_sku": "Se usa el `created_at` del registro legacy si viene (el legacy sí lo tenía, aunque el script no lo migraba a la columna); si falta o no parsea, la fecha de la corrida. Coherente con el criterio de t-165 ('fecha del día de guardado, o del createdAt en productos existentes')."
+  },
+  "zona": "scripts_migracion",
+  "tipo": "bugfix",
+  "riesgo": "bajo",
+  "criterios_aceptacion": [
+    "scripts/migrate-core.ts genera el SKU del catálogo con `generarSkuUnico` de lib/data/skus, no con un contador AUTO-NNNNNN",
+    "Todos los SKUs que la migración produciría pasan `esSkuAutogenerado`",
+    "Descripciones legacy repetidas (misma abreviatura + mismo día) no colisionan: el sufijo -N se resuelve contra los SKUs ya generados en la misma corrida",
+    "Un `created_at` ausente o inválido no rompe la generación",
+    "tsc --noEmit limpio y lib/data/skus.test.ts en verde"
+  ],
+  "hallazgos_colaterales": [
+    "BUG PROPIO DE t-165 (corregido acá): el fallback de `abreviarDescripcion` era 'PROD' (4 letras) y por lo tanto el SKU resultante NO pasaba `esSkuAutogenerado`, cuyo patrón exige tokens de 1-3. Se alcanzaba con descripción vacía o compuesta solo por stopwords ('de la'), casos que ni el mockStore ni el formulario filtran. Cambiado a 'PRD' + dos tests de regresión que atan el fallback al validador. El bug llevaba pusheado en 7999b83 y no lo detectó ningún test: los tests existentes solo comparaban contra el string 'PROD', nunca contra el validador.",
+    "No hay referencias por SKU en la base: items_orden_compra y catalogo_producto_acabados usan `producto_catalogo_id` (uuid) con FK a productos_catalogo.id. Cambiar un SKU no rompe joins; el riesgo de la reescritura es histórico/visible (SKUs ya publicados en app/(publico)/colecciones y app/(publico)/propuesta, y en órdenes de compra), no referencial.",
+    "CENSOS DE LA BASE (lectura, 2026-09-29): .env.local tiene UNA sola URL real, DATABASE_URL -> ep-round-queen-at3nzf87 / neondb. Conexión OK, 70 tablas en public, solo 2 con datos: agnostic_records (1391) y parametros (1). productos_catalogo tiene 0 filas. Es decir: hoy no hay ningún SKU existente que regenerar; la corrección importa para cuando se corra la migración de los 278."
+  ],
+  "plan_ref": null,
+  "executor": "Orquestador (opencode)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Requisito declarado textualmente por Javier 2026-09-29 ('es requisito regenerar TODOS los skus al modelo automático'). Sin migración de schema y sin ejecución del script: no aplica el checkpoint de schema de AGENTS.md.",
+    "fecha": "2026-09-29"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-29T00:00:00Z",
+  "cerrada_en": null
+}

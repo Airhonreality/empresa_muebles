@@ -28,7 +28,19 @@ async function test(nombre: string, fn: () => void | Promise<void>): Promise<voi
     assert.equal(abreviarDescripcion('Corredera Full Extension 45cm'), 'COR-FUL-EXT')
     assert.equal(abreviarDescripcion('Tablero de Roble 18mm'), 'TAB-ROB-18M', 'stopwords de/la se omiten')
     assert.equal(abreviarDescripcion('Mueble TV'), 'MUE-TV', 'token corto pasa completo')
-    assert.equal(abreviarDescripcion(''), 'PROD', 'descripción vacía -> fallback')
+    assert.equal(abreviarDescripcion(''), 'PRD', 'descripción vacía -> fallback de 3 letras')
+    // El fallback tiene que cumplir el patrón que declara el propio módulo: con 4 letras
+    // ("PROD") el SKU resultante no pasaba esSkuAutogenerado.
+    assert.equal(
+      esSkuAutogenerado(generarSkuUnico('', new Date(Date.UTC(2026, 8, 23)), [])),
+      true,
+      'el SKU del fallback debe ser válido según esSkuAutogenerado'
+    )
+    assert.equal(
+      esSkuAutogenerado(generarSkuUnico('de la', new Date(Date.UTC(2026, 8, 23)), [])),
+      true,
+      'descripción con solo stopwords -> mismo fallback, SKU válido'
+    )
   })
 
   await test('formatearFechaSku: YYMMDD en UTC', () => {
