@@ -13,6 +13,12 @@ import {
   tieneItemsDeLaCategoria,
   type SeccionEspecificacion,
 } from "@/lib/data/contrato-items";
+import { calcularVentanaEntrega, textoPlazoSemanas } from "@/lib/data/contrato-fechas";
+import {
+  requisitosPendientes,
+  type CampoContrato,
+} from "@/lib/data/contrato-validacion";
+import { feriadosDe } from "@/lib/data/feriados-colombia";
 import type {
   Proyecto, Cliente, EspacioVariante, ItemVariante, ProductoCatalogo, Contrato,
   HitoPago, DatosContratoEdicion,
@@ -44,14 +50,54 @@ type HitoLocal = {
   fechaLimite?: string;
 };
 
+/**
+ * t-167: se precarga esta plantilla en "Alcance de suministros" porque el punto que más pide
+ * el cliente antes de firmar es exactamente este — qué trae Veta Dorada y qué trae él
+ * (lavaplatos, piedra sinterizada, iluminación, herrajes). Poner las tres líneas a la vista
+ * hace que la respuesta se escriba sola en vez de dejarle la cláusula en blanco.
+ */
+const PLANTILLA_ALCANCE_SUMINISTROS = [
+  'Suministra Veta Dorada:',
+  'Suministra el Contratante:',
+  'Excluido del alcance:',
+].join('\n');
+
+/** 'AAAA-MM-DD' → '15 oct 2026', sin corrimiento por zona horaria. */
+function fechaCorta(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+/** Motivos legibles de `calcularVentanaEntrega`, para el modal. */
+const MOTIVOS_VENTANA: Record<string, string> = {
+  sin_fecha_firma: 'falta la fecha de firma del contrato.',
+  sin_plazo: 'falta el plazo en semanas hábiles.',
+  feriados_sin_verificar: 'el calendario de festivos de ese año todavía no está verificado.',
+};
+
 type FormContrato = {
   codigoContrato: string;
   fechaContrato: string;
   valorTotal: string;
-  plazoEjecucionTexto: string;
+  /**
+   * t-167: fuente ÚNICA del plazo. `plazoEjecucionTexto` pasó a ser texto derivado de este
+   * número. Antes el plazo era texto libre con default "4 a 5", que era (a) imposible de usar
+   * para calcular la fecha máxima sin parsearlo y (b) más corto que la promesa interna de 7
+   * semanas, así que un contrato generado sin editar ese campo prometía menos de lo que el
+   * cronograma interno tenía previsto.
+   */
+  plazoSemanas: string;
   holguraDias: string;
   garantiaAnios: number;
   objetoItems: string;
+  /** t-167: qué suministra Veta Dorada y qué trae el Contratante (punto 8 de la carta). */
+  alcanceSuministros: string;
+  /** t-167: cómo se identifica el Anexo 1 (Propuesta impresa que se adjunta al contrato). */
+  anexoPropuestaIdentificacion: string;
   especificaciones: Record<SeccionEspecificacion, string>;
 };
 
@@ -108,11 +154,27 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
       ?? `CTR-${new Date().getFullYear()}-${String(proyecto.id).slice(-4).toUpperCase()}`,
     fechaContrato: contratoExistente?.fechaContrato ?? new Date().toISOString().slice(0, 10),
     valorTotal: contratoExistente?.valorTotal ?? valorTotalCotizacion.toString(),
-    plazoEjecucionTexto: contratoExistente?.plazoEjecucionTexto
-      ?? (proyecto.diasEntregaEstimados ? `${Math.floor(proyecto.diasEntregaEstimados / 7)} a ${Math.ceil(proyecto.diasEntregaEstimados / 7)}` : '4 a 5'),
+    // t-167: si el contrato viejo no tiene el número, se deriva de los días estimados del
+    // proyecto; si tampoco hay, la promesa canónica del arnés (7 semanas). NUNCA el "4 a 5"
+    // que tenía antes el default.
+    plazoSemanas: String(
+      contratoExistente?.plazoSemanas
+      ?? (proyecto.diasEntregaEstimados
+        ? Math.max(1, Math.ceil(proyecto.diasEntregaEstimados / 7))
+        : 7),
+    ),
     holguraDias: (contratoExistente?.holguraDias ?? 8).toString(),
     garantiaAnios: contratoExistente?.garantiaAnios ?? proyecto.garantiaAnios ?? 2,
     objetoItems: contratoExistente?.objetoItems ?? objetoDerivado,
+    // t-168: `||` y no `??`. `core.ts` guarda estos campos con `.trim() || null`, pero una fila
+    // que llegó con cadena vacía (guardado por otra vía, o editada a mano en la base) hacía que
+    // `??` NO reemplazara: el textarea se veía vacío y el botón quedaba deshabilitado para
+    // siempre, sin forma de saber por qué. `||` cubre vacío, null y undefined por igual.
+    alcanceSuministros:
+      contratoExistente?.alcanceSuministros?.trim() || PLANTILLA_ALCANCE_SUMINISTROS,
+    anexoPropuestaIdentificacion:
+      contratoExistente?.anexoPropuestaIdentificacion?.trim()
+      || `Propuesta de Diseño y Presupuesto «${proyecto.nombreProyecto}» — versión 1 — fechada el ${contratoExistente?.fechaContrato ?? new Date().toISOString().slice(0, 10)} — ___ páginas`,
     especificaciones: {
       Estructura: contratoExistente?.especificacionesEstructura ?? especificacionesDerivadas.Estructura,
       Herrajes: contratoExistente?.especificacionesHerrajes ?? especificacionesDerivadas.Herrajes,
@@ -122,6 +184,34 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
   }));
 
   const [errorGuardado, setErrorGuardado] = useState<string | null>(null);
+
+  // t-167: un contrato firmado tiene su fecha máxima YA impresa y ya suscrita. Permitir editar
+  // plazo, holgura o fecha de firma después de eso movería en silencio una fecha contractual.
+  // Se bloquea acá y no en la base: es la última línea, no la única.
+  const contratoFirmado = contratoExistente?.estado === 'firmado';
+
+  const plazoSemanasNum = parseInt(form.plazoSemanas, 10);
+  const holguraNum = parseInt(form.holguraDias, 10);
+
+  // t-167: la ventana de entrega que se va a imprimir. Vive AQUÍ, en el modal (la interfaz que
+  // define los detalles del proyecto), no en la página imprimible: la página solo lee. Y si el
+  // calendario de ese año no está verificado, no hay fecha — se explica por qué en vez de
+  // inventar una fecha que después se impugna.
+  const ventana = useMemo(
+    () =>
+      calcularVentanaEntrega({
+        fechaFirma: form.fechaContrato,
+        plazoSemanas: Number.isInteger(plazoSemanasNum) ? plazoSemanasNum : null,
+        holguraDias: Number.isInteger(holguraNum) ? holguraNum : null,
+      }),
+    [form.fechaContrato, plazoSemanasNum, holguraNum],
+  );
+
+  const anioFirma = Number(form.fechaContrato.slice(0, 4));
+  const feriadosPendientes = useMemo(
+    () => (ventana.ok ? [] : feriadosDe(anioFirma).pendientes),
+    [ventana.ok, anioFirma],
+  );
 
   // Hitos: los ya persistidos si hay contrato (default 50/25/25 solo en el alta).
   const [hitos, setHitos] = useState<HitoLocal[]>(() => {
@@ -187,10 +277,9 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
 
   // Validar que suma = valorTotal (para hitos de porcentaje)
   const todosPorcentaje = useMemo(() => hitos.every((h) => h.tipo === 'percentage'), [hitos]);
-  const hitosValidos = useMemo(() => {
-    if (!todosPorcentaje) return true; // Si hay hitos fijos, no validamos suma
-    return Math.abs(sumaHitos - 100) < 0.01;
-  }, [sumaHitos, todosPorcentaje]);
+  // t-168: la regla "la suma tiene que dar 100%" ya no vive acá — vive en
+  // `requisitosPendientes`, junto con el resto, y llega acá por `errorDe('hitos')`. Dejarla
+  // en los dos lados era justamente la forma de que se desincronicen.
 
   /** t-166: vuelve a derivar objeto y especificaciones desde los ítems cotizados ahora.
    *  Explicito y a pedido, no automático: si el usuario escribió a mano y después tocó la
@@ -208,10 +297,15 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     return {
       fechaContrato: form.fechaContrato,
       valorTotal: form.valorTotal,
-      plazoEjecucionTexto: form.plazoEjecucionTexto,
-      holguraDias: parseInt(form.holguraDias) || 8,
+      // t-167: se persiste el número y el texto derivado, no al revés. Así el archivo nunca
+      // puede quedar con un "4 a 5" que contradiga el plazo numérico que se acaba de medir.
+      plazoSemanas: Number.isInteger(plazoSemanasNum) ? plazoSemanasNum : null,
+      plazoEjecucionTexto: textoPlazoSemanas(plazoSemanasNum) ?? undefined,
+      holguraDias: Number.isInteger(holguraNum) ? holguraNum : 8,
       garantiaAnios: form.garantiaAnios,
       objetoItems: form.objetoItems.trim() || null,
+      alcanceSuministros: form.alcanceSuministros.trim() || null,
+      anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion.trim() || null,
       especificacionesEstructura: esp.Estructura.trim() || null,
       especificacionesHerrajes: esp.Herrajes.trim() || null,
       especificacionesMesones: esp.Mesones.trim() || null,
@@ -219,7 +313,7 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
       contratanteDomicilio: clienteForm.domicilio.trim() || null,
       hitos: hitos.map((h) => ({ tipo: h.tipo, monto: h.montoOPorcentaje, razon: h.razon })),
     };
-  }, [form, hitos, clienteForm.domicilio]);
+  }, [form, hitos, clienteForm.domicilio, plazoSemanasNum, holguraNum]);
 
   /**
    * t-166: alta O edición, y con el error a la vista.
@@ -228,9 +322,13 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
    * UNIQUE y determinista por proyecto, la segunda emisión moría con un 23505 que nadie veía
    * — `handleSave` no tenía try/catch ni estado de error, así que el modal se quedaba abierto
    * sin hacer absolutamente nada. Ahora el error se muestra y nada se cierra a medias.
+   *
+   * t-167: `destino` decide a dónde va el usuario después de guardar. `pestana` es la pestaña
+   * que el handler YA abrió de forma síncrona: abrirla después del `await` la bloquearía el
+   * navegador, y sin ventana previa no hay forma honesta de mostrar un PDF en otra pestaña.
    */
   const guardar = useCallback(
-    async (abrirImpresion: boolean) => {
+    async (destino: 'cerrar' | 'contrato' | 'propuesta', pestana: Window | null) => {
       setErrorGuardado(null);
       try {
         if (cliente) {
@@ -259,14 +357,19 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
           setErrorGuardado(
             'No se pudo guardar el contrato: el registro ya no existe. Cerrá y abrí el modal de nuevo.',
           );
+          pestana?.close();
           return;
         }
         onSaved(guardado);
         onClose();
-        if (abrirImpresion) {
+        if (destino === 'contrato') {
+          // La página de impresión lee el contrato recién guardado; mismo origen, misma pestaña.
           router.push(`/erp/cotizador/${proyecto.id}/contrato`);
+        } else if (destino === 'propuesta' && pestana) {
+          pestana.location.href = `/propuesta/${proyecto.id}`;
         }
       } catch (e) {
+        pestana?.close();
         setErrorGuardado(
           e instanceof Error
             ? `No se pudo guardar el contrato: ${e.message}`
@@ -277,11 +380,67 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     [cliente, clienteForm, store, contratoExistente, construirDatos, form.codigoContrato, proyecto.id, onSaved, onClose, router],
   );
 
-  const handleGuardarBorrador = useCallback(() => guardGuardarContrato(() => guardar(false)), [guardGuardarContrato, guardar]);
-  const handleGenerar = useCallback(() => guardGuardarContrato(() => guardar(true)), [guardGuardarContrato, guardar]);
+  const handleGuardarBorrador = useCallback(
+    () => guardGuardarContrato(() => guardar('cerrar', null)),
+    [guardGuardarContrato, guardar],
+  );
+  const handleGenerar = useCallback(
+    () => guardGuardarContrato(() => guardar('contrato', null)),
+    [guardGuardarContrato, guardar],
+  );
 
-  // Verificar si el formulario es válido
-  const esValido = cliente && clienteForm.nombre.trim() && parseFloat(form.valorTotal) > 0 && hitosValidos && hitos.length > 0;
+  /**
+   * t-167: "Imprimir propuesta" abre la pestaña ANTES de guardar a propósito. Una pestaña que
+   * se abre después de un `await` la bloquea el navegador como popup y el usuario no ve nada,
+   * sin error visible. Abriéndola vacía y apuntabándola al final no hay ese problema.
+   */
+  const handleImprimirPropuesta = useCallback(() => {
+    const pestana = window.open('about:blank', '_blank');
+    if (!pestana) {
+      setErrorGuardado(
+        'El navegador bloqueó la pestaña nueva. Permití las ventanas emergentes para este sitio o usá "Ver contrato" y abrí la Propuesta desde ahí.',
+      );
+      return;
+    }
+    void guardGuardarContrato(() => guardar('propuesta', pestana));
+  }, [guardGuardarContrato, guardar]);
+
+  // t-168: la validación ya no es un booleano. `esValido` era una cadena de && que no decía
+  // qué fallaba, y su única retroalimentación era un párrafo genérico (que además no existía
+  // antes de t-166: el botón se deshabilitaba en silencio). Ahora la MISMA regla devuelve la
+  // lista de requisitos incumplidos, y de ahí salen dos cosas que no pueden desincronizarse
+  // entre sí porque salen del mismo cálculo: el mensaje inline de cada campo y la lista que
+  // se muestra junto al botón. Dos copias de la misma regla es lo que produjo el bug.
+  const pendientes = useMemo(
+    () =>
+      requisitosPendientes({
+        tieneCliente: Boolean(cliente),
+        nombreCliente: clienteForm.nombre,
+        valorTotal: form.valorTotal,
+        cantidadHitos: hitos.length,
+        todosPorcentaje,
+        sumaHitos,
+        plazoSemanas: form.plazoSemanas,
+        alcanceSuministros: form.alcanceSuministros,
+        anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion,
+      }),
+    [
+      cliente,
+      clienteForm.nombre,
+      form.valorTotal,
+      hitos,
+      todosPorcentaje,
+      sumaHitos,
+      form.plazoSemanas,
+      form.alcanceSuministros,
+      form.anexoPropuestaIdentificacion,
+    ],
+  );
+
+  const esValido = pendientes.length === 0;
+
+  /** El mensaje exacto que bloquea un campo, o undefined si ese campo no está bloqueando. */
+  const errorDe = (campo: CampoContrato) => pendientes.find((r) => r.campo === campo)?.mensaje;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -307,7 +466,7 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
                 value={clienteForm.nombre}
                 onChange={(e) => setClienteCampo('nombre', e.target.value)}
                 required
-                error={!clienteForm.nombre.trim() ? 'El nombre es obligatorio' : undefined}
+                error={errorDe('cliente')}
               />
               <InputField label="Documento" value={clienteForm.documento} onChange={(e) => setClienteCampo('documento', e.target.value)} />
               <InputField label="Teléfono" value={clienteForm.telefono} onChange={(e) => setClienteCampo('telefono', e.target.value)} />
@@ -320,9 +479,77 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
           <section className="border-b border-border-subtle pb-4">
             <h3 className="text-sm font-semibold text-text-heading mb-3">2. Plazos y Garantía</h3>
             <div className="grid grid-cols-3 gap-4">
-              <InputField label="Plazo de ejecución" value={form.plazoEjecucionTexto} onChange={(e) => setForm({ ...form, plazoEjecucionTexto: e.target.value })} />
-              <InputField label="Días de holgura" value={form.holguraDias} onChange={(e) => setForm({ ...form, holguraDias: e.target.value })} type="number" />
-              <InputField label="Garantía (años)" value={form.garantiaAnios.toString()} onChange={(e) => setForm({ ...form, garantiaAnios: parseInt(e.target.value) || 2 })} type="number" />
+              {/* t-167: el plazo pasó de texto libre a número. La fecha máxima se calcula con
+                  este número, y el texto "N (N) semanas hábiles" se deriva de él al guardar. */}
+              <InputField
+                label="Plazo de ejecución (semanas hábiles) *"
+                value={form.plazoSemanas}
+                onChange={(e) => setForm({ ...form, plazoSemanas: e.target.value })}
+                type="number"
+                min={1}
+                disabled={contratoFirmado}
+                error={errorDe('plazoSemanas')}
+              />
+              <InputField
+                label="Días hábiles de holgura"
+                value={form.holguraDias}
+                onChange={(e) => setForm({ ...form, holguraDias: e.target.value })}
+                type="number"
+                min={0}
+                disabled={contratoFirmado}
+              />
+              <InputField label="Garantía (años)" value={form.garantiaAnios.toString()} onChange={(e) => setForm({ ...form, garantiaAnios: parseInt(e.target.value) || 2 })} type="number" min={0} />
+            </div>
+            {contratoFirmado && (
+              <p className="text-[11px] text-text-muted mt-2">
+                El contrato está firmado: plazo y holgura ya están comprometidos y no se editan
+                acá. Un cambio de plazo después de la firma necesita un otrosí, no un overwrite.
+              </p>
+            )}
+
+            {/* t-167: ventana de entrega. Se muestra antes de imprimir para que el número se
+                pueda corregir mirando la fecha, no después de mandar el contrato. */}
+            <div className="mt-3 rounded-md border border-border-subtle bg-bg-paper p-3">
+              {ventana.ok ? (
+                <div className="space-y-1">
+                  <p className="text-sm text-text-heading">
+                    Entrega más temprana: <strong className="font-mono">{fechaCorta(ventana.ventana.minima)}</strong>
+                  </p>
+                  <p className="text-sm text-text-heading">
+                    Fecha máxima comprometida: <strong className="font-mono">{fechaCorta(ventana.ventana.maxima)}</strong>
+                  </p>
+                  <p className="text-[11px] text-text-muted">
+                    {textoPlazoSemanas(plazoSemanasNum) ?? 'el plazo indicado'} hábiles desde la firma,
+                    más {holguraNum || 0} días hábiles de holgura. No cuenta fin de semana ni festivos,
+                    y el plazo corre desde la fecha de firma del contrato.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {/* t-167: si no hay fecha máxima, no se muestra NINGUNA fecha. Mostrar la
+                      mínima sola invita a leerla como compromiso de entrega, y la mínima sin la
+                      máxima es exactamente el hueco que el cliente quiere cerrar. */}
+                  <p className="text-sm text-text-heading">
+                    Ventana de entrega: <strong>no calculable todavía</strong>
+                  </p>
+                  <p className="text-[11px] text-text-muted">
+                    {MOTIVOS_VENTANA[ventana.motivo]} Es intencional: imprimir una fecha de
+                    vencimiento sin calendario verificado es peor que no imprimirla.
+                  </p>
+                  {feriadosPendientes.length > 0 && (
+                    <details className="text-[11px] text-text-muted">
+                      <summary className="cursor-pointer">
+                        Festivos sin verificar para {anioFirma} ({feriadosPendientes.length})
+                      </summary>
+                      <ul className="mt-1 list-disc pl-4">
+                        {feriadosPendientes.map((nombre) => (
+                          <li key={nombre}>{nombre}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 
@@ -401,15 +628,67 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
             </p>
           </section>
 
-          {/* Sección 5: Valor y Hitos */}
+          {/* Sección 6: Alcance y anexo — t-167. Va antes de valor porque el valor se lee
+              "por lo que está en el alcance": si el alcance queda vago, el precio no explica
+              nada y la adjustable se vuelve el punto de pelea. */}
+          <section className="border-b border-border-subtle pb-4">
+            <h3 className="text-sm font-semibold text-text-heading mb-3">6. Alcance de Suministros y Anexo 1</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-text-muted mb-1 block">
+                  Alcance de suministros *
+                </label>
+                <textarea
+                  value={form.alcanceSuministros}
+                  onChange={(e) => setForm({ ...form, alcanceSuministros: e.target.value })}
+                  aria-invalid={errorDe('alcanceSuministros') ? true : undefined}
+                  className={`w-full min-h-[100px] rounded-sm border bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:shadow-ring-focus ${
+                    errorDe('alcanceSuministros')
+                      ? 'border-error-stroke focus:border-error-stroke'
+                      : 'border-border-subtle focus:border-brand'
+                  }`}
+                  placeholder="Qué suministra Veta Dorada, qué suministra el Contratante y qué queda excluido"
+                />
+                {errorDe('alcanceSuministros') && (
+                  <p role="alert" className="text-xs text-error-text mt-1">
+                    {errorDe('alcanceSuministros')}
+                  </p>
+                )}
+                <p className="text-[11px] text-text-muted mt-1">
+                  La cláusula limitante sale de acá: solo se factura lo que está listado en los
+                  ítems cotizados más lo que se escriba en “Suministra Veta Dorada”. Lo que no
+                  esté en ninguna de las dos listas se conversa como cambio de alcance.
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-text-muted mb-1 block">
+                  Identificación del Anexo 1 (Propuesta) *
+                </label>
+                <InputField
+                  label="Identificación del Anexo 1 (Propuesta) *"
+                  value={form.anexoPropuestaIdentificacion}
+                  onChange={(e) => setForm({ ...form, anexoPropuestaIdentificacion: e.target.value })}
+                  error={errorDe('anexoPropuestaIdentificacion')}
+                  placeholder="Propuesta de Diseño y Presupuesto «nombre» — versión 1 — fechada el 2026-01-01 — N páginas"
+                />
+                <p className="text-[11px] text-text-muted mt-1">
+                  No es un enlace: es cómo se identifica en papel el PDF impreso que se adjunta
+                  al correo. La Propuesta se imprime y se envía junto con el contrato.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Sección 7: Valor y Hitos */}
           <section>
-            <h3 className="text-sm font-semibold text-text-heading mb-3">5. Valor y Plan de Pagos</h3>
+            <h3 className="text-sm font-semibold text-text-heading mb-3">7. Valor y Plan de Pagos</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-text-muted mb-1 block">Valor Total (COP)</label>
                 <MoneyInput
                   value={form.valorTotal}
                   onChange={(v) => setForm({ ...form, valorTotal: v })}
+                  error={errorDe('valorTotal')}
                   className="w-full"
                 />
               </div>
@@ -455,9 +734,9 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
                     </div>
                   ))}
                 </div>
-                {!hitosValidos && todosPorcentaje && (
-                  <p className="text-xs text-error-text mt-2">
-                    La suma de hitos por porcentaje debe ser 100%
+                {errorDe('hitos') && (
+                  <p role="alert" className="text-xs text-error-text mt-2">
+                    {errorDe('hitos')}
                   </p>
                 )}
                 {todosPorcentaje && (
@@ -488,21 +767,61 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
               en ninguna parte — `handleSave` no tenía try/catch, así que el modal se quedaba
               abierto sin explicar nada. Ahora el error se muestra y el modal sigue editable. */}
           {errorGuardado && (
-            <p role="alert" className="mb-3 rounded-sm border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text">
+            <p role="alert" className="mb-3 rounded-sm border border-error-stroke bg-error-fill px-3 py-2 text-sm text-error-text">
               {errorGuardado}
             </p>
           )}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-3 flex-wrap">
             <Button variant="ghost" size="md" onClick={onClose} disabled={guardandoContrato}>
               Cancelar
             </Button>
             <Button variant="secondary" size="md" onClick={handleGuardarBorrador} disabled={!esValido || guardandoContrato} loading={guardandoContrato}>
               {esEdicion ? 'Guardar cambios' : 'Guardar Borrador'}
             </Button>
-            <Button variant="primary" size="md" onClick={handleGenerar} disabled={!esValido || guardandoContrato} loading={guardandoContrato}>
-              {esEdicion ? 'Guardar y ver contrato' : 'Generar Contrato'}
+            {/* t-167: los dos botones de impresión que pidió el cliente. Antes había uno solo
+                ("Generar Contrato") y la Propuesta había que buscarla a mano en otra pantalla,
+                con la consecuencia de que el contrato se firmaba sin el anexo que lo acompaña. */}
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleImprimirPropuesta}
+              disabled={!esValido || guardandoContrato}
+              loading={guardandoContrato}
+            >
+              Imprimir propuesta
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleGenerar}
+              disabled={!esValido || guardandoContrato}
+              loading={guardandoContrato}
+            >
+              {esEdicion ? 'Ver contrato' : 'Imprimir contrato'}
             </Button>
           </div>
+          {/* t-168: la regla del proyecto es que NINGÚN botón queda bloqueado sin decir por
+              qué. Este bloque lista los requisitos incumplidos con el nombre del campo y el
+              motivo; los 4 botones de arriba comparten la misma `pendientes`, así que la lista
+              nunca puede contradecir el estado real del botón. Antes era un párrafo que
+              enumeraba las 6 categorías sin decir cuál faltaba, y antes de t-166 no había
+              nada: el botón muerto no explicaba nada. */}
+          {!esValido && (
+            <div
+              role="alert"
+              className="mt-3 rounded-sm border border-error-stroke bg-error-fill px-3 py-2"
+            >
+              <p className="text-sm font-medium text-error-text">
+                Falta{pendientes.length === 1 ? '' : 'n'} {pendientes.length}{' '}
+                {pendientes.length === 1 ? 'dato' : 'datos'} para poder imprimir el contrato:
+              </p>
+              <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm text-error-text">
+                {pendientes.map((r) => (
+                  <li key={r.campo}>{r.mensaje}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>

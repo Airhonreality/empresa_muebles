@@ -1,0 +1,49 @@
+{
+  "id": "t-168",
+  "titulo": "Modal de contrato: ningún botón bloqueado sin retroalimentación exacta (y fix del default de alcance/anexo)",
+  "intencion_negocio": "Javier (2026-09-29) reportó el botón 'Generar Contrato' deshabilitado y dijo literalmente 'ni sé por qué'. Después volvió a insistir en la regla que quiere: 'un botón no se puede bloquear sin retroalimentación exacta al usuario'. En un ERP que se usa para facturar, un control muerto sin explicación se lee como caída del sistema y hace que el usuario abandone el flujo entero en vez de corregir un campo.",
+  "diagnostico": "esValido (ContratoModal.tsx:402) es un booleano de 9 condiciones encadenadas con &&. La única retroalimentación al false es un párrafo genérico (línea 757) que no dice cuál falta ni dónde; y ese párrafo no existía antes de 7999b83, donde el botón se deshabilitaba en silencio absoluto. La validación se endureció de 5 a 9 requisitos (hitos.length >0 -> >1, más plazoSemanas, alcanceSuministros, anexoPropuestaIdentificacion), así que un contrato válido ayer puede estar bloqueado hoy sin explicación del cambio. Hallazgo adicional: el default de esos dos campos nuevos usa ?? PLANTILLA, que solo cae en null/undefined — si la fila llega con '' (lo que produce el .trim() guardado en core.ts:298-299 al mandar el campo vacío) el default no se aplica, el textarea se ve vacío y el botón queda muerto para siempre.",
+  "decisiones_supervisor": {
+    "alcance": "Solo retroalimentación y el default que causa el bloqueo permanente. NO se relaja ninguna de las 9 condiciones: el botón sigue bloqueado si falta algo, lo que cambia es que el usuario sabe qué y por qué. Sin migración de schema.",
+    "riesgo_de_relajar": "Bajar el requisito de '2 hitos' o del alcance solo para que el botón pase convertiría el trabajo de t-166/t-167 (contrato editable + alcance/anexo) en un fix silencioso de validación, que es exactamente el tipo de atajo que vuelve a romper el flujo en la siguiente iteración."
+  },
+  "zona": "contratos",
+  "tipo": "bugfix_y_ux",
+  "riesgo": "bajo",
+  "plan_ref": "arnes/planes/plan_t-168.md",
+  "criterios_aceptacion": [
+    "Con el botón deshabilitado el modal renderiza junto a él un role=alert con un <li> por requisito pendiente, y cada <li> nombra el campo",
+    "Cada campo bloqueante muestra su error inline por la prop `error` que ya soportan InputField y MoneyInput, sin replicar el patrón a mano",
+    "requisitosPendientes() devuelve TODOS los requisitos incumplidos, no solo el primero (caso de prueba: 4 campos vacíos -> 4 elementos)",
+    "esValido queda tan estricto como antes: tabla de casos contra las 9 condiciones de la línea 402, ninguna relajada",
+    "El default de alcanceSuministros y anexoPropuestaIdentificacion se aplica también con cadena vacía, no solo con null",
+    "DoD 15: ninguna clase nueva apunta a un token --color-* inexistente; se corrige border-error-border bg-error-bg por tokens reales",
+    "npx tsc --noEmit limpio",
+    "npx eslint . sin errores nuevos",
+    "npx tsx lib/data/contrato-validacion.test.ts en verde"
+  ],
+  "hallazgos_colaterales": [
+    "VIOLACIÓN DoD #15 preexistente y en el área exacta que toca esta tarea: el mensaje de error del pie (ContratoModal.tsx:730) usa border-error-border bg-error-bg, y ninguno de los dos tokens existe en app/globals.css (solo error-text, error-fill, error-stroke). Tailwind descarta la clase en silencio, así que ese mensaje se ve como texto rojo suelto sin recuadro ni fondo. Se corrige a border-error-stroke bg-error-fill.",
+    "DISCREPANCIA DE LEDGER: los comentarios del código en ContratoModal.tsx atribuyen el trabajo de alcance/anexo/plazo a 't-167', pero arnes/tareas/t-167.json es la migración de los 278 SKUs. El trabajo de alcance/anexo NO está registrado en el ledger y la migración drizzle/v3/0022 sigue untracked. AGENTS.md prohíbe escribir código sin plan aprobado para una tarea registrada. Pendiente de registro/decisión del Supervisor; esta tarea no lo resuelve.",
+    "HALLAZGO NUEVO, NO CORREGIDO A PROPOSITO: el plazo se parsea con parseInt, que TRUNCA. Escribir '8.5' pasa la validación (parseInt devuelve 8, que es entero) y el contrato queda con 8 semanas sin avisar al usuario. El comentario del código dice 'tiene que ser entero', pero parseInt hace entero cualquier decimal antes de que isInteger lo vea. NO se corrigió porque endurecer la validación puede bloquear un contrato que hoy sí se genera: es un cambio de comportamiento, no de retroalimentación. Fijado en contrato-validacion.test.ts §3 para que no se 'arregle' por accidente. Decisión pendiente del Supervisor."
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint (3 archivos tocados)": "0 errors, 0 warnings",
+    "contrato-validacion.test.ts": "en verde",
+    "next build (DATA_IMPL=mock)": "exit 0, Compiled successfully in 4.6s, solo warnings preexistentes",
+    "mock-store.test.ts": "FALLA en f3-portafolio (store.portafolio.publicar() devuelve undefined, linea 972). Fallo PREEXISTENTE documentado en estado.md:22. No caused por esta tarea: el archivo no importa ninguno de los modulos tocados. No se re-verifico con git stash para no arriesgar el trabajo t-167 sin commitear del Supervisor."
+  },
+  "executor": "Orquestador (opencode)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Requisito declarado textualmente por Javier 2026-09-29: 'que haya una retroalimentación en la UI, un botón no se puede bloquear sin retroalimentación exacta al usuario'. Sin migración de schema. El push a dev (que ES producción) queda a decisión del Supervisor.",
+    "fecha": "2026-09-29"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-29T00:00:00Z",
+  "cerrada_en": null
+}
