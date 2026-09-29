@@ -713,10 +713,13 @@ export async function actualizarParametroAction(clave: string, datos: Partial<Pa
 function columnasContrato(data: {
   valorTotal: string
   fechaContrato?: string | null
+  plazoSemanas?: number | null
   plazoEjecucionTexto?: string
   holguraDias?: number
   garantiaAnios?: number
   objetoItems?: string | null
+  alcanceSuministros?: string | null
+  anexoPropuestaIdentificacion?: string | null
   especificacionesEstructura?: string | null
   especificacionesHerrajes?: string | null
   especificacionesMesones?: string | null
@@ -728,10 +731,13 @@ function columnasContrato(data: {
   return {
     valorTotal: data.valorTotal,
     fechaContrato: data.fechaContrato ?? null,
+    plazoSemanas: data.plazoSemanas ?? null,
     plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
     holguraDias: data.holguraDias ?? 8,
     garantiaAnios: data.garantiaAnios ?? 2,
     objetoItems: data.objetoItems ?? null,
+    alcanceSuministros: data.alcanceSuministros ?? null,
+    anexoPropuestaIdentificacion: data.anexoPropuestaIdentificacion ?? null,
     especificacionesEstructura: data.especificacionesEstructura ?? null,
     especificacionesHerrajes: data.especificacionesHerrajes ?? null,
     especificacionesMesones: data.especificacionesMesones ?? null,

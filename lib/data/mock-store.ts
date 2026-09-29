@@ -801,8 +801,14 @@ export function createMockStore(): DataStore {
            valorTotal: data.valorTotal,
            estado: 'borrador',
            garantiaAnios: data.garantiaAnios ?? 2,
-           plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
+           // t-167: el plazo numérico es la fuente; el texto es su derivado. El default
+           // '4 a 5' historical queda solo como último recurso cuando no llega ninguno de los
+           // dos, y se marca como tal para que no se lea como un plazo de 4 semanas.
+           plazoSemanas: data.plazoSemanas ?? 7,
+           plazoEjecucionTexto: data.plazoEjecucionTexto ?? `${data.plazoSemanas ?? 7} semanas`,
            holguraDias: data.holguraDias ?? 8,
+           alcanceSuministros: data.alcanceSuministros ?? null,
+           anexoPropuestaIdentificacion: data.anexoPropuestaIdentificacion ?? null,
            objetoItems: data.objetoItems ?? null,
            especificacionesEstructura: data.especificacionesEstructura ?? null,
            especificacionesHerrajes: data.especificacionesHerrajes ?? null,
