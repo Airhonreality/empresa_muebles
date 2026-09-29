@@ -26,6 +26,8 @@ import {
   actualizarGrupoItemAction,
   eliminarGrupoItemAction,
   actualizarClienteAction,
+  crearClienteAction,
+  actualizarProyectoAction,
   crearContratoAction,
   actualizarContratoAction,
 } from '@/lib/data/actions/core'
@@ -338,6 +340,34 @@ export function useActualizarClienteMutation(proyectoId: string) {
     ({ id, partial }) => actualizarClienteAction(id, partial),
     (snap, { id, partial }) => actualizarCliente(snap, id, partial),
     (snap, r) => (r ? upsertCliente(snap, r) : snap),
+  )
+}
+
+/** t-169: alta de cliente desde el modal de contrato. Sin parche optimista: el id lo genera el
+ *  servidor y no se puede adivinar, así que hasta la respuesta no hay nada que dibujar. Es el
+ *  hermano faltante de `useActualizarClienteMutation` — sin él, un proyecto sin cliente
+ *  vinculado no tenía forma de salir del modal. */
+export function useCrearClienteMutation(proyectoId: string) {
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
+    { nombre: string; documento: string | null; telefono: string | null; email: string | null; domicilio: string | null },
+    Cliente
+  >(
+    cotizadorKeys.detalle(proyectoId),
+    (data) => crearClienteAction(data),
+    (snap) => snap,
+    (snap, r) => upsertCliente(snap, r),
+  )
+}
+
+/** t-169: vincula el cliente elegido/creado al proyecto. Es el paso que deja de bloquear la
+ *  validación: sin `proyecto.clienteId` el contrato no se puede emitir. */
+export function useVincularClienteProyectoMutation(proyectoId: string) {
+  return useMutationOptGenerico<CotizadorSnapshot, { id: string; clienteId: string }, Proyecto | null>(
+    cotizadorKeys.detalle(proyectoId),
+    ({ id, clienteId }) => actualizarProyectoAction(id, { clienteId }),
+    (snap, { id, clienteId }) => actualizarProyecto(snap, id, { clienteId }),
+    (snap, r) => (r ? upsertProyecto(snap, r) : snap),
   )
 }
 

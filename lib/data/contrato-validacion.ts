@@ -55,15 +55,18 @@ export type EntradaValidacionContrato = {
 export function requisitosPendientes(e: EntradaValidacionContrato): RequisitoPendiente[] {
   const pendientes: RequisitoPendiente[] = []
 
-  if (!e.tieneCliente) {
+  // t-169: el requisito es "que haya un contratante identificado", NO "que el proyecto ya
+  // traiga cliente". Antes era `if (!e.tieneCliente)`, y como el modal solo sabía EDITAR un
+  // cliente ya vinculado, un proyecto sin `clienteId` quedaba bloqueado para siempre: los
+  // campos eran inertes, el botón muerto y el mensaje pedía elegir un cliente que no había
+  // forma de elegir ahí. El nombre escrito a mano se crea y se vincula al guardar, así que
+  // basta con que no esté vacío. Se conserva `tieneCliente` solo para decir qué hacer.
+  if (!e.nombreCliente.trim()) {
     pendientes.push({
       campo: 'cliente',
-      mensaje: 'El proyecto no tiene cliente vinculado. Elegí el cliente antes de generar el contrato.',
-    })
-  } else if (!e.nombreCliente.trim()) {
-    pendientes.push({
-      campo: 'cliente',
-      mensaje: 'El nombre del contratante está vacío. Escribilo en los datos del cliente.',
+      mensaje: e.tieneCliente
+        ? 'El nombre del contratante está vacío. Escribilo en los datos del cliente.'
+        : 'Elegí un cliente de la lista o escribí el nombre completo para crearlo y vincularlo al proyecto.',
     })
   }
 

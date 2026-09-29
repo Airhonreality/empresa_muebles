@@ -27,6 +27,8 @@ import {
   useActualizarGrupoItemMutation,
   useEliminarGrupoItemMutation,
   useActualizarClienteMutation,
+  useCrearClienteMutation,
+  useVincularClienteProyectoMutation,
   useCrearContratoMutation,
   useActualizarContratoMutation,
 } from './useCotizadorQueries'
@@ -46,6 +48,9 @@ export interface CotizadorCompatStore {
       id: string,
       partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>,
     ): Promise<Proyecto | null>
+    /** t-169: vincula un cliente al proyecto. Sin esto el modal de contrato no podía resolver
+     *  un proyecto que llegaba sin `clienteId`. */
+    vincularCliente(id: string, clienteId: string): Promise<Proyecto | null>
   }
   clientes: {
     obtenerPorId(id: string): Cliente | undefined
@@ -54,6 +59,9 @@ export interface CotizadorCompatStore {
      *  pantalla lee por el snapshot — el cambio tardaba hasta ≤4s en verse. Ahora escribe por
      *  el mismo layer que lee. */
     actualizar(id: string, partial: Partial<Pick<Cliente, 'nombre' | 'documento' | 'telefono' | 'email' | 'domicilio'>>): Promise<Cliente | null>
+    /** t-169: alta de cliente. Antes el modal solo sabía editar uno que ya venía vinculado, así
+     *  que un proyecto sin cliente no tenía salida desde el cotizador. */
+    crear(values: { nombre: string; documento: string | null; telefono: string | null; email: string | null; domicilio: string | null }): Promise<Cliente>
   }
   espacios: {
     porProyecto(proyectoId: string): EspacioVariante[]
@@ -123,6 +131,8 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
   const actualizarGrupoItem = useActualizarGrupoItemMutation(proyectoId)
   const eliminarGrupoItem = useEliminarGrupoItemMutation(proyectoId)
   const actualizarCliente = useActualizarClienteMutation(proyectoId)
+  const crearCliente = useCrearClienteMutation(proyectoId)
+  const vincularClienteProyecto = useVincularClienteProyectoMutation(proyectoId)
   const crearContrato = useCrearContratoMutation(proyectoId)
   const actualizarContrato = useActualizarContratoMutation(proyectoId)
 
@@ -142,11 +152,13 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
           obtenerPorId: (id) => (d.proyecto && d.proyecto.id === id ? d.proyecto : undefined),
           actualizarParametrosFinancieros: (id, partial) =>
             actualizarParametrosFinancieros.mutateAsync({ id, partial }),
+          vincularCliente: (id, clienteId) => vincularClienteProyecto.mutateAsync({ id, clienteId }),
         },
         clientes: {
           obtenerPorId: (id) => d.clientes.find((c) => c.id === id),
           listar: () => d.clientes,
           actualizar: (id, partial) => actualizarCliente.mutateAsync({ id, partial }),
+          crear: (values) => crearCliente.mutateAsync(values),
         },
         espacios: {
           porProyecto: (pid) => d.espacios.filter((e) => e.proyectoId === pid),
@@ -192,7 +204,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
     actualizarJornadas, duplicarEspacio, actualizarParametrosFinancieros,
     crearArtefacto, actualizarArtefacto,
     crearGrupoItem, actualizarGrupoItem, eliminarGrupoItem,
-    actualizarCliente, crearContrato, actualizarContrato,
+    actualizarCliente, crearCliente, vincularClienteProyecto, crearContrato, actualizarContrato,
   ])
 
   return <CotizadorCompatContext.Provider value={value}>{children}</CotizadorCompatContext.Provider>

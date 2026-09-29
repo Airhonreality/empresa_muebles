@@ -748,6 +748,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             itemsPorEspacio={new Map(espaciosActivos.map((esp) => [esp.id, store.items.porVariante(esp.id).filter((it) => !it.esReferencial)]))}
             catalogo={catalogo}
             valorTotalCotizacion={total}
+            clientes={store.clientes.listar()}
             contratoExistente={contrato}
             hitosExistentes={hitosList}
             onClose={() => setMostrarContratoModal(false)}

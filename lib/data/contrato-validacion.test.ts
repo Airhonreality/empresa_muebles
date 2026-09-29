@@ -6,9 +6,10 @@
  *
  * La red de seguridad acá no es "el mensaje está bien escrito" sino dos invariantes:
  *
- * 1. NINGUNA condición se relaja. La tabla `CASOS` reproduce una por una las 9 condiciones de
+ * 1. NINGUNA condición se relaja. La tabla `CASOS` reproduce una por una las condiciones de
  *    `esValido` en `app/erp/cotizador/ContratoModal.tsx`. Si alguien afloja una para que el
- *    botón pase, esta tabla falla.
+ *    botón pase, esta tabla falla. (t-169: son 8, no 9 — `tieneCliente` dejó de ser condición
+ *    propia; el requisito es que el nombre del contratante no esté vacío.)
  * 2. Se devuelven TODOS los requisitos incumplidos, no solo el primero. El motivo de negocio
  *    es que el usuario no tenga que corregir de a uno en ida y vuelta.
  */
@@ -52,10 +53,14 @@ function pendientes(over: Partial<EntradaValidacionContrato> = {}) {
 
 // ── 2. Cada condición por separado, contra la línea 402 del modal ─────────────────────
 
-// Las 9 condiciones de esValido, una por caso. Cada una tiene que producir AL MENOS un
+// Las condiciones de esValido, una por caso. Cada una tiene que producir AL MENOS un
 // requisito pendiente, y el campo que nombra es el que la condición controla.
+// t-169: `tieneCliente` ya NO es una condición por sí sola — el requisito es que el nombre del
+// contratante no esté vacío (un nombre escrito a mano se crea y se vincula al guardar). El caso
+// "sin cliente vinculado" pasó a ser "sin cliente vinculado Y sin nombre", que es el deadlock
+// real que había.
 const CASOS: { nombre: string; over: Partial<EntradaValidacionContrato>; campo: CampoContrato }[] = [
-  { nombre: 'sin cliente vinculado', over: { tieneCliente: false }, campo: 'cliente' },
+  { nombre: 'sin cliente vinculado ni nombre escrito', over: { tieneCliente: false, nombreCliente: '   ' }, campo: 'cliente' },
   { nombre: 'nombre del cliente vacío', over: { nombreCliente: '   ' }, campo: 'cliente' },
   { nombre: 'valor total 0', over: { valorTotal: '0' }, campo: 'valorTotal' },
   { nombre: 'valor total NaN', over: { valorTotal: 'abc' }, campo: 'valorTotal' },
@@ -124,8 +129,10 @@ for (const c of CASOS) {
 // ── 4. Devuelve TODOS los pendientes, no solo el primero ───────────────────────────────
 
 {
-  // Las 4 condiciones del bug reportado: cliente vacío, sin alcance, sin anexo y sin plazo.
-  const e = entrada({ tieneCliente: false, alcanceSuministros: '', anexoPropuestaIdentificacion: '', plazoSemanas: '' })
+  // Las 4 condiciones del bug reportado: cliente sin nombre, sin alcance, sin anexo y sin plazo.
+  // t-169: el caso del cliente se dispara con el NOMBRE vacío, que es lo que hoy exige la regla
+  // (un cliente no vinculado pero con nombre escrito ya es válido: se crea al guardar).
+  const e = entrada({ nombreCliente: '   ', alcanceSuministros: '', anexoPropuestaIdentificacion: '', plazoSemanas: '' })
   const p = requisitosPendientes(e)
   assert.equal(p.length, 4, `deben aparecer los 4 requisitos incumplidos, no solo el primero: ${JSON.stringify(p)}`)
   assert.deepEqual(
@@ -137,8 +144,11 @@ for (const c of CASOS) {
 
 {
   // Todo vacío a la vez: 6 campos marcados, cada uno con mensaje.
+  // t-169: `nombreCliente: '   '` (y no `tieneCliente: false`) dispara el requisito de cliente,
+  // porque la regla actual exige el NOMBRE, no el vínculo previo del proyecto.
   const e = entrada({
     tieneCliente: false,
+    nombreCliente: '   ',
     valorTotal: '',
     cantidadHitos: 0,
     sumaHitos: 0,
@@ -168,6 +178,34 @@ for (const c of CASOS) {
   const deHitos = p.filter((r) => r.campo === 'hitos')
   assert.equal(deHitos.length, 1, `con 0 hitos hay un solo problema, no dos: ${JSON.stringify(deHitos)}`)
   assert.match(deHitos[0].mensaje, /hay 0/, 'el mensaje dice cuántos hitos hay')
+}
+
+// ── 7. t-169: un proyecto SIN cliente vinculado no es un callejón sin salida ──────────
+//
+// El bug reportado: el modal exigía `tieneCliente` (= el proyecto ya traía cliente) y solo
+// sabía EDITAR un cliente existente. Con un proyecto sin `clienteId` los campos del
+// contratante eran inertes y el botón quedaba deshabilitado para siempre: era imposible
+// generar el contrato desde esa pantalla. La validación tiene que admitir el nombre escrito
+// a mano, porque ese cliente se crea y se vincula al guardar.
+
+{
+  // El nombre escrito a mano DESBLOQUEA: es lo que se crea al guardar.
+  assert.equal(
+    esContratoValido(entrada({ tieneCliente: false })),
+    true,
+    'un nombre de cliente escrito a mano debe habilitar el guardado (se crea al guardar)',
+  )
+
+  // Pero sin cliente vinculado Y sin nombre, el requisito sigue existiendo.
+  const p = pendientes({ tieneCliente: false, nombreCliente: '   ' })
+  assert.ok(
+    p.some((r) => r.campo === 'cliente'),
+    `sin cliente vinculado ni nombre debe reclamar el cliente: ${JSON.stringify(p)}`,
+  )
+
+  // El mensaje tiene que decir qué hacer, no solo qué falta.
+  const msg = p.find((r) => r.campo === 'cliente')!.mensaje
+  assert.match(msg, /crear|vincular/i, `el mensaje dice la acción posible: ${msg}`)
 }
 
 console.log('contrato-validacion.test.ts — todo en verde')

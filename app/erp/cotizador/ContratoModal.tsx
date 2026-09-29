@@ -28,6 +28,11 @@ import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
 export interface ContratoModalProps {
   proyecto: Proyecto;
   cliente: Cliente | undefined;
+  /** t-169: catálogo de clientes para poder vincular uno desde acá. Antes este modal no tenía
+   *  forma de asignar cliente: solo sabía editar uno que ya venía vinculado, así que un
+   *  proyecto sin cliente quedaba sin salida y la validación bloqueaba el guardado para
+   *  siempre ("no tiene cliente vinculado / elegí el cliente"), sin ninguna acción posible. */
+  clientes: Cliente[];
   espacios: EspacioVariante[];
   itemsPorEspacio: Map<string, ItemVariante[]>;
   catalogo: ProductoCatalogo[];
@@ -101,7 +106,7 @@ type FormContrato = {
   especificaciones: Record<SeccionEspecificacion, string>;
 };
 
-export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, catalogo, valorTotalCotizacion, contratoExistente, hitosExistentes, onClose, onSaved }: ContratoModalProps) {
+export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorEspacio, catalogo, valorTotalCotizacion, contratoExistente, hitosExistentes, onClose, onSaved }: ContratoModalProps) {
   const router = useRouter();
   // t-166: escribe por el MISMO layer que lee la pantalla (snapshot de TanStack). Antes usaba
   // `useDataStore()` —el store global drizzle— y por eso la edición del cliente tardaba hasta
@@ -145,6 +150,31 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
   const setClienteCampo = (campo: keyof typeof clienteForm, valor: string) => {
     setClienteForm((prev) => ({ ...prev, [campo]: valor }));
   };
+
+  // t-169: Elección de cliente. Arranca con el que ya venía vinculado al proyecto; al cambiarlo
+  // se recarga el formulario del contratante con sus datos. Si el proyecto no tenía ninguno, el
+  // selector arranca en "Sin cliente" y el nombre escrito a mano se crea al guardar.
+  const [clienteIdSeleccionado, setClienteIdSeleccionado] = useState(cliente?.id ?? "");
+  const clienteSeleccionado = useMemo(
+    () =>
+      clientes.find((c) => c.id === clienteIdSeleccionado) ??
+      (cliente && clienteIdSeleccionado === cliente.id ? cliente : undefined),
+    [clientes, clienteIdSeleccionado, cliente],
+  );
+  const seleccionarCliente = useCallback(
+    (id: string) => {
+      setClienteIdSeleccionado(id);
+      const c = clientes.find((x) => x.id === id);
+      setClienteForm({
+        nombre: c?.nombre ?? "",
+        documento: c?.documento ?? "",
+        telefono: c?.telefono ?? "",
+        email: c?.email ?? "",
+        domicilio: c?.domicilio ?? "",
+      });
+    },
+    [clientes],
+  );
 
   // t-166: si el contrato ya existe, TODOS los campos se siembran desde lo persistido. Es el
   // arreglo del bug reportado: antes cada `useState` nacía en sus defaults y reabrir el modal
@@ -331,16 +361,27 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
     async (destino: 'cerrar' | 'contrato' | 'propuesta', pestana: Window | null) => {
       setErrorGuardado(null);
       try {
-        if (cliente) {
-          const nombre = clienteForm.nombre.trim();
-          if (nombre) {
-            await store.clientes.actualizar(cliente.id, {
-              nombre,
-              documento: clienteForm.documento.trim() || null,
-              telefono: clienteForm.telefono.trim() || null,
-              email: clienteForm.email.trim() || null,
-              domicilio: clienteForm.domicilio.trim() || null,
+        // t-169: antes esto solo actualizaba un cliente que YA venía vinculado
+        // (`if (cliente)`). Con un proyecto sin cliente la rama no se ejecutaba nunca: los
+        // campos del contratante eran inertes y, como la validación exigía `tieneCliente`, el
+        // botón quedaba deshabilitado para siempre. Ahora, sin cliente previo, se crea uno con
+        // lo escrito y se vincula al proyecto, que es lo que hacía falta para poder cerrar.
+        const nombreCliente = clienteForm.nombre.trim();
+        if (nombreCliente) {
+          const datosCliente = {
+            documento: clienteForm.documento.trim() || null,
+            telefono: clienteForm.telefono.trim() || null,
+            email: clienteForm.email.trim() || null,
+            domicilio: clienteForm.domicilio.trim() || null,
+          };
+          if (clienteSeleccionado) {
+            await store.clientes.actualizar(clienteSeleccionado.id, {
+              nombre: nombreCliente,
+              ...datosCliente,
             });
+          } else {
+            const nuevo = await store.clientes.crear({ nombre: nombreCliente, ...datosCliente });
+            await store.proyectos.vincularCliente(proyecto.id, nuevo.id);
           }
         }
 
@@ -377,7 +418,7 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
         );
       }
     },
-    [cliente, clienteForm, store, contratoExistente, construirDatos, form.codigoContrato, proyecto.id, onSaved, onClose, router],
+    [clienteSeleccionado, clienteForm, store, contratoExistente, construirDatos, form.codigoContrato, proyecto.id, onSaved, onClose, router],
   );
 
   const handleGuardarBorrador = useCallback(
@@ -414,7 +455,7 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
   const pendientes = useMemo(
     () =>
       requisitosPendientes({
-        tieneCliente: Boolean(cliente),
+        tieneCliente: Boolean(clienteSeleccionado),
         nombreCliente: clienteForm.nombre,
         valorTotal: form.valorTotal,
         cantidadHitos: hitos.length,
@@ -425,7 +466,7 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
         anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion,
       }),
     [
-      cliente,
+      clienteSeleccionado,
       clienteForm.nombre,
       form.valorTotal,
       hitos,
@@ -460,13 +501,37 @@ export function ContratoModal({ proyecto, cliente, espacios, itemsPorEspacio, ca
           {/* Sección 1: Contratante */}
           <section className="border-b border-border-subtle pb-4">
             <h3 className="text-sm font-semibold text-text-heading mb-3">1. Datos del Contratante</h3>
+            {/* t-169: selector de cliente. Sin esto, un proyecto sin cliente vinculado no tenía
+                ninguna salida desde este modal. */}
+            <div className="flex flex-col gap-2 mb-4">
+              <label htmlFor="contrato-cliente" className="text-sm font-medium text-text-muted">
+                Cliente vinculado
+              </label>
+              <select
+                id="contrato-cliente"
+                value={clienteIdSeleccionado}
+                onChange={(e) => seleccionarCliente(e.target.value)}
+                className="w-full min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-base text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
+              >
+                <option value="">Sin cliente — se creará con los datos de abajo</option>
+                {clientes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+              {errorDe("cliente") && (
+                <p role="alert" className="text-sm text-error-stroke">
+                  {errorDe("cliente")}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 label="Nombre *"
                 value={clienteForm.nombre}
                 onChange={(e) => setClienteCampo('nombre', e.target.value)}
                 required
-                error={errorDe('cliente')}
               />
               <InputField label="Documento" value={clienteForm.documento} onChange={(e) => setClienteCampo('documento', e.target.value)} />
               <InputField label="Teléfono" value={clienteForm.telefono} onChange={(e) => setClienteCampo('telefono', e.target.value)} />
