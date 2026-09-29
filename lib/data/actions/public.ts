@@ -217,22 +217,6 @@ export interface CatalogoItemPublico {
   camposPersonalizados?: Array<{ clave: string; valor: string }>
 }
 
-/**
- * t-167: datos del contratante que-travela en la propuesta.
- *
- * Deliberadamenteprojection mínima — NO es `Cliente` completo. La propuesta vive en una URL
- * sin sesión (solo UUID no adivinable), así que cada campo que se suma es un campo que
- * queda detrás de un bearer token. Se incluye lo que el documento necesita para ser válido
- * (a nombre de quién está y a dónde se entrega) y nada más.
- */
-export interface ClientePropuestaPublica {
-  nombre: string
-  documento: string | null
-  telefono: string | null
-  email: string | null
-  domicilio: string | null
-}
-
 export interface PropuestaPublicaData {
   proyecto: Proyecto
   espacios: EspacioVariante[]
@@ -244,53 +228,6 @@ export interface PropuestaPublicaData {
   /** t-157 (2026-09-10): grupos/subgrupos de todos los espacios del proyecto — permite
    * renderizar los ítems de "Qué incluye" agrupados por su grupoItemId con nombre legible. */
   gruposItem: GrupoItem[]
-  /**
-   * t-167: el contratante. Va FUERA del snapshot congelado a propósito, y se hidrata en cada
-   * request desde `clientes`. Razón: `snapshotJson` es inmutable por diseño — si el cliente se
-   * cambia el domicilio o se le corrige un nombre, la versión ya publicada seguiría mostrando
-   * el dato viejo para siempre, y un documento contractual con el domicilio equivocado es peor
-   * que un documento sin domicilio. Al no congelarlo, las versiones publicadas en el pasado
-   * siguen funcionando: este campo simplemente llega `undefined` y se llena en el read.
-   */
-  cliente?: ClientePropuestaPublica | null
-}
-
-/**
- * t-167: hidrata `cliente` en un snapshot de propuesta ya construido. Se llama en el Server
- * Component, no dentro del snapshot, para que cubra los tres caminos (publicada, preview y
- * versión puntual) con una sola llamada.
- */
-export async function hidratarClientePropuesta(
-  data: PropuestaPublicaData | null,
-): Promise<PropuestaPublicaData | null> {
-  if (!data) return null
-  if (data.cliente) return data
-  const clienteId = data.proyecto.clienteId
-  if (!clienteId) return { ...data, cliente: null }
-
-  if (DATA_IMPL() === 'drizzle') {
-    const [fila] = await db
-      .select({
-        nombre: s.clientes.nombre,
-        documento: s.clientes.documento,
-        telefono: s.clientes.telefono,
-        email: s.clientes.email,
-        domicilio: s.clientes.domicilio,
-      })
-      .from(s.clientes)
-      .where(eq(s.clientes.id, clienteId))
-      .limit(1)
-    return { ...data, cliente: fila ? { ...fila, documento: fila.documento ?? null, telefono: fila.telefono ?? null, email: fila.email ?? null, domicilio: fila.domicilio ?? null } : null }
-  }
-
-  const { getDataStore } = await import('@/lib/data/store')
-  const c = getDataStore().clientes.obtenerPorId(clienteId)
-  return {
-    ...data,
-    cliente: c
-      ? { nombre: c.nombre, documento: c.documento ?? null, telefono: c.telefono ?? null, email: c.email ?? null, domicilio: c.domicilio ?? null }
-      : null,
-  }
 }
 
 

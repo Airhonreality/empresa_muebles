@@ -289,8 +289,6 @@ function renderItemsAgrupados(
 
 export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublicaData; banner?: ReactNode }) {
   const { proyecto, espacios: espaciosBase, items: todosLosItems, catalogoPorId, contrato, hitos: hitosList, tarifas } = data
-  /** t-167: hidratado en vivo por el Server Component; puede no venir en snapshots antiguos. */
-  const cliente = data.cliente ?? null
   const { tarifaDev, tarifaAssembly, tarifaInstall } = tarifas
   // Fallback []: snapshots publicados ANTES de t-157 (2026-09-10) no tienen esta clave —
   // sin esto, un link de propuesta ya compartido con un cliente real rompería al abrirse.
@@ -484,42 +482,6 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
             Revisa el alcance por ambiente, las alternativas seleccionadas y las referencias visuales.
             Los detalles técnicos se presentan solo cuando ayudan a tomar una decisión.
           </p>
-          {/* t-167: la propuesta es un documento que después se anexa al contrato, y anexa sin
-              nombre no es anexo. El bloque se imprime con la propuesta. */}
-          {cliente && (
-            <div className="mt-8 rounded-lg border border-border-subtle bg-bg-raised p-5 print:border-neutral-300">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-text-muted">
-                Preparada para
-              </p>
-              <p className="mt-2 font-display text-xl text-text-heading">{cliente.nombre}</p>
-              <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
-                {cliente.documento && (
-                  <div className="flex gap-2">
-                    <dt className="text-text-muted">Identificación:</dt>
-                    <dd className="text-text-primary">{cliente.documento}</dd>
-                  </div>
-                )}
-                {cliente.telefono && (
-                  <div className="flex gap-2">
-                    <dt className="text-text-muted">Teléfono:</dt>
-                    <dd className="text-text-primary">{cliente.telefono}</dd>
-                  </div>
-                )}
-                {cliente.email && (
-                  <div className="flex gap-2">
-                    <dt className="text-text-muted">Correo:</dt>
-                    <dd className="text-text-primary break-all">{cliente.email}</dd>
-                  </div>
-                )}
-                {cliente.domicilio && (
-                  <div className="flex gap-2">
-                    <dt className="text-text-muted">Domicilio:</dt>
-                    <dd className="text-text-primary">{cliente.domicilio}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          )}
           {espaciosActivos.length > 0 && (
             <button
               type="button"

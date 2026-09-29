@@ -233,10 +233,8 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
   function contrato(id: string, over: Partial<Contrato> = {}): Contrato {
     return {
       id, proyectoId: 'p1', codigoContrato: 'CTR-1', fechaContrato: '2026-09-29',
-      valorTotal: '1000', estado: 'borrador', garantiaAnios: 2,
-      plazoSemanas: 7, plazoEjecucionTexto: '7 semanas hábiles',
-      holguraDias: 8, objetoItems: null, alcanceSuministros: null,
-      anexoPropuestaIdentificacion: null, especificacionesEstructura: null,
+      valorTotal: '1000', estado: 'borrador', garantiaAnios: 2, plazoEjecucionTexto: '4 a 5',
+      holguraDias: 8, objetoItems: null, especificacionesEstructura: null,
       especificacionesHerrajes: null, especificacionesMesones: null, especificacionesDesmonte: null,
       contratanteDomicilio: null, emailAsunto: null, emailCuerpo: null,
       createdAt: '2026-09-01', updatedAt: '2026-09-01', ...over,

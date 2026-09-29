@@ -203,13 +203,10 @@ export interface DatosContratoNuevo {
   codigoContrato: string
   valorTotal: string
   fechaContrato?: string | null
-  plazoSemanas?: number | null
   plazoEjecucionTexto?: string
   holguraDias?: number
   garantiaAnios?: number
   objetoItems?: string | null
-  alcanceSuministros?: string | null
-  anexoPropuestaIdentificacion?: string | null
   especificacionesEstructura?: string | null
   especificacionesHerrajes?: string | null
   especificacionesMesones?: string | null
@@ -226,13 +223,10 @@ export interface DatosContratoNuevo {
 export interface DatosContratoEdicion {
   valorTotal: string
   fechaContrato?: string | null
-  plazoSemanas?: number | null
   plazoEjecucionTexto?: string
   holguraDias?: number
   garantiaAnios?: number
   objetoItems?: string | null
-  alcanceSuministros?: string | null
-  anexoPropuestaIdentificacion?: string | null
   especificacionesEstructura?: string | null
   especificacionesHerrajes?: string | null
   especificacionesMesones?: string | null
@@ -253,12 +247,9 @@ export interface Contrato {
   valorTotal: string
   estado: string
   garantiaAnios: number
-  plazoSemanas: number | null
   plazoEjecucionTexto: string
   holguraDias: number
   objetoItems: string | null
-  alcanceSuministros: string | null
-  anexoPropuestaIdentificacion: string | null
   especificacionesEstructura: string | null
   especificacionesHerrajes: string | null
   especificacionesMesones: string | null

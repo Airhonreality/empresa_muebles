@@ -173,25 +173,10 @@ export const contratos = pgTable("contratos", {
 	codigoContrato: text("codigo_contrato").notNull(),
 	fechaContrato: text("fecha_contrato"),
 	contratanteDomicilio: text("contratante_domicilio"),
-	// t-167: `plazoEjecucionTexto` pasa a ser texto DERIVADO ("8 semanas hábiles") y deja de
-	// ser fuente. `plazoSemanas` es el único número del que salen las fechas contractuales
-	// (ventana de entrega / Fecha Máxima), porque un texto libre no se puede usar para
-	// matemática de calendario sin parsearlo — y parsear "4 a 5" es exactamente el DEFAULT
-	// peligroso que tenía esta columna.
-	plazoSemanas: integer("plazo_semanas"),
 	plazoEjecucionTexto: text("plazo_ejecucion_texto").default('4 a 5'),
 	holguraDias: integer("holgura_dias").default(8),
 	garantiaAnios: integer("garantia_anios").default(2),
 	objetoItems: text("objeto_items"),
-	// t-167: qué elementos suministra Veta Dorada y cuáles trae el Contratante. Es la
-	// respuesta a un requerimiento real de cliente sobre lavaplatos / piedra sinterizada /
-	// iluminación / herrajes: sin esto el contrato decía UNA cosa (todo lo del cliente) y
-	// la cotización otra (lavaplatos premium incluido).
-	alcanceSuministros: text("alcance_suministros"),
-	// t-167: identificación del Anexo 1 (Propuesta de Diseño y Presupuesto impreso, que se
-	// adjunta al contrato y se manda en el mismo correo). NO es una URL: una URL cambia de
-	// versión entre la firma y la entrega; un PDF ya impreso es evidencia estable.
-	anexoPropuestaIdentificacion: text("anexo_propuesta_identificacion"),
 	especificacionesEstructura: text("especificaciones_estructura"),
 	especificacionesHerrajes: text("especificaciones_herrajes"),
 	especificacionesMesones: text("especificaciones_mesones"),

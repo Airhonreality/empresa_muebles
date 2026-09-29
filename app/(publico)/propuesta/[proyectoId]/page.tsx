@@ -3,7 +3,6 @@ import {
   obtenerPropuestaPublicaAction,
   previsualizarPropuestaPublicaAction,
   obtenerVersionPropuestaPorNumeroAction,
-  hidratarClientePropuesta,
   type PropuestaPublicaData,
 } from '@/lib/data/actions/public'
 import { PropuestaPublicaClient } from './PropuestaPublicaClient'
@@ -51,11 +50,6 @@ export default async function PropuestaPublicaPage({ params, searchParams }: Pag
   } else {
     data = await obtenerPropuestaPublicaAction(proyectoId)
   }
-
-  // t-167: el contratante se hidrata acá, después de elegir la versión, para que cubra los tres
-  // caminos (publicada / preview / versión puntual) con una sola llamada. Ver la nota de
-  // `hidratarClientePropuesta`: no se congela en el snapshot a propósito.
-  data = await hidratarClientePropuesta(data)
 
   if (!data) {
     return (
