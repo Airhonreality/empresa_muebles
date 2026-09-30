@@ -9,7 +9,6 @@ import {
   Briefcase,
   Contact,
   Calculator,
-  Flag,
   Wrench,
   ShoppingCart,
   Hammer,
@@ -64,7 +63,6 @@ const ERP_NAV_SECTIONS: NavSection[] = [
     title: 'Producción',
     items: [
       { href: '/erp/cotizador', label: 'Cotizador', icon: <Calculator className="h-4 w-4" /> },
-      { href: '/erp/gates', label: 'Gates y cronograma', icon: <Flag className="h-4 w-4" /> },
       { href: '/erp/taller', label: 'Taller', icon: <Wrench className="h-4 w-4" /> },
       { href: '/erp/compras', label: 'Compras', icon: <ShoppingCart className="h-4 w-4" /> },
       { href: '/erp/herramientas', label: 'Herramientas', icon: <Hammer className="h-4 w-4" /> },

@@ -38,7 +38,7 @@ No auditada en la purga del 2026-09-30 (el pedido explícito fue "olas 6 y 7"). 
 
 ## Foco vigente (2026-09-30)
 
-El trabajo activo es el **ciclo núcleo**: cotizador (definidor de proyecto) → ficha de proyecto → contrato → seguimiento, más clientes y catálogo como soporte directo de ese ciclo, y finanzas en versión simplificada. Todo lo demás (taller, garantía, compras, herramientas, gates, equipo, comercial, pedidos-web, catálogos de espacios arquitectónicos) queda fuera de foco — no se borra sin auditoría de dependencias, pero no se planifica trabajo nuevo ahí hasta que el núcleo esté sólido y probado con proyectos reales. Detalle y plan en `arnes/estado.md`.
+El trabajo activo es el **ciclo núcleo**: cotizador (definidor de proyecto) → ficha de proyecto → contrato → seguimiento, más clientes y catálogo como soporte directo de ese ciclo, finanzas en versión simplificada, y una primitiva UI agnóstica de selector/creador de entidad reusable en modales. Auditoría de dependencias completa (2026-09-30, ver `arnes/decisiones_cerradas.md`): de 10 módulos candidatos a recorte, solo `gates` se eliminó (cero entrelazamiento). Los otros 9 (`comercial`, `taller`, `compras`, `equipo`, `herramientas`, `pedidos-web`, `portafolio`, `catalogos/espacios-arquitectonicos`, `garantia`) **quedan congelados, no borrados** — son funcionales, algunos (`portafolio`, `garantia`) son backend real del sitio público. No se planifica trabajo nuevo ahí sin pedido explícito del Supervisor, pero el código sigue intacto y editable. Detalle en `arnes/estado.md`.
 
 ## Archivado
 
