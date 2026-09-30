@@ -1,0 +1,42 @@
+{
+  "id": "t-171",
+  "titulo": "Image picker paralelo/optimista + retroalimentación de error en parámetros financieros y versiones de propuesta",
+  "intencion_negocio": "Javier (2026-09-30) describió el image picker del cotizador como 'lo peor que hay': texto 'R2' que nadie entiende, y un congelamiento de ~1 minuto al subir o pegar una imagen antes de poder cargar la siguiente. Pidió explícitamente 'incluye la mejora del image picker que es demasiado lento' como parte del mismo pedido de ejecución. También señaló que los botones de parámetros financieros y el modal de versiones de publicar propuesta 'se quedan cargando un montón' sin explicación cuando algo sale mal.",
+  "diagnostico": "image-picker.tsx: agregarArchivosLote subía en for...await secuencial (N imágenes = N roundtrips en serie) detrás de un isUploading global que bloqueaba todo el picker. Textos 'Clonando a R2...'/'Subiendo a R2...' y errores con 'Cloudflare R2' expuestos al usuario final. ParametrosFinancierosModal.guardar() y VersionesPropuestaModal.crearVersion() hacían await mutateAsync(...) sin catch: usePendingGuard.guard() solo tiene try/finally, así que un fallo de red desbloqueaba el botón sin ningún mensaje, dejando cambios sin guardar sin aviso (mismo principio de t-168).",
+  "decisiones_supervisor": {
+    "alcance": "Paralelizar subida de imágenes + preview optimista + lenguaje neutro (sin 'R2'/'Cloudflare'). Para los dos modales: agregar retroalimentación de error inline, SIN cambiar el momento en que cierran (siguen esperando la respuesta real) porque el repo no tiene sistema de notificación/toast global todavía — cerrar antes de confirmar dejaría fallos de red invisibles, el problema inverso al que se corrige.",
+    "riesgo_de_ampliar": "Cerrar los modales inmediatamente (fire-and-forget) sin un toast global dejaría errores de guardado completamente silenciosos — exactamente el patrón de pérdida de confianza que motivó este pedido. Queda como trabajo futuro explícito, condicionado a construir esa infraestructura primero."
+  },
+  "zona": "components/veta/ (ImagePicker + dos modales del cotizador) + lib/r2/upload.ts",
+  "tipo": "ui_visual",
+  "riesgo": "bajo",
+  "plan_ref": "arnes/planes/plan_t-171.md",
+  "criterios_aceptacion": [
+    "agregarArchivosLote usa Promise.allSettled en vez de for...await secuencial",
+    "ningún string visible en JSX de image-picker.tsx contiene 'R2' ni 'Cloudflare'",
+    "el input de archivo, el botón Examinar y drag/paste ya no quedan disabled mientras hay subidas en curso; solo '+ URL' se bloquea, y solo durante su propia operación",
+    "ParametrosFinancierosModal y VersionesPropuestaModal renderizan role=alert con el mensaje de error cuando la mutación rechaza",
+    "npx tsc --noEmit limpio",
+    "npx eslint . sin errores ni warnings nuevos en los archivos tocados"
+  ],
+  "hallazgos_colaterales": [
+    "El botón 'Publicar'/'Crear nueva versión' sigue atado a la latencia real del servidor (construirSnapshotPropuestaPublica hace ~5-6 roundtrips secuenciales a Neon) — queda fuera de esta tarea, es backend, no patrón de UI.",
+    "No existe ningún sistema de toast/notificación global en el repo (grep sin resultados relevantes) — es la pieza que faltaría para poder cerrar los modales de forma optimista sin perder visibilidad de errores; candidato a tarea propia futura."
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint (image-picker.tsx, parametros-financieros-modal.tsx, versiones-propuesta-modal.tsx, lib/r2/upload.ts)": "0 errors, 0 warnings"
+  },
+  "executor": "Claude Code (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Mismo pedido textual de Javier que t-170 (2026-09-30), con el agregado explícito: 'incluye la mejora del image picker que es demasiado lento'.",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null
+}

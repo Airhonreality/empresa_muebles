@@ -133,7 +133,7 @@ export async function uploadFileToR2(
     return { ok: true, url };
   } catch (error) {
     console.error("[uploadFileToR2]", error);
-    const msg = error instanceof Error ? error.message : "Fallo al conectar con Cloudflare R2";
+    const msg = error instanceof Error ? error.message : "Fallo en la conexión";
     return { ok: false, url: null, error: `No se pudo subir la imagen: ${msg}` };
   }
 }
@@ -188,7 +188,7 @@ export async function uploadArchivoToR2(
     return { ok: true, url };
   } catch (error) {
     console.error("[uploadArchivoToR2]", error);
-    const msg = error instanceof Error ? error.message : "Fallo al conectar con Cloudflare R2";
+    const msg = error instanceof Error ? error.message : "Fallo en la conexión";
     return { ok: false, url: null, error: `No se pudo subir el archivo: ${msg}` };
   }
 }

@@ -32,20 +32,31 @@ export function VersionesPropuestaModal({ proyectoId, onClose }: VersionesPropue
   const eliminar = useEliminarVersionPropuestaMutation(proyectoId);
   const [nombreNueva, setNombreNueva] = useState("");
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const versionesDesc = [...(versiones ?? [])].sort((a, b) => b.version - a.version);
   const hayVersiones = versionesDesc.length > 0;
 
   const crearVersion = async () => {
-    await publicar.mutateAsync(nombreNueva.trim() || undefined);
-    setNombreNueva("");
+    setError(null);
+    try {
+      await publicar.mutateAsync(nombreNueva.trim() || undefined);
+      setNombreNueva("");
+    } catch (err) {
+      // Igual que t-171 en parametros-financieros-modal: sin esto, un fallo de red al publicar
+      // desbloqueaba el botón sin avisar que la versión NUNCA se creó.
+      setError(err instanceof Error ? err.message : 'No se pudo publicar la versión. Revisa tu conexión e intenta de nuevo.');
+    }
   };
 
   const eliminarVersion = async (id: string, version: number) => {
     if (!window.confirm(`¿Eliminar la versión ${version}? El cliente ya no podrá verla en su histórico. Esta acción no se puede deshacer.`)) return;
     setEliminandoId(id);
+    setError(null);
     try {
       await eliminar.mutateAsync(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar la versión. Revisa tu conexión e intenta de nuevo.');
     } finally {
       setEliminandoId(null);
     }
@@ -116,6 +127,12 @@ export function VersionesPropuestaModal({ proyectoId, onClose }: VersionesPropue
             </ul>
           )}
         </div>
+
+        {error && (
+          <p className="mt-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded p-1.5" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="mt-4 space-y-2">
           <InputField

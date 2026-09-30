@@ -44,6 +44,7 @@ function aDigitos(val: string | null | undefined): string {
  */
 export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSaved }: ParametrosFinancierosModalProps) {
   const { guard: guardGuardar, isPending: guardando } = usePendingGuard();
+  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     aplicaIva: proyecto.aplicaIva,
@@ -60,16 +61,24 @@ export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSav
     // (2026-09-11: incidente real en producción — "numeric field overflow" al guardar sin
     // este tope, el input no bloqueaba escribir un valor fuera de rango).
     const ivaClamp = Math.min(Math.max(Number(form.porcentajeIva) || 0, 0), 100)
-    await onGuardar({
-      aplicaIva: form.aplicaIva,
-      porcentajeIva: String(ivaClamp || 19),
-      garantiaAnios: Number(form.garantiaAnios) || 0,
-      costosOperativos: form.costosOperativos || '0',
-      imprevistosInstalacion: form.imprevistosInstalacion || '0',
-      descuentoComercial: form.descuentoComercial || '0',
-      ajusteArbitrario: form.ajusteArbitrario || '0',
-    })
-    onSaved()
+    setError(null)
+    try {
+      await onGuardar({
+        aplicaIva: form.aplicaIva,
+        porcentajeIva: String(ivaClamp || 19),
+        garantiaAnios: Number(form.garantiaAnios) || 0,
+        costosOperativos: form.costosOperativos || '0',
+        imprevistosInstalacion: form.imprevistosInstalacion || '0',
+        descuentoComercial: form.descuentoComercial || '0',
+        ajusteArbitrario: form.ajusteArbitrario || '0',
+      })
+      onSaved()
+    } catch (err) {
+      // Antes este error se perdía en silencio (mutateAsync rechaza, guard() no lo captura):
+      // el botón se desbloqueaba solo, sin decir qué pasó, dejando los cambios sin guardar sin
+      // ningún aviso (t-171 — mismo principio de t-168: ningún control sin retroalimentación exacta).
+      setError(err instanceof Error ? err.message : 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.')
+    }
   }
 
   const set = <K extends keyof typeof form>(campo: K, valor: (typeof form)[K]) => {
@@ -143,6 +152,12 @@ export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSav
             </div>
           </div>
         </div>
+
+        {error && (
+          <p className="mt-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded p-1.5" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="ghost" size="md" onClick={onClose} disabled={guardando}>

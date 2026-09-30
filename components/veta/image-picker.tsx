@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState, type DragEvent, type ClipboardEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type DragEvent, type ClipboardEvent } from "react";
 import { uploadFileToR2, clonarUrlAR2 } from "@/lib/r2/upload";
 import { esUrlR2 } from "@/lib/r2/sanitize";
 import { GalleryOverlay } from "@/components/veta/gallery-lightbox";
@@ -109,23 +109,34 @@ export function ImagePicker({
   const id = useId();
   const [urlDraft, setUrlDraft] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  /** Sube por URL (+ URL): una sola operación a la vez, con sentido bloquear solo ESE control. */
+  const [clonandoUrl, setClonandoUrl] = useState(false);
+  /** Subidas de archivo en curso: cada una independiente (paralelo, no bloquea al resto del
+   *  picker ni entre sí — t-171, ver plan_t-171.md). `objectUrl` es el preview optimista
+   *  inmediato; se revoca al asentar (éxito o error). */
+  const [subidasEnCurso, setSubidasEnCurso] = useState<{ id: string; objectUrl: string; nombre: string }[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [zoomIndex, setZoomIndex] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // `value` fresco para lecturas dentro de callbacks async que siguen vivos después de un
+  // `await` largo (subida a R2) — evita pisar imágenes agregadas por otra subida concurrente
+  // que ya haya asentado mientras esta seguía en vuelo (misma clase de bug que t-170).
+  const valueRef = useRef(value);
+  useEffect(() => { valueRef.current = value; }, [value]);
 
   const agregar = useCallback(async (url: string) => {
     const limpio = url.trim();
     if (!limpio) return;
     if (limpio.startsWith("blob:")) {
-      setUploadError("No se permiten URLs temporales de tipo blob:. Sube la imagen usando el botón Examinar o Arrastrar.");
+      setUploadError("No se permiten URLs temporales. Sube la imagen usando el botón Examinar o Arrastrar.");
       return;
     }
     setUploadError(null);
 
     let destino = limpio;
     if (uploadToR2 && !esUrlR2(limpio)) {
-      setIsUploading(true);
+      setClonandoUrl(true);
       try {
         const resultado = await clonarUrlAR2(limpio, r2Prefix);
         if (!resultado.ok) {
@@ -134,20 +145,20 @@ export function ImagePicker({
         }
         destino = resultado.url;
       } catch (error) {
-        console.error("Error al clonar URL a R2:", error);
-        setUploadError(`No se pudo clonar la imagen a R2: ${error instanceof Error ? error.message : "Fallo en la conexión"}`);
+        console.error("Error al clonar imagen desde URL:", error);
+        setUploadError(`No se pudo subir la imagen: ${error instanceof Error ? error.message : "Fallo en la conexión"}`);
         return;
       } finally {
-        setIsUploading(false);
+        setClonandoUrl(false);
       }
     }
 
     if (!multiple) { onChange([destino]); return; }
-    if (value.includes(destino)) return;
-    onChange([...value, destino]);
-  }, [value, onChange, multiple, uploadToR2, r2Prefix]);
+    if (valueRef.current.includes(destino)) return;
+    onChange([...valueRef.current, destino]);
+  }, [onChange, multiple, uploadToR2, r2Prefix]);
 
-  const subirArchivo = async (archivoCrudo: File): Promise<string> => {
+  const subirArchivo = useCallback(async (archivoCrudo: File): Promise<string> => {
     const archivoOptimizado = await prepareImageForUpload(archivoCrudo);
     const formData = new FormData();
     formData.append("file", archivoOptimizado);
@@ -157,61 +168,65 @@ export function ImagePicker({
       throw new Error(resultado.error);
     }
     return resultado.url;
-  };
+  }, [r2Prefix]);
 
+  /** Sube cada imagen en paralelo (Promise.allSettled) con preview optimista inmediato por
+   *  archivo — nada bloquea al resto: se puede seguir arrastrando/pegando/eligiendo imágenes
+   *  mientras las anteriores siguen en vuelo. Antes era un `for...await` secuencial con un
+   *  único booleano global que congelaba todo el picker hasta que la última imagen terminaba. */
   const agregarArchivosLote = useCallback(async (files: File[]) => {
     const imagenes = files.filter((f) => f.type.startsWith("image/"));
     if (imagenes.length === 0) return;
-
     setUploadError(null);
-    setIsUploading(true);
 
-    try {
-      if (!multiple) {
-        const file = imagenes[0];
-        if (uploadToR2) {
-          try {
-            const url = await subirArchivo(file);
-            onChange([url]);
-          } catch (error) {
-            console.error("Error al subir a R2:", error);
-            setUploadError(`Error al subir a Cloudflare R2: ${error instanceof Error ? error.message : "Fallo en la conexión"}`);
-          }
-        } else {
-          onChange([URL.createObjectURL(file)]);
-        }
-        return;
-      }
-
-      const nuevasUrls: string[] = [];
-      const errores: string[] = [];
-
-      for (const file of imagenes) {
-        if (uploadToR2) {
-          try {
-            const url = await subirArchivo(file);
-            nuevasUrls.push(url);
-          } catch (error) {
-            console.error("Error al subir a R2:", error);
-            errores.push(`${file.name}: ${error instanceof Error ? error.message : "Fallo al subir a R2"}`);
-          }
-        } else {
-          nuevasUrls.push(URL.createObjectURL(file));
-        }
-      }
-
-      if (errores.length > 0) {
-        setUploadError(`No se pudieron subir ${errores.length} imagen(es): ${errores.join(", ")}`);
-      }
-
-      if (nuevasUrls.length > 0) {
-        const combinadas = Array.from(new Set([...value, ...nuevasUrls]));
-        onChange(combinadas);
-      }
-    } finally {
-      setIsUploading(false);
+    if (!uploadToR2) {
+      const urls = imagenes.map((f) => URL.createObjectURL(f));
+      onChange(multiple ? Array.from(new Set([...valueRef.current, ...urls])) : [urls[0]]);
+      return;
     }
-  }, [value, onChange, multiple, uploadToR2, r2Prefix]);
+
+    if (!multiple) {
+      const file = imagenes[0];
+      const entrada = { id: crypto.randomUUID(), objectUrl: URL.createObjectURL(file), nombre: file.name };
+      setSubidasEnCurso((cur) => [...cur, entrada]);
+      try {
+        const url = await subirArchivo(file);
+        onChange([url]);
+      } catch (error) {
+        console.error("Error al subir imagen:", error);
+        setUploadError(`No se pudo subir la imagen: ${error instanceof Error ? error.message : "Fallo en la conexión"}`);
+      } finally {
+        setSubidasEnCurso((cur) => cur.filter((s) => s.id !== entrada.id));
+        URL.revokeObjectURL(entrada.objectUrl);
+      }
+      return;
+    }
+
+    const items = imagenes.map((file) => ({ id: crypto.randomUUID(), file, objectUrl: URL.createObjectURL(file), nombre: file.name }));
+    setSubidasEnCurso((cur) => [...cur, ...items.map(({ id, objectUrl, nombre }) => ({ id, objectUrl, nombre }))]);
+
+    const resultados = await Promise.allSettled(items.map((it) => subirArchivo(it.file)));
+
+    const nuevasUrls: string[] = [];
+    const errores: string[] = [];
+    resultados.forEach((r, i) => {
+      if (r.status === "fulfilled") nuevasUrls.push(r.value);
+      else {
+        console.error("Error al subir imagen:", r.reason);
+        errores.push(`${items[i].nombre}: ${r.reason instanceof Error ? r.reason.message : "no se pudo subir"}`);
+      }
+    });
+
+    if (errores.length > 0) {
+      setUploadError(`No se pudieron subir ${errores.length} imagen(es): ${errores.join(", ")}`);
+    }
+    if (nuevasUrls.length > 0) {
+      onChange(Array.from(new Set([...valueRef.current, ...nuevasUrls])));
+    }
+
+    setSubidasEnCurso((cur) => cur.filter((s) => !items.some((it) => it.id === s.id)));
+    items.forEach((it) => URL.revokeObjectURL(it.objectUrl));
+  }, [onChange, multiple, uploadToR2, subirArchivo]);
 
   const quitar = (url: string) => onChange(value.filter((v) => v !== url));
 
@@ -263,8 +278,18 @@ export function ImagePicker({
           isDragOver ? "border-gold-400 bg-bg-alt" : "border-border-subtle"
         }`}
       >
-        {value.length > 0 && !hideGrid && (
+        {(value.length > 0 || subidasEnCurso.length > 0) && !hideGrid && (
           <div className={multiple ? "grid grid-cols-3 gap-2 mb-2 sm:grid-cols-4 md:grid-cols-6" : "mb-2 flex justify-center"}>
+            {subidasEnCurso.map((s) => (
+              <div key={s.id} className={`relative aspect-square overflow-hidden rounded-sm border border-border-subtle bg-bg-paper opacity-60 ${multiple ? "" : "w-24"}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- preview optimista local, blob: temporal en lo que se sube */}
+                <img src={s.objectUrl} alt="" className="h-full w-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />
+                </div>
+                <span className="sr-only">Subiendo {s.nombre}…</span>
+              </div>
+            ))}
             {value.map((url, idx) => (
               <div key={url} className={`group relative aspect-square overflow-hidden rounded-sm border border-border-subtle bg-bg-paper cursor-zoom-in ${multiple ? "" : "w-24"}`}>
                 <button
@@ -334,15 +359,15 @@ export function ImagePicker({
            }}
            placeholder="https://..."
            className="min-h-[36px] flex-1 rounded-sm border border-border-subtle bg-bg-paper px-2 text-xs text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-           disabled={isUploading}
+           disabled={clonandoUrl}
          />
          <button
            type="button"
            onClick={() => { void agregar(urlDraft); setUrlDraft(""); }}
            className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt disabled:opacity-50"
-           disabled={isUploading}
+           disabled={clonandoUrl}
           >
-            {isUploading ? "Clonando a R2..." : "+ URL"}
+            {clonandoUrl ? "Subiendo..." : "+ URL"}
           </button>
          <input
            ref={inputRef}
@@ -355,15 +380,13 @@ export function ImagePicker({
              if (files.length > 0) void agregarArchivosLote(files);
              e.target.value = "";
            }}
-           disabled={isUploading}
          />
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             className="rounded-sm border border-border-subtle px-3 text-xs text-text-muted transition-colors duration-fast hover:bg-bg-alt disabled:opacity-50"
-            disabled={isUploading}
           >
-            {isUploading ? "Subiendo a R2..." : "Examinar"}
+            {subidasEnCurso.length > 0 ? `Subiendo ${subidasEnCurso.length}...` : "Examinar"}
           </button>
         </div>
         {uploadError && (
