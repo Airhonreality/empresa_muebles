@@ -1,14 +1,10 @@
-﻿# Índice de contexto — Arnés
+# Índice de contexto — Arnés
 
 Este índice se mantiene corto a propósito. Existe para que un agente sepa qué leer al arrancar, sin cargar el proyecto entero a su memoria de trabajo.
 
 **Regla de oro:** borrar lo obsoleto, no acumularlo. Cuando algo deja de ser cierto, se borra. No se marca obsoleto y se deja ahí.
 
-**Estructura del arnés (2026-08-08 — matryoshka por línea de trabajo):** el arnés ya no es una sola línea. `arnes/nucleo/` es la verdad de negocio compartida; `arnes/lineas/` contiene una carpeta por línea de trabajo activa (técnica, demanda, futuras), cada una con su propio progreso, sus propios bucles y su propio archivo histórico. Ver `arnes/lineas/REGISTRO_LINEAS.md` para el índice de líneas.
-
-## ℹ️ Nota sobre trazabilidad
-
-Para el mapa completo del viaje histórico de la línea técnica (Discover→Define, pasadas P2-P8/C1-C6, trazabilidad punto-0), ver `arnes/lineas/ola7/archivo/`. `arnes/lineas/ola7/archivo/_INDICE_MAESTRO.md` es un mapa previo a la reestructuración — sus rutas están desactualizadas, se conserva solo como referencia de qué archivos existieron, no de dónde están hoy.
+**Purga 2026-09-30 (Fase 0 de limpieza):** `arnes/lineas/ola6/` y `arnes/lineas/ola7/` (6MB, ~115 archivos de planeación histórica de fases ya implementadas o de módulos fuera de foco) se sacaron del working tree de `dev`. Siguen recuperables al 100% en la rama `arnes-historico-fase0` y en el historial de git — no se perdió nada, se dejó de cargar en el contexto de cada agente. Motivo: el volumen de documentación hacía que decisiones ya cerradas (ej. el precio del diseño 3D) se re-trataran como abiertas porque estaban repetidas en más de diez archivos distintos. Ver `arnes/decisiones_cerradas.md`.
 
 ## Contexto activo
 
@@ -20,58 +16,30 @@ Declara las zonas del proyecto, sus dueños, y qué sí/qué no se puede hacer e
 ### 1.b arnes/MODELOS.md
 **Regla canónica de modelos (contrato vivo).** Modelos free verificados, intercalación opencode/zen + OpenRouter.
 
-### 1.c arnes/nucleo/ — la verdad de negocio compartida (contrato vivo, cualquier línea puede proponerle cambios)
-- `REGISTRO_DE_ENTIDADES.md` — **Canon raíz del schema.** ~60+ tablas en una vista, con nombre canónico, función de negocio y relaciones. **Si difiere de cualquier otra fuente, gana este.**
-- `logica_de_negocio.md` — el mapa maestro del negocio (Parte I: negocio, Parte II: implicaciones técnicas), con el mermaid de gates embebido. **Documento 1** para entender el negocio desde cero.
-- `glosario_h07.md` — vocabulario de UI: 36 entidades, ~70 estados, ~73 verbos, mapeo campo-schema→nombre natural. Consumir ANTES de escribir labels en cualquier pantalla.
+### 1.c arnes/decisiones_cerradas.md
+**Fuente única de decisiones de negocio cerradas.** Antes de tratar cualquier precio/parámetro/regla como "sin definir", se busca aquí primero. Editable directo por el Supervisor sin pasar por un agente.
 
-### 1.d arnes/ESTRUCTURA_OUTPUT_PRE_CODIGO.md
-**Gate de salida a codificación (contrato vivo).** Inventario completo de artefactos pre-código de la línea técnica, checklist de 10 condiciones para salir de F0–F9, proceso de actualización de `nucleo/REGISTRO_DE_ENTIDADES.md`.
+### 1.d arnes/nucleo/ — la verdad de negocio compartida (contrato vivo)
+- `REGISTRO_DE_ENTIDADES.md` — **Canon raíz del schema.** Tablas con nombre canónico, función de negocio y relaciones. **Si difiere de cualquier otra fuente, gana este.**
+- `logica_de_negocio.md` — el mapa maestro del negocio. **Documento 1** para entender el negocio desde cero.
+- `glosario_h07.md` — vocabulario de UI: entidades, estados, verbos, mapeo campo-schema→nombre natural. Consumir ANTES de escribir labels en cualquier pantalla.
 
 ### 2. arnes/estado.md
-Dashboard corto: en qué fase está cada línea activa, ahora mismo. El detalle cronológico de cada línea vive en su propio `estado_<linea>.md` (ver abajo).
+Dashboard: en qué punto está el proyecto y cuál es la próxima acción permitida.
 
-### 3. arnes/lineas/ — líneas de trabajo paralelas
-
-**Índice:** `arnes/lineas/REGISTRO_LINEAS.md` (1 fila por línea: estado, qué produce, dónde escribe). Para abrir una línea nueva, usar `arnes/lineas/_plantilla/LEEME.md`.
-
-#### 3.a `lineas/ola7/` — Ola 6/7: ERP + sitio (schema, pantallas, hardening, QA)
-
-- `estado_ola7.md` — progreso detallado de esta línea (lo que antes era la mayor parte de `estado.md`).
-- `plan_ola7_maestro.md` — contrato maestro F0–F9.
-- `plan_alineacion.md` — doctor de esta línea (diagnóstico de desalineación de referencias).
-- `plan_rediagnostico.md` — propuesta de reestructuración física, DIFERIDA (ver su §0.b).
-- `plan_f4.md`..`plan_f7.md` — hallazgos y decisiones compiladas por fase.
-- `destilacion_f3_publico.md` — fuente activa de F-08 (propuesta pública), no archivar hasta que se construya.
-- **`pantallas/`** — diseños F2–F7 (`PLANTILLA_PANTALLA.md` + todos los `disenio_PXX.md`/`disenio_FXX.md`).
-- **`tecnico/`** — salidas de datos F0/F1/F8/F9, no son pantallas (`plan_t-074.md`, `plan_t-075.md`, `plan_t-080.md`, `PLANTILLA_HARDENING.md`, `PLANTILLA_QA.md`, `m06_capa_tecnica_transversal.md`, `m07_capa_reactividad.md`). **`checklist_progreso_pantallas.md` — Definición de Hecho obligatoria para toda tarea de pantalla/datos de F10 (B2 en adelante). El Iniciador la lee antes de planificar cualquier tarea de este tipo, no solo cuando el humano la menciona.** `plan_f10_migracion.md` — fuente única de verdad de F10 · **`plan_zod_validacion_runtime.md` — validación runtime (Zod) del borde de escritura, t-164 (2026-09-18, pendiente checkpoint)** (migración de datos + persistencia + reactividad). `m07b_reactividad_multiusuario.md` — decisión vigente de reactividad cross-usuario (long-polling + `LISTEN`/`NOTIFY`), extiende M-07 y reemplaza el mecanismo de polling corto fijo descrito en `plan_f10_migracion.md` §3.1d. **Decisión vigente del server-state del ERP (2026-09-05): TanStack Query** (cache + mutation optimista), zustand solo para estado local de UI, sitio público con RSC + Server Actions; ver `estado.md` §"DECISIÓN DE ARQUITECTURA CORREGIDA" — sustituye la Vía A de `zustand-migration/`. **Plan de migración del cotizador:** `tecnico/plan_cotizador_tanstack_query.md` (creado 2026-09-05, **ejecutado Fases A/B/C** — ver `estado.md` §"COTIZADOR EN TANSTACK QUERY"; pendiente solo QA runtime T3).
-- **`archivo/`** — histórico: rondas de preguntas a Javier, diamante2 discover/define, pasadas P2-P8/C1-C6, trazabilidad punto-0, metodología OLA_6/7, Tercer input humano (diferido). Se lee para entender cómo se llegó a una decisión, no para decidir.
-
-Detalle de pantallas por fase (cita rápida, el archivo vive en `pantallas/`):
-- **F5** (Taller/Calidad/Entrega/Garantía): `disenio_P16_fila_taller.md`, `disenio_P17_calidad_gate.md`, `disenio_P18_instalacion.md`, `disenio_P19_acta_entrega.md`, `disenio_P20_garantia.md`
-- **F6** (Finanzas): `disenio_P21_caja.md`, `disenio_P22_obligaciones.md`, `disenio_P23_cuentas_cobro.md`
-- **F7** (Sitio Público/Frontstage): `disenio_F02_tienda_web.md`, `disenio_F03_portafolio_proyectos.md`, `disenio_F07_portal_cliente.md`, `disenio_F08_propuesta_publica.md`
-
-#### 3.b `lineas/demanda/` — captación, conversión, marca (marketing/estrategia, sin código)
-
-- `estado_demanda.md` — progreso de esta línea.
-- `plan_demanda.md` — fuente única de la línea de demanda (Bloques A-F).
-- `plan_estructura_sitio_publico.md` — base de determinantes de pantalla (F-00..F-13).
-- `plan_diseno_web_publica.md` — **sub-línea web pública (v3, 2026-08-08).** Continúa/amplía `plan_estructura_sitio_publico.md`. Universo completo F-00..F-19: 12 pantallas por diseñar + F-17 (requerimiento bloqueado). Incluye Conócenos (F-18, historia + perfiles), B2B (F-19), Bitácora de Diseño (F-15), Agenda tu Asesoría (F-12, dos tiers), Cotiza tu Espacio (F-17).
-- `plan_seo_2026.md` — **subsistema SEO integral (2026-08-08).** Indexación total, JSON-LD por tipo, imágenes 5 niveles, robots/llms.txt, Core Web Vitals, reglas anti-invención.
-- `archivo/` — `destilacion_docs_veta.md` ("segundo input": DOCS VETA DORADA — marca/SEO/tono), `marco_estrategia_mercado.md`.
-- `contenido/` — **copy exacto y estructura de secciones por pantalla pública (2026-08-09).** Espejo 1:1 con `ola7/pantallas/disenio_FXX.md`. Insumo cerrado de contenido para que el Iniciador del bucle F-web destile sin inventar copy. Sigue `PLANTILLA_CONTENIDO.md` (7 bloques).
-
-#### 3.c `lineas/ui-slots/` — ⛔ CANCELADA (2026-09-10), nunca tuvo archivos
-
-Esta sección describía una línea con doctrina y 4 archivos como si existiera. Verificado 2026-09-10 (`find` + `git log --all`, todas las ramas): `arnes/lineas/ui-slots/` **nunca se escribió** — cero archivos, cero commits. Decisión axiomática de reemplazo en `arnes/lineas/ola7/tecnico/decision_axiomatica_2026-09-10_header_entidad_y_versionado_propuesta.md`: el alcance completo (taxonomía de estados, contrato a `nucleo/`) queda cancelado por sobre-ingeniería; se sustituye por dos primitivas puntuales (`entity-header.tsx`/`entity-actions-bar.tsx`, ver `arnes/tareas/t-154.json`/`t-155.json`). El piloto real que sí se construyó (`alert-slot.tsx`, `empty-state.tsx`, chips de filtro en `/erp/cotizador`) se conserva. **Regla actualizada:** `ZU_05`..`ZU_08` quedan bloqueadas hasta que `t-154`/`t-155` entreguen esas dos primitivas aplicadas en ≥2 pantallas — no hasta un "contrato mínimo" de una línea que nunca existió.
+### 3. arnes/tareas/
+Ledger compartido (`t-001`..`t-1xx`+, un solo pool secuencial de IDs).
 
 ### 4. arnes/roles/
-Contratos de los 5 roles (orquestador, iniciador, código, QA, supervisor). Compartido por todas las líneas — se lee al arranque de cada sesión (`AGENTS.md` paso 4), no es archivo histórico.
+Contratos de los 5 roles (orquestador, iniciador, código, QA, supervisor). Se lee al arranque de cada sesión (`AGENTS.md` paso 4).
 
-### 5. arnes/tareas/
-Ledger compartido entre líneas (`t-001`..`t-101`+). Los IDs son un solo pool secuencial — t-034 es de la línea demanda, t-074+ son de la línea técnica.
+### 5. arnes/lineas/demanda/ — captación, conversión, marca del sitio público (sin código, sin tocar todavía en esta pasada de limpieza)
+No auditada en la purga del 2026-09-30 (el pedido explícito fue "olas 6 y 7"). Sigue siendo la línea de trabajo del sitio público/SEO/marketing; candidata a la misma revisión más adelante si se decide.
+
+## Foco vigente (2026-09-30)
+
+El trabajo activo es el **ciclo núcleo**: cotizador (definidor de proyecto) → ficha de proyecto → contrato → seguimiento, más clientes y catálogo como soporte directo de ese ciclo, y finanzas en versión simplificada. Todo lo demás (taller, garantía, compras, herramientas, gates, equipo, comercial, pedidos-web, catálogos de espacios arquitectónicos) queda fuera de foco — no se borra sin auditoría de dependencias, pero no se planifica trabajo nuevo ahí hasta que el núcleo esté sólido y probado con proyectos reales. Detalle y plan en `arnes/estado.md`.
 
 ## Archivado
 
-Vacío como carpeta propia — el histórico vive dentro de `archivo/` de cada línea (`lineas/ola7/archivo/`, `lineas/demanda/archivo/`), no en un archivo global único. `arnes/diagnostico/` quedó como carpeta residual con 2 archivos que no pertenecen a ninguna línea específica: `diagnostico_de_proceso.md` (metodología de proceso, aplica a todas las líneas) y `_INDICE_MAESTRO.md` (mapa pre-reestructuración, desactualizado).
+`arnes/lineas/ola6/` y `arnes/lineas/ola7/` (histórico completo, incluida su carpeta `archivo/` interna) viven en la rama `arnes-historico-fase0` y en el historial de `dev` anterior al commit de purga. Se leen ahí si hace falta reconstruir cómo se llegó a una decisión — no son parte del contexto por defecto de un agente.

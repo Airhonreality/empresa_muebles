@@ -6,8 +6,8 @@ Para abrir una línea nueva, usar `_plantilla/LEEME.md`.
 
 | Línea | Estado | Qué produce | Escribe hacia | Detalle |
 |---|---|---|---|---|
-| `ola7` | F0–F7 aprobado, F8 abierto | Schema (F0/F1), pantallas (F2-F7), hardening/QA (F8/F9) del ERP + sitio | `nucleo/` (propone cambios de schema/eventos) | `ola7/estado_ola7.md`, `ola7/plan_ola7_maestro.md` |
-| `demanda` | v3 del marco, sin aprobar — bloqueada esperando Supervisor | Diagnóstico y plan de captación/conversión/marca; determinantes de pantalla para el sitio público | `nucleo/` (ej. schema de `leads`, Bloque A) y `lineas/ola7/pantallas/` (determinantes F-09..F-13) | `demanda/estado_demanda.md`, `demanda/plan_demanda.md` |
+| `ola7` | **Archivada 2026-09-30** (planeación histórica sacada del working tree, ver `arnes/INDEX.md` §Purga). Sustituida por el foco núcleo vigente en `arnes/estado.md`. | Schema (F0/F1), pantallas (F2-F7), hardening/QA (F8/F9) del ERP + sitio — histórico | `nucleo/` (propone cambios de schema/eventos) | rama `arnes-historico-fase0` |
+| `demanda` | v3 del marco, sin aprobar — bloqueada esperando Supervisor | Diagnóstico y plan de captación/conversión/marca; determinantes de pantalla para el sitio público | `nucleo/` (ej. schema de `leads`, Bloque A) | `demanda/estado_demanda.md`, `demanda/plan_demanda.md` |
 
 ## Regla de convivencia entre líneas
 

@@ -33,8 +33,9 @@ Si nadie te dijo qué rol asumir, asume **Orquestador** y pregunta antes de actu
 
 ## Ruta de la V3 (el orden importa)
 
-1. **Diamante 4 (diseño visual)** — CERRADO (PoC 3.1 verificada 2026-08-04). Definió el sistema visual: stack técnico del arnés de estilos, tokens D4 (`app/globals.css`), primitivas (`components/veta/`). Entrada histórica: `arnes/lineas/ola7/archivo/diamante4_metodologia.md`. **Su código (PoC 1/2/3/3.1, t-098/t-099) es prueba de concepto de estética/tokens/interacción únicamente — nunca evidencia de que una pantalla de negocio existe o está aprobada** (ver `Prohibido`).
-2. **Banda F0-F9 (planes primero, código después)** — cada fase produce diseño + plan de código aprobado antes de escribir `lib/`/`app/` (ver `arnes/estado.md` §"ESTRATEGIA GENERAL V3"). F0–F7 con diseño/plan aprobado; F8 (hardening) es la fase abierta. Entrada: `arnes/lineas/ola7/archivo/OLA_7_ENTRADA.md` y el contrato maestro `arnes/lineas/ola7/plan_ola7_maestro.md`. **Ninguna pantalla se diseña con estilo improvisado: consume los tokens del Diamante 4.**
+1. **Diamante 4 (diseño visual)** — CERRADO (PoC 3.1 verificada 2026-08-04). Definió el sistema visual: stack técnico del arnés de estilos, tokens D4 (`app/globals.css`), primitivas (`components/veta/`). **Su código (PoC 1/2/3/3.1, t-098/t-099) es prueba de concepto de estética/tokens/interacción únicamente — nunca evidencia de que una pantalla de negocio existe o está aprobada** (ver `Prohibido`).
+2. **Banda F0-F9 (histórica)** — cada fase producía diseño + plan de código aprobado antes de escribir `lib/`/`app/`. F0–F7 se dieron por aprobados con ese método; F8 (hardening) quedó abierto. **Superada 2026-09-30 por el foco núcleo** (punto 2.b): en vez de continuar la banda F0-F9 sobre todos los módulos, el trabajo activo se concentra en el ciclo cotizador → ficha de proyecto → contrato → seguimiento. La planeación histórica de la banda F0-F9 (`arnes/lineas/ola7/`, `arnes/lineas/ola6/`) se archivó fuera del working tree de `dev` (rama `arnes-historico-fase0`) por volumen excesivo — ver `arnes/INDEX.md` §Purga y `arnes/decisiones_cerradas.md` para lo que sigue vigente de esas decisiones.
+2.b **Foco núcleo (vigente desde 2026-09-30)** — alcance activo: cotizador (definidor de proyecto), ficha de proyecto, contratos, clientes, catálogo, y finanzas en versión simplificada. El resto de módulos ya construidos (taller, garantía, compras, herramientas, gates, equipo, comercial, pedidos-web, catálogos de espacios arquitectónicos) queda fuera de foco — no se planifica trabajo nuevo ahí sin checkpoint explícito del Supervisor. Detalle y plan de limpieza en `arnes/estado.md`.
 3. **Checkpoint final del Supervisor** antes de mergear `dev` → `main`.
 
 ## Qué construye este proyecto
@@ -80,7 +81,7 @@ dev                      → rama huérfana (sin historia de main) donde se cons
 - No se debe hacer push ni merge a `main` sin aprobación explícita del Supervisor (checkpoint final de la migración).
 - No se debe modificar ni hacer push a `legacy-agnostic-backup` — es un snapshot congelado.
 - No se debe usar el motor "Agnostic Seed" ni ningún patrón schema-driven genérico equivalente en el código nuevo.
-- No se debe migrar un registro de datos "as-is" sin haberlo revisado en el diagnóstico de Fase 0 (`arnes/lineas/ola7/archivo/auditoria_neon.md`, `arnes/lineas/ola7/archivo/inventario_legacy.md`).
+- No se debe migrar un registro de datos "as-is" sin haberlo revisado en el diagnóstico de Fase 0 (ya completado — ver `arnes/estado.md` §"FASE 0 COMPLETA"; el diagnóstico detallado quedó archivado en la rama `arnes-historico-fase0`).
 - No se debe modificar el schema de datos (ORM) ni las reglas de este `AGENTS.md` sin pasar por el checkpoint de Supervisor.
 - Credenciales y secretos nunca viven en archivos versionados. Las credenciales reales (Neon, R2, GitHub) ya existen en las variables de entorno de Vercel de este mismo proyecto — no hay que crear ni copiar ninguna.
 - Un agente **nunca** hace `checkout` de `dev` sobre el working tree principal del humano (`c:\Users\javir\Documents\DEVs\empresa_muebles_clone`). Todo trabajo de la V3 ocurre en el worktree `../empresa_muebles_clone_v3`.
@@ -100,11 +101,11 @@ Zonas activas hoy:
 | `arnes/lineas/` | Líneas de trabajo paralelas (técnica, demanda, futuras) — cada una con su propio progreso | Supervisor | medio-alto según línea |
 | `datos` | Cimientos F0: schema Drizzle (`lib/db/`), lógica de identidad/auditoría (`lib/modules/f0/`: roles, parámetros con historial, eventos, audit) — SIN UI | Código | alto |
 
-Las zonas de código de producto (auth, catálogo, cotizador, contratos, producción, finanzas, sitio público, etc.) se declaran cuando el plan de arquitectura (`arnes/lineas/ola7/archivo/plan_arquitectura_destino.md`, histórico — superado por `arnes/lineas/ola7/plan_ola7_maestro.md`) sea aprobado por el Supervisor. `datos` (F0) es la primera zona de código declarada, aprobada por el Supervisor el 2026-08-05 junto con el arranque de t-074.
+Las zonas de código de producto (auth, catálogo, cotizador, contratos, producción, finanzas, sitio público, etc.) ya fueron declaradas y están en uso (ver árbol `app/erp/` y `lib/modules/`); el plan de arquitectura que las originó quedó archivado en la rama `arnes-historico-fase0`. `datos` (F0) fue la primera zona de código declarada, aprobada por el Supervisor el 2026-08-05 junto con el arranque de t-074.
 
 ## Comandos de verificación
 
-Stack en definición por el **Diamante 4** (`arnes/lineas/ola7/archivo/diamante4_metodologia.md`). Referencia de v2 (prototipo, validada en runtime contra `dev-local`): Next.js + TypeScript + Drizzle ORM + Neon Postgres (misma base de datos de producción, ver modelo de ramas arriba). Los comandos de esta tabla se confirman/ajustan cuando el D4 cierre el stack definitivo.
+Stack cerrado por el **Diamante 4** (metodología archivada en la rama `arnes-historico-fase0`): Next.js + TypeScript + Drizzle ORM + Neon Postgres (misma base de datos de producción, ver modelo de ramas arriba).
 
 | Qué verifica | Comando | Nota |
 |--------------|---------|------|
