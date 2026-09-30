@@ -687,9 +687,9 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
             </p>
           </section>
 
-          {/* Sección 6: Anexo 1 — t-167. */}
+          {/* Sección 5: Anexo 1 — t-167. */}
           <section className="border-b border-border-subtle pb-4">
-            <h3 className="text-sm font-semibold text-text-heading mb-3">6. Anexo 1 (Propuesta)</h3>
+            <h3 className="text-sm font-semibold text-text-heading mb-3">5. Anexo 1 (Propuesta)</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-text-muted mb-1 block">
@@ -703,16 +703,16 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                   placeholder="Propuesta de Diseño y Presupuesto «nombre» — versión 1 — fechada el 2026-01-01 — N páginas"
                 />
                 <p className="text-[11px] text-text-muted mt-1">
-                  No es un enlace: es cómo se identifica en papel el PDF impreso que se adjunta
-                  al correo. La Propuesta se imprime y se envía junto con el contrato.
+                  No es un enlace: es cómo se identifica en papel el PDF impreso que se anexa
+                  al contrato, tal como dice la cláusula PRIMERA.
                 </p>
               </div>
             </div>
           </section>
 
-          {/* Sección 7: numeral SEXTA completo (t-170). */}
+          {/* Sección 6: numeral de penalidad completo (t-170). */}
           <section className="border-b border-border-subtle pb-4">
-            <h3 className="text-sm font-semibold text-text-heading mb-3">7. Cláusula de penalidad</h3>
+            <h3 className="text-sm font-semibold text-text-heading mb-3">6. Cláusula de penalidad</h3>
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -745,9 +745,9 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
             )}
           </section>
 
-          {/* Sección 8: Valor y Hitos */}
+          {/* Sección 7: Valor y Hitos */}
           <section>
-            <h3 className="text-sm font-semibold text-text-heading mb-3">8. Valor y Plan de Pagos</h3>
+            <h3 className="text-sm font-semibold text-text-heading mb-3">7. Valor y Plan de Pagos</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-text-muted mb-1 block">Valor Total (COP)</label>

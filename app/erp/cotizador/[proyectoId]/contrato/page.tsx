@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import { CotizadorCompatProvider, useCotizadorCompat } from '@/lib/data/queries/cotizador-compat'
 import { Button } from '@/components/veta/button'
 import { calcularVentanaEntrega, textoPlazoSemanas } from '@/lib/data/contrato-fechas'
+import { ordinalesClausulas, type ClaveClausula } from '@/lib/data/contrato-clausulas'
 
 // Plantilla del contrato de fabricación e instalación (t-163, 2026-09-14).
 // Adaptada de la plantilla del sistema legacy (`legacy-agnostic-backup:
@@ -206,6 +207,16 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
     ?? contrato.plazoEjecucionTexto
     ?? 'plazo acordado en la Propuesta que constituye el Anexo 1'
 
+  // t-170: el ordinal de cada cláusula y de cada referencia cruzada sale de acá. Con la
+  // penalidad apagada, GARANTIA pasa a ser el numeral SEXTA y así sucesivamente, sin huecos: si
+  // los ordinales estuvieran escritos en el texto, apagar la penalidad dejaría un salto visible
+  // (QUINTA y después SÉPTIMA) en un documento que el cliente firma. `ord` devuelve cadena
+  // vacía solo si se referencia una cláusula que no se está imprimiendo, que hoy no ocurre:
+  // las únicas referencias a la penalidad viven dentro de la propia penalidad y de DÉCIMA,
+  // que ya vienen condicionadas.
+  const ordinales = ordinalesClausulas(contrato.aplicaClausulaPenalidad)
+  const ord = (clave: ClaveClausula) => ordinales[clave] ?? ''
+
   return (
     <>
       {/* Barra de acciones — oculta al imprimir */}
@@ -270,12 +281,12 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
 
         <div className="section-title">2. Consideraciones Generales</div>
         <p>
-          Las partes contratantes obran de estricta buena fe, con plena capacidad legal y técnica para la ejecución satisfactoria del proyecto descrito en este contrato, basándose en la Propuesta de Diseño y Presupuesto que se identifica en el numeral PRIMERO de este documento y que hace parte integral y vinculante de él.
+          Las partes contratantes obran de estricta buena fe, con plena capacidad legal y técnica para la ejecución satisfactoria del proyecto descrito en este contrato, basándose en la Propuesta de Diseño y Presupuesto que se identifica en el numeral {ord('OBJETO')} de este documento y que hace parte integral y vinculante de él.
         </p>
 
         <div className="section-title">3. Cláusulas del Contrato</div>
 
-        <div className="clausula-header">PRIMERA. OBJETO DEL CONTRATO Y ANEXOS</div>
+        <div className="clausula-header">{ord('OBJETO')}. OBJETO DEL CONTRATO Y ANEXOS</div>
         <p>
           El Contratista se obliga a realizar la fabricación e instalación del siguiente mobiliario a medida de acuerdo con los requerimientos técnicos coordinados y validados:
         </p>
@@ -309,12 +320,12 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           <strong>Anexo 2 — Acta de Entrega de Mobiliario</strong> y <strong>Anexo 3 — Acta de Garantías</strong>: se suscriben por separado, en el momento en que ocurran los hechos que cada una documenta, y forman parte de este contrato. La no existencia de estos actas al momento de la firma no afecta la validez del contrato ni los derechos derivados de ellas.
         </p>
 
-        <div className="clausula-header">SEGUNDA. ALCANCE</div>
+        <div className="clausula-header">{ord('ALCANCE')}. ALCANCE</div>
         <p>
-          El alcance de este contrato queda limitado a los ítems cotizados y descritos en el numeral
-          PRIMERO y en el Anexo 1. Todo suministro no listado en dichos lugares se considera
-          excluido y solo podrá entregarse mediante el procedimiento de adicionales del numeral
-          QUINTO.
+          El alcance de este contrato queda limitado a los ítems cotizados y descritos en el numeral{' '}
+          {ord('OBJETO')} y en el Anexo 1. Todo suministro no listado en dichos lugares se considera
+          excluido y solo podrá entregarse mediante el procedimiento de adicionales del numeral{' '}
+          {ord('ADICIONALES')}.
         </p>
         <p>
           <strong>Exclusiones y Suministros del Cliente:</strong> Se excluyen del alcance de este contrato todo tipo de obras civiles, plomería, instalaciones de gas, conexiones eléctricas y pintura de muros ajenos al mobiliario en sí.
@@ -341,7 +352,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           </div>
         )}
 
-        <div className="clausula-header">TERCERA. PLAZOS Y VENTANA DE ENTREGA</div>
+        <div className="clausula-header">{ord('PLAZOS')}. PLAZOS Y VENTANA DE ENTREGA</div>
         <p>
           El plazo de ejecución de este contrato es de <strong>{plazoTexto}</strong>. Para calcular
           las fechas de la ventana de entrega que aparece más abajo se estima como fecha de inicio
@@ -386,10 +397,10 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           propios, y el comprobante de pago acredita la fecha real de inicio.
         </p>
 
-        <div className="clausula-header">CUARTA. ENTREGA Y AJUSTES</div>
+        <div className="clausula-header">{ord('ENTREGA')}. ENTREGA Y AJUSTES</div>
         <p>
           La entrega del mobiliario se realiza en el domicilio de obra dentro del plazo pactado en
-          el numeral TERCERO. Hay una sola entrega, y ocurre en la fecha comprometida.
+          el numeral {ord('PLAZOS')}. Hay una sola entrega, y ocurre en la fecha comprometida.
         </p>
         <p>
           <strong>Ajustes menores y reservas:</strong> desde la entrega, el Contratante tiene{' '}
@@ -407,7 +418,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           por parte del Contratista.
         </p>
 
-        <div className="clausula-header">QUINTA. MANEJO DE ADICIONALES</div>
+        <div className="clausula-header">{ord('ADICIONALES')}. MANEJO DE ADICIONALES</div>
         <p>
           Cualquier modificación sobre los diseños aprobados, cambio de color/textura posterior al inicio de producción, o trabajo extra no contemplado en la Propuesta que constituye el Anexo 1, deberá ser solicitado y aprobado formalmente por escrito (correo electrónico o servicio de mensajería instantánea de datos). Sin este acuerdo que exprese el nuevo precio y el impacto sobre los tiempos de entrega, el Contratista no estará obligado a ejecutar dichos cambios.
         </p>
@@ -420,11 +431,11 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
             penalidad. */}
         {contrato.aplicaClausulaPenalidad && (
           <>
-            <div className="clausula-header">SEXTA. MORA, RETENCIÓN Y SUSPENSIONES</div>
+            <div className="clausula-header">{ord('PENALIDAD')}. MORA, RETENCIÓN Y SUSPENSIONES</div>
             <p>
               <strong>Mora del Contratista:</strong> si la entrega no se produce en la fecha máxima
-              comprometida del numeral TERCERO y el retraso es imputable al Contratista —es decir,
-              no se configura ninguna de las causales de exoneración del numeral OCTAVO—, el
+              comprometida del numeral {ord('PLAZOS')} y el retraso es imputable al Contratista —es decir,
+              no se configura ninguna de las causales de exoneración del numeral {ord('DESMONTE')}—, el
               Contratante podrá retener del último hito de pago el <strong>0,5 % semanal</strong> de
               su valor, con un <strong>tope máximo del 5 %</strong> de ese mismo hito. La retención
               se aplica únicamente sobre el último hito, se contabiliza por semanas hábiles
@@ -435,7 +446,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
               corresponde a los diseños, dimensiones, materiales o acabados aprobados en la Propuesta
               que constituye el Anexo 1 —incluida la entrega con materiales distintos de los
               pactados—, y el Contratante lo comunica por escrito dentro de los 10 días hábiles del
-              numeral CUARTA, podrá retener del último hito de pago el{' '}
+              numeral {ord('ENTREGA')}, podrá retener del último hito de pago el{' '}
               <strong>0,5 % semanal</strong> de su valor, con un <strong>tope máximo del 5 %</strong>{' '}
               de ese mismo hito. Es una segunda causa de retención, distinta de la mora e
               independiente de ella: no se acumulan entre sí.
@@ -455,7 +466,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           </>
         )}
 
-        <div className="clausula-header">SÉPTIMA. GARANTÍA DEL SERVICIO</div>
+        <div className="clausula-header">{ord('GARANTIA')}. GARANTÍA DEL SERVICIO</div>
         <p>
           El Contratista otorga una garantía de calidad y estabilidad de <strong>{contrato.garantiaAnios || 2} años</strong> a partir del Acta de Entrega, la cual cubre defectos de fabricación de la estructura modular y fallos derivados directamente de la instalación física.
         </p>
@@ -473,11 +484,11 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           <strong>Herrajes e Iluminación:</strong> La garantía de sistemas electrónicos, iluminación LED, electrodomésticos o herrajes mecánicos de marca corresponderá estrictamente a la ofrecida de forma directa por el fabricante de dichos insumos, y se documentará en el <strong>Acta de Garantías (Anexo 3)</strong> que se firma al cierre de la obra.
         </p>
 
-        <div className="clausula-header">OCTAVO. DESMONTE, CONDICIONES DEL SITIO Y FUERZA MAYOR</div>
+        <div className="clausula-header">{ord('DESMONTE')}. DESMONTE, CONDICIONES DEL SITIO Y FUERZA MAYOR</div>
         <p>
           <strong>Desmonte:</strong> el desmonte de mobiliario anterior, retiro de escombros, transporte
           a botadero y disposición final de residuos no están incluidos en el alcance de este
-          contrato, salvo que se diga expresamente en el numeral SEGUNDO. Si el Contratante los
+          contrato, salvo que se diga expresamente en el numeral {ord('ALCANCE')}. Si el Contratante los
           contrata, su valor se cotiza aparte y se paga por separado. El Contratista puede declinear
           la ejecución del desmonte si el estado del mobiliario existente no permite
           garantizar la seguridad de los operarios o de la obra.
@@ -503,7 +514,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           soportes que la respalden.
         </p>
 
-        <div className="clausula-header">NOVENA. CONDICIONES DE PAGO</div>
+        <div className="clausula-header">{ord('PAGOS')}. CONDICIONES DE PAGO</div>
         <p>
           El valor total del presente contrato asciende a la suma de <strong>{fmtCOP(totalNeto)}</strong> (<em>{numeroALetras(totalNeto)}</em>), pagaderos a la cuenta autorizada de Hermanos García González S.A.S bajo los siguientes hitos de avance:
         </p>
@@ -527,11 +538,11 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           </tbody>
         </table>
 
-        <div className="clausula-header">DÉCIMA. CORRESPONSABILIDAD Y SUSPENSIÓN</div>
+        <div className="clausula-header">{ord('CORRESPONSABILIDAD')}. CORRESPONSABILIDAD Y SUSPENSIÓN</div>
         {contrato.aplicaClausulaPenalidad && (
           <p>
-            Las causales que liberan al Contratista de la retención de mora del numeral SEXTA, y que
-            deben acreditarse con soportes, son las enumeradas en el numeral OCTAVO. Ninguna otra
+            Las causales que liberan al Contratista de la retención de mora del numeral {ord('PENALIDAD')}, y que
+            deben acreditarse con soportes, son las enumeradas en el numeral {ord('DESMONTE')}. Ninguna otra
             situación comercial, dificultad de aprovisionamiento o cambio de las condiciones operativas
             del Contratante constituye por sí sola una de ellas.
           </p>
@@ -540,7 +551,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           <strong>Ruptura de la Buena Fe:</strong> El Contratista se reserva el derecho de suspender de forma temporal o definitiva la instalación o liquidar el contrato en el estado en que se encuentre si el Contratante ejerce hostilidad, maltrato o acoso hacia el personal de instalación, o si condiciona el pago del segundo abono o saldo final a exigencias imprevistas no pactadas.
         </p>
 
-        <div className="clausula-header">UNDÉCIMA. MÉRITO EJECUTIVO</div>
+        <div className="clausula-header">{ord('MERITO')}. MÉRITO EJECUTIVO</div>
         <p>
           Las partes acuerdan que el presente contrato presta mérito ejecutivo de acuerdo con la legislación colombiana para la exigencia judicial del cumplimiento de todas las obligaciones de dar, hacer y pagar contenidas en él.
         </p>

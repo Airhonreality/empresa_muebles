@@ -187,6 +187,11 @@ export const contratos = pgTable("contratos", {
 	// respuesta a un requerimiento real de cliente sobre lavaplatos / piedra sinterizada /
 	// iluminación / herrajes: sin esto el contrato decía UNA cosa (todo lo del cliente) y
 	// la cotización otra (lavaplatos premium incluido).
+	// t-170: LEGACY. El cliente pidió que el alcance se leyera de los ítems cotizados
+	// (numeral PRIMERO + Anexo 1), que es la única fuente que no se contradice con la
+	// cotización, así que este campo ya no se imprime ni se edita. La columna se conserva y
+	// el valor histórico se sigue reenviando al guardar, para no perder lo escrito en su día:
+	// borrarla sería destruir un dato de un contrato ya firmado.
 	alcanceSuministros: text("alcance_suministros"),
 	// t-167: identificación del Anexo 1 (Propuesta de Diseño y Presupuesto impreso, que se
 	// adjunta al contrato y se manda en el mismo correo). NO es una URL: una URL cambia de
