@@ -4,6 +4,8 @@ import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/veta/button";
 import { InputField } from "@/components/veta/input-field";
 import { MoneyInput } from "@/components/veta/money-input";
+import { EntityFields } from "@/components/veta/entity-fields";
+import { clienteFormFields, datosClienteParaGuardar, valoresClienteDesde } from "@/lib/forms/cliente-form-spec";
 import { useRouter } from "next/navigation";
 import { useCotizadorCompat } from "@/lib/data/queries/cotizador-compat";
 import {
@@ -13,7 +15,7 @@ import {
   tieneItemsDeLaCategoria,
   type SeccionEspecificacion,
 } from "@/lib/data/contrato-items";
-import { textoPlazoSemanas } from "@/lib/data/contrato-fechas";
+import { textoPlazoSemanas, sugerirFechaEntrega } from "@/lib/data/contrato-fechas";
 import {
   requisitosPendientes,
   type CampoContrato,
@@ -112,13 +114,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
   );
 
   // Estado del formulario de datos del contratante — editable in situ (persistido al guardar).
-  const [clienteForm, setClienteForm] = useState({
-    nombre: cliente?.nombre ?? '',
-    documento: cliente?.documento ?? '',
-    telefono: cliente?.telefono ?? '',
-    email: cliente?.email ?? '',
-    domicilio: cliente?.domicilio ?? '',
-  });
+  const [clienteForm, setClienteForm] = useState(() => valoresClienteDesde(cliente));
   const setClienteCampo = (campo: keyof typeof clienteForm, valor: string) => {
     setClienteForm((prev) => ({ ...prev, [campo]: valor }));
   };
@@ -136,14 +132,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
   const seleccionarCliente = useCallback(
     (id: string) => {
       setClienteIdSeleccionado(id);
-      const c = clientes.find((x) => x.id === id);
-      setClienteForm({
-        nombre: c?.nombre ?? "",
-        documento: c?.documento ?? "",
-        telefono: c?.telefono ?? "",
-        email: c?.email ?? "",
-        domicilio: c?.domicilio ?? "",
-      });
+      setClienteForm(valoresClienteDesde(clientes.find((x) => x.id === id)));
     },
     [clientes],
   );
@@ -165,7 +154,19 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
         ? Math.max(1, Math.ceil(proyecto.diasEntregaEstimados / 7))
         : 7),
     ),
-    fechaEntregaMaxima: contratoExistente?.fechaEntregaMaxima ?? '',
+    // t-175: si el contrato todavía no tiene fecha de entrega, se siembra con la sugerida
+    // (fecha de firma + plazo en semanas hábiles de lunes a viernes). Un contrato ya guardado
+    // respeta su fecha: no se recalcula, porque un contrato no cambia de fecha porque se abra
+    // el modal.
+    fechaEntregaMaxima: contratoExistente?.fechaEntregaMaxima
+      ?? sugerirFechaEntrega(
+        contratoExistente?.fechaContrato ?? new Date().toISOString().slice(0, 10),
+        Number(
+          contratoExistente?.plazoSemanas
+          ?? (proyecto.diasEntregaEstimados ? Math.max(1, Math.ceil(proyecto.diasEntregaEstimados / 7)) : 7),
+        ),
+      )
+      ?? '',
     garantiaAnios: contratoExistente?.garantiaAnios ?? proyecto.garantiaAnios ?? 2,
     objetoItems: contratoExistente?.objetoItems ?? objetoDerivado,
     // t-168: `||` y no `??`. `core.ts` guarda este campo con `.trim() || null`, pero una fila
@@ -197,6 +198,34 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
   // porque dependía de un calendario oficial de feriados por año, y si ese año no estaba
   // cargado el contrato salía sin fecha — sin fecha no hay mora que aplicar. Acá no hay nada
   // que calcular: la persona que emite el contrato sabe hasta cuándo se entrega.
+  // ── t-175: la fecha de entrega se sugiere sola, y se respeta si la persona la cambió ──────
+  //
+  // `tocarFecha` es la memoria de "esto lo escribió un humano, no el cálculo". Sin ella, cada
+  // cambio de plazo pisaría una fecha elegida a mano; con ella, el cálculo solo rellena huecos.
+  const [tocarFecha, setTocarFecha] = useState(
+    Boolean(contratoExistente?.fechaEntregaMaxima),
+  );
+
+  /** Lo que el cálculo propondría AHORA, con los valores actuales del formulario. */
+  const sugerencia = sugerirFechaEntrega(form.fechaContrato, parseInt(form.plazoSemanas, 10));
+
+  /**
+   * Cambia el plazo y, si la fecha no la escribió a mano, la recalcula.
+   *
+   * Se aplica en el onChange del input y NO en un useEffect: un efecto se dispararía también al
+   * abrir el modal, al imprimir o al cambiar cualquier otro campo, y la fecha de entrega se
+   * movería sola. Un contrato no cambia de fecha porque alguien abra la pantalla.
+   */
+  const setPlazo = useCallback((valor: string) => {
+    setForm((prev) => ({
+      ...prev,
+      plazoSemanas: valor,
+      fechaEntregaMaxima: tocarFecha
+        ? prev.fechaEntregaMaxima
+        : sugerirFechaEntrega(prev.fechaContrato, parseInt(valor, 10)) ?? '',
+    }));
+  }, [tocarFecha]);
+
   const plazoSemanasNum = parseInt(form.plazoSemanas, 10);
 
   // Hitos: los ya persistidos si hay contrato (default 50/25/25 solo en el alta).
@@ -329,21 +358,12 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
         // campos del contratante eran inertes y, como la validación exigía `tieneCliente`, el
         // botón quedaba deshabilitado para siempre. Ahora, sin cliente previo, se crea uno con
         // lo escrito y se vincula al proyecto, que es lo que hacía falta para poder cerrar.
-        const nombreCliente = clienteForm.nombre.trim();
-        if (nombreCliente) {
-          const datosCliente = {
-            documento: clienteForm.documento.trim() || null,
-            telefono: clienteForm.telefono.trim() || null,
-            email: clienteForm.email.trim() || null,
-            domicilio: clienteForm.domicilio.trim() || null,
-          };
+        const datosCliente = datosClienteParaGuardar(clienteForm);
+        if (datosCliente.nombre) {
           if (clienteSeleccionado) {
-            await store.clientes.actualizar(clienteSeleccionado.id, {
-              nombre: nombreCliente,
-              ...datosCliente,
-            });
+            await store.clientes.actualizar(clienteSeleccionado.id, datosCliente);
           } else {
-            const nuevo = await store.clientes.crear({ nombre: nombreCliente, ...datosCliente });
+            const nuevo = await store.clientes.crear(datosCliente);
             await store.proyectos.vincularCliente(proyecto.id, nuevo.id);
           }
         }
@@ -414,31 +434,26 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
   // antes de t-166: el botón se deshabilitaba en silencio). Ahora la MISMA regla devuelve la
   // lista de requisitos incumplidos, y de ahí salen dos cosas que no pueden desincronizarse
   // entre sí porque salen del mismo cálculo: el mensaje inline de cada campo y la lista que
-  // se muestra junto al botón. Dos copias de la misma regla es lo que produjo el bug.
-  const pendientes = useMemo(
-    () =>
-      requisitosPendientes({
-        tieneCliente: Boolean(clienteSeleccionado),
-        nombreCliente: clienteForm.nombre,
-        valorTotal: form.valorTotal,
-        cantidadHitos: hitos.length,
-        todosPorcentaje,
-        sumaHitos,
-        plazoSemanas: form.plazoSemanas,
-        fechaEntregaMaxima: form.fechaEntregaMaxima,
-        anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion,
-      }),
-    [
-      clienteSeleccionado,
-      clienteForm.nombre,
-      form.valorTotal,
-      hitos,
-      todosPorcentaje,
-      sumaHitos,
-      form.plazoSemanas,
-      form.anexoPropuestaIdentificacion,
-    ],
-  );
+  // se muestra junto al botón.
+  //
+  // t-175: esto ya NO lleva useMemo, y es a propósito. El memo traía su propia lista de
+  // dependencias escrita a mano, y esa lista es una segunda copia de las entradas de la regla:
+  // se le olvidó `fechaEntregaMaxima`, así que al escribir la fecha el memo no se recalculaba y
+  // el botón se quedaba bloqueado con "falta la fecha" para siempre, aunque la fecha estuviera
+  // ahí. No hay forma de que un useMemo se queje por una dependencia que le falte. `requisitosPendientes`
+  // es una función pura y barata sobre un objeto chico: calcularla en cada render cuesta nada y
+  // elimina la clase entera de bug, que es mantener de a mano la lista de lo que hay que mirar.
+  const pendientes = requisitosPendientes({
+    tieneCliente: Boolean(clienteSeleccionado),
+    nombreCliente: clienteForm.nombre,
+    valorTotal: form.valorTotal,
+    cantidadHitos: hitos.length,
+    todosPorcentaje,
+    sumaHitos,
+    plazoSemanas: form.plazoSemanas,
+    fechaEntregaMaxima: form.fechaEntregaMaxima,
+    anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion,
+  });
 
   const esValido = pendientes.length === 0;
 
@@ -488,18 +503,12 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <InputField
-                label="Nombre *"
-                value={clienteForm.nombre}
-                onChange={(e) => setClienteCampo('nombre', e.target.value)}
-                required
-              />
-              <InputField label="Documento" value={clienteForm.documento} onChange={(e) => setClienteCampo('documento', e.target.value)} />
-              <InputField label="Teléfono" value={clienteForm.telefono} onChange={(e) => setClienteCampo('telefono', e.target.value)} />
-              <InputField label="Email" value={clienteForm.email} onChange={(e) => setClienteCampo('email', e.target.value)} />
-              <InputField label="Domicilio" value={clienteForm.domicilio} onChange={(e) => setClienteCampo('domicilio', e.target.value)} className="col-span-2" />
-            </div>
+            <EntityFields
+              className="grid grid-cols-2 gap-4"
+              fields={clienteFormFields}
+              values={clienteForm}
+              onChange={(campo, valor) => setClienteCampo(campo, valor)}
+            />
           </section>
 
           {/* Sección 2: Plazos */}
@@ -511,28 +520,29 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
               <InputField
                 label="Plazo de ejecución (semanas hábiles) *"
                 value={form.plazoSemanas}
-                onChange={(e) => setForm({ ...form, plazoSemanas: e.target.value })}
+                onChange={(e) => setPlazo(e.target.value)}
                 type="number"
                 min={1}
                 disabled={contratoFirmado}
                 error={errorDe('plazoSemanas')}
               />
-              {/* t-173: la fecha de entrega se escribe. Es el dato del que depende la mora del
-                  5 %, así que va junto al plazo y no se recalcula por debajo. */}
+              {/* t-175: la fecha se CALCULA sola (firma + plazo, lunes a viernes) y se puede
+                  cambiar a mano. `tocarFecha` marca que la persona la tocó, para que un cambio de
+                  plazo después no le pise la fecha que ella eligió. */}
               <InputField
                 label="Fecha de entrega *"
                 type="date"
                 value={form.fechaEntregaMaxima}
-                onChange={(e) => setForm({ ...form, fechaEntregaMaxima: e.target.value })}
+                onChange={(e) => { setTocarFecha(true); setForm({ ...form, fechaEntregaMaxima: e.target.value }) }}
                 disabled={contratoFirmado}
                 error={errorDe('fechaEntregaMaxima')}
               />
               <InputField label="Garantía (años)" value={form.garantiaAnios.toString()} onChange={(e) => setForm({ ...form, garantiaAnios: parseInt(e.target.value) || 2 })} type="number" min={0} />
             </div>
             <p className="text-[11px] text-text-muted mt-2">
-              {textoPlazoSemanas(plazoSemanasNum)
-                ? `La fecha de entrega que se imprime en el contrato es la de arriba; las ${plazoSemanasNum} semanas hábiles son el plazo pactado.`
-                : 'La fecha de entrega que se imprime en el contrato es la de arriba.'}
+              {sugerencia
+                ? `Se sugirió sola: ${plazoSemanasNum} semanas hábiles desde la firma, contando lunes a viernes y sin descontar festivos, así que puede quedar 1 o 2 días antes de la real. Si necesitás otra fecha, cambiala acá.`
+                : 'Poné el plazo de ejecución y la fecha de entrega se sugiere sola. Sin días festivos: podés corregirla a mano.'}
             </p>
             {contratoFirmado && (
               <p className="text-[11px] text-text-muted mt-2">
