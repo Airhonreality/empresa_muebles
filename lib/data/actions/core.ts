@@ -730,6 +730,7 @@ function columnasContrato(data: {
   emailCuerpo?: string | null
   aplicaClausulaPenalidad?: boolean
   aplicaPenalidadDefinitiva?: boolean
+  incluyeIVA?: boolean
 }) {
   return {
     valorTotal: data.valorTotal,
@@ -754,6 +755,7 @@ function columnasContrato(data: {
     // cosa borraría en silencio la cláusula de penalidad de un contrato ya firmado.
     aplicaClausulaPenalidad: data.aplicaClausulaPenalidad ?? true,
     aplicaPenalidadDefinitiva: data.aplicaPenalidadDefinitiva ?? true,
+    incluyeIVA: data.incluyeIVA ?? false,
   }
 }
 

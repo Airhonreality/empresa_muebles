@@ -223,6 +223,7 @@ export interface DatosContratoNuevo {
    *  OFF = el numeral no se imprime: sin penalidad de ningún tipo. */
   aplicaClausulaPenalidad?: boolean
   aplicaPenalidadDefinitiva?: boolean
+  incluyeIVA?: boolean
   hitos?: HitoPagoInput[]
 }
 
@@ -252,6 +253,7 @@ export interface DatosContratoEdicion {
    *  pactado. Apagarlo o encenderlo es una decisión explícita del Supervisor. */
   aplicaClausulaPenalidad?: boolean
   aplicaPenalidadDefinitiva?: boolean
+  incluyeIVA?: boolean
   /** t-166: si viene, el plan de pagos se REEMPLAZA por completo (borra los anteriores y
    *  reinserta estos). Si viene `undefined`, los hitos no se tocan. */
   hitos?: HitoPagoInput[]
@@ -274,6 +276,7 @@ export interface Contrato {
   anexoPropuestaIdentificacion: string | null
   aplicaClausulaPenalidad: boolean
   aplicaPenalidadDefinitiva: boolean
+  incluyeIVA: boolean
   especificacionesEstructura: string | null
   especificacionesHerrajes: string | null
   especificacionesMesones: string | null

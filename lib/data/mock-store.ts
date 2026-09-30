@@ -812,6 +812,7 @@ export function createMockStore(): DataStore {
            anexoPropuestaIdentificacion: data.anexoPropuestaIdentificacion ?? null,
            aplicaClausulaPenalidad: data.aplicaClausulaPenalidad ?? true,
            aplicaPenalidadDefinitiva: data.aplicaPenalidadDefinitiva ?? true,
+           incluyeIVA: data.incluyeIVA ?? false,
            objetoItems: data.objetoItems ?? null,
            especificacionesEstructura: data.especificacionesEstructura ?? null,
            especificacionesHerrajes: data.especificacionesHerrajes ?? null,
@@ -860,6 +861,7 @@ export function createMockStore(): DataStore {
             data.aplicaClausulaPenalidad ?? previo.aplicaClausulaPenalidad,
           aplicaPenalidadDefinitiva:
             data.aplicaPenalidadDefinitiva ?? previo.aplicaPenalidadDefinitiva,
+          incluyeIVA: data.incluyeIVA ?? previo.incluyeIVA,
           especificacionesEstructura: data.especificacionesEstructura ?? null,
           especificacionesHerrajes: data.especificacionesHerrajes ?? null,
           especificacionesMesones: data.especificacionesMesones ?? null,

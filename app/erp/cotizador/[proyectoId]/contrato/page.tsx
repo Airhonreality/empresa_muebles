@@ -563,6 +563,23 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           El valor total del presente contrato asciende a la suma de <strong>{fmtCOP(totalNeto)}</strong> (<em>{numeroALetras(totalNeto)}</em>), pagaderos a la cuenta autorizada de Hermanos García González S.A.S bajo los siguientes hitos de avance:
         </p>
 
+        {/* t-177: declaración, NO cálculo. El total de arriba YA trae el IVA si el proyecto lo
+            tiene aplicado (`aplica_iva` + `porcentaje_iva`); este interruptor solo decide si el
+            contrato lo dice. Con la frase, el cliente sabe que ese número es el precio final y no
+            le llega una factura con un 19 % encima.
+            Cuando el interruptor está apagado el contrato no menciona IVA: ese es el hueco que
+            hay que decidir (ver nota del modal). */}
+        {contrato.incluyeIVA && (
+          <p>
+            <strong>IVA incluido:</strong> el valor total pactado en este contrato{' '}
+            <strong>incluye</strong> el impuesto a las ventas (IVA){' '}
+            {proyecto?.porcentajeIva ? `del ${proyecto.porcentajeIva} %` : ''} ya aplicado, de modo
+            que sobre esa suma no se causa IVA adicional ni queda saldo por ese concepto. El
+            Contratante se obliga a pagar las sumas pactadas sin descontar, retener o compensar el
+            IVA, salvo por retención en la fuente legalmente obligatoria.
+          </p>
+        )}
+
         <table className="payment-table">
           <thead>
             <tr>

@@ -78,6 +78,7 @@ type FormContrato = {
    *  tipo: el numeral entero no se imprime. */
   aplicaClausulaPenalidad: boolean;
   aplicaPenalidadDefinitiva: boolean;
+  incluyeIVA: boolean;
   especificaciones: Record<SeccionEspecificacion, string>;
 };
 
@@ -180,6 +181,8 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
     // propósito se respeta: es una decisión del Supervisor, no un default perdido.
     aplicaClausulaPenalidad: contratoExistente?.aplicaClausulaPenalidad ?? true,
     aplicaPenalidadDefinitiva: contratoExistente?.aplicaPenalidadDefinitiva ?? true,
+    // t-177: el switch arranca con lo que dice el PROYECTO, que es donde el IVA se aplicó de verdad.
+    incluyeIVA: contratoExistente?.incluyeIVA ?? proyecto.aplicaIva,
     especificaciones: {
       Estructura: contratoExistente?.especificacionesEstructura ?? especificacionesDerivadas.Estructura,
       Herrajes: contratoExistente?.especificacionesHerrajes ?? especificacionesDerivadas.Herrajes,
@@ -330,6 +333,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
       alcanceSuministros: contratoExistente?.alcanceSuministros ?? null,
       aplicaClausulaPenalidad: form.aplicaClausulaPenalidad,
       aplicaPenalidadDefinitiva: form.aplicaPenalidadDefinitiva,
+      incluyeIVA: form.incluyeIVA,
       anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion.trim() || null,
       especificacionesEstructura: esp.Estructura.trim() || null,
       especificacionesHerrajes: esp.Herrajes.trim() || null,
@@ -728,6 +732,44 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                   className="w-full"
                 />
               </div>
+
+              {/* t-177: declaración de IVA, NO un cálculo. El IVA ya está aplicado en el total
+                  del proyecto (`aplica_iva` / `porcentaje_iva`), y el valor total de arriba es ese
+                  número. Este interruptor no suma ni resta nada: solo decide si el contrato
+                  declara por escrito que ese precio ya trae el IVA.
+
+                  Por eso se siembra desde el proyecto y no arranca en un valor fijo: si el
+                  interruptor dijera una cosa y el total otra, el contrato mentiría y el cliente
+                  recibe una factura con un 19 % encima de lo que firmó. */}
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.incluyeIVA}
+                  onChange={(e) => setForm({ ...form, incluyeIVA: e.target.checked })}
+                  disabled={contratoFirmado}
+                  className="mt-0.5 h-4 w-4 rounded border-border-subtle cursor-pointer accent-[var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-60"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-text-heading">
+                    Declarar que el valor total incluye IVA
+                  </span>
+                  <span className="block text-[11px] text-text-muted mt-1">
+                    Encendido, el contrato escribe que ese valor total ya incluye el IVA del{' '}
+                    {proyecto.porcentajeIva} % y que sobre esa suma no se causa IVA adicional.
+                    Apagado, el contrato no menciona IVA.
+                  </span>
+                  {form.incluyeIVA !== proyecto.aplicaIva && !contratoFirmado && (
+                    <span className="block text-[11px] mt-1 text-[var(--color-warning-ink,var(--color-text-muted))]">
+                      ⚠ Este interruptor no cambia el número: el valor total de arriba viene del
+                      proyecto, donde el IVA está{' '}
+                      {proyecto.aplicaIva ? 'aplicado' : 'NO aplicado'}. Si lo apagás, el contrato
+                      queda sin mencionar el IVA aunque el total ya lo tenga incluido (o al revés),
+                      y el IVA hay que aplicarlo o quitarlo en los parámetros financieros del
+                      proyecto, no acá.
+                    </span>
+                  )}
+                </span>
+              </label>
 
               {/* Hitos */}
               <div className="border border-border-subtle rounded-md p-4">

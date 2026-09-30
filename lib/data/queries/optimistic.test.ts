@@ -238,7 +238,7 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
       plazoSemanas: 7, plazoEjecucionTexto: '7 semanas hábiles',
       fechaEntregaMaxima: '2026-11-20', holguraDias: 8, objetoItems: null, alcanceSuministros: null,
       anexoPropuestaIdentificacion: null, aplicaClausulaPenalidad: true,
-      aplicaPenalidadDefinitiva: true, especificacionesEstructura: null,
+      aplicaPenalidadDefinitiva: true, incluyeIVA: true, especificacionesEstructura: null,
       especificacionesHerrajes: null, especificacionesMesones: null, especificacionesDesmonte: null,
       contratanteDomicilio: null, emailAsunto: null, emailCuerpo: null,
       createdAt: '2026-09-01', updatedAt: '2026-09-01', ...over,

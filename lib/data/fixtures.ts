@@ -137,6 +137,7 @@ export const CONTRATO_CANONICO: Contrato = {
   anexoPropuestaIdentificacion: 'Propuesta de Diseño y Presupuesto «Cocina integral roble» — versión 2 — fechada el 2026-06-28 — 7 páginas',
   aplicaClausulaPenalidad: true,
   aplicaPenalidadDefinitiva: true,
+  incluyeIVA: true,
   especificacionesEstructura: 'Estructura en roble macizo 18mm. Uniones con espiga y caja. Refuerzos metálicos en esquinas.',
   especificacionesHerrajes: 'Bisagras Blum de cierre suave. Correderas Full Extension 45cm. Tiradores acero 128mm.',
   especificacionesMesones: 'Mesón en granito negro absoluto pulido. Espesor 3cm. Bordes redondeados.',

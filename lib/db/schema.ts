@@ -214,6 +214,13 @@ export const contratos = pgTable("contratos", {
 	// es bilateral (también cubre que el Contratante no pague el anticipo), así que compartir el
 	// interruptor haría que apagar el 5 % borrara la cláusula que nos protege a nosotros.
 	aplicaPenalidadDefinitiva: boolean("aplica_penalidad_definitiva").default(true).notNull(),
+	// t-177: NO es un cálculo, es una DECLARACIÓN. El IVA ya se suma al total del proyecto
+	// (`aplica_iva` + `porcentaje_iva` en `proyectos`), y el `valorTotal` del contrato es ese
+	// total: ya incluye IVA si y solo si el proyecto lo tiene. Este campo solo decide si el
+	// contrato lo DICE. `.default(false)`, al revés que las penalidades: si una columna nueva de
+	// una cláusula protectora se pondría en `true`, un contrato YA FIRMADO reimpreso después ganaría
+	// una frase que no se pactó, y eso también es alterar un documento suscrito.
+	incluyeIVA: boolean("incluye_iva").default(false).notNull(),
 	especificacionesEstructura: text("especificaciones_estructura"),
 	especificacionesHerrajes: text("especificaciones_herrajes"),
 	especificacionesMesones: text("especificaciones_mesones"),
