@@ -715,6 +715,7 @@ function columnasContrato(data: {
   fechaContrato?: string | null
   plazoSemanas?: number | null
   plazoEjecucionTexto?: string
+  fechaEntregaMaxima?: string | null
   holguraDias?: number
   garantiaAnios?: number
   objetoItems?: string | null
@@ -734,6 +735,7 @@ function columnasContrato(data: {
     fechaContrato: data.fechaContrato ?? null,
     plazoSemanas: data.plazoSemanas ?? null,
     plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
+    fechaEntregaMaxima: data.fechaEntregaMaxima ?? null,
     holguraDias: data.holguraDias ?? 8,
     garantiaAnios: data.garantiaAnios ?? 2,
     objetoItems: data.objetoItems ?? null,

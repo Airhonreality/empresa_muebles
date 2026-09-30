@@ -205,6 +205,8 @@ export interface DatosContratoNuevo {
   fechaContrato?: string | null
   plazoSemanas?: number | null
   plazoEjecucionTexto?: string
+  /** t-173: la fecha de entrega se escribe a mano; es el dato que sostiene la mora. */
+  fechaEntregaMaxima?: string | null
   holguraDias?: number
   garantiaAnios?: number
   objetoItems?: string | null
@@ -231,6 +233,8 @@ export interface DatosContratoEdicion {
   fechaContrato?: string | null
   plazoSemanas?: number | null
   plazoEjecucionTexto?: string
+  /** t-173: la fecha de entrega se escribe a mano; es el dato que sostiene la mora. */
+  fechaEntregaMaxima?: string | null
   holguraDias?: number
   garantiaAnios?: number
   objetoItems?: string | null
@@ -261,6 +265,7 @@ export interface Contrato {
   garantiaAnios: number
   plazoSemanas: number | null
   plazoEjecucionTexto: string
+  fechaEntregaMaxima: string | null
   holguraDias: number
   objetoItems: string | null
   alcanceSuministros: string | null

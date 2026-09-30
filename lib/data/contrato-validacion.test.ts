@@ -35,6 +35,7 @@ function entrada(over: Partial<EntradaValidacionContrato> = {}): EntradaValidaci
     todosPorcentaje: true,
     sumaHitos: 100,
     plazoSemanas: '8',
+    fechaEntregaMaxima: '2026-11-20',
     anexoPropuestaIdentificacion: 'Propuesta «Cocina integral» — versión 1 — 4 páginas',
     ...over,
   }
@@ -76,6 +77,11 @@ const CASOS: { nombre: string; over: Partial<EntradaValidacionContrato>; campo: 
   { nombre: 'plazo no numérico', over: { plazoSemanas: 'ocho' }, campo: 'plazoSemanas' },
   { nombre: 'plazo 0', over: { plazoSemanas: '0' }, campo: 'plazoSemanas' },
   { nombre: 'plazo negativo', over: { plazoSemanas: '-3' }, campo: 'plazoSemanas' },
+  // t-173: la fecha de entrega es requisito. Sin ella el contrato sale sin fecha, y sin fecha
+  // no hay contra qué aplicar la retención del 5 %.
+  { nombre: 'fecha de entrega vacía', over: { fechaEntregaMaxima: '' }, campo: 'fechaEntregaMaxima' },
+  { nombre: 'fecha de entrega con texto', over: { fechaEntregaMaxima: 'en dos semanas' }, campo: 'fechaEntregaMaxima' },
+  { nombre: 'fecha de entrega incompleta', over: { fechaEntregaMaxima: '2026-11' }, campo: 'fechaEntregaMaxima' },
   {
     nombre: 'anexo vacío',
     over: { anexoPropuestaIdentificacion: '' },

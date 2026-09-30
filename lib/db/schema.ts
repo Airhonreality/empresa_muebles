@@ -174,12 +174,17 @@ export const contratos = pgTable("contratos", {
 	fechaContrato: text("fecha_contrato"),
 	contratanteDomicilio: text("contratante_domicilio"),
 	// t-167: `plazoEjecucionTexto` pasa a ser texto DERIVADO ("8 semanas hábiles") y deja de
-	// ser fuente. `plazoSemanas` es el único número del que salen las fechas contractuales
-	// (ventana de entrega / Fecha Máxima), porque un texto libre no se puede usar para
-	// matemática de calendario sin parsearlo — y parsear "4 a 5" es exactamente el DEFAULT
-	// peligroso que tenía esta columna.
+	// ser fuente. `plazoSemanas` es el plazo pactado, en semanas hábiles.
 	plazoSemanas: integer("plazo_semanas"),
+	// t-173: la FECHA de entrega se escribe a mano y se imprime tal cual. Se sacó el cálculo
+	// automático por días hábiles porque obligaba a mantener un calendario oficial de
+	// feriados Colombia por año, y sin el año cargado el contrato salía SIN fecha de entrega
+	// — sin fecha no hay mora que aplicar y el numeral de penalidad queda vacío. Un campo que
+	// se llena con un click es más confiable que uno que depende de un calendario externo.
+	fechaEntregaMaxima: text("fecha_entrega_maxima"),
 	plazoEjecucionTexto: text("plazo_ejecucion_texto").default('4 a 5'),
+	// t-173: LEGACY. Servía para calcular la fecha máxima (plazo + días de holgura) y ya no se
+	// usa: la fecha se escribe. Se conserva la columna porque hay contratos firmados.
 	holguraDias: integer("holgura_dias").default(8),
 	garantiaAnios: integer("garantia_anios").default(2),
 	objetoItems: text("objeto_items"),

@@ -5,7 +5,7 @@
  * sea una respuesta que el usuario pueda leer, no un estado mudo — y para que esa respuesta
  * se pueda testear sin montar nada (patrón `node:assert` + `npx tsx` del repo, ver AGENTS.md).
  *
- * Por qué NO se reimplementa la validación aquí: estas condiciones son las mismas 8 de
+ * Por qué NO se reimplementa la validación aquí: estas condiciones son las mismas 9 de
  * `esValido` en `app/erp/cotizador/ContratoModal.tsx`. Este módulo las devuelve una por una
  * para poder nombrarlas; el modal decide si el botón se habilita con `pendientes.length === 0`.
  * La tabla de casos de `contrato-validacion.test.ts` ata las dos cosas para que una no se
@@ -18,6 +18,7 @@ export type CampoContrato =
   | 'valorTotal'
   | 'hitos'
   | 'plazoSemanas'
+  | 'fechaEntregaMaxima'
   | 'anexoPropuestaIdentificacion'
 
 /** Requisito incumplido: qué campo es y el texto exacto que ve el usuario. */
@@ -42,6 +43,8 @@ export type EntradaValidacionContrato = {
   sumaHitos: number
   /** Plazo en semanas hábiles, como texto. */
   plazoSemanas: string
+  /** t-173: fecha de entrega del contrato, 'AAAA-MM-DD'. Es lo que sostiene la mora del 5 %. */
+  fechaEntregaMaxima: string
   anexoPropuestaIdentificacion: string
 }
 
@@ -95,6 +98,15 @@ export function requisitosPendientes(e: EntradaValidacionContrato): RequisitoPen
     pendientes.push({
       campo: 'plazoSemanas',
       mensaje: 'El plazo tiene que ser un número entero de semanas hábiles mayor a 0.',
+    })
+  }
+
+  // t-173: sin fecha de entrega el contrato se emite sin fecha, y sin fecha no hay contra qué
+  // aplicar la retención del 5 %. Por eso es requisito, igual que el plazo.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(e.fechaEntregaMaxima)) {
+    pendientes.push({
+      campo: 'fechaEntregaMaxima',
+      mensaje: 'Falta la fecha de entrega. Es la fecha que se imprime en el contrato y la contra la que corre la mora.',
     })
   }
 

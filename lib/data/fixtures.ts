@@ -130,6 +130,7 @@ export const CONTRATO_CANONICO: Contrato = {
   garantiaAnios: 2,
   plazoSemanas: 6,
   plazoEjecucionTexto: '6 semanas hábiles',
+  fechaEntregaMaxima: '2026-11-20',
   holguraDias: 8,
   objetoItems: 'Cocina integral en roble con isla central y mesón en granito. Incluye: muebles bajos, muebles altos, isla central, despensa.',
   alcanceSuministros: 'Suministra Veta Dorada: mobiliario en roble, isla central, mesón en granito.\nSuministra el Contratante: Typed Anchor 60 cm, campana extractora.\nExcluido del alcance: instalación de gas y conexiones eléctricas.',

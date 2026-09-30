@@ -806,6 +806,7 @@ export function createMockStore(): DataStore {
            // dos, y se marca como tal para que no se lea como un plazo de 4 semanas.
            plazoSemanas: data.plazoSemanas ?? 7,
            plazoEjecucionTexto: data.plazoEjecucionTexto ?? `${data.plazoSemanas ?? 7} semanas`,
+           fechaEntregaMaxima: data.fechaEntregaMaxima ?? null,
            holguraDias: data.holguraDias ?? 8,
            alcanceSuministros: data.alcanceSuministros ?? null,
            anexoPropuestaIdentificacion: data.anexoPropuestaIdentificacion ?? null,
@@ -849,6 +850,7 @@ export function createMockStore(): DataStore {
           valorTotal: data.valorTotal,
           garantiaAnios: data.garantiaAnios ?? 2,
           plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
+          fechaEntregaMaxima: data.fechaEntregaMaxima ?? previo.fechaEntregaMaxima ?? null,
           holguraDias: data.holguraDias ?? 8,
           objetoItems: data.objetoItems ?? null,
           // t-170: si el payload no lo trae se conserva lo pactado — el espejo tiene que

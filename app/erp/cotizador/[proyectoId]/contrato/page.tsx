@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation'
 import { CotizadorCompatProvider, useCotizadorCompat } from '@/lib/data/queries/cotizador-compat'
 import { Button } from '@/components/veta/button'
-import { calcularVentanaEntrega, textoPlazoSemanas } from '@/lib/data/contrato-fechas'
+import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import { ordinalesClausulas, type ClaveClausula } from '@/lib/data/contrato-clausulas'
 
 // Plantilla del contrato de fabricación e instalación (t-163, 2026-09-14).
@@ -87,17 +87,10 @@ function fechaLarga(iso: string | null): { dia: string; mes: string; anio: strin
   return { dia: day, mes: MESES[parseInt(month, 10) - 1] ?? month, anio: year }
 }
 
-/** 'AAAA-MM-DD' → '15 de octubre de 2026', para la ventana de entrega. */
+/** 'AAAA-MM-DD' → '15 de octubre de 2026', para la fecha de entrega del contrato. */
 function fechaTexto(iso: string): string {
   const f = fechaLarga(iso)
   return f ? `${f.dia} de ${f.mes} de ${f.anio}` : iso
-}
-
-/** Motivos legibles de `calcularVentanaEntrega`, para la cláusula de plazos. */
-const MOTIVOS_VENTANA: Record<string, string> = {
-  sin_fecha_firma: 'el contrato no tiene fecha de firma.',
-  sin_plazo: 'el contrato no tiene plazo en semanas hábiles.',
-  feriados_sin_verificar: 'el calendario de festivos de ese año no está verificado.',
 }
 
 export default function ContratoPrintPage() {
@@ -136,7 +129,6 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
   }
 
   const totalNeto = parseNum(contrato.valorTotal)
-  const fecha = fechaLarga(contrato.fechaContrato)
 
   // t-166: el objeto se renderiza como elementos React, NO con dangerouslySetInnerHTML.
   // Antes se concatenaba HTML a mano y se inyectaba sin escapar: el texto se arma con
@@ -190,15 +182,13 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
 
   const hayEspecificaciones = !!(contrato.especificacionesEstructura || contrato.especificacionesHerrajes || contrato.especificacionesMesones || contrato.especificacionesDesmonte)
 
-  // t-167: la ventana de entrega se CALCULA acá y no se persiste. La fecha máxima es el dato
-  // que el cliente pidió para no tener que discutirla después, y guardarla en la base la
-  // convertiría en un segundo plazo que puede quedar viejo si el calendario del año se corrige.
-  // La fuente es `plazoSemanas` + `holguraDias` + la fecha de firma, los tres ya persistidos.
-  const ventana = calcularVentanaEntrega({
-    fechaFirma: contrato.fechaContrato,
-    plazoSemanas: contrato.plazoSemanas,
-    holguraDias: contrato.holguraDias,
-  })
+  // t-173: la fecha de entrega se LEE, no se calcula. Se sacó el cálculo por días hábiles con
+  // calendario de feriados: dependía de un año cargado a mano y, si faltaba, el contrato salía
+  // sin fecha. Ahora es un campo que se escribe en el modal y se imprime tal cual.
+  const fechaEntrega = fechaLarga(contrato.fechaEntregaMaxima)
+    ? fechaTexto(contrato.fechaEntregaMaxima as string)
+    : null
+  const fechaFirma = fechaLarga(contrato.fechaContrato)
 
   // El texto del plazo sale del número. Si el número no está (contrato viejo), se cae al texto
   // guardado, y si tampoco está, se dice "el plazo acordado en la Propuesta" en vez de inventar
@@ -244,9 +234,9 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           <span className="ref">Código de Referencia: {contrato.codigoContrato}</span>
         </div>
 
-        {fecha && (
+        {fechaFirma && (
           <div className="meta-date">
-            Bogotá D.C., {fecha.dia} de {fecha.mes} de {fecha.anio}
+            Bogotá D.C., {fechaFirma.dia} de {fechaFirma.mes} de {fechaFirma.anio}
           </div>
         )}
 
@@ -321,10 +311,6 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         <p>
           <strong>Anexo 1 — Propuesta de Diseño y Presupuesto:</strong> {contrato.anexoPropuestaIdentificacion || 'Propuesta de Diseño y Presupuesto del proyecto ' + proyecto.nombreProyecto}. Dicha propuesta se anexa al presente contrato. Su contenido, sus render y sus precios forman parte integral de este contrato.
         </p>
-        <p>
-          <strong>Anexo 2 — Acta de Entrega de Mobiliario</strong> y <strong>Anexo 3 — Acta de Garantías</strong>: se suscriben por separado, en el momento en que ocurran los hechos que cada una documenta, y forman parte de este contrato. La no existencia de estos actas al momento de la firma no afecta la validez del contrato ni los derechos derivados de ellas.
-        </p>
-
         <div className="clausula-header">{ord('ALCANCE')}. ALCANCE</div>
         <p>
           El alcance de este contrato queda limitado a los ítems cotizados y descritos en el numeral{' '}
@@ -357,55 +343,30 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           </div>
         )}
 
-        <div className="clausula-header">{ord('PLAZOS')}. PLAZOS Y VENTANA DE ENTREGA</div>
+        <div className="clausula-header">{ord('PLAZOS')}. PLAZOS Y FECHA DE ENTREGA</div>
         <p>
-          El plazo de ejecución de este contrato es de <strong>{plazoTexto}</strong>. Para calcular
-          las fechas de la ventana de entrega que aparece más abajo se estima como fecha de inicio
-          la semana en que se firma este documento{fecha ? `, el ${fecha.dia} de ${fecha.mes} de ${fecha.anio}` : ''}.
-          Esa fecha es una estimación: la fecha de inicio legítima es la fecha en que el Contratante
-          realiza el primer anticipo de este contrato, y desde ella corre el plazo.
+          El plazo de ejecución pactado es de <strong>{plazoTexto}</strong>{fechaFirma ? `, contados desde la firma de este documento, el ${fechaFirma.dia} de ${fechaFirma.mes} de ${fechaFirma.anio}` : ''}.
+          {fechaEntrega
+            ? <> La entrega se realiza el <strong>{fechaEntrega}</strong>.</>
+            : null}
         </p>
-        {ventana.ok && (
-          <div className="ventana-box">
-            <div className="ventana-row">
-              <span>Entrega más temprana (mínima):</span>
-              <strong className="font-mono">{fechaTexto(ventana.ventana.minima)}</strong>
+        {fechaEntrega && (
+          <div className="fecha-entrega-box">
+            <div className="fecha-entrega-row">
+              <span>Fecha de entrega comprometida:</span>
+              <strong className="font-mono">{fechaEntrega}</strong>
             </div>
-            <div className="ventana-row">
-              <span>Fecha máxima comprometida:</span>
-              <strong className="font-mono">{fechaTexto(ventana.ventana.maxima)}</strong>
-            </div>
-            <p className="ventana-nota">
-              Estas dos fechas son estimadas a partir de la fecha de firma, antes descrita como
-              fecha de inicio estimada. La fecha mínima se cuenta con {contrato.plazoSemanas} semanas
-              hábiles y la máxima añade {contrato.holguraDias || 8} días hábiles de holgura
-              adicional e incondicional, ya incluida en el conteo anterior. Ambas fechas se calculan
-              únicamente con días hábiles: no se cuenta sábado, domingo ni festivo.
+            <p className="fecha-entrega-nota">
+              El plazo corre desde la fecha en que el Contratante realiza el primer anticipo de este
+              contrato. Si ese anticipo se paga después de la firma, la fecha de entrega se corre por
+              el mismo número de días de retraso. El comprobante de pago acredita la fecha real de
+              inicio.
             </p>
           </div>
         )}
-        {/* t-172: si la ventana no se puede calcular, en el papel NO va ninguna explicación: el
-            contrato es un documento para el cliente y un recuadro que dice "esta fecha no se
-            imprime" se lee como una fecha impugnable. Pero tampoco se puede dejar el hueco en
-            silencio, porque quedaría un contrato sin fecha de entrega, que es justo lo que
-            sostiene la mora del 5 %. Por eso el aviso va solo en pantalla (`print:hidden`): quien
-            está por imprimir lo ve, el PDF sale limpio. Motivos posibles: el contrato no tiene
-            fecha de firma, o no tiene plazo en semanas (el modal lo exige), o el calendario de
-            festivos de ese año no está verificado. */}
-        {!ventana.ok && (
-          <div className="print:hidden mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900">
-            <strong>Esta copia no tiene fecha de entrega calculada.</strong> En el PDF no va a
-            aparecer ninguna fecha:{' '}
-            {MOTIVOS_VENTANA[ventana.motivo] ?? 'el calendario de ese año no está verificado'}. No
-            entregues ni imprimas este contrato así, porque sin fecha máxima no corre la cláusula de
-            mora. Corregí el dato en el contrato y volvé a imprimir.
-          </div>
-        )}
         <p>
-          <strong>Anticipo tardío:</strong> si el pago del primer anticipo se realiza después de la
-          firma, la fecha máxima se corre por el mismo número de días hábiles que se tarde el
-          anticipo. El contrato no obliga al Contratista a financiar la producción con recursos
-          propios, y el comprobante de pago acredita la fecha real de inicio.
+          <strong>Anticipo tardío:</strong> el contrato no obliga al Contratista a financiar la
+          producción con recursos propios antes de recibir el primer anticipo.
         </p>
 
         <div className="clausula-header">{ord('ENTREGA')}. ENTREGA Y AJUSTES</div>
@@ -493,6 +454,17 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         </p>
         <p>
           <strong>Herrajes e Iluminación:</strong> La garantía de sistemas electrónicos, iluminación LED, electrodomésticos o herrajes mecánicos de marca corresponderá estrictamente a la ofrecida de forma directa por el fabricante de dichos insumos, y se documentará en el <strong>Acta de Garantías (Anexo 3)</strong> que se firma al cierre de la obra.
+        </p>
+        {/* t-174: el Acta de Entrega y el Acta de Garantías se nombran acá, donde importan, y
+            no en la lista de anexos. En el numeral PRIMERA parecían piezas de un inventario de
+            papeles y además se añadía una frase sobre "la no existencia de estos actas al
+            momento de la firma", que describe algo que no es un problema: el acta de entrega se
+            firma cuando se entrega, y el acta de garantías cuando se cierra la obra. */}
+        <p>
+          El <strong>Acta de Entrega (Anexo 2)</strong> se suscribe en el momento de la entrega del
+          mobiliario e inicia el cómputo de la garantía. El <strong>Acta de Garantías (Anexo 3)</strong>
+          se suscribe al cierre de la obra y deja constancia de las garantías de fábrica de cada
+          insumo instalado.
         </p>
 
         <div className="clausula-header">{ord('DESMONTE')}. DESMONTE, CONDICIONES DEL SITIO Y FUERZA MAYOR</div>
@@ -745,28 +717,28 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         .tech-item strong {
           color: #444444;
         }
-        /* t-167: la ventana de entrega va en recuadro porque es el único dato del contrato que
-           el cliente va a buscar con el dedo para comparar contra el cronograma. */
-        .ventana-box {
+        /* t-173: la fecha de entrega va en recuadro porque es el dato que el cliente busca con
+           el dedo para compararlo contra el cronograma. */
+        .fecha-entrega-box {
           background-color: #FAF9F6;
           border: 1px solid #C5A059;
           border-radius: 6px;
           padding: 14px 16px;
           margin: 14px 0;
         }
-        .ventana-row {
+        .fecha-entrega-nota {
+          font-size: 11.5px;
+          color: #555555;
+          margin: 8px 0 0;
+          text-align: left;
+        }
+        .fecha-entrega-row {
           display: flex;
           justify-content: space-between;
           align-items: baseline;
           gap: 16px;
           font-size: 13px;
           margin-bottom: 4px;
-        }
-        .ventana-nota {
-          font-size: 11.5px;
-          color: #555555;
-          margin: 8px 0 0;
-          text-align: left;
         }
         .payment-table {
           width: 100%;

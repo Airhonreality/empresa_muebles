@@ -13,12 +13,11 @@ import {
   tieneItemsDeLaCategoria,
   type SeccionEspecificacion,
 } from "@/lib/data/contrato-items";
-import { calcularVentanaEntrega, textoPlazoSemanas } from "@/lib/data/contrato-fechas";
+import { textoPlazoSemanas } from "@/lib/data/contrato-fechas";
 import {
   requisitosPendientes,
   type CampoContrato,
 } from "@/lib/data/contrato-validacion";
-import { feriadosDe } from "@/lib/data/feriados-colombia";
 import type {
   Proyecto, Cliente, EspacioVariante, ItemVariante, ProductoCatalogo, Contrato,
   HitoPago, DatosContratoEdicion,
@@ -55,23 +54,6 @@ type HitoLocal = {
   fechaLimite?: string;
 };
 
-/** 'AAAA-MM-DD' → '15 oct 2026', sin corrimiento por zona horaria. */
-function fechaCorta(iso: string): string {
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
-
-/** Motivos legibles de `calcularVentanaEntrega`, para el modal. */
-const MOTIVOS_VENTANA: Record<string, string> = {
-  sin_fecha_firma: 'falta la fecha de firma del contrato.',
-  sin_plazo: 'falta el plazo en semanas hábiles.',
-  feriados_sin_verificar: 'el calendario de festivos de ese año todavía no está verificado.',
-};
-
 type FormContrato = {
   codigoContrato: string;
   fechaContrato: string;
@@ -84,7 +66,8 @@ type FormContrato = {
    * cronograma interno tenía previsto.
    */
   plazoSemanas: string;
-  holguraDias: string;
+  /** t-173: la fecha de entrega del contrato. Se escribe, no se calcula. */
+  fechaEntregaMaxima: string;
   garantiaAnios: number;
   objetoItems: string;
   /** t-167: cómo se identifica el Anexo 1 (Propuesta impresa que se adjunta al contrato). */
@@ -182,7 +165,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
         ? Math.max(1, Math.ceil(proyecto.diasEntregaEstimados / 7))
         : 7),
     ),
-    holguraDias: (contratoExistente?.holguraDias ?? 8).toString(),
+    fechaEntregaMaxima: contratoExistente?.fechaEntregaMaxima ?? '',
     garantiaAnios: contratoExistente?.garantiaAnios ?? proyecto.garantiaAnios ?? 2,
     objetoItems: contratoExistente?.objetoItems ?? objetoDerivado,
     // t-168: `||` y no `??`. `core.ts` guarda este campo con `.trim() || null`, pero una fila
@@ -204,33 +187,17 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
 
   const [errorGuardado, setErrorGuardado] = useState<string | null>(null);
 
-  // t-167: un contrato firmado tiene su fecha máxima YA impresa y ya suscrita. Permitir editar
-  // plazo, holgura o fecha de firma después de eso movería en silencio una fecha contractual.
+  // t-167: un contrato firmado tiene su fecha de entrega YA impresa y ya suscrita. Permitir
+  // editar plazo, fecha de entrega o fecha de firma después de eso movería en silencio una
+  // fecha contractual.
   // Se bloquea acá y no en la base: es la última línea, no la única.
   const contratoFirmado = contratoExistente?.estado === 'firmado';
 
+  // t-173: la fecha de entrega se ESCRIBE, no se calcula. Se sacó el cálculo por días hábiles
+  // porque dependía de un calendario oficial de feriados por año, y si ese año no estaba
+  // cargado el contrato salía sin fecha — sin fecha no hay mora que aplicar. Acá no hay nada
+  // que calcular: la persona que emite el contrato sabe hasta cuándo se entrega.
   const plazoSemanasNum = parseInt(form.plazoSemanas, 10);
-  const holguraNum = parseInt(form.holguraDias, 10);
-
-  // t-167: la ventana de entrega que se va a imprimir. Vive AQUÍ, en el modal (la interfaz que
-  // define los detalles del proyecto), no en la página imprimible: la página solo lee. Y si el
-  // calendario de ese año no está verificado, no hay fecha — se explica por qué en vez de
-  // inventar una fecha que después se impugna.
-  const ventana = useMemo(
-    () =>
-      calcularVentanaEntrega({
-        fechaFirma: form.fechaContrato,
-        plazoSemanas: Number.isInteger(plazoSemanasNum) ? plazoSemanasNum : null,
-        holguraDias: Number.isInteger(holguraNum) ? holguraNum : null,
-      }),
-    [form.fechaContrato, plazoSemanasNum, holguraNum],
-  );
-
-  const anioFirma = Number(form.fechaContrato.slice(0, 4));
-  const feriadosPendientes = useMemo(
-    () => (ventana.ok ? [] : feriadosDe(anioFirma).pendientes),
-    [ventana.ok, anioFirma],
-  );
 
   // Hitos: los ya persistidos si hay contrato (default 50/25/25 solo en el alta).
   const [hitos, setHitos] = useState<HitoLocal[]>(() => {
@@ -320,7 +287,9 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
       // puede quedar con un "4 a 5" que contradiga el plazo numérico que se acaba de medir.
       plazoSemanas: Number.isInteger(plazoSemanasNum) ? plazoSemanasNum : null,
       plazoEjecucionTexto: textoPlazoSemanas(plazoSemanasNum) ?? undefined,
-      holguraDias: Number.isInteger(holguraNum) ? holguraNum : 8,
+      fechaEntregaMaxima: form.fechaEntregaMaxima || null,
+      // t-173: la holgura ya no calcula nada. La columna no se toca: se reenvía lo que había.
+      holguraDias: contratoExistente?.holguraDias ?? 8,
       garantiaAnios: form.garantiaAnios,
       objetoItems: form.objetoItems.trim() || null,
       // El texto de "Suministra Veta / Suministra el Contratante" ya no se edita ni se imprime
@@ -337,7 +306,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
       contratanteDomicilio: clienteForm.domicilio.trim() || null,
       hitos: hitos.map((h) => ({ tipo: h.tipo, monto: h.montoOPorcentaje, razon: h.razon })),
     };
-  }, [form, hitos, clienteForm.domicilio, plazoSemanasNum, holguraNum, contratoExistente]);
+  }, [form, hitos, clienteForm.domicilio, plazoSemanasNum, contratoExistente]);
 
   /**
    * t-166: alta O edición, y con el error a la vista.
@@ -456,6 +425,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
         todosPorcentaje,
         sumaHitos,
         plazoSemanas: form.plazoSemanas,
+        fechaEntregaMaxima: form.fechaEntregaMaxima,
         anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion,
       }),
     [
@@ -547,69 +517,29 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                 disabled={contratoFirmado}
                 error={errorDe('plazoSemanas')}
               />
+              {/* t-173: la fecha de entrega se escribe. Es el dato del que depende la mora del
+                  5 %, así que va junto al plazo y no se recalcula por debajo. */}
               <InputField
-                label="Días hábiles de holgura"
-                value={form.holguraDias}
-                onChange={(e) => setForm({ ...form, holguraDias: e.target.value })}
-                type="number"
-                min={0}
+                label="Fecha de entrega *"
+                type="date"
+                value={form.fechaEntregaMaxima}
+                onChange={(e) => setForm({ ...form, fechaEntregaMaxima: e.target.value })}
                 disabled={contratoFirmado}
+                error={errorDe('fechaEntregaMaxima')}
               />
               <InputField label="Garantía (años)" value={form.garantiaAnios.toString()} onChange={(e) => setForm({ ...form, garantiaAnios: parseInt(e.target.value) || 2 })} type="number" min={0} />
             </div>
+            <p className="text-[11px] text-text-muted mt-2">
+              {textoPlazoSemanas(plazoSemanasNum)
+                ? `La fecha de entrega que se imprime en el contrato es la de arriba; las ${plazoSemanasNum} semanas hábiles son el plazo pactado.`
+                : 'La fecha de entrega que se imprime en el contrato es la de arriba.'}
+            </p>
             {contratoFirmado && (
               <p className="text-[11px] text-text-muted mt-2">
-                El contrato está firmado: plazo y holgura ya están comprometidos y no se editan
-                acá. Un cambio de plazo después de la firma necesita un otrosí, no un overwrite.
+                El contrato está firmado: plazo y fecha de entrega ya están comprometidos y no se
+                editan acá. Un cambio después de la firma necesita un otrosí, no un overwrite.
               </p>
             )}
-
-            {/* t-167: ventana de entrega. Se muestra antes de imprimir para que el número se
-                pueda corregir mirando la fecha, no después de mandar el contrato. */}
-            <div className="mt-3 rounded-md border border-border-subtle bg-bg-paper p-3">
-              {ventana.ok ? (
-                <div className="space-y-1">
-                  <p className="text-sm text-text-heading">
-                    Entrega más temprana: <strong className="font-mono">{fechaCorta(ventana.ventana.minima)}</strong>
-                  </p>
-                  <p className="text-sm text-text-heading">
-                    Fecha máxima comprometida: <strong className="font-mono">{fechaCorta(ventana.ventana.maxima)}</strong>
-                  </p>
-                  <p className="text-[11px] text-text-muted">
-                    {textoPlazoSemanas(plazoSemanasNum) ?? 'el plazo indicado'} hábiles desde la
-                    firma, más {holguraNum || 0} días hábiles de holgura. No cuenta fin de semana ni
-                    festivos. Son fechas estimadas desde la firma: la fecha de inicio legítima es la
-                    del primer anticipo, y si ese anticipo se paga después, la fecha máxima se corre
-                    por los días hábiles de retraso.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {/* t-167: si no hay fecha máxima, no se muestra NINGUNA fecha. Mostrar la
-                      mínima sola invita a leerla como compromiso de entrega, y la mínima sin la
-                      máxima es exactamente el hueco que el cliente quiere cerrar. */}
-                  <p className="text-sm text-text-heading">
-                    Ventana de entrega: <strong>no calculable todavía</strong>
-                  </p>
-                  <p className="text-[11px] text-text-muted">
-                    {MOTIVOS_VENTANA[ventana.motivo]} Es intencional: imprimir una fecha de
-                    vencimiento sin calendario verificado es peor que no imprimirla.
-                  </p>
-                  {feriadosPendientes.length > 0 && (
-                    <details className="text-[11px] text-text-muted">
-                      <summary className="cursor-pointer">
-                        Festivos sin verificar para {anioFirma} ({feriadosPendientes.length})
-                      </summary>
-                      <ul className="mt-1 list-disc pl-4">
-                        {feriadosPendientes.map((nombre) => (
-                          <li key={nombre}>{nombre}</li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </div>
-              )}
-            </div>
           </section>
 
           {/* Sección 3: Especificaciones — solo mostrar secciones con items cotizados.
