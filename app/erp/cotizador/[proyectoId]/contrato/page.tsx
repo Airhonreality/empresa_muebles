@@ -365,7 +365,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           Esa fecha es una estimación: la fecha de inicio legítima es la fecha en que el Contratante
           realiza el primer anticipo de este contrato, y desde ella corre el plazo.
         </p>
-        {ventana.ok ? (
+        {ventana.ok && (
           <div className="ventana-box">
             <div className="ventana-row">
               <span>Entrega más temprana (mínima):</span>
@@ -383,16 +383,22 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
               únicamente con días hábiles: no se cuenta sábado, domingo ni festivo.
             </p>
           </div>
-        ) : (
-          <div className="ventana-box ventana-box-vacia">
-            <p className="ventana-nota">
-              <strong>La fecha máxima de entrega no se imprime en esta copia.</strong> Motivo:{' '}
-              {MOTIVOS_VENTANA[ventana.motivo] ?? 'el calendario de ese año no está verificado'}{' '}
-              Imprimir una fecha de vencimiento sin calendario oficial verificado sería peor que
-              no imprimirla, porque es una fecha que se puede impugnar. El plazo en semanas
-              hábiles pactado en el párrafo anterior es el que obliga, y la fecha máxima se
-              emite en la copia que el Contratista diligencie una vez verificado el calendario.
-            </p>
+        )}
+        {/* t-172: si la ventana no se puede calcular, en el papel NO va ninguna explicación: el
+            contrato es un documento para el cliente y un recuadro que dice "esta fecha no se
+            imprime" se lee como una fecha impugnable. Pero tampoco se puede dejar el hueco en
+            silencio, porque quedaría un contrato sin fecha de entrega, que es justo lo que
+            sostiene la mora del 5 %. Por eso el aviso va solo en pantalla (`print:hidden`): quien
+            está por imprimir lo ve, el PDF sale limpio. Motivos posibles: el contrato no tiene
+            fecha de firma, o no tiene plazo en semanas (el modal lo exige), o el calendario de
+            festivos de ese año no está verificado. */}
+        {!ventana.ok && (
+          <div className="print:hidden mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+            <strong>Esta copia no tiene fecha de entrega calculada.</strong> En el PDF no va a
+            aparecer ninguna fecha:{' '}
+            {MOTIVOS_VENTANA[ventana.motivo] ?? 'el calendario de ese año no está verificado'}. No
+            entregues ni imprimas este contrato así, porque sin fecha máxima no corre la cláusula de
+            mora. Corregí el dato en el contrato y volvé a imprimir.
           </div>
         )}
         <p>
@@ -747,11 +753,6 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           border-radius: 6px;
           padding: 14px 16px;
           margin: 14px 0;
-        }
-        .ventana-box-vacia {
-          background-color: #FCFCFC;
-          border-style: dashed;
-          border-color: #CCCCCC;
         }
         .ventana-row {
           display: flex;
