@@ -313,8 +313,13 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         {/* t-167: el Anexo 1 se identifica por contenido —propuesta impresa, versión, fecha y
             número de páginas— y no por URL. Un enlace a la propuesta online se rompe, y el
             reclamo más frecuente era justo ese: "me enviaron el contrato sin el anexo". */}
+        {/* t-171: acá NO se cita el plazo de entrega de la Propuesta. El plazo contractual lo
+            fija el numeral PLAZOS de este mismo contrato, y si además la Propuesta "formara
+            parte" con un plazo propio, el documento tendría dos plazos y el que se contradiga
+            queda anulado sin que nadie pueda saber cuál. La Propuesta se anexa por su
+            contenido (ítems, renders, precios), que es lo que no está pactado en otro lado. */}
         <p>
-          <strong>Anexo 1 — Propuesta de Diseño y Presupuesto:</strong> {contrato.anexoPropuestaIdentificacion || 'Propuesta de Diseño y Presupuesto del proyecto ' + proyecto.nombreProyecto}. Dicha propuesta se anexa al presente contrato. Su contenido, sus render, sus precios y su plazo de entrega forman parte integral de este contrato.
+          <strong>Anexo 1 — Propuesta de Diseño y Presupuesto:</strong> {contrato.anexoPropuestaIdentificacion || 'Propuesta de Diseño y Presupuesto del proyecto ' + proyecto.nombreProyecto}. Dicha propuesta se anexa al presente contrato. Su contenido, sus render y sus precios forman parte integral de este contrato.
         </p>
         <p>
           <strong>Anexo 2 — Acta de Entrega de Mobiliario</strong> y <strong>Anexo 3 — Acta de Garantías</strong>: se suscriben por separado, en el momento en que ocurran los hechos que cada una documenta, y forman parte de este contrato. La no existencia de estos actas al momento de la firma no afecta la validez del contrato ni los derechos derivados de ellas.

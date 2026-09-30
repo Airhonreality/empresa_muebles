@@ -9,6 +9,7 @@ import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { GalleryRail } from '@/components/veta/gallery-rail'
 import { ProductSheetModal } from '@/components/veta/product-sheet-modal'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
+import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 
 // F-08 Propuesta pública (disenio_F08_propuesta_publica.md). Ruta simplificada
@@ -818,7 +819,16 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-text-muted mt-3">Garantía: {contrato.garantiaAnios} años · Plazo: {contrato.plazoEjecucionTexto}</p>
+              {/* t-171: el plazo sale del NÚMERO (`plazoSemanas`), igual que en el contrato, con
+                  la misma cadena de respaldo. Antes esta línea imprimía `plazoEjecucionTexto`, el
+                  texto libre legacy: son dos campos distintos para lo mismo, así que la Propuesta
+                  y el contrato podían decir plazos diferentes siendo el mismo contrato. */}
+              <p className="text-xs text-text-muted mt-3">
+                Garantía: {contrato.garantiaAnios} años · Plazo:{' '}
+                {textoPlazoSemanas(contrato.plazoSemanas)
+                  ?? contrato.plazoEjecucionTexto
+                  ?? 'el acordado con el Contratista'}
+              </p>
             </section>
           )}
         </div>
