@@ -407,7 +407,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
             <p>
               <strong>Mora del Contratista:</strong> si la entrega no se produce en la fecha máxima
               comprometida del numeral {ord('PLAZOS')} y el retraso es imputable al Contratista —es decir,
-              no se configura ninguna de las causales de exoneración del numeral {ord('DESMONTE')}—, el
+              no se configura ninguna de las causales de exoneración del numeral {ord('SITIO_Y_FUERZA_MAYOR')}—, el
               Contratante podrá retener del último hito de pago el <strong>0,5 % semanal</strong> de
               su valor, con un <strong>tope máximo del 5 %</strong> de ese mismo hito. La retención
               se aplica únicamente sobre el último hito, se contabiliza por semanas hábiles
@@ -467,15 +467,16 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           insumo instalado.
         </p>
 
-        <div className="clausula-header">{ord('DESMONTE')}. DESMONTE, CONDICIONES DEL SITIO Y FUERZA MAYOR</div>
-        <p>
-          <strong>Desmonte:</strong> el desmonte de mobiliario anterior, retiro de escombros, transporte
-          a botadero y disposición final de residuos no están incluidos en el alcance de este
-          contrato, salvo que se diga expresamente en el numeral {ord('ALCANCE')}. Si el Contratante los
-          contrata, su valor se cotiza aparte y se paga por separado. El Contratista puede declinear
-          la ejecución del desmonte si el estado del mobiliario existente no permite
-          garantizar la seguridad de los operarios o de la obra.
-        </p>
+        {/* t-174: se quitó el párrafo de desmonte. Estaba escrito en la plantilla y no salía de
+            los ítems cotizados, o sea que el contrato afirmaba algo que el proyecto no
+            necesariamente compraba. El cliente lo pidió fuera "por ahora".
+
+            ⚠️ El resto de la cláusula NO es del desmonte y no se puede borrar con él: "Fuerza
+            mayor y causales de exoneración" es la lista de causales por las que el Contratista NO
+            incurre en mora, y la citan el numeral de penalidad y el de corresponsabilidad. Si
+            este numeral desaparece, ambas referencias quedan apuntando a la nada y la cláusula del
+            5 % se queda sin salida. */}
+        <div className="clausula-header">{ord('SITIO_Y_FUERZA_MAYOR')}. CONDICIONES DEL SITIO Y FUERZA MAYOR</div>
         <p>
           <strong>Condiciones del sitio:</strong> el Contratante garantiza que el domicilio de obra
           cuenta con las condiciones necesarias para la instalación: espacios de acceso y maniobra
@@ -525,7 +526,7 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         {contrato.aplicaClausulaPenalidad && (
           <p>
             Las causales que liberan al Contratista de la retención de mora del numeral {ord('PENALIDAD')}, y que
-            deben acreditarse con soportes, son las enumeradas en el numeral {ord('DESMONTE')}. Ninguna otra
+            deben acreditarse con soportes, son las enumeradas en el numeral {ord('SITIO_Y_FUERZA_MAYOR')}. Ninguna otra
             situación comercial, dificultad de aprovisionamiento o cambio de las condiciones operativas
             del Contratante constituye por sí sola una de ellas.
           </p>

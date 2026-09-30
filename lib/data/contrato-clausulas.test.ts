@@ -78,7 +78,7 @@ for (const incluyePenalidad of [true, false]) {
   const o = ordinalesClausulas(false)
 
   assert.equal(o.GARANTIA, 'SEXTA', 'apagada la penalidad, la garantía debe ocupar el numeral SEXTA')
-  assert.equal(o.DESMONTE, 'SÉPTIMA')
+  assert.equal(o.SITIO_Y_FUERZA_MAYOR, 'SÉPTIMA')
   assert.equal(o.PAGOS, 'OCTAVO')
   assert.equal(o.CORRESPONSABILIDAD, 'NOVENA')
   assert.equal(o.MERITO, 'DÉCIMA')
