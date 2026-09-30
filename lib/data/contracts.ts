@@ -217,6 +217,9 @@ export interface DatosContratoNuevo {
   contratanteDomicilio?: string | null
   emailAsunto?: string | null
   emailCuerpo?: string | null
+  /** t-170: ON = el contrato incluye el numeral SEXTA completo (penalidad del 5 %).
+   *  OFF = el numeral no se imprime: sin penalidad de ningún tipo. */
+  aplicaClausulaPenalidad?: boolean
   hitos?: HitoPagoInput[]
 }
 
@@ -240,6 +243,9 @@ export interface DatosContratoEdicion {
   contratanteDomicilio?: string | null
   emailAsunto?: string | null
   emailCuerpo?: string | null
+  /** t-170: si viene `undefined`, el numeral NO se toca: se conserva lo que ya estaba
+   *  pactado. Apagarlo o encenderlo es una decisión explícita del Supervisor. */
+  aplicaClausulaPenalidad?: boolean
   /** t-166: si viene, el plan de pagos se REEMPLAZA por completo (borra los anteriores y
    *  reinserta estos). Si viene `undefined`, los hitos no se tocan. */
   hitos?: HitoPagoInput[]
@@ -259,6 +265,7 @@ export interface Contrato {
   objetoItems: string | null
   alcanceSuministros: string | null
   anexoPropuestaIdentificacion: string | null
+  aplicaClausulaPenalidad: boolean
   especificacionesEstructura: string | null
   especificacionesHerrajes: string | null
   especificacionesMesones: string | null

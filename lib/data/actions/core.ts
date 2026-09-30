@@ -727,6 +727,7 @@ function columnasContrato(data: {
   contratanteDomicilio?: string | null
   emailAsunto?: string | null
   emailCuerpo?: string | null
+  aplicaClausulaPenalidad?: boolean
 }) {
   return {
     valorTotal: data.valorTotal,
@@ -745,6 +746,10 @@ function columnasContrato(data: {
     contratanteDomicilio: data.contratanteDomicilio ?? null,
     emailAsunto: data.emailAsunto ?? null,
     emailCuerpo: data.emailCuerpo ?? null,
+    // t-170: `?? true` y no `?? false`. Un UPDATE que no mencione el campo tiene que dejar el
+    // numeral SEXTA como estaba; si el default fuera `false`, reabrir el modal para cambiar otra
+    // cosa borraría en silencio la cláusula de penalidad de un contrato ya firmado.
+    aplicaClausulaPenalidad: data.aplicaClausulaPenalidad ?? true,
   }
 }
 

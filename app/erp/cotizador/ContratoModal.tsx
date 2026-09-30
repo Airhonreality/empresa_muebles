@@ -55,18 +55,6 @@ type HitoLocal = {
   fechaLimite?: string;
 };
 
-/**
- * t-167: se precarga esta plantilla en "Alcance de suministros" porque el punto que más pide
- * el cliente antes de firmar es exactamente este — qué trae Veta Dorada y qué trae él
- * (lavaplatos, piedra sinterizada, iluminación, herrajes). Poner las tres líneas a la vista
- * hace que la respuesta se escriba sola en vez de dejarle la cláusula en blanco.
- */
-const PLANTILLA_ALCANCE_SUMINISTROS = [
-  'Suministra Veta Dorada:',
-  'Suministra el Contratante:',
-  'Excluido del alcance:',
-].join('\n');
-
 /** 'AAAA-MM-DD' → '15 oct 2026', sin corrimiento por zona horaria. */
 function fechaCorta(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-CO', {
@@ -99,10 +87,11 @@ type FormContrato = {
   holguraDias: string;
   garantiaAnios: number;
   objetoItems: string;
-  /** t-167: qué suministra Veta Dorada y qué trae el Contratante (punto 8 de la carta). */
-  alcanceSuministros: string;
   /** t-167: cómo se identifica el Anexo 1 (Propuesta impresa que se adjunta al contrato). */
   anexoPropuestaIdentificacion: string;
+  /** t-170: si el contrato incluye el numeral SEXTA completo. Apagado = sin penalidad de ningún
+   *  tipo: el numeral entero no se imprime. */
+  aplicaClausulaPenalidad: boolean;
   especificaciones: Record<SeccionEspecificacion, string>;
 };
 
@@ -196,15 +185,15 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
     holguraDias: (contratoExistente?.holguraDias ?? 8).toString(),
     garantiaAnios: contratoExistente?.garantiaAnios ?? proyecto.garantiaAnios ?? 2,
     objetoItems: contratoExistente?.objetoItems ?? objetoDerivado,
-    // t-168: `||` y no `??`. `core.ts` guarda estos campos con `.trim() || null`, pero una fila
+    // t-168: `||` y no `??`. `core.ts` guarda este campo con `.trim() || null`, pero una fila
     // que llegó con cadena vacía (guardado por otra vía, o editada a mano en la base) hacía que
-    // `??` NO reemplazara: el textarea se veía vacío y el botón quedaba deshabilitado para
-    // siempre, sin forma de saber por qué. `||` cubre vacío, null y undefined por igual.
-    alcanceSuministros:
-      contratoExistente?.alcanceSuministros?.trim() || PLANTILLA_ALCANCE_SUMINISTROS,
+    // `??` NO reemplazara: el campo se veía vacío y el botón quedaba deshabilitado para siempre.
     anexoPropuestaIdentificacion:
       contratoExistente?.anexoPropuestaIdentificacion?.trim()
       || `Propuesta de Diseño y Presupuesto «${proyecto.nombreProyecto}» — versión 1 — fechada el ${contratoExistente?.fechaContrato ?? new Date().toISOString().slice(0, 10)} — ___ páginas`,
+    // t-170: por defecto la cláusula se pacta (encendida). Un `false` guardado apagado a
+    // propósito se respeta: es una decisión del Supervisor, no un default perdido.
+    aplicaClausulaPenalidad: contratoExistente?.aplicaClausulaPenalidad ?? true,
     especificaciones: {
       Estructura: contratoExistente?.especificacionesEstructura ?? especificacionesDerivadas.Estructura,
       Herrajes: contratoExistente?.especificacionesHerrajes ?? especificacionesDerivadas.Herrajes,
@@ -334,7 +323,12 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
       holguraDias: Number.isInteger(holguraNum) ? holguraNum : 8,
       garantiaAnios: form.garantiaAnios,
       objetoItems: form.objetoItems.trim() || null,
-      alcanceSuministros: form.alcanceSuministros.trim() || null,
+      // El texto de "Suministra Veta / Suministra el Contratante" ya no se edita ni se imprime
+      // (salía vacío: la plantilla eran tres títulos sin contenido y la lista de ítems ya está
+      // en el numeral PRIMERO). La columna no se toca — se reenvía lo que había, para no borrar
+      // en silencio un contrato ya emitido.
+      alcanceSuministros: contratoExistente?.alcanceSuministros ?? null,
+      aplicaClausulaPenalidad: form.aplicaClausulaPenalidad,
       anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion.trim() || null,
       especificacionesEstructura: esp.Estructura.trim() || null,
       especificacionesHerrajes: esp.Herrajes.trim() || null,
@@ -343,7 +337,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
       contratanteDomicilio: clienteForm.domicilio.trim() || null,
       hitos: hitos.map((h) => ({ tipo: h.tipo, monto: h.montoOPorcentaje, razon: h.razon })),
     };
-  }, [form, hitos, clienteForm.domicilio, plazoSemanasNum, holguraNum]);
+  }, [form, hitos, clienteForm.domicilio, plazoSemanasNum, holguraNum, contratoExistente]);
 
   /**
    * t-166: alta O edición, y con el error a la vista.
@@ -462,7 +456,6 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
         todosPorcentaje,
         sumaHitos,
         plazoSemanas: form.plazoSemanas,
-        alcanceSuministros: form.alcanceSuministros,
         anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion,
       }),
     [
@@ -473,7 +466,6 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
       todosPorcentaje,
       sumaHitos,
       form.plazoSemanas,
-      form.alcanceSuministros,
       form.anexoPropuestaIdentificacion,
     ],
   );
@@ -584,9 +576,11 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                     Fecha máxima comprometida: <strong className="font-mono">{fechaCorta(ventana.ventana.maxima)}</strong>
                   </p>
                   <p className="text-[11px] text-text-muted">
-                    {textoPlazoSemanas(plazoSemanasNum) ?? 'el plazo indicado'} hábiles desde la firma,
-                    más {holguraNum || 0} días hábiles de holgura. No cuenta fin de semana ni festivos,
-                    y el plazo corre desde la fecha de firma del contrato.
+                    {textoPlazoSemanas(plazoSemanasNum) ?? 'el plazo indicado'} hábiles desde la
+                    firma, más {holguraNum || 0} días hábiles de holgura. No cuenta fin de semana ni
+                    festivos. Son fechas estimadas desde la firma: la fecha de inicio legítima es la
+                    del primer anticipo, y si ese anticipo se paga después, la fecha máxima se corre
+                    por los días hábiles de retraso.
                   </p>
                 </div>
               ) : (
@@ -693,38 +687,10 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
             </p>
           </section>
 
-          {/* Sección 6: Alcance y anexo — t-167. Va antes de valor porque el valor se lee
-              "por lo que está en el alcance": si el alcance queda vago, el precio no explica
-              nada y la adjustable se vuelve el punto de pelea. */}
+          {/* Sección 6: Anexo 1 — t-167. */}
           <section className="border-b border-border-subtle pb-4">
-            <h3 className="text-sm font-semibold text-text-heading mb-3">6. Alcance de Suministros y Anexo 1</h3>
+            <h3 className="text-sm font-semibold text-text-heading mb-3">6. Anexo 1 (Propuesta)</h3>
             <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-text-muted mb-1 block">
-                  Alcance de suministros *
-                </label>
-                <textarea
-                  value={form.alcanceSuministros}
-                  onChange={(e) => setForm({ ...form, alcanceSuministros: e.target.value })}
-                  aria-invalid={errorDe('alcanceSuministros') ? true : undefined}
-                  className={`w-full min-h-[100px] rounded-sm border bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:shadow-ring-focus ${
-                    errorDe('alcanceSuministros')
-                      ? 'border-error-stroke focus:border-error-stroke'
-                      : 'border-border-subtle focus:border-brand'
-                  }`}
-                  placeholder="Qué suministra Veta Dorada, qué suministra el Contratante y qué queda excluido"
-                />
-                {errorDe('alcanceSuministros') && (
-                  <p role="alert" className="text-xs text-error-text mt-1">
-                    {errorDe('alcanceSuministros')}
-                  </p>
-                )}
-                <p className="text-[11px] text-text-muted mt-1">
-                  La cláusula limitante sale de acá: solo se factura lo que está listado en los
-                  ítems cotizados más lo que se escriba en “Suministra Veta Dorada”. Lo que no
-                  esté en ninguna de las dos listas se conversa como cambio de alcance.
-                </p>
-              </div>
               <div>
                 <label className="text-sm font-medium text-text-muted mb-1 block">
                   Identificación del Anexo 1 (Propuesta) *
@@ -744,9 +710,44 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
             </div>
           </section>
 
-          {/* Sección 7: Valor y Hitos */}
+          {/* Sección 7: numeral SEXTA completo (t-170). */}
+          <section className="border-b border-border-subtle pb-4">
+            <h3 className="text-sm font-semibold text-text-heading mb-3">7. Cláusula de penalidad</h3>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.aplicaClausulaPenalidad}
+                onChange={(e) => setForm({ ...form, aplicaClausulaPenalidad: e.target.checked })}
+                // mismo criterio que el plazo: en un contrato ya firmado la cláusula quedó
+                // pactada, y apagarla acá cambiaría en silencio un documento ya suscrito.
+                disabled={contratoFirmado}
+                className="mt-0.5 h-4 w-4 rounded border-border-subtle cursor-pointer accent-[var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-60"
+              />
+              <span>
+                <span className="block text-sm font-medium text-text-heading">
+                  Incluir el numeral SEXTA — penalidad del 5 % (todo o nada)
+                </span>
+                <span className="block text-[11px] text-text-muted mt-1">
+                  Encendida, el contrato imprime el numeral SEXTA completo: retención de hasta el
+                  5 % del último hito por mora en la entrega, retención de hasta el 5 % si lo
+                  entregado no corresponde a los diseños o a los materiales pactados, derecho del
+                  Contratista a suspender por mora del cliente, e intereses moratorios. Apagada, el
+                  numeral no se imprime: no hay penalidad de ningún tipo. Es una sola decisión, no
+                  partes: no existe la cláusula a medias.
+                </span>
+              </span>
+            </label>
+            {contratoFirmado && (
+              <p className="text-[11px] text-text-muted mt-2">
+                El contrato está firmado: el numeral SEXTA ya salió con esta cláusula y no se apaga
+                acá. Quitarla después de la firma requiere un otrosí.
+              </p>
+            )}
+          </section>
+
+          {/* Sección 8: Valor y Hitos */}
           <section>
-            <h3 className="text-sm font-semibold text-text-heading mb-3">7. Valor y Plan de Pagos</h3>
+            <h3 className="text-sm font-semibold text-text-heading mb-3">8. Valor y Plan de Pagos</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-text-muted mb-1 block">Valor Total (COP)</label>

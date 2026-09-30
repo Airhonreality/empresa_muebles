@@ -206,11 +206,6 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
     ?? contrato.plazoEjecucionTexto
     ?? 'plazo acordado en la Propuesta que constituye el Anexo 1'
 
-  const alcanceLineas = (contrato.alcanceSuministros ?? '')
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0)
-
   return (
     <>
       {/* Barra de acciones — oculta al imprimir */}
@@ -308,32 +303,22 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
             número de páginas— y no por URL. Un enlace a la propuesta online se rompe, y el
             reclamo más frecuente era justo ese: "me enviaron el contrato sin el anexo". */}
         <p>
-          <strong>Anexo 1 — Propuesta de Diseño y Presupuesto:</strong> {contrato.anexoPropuestaIdentificacion || 'Propuesta de Diseño y Presupuesto del proyecto ' + proyecto.nombreProyecto}. Dicha propuesta se imprime, se firma y se remite junto con el presente contrato en el mismo correo. Su contenido, sus render, sus precios y su plazo de entrega forman parte integral de este contrato.
+          <strong>Anexo 1 — Propuesta de Diseño y Presupuesto:</strong> {contrato.anexoPropuestaIdentificacion || 'Propuesta de Diseño y Presupuesto del proyecto ' + proyecto.nombreProyecto}. Dicha propuesta se anexa al presente contrato. Su contenido, sus render, sus precios y su plazo de entrega forman parte integral de este contrato.
         </p>
         <p>
           <strong>Anexo 2 — Acta de Entrega de Mobiliario</strong> y <strong>Anexo 3 — Acta de Garantías</strong>: se suscriben por separado, en el momento en que ocurran los hechos que cada una documenta, y forman parte de este contrato. La no existencia de estos actas al momento de la firma no afecta la validez del contrato ni los derechos derivados de ellas.
         </p>
 
-        <div className="clausula-header">SEGUNDA. ALCANCE Y SUMINISTROS</div>
-        {alcanceLineas.length > 0 ? (
-          <>
-            <p>
-              El alcance de este contrato queda limitado a los ítems cotizados y descritos en el Anexo 1 y al texto siguiente, que prevalece sobre cualquier interpretación más amplia:
-            </p>
-            <ul>
-              {alcanceLineas.map((linea, i) => (
-                <li key={i}>{linea}</li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <p>
-            El alcance de este contrato queda limitado a los ítems cotizados y descritos en el Anexo 1. Todo suministro no listado en dicho Anexo se considera excluido y solo podrá entregarse mediante el procedimiento de adicionales del numeral QUINTO.
-          </p>
-        )}
+        <div className="clausula-header">SEGUNDA. ALCANCE</div>
+        <p>
+          El alcance de este contrato queda limitado a los ítems cotizados y descritos en el numeral
+          PRIMERO y en el Anexo 1. Todo suministro no listado en dichos lugares se considera
+          excluido y solo podrá entregarse mediante el procedimiento de adicionales del numeral
+          QUINTO.
+        </p>
         <p>
           <strong>Exclusiones y Suministros del Cliente:</strong> Se excluyen del alcance de este contrato todo tipo de obras civiles, plomería, instalaciones de gas, conexiones eléctricas y pintura de muros ajenos al mobiliario en sí.
-          <em> Importante:</em> Los electrodomésticos, lavaplatos, herrajes especiales o cubiertas suministrados por el Contratante deberán contar con sus respectivas fichas técnicas oficiales entregadas al Contratista antes del inicio de la fabricación. Cualquier reproceso, ajuste o retraso derivado de medidas erróneas, omisión de fichas técnicas o entrega tardía de estos elementos por parte del Contratante generará un cobro adicional por concepto de mano de obra y materiales de modificación, y suspenderá los plazos pactados.
+          <em> Importante:</em> Los electrodomésticos o complementos especiales suministrados por el Contratante deberán contar con sus respectivas fichas técnicas oficiales entregadas al Contratista antes del inicio de la fabricación. Cualquier reproceso, ajuste o retraso derivado de medidas erróneas, omisión de fichas técnicas o entrega tardía de estos elementos por parte del Contratante generará un cobro adicional por concepto de mano de obra y materiales de modificación, y suspenderá los plazos pactados.
         </p>
 
         {hayEspecificaciones && (
@@ -358,10 +343,11 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
 
         <div className="clausula-header">TERCERA. PLAZOS Y VENTANA DE ENTREGA</div>
         <p>
-          El plazo de ejecución de este contrato es de <strong>{plazoTexto}</strong>, y corre
-          desde la fecha de firma del presente documento. No se cuenta desde la fecha del anticipo,
-          ni desde la fecha de la Propuesta, ni desde la fecha en que el Contratante entregue las
-          fichas técnicas: el único punto de partida es la firma.
+          El plazo de ejecución de este contrato es de <strong>{plazoTexto}</strong>. Para calcular
+          las fechas de la ventana de entrega que aparece más abajo se estima como fecha de inicio
+          la semana en que se firma este documento{fecha ? `, el ${fecha.dia} de ${fecha.mes} de ${fecha.anio}` : ''}.
+          Esa fecha es una estimación: la fecha de inicio legítima es la fecha en que el Contratante
+          realiza el primer anticipo de este contrato, y desde ella corre el plazo.
         </p>
         {ventana.ok ? (
           <div className="ventana-box">
@@ -374,9 +360,10 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
               <strong className="font-mono">{fechaTexto(ventana.ventana.maxima)}</strong>
             </div>
             <p className="ventana-nota">
-              La fecha mínima se cuenta con {contrato.plazoSemanas} semanas hábiles y la máxima
-              añade {contrato.holguraDias || 8} días hábiles de holgura adicional e
-              incondicional, ya incluida en el conteo anterior. Ambas fechas se calculan
+              Estas dos fechas son estimadas a partir de la fecha de firma, antes descrita como
+              fecha de inicio estimada. La fecha mínima se cuenta con {contrato.plazoSemanas} semanas
+              hábiles y la máxima añade {contrato.holguraDias || 8} días hábiles de holgura
+              adicional e incondicional, ya incluida en el conteo anterior. Ambas fechas se calculan
               únicamente con días hábiles: no se cuenta sábado, domingo ni festivo.
             </p>
           </div>
@@ -393,39 +380,25 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           </div>
         )}
         <p>
-          <strong>Anticipo tardío:</strong> si el pago del primer hito se realiza después de la
+          <strong>Anticipo tardío:</strong> si el pago del primer anticipo se realiza después de la
           firma, la fecha máxima se corre por el mismo número de días hábiles que se tarde el
           anticipo. El contrato no obliga al Contratista a financiar la producción con recursos
           propios, y el comprobante de pago acredita la fecha real de inicio.
         </p>
 
-        <div className="clausula-header">CUARTA. RECEPCIÓN Y ENTREGA</div>
+        <div className="clausula-header">CUARTA. ENTREGA Y AJUSTES</div>
         <p>
-          La recepción se hace en dos momentos distintos, y confundirlos es la fuente más común
-          de reclamos en este tipo de obra:
+          La entrega del mobiliario se realiza en el domicilio de obra dentro del plazo pactado en
+          el numeral TERCERO. Hay una sola entrega, y ocurre en la fecha comprometida.
         </p>
-        <ul>
-          <li>
-            <strong>Recepción provisional:</strong> ocurre cuando el Contratista declara la
-            instalación terminada. En ese momento el Contratante tiene <strong>10 días hábiles</strong>{' '}
-            para ejecutar los remates finales, pruebas de funcionamiento y ajustes menores, y
-            dentro de esos mismos 10 días hábiles puede presentar por escrito sus reservas u
-            observaciones. Vencido el término sin reservas, la recepción provisional se entiende
-            aceptada.
-          </li>
-          <li>
-            <strong>Recepción definitiva:</strong> solo se produce con la suscripción del{' '}
-            <strong>Acta de Entrega de Mobiliario (Anexo 2)</strong>, que el Contratante tiene{' '}
-            <strong>5 días hábiles</strong> desde el vencimiento de la recepción provisional para
-            firmarla o para presentar sus reservas por escrito.
-          </li>
-        </ul>
         <p>
-          <strong>La recepción provisional no equivale a la definitiva</strong>, no implica
-          renuncia a ninguna reserva presentada dentro de los plazos anteriores, y no habilita por
-          sí sola el cobro del saldo final. El uso u ocupación del mobiliario por parte del
-          Contratante se entenderá como aceptación de lo no reservado, pero no como renuncia a lo
-          expresamente reservado.
+          <strong>Ajustes menores y reservas:</strong> desde la entrega, el Contratante tiene{' '}
+          <strong>10 días hábiles</strong> para ejecutar los remates finales, correr las pruebas de
+          funcionamiento y revisar los ajustes menores del mobiliario. Dentro de esos mismos 10 días
+          hábiles puede presentar por escrito sus reservas u observaciones. Vencido el término sin
+          reservas, la entrega se entiende aceptada. El uso u ocupación del mobiliario se
+          entenderá como aceptación de lo no reservado, pero no como renuncia a lo expresamente
+          reservado.
         </p>
         <p>
           <strong>Retrasos imputables al Contratante:</strong> la no firma del Acta de Entrega, la
@@ -439,28 +412,48 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           Cualquier modificación sobre los diseños aprobados, cambio de color/textura posterior al inicio de producción, o trabajo extra no contemplado en la Propuesta que constituye el Anexo 1, deberá ser solicitado y aprobado formalmente por escrito (correo electrónico o servicio de mensajería instantánea de datos). Sin este acuerdo que exprese el nuevo precio y el impacto sobre los tiempos de entrega, el Contratista no estará obligado a ejecutar dichos cambios.
         </p>
 
-        <div className="clausula-header">SEXTA. MORA, RETENCIÓN Y SUSPENSIONES</div>
-        <p>
-          <strong>Mora del Contratista:</strong> si la entrega no se produce en la fecha máxima
-          comprometida del numeral TERCERO y el retraso es imputable al Contratista —es decir, no
-          se configura ninguna de las causales de exoneración del numeral OCTAVO—, el Contratante
-          podrá retener del último hito de pago el <strong>0,5 % semanal</strong> de su valor, con
-          un <strong>tope máximo del 5 %</strong> de ese mismo hito. La retención se aplica
-          únicamente sobre el último hito, se contabiliza por semanas hábiles completas de retraso y
-          no se acumula con penalidades de otra naturaleza.
-        </p>
-        <p>
-          <strong>Mora del Contratante (simétrica):</strong> si el Contratante retrasa el pago de un
-          hito, no entrega los suministros o fichas técnicas a su cargo, o no garantiza el acceso
-          al domicilio de obra, el Contratista podrá suspender la ejecución, y la fecha máxima
-          comprometida se correrá por el mismo número de días hábiles del retraso del
-          Contratante, sin que ello genere retención ni penalidad a su favor.
-        </p>
-        <p>
-          <strong>Intereses:</strong> las sumas que el Contratante deba pagar y que permanezcan
-          vencidas generarán intereses moratorios a la tasa de usura vigente en Colombia, aplicada
-          sobre el saldo insoluto.
-        </p>
+        {/* t-170: el switch del modal gobierna la cláusula COMPLETA, no una parte. Apagado,
+            el numeral SEXTA no se imprime: no hay retención del 5 % por mora, ni por
+            incumplimiento de la Propuesta, ni mora del Contratante, ni intereses moratorios.
+            Encendido, sale entero. Media cláusula pegada al interruptor es exactamente el
+            estado que no debe existir: "lo apagamos un momentico" y quedó la mora pactada sin
+            penalidad. */}
+        {contrato.aplicaClausulaPenalidad && (
+          <>
+            <div className="clausula-header">SEXTA. MORA, RETENCIÓN Y SUSPENSIONES</div>
+            <p>
+              <strong>Mora del Contratista:</strong> si la entrega no se produce en la fecha máxima
+              comprometida del numeral TERCERO y el retraso es imputable al Contratista —es decir,
+              no se configura ninguna de las causales de exoneración del numeral OCTAVO—, el
+              Contratante podrá retener del último hito de pago el <strong>0,5 % semanal</strong> de
+              su valor, con un <strong>tope máximo del 5 %</strong> de ese mismo hito. La retención
+              se aplica únicamente sobre el último hito, se contabiliza por semanas hábiles
+              completas de retraso y no se acumula con penalidades de otra naturaleza.
+            </p>
+            <p>
+              <strong>Entrega que no cumple la Propuesta:</strong> si el mobiliario entregado no
+              corresponde a los diseños, dimensiones, materiales o acabados aprobados en la Propuesta
+              que constituye el Anexo 1 —incluida la entrega con materiales distintos de los
+              pactados—, y el Contratante lo comunica por escrito dentro de los 10 días hábiles del
+              numeral CUARTA, podrá retener del último hito de pago el{' '}
+              <strong>0,5 % semanal</strong> de su valor, con un <strong>tope máximo del 5 %</strong>{' '}
+              de ese mismo hito. Es una segunda causa de retención, distinta de la mora e
+              independiente de ella: no se acumulan entre sí.
+            </p>
+            <p>
+              <strong>Mora del Contratante (simétrica):</strong> si el Contratante retrasa el pago de
+              un hito, no entrega los suministros o fichas técnicas a su cargo, o no garantiza el
+              acceso al domicilio de obra, el Contratista podrá suspender la ejecución, y la fecha
+              máxima comprometida se correrá por el mismo número de días hábiles del retraso del
+              Contratante, sin que ello genere retención ni penalidad a su favor.
+            </p>
+            <p>
+              <strong>Intereses:</strong> las sumas que el Contratante deba pagar y que permanezcan
+              vencidas generarán intereses moratorios a la tasa de usura vigente en Colombia,
+              aplicada sobre el saldo insoluto.
+            </p>
+          </>
+        )}
 
         <div className="clausula-header">SÉPTIMA. GARANTÍA DEL SERVICIO</div>
         <p>
@@ -535,12 +528,14 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         </table>
 
         <div className="clausula-header">DÉCIMA. CORRESPONSABILIDAD Y SUSPENSIÓN</div>
-        <p>
-          Las causales que liberan al Contratista de la retención de mora del numeral SEXTA, y que
-          deben acreditarse con soportes, son las enumeradas en el numeral OCTAVO. Ninguna otra
-          situación comercial, dificultad de aprovisionamiento o cambio de las condiciones operativas
-          del Contratante constituye por sí sola una de ellas.
-        </p>
+        {contrato.aplicaClausulaPenalidad && (
+          <p>
+            Las causales que liberan al Contratista de la retención de mora del numeral SEXTA, y que
+            deben acreditarse con soportes, son las enumeradas en el numeral OCTAVO. Ninguna otra
+            situación comercial, dificultad de aprovisionamiento o cambio de las condiciones operativas
+            del Contratante constituye por sí sola una de ellas.
+          </p>
+        )}
         <p>
           <strong>Ruptura de la Buena Fe:</strong> El Contratista se reserva el derecho de suspender de forma temporal o definitiva la instalación o liquidar el contrato en el estado en que se encuentre si el Contratante ejerce hostilidad, maltrato o acoso hacia el personal de instalación, o si condiciona el pago del segundo abono o saldo final a exigencias imprevistas no pactadas.
         </p>
@@ -586,9 +581,14 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
       </div>
 
       <style jsx global>{`
+        /* t-170: "margin: 0" a propósito. El pie con la URL de la página y el "3/5" no lo
+           pone esta app: los dibuja el navegador en el margen de la hoja, y solo caben si el
+           @page tiene margen. Con margen 0 no hay caja de margen donde dibujarlos, y el mismo
+           espacio se reproduce como padding de .contract-print en @media print (abajo). Por
+           eso los dos van juntos: cambiar uno sin el otro deja el texto pegado al borde. */
         @page {
           size: letter;
-          margin: 1.5cm 2cm;
+          margin: 0;
         }
         .contract-print {
           max-width: 800px;
@@ -805,7 +805,8 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         @media print {
           .contract-print {
             max-width: 100%;
-            padding: 0;
+            /* el margen que dejó de estar en @page */
+            padding: 1.5cm 2cm;
           }
           .tech-specs {
             background-color: #FAF9F6 !important;

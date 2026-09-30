@@ -5,7 +5,7 @@
  * sea una respuesta que el usuario pueda leer, no un estado mudo — y para que esa respuesta
  * se pueda testear sin montar nada (patrón `node:assert` + `npx tsx` del repo, ver AGENTS.md).
  *
- * Por qué NO se reimplementa la validación aquí: estas condiciones son las mismas 9 de
+ * Por qué NO se reimplementa la validación aquí: estas condiciones son las mismas 8 de
  * `esValido` en `app/erp/cotizador/ContratoModal.tsx`. Este módulo las devuelve una por una
  * para poder nombrarlas; el modal decide si el botón se habilita con `pendientes.length === 0`.
  * La tabla de casos de `contrato-validacion.test.ts` ata las dos cosas para que una no se
@@ -18,7 +18,6 @@ export type CampoContrato =
   | 'valorTotal'
   | 'hitos'
   | 'plazoSemanas'
-  | 'alcanceSuministros'
   | 'anexoPropuestaIdentificacion'
 
 /** Requisito incumplido: qué campo es y el texto exacto que ve el usuario. */
@@ -43,7 +42,6 @@ export type EntradaValidacionContrato = {
   sumaHitos: number
   /** Plazo en semanas hábiles, como texto. */
   plazoSemanas: string
-  alcanceSuministros: string
   anexoPropuestaIdentificacion: string
 }
 
@@ -97,14 +95,6 @@ export function requisitosPendientes(e: EntradaValidacionContrato): RequisitoPen
     pendientes.push({
       campo: 'plazoSemanas',
       mensaje: 'El plazo tiene que ser un número entero de semanas hábiles mayor a 0.',
-    })
-  }
-
-  if (!e.alcanceSuministros.trim()) {
-    pendientes.push({
-      campo: 'alcanceSuministros',
-      mensaje:
-        'El alcance de suministros está vacío. Escribí qué suma Veta Dorada, qué trae el cliente y qué queda excluido.',
     })
   }
 

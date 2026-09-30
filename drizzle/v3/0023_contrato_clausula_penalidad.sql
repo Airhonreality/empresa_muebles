@@ -1,0 +1,23 @@
+-- Interruptor del numeral SEXTA completo: penalidad del 5 % (2026-09-30).
+--
+-- Origen: el numeral SEXTA solo cubría la MORA en la entrega. El otro caso que la empresa
+-- necesita poder cobrar es la entrega que no cumple la Propuesta: muebles que no corresponden
+-- a los diseños aprobados, o entregados con materiales distintos de los pactados (ese segundo
+-- punto es el que más se repite: se aprueba una madera y se instala la otra).
+--
+-- La columna es el interruptor del numeral ENTERO, no de una parte: encendida (default) el
+-- contrato imprime la cláusula completa —retención de hasta el 5 % del último hito por mora,
+-- retención de hasta el 5 % por incumplimiento de la Propuesta, suspensión por mora del cliente
+-- e intereses moratorios—; apagada, el numeral no se imprime y no hay penalidad de ningún tipo.
+-- Es aditiva y NO nullable.
+--
+-- `DEFAULT true` es deliberado y no un descuido: la página imprimible lee la fila vigente de
+-- la base, así que un contrato YA firmado tiene que seguir saliendo con la cláusula. Con
+-- `DEFAULT false`, aplicar la migración borraría de un plumazo el numeral SEXTA de todos los
+-- contratos emitidos, y volver a imprimirlos saldría sin él.
+--
+-- Escrita a mano por la misma razón que la 0022: `drizzle-kit generate` sigue bloqueado por
+-- el choque de snapshots 0010/0011 (documentado desde 2026-08-28).
+-- APLICAR ANTES de hacer push.
+ALTER TABLE "contratos"
+  ADD COLUMN IF NOT EXISTS "aplica_clausula_penalidad" boolean DEFAULT true NOT NULL;

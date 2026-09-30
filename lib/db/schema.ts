@@ -192,6 +192,14 @@ export const contratos = pgTable("contratos", {
 	// adjunta al contrato y se manda en el mismo correo). NO es una URL: una URL cambia de
 	// versión entre la firma y la entrega; un PDF ya impreso es evidencia estable.
 	anexoPropuestaIdentificacion: text("anexo_propuesta_identificacion"),
+	// t-170: interruptor del numeral SEXTA COMPLETO (todo o nada). Encendido, el contrato
+	// imprime la cláusula entera: retención de hasta el 5 % del último hito por mora, retención
+	// de hasta el 5 % por entrega que no corresponde a la Propuesta, suspensión por mora del
+	// cliente e intereses moratorios. Apagado, no se imprime el numeral: no hay penalidad de
+	// ningún tipo. No existe la cláusula a medias, y por eso es un solo booleano y no dos.
+	// `.default(true)` a propósito: la página imprimible lee la fila vigente, así que un
+	// contrato YA firmado tiene que seguir saliendo con la cláusula y no perderla al reimprimir.
+	aplicaClausulaPenalidad: boolean("aplica_clausula_penalidad").default(true).notNull(),
 	especificacionesEstructura: text("especificaciones_estructura"),
 	especificacionesHerrajes: text("especificaciones_herrajes"),
 	especificacionesMesones: text("especificaciones_mesones"),

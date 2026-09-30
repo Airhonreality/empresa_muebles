@@ -809,6 +809,7 @@ export function createMockStore(): DataStore {
            holguraDias: data.holguraDias ?? 8,
            alcanceSuministros: data.alcanceSuministros ?? null,
            anexoPropuestaIdentificacion: data.anexoPropuestaIdentificacion ?? null,
+           aplicaClausulaPenalidad: data.aplicaClausulaPenalidad ?? true,
            objetoItems: data.objetoItems ?? null,
            especificacionesEstructura: data.especificacionesEstructura ?? null,
            especificacionesHerrajes: data.especificacionesHerrajes ?? null,
@@ -850,6 +851,10 @@ export function createMockStore(): DataStore {
           plazoEjecucionTexto: data.plazoEjecucionTexto ?? '4 a 5',
           holguraDias: data.holguraDias ?? 8,
           objetoItems: data.objetoItems ?? null,
+          // t-170: si el payload no lo trae se conserva lo pactado — el espejo tiene que
+          // comportarse como `columnasContrato` en core.ts.
+          aplicaClausulaPenalidad:
+            data.aplicaClausulaPenalidad ?? previo.aplicaClausulaPenalidad,
           especificacionesEstructura: data.especificacionesEstructura ?? null,
           especificacionesHerrajes: data.especificacionesHerrajes ?? null,
           especificacionesMesones: data.especificacionesMesones ?? null,

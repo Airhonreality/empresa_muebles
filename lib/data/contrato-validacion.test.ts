@@ -8,8 +8,10 @@
  *
  * 1. NINGUNA condición se relaja. La tabla `CASOS` reproduce una por una las condiciones de
  *    `esValido` en `app/erp/cotizador/ContratoModal.tsx`. Si alguien afloja una para que el
- *    botón pase, esta tabla falla. (t-169: son 8, no 9 — `tieneCliente` dejó de ser condición
- *    propia; el requisito es que el nombre del contratante no esté vacío.)
+ *    botón pase, esta tabla falla. (t-169: `tieneCliente` dejó de ser condición propia; el
+ *    requisito es que el nombre del contratante no esté vacío. El alcance de suministros
+ *    "Suministra Veta / Suministra el Contratante" también dejó de ser requisito: salía vacío
+ *    y ya no se imprime — el alcance es la lista de ítems del numeral PRIMERO.)
  * 2. Se devuelven TODOS los requisitos incumplidos, no solo el primero. El motivo de negocio
  *    es que el usuario no tenga que corregir de a uno en ida y vuelta.
  */
@@ -33,7 +35,6 @@ function entrada(over: Partial<EntradaValidacionContrato> = {}): EntradaValidaci
     todosPorcentaje: true,
     sumaHitos: 100,
     plazoSemanas: '8',
-    alcanceSuministros: 'Suministra Veta Dorada:\n- Mobiliario a medida',
     anexoPropuestaIdentificacion: 'Propuesta «Cocina integral» — versión 1 — 4 páginas',
     ...over,
   }
@@ -75,8 +76,6 @@ const CASOS: { nombre: string; over: Partial<EntradaValidacionContrato>; campo: 
   { nombre: 'plazo no numérico', over: { plazoSemanas: 'ocho' }, campo: 'plazoSemanas' },
   { nombre: 'plazo 0', over: { plazoSemanas: '0' }, campo: 'plazoSemanas' },
   { nombre: 'plazo negativo', over: { plazoSemanas: '-3' }, campo: 'plazoSemanas' },
-  { nombre: 'alcance vacío', over: { alcanceSuministros: '' }, campo: 'alcanceSuministros' },
-  { nombre: 'alcance solo espacios', over: { alcanceSuministros: '   \n  ' }, campo: 'alcanceSuministros' },
   {
     nombre: 'anexo vacío',
     over: { anexoPropuestaIdentificacion: '' },
@@ -129,21 +128,21 @@ for (const c of CASOS) {
 // ── 4. Devuelve TODOS los pendientes, no solo el primero ───────────────────────────────
 
 {
-  // Las 4 condiciones del bug reportado: cliente sin nombre, sin alcance, sin anexo y sin plazo.
+  // Las 3 condiciones del bug reportado: cliente sin nombre, sin anexo y sin plazo.
   // t-169: el caso del cliente se dispara con el NOMBRE vacío, que es lo que hoy exige la regla
   // (un cliente no vinculado pero con nombre escrito ya es válido: se crea al guardar).
-  const e = entrada({ nombreCliente: '   ', alcanceSuministros: '', anexoPropuestaIdentificacion: '', plazoSemanas: '' })
+  const e = entrada({ nombreCliente: '   ', anexoPropuestaIdentificacion: '', plazoSemanas: '' })
   const p = requisitosPendientes(e)
-  assert.equal(p.length, 4, `deben aparecer los 4 requisitos incumplidos, no solo el primero: ${JSON.stringify(p)}`)
+  assert.equal(p.length, 3, `deben aparecer los 3 requisitos incumplidos, no solo el primero: ${JSON.stringify(p)}`)
   assert.deepEqual(
     p.map((r) => r.campo),
-    ['cliente', 'plazoSemanas', 'alcanceSuministros', 'anexoPropuestaIdentificacion'],
+    ['cliente', 'plazoSemanas', 'anexoPropuestaIdentificacion'],
     'deben venir todos, en el orden en que se revisa el formulario',
   )
 }
 
 {
-  // Todo vacío a la vez: 6 campos marcados, cada uno con mensaje.
+  // Todo vacío a la vez: 5 campos marcados, cada uno con mensaje.
   // t-169: `nombreCliente: '   '` (y no `tieneCliente: false`) dispara el requisito de cliente,
   // porque la regla actual exige el NOMBRE, no el vínculo previo del proyecto.
   const e = entrada({
@@ -153,12 +152,11 @@ for (const c of CASOS) {
     cantidadHitos: 0,
     sumaHitos: 0,
     plazoSemanas: '',
-    alcanceSuministros: '',
     anexoPropuestaIdentificacion: '',
   })
   const p = requisitosPendientes(e)
-  assert.equal(p.length, 6, `los 6 campos que bloquean deben reportarse: ${JSON.stringify(p)}`)
-  assert.equal(new Set(p.map((r) => r.campo)).size, 6, 'no debe repetir el mismo campo con dos textos')
+  assert.equal(p.length, 5, `los 5 campos que bloquean deben reportarse: ${JSON.stringify(p)}`)
+  assert.equal(new Set(p.map((r) => r.campo)).size, 5, 'no debe repetir el mismo campo con dos textos')
 }
 
 // ── 5. El caso que causa el bloqueo permanente: cadena vacía, no null ───────────────────
@@ -166,9 +164,9 @@ for (const c of CASOS) {
 {
   // Lo que llega de la base cuando el campo se guardó vacío con .trim() (core.ts:298-299).
   // Antes el default (?? PLANTILLA) no caía y el botón quedaba muerto para siempre.
-  const p = pendientes({ alcanceSuministros: '', anexoPropuestaIdentificacion: '' })
-  assert.equal(p.length, 2)
-  assert.equal(esContratoValido(entrada({ alcanceSuministros: '' })), false)
+  const p = pendientes({ anexoPropuestaIdentificacion: '' })
+  assert.equal(p.length, 1)
+  assert.equal(esContratoValido(entrada({ anexoPropuestaIdentificacion: '' })), false)
 }
 
 // ── 6. 0 hitos no produce dos mensajes para el mismo problema ──────────────────────────
