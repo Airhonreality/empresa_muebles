@@ -5,12 +5,17 @@ import { useMemo, useState } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { LinkButton } from '@/components/veta/button'
 import { EntityHeader } from '@/components/veta/entity-header'
+import { EntityActionsBar } from '@/components/veta/entity-actions-bar'
 import {
   useDataStore,
   type ActaEntrega,
   type CitacionCalidad,
   type DesfaseCronograma,
+  type EspacioArtefacto,
+  type EspacioVariante,
   type Instalacion,
+  type ItemVariante,
+  type NotaReunion,
   type ObligacionPendiente,
   type OrdenCompra,
   type RecepcionMaterial,
@@ -323,11 +328,257 @@ const ARTEFACTO_TIPO_LABEL: Record<string, string> = {
   modelo_3d: 'Modelo 3D',
 }
 
+const LABELS_CATEGORIA_NOTA: Record<string, string> = {
+  requisito_cliente: 'Requisito del cliente',
+  cambio_diseno: 'Cambio de diseño',
+  cambio_presupuesto: 'Cambio de presupuesto',
+  acuerdo: 'Acuerdo',
+  libre: 'Nota libre',
+}
+
+const LABELS_CATEGORIA_ARTEFACTO: Record<string, string> = {
+  determinante: 'Determinante',
+  electrodomestico: 'Electrodoméstico',
+  bloqueante: 'Bloqueante',
+  obra_civil: 'Obra civil',
+  servicio_tercero: 'Servicio tercero',
+}
+
 function dotModuloColor(estado: string): string {
   if (['armado', 'aprobado'].includes(estado)) return 'text-gold-600'
   if (estado === 'en_instal' || estado === 'instalado') return 'text-info-stroke'
   if (estado === 'por_armar') return 'text-stone-400'
   return 'text-warning-stroke'
+}
+
+/** Contenido completo de un espacio en la bóveda del proyecto: descripción, jornadas, fotos,
+ *  ítems cotizados, retoma de medidas y notas de reunión. Se usa tanto dentro del acordeón
+ *  interactivo (colapsado por defecto) como en el documento plano de impresión (siempre
+ *  expandido) — un solo bloque de JSX para los dos, en vez de mantener dos copias que puedan
+ *  divergir. Cada sub-bloque se omite por completo si no tiene dato, nunca muestra un campo
+ *  vacío ("Sin registrar", "—", etc.). */
+function EspacioDetalle({
+  espacio,
+  items,
+  itemsPrincipales,
+  itemsReferenciales,
+  artefactos,
+  notas,
+  nombreItem,
+}: {
+  espacio: EspacioVariante
+  items: ItemVariante[]
+  itemsPrincipales: ItemVariante[]
+  itemsReferenciales: ItemVariante[]
+  artefactos: EspacioArtefacto[]
+  notas: NotaReunion[]
+  nombreItem: (item: ItemVariante) => string
+}) {
+  const fotos: Array<{ label: string; urls: string[] }> = [
+    { label: 'Fotos del espacio', urls: espacio.fotosEspacio },
+    { label: 'Fotos de diseño', urls: espacio.fotosDisenio },
+    { label: 'Fotos de referencia', urls: espacio.fotosReferencia },
+  ].filter((g) => g.urls.length > 0)
+  const tieneJornadas =
+    numDe(espacio.jornadasDesarrolloTecnico) > 0 ||
+    numDe(espacio.jornadasEnsamblajeTaller) > 0 ||
+    numDe(espacio.jornadasInstalacionObra) > 0
+
+  return (
+    <div className="space-y-4">
+      {/* Descripción y datos del espacio */}
+      {(espacio.tipoEspacio || espacio.descripcion || (espacio.colores as string[]).length > 0) && (
+        <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          {espacio.tipoEspacio && (
+            <div>
+              <dt className="text-xs text-text-muted">Tipo</dt>
+              <dd className="mt-0.5 text-text-heading">{espacio.tipoEspacio}</dd>
+            </div>
+          )}
+          {espacio.descripcion && (
+            <div className="sm:col-span-2">
+              <dt className="text-xs text-text-muted">Descripción</dt>
+              <dd className="mt-0.5 text-text-heading">{espacio.descripcion}</dd>
+            </div>
+          )}
+          {(espacio.colores as string[]).length > 0 && (
+            <div className="sm:col-span-2">
+              <dt className="text-xs text-text-muted">Colores</dt>
+              <dd className="mt-0.5 text-text-heading">{(espacio.colores as string[]).join(', ')}</dd>
+            </div>
+          )}
+        </dl>
+      )}
+
+      {/* Jornadas */}
+      {tieneJornadas && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Jornadas</h4>
+          <dl className="grid grid-cols-3 gap-x-4 text-sm">
+            <div>
+              <dt className="text-xs text-text-muted">Desarrollo técnico</dt>
+              <dd className="mt-0.5 text-text-heading">{espacio.jornadasDesarrolloTecnico}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-text-muted">Ensamblaje taller</dt>
+              <dd className="mt-0.5 text-text-heading">{espacio.jornadasEnsamblajeTaller}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-text-muted">Instalación obra</dt>
+              <dd className="mt-0.5 text-text-heading">{espacio.jornadasInstalacionObra}</dd>
+            </div>
+          </dl>
+        </div>
+      )}
+
+      {/* Fotos */}
+      {fotos.length > 0 && (
+        <div className="space-y-3">
+          {fotos.map((grupo) => (
+            <div key={grupo.label}>
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
+                {grupo.label}
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {grupo.urls.map((url, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element -- galería de URLs R2 de largo variable
+                  <img
+                    key={`${url}-${i}`}
+                    src={url}
+                    alt=""
+                    className="h-16 w-16 rounded-sm border border-border-subtle object-cover print:h-24 print:w-24"
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Ítems cotizados */}
+      {itemsPrincipales.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
+            Ítems cotizados
+          </h4>
+          <ul className="space-y-1.5">
+            {itemsPrincipales.map((item) => {
+              const fichaTecnica = [item.marca, item.referencia, item.color, item.dimensiones, item.acabado, item.espesor && `${item.espesor} mm`]
+                .filter(Boolean)
+              return (
+                <li key={item.id} className="rounded-sm border border-border-subtle px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-text-heading">{nombreItem(item)}</span>
+                    <span className="shrink-0 font-mono text-xs text-text-muted">
+                      {item.cantidad} × {formatCOP(numDe(item.precioUnitario))}
+                    </span>
+                  </div>
+                  {fichaTecnica.length > 0 && (
+                    <p className="mt-1 text-xs text-text-muted">{fichaTecnica.join(' · ')}</p>
+                  )}
+                  {item.comentario && (
+                    <p className="mt-1 text-xs italic text-text-muted">{item.comentario}</p>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+      {itemsReferenciales.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
+            Presupuesto adicional (referencial, no contractual)
+          </h4>
+          <ul className="space-y-1.5">
+            {itemsReferenciales.map((item) => (
+              <li key={item.id} className="rounded-sm border border-dashed border-border-subtle px-3 py-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-text-heading">{nombreItem(item)}</span>
+                  <span className="shrink-0 font-mono text-xs text-text-muted">
+                    {item.cantidad} × {formatCOP(numDe(item.precioUnitario))}
+                  </span>
+                </div>
+                {item.grupoReferencial && (
+                  <p className="mt-1 text-xs text-text-muted">{item.grupoReferencial}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {items.length === 0 && (
+        <p className="text-xs text-text-muted print:hidden">Sin ítems cotizados en este espacio.</p>
+      )}
+
+      {/* Retoma de medidas / artefactos del espacio */}
+      {artefactos.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
+            Retoma de medidas
+          </h4>
+          <ul className="space-y-1.5">
+            {artefactos.map((a) => (
+              <li key={a.id} className="rounded-sm border border-border-subtle px-3 py-2 text-sm">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <Badge tone="neutral">{LABELS_CATEGORIA_ARTEFACTO[a.categoria] ?? a.categoria}</Badge>
+                  {a.dimensionesMm && (
+                    <span className="font-mono text-xs text-text-muted">{a.dimensionesMm} mm</span>
+                  )}
+                </div>
+                {a.ubicacion && <p className="text-text-heading">{a.ubicacion}</p>}
+                {a.descripcion && <p className="mt-0.5 text-xs text-text-muted">{a.descripcion}</p>}
+                {(a.fotoUrls.length > 0 || a.archivosUrls.length > 0) && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {a.fotoUrls.map((url, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element -- galería de URLs R2 de largo variable
+                      <img
+                        key={`${url}-${i}`}
+                        src={url}
+                        alt=""
+                        className="h-14 w-14 rounded-sm border border-border-subtle object-cover print:h-20 print:w-20"
+                      />
+                    ))}
+                    {a.archivosUrls.map((url, i) => (
+                      <a
+                        key={`${url}-${i}`}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex h-14 w-14 items-center justify-center rounded-sm border border-border-subtle text-[10px] text-text-muted hover:border-gold-400 print:hidden"
+                      >
+                        Archivo
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Notas de reunión de este espacio */}
+      {notas.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
+            Notas de reunión
+          </h4>
+          <ul className="space-y-1.5">
+            {notas.map((n) => (
+              <li key={n.id} className="rounded-sm border border-border-subtle px-3 py-2 text-sm">
+                <div className="mb-1 flex items-center justify-between">
+                  <Badge tone="neutral">{LABELS_CATEGORIA_NOTA[n.categoria] ?? n.categoria}</Badge>
+                  <span className="text-[10px] text-text-muted">{formatDate(n.createdAt)}</span>
+                </div>
+                <p className="text-text-heading">{n.contenido}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function Chevron({ abierto }: { abierto: boolean }) {
@@ -412,6 +663,7 @@ export default function ProyectoHubPage() {
 
   const [espaciosExpandidos, setEspaciosExpandidos] = useState<Set<string>>(new Set())
   const [moduloSeleccionadoId, setModuloSeleccionadoId] = useState<string | null>(null)
+  const [espaciosVaultAbiertos, setEspaciosVaultAbiertos] = useState<Set<string>>(new Set())
 
   const proyecto = store.proyectos.obtenerPorId(proyectoId)
   const cliente = proyecto?.clienteId ? store.clientes.obtenerPorId(proyecto.clienteId) : undefined
@@ -444,6 +696,10 @@ export default function ProyectoHubPage() {
   const cajaDisponible = useMemo(() => store.cuentasFinancieras.disponible(), [store, version])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const cronogramaEtapas = useMemo(() => (cronograma ? store.cronogramaEtapas.porCronograma(cronograma.id) : []), [cronograma, store, version])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const notasReunion = useMemo(() => (proyecto ? store.notasReunion.porProyecto(proyectoId) : []), [proyectoId, store, version])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const catalogo = useMemo(() => store.catalogo.listar(), [store, version])
 
   const moduloSeleccionado = moduloSeleccionadoId ? (modulos.find((m) => m.id === moduloSeleccionadoId) ?? null) : null
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -517,6 +773,32 @@ export default function ProyectoHubPage() {
     })
   }
 
+  // --- Definición del Proyecto (bóveda): todo lo que el cotizador captura por espacio ---
+  const itemsPorEspacio = (espacioId: string) => store.items.porVariante(espacioId)
+  const artefactosPorEspacio = (espacioId: string) => store.artefactos.porEspacio(espacioId)
+  const notasDeEspacio = (espacioId: string) => notasReunion.filter((n) => n.espacioVarianteId === espacioId)
+  const notasSinEspacio = notasReunion.filter((n) => !n.espacioVarianteId)
+  const nombreItem = (item: { nombrePersonalizado: string | null; catalogoId: string | null }) =>
+    item.nombrePersonalizado ?? catalogo.find((p) => p.id === item.catalogoId)?.descripcion ?? 'Ítem sin nombre'
+  // Misma fórmula que el cotizador (materialesTotal): solo variantes activas, excluye referenciales.
+  // No incluye mano de obra/IVA/ajustes — ese total completo vive únicamente en el cotizador,
+  // para no mantener dos fórmulas del mismo número en dos pantallas.
+  const materialesTotal = espacios
+    .filter((e) => e.activa)
+    .reduce((sum, esp) => {
+      const items = itemsPorEspacio(esp.id).filter((it) => !it.esReferencial)
+      return sum + items.reduce((s, it) => s + numDe(it.totalLinea), 0)
+    }, 0)
+
+  const toggleVault = (espacioId: string) => {
+    setEspaciosVaultAbiertos((prev) => {
+      const next = new Set(prev)
+      if (next.has(espacioId)) next.delete(espacioId)
+      else next.add(espacioId)
+      return next
+    })
+  }
+
   const etapaInstalacionContractual = cronogramaEtapas.find((e) => e.linea === 'contractual' && e.etapa === 'instalacion')
   const fechaPrevistaInstalacion = etapaInstalacionContractual?.fechaIdeal ?? null
   const ultimaInstalacion = instalaciones.length > 0 ? instalaciones[instalaciones.length - 1] : undefined
@@ -524,9 +806,8 @@ export default function ProyectoHubPage() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
       {/* Header — EntityHeader (t-155, decision_axiomatica_2026-09-10 Decisión 1).
-          Esta pantalla no tiene acciones de header hoy (las "Ir a X" de abajo son
-          navegación de sección, no acciones de entidad) — se omite EntityActionsBar
-          a propósito en vez de inventar acciones que no existen. */}
+          Única acción de header hoy: imprimir la bóveda del proyecto (documento plano,
+          ver sección `hidden print:block` al final de la página). */}
       <EntityHeader
         variant="stacked"
         titulo={proyecto.nombreProyecto}
@@ -541,7 +822,134 @@ export default function ProyectoHubPage() {
             {estadoLabels[proyecto.estado] || proyecto.estado}
           </Badge>
         }
-      />
+      >
+        <EntityActionsBar
+          className="print:hidden"
+          actions={[
+            { id: 'imprimir', label: 'Imprimir ficha', variant: 'secondary', onClick: () => window.print() },
+          ]}
+        />
+      </EntityHeader>
+
+      {/* Todo lo interactivo (acordeones, timeline, árbol operativo, grilla "Ir a X") se oculta
+          al imprimir — el documento plano de abajo (`hidden print:block`) lo reemplaza, igual
+          que en la propuesta pública: un acordeón colapsado no imprime su contenido, así que
+          intentar imprimir esta UI tal cual deja huecos. */}
+      <div className="print:hidden">
+
+      {/* Definición del Proyecto — la bóveda: todo lo que el cotizador captura por espacio,
+          en un solo lugar en vez de quedar en el aire después de cotizar. */}
+      <section className="mb-8">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Definición del Proyecto</h2>
+          <span className="font-mono text-xs text-text-muted">
+            Materiales cotizados: {formatCOP(materialesTotal)}
+          </span>
+        </div>
+
+        {/* Parámetros financieros del proyecto */}
+        <div className="mb-3 rounded-lg border border-border-subtle bg-bg-raised p-5">
+          <h3 className="text-[13px] font-semibold text-text-heading mb-3">Parámetros financieros</h3>
+          <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-6">
+            <div>
+              <dt className="text-xs text-text-muted">IVA</dt>
+              <dd className="mt-0.5 text-text-heading">
+                {proyecto.aplicaIva ? `${proyecto.porcentajeIva}%` : 'No aplica'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-text-muted">Garantía</dt>
+              <dd className="mt-0.5 text-text-heading">{proyecto.garantiaAnios} años</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-text-muted">Costos operativos</dt>
+              <dd className="mt-0.5 text-text-heading">{formatCOP(numDe(proyecto.costosOperativos))}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-text-muted">Imprevistos instalación</dt>
+              <dd className="mt-0.5 text-text-heading">{formatCOP(numDe(proyecto.imprevistosInstalacion))}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-text-muted">Descuento comercial</dt>
+              <dd className="mt-0.5 text-text-heading">{formatCOP(numDe(proyecto.descuentoComercial))}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-text-muted">Ajuste</dt>
+              <dd className="mt-0.5 text-text-heading">{formatCOP(numDe(proyecto.ajusteArbitrario))}</dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* Notas de reunión generales del proyecto (sin espacio asociado) */}
+        {notasSinEspacio.length > 0 && (
+          <div className="mb-3 rounded-lg border border-border-subtle bg-bg-raised p-5">
+            <h3 className="text-[13px] font-semibold text-text-heading mb-3">Notas de reunión — proyecto general</h3>
+            <ul className="space-y-2">
+              {notasSinEspacio.map((n) => (
+                <li key={n.id} className="rounded-sm border border-border-subtle px-3 py-2 text-sm">
+                  <div className="mb-1 flex items-center justify-between">
+                    <Badge tone="neutral">{LABELS_CATEGORIA_NOTA[n.categoria] ?? n.categoria}</Badge>
+                    <span className="text-[10px] text-text-muted">{formatDate(n.createdAt)}</span>
+                  </div>
+                  <p className="text-text-heading">{n.contenido}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Un bloque expandible por espacio, con todo lo que el cotizador capturó de él */}
+        {espacios.length === 0 ? (
+          <p className="text-sm text-text-muted">Sin espacios cotizados.</p>
+        ) : (
+          <div className="space-y-3">
+            {espacios.map((esp) => {
+              const items = itemsPorEspacio(esp.id)
+              const itemsPrincipales = items.filter((it) => !it.esReferencial)
+              const itemsReferenciales = items.filter((it) => it.esReferencial)
+              const artefactos = artefactosPorEspacio(esp.id)
+              const notas = notasDeEspacio(esp.id)
+              const abierto = espaciosVaultAbiertos.has(esp.id)
+              const subtotalEspacio = itemsPrincipales.reduce((s, it) => s + numDe(it.totalLinea), 0)
+
+              return (
+                <div key={esp.id} className="rounded-lg border border-border-subtle bg-bg-raised">
+                  <button
+                    type="button"
+                    onClick={() => toggleVault(esp.id)}
+                    className="flex w-full items-center justify-between gap-2 px-5 py-3 text-left"
+                  >
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <Chevron abierto={abierto} />
+                      <span className="truncate text-sm font-medium text-text-heading">{esp.nombreEspacio}</span>
+                      {esp.nombreVariante !== esp.nombreEspacio && (
+                        <span className="truncate text-xs text-text-muted">· {esp.nombreVariante}</span>
+                      )}
+                      {esp.activa && <Badge tone="info">Activa</Badge>}
+                      {esp.visibleEnPropuestaPublica && <Badge tone="neutral">Visible en propuesta</Badge>}
+                    </span>
+                    <span className="shrink-0 font-mono text-xs text-text-muted">{formatCOP(subtotalEspacio)}</span>
+                  </button>
+
+                  {abierto && (
+                    <div className="border-t border-border-subtle px-5 py-4">
+                      <EspacioDetalle
+                        espacio={esp}
+                        items={items}
+                        itemsPrincipales={itemsPrincipales}
+                        itemsReferenciales={itemsReferenciales}
+                        artefactos={artefactos}
+                        notas={notas}
+                        nombreItem={nombreItem}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
 
       {/* Timeline de Gates derivado: E-18, E-21, E-23, E-24, E-25, E-26 + transversales E-33/E-20 */}
       <section className="mb-8">
@@ -771,16 +1179,6 @@ export default function ProyectoHubPage() {
       {/* Acciones (grilla "Ir a X" conservada tal cual existía) */}
       <section className="mb-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-border-subtle bg-bg-raised p-6">
-          <h3 className="font-semibold text-text-heading mb-3">Retoma de Medidas</h3>
-          <p className="text-sm text-text-muted mb-4">
-            Registro de medidas y anomalías detectadas en obra.
-          </p>
-          <LinkButton href={`/erp/proyectos/${proyectoId}/retoma`} variant="primary" size="md" className="w-full">
-            Ir a Retoma
-          </LinkButton>
-        </div>
-
-        <div className="rounded-lg border border-border-subtle bg-bg-raised p-6">
           <h3 className="font-semibold text-text-heading mb-3">Esquema y Veredicto</h3>
           <p className="text-sm text-text-muted mb-4">
             Carga, revisión y aprobación del esquema técnico.
@@ -850,6 +1248,104 @@ export default function ProyectoHubPage() {
            </LinkButton>
          </div>
        </section>
+      </div>
+
+      {/* Documento plano de impresión (t-170, mismo patrón que la propuesta pública): oculto en
+          pantalla, visible solo al imprimir. Todos los espacios siempre expandidos — un
+          acordeón colapsado no existe en el DOM, así que no hay forma de que CSS de impresión
+          lo revele. Cada campo vacío se omite (EspacioDetalle ya lo hace por dato, no por
+          pantalla), nunca imprime un placeholder de "sin dato". */}
+      <section className="hidden print:block ficha-print" aria-label="Ficha técnica del proyecto">
+        <header className="mb-6 border-b-2 border-gold-500 pb-4">
+          <h1 className="text-xl font-bold text-text-heading">{proyecto.nombreProyecto}</h1>
+          {cliente && <p className="text-sm text-text-muted mt-1">Cliente: {cliente.nombre}</p>}
+          {proyecto.direccionObra && <p className="text-sm text-text-muted">Ubicación: {proyecto.direccionObra}</p>}
+          <p className="text-xs text-text-muted mt-1">Impreso el {formatDate(new Date().toISOString())}</p>
+        </header>
+
+        {(proyecto.aplicaIva || numDe(proyecto.costosOperativos) > 0 || numDe(proyecto.imprevistosInstalacion) > 0 || numDe(proyecto.descuentoComercial) > 0 || numDe(proyecto.ajusteArbitrario) > 0 || proyecto.garantiaAnios > 0) && (
+          <section className="mb-6">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-text-heading mb-2">Parámetros financieros</h2>
+            <dl className="grid grid-cols-3 gap-x-6 gap-y-1 text-sm">
+              {proyecto.aplicaIva && (
+                <div><dt className="text-xs text-text-muted inline">IVA: </dt><dd className="inline text-text-heading">{proyecto.porcentajeIva}%</dd></div>
+              )}
+              {proyecto.garantiaAnios > 0 && (
+                <div><dt className="text-xs text-text-muted inline">Garantía: </dt><dd className="inline text-text-heading">{proyecto.garantiaAnios} años</dd></div>
+              )}
+              {numDe(proyecto.costosOperativos) > 0 && (
+                <div><dt className="text-xs text-text-muted inline">Costos operativos: </dt><dd className="inline text-text-heading">{formatCOP(numDe(proyecto.costosOperativos))}</dd></div>
+              )}
+              {numDe(proyecto.imprevistosInstalacion) > 0 && (
+                <div><dt className="text-xs text-text-muted inline">Imprevistos: </dt><dd className="inline text-text-heading">{formatCOP(numDe(proyecto.imprevistosInstalacion))}</dd></div>
+              )}
+              {numDe(proyecto.descuentoComercial) > 0 && (
+                <div><dt className="text-xs text-text-muted inline">Descuento: </dt><dd className="inline text-text-heading">{formatCOP(numDe(proyecto.descuentoComercial))}</dd></div>
+              )}
+              {numDe(proyecto.ajusteArbitrario) > 0 && (
+                <div><dt className="text-xs text-text-muted inline">Ajuste: </dt><dd className="inline text-text-heading">{formatCOP(numDe(proyecto.ajusteArbitrario))}</dd></div>
+              )}
+            </dl>
+          </section>
+        )}
+
+        {notasSinEspacio.length > 0 && (
+          <section className="mb-6">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-text-heading mb-2">Notas de reunión — proyecto general</h2>
+            <ul className="space-y-1.5">
+              {notasSinEspacio.map((n) => (
+                <li key={n.id} className="text-sm">
+                  <span className="font-medium text-text-heading">{LABELS_CATEGORIA_NOTA[n.categoria] ?? n.categoria}:</span>{' '}
+                  <span className="text-text-muted">{n.contenido}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {espacios.map((esp) => {
+          const items = itemsPorEspacio(esp.id)
+          return (
+            <section key={esp.id} className="mb-8" style={{ breakInside: 'avoid' }}>
+              <h2 className="text-base font-bold text-text-heading border-b border-border-subtle pb-1 mb-3">
+                {esp.nombreEspacio}
+                {esp.nombreVariante !== esp.nombreEspacio && (
+                  <span className="font-normal text-text-muted"> · {esp.nombreVariante}</span>
+                )}
+              </h2>
+              <EspacioDetalle
+                espacio={esp}
+                items={items}
+                itemsPrincipales={items.filter((it) => !it.esReferencial)}
+                itemsReferenciales={items.filter((it) => it.esReferencial)}
+                artefactos={artefactosPorEspacio(esp.id)}
+                notas={notasDeEspacio(esp.id)}
+                nombreItem={nombreItem}
+              />
+            </section>
+          )
+        })}
+
+        {materialesTotal > 0 && (
+          <footer className="mt-6 border-t-2 border-gold-500 pt-3 text-right">
+            <span className="text-sm text-text-muted">Total materiales cotizados: </span>
+            <span className="text-base font-bold text-text-heading">{formatCOP(materialesTotal)}</span>
+          </footer>
+        )}
+
+        <style jsx global>{`
+          @page {
+            size: letter;
+            margin: 20mm 15mm;
+          }
+          @media print {
+            .ficha-print img {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+          }
+        `}</style>
+      </section>
     </div>
   )
 }
