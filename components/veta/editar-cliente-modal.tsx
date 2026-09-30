@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/veta/button";
-import { InputField } from "@/components/veta/input-field";
+import { EntityFields } from "@/components/veta/entity-fields";
 import { useDataStore, type Cliente } from "@/lib/data";
 import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
+import { clienteFormFields, datosClienteParaGuardar, valoresClienteDesde } from "@/lib/forms/cliente-form-spec";
 
 export interface EditarClienteModalProps {
   cliente: Cliente;
@@ -16,24 +17,12 @@ export function EditarClienteModal({ cliente, onClose, onSaved }: EditarClienteM
   const store = useDataStore();
   const { guard: guardGuardar, isPending: guardando } = usePendingGuard();
 
-  const [form, setForm] = useState({
-    nombre: cliente.nombre,
-    documento: cliente.documento ?? '',
-    telefono: cliente.telefono ?? '',
-    email: cliente.email ?? '',
-    domicilio: cliente.domicilio ?? '',
-  });
+  const [form, setForm] = useState(() => valoresClienteDesde(cliente));
 
   const guardar = async () => {
-    const nombre = form.nombre.trim()
-    if (!nombre) return
-    await store.clientes.actualizar(cliente.id, {
-      nombre,
-      documento: form.documento.trim() || null,
-      telefono: form.telefono.trim() || null,
-      email: form.email.trim() || null,
-      domicilio: form.domicilio.trim() || null,
-    })
+    const datos = datosClienteParaGuardar(form)
+    if (!datos.nombre) return
+    await store.clientes.actualizar(cliente.id, datos)
     onSaved()
   }
 
@@ -51,39 +40,12 @@ export function EditarClienteModal({ cliente, onClose, onSaved }: EditarClienteM
           <Button variant="ghost" size="md" onClick={onClose} aria-label="Cerrar">✕</Button>
         </div>
 
-        <div className="space-y-4">
-          <InputField
-            label="Nombre *"
-            value={form.nombre}
-            onChange={(e) => set('nombre', e.target.value)}
-            required
-          />
-          <InputField
-            label="Documento"
-            value={form.documento}
-            onChange={(e) => set('documento', e.target.value)}
-            placeholder="Ej: CC-1234567890"
-          />
-          <InputField
-            label="Teléfono"
-            value={form.telefono}
-            onChange={(e) => set('telefono', e.target.value)}
-            placeholder="Ej: 3001234567"
-          />
-          <InputField
-            label="Correo electrónico"
-            type="email"
-            value={form.email}
-            onChange={(e) => set('email', e.target.value)}
-            placeholder="Ej: cliente@correo.co"
-          />
-          <InputField
-            label="Domicilio"
-            value={form.domicilio}
-            onChange={(e) => set('domicilio', e.target.value)}
-            placeholder="Ej: Calle 1 #2-3, Bogotá"
-          />
-        </div>
+        <EntityFields
+          className="space-y-4"
+          fields={clienteFormFields}
+          values={form}
+          onChange={(campo, valor) => set(campo, valor)}
+        />
 
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="ghost" size="md" onClick={onClose} disabled={guardando}>
