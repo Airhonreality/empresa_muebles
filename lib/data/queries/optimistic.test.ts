@@ -308,7 +308,7 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
     assert.equal(snap.contrato?.valorTotal, '777')
   })
 
-  // --- t-169: deshacer dirigido sobre el snapshot ACTUAL (no sobre uno viejo capturado antes
+  // --- t-170: deshacer dirigido sobre el snapshot ACTUAL (no sobre uno viejo capturado antes
   // de que otra mutación concurrente tocara el cache) — fix de la condición de carrera de
   // factory.ts que causó la pérdida de ítems reportada 2026-09-30. ---
 

@@ -1,0 +1,46 @@
+{
+  "id": "t-170",
+  "titulo": "Cotizador: corrige la condición de carrera del rollback optimista que perdía ítems sin conexión",
+  "intencion_negocio": "Javier (2026-09-30) reportó que se quedó sin internet cargando varios ítems a una cotización, la UI tituló, borró todo y volvió a cargar uno por uno al volver la conexión — al recargar la página todo el trabajo se había perdido. Comparó el comportamiento con Notion ('la db solo guarda información... en nuestro caso parece al revés, muy frágil'). En un ERP que cotiza proyectos reales, perder el trabajo de un vendedor en vivo frente a un cliente es inaceptable.",
+  "diagnostico": "lib/data/queries/factory.ts (useMutationOptGenerico): cada mutación captura su propio snapshot `previous` en onMutate. Cuando dos mutaciones corren casi simultáneas sobre el mismo queryKey (cotizadorKeys.detalle) y una falla, su onError restauraba ese `previous` a ciegas con setQueryData — pisando el cache actual, que puede tener el resultado ya confirmado de la mutación hermana que sí tuvo éxito mientras esta fallaba. Hallazgo colateral: useEliminarItemMutation no revertía cuando el servidor respondía `false` (fila no encontrada), dejando el borrado optimista aplicado sin confirmar nunca.",
+  "decisiones_supervisor": {
+    "alcance": "Corrección de la condición de carrera (rollback dirigido por id en vez de restaurar un snapshot viejo) + retiro del clúster Zustand muerto (lib/data/stores/). NO incluye persistencia local de respaldo tipo localStorage — se deja como trabajo futuro explícito, es una capa arquitectónica nueva que merece su propio plan.",
+    "aprobacion": "Pedido textual de Javier en el chat (2026-09-30): 'ejecuta fase 1 y 2 en secuencia, comprueba y push'. Mismo patrón de checkpoint que t-168: instrucción directa del Supervisor como veredicto."
+  },
+  "zona": "lib/data/queries/ (capa de datos del cotizador) + lib/data/stores/ (retiro de código muerto)",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-170.md",
+  "criterios_aceptacion": [
+    "revertirItem/revertirEspacio/revertirArtefacto/revertirCliente/revertirContrato deshacen crear/actualizar/eliminar sobre el snapshot ACTUAL sin tocar otras filas (9 casos nuevos en optimistic.test.ts)",
+    "revertirProyecto/revertirContrato restauran el objeto singular completo cuando el id coincide, no-op si no",
+    "onError de useMutationOptGenerico ya no restaura un snapshot previo a ciegas: aplica revertirOptimista dirigido si está disponible, o invalida (pide la verdad al servidor) si no",
+    "onSuccess trata un resultado null/false como fallo (mismo tratamiento que un error de red), no solo lo ignora",
+    "ningún archivo de lib/data/stores/ queda importado desde fuera del propio clúster (verificado por grep antes de borrar)",
+    "npx tsc --noEmit limpio",
+    "npx eslint . sin errores nuevos",
+    "npx tsx lib/data/queries/optimistic.test.ts en verde (36/36)"
+  ],
+  "hallazgos_colaterales": [
+    "El working tree tenía cambios sin commitear de otra sesión/ventana en paralelo (ContratoModal.tsx, lib/data/actions/core.ts, lib/data/contracts.ts, lib/db/schema.ts, una migración nueva drizzle/v3/0025_penalidad_definitiva.sql sin aplicar) — incluyendo app/erp/proyectos/[proyectoId]/page.tsx con un error de sintaxis real que rompe `next build` completo. Javier confirmó en el chat que es trabajo propio bajo control; esta tarea NO tocó, comiteó ni pusheó ninguno de esos archivos — el commit de t-170/t-171 se hizo listando archivos explícitos, nunca `git add -A`.",
+    "lib/data/queries/useCotizadorQueries.ts ya tenía comentarios 't-169' preexistentes (useCrearClienteMutation/useVincularClienteProyectoMutation, del trabajo concurrente de arriba) — se usó t-170/t-171 para esta tarea para no colisionar con ese id ya en uso informalmente."
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint (lib/data/queries/, components/veta/)": "0 errors, 0 warnings nuevos",
+    "optimistic.test.ts": "36/36 en verde",
+    "next build": "NO verificado end-to-end: bloqueado por un archivo ajeno (app/erp/proyectos/[proyectoId]/page.tsx) con error de sintaxis de otra sesión en paralelo, confirmado por Javier como fuera del alcance de esta tarea"
+  },
+  "executor": "Claude Code (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Pedido textual de Javier 2026-09-30: 'ejecuta fase 1 y 2 en secuencia, comprueba y push'. Confirmado explícitamente que el trabajo concurrente ajeno en el working tree está bajo su control y que el push debía proceder solo con los archivos de esta tarea.",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null
+}

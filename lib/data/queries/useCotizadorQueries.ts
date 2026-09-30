@@ -56,6 +56,12 @@ import {
   construirItemOptimista,
   eliminarEspacio,
   eliminarItem,
+  revertirItem,
+  revertirEspacio,
+  revertirArtefacto,
+  revertirProyecto,
+  revertirCliente,
+  revertirContrato,
   marcarEspacioActiva,
   upsertArtefacto,
   upsertCliente,
@@ -123,6 +129,7 @@ export function useCrearItemMutation(proyectoId: string) {
     {
       onMutateExtra: (input) => registrarItemPendiente(proyectoId, construirItemOptimista(input)),
       onSettledExtra: (input) => liberarItemPendiente(proyectoId, input.id),
+      revertirOptimista: (actual, input, previo) => revertirItem(actual, input.id, previo),
     },
   )
 }
@@ -137,6 +144,7 @@ export function useActualizarItemMutation(proyectoId: string) {
     ({ id, patch }) => actualizarItemAction(id, patch),
     (snap, { id, patch }) => actualizarItem(snap, id, patch),
     (snap, r) => (r ? upsertItem(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirItem(actual, id, previo) },
   )
 }
 
@@ -146,7 +154,10 @@ export function useEliminarItemMutation(proyectoId: string) {
     ({ id }) => eliminarItemAction(id),
     (snap, { id }) => eliminarItem(snap, id),
     undefined,
-    { invalidarSiempre: true },
+    {
+      invalidarSiempre: true,
+      revertirOptimista: (actual, { id }, previo) => revertirItem(actual, id, previo),
+    },
   )
 }
 
@@ -171,6 +182,7 @@ export function useCrearEspacioMutation(proyectoId: string) {
       }),
     (snap, input) => agregarEspacio(snap, { ...input, proyectoId }),
     (snap, r) => upsertEspacio(snap, r),
+    { revertirOptimista: (actual, input, previo) => revertirEspacio(actual, input.id, previo) },
   )
 }
 
@@ -184,6 +196,7 @@ export function useActualizarEspacioMutation(proyectoId: string) {
     ({ id, patch }) => actualizarEspacioAction(id, patch),
     (snap, { id, patch }) => actualizarEspacio(snap, id, patch),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirEspacio(actual, id, previo) },
   )
 }
 
@@ -193,6 +206,7 @@ export function useMarcarEspacioActivaMutation(proyectoId: string) {
     ({ id }) => marcarActivaEspacioAction(id),
     (snap, { id }) => marcarEspacioActiva(snap, id),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirEspacio(actual, id, previo) },
   )
 }
 
@@ -216,6 +230,7 @@ export function useActualizarJornadasMutation(proyectoId: string) {
     ({ id, jornadas }) => actualizarJornadasAction(id, jornadas),
     (snap, { id, jornadas }) => actualizarJornadas(snap, id, jornadas),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirEspacio(actual, id, previo) },
   )
 }
 
@@ -242,6 +257,7 @@ export function useActualizarParametrosFinancierosMutation(proyectoId: string) {
     ({ id, partial }) => actualizarParametrosFinancierosAction(id, partial),
     (snap, { id, partial }) => actualizarProyecto(snap, id, partial),
     (snap, r) => (r ? upsertProyecto(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
   )
 }
 
@@ -265,6 +281,7 @@ export function useCrearArtefactoMutation(proyectoId: string) {
       }),
     (snap, input) => agregarArtefacto(snap, construirArtefactoOptimista(input)),
     (snap, r) => upsertArtefacto(snap, r),
+    { revertirOptimista: (actual, input, previo) => revertirArtefacto(actual, input.id, previo) },
   )
 }
 
@@ -278,6 +295,7 @@ export function useActualizarArtefactoMutation(proyectoId: string) {
     ({ id, patch }) => actualizarArtefactoAction(id, patch),
     (snap, { id, patch }) => actualizarArtefacto(snap, id, patch),
     (snap, r) => (r ? upsertArtefacto(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirArtefacto(actual, id, previo) },
   )
 }
 
@@ -340,6 +358,7 @@ export function useActualizarClienteMutation(proyectoId: string) {
     ({ id, partial }) => actualizarClienteAction(id, partial),
     (snap, { id, partial }) => actualizarCliente(snap, id, partial),
     (snap, r) => (r ? upsertCliente(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirCliente(actual, id, previo) },
   )
 }
 
@@ -368,6 +387,7 @@ export function useVincularClienteProyectoMutation(proyectoId: string) {
     ({ id, clienteId }) => actualizarProyectoAction(id, { clienteId }),
     (snap, { id, clienteId }) => actualizarProyecto(snap, id, { clienteId }),
     (snap, r) => (r ? upsertProyecto(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
   )
 }
 
@@ -391,6 +411,7 @@ export function useActualizarContratoMutation(proyectoId: string) {
     ({ id, data }) => actualizarContratoAction(id, data),
     (snap, { id, data }) => actualizarContrato(snap, id, data as Partial<Contrato>, data.hitos),
     (snap, r) => (r ? upsertContrato(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirContrato(actual, id, previo) },
   )
 }
 

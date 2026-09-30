@@ -109,6 +109,27 @@ export function eliminarItem(snapshot: CotizadorSnapshot, itemId: string): Cotiz
   }
 }
 
+/** Deshace el cambio de UN ítem, aplicado sobre el snapshot ACTUAL (no sobre uno viejo) —
+ * sincroniza la presencia/valores de `itemId` en `actual` con lo que tenía en `previo`, sin
+ * tocar ningún otro ítem. Sirve para revertir crear (no estaba en `previo` -> se quita),
+ * actualizar y eliminar (estaba en `previo` -> se restaura tal cual) con la misma función,
+ * porque las tres mutaciones tocan un solo id (t-170, fix de la condición de carrera de
+ * `factory.ts` cuando hay mutaciones concurrentes sobre el mismo queryKey). */
+export function revertirItem(actual: CotizadorSnapshot, itemId: string, previo: CotizadorSnapshot): CotizadorSnapshot {
+  const anterior = previo.items.find((i) => i.id === itemId)
+  const existeEnActual = actual.items.some((i) => i.id === itemId)
+  if (!anterior) {
+    if (!existeEnActual) return actual
+    return { ...actual, items: actual.items.filter((i) => i.id !== itemId) }
+  }
+  return {
+    ...actual,
+    items: existeEnActual
+      ? actual.items.map((i) => (i.id === itemId ? anterior : i))
+      : [...actual.items, anterior],
+  }
+}
+
 export function upsertItem(snapshot: CotizadorSnapshot, item: ItemVariante): CotizadorSnapshot {
   const idx = snapshot.items.findIndex((i) => i.id === item.id)
   const items = idx === -1 ? [...snapshot.items, item] : snapshot.items.map((i) => (i.id === item.id ? item : i))
@@ -197,6 +218,22 @@ export function eliminarEspacio(snapshot: CotizadorSnapshot, espacioId: string):
   }
 }
 
+/** Mismo principio que `revertirItem`, para espacios (t-170). */
+export function revertirEspacio(actual: CotizadorSnapshot, espacioId: string, previo: CotizadorSnapshot): CotizadorSnapshot {
+  const anterior = previo.espacios.find((e) => e.id === espacioId)
+  const existeEnActual = actual.espacios.some((e) => e.id === espacioId)
+  if (!anterior) {
+    if (!existeEnActual) return actual
+    return { ...actual, espacios: actual.espacios.filter((e) => e.id !== espacioId) }
+  }
+  return {
+    ...actual,
+    espacios: existeEnActual
+      ? actual.espacios.map((e) => (e.id === espacioId ? anterior : e))
+      : [...actual.espacios, anterior],
+  }
+}
+
 export function upsertEspacio(snapshot: CotizadorSnapshot, espacio: EspacioVariante): CotizadorSnapshot {
   const idx = snapshot.espacios.findIndex((e) => e.id === espacio.id)
   const espacios = idx === -1 ? [...snapshot.espacios, espacio] : snapshot.espacios.map((e) => (e.id === espacio.id ? espacio : e))
@@ -212,6 +249,13 @@ export function actualizarProyecto(
 ): CotizadorSnapshot {
   if (!snapshot.proyecto || snapshot.proyecto.id !== proyectoId) return snapshot
   return { ...snapshot, proyecto: { ...snapshot.proyecto, ...patch, updatedAt: new Date().toISOString() } }
+}
+
+/** El snapshot es escopado a UN proyecto, así que revertir es restaurar el `proyecto` entero
+ * de `previo` (t-170) — no hace falta lógica de lista como en items/espacios/artefactos. */
+export function revertirProyecto(actual: CotizadorSnapshot, proyectoId: string, previo: CotizadorSnapshot): CotizadorSnapshot {
+  if (!previo.proyecto || previo.proyecto.id !== proyectoId) return actual
+  return { ...actual, proyecto: previo.proyecto }
 }
 
 export function upsertProyecto(snapshot: CotizadorSnapshot, proyecto: Proyecto): CotizadorSnapshot {
@@ -235,6 +279,19 @@ export function actualizarCliente(
     clientes: snapshot.clientes.map((c) =>
       c.id === clienteId ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c,
     ),
+  }
+}
+
+/** Mismo principio que `revertirItem`, para el maestro de cliente (t-170). */
+export function revertirCliente(actual: CotizadorSnapshot, clienteId: string, previo: CotizadorSnapshot): CotizadorSnapshot {
+  const anterior = previo.clientes.find((c) => c.id === clienteId)
+  if (!anterior) return actual
+  const existeEnActual = actual.clientes.some((c) => c.id === clienteId)
+  return {
+    ...actual,
+    clientes: existeEnActual
+      ? actual.clientes.map((c) => (c.id === clienteId ? anterior : c))
+      : [...actual.clientes, anterior],
   }
 }
 
@@ -276,6 +333,13 @@ export function actualizarContrato(
       razon: h.razon,
     })),
   }
+}
+
+/** El snapshot tiene un solo contrato activo: revertir restaura `contrato` e `hitos` completos
+ * de `previo` (t-170) — `actualizarContrato` regenera ambos juntos, así que se deshacen juntos. */
+export function revertirContrato(actual: CotizadorSnapshot, contratoId: string, previo: CotizadorSnapshot): CotizadorSnapshot {
+  if (!previo.contrato || previo.contrato.id !== contratoId) return actual
+  return { ...actual, contrato: previo.contrato, hitos: previo.hitos }
 }
 
 // --- Artefactos ---
@@ -329,6 +393,22 @@ export function actualizarArtefacto(
     artefactos: snapshot.artefactos.map((a) =>
       a.id === artefactoId ? { ...a, ...patch, updatedAt: new Date().toISOString() } : a,
     ),
+  }
+}
+
+/** Mismo principio que `revertirItem`, para artefactos (t-170). */
+export function revertirArtefacto(actual: CotizadorSnapshot, artefactoId: string, previo: CotizadorSnapshot): CotizadorSnapshot {
+  const anterior = previo.artefactos.find((a) => a.id === artefactoId)
+  const existeEnActual = actual.artefactos.some((a) => a.id === artefactoId)
+  if (!anterior) {
+    if (!existeEnActual) return actual
+    return { ...actual, artefactos: actual.artefactos.filter((a) => a.id !== artefactoId) }
+  }
+  return {
+    ...actual,
+    artefactos: existeEnActual
+      ? actual.artefactos.map((a) => (a.id === artefactoId ? anterior : a))
+      : [...actual.artefactos, anterior],
   }
 }
 
