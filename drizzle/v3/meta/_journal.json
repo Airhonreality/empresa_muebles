@@ -176,6 +176,12 @@
       "when": 1789521000000,
       "tag": "0024_fecha_entrega_manual",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789610000000,
+      "tag": "0025_penalidad_definitiva"
     }
   ]
 }

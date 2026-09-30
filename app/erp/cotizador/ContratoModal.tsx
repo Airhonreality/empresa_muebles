@@ -77,6 +77,7 @@ type FormContrato = {
   /** t-170: si el contrato incluye el numeral SEXTA completo. Apagado = sin penalidad de ningún
    *  tipo: el numeral entero no se imprime. */
   aplicaClausulaPenalidad: boolean;
+  aplicaPenalidadDefinitiva: boolean;
   especificaciones: Record<SeccionEspecificacion, string>;
 };
 
@@ -178,6 +179,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
     // t-170: por defecto la cláusula se pacta (encendida). Un `false` guardado apagado a
     // propósito se respeta: es una decisión del Supervisor, no un default perdido.
     aplicaClausulaPenalidad: contratoExistente?.aplicaClausulaPenalidad ?? true,
+    aplicaPenalidadDefinitiva: contratoExistente?.aplicaPenalidadDefinitiva ?? true,
     especificaciones: {
       Estructura: contratoExistente?.especificacionesEstructura ?? especificacionesDerivadas.Estructura,
       Herrajes: contratoExistente?.especificacionesHerrajes ?? especificacionesDerivadas.Herrajes,
@@ -327,6 +329,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
       // en silencio un contrato ya emitido.
       alcanceSuministros: contratoExistente?.alcanceSuministros ?? null,
       aplicaClausulaPenalidad: form.aplicaClausulaPenalidad,
+      aplicaPenalidadDefinitiva: form.aplicaPenalidadDefinitiva,
       anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion.trim() || null,
       especificacionesEstructura: esp.Estructura.trim() || null,
       especificacionesHerrajes: esp.Herrajes.trim() || null,
@@ -672,8 +675,9 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                   5 % del último hito por mora en la entrega, retención de hasta el 5 % si lo
                   entregado no corresponde a los diseños o a los materiales pactados, derecho del
                   Contratista a suspender por mora del cliente, e intereses moratorios. Apagada, el
-                  numeral no se imprime: no hay penalidad de ningún tipo. Es una sola decisión, no
-                  partes: no existe la cláusula a medias.
+                  numeral no se imprime: no hay retención de mora ni interés moratorio. Es una sola
+                  decisión, no partes: no existe la cláusula a medias. La penalidad del 10 % por
+                  incumplimiento definitivo es un interruptor aparte, más abajo.
                 </span>
               </span>
             </label>
@@ -683,6 +687,32 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                 acá. Quitarla después de la firma requiere un otrosí.
               </p>
             )}
+
+            {/* t-176: interruptor APARTE. Apagar el 5 % no puede apagar el 10 %: este es el
+                numeral que permite cobrarle al Contratante cuando no paga el anticipo, y el otro
+                existe para quitarle al cliente nuestra exposición por mora. Juntas en un solo
+                interruptor, apagar el 5 % borraría la cláusula que nos protege a nosotros. */}
+            <label className="flex items-start gap-3 cursor-pointer mt-5 pt-5 border-t border-border-subtle">
+              <input
+                type="checkbox"
+                checked={form.aplicaPenalidadDefinitiva}
+                onChange={(e) => setForm({ ...form, aplicaPenalidadDefinitiva: e.target.checked })}
+                disabled={contratoFirmado}
+                className="mt-0.5 h-4 w-4 rounded border-border-subtle cursor-pointer accent-[var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-60"
+              />
+              <span>
+                <span className="block text-sm font-medium text-text-heading">
+                  Incluir el numeral SÉPTIMA — penalidad del 10 % por incumplimiento definitivo
+                </span>
+                <span className="block text-[11px] text-text-muted mt-1">
+                  Es una cláusula distinta de la anterior y va en su propio interruptor. Cubre el
+                  incumplimiento grave y definitivo, el abandono injustificado de obra y la falta
+                  de pago del anticipo, y es recíproca: la paga la parte que incumple, sea el
+                  Contratista o el Contratante. No se acumula con la retención del 5 %: un mismo
+                  hecho se cobra por una sola vía. Apagada, el numeral no se imprime.
+                </span>
+              </span>
+            </label>
           </section>
 
           {/* Sección 7: Valor y Hitos */}

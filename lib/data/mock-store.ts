@@ -811,6 +811,7 @@ export function createMockStore(): DataStore {
            alcanceSuministros: data.alcanceSuministros ?? null,
            anexoPropuestaIdentificacion: data.anexoPropuestaIdentificacion ?? null,
            aplicaClausulaPenalidad: data.aplicaClausulaPenalidad ?? true,
+           aplicaPenalidadDefinitiva: data.aplicaPenalidadDefinitiva ?? true,
            objetoItems: data.objetoItems ?? null,
            especificacionesEstructura: data.especificacionesEstructura ?? null,
            especificacionesHerrajes: data.especificacionesHerrajes ?? null,
@@ -857,6 +858,8 @@ export function createMockStore(): DataStore {
           // comportarse como `columnasContrato` en core.ts.
           aplicaClausulaPenalidad:
             data.aplicaClausulaPenalidad ?? previo.aplicaClausulaPenalidad,
+          aplicaPenalidadDefinitiva:
+            data.aplicaPenalidadDefinitiva ?? previo.aplicaPenalidadDefinitiva,
           especificacionesEstructura: data.especificacionesEstructura ?? null,
           especificacionesHerrajes: data.especificacionesHerrajes ?? null,
           especificacionesMesones: data.especificacionesMesones ?? null,

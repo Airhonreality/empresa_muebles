@@ -204,7 +204,10 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
   // vacía solo si se referencia una cláusula que no se está imprimiendo, que hoy no ocurre:
   // las únicas referencias a la penalidad viven dentro de la propia penalidad y de DÉCIMA,
   // que ya vienen condicionadas.
-  const ordinales = ordinalesClausulas(contrato.aplicaClausulaPenalidad)
+  const ordinales = ordinalesClausulas({
+    penalidad: contrato.aplicaClausulaPenalidad,
+    penalidadDefinitiva: contrato.aplicaPenalidadDefinitiva,
+  })
   const ord = (clave: ClaveClausula) => ordinales[clave] ?? ''
 
   return (
@@ -438,16 +441,73 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           </>
         )}
 
+        {/* t-176: penalidad del 10 % por incumplimiento definitivo / abandono / falta de pago del
+            anticipo. BILATERAL y en switch aparte, a propósito.
+
+            Por qué no va dentro del switch del 5 %: el 5 % protege al Contratante de nuestra mora.
+            Este 10 % es lo único que nos permite cobrarle al Contratante cuando no paga el
+            anticipo. Si compartieran interruptor, apagar el 5 % —que existe justamente para
+            quitarle al cliente nuestra exposición— se llevaría por delante la cláusula que nos
+            protege a nosotros.
+
+            Exclusividad con el 5 %: el texto del 5 % dice que la retención "no se acumula con
+            penalidades de otra naturaleza". Un 10 % dentro del mismo numeral sería contradictorio
+            consigo mismo, y un mismo hecho no puede generar 5 % + 10 % (15 %) por la misma
+            novela. Por eso son cláusulas separadas y la de aquí se declara ALTERNA.
+
+            Abandono: los 10 días hábiles para subsanar son inútiles contra un abandono —no hay
+            nada que subsanar y regalar dos semanas más a quien ya se fue es regalarle plazo sin
+            contraprestación—, así que el plazo corre solo contra incumplimientos subsanables y en
+            el abandono la notificación queda como constancia para el registro. Esto lo tiene que
+            confirmar el abogado: es la parte del texto donde más se puede discutir. */}
+        {contrato.aplicaPenalidadDefinitiva && (
+          <>
+            <div className="clausula-header">
+              {ord('PENALIDAD_DEFINITIVA')}. INCUMPLIMIENTO DEFINITIVO Y ABANDONO DE OBRA
+            </div>
+            <p>
+              <strong>Penalidad del 10 % (recíproca):</strong> adicionalmente, en caso de
+              incumplimiento grave y definitivo de las obligaciones contractuales, o de{' '}
+              <strong>abandono injustificado de la obra</strong> por parte del Contratista, o de
+              resolución del contrato por <strong>falta de pago del anticipo</strong> por parte del
+              Contratante, la parte incumplida pagará a la otra una penalidad equivalente al{' '}
+              <strong>10 % del valor total del contrato</strong>, previa notificación escrita con un
+              plazo de <strong>10 días hábiles</strong> para subsanar. La notificación se hace por
+              escrito y puede enviarse a cualquier medio que deje constancia de su envío y de la
+              fecha.
+            </p>
+            <p>
+              <strong>Abandono de obra:</strong> tratándose de abandono, que no es subsanable, el
+              plazo de 10 días hábiles no corre y la notificación escrita queda como constancia del
+              hecho para todos los efectos. En los casos de incumplimiento subsanable, el plazo se
+              cuenta desde la notificación y, si no se subsana, la penalidad se hace exigible sin
+              que sea necesario un trámite judicial previo.
+            </p>
+            {ord('PENALIDAD') && (
+              <p>
+                <strong>No acumulación:</strong> esta penalidad es <strong>alterna</strong> a la
+                retención del numeral {ord('PENALIDAD')} y no se suma a ella. Un mismo hecho no
+                puede generar las dos: el incumplimiento que definido o el abandono se cobran acá y
+                por una sola vez, y la mora que sí admite corrección se cobra únicamente por la vía
+                de la retención del 5 %.
+              </p>
+            )}
+          </>
+        )}
+
         <div className="clausula-header">{ord('GARANTIA')}. GARANTÍA DEL SERVICIO</div>
         <p>
           El Contratista otorga una garantía de calidad y estabilidad de <strong>{contrato.garantiaAnios || 2} años</strong> a partir del Acta de Entrega, la cual cubre defectos de fabricación de la estructura modular y fallos derivados directamente de la instalación física.
         </p>
         <p>
-          <strong>Plazo de respuesta:</strong> el Contratista se compromete a dar respuesta formal
-          y escrita sobre cualquier reclamo de garantía dentro de los <strong>12 días hábiles</strong>
-          siguientes a su radicación por cualquier medio. Este plazo es de <strong>respuesta</strong>,
-          no de solución: el tiempo de ejecución del reparo depende de la disponibilidad del
-          insumo y del fabricante cuando el defecto provenga de un tercero.
+          <strong>Plazo de respuesta:</strong> el Contratista se compromete a dar respuesta escrita
+          y programar la visita técnica de diagnóstico dentro de los <strong>5 días hábiles</strong>{' '}
+          siguientes a la radicación del reclamo por cualquier medio. Este plazo es de{' '}
+          <strong>respuesta y diagnóstico</strong>, no de solución: el tiempo final de reparación o
+          reposición depende de la disponibilidad técnica y de importación de los insumos del
+          fabricante. Si al momento del diagnóstico se determina que el reparo requiere un insumo
+          que el Contratista no tiene, este lo informa por escrito dentro de los mismos 5 días
+          hábiles, indicando el tiempo estimado.
         </p>
         <p>
           <strong>Exclusiones de Garantía:</strong> Esta garantía no cubre daños provocados por mal uso, limpieza con químicos abrasivos, humedad estructural proveniente de muros o tuberías de la edificación, exposición excesiva a la luz solar directa, plagas de insectos, accidentes o manipulación técnica realizada por terceros ajenos al Contratista.

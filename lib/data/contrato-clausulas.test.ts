@@ -1,89 +1,75 @@
-/**
- * t-170: el ordinal de cada cláusula se calcula, no se escribe a mano. Estos tests fijan la
- * invariante que hace que eso sea seguro: con la penalidad apagada NO puede quedar un hueco en
- * la numeración (la falla tipográfica de "QUINTA y después SÉPTIMA" en un contrato firmado).
- */
 import assert from 'node:assert/strict'
 
 import { CLAUSULAS, ordinalesClausulas } from './contrato-clausulas'
 
-const ORDINALES_ESPERADOS = [
-  'PRIMERA',
-  'SEGUNDA',
-  'TERCERA',
-  'CUARTA',
-  'QUINTA',
-  'SEXTA',
-  'SÉPTIMA',
-  'OCTAVO',
-  'NOVENA',
-  'DÉCIMA',
-  'UNDÉCIMA',
-]
+/** Las cuatro combinaciones de los dos switches: los ordinales no pueden tener huecos ni pisarse. */
+const COMBINACIONES = [
+  { penalidad: true, penalidadDefinitiva: true },
+  { penalidad: true, penalidadDefinitiva: false },
+  { penalidad: false, penalidadDefinitiva: true },
+  { penalidad: false, penalidadDefinitiva: false },
+] as const
 
-/** Con la penalidad prendida el documento tiene las 11 cláusulas, en su orden original. */
-{
-  const o = ordinalesClausulas(true)
+for (const imprime of COMBINACIONES) {
+  const o = ordinalesClausulas(imprime)
+  const etiqueta = `penalidad=${imprime.penalidad} definitiva=${imprime.penalidadDefinitiva}`
 
+  // Toda clave tiene ordinal, y toda clave apagada tiene `null` (no una palabra): una referencia
+  // cruzada a una cláusula ausente tiene que desaparecer del texto, no quedar apuntando al aire.
   for (const clave of CLAUSULAS) {
-    assert.notEqual(o[clave], null, `${clave} debería estar presente con la penalidad prendida`)
+    const v = o[clave]
+    if (v === null) {
+      assert.ok(
+        (clave === 'PENALIDAD' && !imprime.penalidad)
+          || (clave === 'PENALIDAD_DEFINITIVA' && !imprime.penalidadDefinitiva),
+        `${clave} dio null sin estar apagada (${etiqueta})`,
+      )
+    } else {
+      assert.equal(typeof v, 'string', `${clave} tiene que dar palabra o null (${etiqueta})`)
+      assert.ok(v.length > 0, `${clave} dio ordinal vacío (${etiqueta})`)
+    }
   }
-  assert.deepEqual(
-    CLAUSULAS.map((c) => o[c]),
-    ORDINALES_ESPERADOS,
-    'con la penalidad prendida cada clave debe caer en su ordinal original'
-  )
-}
 
-/** Apagada, la cláusula de penalidad no se imprime y no devuelve un ordinal para citarla. */
-{
-  const o = ordinalesClausulas(false)
-
-  assert.equal(o.PENALIDAD, null, 'la cláusula de penalidad no debe tener ordinal cuando está apagada')
-
-  for (const clave of CLAUSULAS) {
-    if (clave === 'PENALIDAD') continue
-    assert.notEqual(o[clave], null, `${clave} debería seguir presente aunque falte la penalidad`)
-  }
-}
-
-/** La invariante: los ordinales impresos son 1..N, sin huecos y sin repetidos. */
-for (const incluyePenalidad of [true, false]) {
-  const o = ordinalesClausulas(incluyePenalidad)
-  const impresos = CLAUSULAS.map((c) => o[c]).filter((x): x is string => x !== null)
-
-  assert.deepEqual(
-    impresos,
-    ORDINALES_ESPERADOS.slice(0, impresos.length),
-    'los ordinales deben ser la lista de palabras, corrida: nada de huecos ni repetidos'
-  )
+  // Ningún ordinal repetido: un numeral repetido en un documento firmado se lee como error.
+  const impresos = CLAUSULAS.map((c) => o[c]).filter((v): v is string => v !== null)
   assert.equal(
     new Set(impresos).size,
     impresos.length,
-    'ningún ordinal puede repetirse: dos cláusulas con el mismo número invalidan las referencias cruzadas'
+    `hay ordinales repetidos (${etiqueta}): ${impresos.join(', ')}`,
   )
-  assert.equal(
-    impresos.length,
-    incluyePenalidad ? 11 : 10,
-    'apagar una cláusula debe bajar el total en uno, no en dos'
-  )
+
+  // Ningún hueco: la posición en el texto y el ordinal tienen que coincidir.
+  impresos.forEach((palabra, i) => {
+    assert.equal(
+      palabra,
+      ['PRIMERA', 'SEGUNDA', 'TERCERA', 'CUARTA', 'QUINTA', 'SEXTA', 'SÉPTIMA', 'OCTAVA',
+        'NOVENA', 'DÉCIMA', 'UNDÉCIMA', 'DUODÉCIMA'][i],
+      `posición ${i + 1} no coincide con el ordinal (${etiqueta})`,
+    )
+  })
 }
 
-/**
- * La trampa de este módulo: con la penalidad apagada, GARANTIA pasa a ser el numeral SEXTA.
- * Si alguien "corrigiera" la clave para que no coincida con su ordinal, la referencia cruzada
- * del numeral de garantía quedaría apuntando a la cláusula equivocada en silencio.
- */
-{
-  const o = ordinalesClausulas(false)
+// t-176: los dos switches son independientes. Este es el punto de la cláusula aparte: apagar la
+// penalidad del 5 % NO puede borrar la del 10 %, porque esa es la que permite cobrarle al
+// Contratante que no paga el anticipo.
+const ambas = ordinalesClausulas({ penalidad: true, penalidadDefinitiva: true })
+assert.equal(ambas.PENALIDAD, 'SEXTA')
+assert.equal(ambas.PENALIDAD_DEFINITIVA, 'SÉPTIMA')
+assert.equal(ambas.GARANTIA, 'OCTAVA')
 
-  assert.equal(o.GARANTIA, 'SEXTA', 'apagada la penalidad, la garantía debe ocupar el numeral SEXTA')
-  assert.equal(o.SITIO_Y_FUERZA_MAYOR, 'SÉPTIMA')
-  assert.equal(o.PAGOS, 'OCTAVO')
-  assert.equal(o.CORRESPONSABILIDAD, 'NOVENA')
-  assert.equal(o.MERITO, 'DÉCIMA')
-  assert.equal(o.OBJETO, 'PRIMERA', 'lo que está antes de la penalidad no se mueve')
-  assert.equal(o.PLAZOS, 'TERCERA')
-}
+const sinCinco = ordinalesClausulas({ penalidad: false, penalidadDefinitiva: true })
+assert.equal(sinCinco.PENALIDAD, null)
+assert.equal(sinCinco.PENALIDAD_DEFINITIVA, 'SEXTA')
+assert.equal(sinCinco.GARANTIA, 'SÉPTIMA')
+
+const sinDiez = ordinalesClausulas({ penalidad: true, penalidadDefinitiva: false })
+assert.equal(sinDiez.PENALIDAD, 'SEXTA')
+assert.equal(sinDiez.PENALIDAD_DEFINITIVA, null)
+assert.equal(sinDiez.GARANTIA, 'SÉPTIMA')
+
+const sinNinguna = ordinalesClausulas({ penalidad: false, penalidadDefinitiva: false })
+assert.equal(sinNinguna.PENALIDAD, null)
+assert.equal(sinNinguna.PENALIDAD_DEFINITIVA, null)
+assert.equal(sinNinguna.GARANTIA, 'SEXTA')
 
 console.log('contrato-clausulas.test.ts OK')

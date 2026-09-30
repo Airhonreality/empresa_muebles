@@ -729,6 +729,7 @@ function columnasContrato(data: {
   emailAsunto?: string | null
   emailCuerpo?: string | null
   aplicaClausulaPenalidad?: boolean
+  aplicaPenalidadDefinitiva?: boolean
 }) {
   return {
     valorTotal: data.valorTotal,
@@ -752,6 +753,7 @@ function columnasContrato(data: {
     // numeral SEXTA como estaba; si el default fuera `false`, reabrir el modal para cambiar otra
     // cosa borraría en silencio la cláusula de penalidad de un contrato ya firmado.
     aplicaClausulaPenalidad: data.aplicaClausulaPenalidad ?? true,
+    aplicaPenalidadDefinitiva: data.aplicaPenalidadDefinitiva ?? true,
   }
 }
 

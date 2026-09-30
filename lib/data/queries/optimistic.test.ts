@@ -9,6 +9,7 @@ import {
   construirItemOptimista, eliminarEspacio, eliminarItem,
   marcarEspacioActiva, upsertEspacio, upsertItem, fusionarPendientes,
   actualizarCliente, upsertCliente, actualizarContrato, upsertContrato,
+  revertirItem, revertirEspacio, revertirArtefacto, revertirProyecto, revertirCliente, revertirContrato,
 } from './optimistic'
 import type { ItemVariante, EspacioVariante, Cliente, Contrato } from '../contracts'
 
@@ -236,7 +237,8 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
       valorTotal: '1000', estado: 'borrador', garantiaAnios: 2,
       plazoSemanas: 7, plazoEjecucionTexto: '7 semanas hábiles',
       fechaEntregaMaxima: '2026-11-20', holguraDias: 8, objetoItems: null, alcanceSuministros: null,
-      anexoPropuestaIdentificacion: null, aplicaClausulaPenalidad: true, especificacionesEstructura: null,
+      anexoPropuestaIdentificacion: null, aplicaClausulaPenalidad: true,
+      aplicaPenalidadDefinitiva: true, especificacionesEstructura: null,
       especificacionesHerrajes: null, especificacionesMesones: null, especificacionesDesmonte: null,
       contratanteDomicilio: null, emailAsunto: null, emailCuerpo: null,
       createdAt: '2026-09-01', updatedAt: '2026-09-01', ...over,
@@ -304,6 +306,83 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
     const snap = upsertContrato(baseSnapshot(), contrato('ctr-1', { valorTotal: '777' }))
     assert.equal(snap.contrato?.id, 'ctr-1')
     assert.equal(snap.contrato?.valorTotal, '777')
+  })
+
+  // --- t-169: deshacer dirigido sobre el snapshot ACTUAL (no sobre uno viejo capturado antes
+  // de que otra mutación concurrente tocara el cache) — fix de la condición de carrera de
+  // factory.ts que causó la pérdida de ítems reportada 2026-09-30. ---
+
+  await test('revertirItem: deshace una creación (no existía en previo) quitándolo del actual, sin tocar al resto', () => {
+    const previo = baseSnapshot({ items: [item('it-viejo')] })
+    const actual = baseSnapshot({ items: [item('it-viejo'), item('it-nuevo-fallido'), item('it-hermano-exitoso')] })
+    const snap = revertirItem(actual, 'it-nuevo-fallido', previo)
+    assert.equal(snap.items.length, 2)
+    assert.ok(!snap.items.some((i) => i.id === 'it-nuevo-fallido'))
+    assert.ok(snap.items.some((i) => i.id === 'it-hermano-exitoso'), 'no pisa el ítem de la mutación hermana que sí tuvo éxito')
+  })
+
+  await test('revertirItem: deshace una actualización restaurando los valores de previo', () => {
+    const previo = baseSnapshot({ items: [item('it-1', { cantidad: '2', totalLinea: '2000' })] })
+    const actual = baseSnapshot({ items: [item('it-1', { cantidad: '99', totalLinea: '99000' }), item('it-hermano')] })
+    const snap = revertirItem(actual, 'it-1', previo)
+    assert.equal(snap.items.find((i) => i.id === 'it-1')?.cantidad, '2')
+    assert.ok(snap.items.some((i) => i.id === 'it-hermano'), 'no pisa al hermano')
+  })
+
+  await test('revertirItem: deshace un soft-delete (anulado vuelve a false)', () => {
+    const previo = baseSnapshot({ items: [item('it-1', { anulado: false })] })
+    const actual = baseSnapshot({ items: [item('it-1', { anulado: true })] })
+    const snap = revertirItem(actual, 'it-1', previo)
+    assert.equal(snap.items[0].anulado, false)
+  })
+
+  await test('revertirItem: id sin cambios en ninguno de los dos snapshots es no-op', () => {
+    const previo = baseSnapshot()
+    const actual = baseSnapshot({ items: [item('it-x')] })
+    const snap = revertirItem(actual, 'it-inexistente', previo)
+    assert.equal(snap, actual)
+  })
+
+  await test('revertirEspacio: deshace creación sin tocar espacios hermanos', () => {
+    const previo = baseSnapshot({ espacios: [espacio('esp-1')] })
+    const actual = baseSnapshot({ espacios: [espacio('esp-1'), espacio('esp-fallido'), espacio('esp-hermano')] })
+    const snap = revertirEspacio(actual, 'esp-fallido', previo)
+    assert.equal(snap.espacios.length, 2)
+    assert.ok(snap.espacios.some((e) => e.id === 'esp-hermano'))
+  })
+
+  await test('revertirArtefacto: deshace creación sin tocar artefactos hermanos', () => {
+    const art = construirArtefactoOptimista({ id: 'art-1', espacioVarianteId: 'esp-1', categoria: 'electrodomestico' })
+    const previo = baseSnapshot()
+    const actual = baseSnapshot({ artefactos: [art] })
+    const snap = revertirArtefacto(actual, 'art-1', previo)
+    assert.equal(snap.artefactos.length, 0)
+  })
+
+  await test('revertirProyecto: restaura el proyecto completo de previo', () => {
+    const proyectoBase = { id: 'proj-1', nombreProyecto: 'P', clienteId: null, tipoProyecto: 'personalizado' as const, direccionObra: null, descripcionSemantica: null, costosOperativos: '0', imprevistosInstalacion: '0', descuentoComercial: '0', ajusteArbitrario: '0', aplicaIva: false, porcentajeIva: '19', garantiaAnios: 2, diasEntregaEstimados: null, estado: 'activa' as const, createdAt: '2026-01-01', updatedAt: '2026-01-01' }
+    const previo = baseSnapshot({ proyecto: proyectoBase })
+    const actual = baseSnapshot({ proyecto: { ...proyectoBase, aplicaIva: true, garantiaAnios: 99 } })
+    const snap = revertirProyecto(actual, 'proj-1', previo)
+    assert.equal(snap.proyecto?.aplicaIva, false)
+    assert.equal(snap.proyecto?.garantiaAnios, 2)
+  })
+
+  await test('revertirCliente: restaura el cliente sin tocar al resto de la lista', () => {
+    const previo = baseSnapshot({ clientes: [cliente('c1', { telefono: null })] })
+    const actual = baseSnapshot({ clientes: [cliente('c1', { telefono: '999' }), cliente('c2', { nombre: 'Luis' })] })
+    const snap = revertirCliente(actual, 'c1', previo)
+    assert.equal(snap.clientes.find((c) => c.id === 'c1')?.telefono, null)
+    assert.equal(snap.clientes.find((c) => c.id === 'c2')?.nombre, 'Luis')
+  })
+
+  await test('revertirContrato: restaura contrato e hitos juntos', () => {
+    const hitosPrevios = [{ id: 'h1', contratoId: 'ctr-1', orden: 1, tipo: 'percentage' as const, montoOPorcentaje: '100', razon: 'Unico' }]
+    const previo = baseSnapshot({ contrato: contrato('ctr-1', { valorTotal: '1000' }), hitos: hitosPrevios })
+    const actual = baseSnapshot({ contrato: contrato('ctr-1', { valorTotal: '99999' }), hitos: [] })
+    const snap = revertirContrato(actual, 'ctr-1', previo)
+    assert.equal(snap.contrato?.valorTotal, '1000')
+    assert.equal(snap.hitos.length, 1)
   })
 
   console.log(`\n${pasadas} pruebas pasadas`)

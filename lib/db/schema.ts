@@ -210,6 +210,10 @@ export const contratos = pgTable("contratos", {
 	// `.default(true)` a propósito: la página imprimible lee la fila vigente, así que un
 	// contrato YA firmado tiene que seguir saliendo con la cláusula y no perderla al reimprimir.
 	aplicaClausulaPenalidad: boolean("aplica_clausula_penalidad").default(true).notNull(),
+	// t-176: switch APARTE del 5 %. La penalidad del 5 % protege al Contratante de nosotros; esta
+	// es bilateral (también cubre que el Contratante no pague el anticipo), así que compartir el
+	// interruptor haría que apagar el 5 % borrara la cláusula que nos protege a nosotros.
+	aplicaPenalidadDefinitiva: boolean("aplica_penalidad_definitiva").default(true).notNull(),
 	especificacionesEstructura: text("especificaciones_estructura"),
 	especificacionesHerrajes: text("especificaciones_herrajes"),
 	especificacionesMesones: text("especificaciones_mesones"),
