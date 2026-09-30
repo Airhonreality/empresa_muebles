@@ -7,6 +7,8 @@ import { Button } from '@/components/veta/button'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { MoneyInput } from '@/components/veta/money-input'
 import { ImagePicker } from '@/components/veta/image-picker'
+import { EntityFields } from '@/components/veta/entity-fields'
+import { fichaTecnicaFormFields, type FichaTecnicaValues } from '@/lib/forms/ficha-tecnica-form-spec'
 import type { CampoPersonalizadoProducto, GrupoItem, ItemVariante, ProductoCatalogo } from '@/lib/data'
 
 interface ItemEditorModalProps {
@@ -129,6 +131,18 @@ export function ItemEditorModal({
     item.camposPersonalizados ?? []
   )
   const gruposPorId = new Map(grupos.map((g) => [g.id, g]))
+
+  const fichaTecnicaValues: FichaTecnicaValues = { marca, referencia, color, dimensiones, acabado, espesor }
+  const setFichaTecnicaCampo = (campo: keyof FichaTecnicaValues, valor: string) => {
+    switch (campo) {
+      case 'marca': setMarca(valor); break
+      case 'referencia': setReferencia(valor); break
+      case 'color': setColor(valor); break
+      case 'dimensiones': setDimensiones(valor); break
+      case 'acabado': setAcabado(valor); break
+      case 'espesor': setEspesor(valor); break
+    }
+  }
 
   const setCampoPersonalizado = (idx: number, patch: Partial<CampoPersonalizadoProducto>) => {
     setCamposPersonalizados((prev) => prev.map((c, i) => (i === idx ? { ...c, ...patch } : c)))
@@ -425,68 +439,12 @@ export function ItemEditorModal({
           {/* Ficha técnica (2026-09-22): 6 campos universales + claves personalizadas. */}
           <div className="space-y-2 rounded-sm border border-border-subtle bg-bg-alt/30 px-3 py-2">
             <span className="block text-xs font-semibold text-text-heading">Ficha técnica</span>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <div>
-                <label className="block text-[11px] font-medium text-text-muted mb-1">Marca</label>
-                <input
-                  type="text"
-                  value={marca}
-                  onChange={(e) => setMarca(e.target.value)}
-                  placeholder="Ej: Duratex"
-                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-text-muted mb-1">Referencia</label>
-                <input
-                  type="text"
-                  value={referencia}
-                  onChange={(e) => setReferencia(e.target.value)}
-                  placeholder="Ej: AUTO-000064"
-                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-text-muted mb-1">Color</label>
-                <input
-                  type="text"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  placeholder="Ej: Graffo"
-                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-text-muted mb-1">Dimensiones</label>
-                <input
-                  type="text"
-                  value={dimensiones}
-                  onChange={(e) => setDimensiones(e.target.value)}
-                  placeholder="Ej: 1.20 × 0.60 m"
-                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-text-muted mb-1">Acabado</label>
-                <input
-                  type="text"
-                  value={acabado}
-                  onChange={(e) => setAcabado(e.target.value)}
-                  placeholder="Ej: RH con cantos rígidos 2 mm"
-                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-text-muted mb-1">Espesor</label>
-                <input
-                  type="text"
-                  value={espesor}
-                  onChange={(e) => setEspesor(e.target.value)}
-                  placeholder="Ej: 18"
-                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
-                />
-              </div>
-            </div>
+            <EntityFields
+              className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+              fields={fichaTecnicaFormFields}
+              values={fichaTecnicaValues}
+              onChange={setFichaTecnicaCampo}
+            />
 
             <div className="flex items-center justify-between pt-1">
               <span className="text-[11px] font-medium text-text-muted">Campos personalizados</span>

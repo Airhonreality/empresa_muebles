@@ -5,9 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
-import { InputField } from '@/components/veta/input-field'
-import { MoneyInput } from '@/components/veta/money-input'
-import { NumberInput } from '@/components/veta/number-input'
+import { EntityFields, type EntityFieldSpec } from '@/components/veta/entity-fields'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { FilePicker } from '@/components/veta/file-picker'
@@ -77,6 +75,21 @@ const EMPTY_FORM: ProductoForm = {
   proyectoOrigenId: null,
   error: null,
 }
+
+const PRODUCTO_DESCRIPCION_FIELD: EntityFieldSpec<Omit<ProductoForm, 'error'>>[] = [
+  { key: 'descripcion', label: 'Descripción', placeholder: 'Ej. Tablero Roble 18mm' },
+]
+const PRODUCTO_UNIDAD_STOCK_FIELDS: EntityFieldSpec<Omit<ProductoForm, 'error'>>[] = [
+  { key: 'unidadMedida', label: 'Unidad', placeholder: 'Ej. m², ud, jornada' },
+  { key: 'stockActual', label: 'Stock', kind: 'number', min: 0 },
+]
+const PRODUCTO_PRECIOS_FIELDS: EntityFieldSpec<Omit<ProductoForm, 'error'>>[] = [
+  { key: 'precioDirecto', label: 'Precio directo', kind: 'money' },
+  { key: 'precioPublico', label: 'Precio público', kind: 'money' },
+]
+const PRODUCTO_CATEGORIA_FIELD: EntityFieldSpec<Omit<ProductoForm, 'error'>>[] = [
+  { key: 'categoriaComercial', label: 'Categoría comercial', placeholder: 'Ej. Maderas, Herrajes...' },
+]
 
 function formFromProducto(p: ProductoCatalogo): ProductoForm {
   return {
@@ -441,47 +454,21 @@ function CatalogoPageContent() {
                     </select>
                   </label>
                 </div>
-                <InputField
-                  label="Descripción"
-                  value={form.descripcion}
-                  onChange={(e) => setCampo('descripcion', e.target.value)}
-                  placeholder="Ej. Tablero Roble 18mm"
+                <EntityFields<Omit<ProductoForm, 'error'>> fields={PRODUCTO_DESCRIPCION_FIELD} values={form} onChange={(campo, valor) => setCampo(campo, valor)} />
+                <EntityFields<Omit<ProductoForm, 'error'>>
+                  className="grid grid-cols-2 gap-3"
+                  fields={PRODUCTO_UNIDAD_STOCK_FIELDS}
+                  values={form}
+                  onChange={(campo, valor) => setCampo(campo, valor)}
+                />
+                <EntityFields<Omit<ProductoForm, 'error'>>
+                  className="grid grid-cols-2 gap-3"
+                  fields={PRODUCTO_PRECIOS_FIELDS}
+                  values={form}
+                  onChange={(campo, valor) => setCampo(campo, valor)}
                 />
                 <div className="grid grid-cols-2 gap-3">
-                  <InputField
-                    label="Unidad"
-                    value={form.unidadMedida}
-                    onChange={(e) => setCampo('unidadMedida', e.target.value)}
-                    placeholder="Ej. m², ud, jornada"
-                  />
-                  <NumberInput
-                    label="Stock"
-                    value={form.stockActual}
-                    onChange={(v) => setCampo('stockActual', v)}
-                    min={0}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <MoneyInput
-                    label="Precio directo"
-                    value={form.precioDirecto}
-                    onChange={(v) => setCampo('precioDirecto', v)}
-                    aria-label="Precio directo"
-                  />
-                  <MoneyInput
-                    label="Precio público"
-                    value={form.precioPublico}
-                    onChange={(v) => setCampo('precioPublico', v)}
-                    aria-label="Precio público"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <InputField
-                    label="Categoría comercial"
-                    value={form.categoriaComercial}
-                    onChange={(e) => setCampo('categoriaComercial', e.target.value)}
-                    placeholder="Ej. Maderas, Herrajes..."
-                  />
+                  <EntityFields<Omit<ProductoForm, 'error'>> fields={PRODUCTO_CATEGORIA_FIELD} values={form} onChange={(campo, valor) => setCampo(campo, valor)} />
                   <label className="flex flex-col gap-1">
                     <span className="text-xs text-text-muted">Proveedor</span>
                     <select
