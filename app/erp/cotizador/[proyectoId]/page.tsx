@@ -511,7 +511,11 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
               return (
                 <select
                   value={proyecto.estado}
-                  onChange={(e) => store.proyectos.actualizarEstado(proyecto.id, e.target.value)}
+                  onChange={(e) => {
+                    store.proyectos.actualizarEstado(proyecto.id, e.target.value).catch((err) => {
+                      mostrarError(err instanceof Error ? err.message : 'No se pudo cambiar el estado. Revisa tu conexión e intenta de nuevo.')
+                    })
+                  }}
                   aria-label="Estado del proyecto"
                   className="rounded-sm border border-border-subtle bg-bg-paper px-2 py-1 text-xs font-medium text-text-heading focus:border-brand focus:outline-none"
                 >
