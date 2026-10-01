@@ -9,6 +9,11 @@ import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import { num, sanitizarCamposPersonalizados } from './mappers'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
 import { generarSkuUnico } from '../skus'
+import { validarEntrada } from '@/lib/validacion/validar'
+import {
+  itemCrearSchema, itemActualizarSchema, espacioCrearSchema, espacioActualizarSchema,
+  jornadasSchema, parametrosFinancierosSchema, clienteCrearSchema, clienteActualizarSchema,
+} from '@/lib/validacion/cotizador'
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
   ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial, GrupoItem, HitoPagoInput,
@@ -149,7 +154,9 @@ export async function actualizarParametrosFinancierosAction(
   // porcentaje_iva es numeric(5,2) — un valor fuera de [0,100] rompe la constraint de Postgres
   // con "numeric field overflow" (incidente real en producción, 2026-09-11, causado por un
   // input sin tope en el cliente). Server-side es la defensa que no se puede saltar.
-  const datos = { ...partial }
+  // t-172: validarEntrada rechaza ahora cualquier campo no-numérico/negativo ANTES del clamp de
+  // abajo (que sigue intacto — el clamp resuelve el rango, Zod resuelve la forma/tipo).
+  const datos = { ...validarEntrada(parametrosFinancierosSchema, partial) }
   if (datos.porcentajeIva !== undefined) {
     const n = Math.min(Math.max(Number(datos.porcentajeIva) || 0, 0), 100)
     datos.porcentajeIva = String(n)
@@ -245,12 +252,13 @@ export async function historialEstadoAction(proyectoId: string): Promise<Proyect
 }
 
 export async function crearClienteAction(data: Partial<Cliente> & { nombre: string }): Promise<Cliente> {
+  const validado = validarEntrada(clienteCrearSchema, data)
   const [nuevo] = await db.insert(s.clientes).values({
-    nombre: data.nombre,
-    documento: data.documento ?? null,
-    telefono: data.telefono ?? null,
-    email: data.email ?? null,
-    domicilio: data.domicilio ?? null,
+    nombre: validado.nombre,
+    documento: validado.documento ?? null,
+    telefono: validado.telefono ?? null,
+    email: validado.email ?? null,
+    domicilio: validado.domicilio ?? null,
   }).returning()
   return nuevo as unknown as Cliente
 }
@@ -261,44 +269,46 @@ export async function actualizarClienteAction(
   id: string,
   partial: Partial<Omit<Cliente, 'id'>>
 ): Promise<Cliente | null> {
+  const validado = validarEntrada(clienteActualizarSchema, partial)
   const [actualizado] = await db.update(s.clientes)
-    .set({ ...partial, updatedAt: new Date().toISOString() })
+    .set({ ...validado, updatedAt: new Date().toISOString() })
     .where(eq(s.clientes.id, id)).returning()
   return (actualizado as unknown as Cliente) ?? null
 }
 
 export async function crearEspacioAction(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante> {
+  const validado = validarEntrada(espacioCrearSchema, data)
   return db.transaction(async (tx) => {
-    let orden = data.orden
+    let orden = validado.orden
     if (orden === undefined) {
-      const existentes = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, data.proyectoId))
+      const existentes = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, validado.proyectoId))
       orden = existentes.length
     }
 
     // DEC-7 (2026-09-05, plan_cotizador_tanstack_query.md): mismo contrato idempotente que
     // crearItemAction — id opcional cliente-generado + onConflictDoNothing ante reintentos.
     const [nuevo] = await tx.insert(s.espacioVariantes).values({
-      id: data.id,
-      proyectoId: data.proyectoId,
-      nombreEspacio: data.nombreEspacio,
-      nombreVariante: data.nombreVariante ?? 'Inicial',
-      tipoEspacio: data.tipoEspacio ?? null,
-      descripcion: data.descripcion ?? null,
-      activa: data.activa ?? true,
-      visibleEnPropuestaPublica: data.visibleEnPropuestaPublica ?? true,
+      id: validado.id,
+      proyectoId: validado.proyectoId,
+      nombreEspacio: validado.nombreEspacio,
+      nombreVariante: validado.nombreVariante ?? 'Inicial',
+      tipoEspacio: validado.tipoEspacio ?? null,
+      descripcion: validado.descripcion ?? null,
+      activa: validado.activa ?? true,
+      visibleEnPropuestaPublica: validado.visibleEnPropuestaPublica ?? true,
       orden,
-      jornadasDesarrolloTecnico: data.jornadasDesarrolloTecnico ?? '0',
-      jornadasEnsamblajeTaller: data.jornadasEnsamblajeTaller ?? '0',
-      jornadasInstalacionObra: data.jornadasInstalacionObra ?? '0',
-      colores: data.colores ?? [],
-      fotosEspacio: sanitizarUrlsFotos(data.fotosEspacio) ?? [],
-      fotosDisenio: sanitizarUrlsFotos(data.fotosDisenio) ?? [],
-      fotosReferencia: sanitizarUrlsFotos(data.fotosReferencia) ?? [],
+      jornadasDesarrolloTecnico: validado.jornadasDesarrolloTecnico ?? '0',
+      jornadasEnsamblajeTaller: validado.jornadasEnsamblajeTaller ?? '0',
+      jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
+      colores: validado.colores ?? [],
+      fotosEspacio: sanitizarUrlsFotos(validado.fotosEspacio) ?? [],
+      fotosDisenio: sanitizarUrlsFotos(validado.fotosDisenio) ?? [],
+      fotosReferencia: sanitizarUrlsFotos(validado.fotosReferencia) ?? [],
     }).onConflictDoNothing({ target: s.espacioVariantes.id }).returning()
 
     if (nuevo) return nuevo as unknown as EspacioVariante
-    if (!data.id) throw new Error('crearEspacioAction: conflicto de id sin id de entrada')
-    const [existente] = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, data.id))
+    if (!validado.id) throw new Error('crearEspacioAction: conflicto de id sin id de entrada')
+    const [existente] = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, validado.id))
     if (existente) return existente as unknown as EspacioVariante
     throw new Error('crearEspacioAction: conflicto de id sin fila existente')
   })
@@ -308,7 +318,8 @@ export async function actualizarJornadasAction(
   id: string,
   jornadas: { jornadasDesarrolloTecnico: string; jornadasEnsamblajeTaller: string; jornadasInstalacionObra: string }
 ): Promise<EspacioVariante | null> {
-  const [actualizado] = await db.update(s.espacioVariantes).set(jornadas).where(eq(s.espacioVariantes.id, id)).returning()
+  const validado = validarEntrada(jornadasSchema, jornadas)
+  const [actualizado] = await db.update(s.espacioVariantes).set(validado).where(eq(s.espacioVariantes.id, id)).returning()
   return (actualizado as unknown as EspacioVariante) ?? null
 }
 
@@ -316,7 +327,7 @@ export async function actualizarEspacioAction(
   id: string,
   partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
 ): Promise<EspacioVariante | null> {
-  const sanitized = { ...partial };
+  const sanitized = { ...validarEntrada(espacioActualizarSchema, partial) };
   if (sanitized.fotosEspacio) sanitized.fotosEspacio = sanitizarUrlsFotos(sanitized.fotosEspacio) ?? [];
   if (sanitized.fotosDisenio) sanitized.fotosDisenio = sanitizarUrlsFotos(sanitized.fotosDisenio) ?? [];
   if (sanitized.fotosReferencia) sanitized.fotosReferencia = sanitizarUrlsFotos(sanitized.fotosReferencia) ?? [];
@@ -384,38 +395,39 @@ export async function marcarActivaEspacioAction(id: string): Promise<EspacioVari
 }
 
 export async function crearItemAction(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante> {
-  const precioUnitario = data.precioUnitario ?? '0'
+  const validado = validarEntrada(itemCrearSchema, data)
+  const precioUnitario = validado.precioUnitario ?? '0'
   // DEC-1 (2026-09-05, plan_cotizador_tanstack_query.md): id opcional cliente-generado
   // (crypto.randomUUID()) para la mutation optimista de TanStack Query. onConflictDoNothing
   // hace que un reintento con el mismo id (retry de red, doble-submit, re-run del onMutate)
   // sea idempotente en vez de duplicar la línea — mismo patrón que crearProyectoAction.
   const [nuevo] = await db.insert(s.itemsVariante).values({
-    id: data.id,
-    varianteId: data.varianteId,
-    catalogoId: data.catalogoId,
-    nombrePersonalizado: data.nombrePersonalizado ?? null,
-    cantidad: data.cantidad,
+    id: validado.id,
+    varianteId: validado.varianteId,
+    catalogoId: validado.catalogoId,
+    nombrePersonalizado: validado.nombrePersonalizado ?? null,
+    cantidad: validado.cantidad,
     precioUnitario,
-    totalLinea: String(num(data.cantidad) * num(precioUnitario)),
-    anulado: data.anulado ?? false,
-    esReferencial: data.esReferencial ?? false,
-    fuenteReferencial: data.fuenteReferencial ?? null,
-    grupoReferencial: data.grupoReferencial ?? null,
-    comentario: data.comentario ?? null,
-    grupoItemId: data.grupoItemId ?? null,
-    fotoUrl: data.fotoUrl ? (sanitizarUrlsFotos([data.fotoUrl])?.[0] ?? null) : null,
-    marca: data.marca ?? null,
-    referencia: data.referencia ?? null,
-    color: data.color ?? null,
-    dimensiones: data.dimensiones ?? null,
-    acabado: data.acabado ?? null,
-    espesor: data.espesor ?? null,
-    camposPersonalizados: sanitizarCamposPersonalizados(data.camposPersonalizados),
+    totalLinea: String(num(validado.cantidad) * num(precioUnitario)),
+    anulado: validado.anulado ?? false,
+    esReferencial: validado.esReferencial ?? false,
+    fuenteReferencial: validado.fuenteReferencial ?? null,
+    grupoReferencial: validado.grupoReferencial ?? null,
+    comentario: validado.comentario ?? null,
+    grupoItemId: validado.grupoItemId ?? null,
+    fotoUrl: validado.fotoUrl ? (sanitizarUrlsFotos([validado.fotoUrl])?.[0] ?? null) : null,
+    marca: validado.marca ?? null,
+    referencia: validado.referencia ?? null,
+    color: validado.color ?? null,
+    dimensiones: validado.dimensiones ?? null,
+    acabado: validado.acabado ?? null,
+    espesor: validado.espesor ?? null,
+    camposPersonalizados: sanitizarCamposPersonalizados(validado.camposPersonalizados),
   }).onConflictDoNothing({ target: s.itemsVariante.id }).returning()
 
   if (!nuevo) {
-    if (!data.id) throw new Error('crearItemAction: conflicto de id sin id de entrada')
-    const [existente] = await db.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, data.id))
+    if (!validado.id) throw new Error('crearItemAction: conflicto de id sin id de entrada')
+    const [existente] = await db.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, validado.id))
     if (existente) return existente as unknown as ItemVariante
     throw new Error('crearItemAction: conflicto de id sin fila existente')
   }
@@ -426,17 +438,18 @@ export async function actualizarItemAction(
   id: string,
   partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>
 ): Promise<ItemVariante | null> {
+  const validado = validarEntrada(itemActualizarSchema, partial)
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, id))
     if (!actual) return null
-    const cantidad = partial.cantidad ?? actual.cantidad
-    const precioUnitario = partial.precioUnitario ?? actual.precioUnitario
+    const cantidad = validado.cantidad ?? actual.cantidad
+    const precioUnitario = validado.precioUnitario ?? actual.precioUnitario
     const [actualizado] = await tx.update(s.itemsVariante).set({
-      ...partial,
-      ...(partial.camposPersonalizados !== undefined
-        ? { camposPersonalizados: sanitizarCamposPersonalizados(partial.camposPersonalizados) }
+      ...validado,
+      ...(validado.camposPersonalizados !== undefined
+        ? { camposPersonalizados: sanitizarCamposPersonalizados(validado.camposPersonalizados) }
         : {}),
-      fotoUrl: partial.fotoUrl !== undefined ? (partial.fotoUrl ? (sanitizarUrlsFotos([partial.fotoUrl])?.[0] ?? null) : null) : undefined,
+      fotoUrl: validado.fotoUrl !== undefined ? (validado.fotoUrl ? (sanitizarUrlsFotos([validado.fotoUrl])?.[0] ?? null) : null) : undefined,
       totalLinea: String(num(cantidad) * num(precioUnitario)),
       updatedAt: new Date().toISOString(),
     }).where(eq(s.itemsVariante.id, id)).returning()

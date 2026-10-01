@@ -1,0 +1,46 @@
+{
+  "id": "t-172",
+  "titulo": "Zod en el borde de escritura del cotizador (Lote 1: ítems, espacio/jornadas, parámetros financieros, cliente)",
+  "intencion_negocio": "Tras el diagnóstico de UI del cotizador (t-170/t-171), el usuario preguntó explícitamente '¿para qué sirve Zod realmente? ¿es necesaria para nuestro goal?'. Se le explicó que no resuelve lentitud ni pérdida de datos (problemas ya corregidos en t-170/t-171) pero sí previene el tipo de bug que ya causó un incidente real de producción documentado en el código ('numeric field overflow', 2026-09-11, por falta de validación runtime). El usuario pidió seguir implementando todo en secuencia, lo que incluye esta Fase 3 ya acordada.",
+  "diagnostico": "Zod no estaba integrado en ninguna parte del código fuente (0 resultados fuera de node_modules). Toda la validación de las Server Actions de escritura era manual (if sueltos, Math.min/max, .trim()) tipada solo con TypeScript, que desaparece en runtime. Existía un plan formal archivado y nunca ejecutado (arnes/lineas/ola7/tecnico/plan_zod_validacion_runtime.md, rama arnes-historico-fase0, ligado a t-164) que ya diagnosticaba exactamente este hoyo y proponía la misma arquitectura (lib/validacion/ por dominio, wrapper validarEntrada, tipos derivados con z.infer, prioridad por riesgo de dinero primero).",
+  "decisiones_supervisor": {
+    "alcance": "Lote 1 (crítico) del plan archivado: ítems (crear/actualizar), espacio (crear/actualizar), jornadas, parámetros financieros, cliente (crear/actualizar). NO incluye proyecto completo, contrato/hitos, ni los Lotes 2/3 (operativo, maestro/tienda) — quedan como trabajo futuro con su propio checkpoint.",
+    "aprobacion": "Continuación textual de Javier (2026-09-30): 'seguir implementando todo en secuencia', tras resolver en el chat la pregunta sobre el propósito de Zod. Mismo patrón de checkpoint que t-168/t-170/t-171."
+  },
+  "zona": "lib/validacion/ (nuevo) + lib/data/actions/core.ts",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-172.md",
+  "criterios_aceptacion": [
+    "crearItemAction, actualizarItemAction, crearEspacioAction, actualizarEspacioAction, actualizarJornadasAction, actualizarParametrosFinancierosAction, crearClienteAction y actualizarClienteAction llaman validarEntrada antes de cualquier db.insert/db.update",
+    "los tipos exportados de lib/validacion/cotizador.ts se derivan con z.infer, cero re-declaración manual",
+    "21 casos de prueba en lib/validacion/cotizador.test.ts cubren payload válido, campo requerido vacío, numérico-como-texto inválido/negativo, enum fuera de rango, patch parcial vacío, y mensaje de error con la ruta del campo",
+    "npx tsc --noEmit limpio en todo el árbol",
+    "npx eslint . sin errores ni warnings nuevos",
+    "npx tsx lib/validacion/cotizador.test.ts en verde (21/21)",
+    "npx tsx lib/data/queries/optimistic.test.ts sigue en verde (36/36) tras tocar core.ts"
+  ],
+  "hallazgos_colaterales": [
+    "El clamp de porcentajeIva (0-100) en actualizarParametrosFinancierosAction se dejó intacto a propósito: Zod rechaza lo que no es numérico/es negativo ANTES del clamp, pero cambiar el clamp a un rechazo duro de fuera-de-rango es una decisión de producto nueva (UX de corrección silenciosa vs. rechazo explícito) fuera del alcance de esta tarea.",
+    "Los schemas NO exigen formato UUID en ids/llaves foráneas a propósito: los fixtures de prueba existentes usan ids no-UUID (p.ej. 'esp-1') y exigir el formato habría arriesgado rechazar datos legítimos que la propia DB no considera inválidos.",
+    "email de cliente se valida solo como string/null, sin formato estricto — no se auditó cada formulario que lo envía dentro de esta tarea, y forzar formato arriesgaba romper guardados legítimos existentes."
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint .": "0 errors, 0 warnings nuevos (deuda preexistente en scripts/ no tocada por esta tarea)",
+    "lib/validacion/cotizador.test.ts": "21/21 en verde",
+    "lib/data/queries/optimistic.test.ts": "36/36 en verde (confirma que t-170 sigue intacto)"
+  },
+  "executor": "Claude Code (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Continuación de 'seguir implementando todo en secuencia' (2026-09-30), tras resolver en el chat la pregunta del usuario sobre el propósito y necesidad de Zod antes de ejecutar.",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null
+}
