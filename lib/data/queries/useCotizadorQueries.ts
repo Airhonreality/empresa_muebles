@@ -19,6 +19,7 @@ import {
   eliminarEspacioAction,
   actualizarJornadasAction,
   actualizarParametrosFinancierosAction,
+  actualizarEstadoProyectoAction,
   crearArtefactoAction,
   actualizarArtefactoAction,
   duplicarEspacioAction,
@@ -258,6 +259,16 @@ export function useActualizarParametrosFinancierosMutation(proyectoId: string) {
     cotizadorKeys.detalle(proyectoId),
     ({ id, partial }) => actualizarParametrosFinancierosAction(id, partial),
     (snap, { id, partial }) => actualizarProyecto(snap, id, partial),
+    (snap, r) => (r ? upsertProyecto(snap, r) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
+  )
+}
+
+export function useActualizarEstadoProyectoMutation(proyectoId: string) {
+  return useMutationOptGenerico<CotizadorSnapshot, { id: string; estado: string }, Proyecto | null>(
+    cotizadorKeys.detalle(proyectoId),
+    ({ id, estado }) => actualizarEstadoProyectoAction(id, estado),
+    (snap, { id, estado }) => actualizarProyecto(snap, id, { estado: estado as Proyecto['estado'] }),
     (snap, r) => (r ? upsertProyecto(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
   )
