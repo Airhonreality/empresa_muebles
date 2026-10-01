@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect, memo, type ReactElement } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, memo, type ReactElement } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
@@ -1475,6 +1475,13 @@ function VarianteContenido({
   // penaliza el caso más común (reabrir una cotización ya poblada) con una sección vacía
   // forzando scroll de más.
   const [contextoForzado, setContextoForzado] = useState<boolean | null>(null)
+  // 2026-09-30 (diagnóstico UX): los ítems nuevos se insertan siempre al final de la lista
+  // (sin orderBy en ningún punto de lectura) -- en un espacio con muchos ítems ya cargados, la
+  // fila nueva aterriza fuera de la vista y nada avisaba dónde quedó. `itemRecienCreadoId` guarda
+  // el id del último ítem creado en esta variante; el efecto de abajo le hace scroll y lo resalta
+  // brevemente, y se limpia solo para no dejar el resaltado pegado si el usuario sigue trabajando.
+  const [itemRecienCreadoId, setItemRecienCreadoId] = useState<string | null>(null)
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [modalItemId, setModalItemId] = useState<string | null>(null)
   const [creandoItemLibre, setCreandoItemLibre] = useState(false)
   const [itemLibreNombre, setItemLibreNombre] = useState('')
@@ -1503,6 +1510,16 @@ function VarianteContenido({
   const actualizarItem = async (id: string, field: keyof Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>, value: string | boolean) => {
     await store.items.actualizar(id, { [field]: value } as Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>)
   }
+
+  useEffect(() => {
+    if (!itemRecienCreadoId) return
+    document.getElementById(`item-row-${itemRecienCreadoId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
+    highlightTimeoutRef.current = setTimeout(() => setItemRecienCreadoId(null), 1600)
+    return () => {
+      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
+    }
+  }, [itemRecienCreadoId])
 
   return (
     <div className="border-t border-border-subtle px-4 py-3 space-y-3">
@@ -1781,14 +1798,14 @@ function VarianteContenido({
                 // B2 (plan_cotizador_tanstack_query.md): mutation optimista con id cliente
                 // (DEC-1) — la fila aparece al instante y persiste en background; sin
                 // usePendingGuard para permitir encadenar (T2) y sin fila temporal (T1).
-                void store.items.crear({
+                store.items.crear({
                   varianteId: espacio.id,
                   catalogoId: producto.id,
                   nombrePersonalizado: null,
                   cantidad: '1',
                   precioUnitario: producto.precioPublico ?? '0',
                   esReferencial: busquedaEsReferencial,
-                })
+                }).then((item) => setItemRecienCreadoId(item.id))
                 setModoBusquedaItem('off')
               }}
               onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(busquedaEsReferencial); setModoBusquedaItem('off') }}
@@ -1822,7 +1839,11 @@ function VarianteContenido({
           const precioNum = parseNum(item.precioUnitario)
           const total = cantidadNum * precioNum
           return (
-            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0">
+            <div
+              key={item.id}
+              id={`item-row-${item.id}`}
+              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0 rounded transition-colors duration-500 ${item.id === itemRecienCreadoId ? 'bg-gold-100/80' : ''}`}
+            >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 sm:gap-2">
                   <ItemMiniatura producto={prod} fotoUrl={item.fotoUrl} onClick={() => setModalItemId(item.id)} />
@@ -2019,7 +2040,11 @@ function VarianteContenido({
               const prod = item.catalogoId ? productMap.get(item.catalogoId) : undefined
               const total = parseNum(item.cantidad) * parseNum(item.precioUnitario)
               return (
-                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-1 last:pb-0 last:border-0">
+                <div
+                  key={item.id}
+                  id={`item-row-${item.id}`}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-1 last:pb-0 last:border-0 rounded transition-colors duration-500 ${item.id === itemRecienCreadoId ? 'bg-gold-100/80' : ''}`}
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 sm:gap-2">
                       <ItemMiniatura producto={prod} fotoUrl={item.fotoUrl} onClick={() => setModalItemId(item.id)} />
@@ -2271,7 +2296,7 @@ function VarianteContenido({
                 size="md"
                 disabled={!itemLibreNombre.trim()}
                 onClick={async () => {
-                  await store.items.crear({
+                  const item = await store.items.crear({
                     varianteId: espacio.id,
                     catalogoId: null,
                     nombrePersonalizado: itemLibreNombre.trim(),
@@ -2279,6 +2304,7 @@ function VarianteContenido({
                     precioUnitario: itemLibrePrecio,
                     esReferencial: itemLibreEsRef,
                   })
+                  setItemRecienCreadoId(item.id)
                   setCreandoItemLibre(false)
                   setItemLibreNombre('')
                   setItemLibreCantidad('1')
