@@ -245,7 +245,7 @@ export function upsertEspacio(snapshot: CotizadorSnapshot, espacio: EspacioVaria
 export function actualizarProyecto(
   snapshot: CotizadorSnapshot,
   proyectoId: string,
-  patch: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'direccionObra' | 'descripcionSemantica' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario' | 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios'>>,
+  patch: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'direccionObra' | 'descripcionSemantica' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario' | 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'estado'>>,
 ): CotizadorSnapshot {
   if (!snapshot.proyecto || snapshot.proyecto.id !== proyectoId) return snapshot
   return { ...snapshot, proyecto: { ...snapshot.proyecto, ...patch, updatedAt: new Date().toISOString() } }
