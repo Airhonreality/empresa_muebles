@@ -3,13 +3,18 @@
 import { useState } from "react";
 import { Button } from "@/components/veta/button";
 import { NumberInput } from "@/components/veta/number-input";
-import { MoneyInput } from "@/components/veta/money-input";
 import type { Proyecto } from "@/lib/data";
 import { useToast } from "@/components/veta/toast-provider";
 
 export type ParametrosFinancieros = Partial<
   Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>
 >;
+
+// Tipo acotado de lo que este modal de verdad guarda (ver nota 2026-09-30 más abajo):
+// costosOperativos/imprevistosInstalacion/descuentoComercial/ajusteArbitrario se mudaron
+// a inputs in-situ en el footer del cotizador. onGuardar sigue aceptando el tipo completo
+// (Partial) porque el caller lo comparte con esos otros call sites, pero este componente
+// solo envía las 3 claves de IVA/garantía -- una actualización real (PATCH), no resetea las demás.
 
 export interface ParametrosFinancierosModalProps {
   proyecto: Proyecto;
@@ -30,17 +35,18 @@ function aDigitos(val: string | null | undefined): string {
 }
 
 /**
- * Módulo consolidado de parametrización final del costo de la cotización (2026-09-11,
- * pedido explícito del Supervisor: "un módulo que controle impuestos, costos operativos,
- * descuentos, etc."). Antes estos campos vivían repartidos entre inputs sueltos en el
- * header (Garantía/IVA) y el modal genérico "Editar datos" (los costos) — sin ningún
- * lugar único, discoverable, dedicado a la parametrización financiera.
+ * Módulo de parametrización de impuestos y garantía (2026-09-11, pedido explícito del
+ * Supervisor; recortado 2026-09-30 -- diagnóstico UX encontró que los 4 campos de
+ * costos/imprevistos/descuento/ajuste vivían escondidos detrás de este modal, causa real
+ * de "siempre se me olvida meter costo operativo" (feedback directo de Javier): son datos
+ * que cambian por cotización, no parámetros raros de tocar una vez. Se movieron a inputs
+ * in-situ con autosave en el footer del cotizador (app/erp/cotizador/[proyectoId]/page.tsx).
+ * Este modal queda solo para IVA/garantía, que sí casi no cambian entre cotizaciones.
  *
  * Nota (2026-09-11, mismo día): "Costos logísticos" existió unas horas como campo separado
  * de "Costos operativos" — Javier señaló que eran conceptualmente el mismo balde (un solo
  * número de costo operativo, que YA cubre logística/transporte) y que dos campos casi
  * idénticos en el formulario era redundante y confuso, no una necesidad real de negocio.
- * Se retiró; "Costos operativos" es el único campo.
  */
 export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSaved }: ParametrosFinancierosModalProps) {
   const { mostrarError } = useToast();
@@ -49,10 +55,6 @@ export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSav
     aplicaIva: proyecto.aplicaIva,
     porcentajeIva: aDigitos(proyecto.porcentajeIva) || '19',
     garantiaAnios: String(proyecto.garantiaAnios ?? 2),
-    costosOperativos: aDigitos(proyecto.costosOperativos),
-    imprevistosInstalacion: aDigitos(proyecto.imprevistosInstalacion),
-    descuentoComercial: aDigitos(proyecto.descuentoComercial),
-    ajusteArbitrario: aDigitos(proyecto.ajusteArbitrario),
   });
 
   // t-177: la mutación ya es optimista (el header del cotizador cambia al instante). Antes el
@@ -64,14 +66,13 @@ export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSav
     // (2026-09-11: incidente real en producción — "numeric field overflow" al guardar sin
     // este tope, el input no bloqueaba escribir un valor fuera de rango).
     const ivaClamp = Math.min(Math.max(Number(form.porcentajeIva) || 0, 0), 100)
+    // Partial real (PATCH, no overwrite -- confirmado contra lib/data/actions/core.ts): omitir
+    // costosOperativos/imprevistosInstalacion/descuentoComercial/ajusteArbitrario NO los resetea,
+    // siguen viviendo en el footer del cotizador.
     onGuardar({
       aplicaIva: form.aplicaIva,
       porcentajeIva: String(ivaClamp || 19),
       garantiaAnios: Number(form.garantiaAnios) || 0,
-      costosOperativos: form.costosOperativos || '0',
-      imprevistosInstalacion: form.imprevistosInstalacion || '0',
-      descuentoComercial: form.descuentoComercial || '0',
-      ajusteArbitrario: form.ajusteArbitrario || '0',
     }).catch((err) => {
       mostrarError(err instanceof Error ? err.message : 'No se pudo guardar los parámetros financieros. Revisa tu conexión e intenta de nuevo.')
     })
@@ -87,14 +88,13 @@ export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSav
       <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-lg border border-border-subtle bg-bg-paper p-6 shadow-lg">
         <div className="mb-5 flex items-center justify-between">
           <h2 id="parametros-financieros-title" className="font-display text-lg font-semibold text-text-heading">
-            Parámetros financieros de la cotización
+            IVA y garantía
           </h2>
           <Button variant="ghost" size="md" onClick={onClose} aria-label="Cerrar">✕</Button>
         </div>
 
         <div className="space-y-5">
           <div>
-            <p className="text-xs font-medium text-text-muted mb-2">Impuestos y garantía</p>
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="flex items-center gap-2 sm:col-span-1">
                 <input
@@ -119,32 +119,6 @@ export function ParametrosFinancierosModal({ proyecto, onGuardar, onClose, onSav
                 onChange={(v) => set('garantiaAnios', v)}
                 min={0}
                 step={1}
-              />
-            </div>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-text-muted mb-2">Costos, descuentos y ajustes</p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <MoneyInput
-                label="Costos operativos (incluye logística y transporte)"
-                value={form.costosOperativos}
-                onChange={(v) => set('costosOperativos', v)}
-              />
-              <MoneyInput
-                label="Imprevistos de instalación"
-                value={form.imprevistosInstalacion}
-                onChange={(v) => set('imprevistosInstalacion', v)}
-              />
-              <MoneyInput
-                label="Descuento comercial"
-                value={form.descuentoComercial}
-                onChange={(v) => set('descuentoComercial', v)}
-              />
-              <MoneyInput
-                label="Ajuste arbitrario"
-                value={form.ajusteArbitrario}
-                onChange={(v) => set('ajusteArbitrario', v)}
               />
             </div>
           </div>

@@ -71,6 +71,12 @@ function parseNum(s: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0
 }
 
+/** Mismo helper que parametros-financieros-modal.tsx: deja solo dígitos, para alimentar
+ *  MoneyInput (que espera un string de dígitos crudos, no un numeric string con decimales). */
+function aDigitos(s: string | null | undefined): string {
+  return (s ?? '').replace(/[^\d]/g, '')
+}
+
 interface TarifasMO {
   tarifaDev: number
   tarifaAssembly: number
@@ -183,7 +189,12 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [mostrarParametrosFinancieros, setMostrarParametrosFinancieros] = useState(false)
-  const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(false)
+  // 2026-09-30 (diagnóstico UX): antes arrancaba colapsado pese a que el contenedor ya reserva
+  // espacio de sobra (max-h-[50vh]) — obligaba a un clic para ver Subtotal/IVA, y era la causa
+  // real de "siempre se me olvida meter costo operativo" (el campo vivía fuera de la vista por
+  // defecto, detrás de dos pasos: abrir el desglose Y abrir el modal). Ahora arranca expandido;
+  // el toggle sigue existiendo como opción de compactar en pantallas chicas.
+  const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(true)
   const [mostrarVersionesPropuesta, setMostrarVersionesPropuesta] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
   const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
@@ -384,9 +395,12 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       onClick: () => window.open(`/propuesta/${proyecto.id}`, '_blank'),
     },
     {
+      // 2026-09-30 (diagnóstico UX): antes 'primary' igual que 'presentar' y 'generar-contrato'
+      // — tres botones del mismo peso visual no dejaban claro cuál seguía. 'generar-contrato'
+      // queda como el único primary (es el paso terminal del flujo); el resto baja a secondary.
       id: 'versiones-propuesta',
       label: estadoPublicacion?.tieneVersionPublicada ? 'Crear nueva versión' : 'Publicar',
-      variant: 'primary',
+      variant: 'secondary',
       onClick: () => setMostrarVersionesPropuesta(true),
     },
     {
@@ -398,7 +412,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
     {
       id: 'presentar',
       label: '▶ Presentar',
-      variant: 'primary',
+      variant: 'secondary',
       onClick: () => {
         window.open(`/propuesta/${proyecto.id}`, '_blank', 'noopener')
         setModalPresentacionAbierto(true)
@@ -589,25 +603,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         ))}
       </section>
 
-      {/* Mano de Obra */}
-      <section className="mt-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-md border border-border-subtle bg-bg-raised p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Desarrollo Técnico</p>
-          <p className="mt-2 font-mono text-xl font-medium text-text-heading">{formatCOP(moDev)}</p>
-          <p className="text-xs text-text-muted mt-1">{tarifaDev.toLocaleString()} COP/jornada</p>
-        </div>
-        <div className="rounded-md border border-border-subtle bg-bg-raised p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Ensamblaje Taller</p>
-          <p className="mt-2 font-mono text-xl font-medium text-text-heading">{formatCOP(moEns)}</p>
-          <p className="text-xs text-text-muted mt-1">{tarifaAssembly.toLocaleString()} COP/jornada</p>
-        </div>
-        <div className="rounded-md border border-border-subtle bg-bg-raised p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Instalación Obra</p>
-          <p className="mt-2 font-mono text-xl font-medium text-text-heading">{formatCOP(moInst)}</p>
-          <p className="text-xs text-text-muted mt-1">{tarifaInstall.toLocaleString()} COP/jornada</p>
-        </div>
-      </section>
-
       {/* Contrato */}
       {contrato && (
         <section className="mt-6 rounded-lg border border-border-subtle bg-bg-raised p-6">
@@ -673,34 +668,73 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
                 <span className="text-text-muted">Materiales</span>
                 <span className="font-mono text-text-heading">{formatCOP(materialesTotal)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-muted">Mano de Obra</span>
-                <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
+              <div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Mano de Obra</span>
+                  <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
+                </div>
+                {/* 2026-09-30 (diagnóstico UX): antes vivía duplicado en 3 tarjetas sueltas a
+                    media página, sin título que dijera si era por espacio o del proyecto completo
+                    — "no aporta nada" (feedback directo de Javier). El desglose por categoría solo
+                    tiene sentido junto al total que ya lo contextualiza (todos los espacios activos). */}
+                <div className="pl-3 mt-1 space-y-0.5 text-xs text-text-muted">
+                  <div className="flex justify-between">
+                    <span>Desarrollo técnico</span>
+                    <span className="font-mono">{formatCOP(moDev)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Ensamblaje taller</span>
+                    <span className="font-mono">{formatCOP(moEns)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Instalación obra</span>
+                    <span className="font-mono">{formatCOP(moInst)}</span>
+                  </div>
+                </div>
               </div>
-              {costosOperativos > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Costos Operativos</span>
-                  <span className="font-mono text-text-heading">{formatCOP(costosOperativos)}</span>
+              {/* 2026-09-30 (diagnóstico UX): antes estos 4 campos solo eran editables dentro del
+                  modal "Parámetros financieros" -- fuera de la vista por defecto, causa directa de
+                  "siempre se me olvida meter costo operativo" (feedback de Javier). Ahora son
+                  inputs in-situ con el mismo autosave (debounce + onBlur) que el resto del
+                  cotizador; el modal queda solo para IVA/garantía, que casi no cambian por cotización. */}
+              <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text-muted shrink-0">Costos Operativos</span>
+                  <MoneyInput
+                    value={aDigitos(proyecto.costosOperativos)}
+                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { costosOperativos: v || '0' })}
+                    className="w-32"
+                    aria-label="Costos operativos"
+                  />
                 </div>
-              )}
-              {imprevistos > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Imprevistos</span>
-                  <span className="font-mono text-text-heading">{formatCOP(imprevistos)}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text-muted shrink-0">Imprevistos</span>
+                  <MoneyInput
+                    value={aDigitos(proyecto.imprevistosInstalacion)}
+                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { imprevistosInstalacion: v || '0' })}
+                    className="w-32"
+                    aria-label="Imprevistos de instalación"
+                  />
                 </div>
-              )}
-              {descuento > 0 && (
-                <div className="flex justify-between text-red-600">
-                  <span>Descuento</span>
-                  <span className="font-mono">&minus;{formatCOP(descuento)}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text-muted shrink-0">Descuento</span>
+                  <MoneyInput
+                    value={aDigitos(proyecto.descuentoComercial)}
+                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { descuentoComercial: v || '0' })}
+                    className="w-32"
+                    aria-label="Descuento comercial"
+                  />
                 </div>
-              )}
-              {ajuste !== 0 && (
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Ajuste</span>
-                  <span className="font-mono text-text-heading">{formatCOP(ajuste)}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text-muted shrink-0">Ajuste</span>
+                  <MoneyInput
+                    value={aDigitos(proyecto.ajusteArbitrario)}
+                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { ajusteArbitrario: v || '0' })}
+                    className="w-32"
+                    aria-label="Ajuste arbitrario"
+                  />
                 </div>
-              )}
+              </div>
               <hr className="border-border-subtle" />
               <div className="flex justify-between font-semibold">
                 <span className="text-text-heading">Subtotal</span>
@@ -738,8 +772,9 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
               size="md"
               onClick={() => setMostrarParametrosFinancieros(true)}
               className="h-8 whitespace-nowrap px-2.5 text-xs"
+              title="IVA y garantía — los demás parámetros (costos operativos, imprevistos, descuento, ajuste) ya son editables arriba, en el desglose"
             >
-              $ Parámetros financieros
+              $ IVA y garantía
             </Button>
           </div>
         </div>
@@ -1401,6 +1436,14 @@ function VarianteContenido({
   const subtotalItems = itemsContractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
   const totalReferencial = itemsReferenciales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
 
+  // t-175 (2026-09-30): acabados del espacio (reemplaza espacio.colores jsonb), resueltos
+  // contra el catálogo para mostrar el nombre en el resumen colapsado de la tarjeta.
+  const catalogoAcabadosDisponibles = store.catalogoAcabados.listar()
+  const acabadosDelEspacio = store.espacioVarianteAcabados.porEspacio(espacio.id)
+  const nombresAcabadosDelEspacio = acabadosDelEspacio
+    .map((a) => catalogoAcabadosDisponibles.find((c) => c.id === a.acabadoId)?.nombre)
+    .filter((n): n is string => Boolean(n))
+
   // t-157 (2026-09-10): árbol Espacio → Grupo → Subgrupo → Ítems. Los grupos son opcionales —
   // sin ninguno creado, el render de abajo es idéntico al de antes (lista plana).
   const grupos = store.gruposItem.porEspacio(espacio.id)
@@ -1412,19 +1455,42 @@ function VarianteContenido({
   const [mostrarFormArtefacto, setMostrarFormArtefacto] = useState(false)
   const [editarArtefactoId, setEditarArtefactoId] = useState<string | null>(null)
   const [zoomFotosArtefacto, setZoomFotosArtefacto] = useState<{ urls: string[]; index: number } | null>(null)
-  const [modoBusquedaItem, setModoBusquedaItem] = useState<'off' | 'normal' | 'referencial'>('off')
-  const [mostrarDetalles, setMostrarDetalles] = useState(false)
+  // 2026-09-30 (diagnóstico UX): antes 'normal' y 'referencial' eran dos botones gemelos
+  // ("+ Buscar" y "+ Ítem ref") en dos secciones distintas de la pantalla, sin más diferencia
+  // visual que el texto -- causa confirmada de que ítems reales terminaran marcados como
+  // referenciales por error (feedback directo de Javier: "casi nunca se usa [referencial] y
+  // sí me ha hecho equivocarme"). Un solo modo de búsqueda + un checkbox explícito (ver más
+  // abajo) reemplaza los dos botones por un único camino.
+  const [modoBusquedaItem, setModoBusquedaItem] = useState<'off' | 'normal'>('off')
+  const [busquedaEsReferencial, setBusquedaEsReferencial] = useState(false)
+  // 2026-09-30 (diagnóstico UX, simulación del flujo "definir un espacio desde cero"): antes
+  // este bloque (fusión de "Detalles del espacio" + "Artefactos del espacio" en un solo
+  // "Contexto del espacio") arrancaba siempre colapsado, al fondo de la tarjeta, después de
+  // Ítems/Presupuesto Adicional/Subtotal -- pero el contexto físico del espacio (fotos,
+  // acabados, artefactos determinantes) es lo primero que se conoce en la práctica, antes de
+  // poder elegir bien qué ítems de catálogo corresponden. `contextoForzado` es el override
+  // manual del usuario (null = todavía no tocó el toggle esta sesión); mientras no lo toque,
+  // el bloque se calcula solo: expandido si el espacio está vacío de contexto (nada que
+  // ocultar), colapsado a una fila de preview en cuanto ya tiene algo guardado -- así no
+  // penaliza el caso más común (reabrir una cotización ya poblada) con una sección vacía
+  // forzando scroll de más.
+  const [contextoForzado, setContextoForzado] = useState<boolean | null>(null)
   const [modalItemId, setModalItemId] = useState<string | null>(null)
   const [creandoItemLibre, setCreandoItemLibre] = useState(false)
   const [itemLibreNombre, setItemLibreNombre] = useState('')
   const [itemLibreCantidad, setItemLibreCantidad] = useState('1')
   const [itemLibrePrecio, setItemLibrePrecio] = useState('0')
   const [itemLibreEsRef, setItemLibreEsRef] = useState(false)
+  const { mostrarInfo } = useToast()
   // t-157: undefined = form cerrado; null = crear grupo raíz; string = crear subgrupo bajo ese id.
   const [creandoGrupoPadreId, setCreandoGrupoPadreId] = useState<string | null | undefined>(undefined)
   const [nombreNuevoGrupo, setNombreNuevoGrupo] = useState('')
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
+  const tieneContexto = Boolean(espacio.descripcion) || espacio.fotosEspacio.length > 0 ||
+    espacio.fotosDisenio.length > 0 || espacio.fotosReferencia.length > 0 ||
+    acabadosDelEspacio.length > 0 || artefactosList.length > 0
+  const mostrarContexto = contextoForzado ?? !tieneContexto
 
   const modalItem = modalItemId ? items.find((i) => i.id === modalItemId) : undefined
   const modalProd = modalItem?.catalogoId ? productMap.get(modalItem.catalogoId) : undefined
@@ -1440,9 +1506,207 @@ function VarianteContenido({
 
   return (
     <div className="border-t border-border-subtle px-4 py-3 space-y-3">
-      {espacio.descripcion && (
-        <p className="text-sm text-text-muted italic">{espacio.descripcion}</p>
-      )}
+      {/* Contexto del espacio — fusiona lo que antes eran "Detalles del espacio" y "Artefactos
+          del espacio" en un solo bloque, movido AL PRINCIPIO de la tarjeta (antes de Ítems).
+          Ver la nota junto a `contextoForzado` más arriba: en la práctica el contexto físico
+          (fotos, acabados, artefactos determinantes) se conoce antes de poder elegir bien qué
+          módulos de catálogo corresponden -- tenerlo al fondo, detrás de dos disclosures
+          separados, obligaba a bajar y subir la pantalla en el orden contrario al de la tarea real. */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Contexto del espacio</p>
+          {mostrarContexto && (
+            <button
+              type="button"
+              onClick={() => setContextoForzado(false)}
+              className="text-xs text-text-muted hover:text-text-heading transition-colors duration-fast"
+            >
+              Cerrar
+            </button>
+          )}
+        </div>
+
+        {!mostrarContexto && (
+          <button
+            type="button"
+            onClick={() => setContextoForzado(true)}
+            className="w-full flex items-center gap-3 py-1 text-left hover:bg-bg-alt/50 rounded transition-colors duration-fast"
+          >
+            {(espacio.fotosEspacio[0] ?? espacio.fotosDisenio[0]) ? (
+              // eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob:, no assets estáticos optimizables
+              <img src={espacio.fotosEspacio[0] ?? espacio.fotosDisenio[0]} alt="" className="w-10 h-10 rounded object-cover border border-border-subtle flex-shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded border border-dashed border-border-subtle flex-shrink-0" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-text-muted truncate">{espacio.descripcion || '(sin descripción)'}</p>
+              {nombresAcabadosDelEspacio.length > 0 && (
+                <p className="text-[11px] text-text-muted truncate">{nombresAcabadosDelEspacio.join(', ')}</p>
+              )}
+            </div>
+            {artefactosList.length > 0 && (
+              <span className="text-[11px] text-text-muted shrink-0 font-mono">
+                {artefactosList.length} artefacto{artefactosList.length === 1 ? '' : 's'}
+                {artefactosList.some((a) => a.requiereVerificacion) ? ' · pendiente' : ''}
+              </span>
+            )}
+            <span
+              className="p-1 rounded text-text-muted hover:text-gold-600 flex-shrink-0"
+              aria-label="Editar contexto del espacio"
+              title="Editar contexto del espacio"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5 8.5-8.5z" strokeLinejoin="round" strokeLinecap="round" />
+              </svg>
+            </span>
+          </button>
+        )}
+
+        {mostrarContexto && (
+          <div className="space-y-4">
+            <FormDetallesEspacio
+              espacio={espacio}
+              onGuardado={() => setContextoForzado(false)}
+              onCancelar={() => setContextoForzado(false)}
+            />
+
+            <div className="border-t border-border-subtle pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Artefactos del espacio</p>
+                <button
+                  type="button"
+                  onClick={() => { setMostrarFormArtefacto(!mostrarFormArtefacto); setEditarArtefactoId(null) }}
+                  className="text-xs text-gold-600 hover:text-gold-700 transition-colors duration-fast"
+                >
+                  {mostrarFormArtefacto ? 'Cancelar' : '+ Artefacto'}
+                </button>
+              </div>
+
+              {mostrarFormArtefacto && (
+                <FormArtefacto
+                  espacioId={espacio.id}
+                  onGuardado={() => setMostrarFormArtefacto(false)}
+                  onCancelar={() => setMostrarFormArtefacto(false)}
+                />
+              )}
+
+              {artefactosList.length === 0 && !mostrarFormArtefacto && (
+                <p className="text-xs text-text-muted italic py-1">Sin artefactos registrados.</p>
+              )}
+
+              {artefactosList.map((artefacto) => {
+                const editando = editarArtefactoId === artefacto.id
+                const numFotos = artefacto.fotoUrls?.length ?? 0
+                const numArchivos = artefacto.archivosUrls?.length ?? 0
+                const artefactoConExtras = Boolean(artefacto.descripcion) || numFotos > 0 || numArchivos > 0
+                return (
+                  <div key={artefacto.id} className="border-b border-border-subtle/50 pb-2 last:pb-0 last:border-0">
+                    {editando ? (
+                      <FormArtefactoEdicion
+                        artefacto={artefacto}
+                        onGuardado={() => setEditarArtefactoId(null)}
+                        onCancelar={() => setEditarArtefactoId(null)}
+                      />
+                    ) : (
+                      <>
+                      <div
+                        className="flex items-start justify-between text-sm cursor-pointer hover:bg-bg-alt/50 rounded px-2 py-1 -mx-2 transition-colors duration-fast"
+                        onClick={() => setEditarArtefactoId(artefacto.id)}
+                        title="Clic para editar"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge tone={
+                            artefacto.categoria === 'determinante' ? 'info' :
+                            artefacto.categoria === 'bloqueante' ? 'danger' :
+                            artefacto.categoria === 'electrodomestico' ? 'warning' :
+                            'neutral'
+                          }>
+                            {artefacto.categoria === 'determinante' ? 'Determinante' :
+                             artefacto.categoria === 'bloqueante' ? 'Bloqueante' :
+                             artefacto.categoria === 'electrodomestico' ? 'Electrodom.' :
+                             artefacto.categoria === 'obra_civil' ? 'Obra civil' :
+                             'Serv. tercero'}
+                          </Badge>
+                          <span className="text-text-heading truncate">
+                            {artefacto.tipoSpecifique || '(sin descripción)'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          {artefacto.ubicacion && (
+                            <span className="text-xs text-text-muted">{artefacto.ubicacion}</span>
+                          )}
+                          {artefacto.dimensionesMm && (
+                            <span className="text-xs text-text-muted font-mono">{artefacto.dimensionesMm}</span>
+                          )}
+                          {numFotos > 0 && (
+                            <span className="text-[10px] font-mono text-text-muted" title="Fotos">{numFotos} foto(s)</span>
+                          )}
+                          {numArchivos > 0 && (
+                            <span className="text-[10px] font-mono text-text-muted" title="Archivos">{numArchivos} archivo(s)</span>
+                          )}
+                          {artefacto.requiereVerificacion ? (
+                            <Badge tone="warning">Pendiente</Badge>
+                          ) : (
+                            <Badge tone="info">Validado</Badge>
+                          )}
+                        </div>
+                      </div>
+                      {artefactoConExtras && (
+                        <div className="-mx-2 mt-0.5 space-y-1 rounded bg-bg-alt/30 px-2 py-1">
+                          {artefacto.descripcion && (
+                            <p className="text-xs text-text-muted line-clamp-2">{artefacto.descripcion}</p>
+                          )}
+                          {numFotos > 0 && (
+                            <div className="flex items-center gap-1">
+                              {artefacto.fotoUrls.slice(0, 8).map((url, fotoIdx) => (
+                                <button
+                                  key={url}
+                                  type="button"
+                                  onClick={() => setZoomFotosArtefacto({ urls: artefacto.fotoUrls, index: fotoIdx })}
+                                  aria-label={`Ver foto ${fotoIdx + 1} del artefacto ampliada`}
+                                  title="Clic para ampliar"
+                                  className="h-10 w-10 overflow-hidden rounded-sm border border-border-subtle bg-bg-paper cursor-zoom-in transition-opacity hover:opacity-80"
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element -- miniaturas de artefacto en el listado del cotizador */}
+                                  <img src={url} alt="" className="h-full w-full object-cover" />
+                                </button>
+                              ))}
+                              {numFotos > 8 && (
+                                <span className="text-[10px] font-mono text-text-muted">+{numFotos - 8}</span>
+                              )}
+                            </div>
+                          )}
+                          {numArchivos > 0 && (
+                            <div className="flex flex-wrap items-center gap-1">
+                              {artefacto.archivosUrls.slice(0, 3).map((url) => (
+                                <a
+                                  key={url}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={url}
+                                  className="rounded-sm bg-gold-500/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-gold-700 transition-colors duration-fast hover:bg-gold-500/25"
+                                >
+                                  {extensionArchivoUrl(url)}
+                                </a>
+                              ))}
+                              {numArchivos > 3 && (
+                                <span className="text-[10px] font-mono text-text-muted">+{numArchivos - 3}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Items (Tabla) — solo el objeto de contrato real; los referenciales viven abajo, en su propia zona */}
       <div className="border-t border-border-subtle pt-3">
@@ -1470,10 +1734,11 @@ function VarianteContenido({
             <Button
               variant="ghost"
               size="md"
-              onClick={() => setModoBusquedaItem('normal')}
-              aria-label="Buscar en catálogo"
+              onClick={() => { setModoBusquedaItem('normal'); setBusquedaEsReferencial(false) }}
+              className="text-xs border border-border-subtle hover:border-gold-400"
+              title="Buscar un producto del catálogo"
             >
-              + Buscar
+              + Ítem de catálogo
             </Button>
           </div>
         </div>
@@ -1509,7 +1774,7 @@ function VarianteContenido({
         )}
 
         {modoBusquedaItem === 'normal' && (
-          <div className="mb-3">
+          <div className="mb-3 space-y-2">
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
               onSelect={(producto) => {
@@ -1522,17 +1787,29 @@ function VarianteContenido({
                   nombrePersonalizado: null,
                   cantidad: '1',
                   precioUnitario: producto.precioPublico ?? '0',
-                  esReferencial: false,
+                  esReferencial: busquedaEsReferencial,
                 })
                 setModoBusquedaItem('off')
               }}
-              onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(false); setModoBusquedaItem('off') }}
+              onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(busquedaEsReferencial); setModoBusquedaItem('off') }}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
               contexto="cotizador-items"
             />
-            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2">
+            {/* 2026-09-30 (diagnóstico UX): reemplaza el botón gemelo "+ Ítem ref" -- un único
+                camino de creación, con la decisión real (cuenta o no al contrato) explícita en
+                cada uso en vez de depender de qué botón lejano se recuerde haber tocado. */}
+            <label className="flex items-center gap-2 text-xs text-gold-700 cursor-pointer w-fit rounded border border-dashed border-gold-300 bg-gold-50/40 px-2 py-1.5">
+              <input
+                type="checkbox"
+                checked={busquedaEsReferencial}
+                onChange={(e) => setBusquedaEsReferencial(e.target.checked)}
+                className="rounded text-gold-500 focus:ring-gold-400"
+              />
+              <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
+            </label>
+            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')}>
               Cancelar
             </Button>
           </div>
@@ -1606,9 +1883,21 @@ function VarianteContenido({
                   </button>
                   <button
                     type="button"
-                    onClick={() => actualizarItem(item.id, 'esReferencial', true)}
+                    onClick={() => {
+                      const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
+                      actualizarItem(item.id, 'esReferencial', true)
+                      // 2026-09-30 (diagnóstico UX): esta acción mueve plata fuera del total
+                      // contractual con un solo clic y sin window.confirm -- antes tenía menos
+                      // fricción que eliminar un ítem, pese a ser más fácil de pasar por alto
+                      // (no borra nada visible, solo reclasifica). El toast con Deshacer da el
+                      // punto de control sin frenar el flujo con un confirm modal.
+                      mostrarInfo(`"${nombre}" movido a Presupuesto Adicional — ya no cuenta en el contrato.`, {
+                        etiqueta: 'Deshacer',
+                        onClick: () => actualizarItem(item.id, 'esReferencial', false),
+                      })
+                    }}
                     aria-label="Mover a Presupuesto Adicional"
-                    title="Mover a Presupuesto Adicional"
+                    title="Mover a Presupuesto Adicional (no cuenta en el contrato)"
                     className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded"
                   >
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1714,50 +2003,15 @@ function VarianteContenido({
           Javier) porque leerlo tras el Subtotal se sentía desconectado de la lista. La distancia ya no es la
           señal de "no cuenta"; el borde punteado ámbar + el subtítulo explícito de abajo cumplen ese rol ahora. */}
       <div className="border-t-2 border-dashed border-gold-300 pt-3">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">Presupuesto Adicional (Referenciales)</p>
-            <p className="text-[11px] text-text-muted">No suma al Subtotal Espacio ni al contrato — estimado informativo.</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={() => setModoBusquedaItem('referencial')}
-            aria-label="Añadir ítem referencial"
-            title="Presupuesto adicional estimado (ej. obra civil) — no suma al contrato"
-          >
-            + Ítem ref
-          </Button>
+        <div className="mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">Presupuesto Adicional (Referenciales)</p>
+          <p className="text-[11px] text-text-muted">
+            No suma al Subtotal Espacio ni al contrato — estimado informativo. Para agregar uno,
+            marca &quot;Es referencial&quot; al crear el ítem arriba en Ítems.
+          </p>
         </div>
 
-        {modoBusquedaItem === 'referencial' && (
-          <div className="mb-3">
-            <SmartSearch
-              items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-              onSelect={(producto) => {
-                void store.items.crear({
-                  varianteId: espacio.id,
-                  catalogoId: producto.id,
-                  nombrePersonalizado: null,
-                  cantidad: '1',
-                  precioUnitario: producto.precioPublico ?? '0',
-                  esReferencial: true,
-                })
-                setModoBusquedaItem('off')
-              }}
-              onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(true); setModoBusquedaItem('off') }}
-              placeholder="Buscar en catálogo..."
-              label="Producto"
-              allowCreate
-              contexto="cotizador-items"
-            />
-            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')} className="mt-2">
-              Cancelar
-            </Button>
-          </div>
-        )}
-
-        {itemsReferenciales.length === 0 && modoBusquedaItem !== 'referencial' ? (
+        {itemsReferenciales.length === 0 ? (
           <p className="text-xs text-text-muted italic py-1">Sin ítems referenciales.</p>
         ) : (
           <>
@@ -1838,9 +2092,16 @@ function VarianteContenido({
                       </button>
                       <button
                         type="button"
-                        onClick={() => actualizarItem(item.id, 'esReferencial', false)}
+                        onClick={() => {
+                          const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
+                          actualizarItem(item.id, 'esReferencial', false)
+                          mostrarInfo(`"${nombre}" movido a Ítems — ahora cuenta en el contrato.`, {
+                            etiqueta: 'Deshacer',
+                            onClick: () => actualizarItem(item.id, 'esReferencial', true),
+                          })
+                        }}
                         aria-label="Mover a Ítems (cotizado)"
-                        title="Mover a Ítems"
+                        title="Mover a Ítems (cuenta en el contrato)"
                         className="p-2 sm:p-1 text-text-muted hover:text-emerald-600 rounded"
                       >
                         <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1884,196 +2145,6 @@ function VarianteContenido({
           <span className="text-text-heading">Total Espacio</span>
           <span className="font-mono text-text-heading">{formatCOP(subtotalItems + moSubtotal)}</span>
         </div>
-      </div>
-
-      {/* Detalles técnicos del espacio — preview con miniatura + specs no redundantes, editar vía ícono (no un "+ Editar" escondido) */}
-      <div className="border-t border-border-subtle pt-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Detalles del espacio</p>
-          {mostrarDetalles && (
-            <button
-              type="button"
-              onClick={() => setMostrarDetalles(false)}
-              className="text-xs text-text-muted hover:text-text-heading transition-colors duration-fast"
-            >
-              Cerrar
-            </button>
-          )}
-        </div>
-
-        {!mostrarDetalles && (
-          <button
-            type="button"
-            onClick={() => setMostrarDetalles(true)}
-            className="w-full flex items-center gap-3 py-1 text-left hover:bg-bg-alt/50 rounded transition-colors duration-fast"
-          >
-            {(espacio.fotosEspacio[0] ?? espacio.fotosDisenio[0]) ? (
-              // eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob:, no assets estáticos optimizables
-              <img src={espacio.fotosEspacio[0] ?? espacio.fotosDisenio[0]} alt="" className="w-10 h-10 rounded object-cover border border-border-subtle flex-shrink-0" />
-            ) : (
-              <div className="w-10 h-10 rounded border border-dashed border-border-subtle flex-shrink-0" />
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-text-muted truncate">{espacio.descripcion || '(sin descripción)'}</p>
-              {(espacio.colores as string[]).length > 0 && (
-                <p className="text-[11px] text-text-muted truncate">{(espacio.colores as string[]).join(', ')}</p>
-              )}
-            </div>
-            <span
-              className="p-1 rounded text-text-muted hover:text-gold-600 flex-shrink-0"
-              aria-label="Editar detalles del espacio"
-              title="Editar detalles del espacio"
-            >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5 8.5-8.5z" strokeLinejoin="round" strokeLinecap="round" />
-              </svg>
-            </span>
-          </button>
-        )}
-
-        {mostrarDetalles && (
-          <FormDetallesEspacio
-            espacio={espacio}
-            onGuardado={() => setMostrarDetalles(false)}
-            onCancelar={() => setMostrarDetalles(false)}
-          />
-        )}
-      </div>
-
-      {/* Artefactos del espacio */}
-      <div className="border-t border-border-subtle pt-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Artefactos del espacio</p>
-          <button
-            type="button"
-            onClick={() => { setMostrarFormArtefacto(!mostrarFormArtefacto); setEditarArtefactoId(null) }}
-            className="text-xs text-gold-600 hover:text-gold-700 transition-colors duration-fast"
-          >
-            {mostrarFormArtefacto ? 'Cancelar' : '+ Artefacto'}
-          </button>
-        </div>
-
-        {mostrarFormArtefacto && (
-          <FormArtefacto
-            espacioId={espacio.id}
-            onGuardado={() => setMostrarFormArtefacto(false)}
-            onCancelar={() => setMostrarFormArtefacto(false)}
-          />
-        )}
-
-        {artefactosList.length === 0 && !mostrarFormArtefacto && (
-          <p className="text-xs text-text-muted italic py-1">Sin artefactos registrados.</p>
-        )}
-
-        {artefactosList.map((artefacto) => {
-          const editando = editarArtefactoId === artefacto.id
-          const numFotos = artefacto.fotoUrls?.length ?? 0
-          const numArchivos = artefacto.archivosUrls?.length ?? 0
-          const artefactoConExtras = Boolean(artefacto.descripcion) || numFotos > 0 || numArchivos > 0
-          return (
-            <div key={artefacto.id} className="border-b border-border-subtle/50 pb-2 last:pb-0 last:border-0">
-              {editando ? (
-                <FormArtefactoEdicion
-                  artefacto={artefacto}
-                  onGuardado={() => setEditarArtefactoId(null)}
-                  onCancelar={() => setEditarArtefactoId(null)}
-                />
-              ) : (
-                <>
-                <div
-                  className="flex items-start justify-between text-sm cursor-pointer hover:bg-bg-alt/50 rounded px-2 py-1 -mx-2 transition-colors duration-fast"
-                  onClick={() => setEditarArtefactoId(artefacto.id)}
-                  title="Clic para editar"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Badge tone={
-                      artefacto.categoria === 'determinante' ? 'info' :
-                      artefacto.categoria === 'bloqueante' ? 'danger' :
-                      artefacto.categoria === 'electrodomestico' ? 'warning' :
-                      'neutral'
-                    }>
-                      {artefacto.categoria === 'determinante' ? 'Determinante' :
-                       artefacto.categoria === 'bloqueante' ? 'Bloqueante' :
-                       artefacto.categoria === 'electrodomestico' ? 'Electrodom.' :
-                       artefacto.categoria === 'obra_civil' ? 'Obra civil' :
-                       'Serv. tercero'}
-                    </Badge>
-                    <span className="text-text-heading truncate">
-                      {artefacto.tipoSpecifique || '(sin descripción)'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    {artefacto.ubicacion && (
-                      <span className="text-xs text-text-muted">{artefacto.ubicacion}</span>
-                    )}
-                    {artefacto.dimensionesMm && (
-                      <span className="text-xs text-text-muted font-mono">{artefacto.dimensionesMm}</span>
-                    )}
-                    {numFotos > 0 && (
-                      <span className="text-[10px] font-mono text-text-muted" title="Fotos">{numFotos} foto(s)</span>
-                    )}
-                    {numArchivos > 0 && (
-                      <span className="text-[10px] font-mono text-text-muted" title="Archivos">{numArchivos} archivo(s)</span>
-                    )}
-                    {artefacto.requiereVerificacion ? (
-                      <Badge tone="warning">Pendiente</Badge>
-                    ) : (
-                      <Badge tone="info">Validado</Badge>
-                    )}
-                  </div>
-                </div>
-                {artefactoConExtras && (
-                  <div className="-mx-2 mt-0.5 space-y-1 rounded bg-bg-alt/30 px-2 py-1">
-                    {artefacto.descripcion && (
-                      <p className="text-xs text-text-muted line-clamp-2">{artefacto.descripcion}</p>
-                    )}
-                    {numFotos > 0 && (
-                      <div className="flex items-center gap-1">
-                        {artefacto.fotoUrls.slice(0, 8).map((url, fotoIdx) => (
-                          <button
-                            key={url}
-                            type="button"
-                            onClick={() => setZoomFotosArtefacto({ urls: artefacto.fotoUrls, index: fotoIdx })}
-                            aria-label={`Ver foto ${fotoIdx + 1} del artefacto ampliada`}
-                            title="Clic para ampliar"
-                            className="h-10 w-10 overflow-hidden rounded-sm border border-border-subtle bg-bg-paper cursor-zoom-in transition-opacity hover:opacity-80"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element -- miniaturas de artefacto en el listado del cotizador */}
-                            <img src={url} alt="" className="h-full w-full object-cover" />
-                          </button>
-                        ))}
-                        {numFotos > 8 && (
-                          <span className="text-[10px] font-mono text-text-muted">+{numFotos - 8}</span>
-                        )}
-                      </div>
-                    )}
-                    {numArchivos > 0 && (
-                      <div className="flex flex-wrap items-center gap-1">
-                        {artefacto.archivosUrls.slice(0, 3).map((url) => (
-                          <a
-                            key={url}
-                            href={url}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            title={url}
-                            className="rounded-sm bg-gold-500/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-gold-700 transition-colors duration-fast hover:bg-gold-500/25"
-                          >
-                            {extensionArchivoUrl(url)}
-                          </a>
-                        ))}
-                        {numArchivos > 3 && (
-                          <span className="text-[10px] font-mono text-text-muted">+{numArchivos - 3}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-                </>
-              )}
-            </div>
-          )
-        })}
       </div>
 
       <div className="border-t border-border-subtle pt-3">
@@ -2143,7 +2214,7 @@ function VarianteContenido({
         <Modal
           open={true}
           onClose={() => setCreandoItemLibre(false)}
-          title={itemLibreEsRef ? 'Agregar Ítem Referencial a Medida' : 'Agregar Ítem a Medida (Sin Catálogo)'}
+          title="Agregar Ítem a Medida (Sin Catálogo)"
         >
           <div className="space-y-3">
             <p className="text-xs text-text-muted">
@@ -2182,6 +2253,15 @@ function VarianteContenido({
                 />
               </div>
             </div>
+            <label className="flex items-center gap-2 text-xs text-gold-700 cursor-pointer w-fit rounded border border-dashed border-gold-300 bg-gold-50/40 px-2 py-1.5">
+              <input
+                type="checkbox"
+                checked={itemLibreEsRef}
+                onChange={(e) => setItemLibreEsRef(e.target.checked)}
+                className="rounded text-gold-500 focus:ring-gold-400"
+              />
+              <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
+            </label>
             <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
               <Button variant="ghost" size="md" onClick={() => setCreandoItemLibre(false)}>
                 Cancelar
@@ -2452,14 +2532,29 @@ function FormDetallesEspacio({
   onCancelar: () => void
 }) {
   const { store } = useCotizadorCompat()
-  const [nombreEspacio, setNombreEspacio] = useState(espacio.nombreEspacio)
-  const [nombreVariante, setNombreVariante] = useState(espacio.nombreVariante)
   const [descripcion, setDescripcion] = useState(espacio.descripcion ?? '')
-  const [colores, setColores] = useState<(AcabadoItem | string)[]>(() => {
-    if (Array.isArray(espacio.colores)) {
-      return espacio.colores as (AcabadoItem | string)[]
-    }
-    return []
+  // t-175 (2026-09-30): catálogo de acabados leído una sola vez al abrir el form — se usa tanto
+  // para hidratar la selección inicial como para pasarlo al picker.
+  const catalogoAcabadosDisponibles = store.catalogoAcabados.listar()
+  const [colores, setColores] = useState<AcabadoSeleccionado[]>(() => {
+    return store.espacioVarianteAcabados
+      .porEspacio(espacio.id)
+      .map((asociacion): AcabadoSeleccionado | null => {
+        const acabado = catalogoAcabadosDisponibles.find((c) => c.id === asociacion.acabadoId)
+        if (!acabado) return null
+        return {
+          acabado: {
+            id: acabado.id,
+            nombre: acabado.nombre,
+            familia: acabado.familia,
+            colorHex: acabado.colorHex,
+            imagenTexturaUrl: acabado.imagenTexturaUrl,
+            textura: acabado.textura,
+          },
+          descripcionUso: asociacion.descripcionUso,
+        }
+      })
+      .filter((x): x is AcabadoSeleccionado => x !== null)
   })
   const [fotosEspacio, setFotosEspacio] = useState<string[]>(espacio.fotosEspacio)
   const [fotosDisenio, setFotosDisenio] = useState<string[]>(espacio.fotosDisenio)
@@ -2467,32 +2562,29 @@ function FormDetallesEspacio({
 
   const handleGuardar = useCallback(async () => {
     await store.espacios.actualizar(espacio.id, {
-      nombreEspacio: nombreEspacio.trim(),
-      nombreVariante: nombreVariante.trim(),
       descripcion: descripcion.trim() || null,
-      colores,
       fotosEspacio,
       fotosDisenio,
       fotosReferencia,
     })
+    // t-175: reemplaza por completo a espacio.colores (jsonb) como fuente de verdad — relación
+    // real con texto libre de destino por acabado.
+    await store.espacioVarianteAcabados.reemplazarTodos(
+      espacio.id,
+      colores.map((c) => ({ acabadoId: c.acabado.id, descripcionUso: c.descripcionUso })),
+    )
     onGuardado()
-  }, [store, espacio.id, nombreEspacio, nombreVariante, descripcion, colores, fotosEspacio, fotosDisenio, fotosReferencia, onGuardado])
+  }, [store, espacio.id, descripcion, colores, fotosEspacio, fotosDisenio, fotosReferencia, onGuardado])
 
   const inputCls = 'rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none'
   const ayudaCls = 'text-[11px] text-text-muted'
 
   return (
     <div className="space-y-3 rounded border border-border-subtle bg-bg-paper p-3">
-      <div className="grid grid-cols-2 gap-2">
-        <label className="flex flex-col gap-1">
-          <span className="text-[11px] text-text-muted">Nombre del espacio</span>
-          <input type="text" value={nombreEspacio} onChange={(e) => setNombreEspacio(e.target.value)} className={inputCls} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[11px] text-text-muted">Variante</span>
-          <input type="text" value={nombreVariante} onChange={(e) => setNombreVariante(e.target.value)} className={inputCls} />
-        </label>
-      </div>
+      {/* 2026-09-30 (diagnóstico UX): "Nombre del espacio"/"Variante" se quitaron de este form --
+          eran un tercer camino redundante para lo mismo que ya edita el ícono de lápiz en el
+          header de la tarjeta (mismo patrón de "dos UI para un solo dato" ya corregido en el
+          flujo de referenciales). Queda un solo lugar para renombrar: el lápiz del header. */}
 
       {/* Selector de imágenes — arriba, con miniaturas y controles de reordenamiento */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -2512,12 +2604,13 @@ function FormDetallesEspacio({
         La variante activa se controla desde el header del espacio, junto al ícono de ojo y el tab con punto verde.
       </p>
 
-      {/* Selector visual de acabados de catálogo (ZU_04) */}
+      {/* Selector visual de acabados de catálogo (ZU_04), relacional + alta rápida (t-175) */}
       <AcabadoPicker
         label="Colores y Acabados de la Variante"
-        acabadosDisponibles={store.catalogoAcabados.listar()}
+        acabadosDisponibles={catalogoAcabadosDisponibles}
         value={colores}
         onChange={setColores}
+        onCrearAcabado={(data) => store.catalogoAcabados.crear(data)}
       />
 
       <div className="flex items-center gap-2 pt-1">
