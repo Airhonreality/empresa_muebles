@@ -2,6 +2,7 @@
 
 import { useState, useId, type InputHTMLAttributes } from "react";
 import { useDebouncedInput } from "@/lib/hooks/useDebouncedInput";
+import { useUndoHistorial, detectarAtajoDeshacer } from "@/lib/hooks/useUndoHistorial";
 
 export interface MoneyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
   value: string;
@@ -17,10 +18,23 @@ export function MoneyInput({ value, onChange, label, error, className = "", ...p
   const id = useId();
   const { local, onChangeLocal, onBlurLocal } = useDebouncedInput(value, onChange);
   const [focused, setFocused] = useState(false);
+  // t-177: este input filtra cada tecla con una regex (deja pasar solo dígitos) -- eso
+  // desincroniza el undo nativo del navegador (el DOM recuerda lo tecleado, React muestra la
+  // versión filtrada). El historial propio reemplaza ese Ctrl+Z roto por uno manual y confiable.
+  const historial = useUndoHistorial(local);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^\d]/g, "");
+    historial.registrar(raw);
     onChangeLocal(raw);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const atajo = detectarAtajoDeshacer(e);
+    if (!atajo) return;
+    e.preventDefault();
+    const valor = atajo === 'deshacer' ? historial.deshacer() : historial.rehacer();
+    if (valor !== null) onChangeLocal(valor);
   };
 
   const handleFocus = () => setFocused(true);
@@ -46,6 +60,7 @@ export function MoneyInput({ value, onChange, label, error, className = "", ...p
           inputMode="decimal"
           value={displayValue}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           onBlur={handleBlur}
           className="w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 text-base text-text-primary outline-none border-border-subtle focus:border-brand focus:shadow-ring-focus"

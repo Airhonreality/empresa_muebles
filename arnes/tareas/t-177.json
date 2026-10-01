@@ -1,0 +1,46 @@
+{
+  "id": "t-177",
+  "titulo": "Cierra el hueco de t-171 (toast) + deshacer manual confiable en MoneyInput/NumberInput",
+  "intencion_negocio": "El usuario pregunto si se puede hacer Ctrl+Z en cualquier lugar del cotizador (textos, numeros, items) y pidio planificar e implementar: cerrar el hueco de t-171, el deshacer por campo, y (en una tarea aparte, t-178) un historial de acciones ya guardadas.",
+  "diagnostico": "InputField no transforma el valor mientras se escribe, asi que el undo nativo del navegador ya funciona ahi. MoneyInput y NumberInput SI filtran cada tecla con una regex (solo dejan pasar digitos/separadores) y le devuelven al input un valor distinto al tecleado -- eso desincroniza el undo nativo de React controlado. Parametros financieros y versiones de propuesta quedaron pendientes de t-171 porque en ese momento no existia ToastProvider (se construyo en t-176) para avisar un error sin dejar el modal bloqueado.",
+  "decisiones_supervisor": {
+    "alcance": "Deshacer manual (HistorialDeshacer) solo para MoneyInput/NumberInput, vive en memoria mientras el input esta montado -- no persiste, no es el historial de acciones ya guardadas (eso es t-178, pieza distinta).",
+    "aprobacion": "Respuesta del usuario 'ambas' a la pregunta de alcance de deshacer (nativo por campo + historial de acciones), 2026-09-30."
+  },
+  "zona": "components/veta/ (money-input, number-input, parametros-financieros-modal, versiones-propuesta-modal) + lib/hooks/ (useUndoHistorial nuevo)",
+  "tipo": "ui_visual",
+  "riesgo": "bajo",
+  "plan_ref": "arnes/planes/plan_t-177.md",
+  "criterios_aceptacion": [
+    "HistorialDeshacer: 6 casos cubren deshacer sin historial, round-trip deshacer/rehacer, cortar rama al escribir tras deshacer, no duplicar pasos iguales, tope de tamano",
+    "ParametrosFinancierosModal.guardar y VersionesPropuestaModal.crearVersion/eliminarVersion ya no esperan el roundtrip antes de cerrar/limpiar",
+    "un fallo de red en esas tres acciones se muestra (toast o banner inline segun corresponda)",
+    "npx tsc --noEmit limpio",
+    "npx eslint . sin errores ni warnings nuevos",
+    "npx tsx lib/hooks/useUndoHistorial.test.ts en verde (6/6)",
+    "npx tsx lib/data/queries/optimistic.test.ts y lib/utils/numero.test.ts siguen en verde"
+  ],
+  "hallazgos_colaterales": [
+    "InputField no se toco -- ya tenia undo nativo del navegador sin ningun cambio."
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint (archivos tocados)": "0 errors, 0 warnings nuevos",
+    "useUndoHistorial.test.ts": "6/6 en verde",
+    "optimistic.test.ts": "36/36 en verde",
+    "numero.test.ts": "14/14 en verde"
+  },
+  "executor": "Claude Code (sesion interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Continuacion de 'esos 3 puntos me importan para planificar y implementar' (2026-09-30).",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null,
+  "relacionado": ["t-178"]
+}

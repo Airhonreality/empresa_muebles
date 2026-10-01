@@ -31,35 +31,30 @@ export function VersionesPropuestaModal({ proyectoId, onClose }: VersionesPropue
   const publicar = usePublicarPropuestaMutation(proyectoId);
   const eliminar = useEliminarVersionPropuestaMutation(proyectoId);
   const [nombreNueva, setNombreNueva] = useState("");
-  const [eliminandoId, setEliminandoId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const versionesDesc = [...(versiones ?? [])].sort((a, b) => b.version - a.version);
   const hayVersiones = versionesDesc.length > 0;
 
-  const crearVersion = async () => {
+  // t-177: ambas mutaciones ya son optimistas (la versión nueva aparece / la eliminada
+  // desaparece de la lista al instante) — ya no hace falta esperar el roundtrip del servidor
+  // para limpiar el input o soltar el botón. El banner inline sigue siendo el lugar correcto
+  // para el error porque, a diferencia de los otros modales, este NO se cierra solo.
+  const crearVersion = () => {
     setError(null);
-    try {
-      await publicar.mutateAsync(nombreNueva.trim() || undefined);
-      setNombreNueva("");
-    } catch (err) {
-      // Igual que t-171 en parametros-financieros-modal: sin esto, un fallo de red al publicar
-      // desbloqueaba el botón sin avisar que la versión NUNCA se creó.
+    const nombre = nombreNueva.trim() || undefined;
+    publicar.mutateAsync(nombre).catch((err) => {
       setError(err instanceof Error ? err.message : 'No se pudo publicar la versión. Revisa tu conexión e intenta de nuevo.');
-    }
+    });
+    setNombreNueva("");
   };
 
-  const eliminarVersion = async (id: string, version: number) => {
+  const eliminarVersion = (id: string, version: number) => {
     if (!window.confirm(`¿Eliminar la versión ${version}? El cliente ya no podrá verla en su histórico. Esta acción no se puede deshacer.`)) return;
-    setEliminandoId(id);
     setError(null);
-    try {
-      await eliminar.mutateAsync(id);
-    } catch (err) {
+    eliminar.mutateAsync(id).catch((err) => {
       setError(err instanceof Error ? err.message : 'No se pudo eliminar la versión. Revisa tu conexión e intenta de nuevo.');
-    } finally {
-      setEliminandoId(null);
-    }
+    });
   };
 
   return (
@@ -116,7 +111,6 @@ export function VersionesPropuestaModal({ proyectoId, onClose }: VersionesPropue
                       size="md"
                       className="h-7 px-2 text-xs text-red-500 hover:text-red-600"
                       onClick={() => eliminarVersion(v.id, v.version)}
-                      loading={eliminandoId === v.id}
                       aria-label={`Eliminar versión ${v.version}`}
                     >
                       🗑
@@ -145,8 +139,7 @@ export function VersionesPropuestaModal({ proyectoId, onClose }: VersionesPropue
             variant="primary"
             size="md"
             className="w-full justify-center"
-            onClick={() => void crearVersion()}
-            loading={publicar.isPending}
+            onClick={crearVersion}
           >
             {hayVersiones ? 'Crear nueva versión' : 'Publicar'}
           </Button>

@@ -3,6 +3,7 @@
 import { type InputHTMLAttributes, useId } from "react";
 import { useDebouncedInput } from "@/lib/hooks/useDebouncedInput";
 import { normalizarNumeroTexto } from "@/lib/utils/numero";
+import { useUndoHistorial, detectarAtajoDeshacer } from "@/lib/hooks/useUndoHistorial";
 
 export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> {
   value: string;
@@ -26,9 +27,22 @@ export function NumberInput({
 }: NumberInputProps) {
   const id = useId();
   const { local, onChangeLocal, onBlurLocal } = useDebouncedInput(value, onChange);
+  // t-177: igual que MoneyInput -- filtrar cada tecla con una regex desincroniza el undo nativo
+  // del navegador, así que se reemplaza por un historial manual.
+  const historial = useUndoHistorial(local);
 
   const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    onChangeLocal(e.target.value.replace(/[^\d.,]/g, ""));
+    const filtrado = e.target.value.replace(/[^\d.,]/g, "");
+    historial.registrar(filtrado);
+    onChangeLocal(filtrado);
+  };
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    const atajo = detectarAtajoDeshacer(e);
+    if (!atajo) return;
+    e.preventDefault();
+    const valor = atajo === 'deshacer' ? historial.deshacer() : historial.rehacer();
+    if (valor !== null) onChangeLocal(valor);
   };
 
   const handleBlur = () => {
@@ -49,6 +63,7 @@ export function NumberInput({
         inputMode="decimal"
         value={local}
         onChange={handleChange}
+        onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         className={`w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 text-base text-text-primary outline-none ${
           error
