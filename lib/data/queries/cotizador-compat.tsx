@@ -15,6 +15,7 @@ import {
   useActualizarItemMutation,
   useActualizarJornadasMutation,
   useActualizarParametrosFinancierosMutation,
+  useActualizarEstadoProyectoMutation,
   useCotizadorSnapshot,
   useCrearArtefactoMutation,
   useCrearEspacioMutation,
@@ -54,6 +55,9 @@ export interface CotizadorCompatStore {
     /** t-169: vincula un cliente al proyecto. Sin esto el modal de contrato no podía resolver
      *  un proyecto que llegaba sin `clienteId`. */
     vincularCliente(id: string, clienteId: string): Promise<Proyecto | null>
+    /** Selector de estado del header (2026-10-01): valida transiciones server-side contra
+     *  el parámetro `transiciones_proyecto` (mismo criterio que el Kanban comercial). */
+    actualizarEstado(id: string, estado: string): Promise<Proyecto | null>
   }
   clientes: {
     obtenerPorId(id: string): Cliente | undefined
@@ -77,7 +81,13 @@ export interface CotizadorCompatStore {
   }
   items: {
     porVariante(varianteId: string): ItemVariante[]
-    crear(input: Omit<InputItemOptimista, 'id'>): Promise<ItemVariante>
+    // 2026-10-01 (diagnóstico UX): `id` opcional -- el caller puede generarlo ANTES de disparar
+    // la creación para engancharse al mismo id que usará la actualización optimista de caché
+    // (onMutate corre síncrono, antes de cualquier round-trip de red). Sin esto, cualquier
+    // feedback visual atado al id resuelto de la promesa (ej. resaltar la fila nueva) queda
+    // esperando al servidor aunque la fila ya esté en pantalla -- el bug real reportado por
+    // Javier ("el feedback de agregación tarda mucho en salir").
+    crear(input: Omit<InputItemOptimista, 'id'> & { id?: string }): Promise<ItemVariante>
     actualizar(id: string, patch: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>): Promise<ItemVariante | null>
     eliminar(id: string): Promise<boolean>
   }
@@ -137,6 +147,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
   const actualizarJornadas = useActualizarJornadasMutation(proyectoId)
   const duplicarEspacio = useDuplicarEspacioMutation(proyectoId)
   const actualizarParametrosFinancieros = useActualizarParametrosFinancierosMutation(proyectoId)
+  const actualizarEstadoProyecto = useActualizarEstadoProyectoMutation(proyectoId)
   const crearArtefacto = useCrearArtefactoMutation(proyectoId)
   const actualizarArtefacto = useActualizarArtefactoMutation(proyectoId)
   const crearGrupoItem = useCrearGrupoItemMutation(proyectoId)
@@ -167,6 +178,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
           actualizarParametrosFinancieros: (id, partial) =>
             actualizarParametrosFinancieros.mutateAsync({ id, partial }),
           vincularCliente: (id, clienteId) => vincularClienteProyecto.mutateAsync({ id, clienteId }),
+          actualizarEstado: (id, estado) => actualizarEstadoProyecto.mutateAsync({ id, estado }),
         },
         clientes: {
           obtenerPorId: (id) => d.clientes.find((c) => c.id === id),
@@ -191,7 +203,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
           // anteriores -- no alcanza con tocar el caché local, porque lo que se revierte ya quedó
           // escrito en Neon.
           crear: async (input) => {
-            const id = crypto.randomUUID()
+            const id = input.id ?? crypto.randomUUID()
             const nuevo = await crearItem.mutateAsync({ ...input, id })
             registrarAccionDeshacer(proyectoId, {
               descripcion: 'Crear ítem',
@@ -264,7 +276,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
     data, snapshot.isLoading, proyectoId,
     crearItem, actualizarItem, eliminarItem,
     crearEspacio, actualizarEspacio, eliminarEspacio, marcarEspacioActiva,
-    actualizarJornadas, duplicarEspacio, actualizarParametrosFinancieros,
+    actualizarJornadas, duplicarEspacio, actualizarParametrosFinancieros, actualizarEstadoProyecto,
     crearArtefacto, actualizarArtefacto,
     crearGrupoItem, actualizarGrupoItem, eliminarGrupoItem,
     reemplazarAcabadosEspacio, crearAcabadoCatalogo,

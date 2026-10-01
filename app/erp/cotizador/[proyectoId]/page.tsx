@@ -117,6 +117,36 @@ function obtenerParametrosJornadas(store: Pick<CotizadorCompatStore, 'parametros
   }
 }
 
+// Selector de estado del header (2026-10-01): mismo mapeo de labels que el Kanban comercial
+// (`app/erp/comercial/page.tsx`), duplicado a propósito -- son dos pantallas independientes y
+// el mapeo es de 10 líneas, no amerita una dependencia cruzada entre rutas.
+const ESTADO_LABELS_HEADER: Record<string, string> = {
+  activa: 'Lead',
+  enviada: 'Propuesta',
+  negociacion: 'En Negociación',
+  en_contrato: 'En Contrato',
+  retoma: 'Retoma de Medidas',
+  pre_produccion: 'Pre-Producción',
+  produccion: 'Producción',
+  entregado: 'Entregado',
+  perdida: 'Perdida',
+  cancelada: 'Cancelada',
+}
+
+/** Destinos válidos desde `estadoActual` según el parámetro `transiciones_proyecto` -- el mismo
+ *  criterio que ya usa `actualizarEstadoProyectoAction` para validar server-side. Si el parámetro
+ *  no existe o no trae el estado, no hay destinos (el selector no se muestra). */
+function destinosEstadoValidos(store: Pick<CotizadorCompatStore, 'parametros'>, estadoActual: string): string[] {
+  const raw = store.parametros.obtenerPorClave('transiciones_proyecto')?.valorTexto
+  if (!raw) return []
+  try {
+    const transiciones = JSON.parse(raw) as Record<string, string[]>
+    return transiciones[estadoActual] ?? []
+  } catch {
+    return []
+  }
+}
+
 export default function CotizadorPage() {
   const params = useParams()
   const proyectoId = params.proyectoId as string
@@ -189,12 +219,12 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [mostrarParametrosFinancieros, setMostrarParametrosFinancieros] = useState(false)
-  // 2026-09-30 (diagnóstico UX): antes arrancaba colapsado pese a que el contenedor ya reserva
-  // espacio de sobra (max-h-[50vh]) — obligaba a un clic para ver Subtotal/IVA, y era la causa
-  // real de "siempre se me olvida meter costo operativo" (el campo vivía fuera de la vista por
-  // defecto, detrás de dos pasos: abrir el desglose Y abrir el modal). Ahora arranca expandido;
-  // el toggle sigue existiendo como opción de compactar en pantallas chicas.
-  const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(true)
+  // 2026-10-01 (diagnóstico UX, ronda 2): vuelve a arrancar colapsado -- Costos Operativos (la
+  // causa real de "siempre se me olvida meter costo operativo") ahora tiene su propio campo
+  // SIEMPRE visible en la fila de resumen fusionada con el header, sin depender de este toggle.
+  // Lo que queda detrás de este desglose (materiales, MO por categoría, imprevistos, descuento,
+  // ajuste, IVA) sí es consulta ocasional -- mantenerlo colapsado por defecto es lo compacto.
+  const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(false)
   const [mostrarVersionesPropuesta, setMostrarVersionesPropuesta] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
   const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
@@ -389,6 +419,15 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       onClick: () => setMostrarEditarProyecto(true),
     },
     {
+      // 2026-10-01 (diagnóstico UX, ronda 2): se muda del footer (que desaparece, fusionado con
+      // el header) a este menú -- IVA/garantía casi no cambian por cotización, no necesitan un
+      // botón propio siempre visible en la barra de resumen.
+      id: 'iva-garantia',
+      label: '$ IVA y garantía',
+      variant: 'secondary',
+      onClick: () => setMostrarParametrosFinancieros(true),
+    },
+    {
       id: 'propuesta-publica',
       label: 'Propuesta pública',
       variant: 'secondary',
@@ -443,12 +482,16 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   return (
     <div className="mx-auto max-w-5xl">
       {/*
-        Header en dos filas, sticky como unidad (2026-09-11: rediseño tras hallazgo de
-        Javier — la fila única anterior forzaba metadata (código/título/cliente) a
-        comprimirse casi a cero para hacerle espacio a Garantía+IVA+timestamp+7 botones,
-        todo en un solo `flex` sin wrap. Garantía/IVA se movieron al módulo consolidado
-        de Parámetros Financieros (ver acción 'parametros-financieros' abajo), y las
-        acciones pasan a su propia fila para que el título SIEMPRE tenga su espacio.
+        2026-10-01 (diagnóstico UX, ronda 2): header + footer fusionados en un solo bloque
+        sticky arriba -- antes eran 4 filas de chrome persistente repartidas en dos extremos de
+        la pantalla (header de 2 filas arriba, footer de 2 filas abajo, este último además
+        chocando con el tab-bar del ERP en mobile), "desperdiciando mucho espacio" (feedback
+        directo de Javier) y obligando a mirar en dos lugares distintos para una sola cosa
+        (identidad+acciones+plata de ESTA cotización). Ahora son 2 filas, las dos arriba:
+        identidad/acciones (EntityHeader, igual que antes) y una fila de resumen financiero
+        compacta con Costos Operativos SIEMPRE visible (ya no detrás de un desglose colapsado
+        ni de un modal) y un desglose opcional que se abre hacia abajo sin ser una barra sticky
+        aparte. Nada queda fijo al fondo de la pantalla.
       */}
       <div className="sticky top-0 z-10 bg-bg-raised shadow-sm">
         <EntityHeader
@@ -456,19 +499,142 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           titulo={proyecto.nombreProyecto}
           subtitulo={cliente ? `· ${cliente.nombre}` : undefined}
           badges={
-            <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
-              {proyecto.estado}
-            </Badge>
+            (() => {
+              const destinos = destinosEstadoValidos(store, proyecto.estado)
+              if (destinos.length === 0) {
+                return (
+                  <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
+                    {ESTADO_LABELS_HEADER[proyecto.estado] ?? proyecto.estado}
+                  </Badge>
+                )
+              }
+              return (
+                <select
+                  value={proyecto.estado}
+                  onChange={(e) => store.proyectos.actualizarEstado(proyecto.id, e.target.value)}
+                  aria-label="Estado del proyecto"
+                  className="rounded-sm border border-border-subtle bg-bg-paper px-2 py-1 text-xs font-medium text-text-heading focus:border-brand focus:outline-none"
+                >
+                  <option value={proyecto.estado}>{ESTADO_LABELS_HEADER[proyecto.estado] ?? proyecto.estado}</option>
+                  {destinos.map((destino) => (
+                    <option key={destino} value={destino}>
+                      {ESTADO_LABELS_HEADER[destino] ?? destino}
+                    </option>
+                  ))}
+                </select>
+              )
+            })()
           }
-        />
-        <div className="flex items-center justify-end gap-2 border-t border-border-subtle px-4 py-2 sm:py-1.5">
+        >
           {estadoPublicacion?.tieneVersionPublicada && estadoPublicacion.publicadaEn && (
-            <span className="hidden sm:inline text-xs text-text-muted shrink-0 mr-auto truncate" title="Última vez que el cliente vio una versión publicada de esta propuesta">
+            <span className="hidden lg:inline text-xs text-text-muted shrink-0 truncate max-w-[220px]" title="Última vez que el cliente vio una versión publicada de esta propuesta">
               v{estadoPublicacion.ultimaVersion}{estadoPublicacion.ultimoNombre ? ` · ${estadoPublicacion.ultimoNombre}` : ''} · publicada {formatRelativeDate(estadoPublicacion.publicadaEn)}
             </span>
           )}
           <EntityActionsBar actions={accionesCotizador} />
+        </EntityHeader>
+
+        {/* Resumen financiero — Costos Operativos siempre visible (pedido explícito de Javier);
+            el resto del desglose (materiales, MO por categoría, imprevistos, descuento, ajuste,
+            IVA) se abre con el toggle, sin bloquear permanentemente espacio de pantalla. */}
+        <div className="flex items-center gap-3 overflow-x-auto border-t border-border-subtle px-4 py-1.5 sm:px-6">
+          <span className="shrink-0 text-sm">
+            <span className="text-text-muted">Total</span>{' '}
+            <span className="font-mono font-semibold text-brand">{formatCOP(total)}</span>
+          </span>
+          <span className="hidden shrink-0 text-xs text-text-muted sm:inline">
+            Subtotal <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
+          </span>
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <span className="text-xs text-text-muted whitespace-nowrap">Costos Op.</span>
+            <MoneyInput
+              value={aDigitos(proyecto.costosOperativos)}
+              onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { costosOperativos: v || '0' })}
+              className="w-28"
+              aria-label="Costos operativos"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setMostrarDesgloseFooter((v) => !v)}
+            className="flex shrink-0 items-center gap-1 text-xs text-text-muted hover:text-text-heading transition-colors duration-fast"
+            aria-expanded={mostrarDesgloseFooter}
+            aria-label="Ver desglose de la cotización"
+          >
+            {mostrarDesgloseFooter ? '▲' : '▼'} Desglose
+          </button>
         </div>
+
+        {mostrarDesgloseFooter && (
+          <div className="max-h-[50vh] overflow-y-auto border-t border-border-subtle px-4 py-4 sm:px-6">
+            <div className="mx-auto max-w-5xl space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-text-muted">Materiales</span>
+                <span className="font-mono text-text-heading">{formatCOP(materialesTotal)}</span>
+              </div>
+              <div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Mano de Obra</span>
+                  <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
+                </div>
+                <div className="pl-3 mt-1 space-y-0.5 text-xs text-text-muted">
+                  <div className="flex justify-between">
+                    <span>Desarrollo técnico</span>
+                    <span className="font-mono">{formatCOP(moDev)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Ensamblaje taller</span>
+                    <span className="font-mono">{formatCOP(moEns)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Instalación obra</span>
+                    <span className="font-mono">{formatCOP(moInst)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text-muted shrink-0">Imprevistos</span>
+                  <MoneyInput
+                    value={aDigitos(proyecto.imprevistosInstalacion)}
+                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { imprevistosInstalacion: v || '0' })}
+                    className="w-32"
+                    aria-label="Imprevistos de instalación"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text-muted shrink-0">Descuento</span>
+                  <MoneyInput
+                    value={aDigitos(proyecto.descuentoComercial)}
+                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { descuentoComercial: v || '0' })}
+                    className="w-32"
+                    aria-label="Descuento comercial"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text-muted shrink-0">Ajuste</span>
+                  <MoneyInput
+                    value={aDigitos(proyecto.ajusteArbitrario)}
+                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { ajusteArbitrario: v || '0' })}
+                    className="w-32"
+                    aria-label="Ajuste arbitrario"
+                  />
+                </div>
+              </div>
+              <hr className="border-border-subtle" />
+              <div className="flex justify-between font-semibold">
+                <span className="text-text-heading">Subtotal</span>
+                <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
+              </div>
+              {iva > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span>
+                  <span className="font-mono text-text-heading">{formatCOP(iva)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Contenido scrolleable */}
@@ -651,136 +817,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           </section>
          )}
 
-      {/*
-        Footer compacto del cotizador (2026-09-11, pedido de Javier con boceto anotado):
-        el resumen financiero completo vivía a media página (había que scrollear para verlo)
-        y "Parámetros financieros" era un botón más entre 9 en el header, contribuyendo al
-        desborde de esa fila. Ambos se consolidan acá: total siempre visible sin scroll,
-        desglose completo disponible con un toque, y el único punto de entrada a
-        Parámetros Financieros. bottom-14 en mobile dice espacio al tab-bar del ERP
-        (erp-shell.tsx, h-14 fijo abajo); en desktop (md:) no hay tab-bar, así que baja a 0.
-      */}
-      <div className="sticky bottom-14 md:bottom-0 z-30 -mx-6 mt-8 border-t border-border-subtle bg-bg-raised shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.08)]">
-        {mostrarDesgloseFooter && (
-          <div className="max-h-[50vh] overflow-y-auto border-b border-border-subtle px-4 py-4 sm:px-6">
-            <div className="mx-auto max-w-5xl space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-muted">Materiales</span>
-                <span className="font-mono text-text-heading">{formatCOP(materialesTotal)}</span>
-              </div>
-              <div>
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Mano de Obra</span>
-                  <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
-                </div>
-                {/* 2026-09-30 (diagnóstico UX): antes vivía duplicado en 3 tarjetas sueltas a
-                    media página, sin título que dijera si era por espacio o del proyecto completo
-                    — "no aporta nada" (feedback directo de Javier). El desglose por categoría solo
-                    tiene sentido junto al total que ya lo contextualiza (todos los espacios activos). */}
-                <div className="pl-3 mt-1 space-y-0.5 text-xs text-text-muted">
-                  <div className="flex justify-between">
-                    <span>Desarrollo técnico</span>
-                    <span className="font-mono">{formatCOP(moDev)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Ensamblaje taller</span>
-                    <span className="font-mono">{formatCOP(moEns)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Instalación obra</span>
-                    <span className="font-mono">{formatCOP(moInst)}</span>
-                  </div>
-                </div>
-              </div>
-              {/* 2026-09-30 (diagnóstico UX): antes estos 4 campos solo eran editables dentro del
-                  modal "Parámetros financieros" -- fuera de la vista por defecto, causa directa de
-                  "siempre se me olvida meter costo operativo" (feedback de Javier). Ahora son
-                  inputs in-situ con el mismo autosave (debounce + onBlur) que el resto del
-                  cotizador; el modal queda solo para IVA/garantía, que casi no cambian por cotización. */}
-              <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 pt-1">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-text-muted shrink-0">Costos Operativos</span>
-                  <MoneyInput
-                    value={aDigitos(proyecto.costosOperativos)}
-                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { costosOperativos: v || '0' })}
-                    className="w-32"
-                    aria-label="Costos operativos"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-text-muted shrink-0">Imprevistos</span>
-                  <MoneyInput
-                    value={aDigitos(proyecto.imprevistosInstalacion)}
-                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { imprevistosInstalacion: v || '0' })}
-                    className="w-32"
-                    aria-label="Imprevistos de instalación"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-text-muted shrink-0">Descuento</span>
-                  <MoneyInput
-                    value={aDigitos(proyecto.descuentoComercial)}
-                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { descuentoComercial: v || '0' })}
-                    className="w-32"
-                    aria-label="Descuento comercial"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-text-muted shrink-0">Ajuste</span>
-                  <MoneyInput
-                    value={aDigitos(proyecto.ajusteArbitrario)}
-                    onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { ajusteArbitrario: v || '0' })}
-                    className="w-32"
-                    aria-label="Ajuste arbitrario"
-                  />
-                </div>
-              </div>
-              <hr className="border-border-subtle" />
-              <div className="flex justify-between font-semibold">
-                <span className="text-text-heading">Subtotal</span>
-                <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
-              </div>
-              {iva > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span>
-                  <span className="font-mono text-text-heading">{formatCOP(iva)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
-          <button
-            type="button"
-            onClick={() => setMostrarDesgloseFooter((v) => !v)}
-            className="flex min-w-0 items-center gap-2 text-left"
-            aria-expanded={mostrarDesgloseFooter}
-            aria-label="Ver desglose de la cotización"
-          >
-            <span className="shrink-0 text-text-muted text-xs">{mostrarDesgloseFooter ? '▼' : '▲'}</span>
-            <span className="truncate text-xs text-text-muted">
-              Subtotal <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
-            </span>
-            <span className="hidden shrink-0 text-sm font-semibold sm:inline">
-              <span className="text-text-heading">Total</span> <span className="font-mono text-brand">{formatCOP(total)}</span>
-            </span>
-          </button>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="font-mono text-sm font-semibold text-brand sm:hidden">{formatCOP(total)}</span>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => setMostrarParametrosFinancieros(true)}
-              className="h-8 whitespace-nowrap px-2.5 text-xs"
-              title="IVA y garantía — los demás parámetros (costos operativos, imprevistos, descuento, ajuste) ya son editables arriba, en el desglose"
-            >
-              $ IVA y garantía
-            </Button>
-          </div>
-        </div>
-      </div>
-
-        {/* Modal Generar / Editar Contrato (t-166): recibe el contrato y sus hitos ya
+      {/* Modal Generar / Editar Contrato (t-166): recibe el contrato y sus hitos ya
             persistidos, para que reabrirlo no arranque de nuevo en los defaults. */}
         {mostrarContratoModal && proyecto && (
           <ContratoModal
@@ -1431,8 +1468,16 @@ function VarianteContenido({
   // Lectura de items desde el snapshot TanStack Query (B2, plan_cotizador_tanstack_query.md).
   const items = store.items.porVariante(espacio.id)
   const productMap = useMemo(() => new Map(catalogo.map((p) => [p.id, p])), [catalogo])
-  const itemsContractuales = items.filter((it) => !it.esReferencial)
-  const itemsReferenciales = items.filter((it) => it.esReferencial)
+  // 2026-10-01 (diagnóstico UX, ronda 2): los ítems se guardan en orden de creación (push al
+  // final, sin orderBy -- store.items.porVariante no reordena), que es el orden correcto para
+  // contratos/propuestas/impresión (siguen leyendo porVariante() directo, sin pasar por acá, así
+  // que no cambian). Pero en ESTE editor el botón de agregar vive arriba, junto al resto de los
+  // controles del espacio -- si el ítem nuevo aparece al final, cada ítem agregado aumenta la
+  // distancia entre el botón y el resultado (Ley de Fitts) y obliga a scrollear. Invertir solo
+  // la vista de edición hace que el ítem recién creado aparezca justo debajo del botón que lo
+  // creó, sin mover el cursor del usuario -- es la UI la que se desplaza, no la persona.
+  const itemsContractuales = items.filter((it) => !it.esReferencial).reverse()
+  const itemsReferenciales = items.filter((it) => it.esReferencial).reverse()
   const subtotalItems = itemsContractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
   const totalReferencial = itemsReferenciales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
 
@@ -1520,6 +1565,15 @@ function VarianteContenido({
       if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
     }
   }, [itemRecienCreadoId])
+
+  // 2026-10-01: "+ Presupuesto adicional" vive en su propia sección, más abajo que el panel de
+  // búsqueda (que siempre se renderiza junto a Ítems, arriba). Sin esto, abrir el panel desde ese
+  // botón lo dejaría fuera de la vista -- el mismo problema de scroll manual que se corrigió para
+  // la creación de ítems, pero por el lado del disparador en vez del resultado.
+  useEffect(() => {
+    if (modoBusquedaItem !== 'normal') return
+    document.getElementById(`panel-busqueda-item-${espacio.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [modoBusquedaItem, espacio.id])
 
   return (
     <div className="border-t border-border-subtle px-4 py-3 space-y-3">
@@ -1729,15 +1783,20 @@ function VarianteContenido({
       <div className="border-t border-border-subtle pt-3">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Ítems</p>
+          {/* 2026-10-01 (diagnóstico UX, ronda 2): antes los 3 botones compartían el mismo peso
+              visual ghost -- ninguno se leía como "la acción principal de esta sección" pese a
+              que buscar en catálogo es, por lejos, la más frecuente (feedback directo de
+              Javier: "no se diseñó" esa jerarquía). "+ Ítem de catálogo" pasa a secondary
+              (bordeado, más peso) y va primero; Grupo/Ítem Libre quedan ghost detrás. */}
           <div className="flex gap-2">
             <Button
-              variant="ghost"
+              variant="secondary"
               size="md"
-              onClick={() => { setCreandoGrupoPadreId(null); setNombreNuevoGrupo('') }}
-              className="text-xs border border-border-subtle hover:border-gold-400"
-              title="Agrupar ítems de este espacio (Grupo → Subgrupo → Ítems)"
+              onClick={() => { setModoBusquedaItem('normal'); setBusquedaEsReferencial(false) }}
+              className="text-xs"
+              title="Buscar un producto del catálogo"
             >
-              + Grupo
+              + Ítem de catálogo
             </Button>
             <Button
               variant="ghost"
@@ -1751,11 +1810,11 @@ function VarianteContenido({
             <Button
               variant="ghost"
               size="md"
-              onClick={() => { setModoBusquedaItem('normal'); setBusquedaEsReferencial(false) }}
+              onClick={() => { setCreandoGrupoPadreId(null); setNombreNuevoGrupo('') }}
               className="text-xs border border-border-subtle hover:border-gold-400"
-              title="Buscar un producto del catálogo"
+              title="Agrupar ítems de este espacio (Grupo → Subgrupo → Ítems)"
             >
-              + Ítem de catálogo
+              + Grupo
             </Button>
           </div>
         </div>
@@ -1791,21 +1850,35 @@ function VarianteContenido({
         )}
 
         {modoBusquedaItem === 'normal' && (
-          <div className="mb-3 space-y-2">
+          // 2026-10-01 (diagnóstico UX, ronda 2): el panel entero cambia de color/borde según
+          // `busquedaEsReferencial` -- sin importar por cuál de los dos caminos se llegó acá (el
+          // botón de catálogo de arriba, o "+ Presupuesto adicional" en su propia sección más
+          // abajo), el MODO queda visualmente inconfundible mientras se está creando el ítem,
+          // no solo en el checkbox chiquito que antes era la única señal.
+          <div id={`panel-busqueda-item-${espacio.id}`} className={`mb-3 space-y-2 rounded border p-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30' : 'border-transparent'}`}>
+            {busquedaEsReferencial && (
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">
+                Agregando a Presupuesto Adicional — no cuenta en el contrato
+              </p>
+            )}
             <SmartSearch
               items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
               onSelect={(producto) => {
-                // B2 (plan_cotizador_tanstack_query.md): mutation optimista con id cliente
-                // (DEC-1) — la fila aparece al instante y persiste en background; sin
-                // usePendingGuard para permitir encadenar (T2) y sin fila temporal (T1).
-                store.items.crear({
+                // 2026-10-01: id generado ANTES de disparar la mutación -- se engancha al mismo
+                // id que usa la actualización optimista de caché (síncrona, antes de cualquier
+                // round-trip de red), así el resaltado de la fila nueva no espera al servidor
+                // (bug real reportado por Javier: "el feedback de agregación tarda mucho en salir").
+                const id = crypto.randomUUID()
+                setItemRecienCreadoId(id)
+                void store.items.crear({
+                  id,
                   varianteId: espacio.id,
                   catalogoId: producto.id,
                   nombrePersonalizado: null,
                   cantidad: '1',
                   precioUnitario: producto.precioPublico ?? '0',
                   esReferencial: busquedaEsReferencial,
-                }).then((item) => setItemRecienCreadoId(item.id))
+                })
                 setModoBusquedaItem('off')
               }}
               onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(busquedaEsReferencial); setModoBusquedaItem('off') }}
@@ -1814,9 +1887,9 @@ function VarianteContenido({
               allowCreate
               contexto="cotizador-items"
             />
-            {/* 2026-09-30 (diagnóstico UX): reemplaza el botón gemelo "+ Ítem ref" -- un único
-                camino de creación, con la decisión real (cuenta o no al contrato) explícita en
-                cada uso en vez de depender de qué botón lejano se recuerde haber tocado. */}
+            {/* 2026-09-30 (diagnóstico UX): checkbox explícito para el caso de entrar por
+                "+ Ítem de catálogo" y decidir ahí mismo que es referencial -- complementa, no
+                reemplaza, el camino directo de "+ Presupuesto adicional" (ver sección de abajo). */}
             <label className="flex items-center gap-2 text-xs text-gold-700 cursor-pointer w-fit rounded border border-dashed border-gold-300 bg-gold-50/40 px-2 py-1.5">
               <input
                 type="checkbox"
@@ -2024,12 +2097,27 @@ function VarianteContenido({
           Javier) porque leerlo tras el Subtotal se sentía desconectado de la lista. La distancia ya no es la
           señal de "no cuenta"; el borde punteado ámbar + el subtítulo explícito de abajo cumplen ese rol ahora. */}
       <div className="border-t-2 border-dashed border-gold-300 pt-3">
-        <div className="mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">Presupuesto Adicional (Referenciales)</p>
-          <p className="text-[11px] text-text-muted">
-            No suma al Subtotal Espacio ni al contrato — estimado informativo. Para agregar uno,
-            marca &quot;Es referencial&quot; al crear el ítem arriba en Ítems.
-          </p>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">Presupuesto Adicional (Referenciales)</p>
+            <p className="text-[11px] text-text-muted">
+              No suma al Subtotal Espacio ni al contrato — estimado informativo.
+            </p>
+          </div>
+          {/* 2026-10-01 (diagnóstico UX, ronda 2): quitar el botón por completo (ronda 1) resolvía
+              la confusión pero no era el diseño correcto -- la idea es jerarquizar con
+              affordances, no borrar caminos (feedback directo de Javier). Este botón vive DENTRO
+              de su sección (proximidad real, Gestalt) y usa el lenguaje visual ámbar/punteado de
+              esta sección, no el gris neutro de los botones de Ítems -- nunca puede leerse como
+              gemelo de "+ Ítem de catálogo" aunque abra el mismo panel de búsqueda (con el modo
+              referencial ya marcado y el panel visiblemente re-coloreado, ver más arriba). */}
+          <button
+            type="button"
+            onClick={() => { setModoBusquedaItem('normal'); setBusquedaEsReferencial(true) }}
+            className="shrink-0 text-xs font-medium text-gold-700 border border-dashed border-gold-400 rounded px-2 py-1.5 hover:bg-gold-50"
+          >
+            + Presupuesto adicional
+          </button>
         </div>
 
         {itemsReferenciales.length === 0 ? (
@@ -2295,8 +2383,13 @@ function VarianteContenido({
                 variant="primary"
                 size="md"
                 disabled={!itemLibreNombre.trim()}
-                onClick={async () => {
-                  const item = await store.items.crear({
+                onClick={() => {
+                  // 2026-10-01: mismo patrón que la búsqueda de catálogo -- id generado antes de
+                  // disparar la mutación, para que el resaltado no espere al servidor.
+                  const id = crypto.randomUUID()
+                  setItemRecienCreadoId(id)
+                  void store.items.crear({
+                    id,
                     varianteId: espacio.id,
                     catalogoId: null,
                     nombrePersonalizado: itemLibreNombre.trim(),
@@ -2304,7 +2397,6 @@ function VarianteContenido({
                     precioUnitario: itemLibrePrecio,
                     esReferencial: itemLibreEsRef,
                   })
-                  setItemRecienCreadoId(item.id)
                   setCreandoItemLibre(false)
                   setItemLibreNombre('')
                   setItemLibreCantidad('1')
