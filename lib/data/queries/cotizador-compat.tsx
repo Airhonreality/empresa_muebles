@@ -33,6 +33,7 @@ import {
   useActualizarContratoMutation,
 } from './useCotizadorQueries'
 import type { InputArtefactoOptimista, InputEspacioOptimista, InputItemOptimista } from './optimistic'
+import { registrarAccionDeshacer, patchInverso } from './historial-deshacer'
 import type {
   CatalogoAcabado, Cliente, Contrato, EspacioArtefacto, EspacioVariante,
   GrupoItem, HitoPago, ItemVariante, Parametro, ProductoCatalogo, Proyecto,
@@ -171,9 +172,51 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
         },
         items: {
           porVariante: (varianteId) => d.items.filter((i) => i.varianteId === varianteId && !i.anulado),
-          crear: (input) => crearItem.mutateAsync({ ...input, id: crypto.randomUUID() }),
-          actualizar: (id, patch) => actualizarItem.mutateAsync({ id, patch }),
-          eliminar: (id) => eliminarItem.mutateAsync({ id }),
+          // t-179: cada escritura de ítem que llega a confirmarse en la DB queda registrada en el
+          // historial de deshacer (Ctrl+Z global, components/veta/historial-deshacer-listener.tsx).
+          // Deshacer una acción ya guardada vuelve a llamar al servidor con los valores
+          // anteriores -- no alcanza con tocar el caché local, porque lo que se revierte ya quedó
+          // escrito en Neon.
+          crear: async (input) => {
+            const id = crypto.randomUUID()
+            const nuevo = await crearItem.mutateAsync({ ...input, id })
+            registrarAccionDeshacer(proyectoId, {
+              descripcion: 'Crear ítem',
+              deshacer: async () => { await eliminarItem.mutateAsync({ id }) },
+            })
+            return nuevo
+          },
+          actualizar: async (id, patch) => {
+            const anterior = d.items.find((i) => i.id === id)
+            const actualizado = await actualizarItem.mutateAsync({ id, patch })
+            if (anterior) {
+              const inverso = patchInverso(anterior, patch)
+              registrarAccionDeshacer(proyectoId, {
+                descripcion: 'Editar ítem',
+                deshacer: async () => { await actualizarItem.mutateAsync({ id, patch: inverso }) },
+              })
+            }
+            return actualizado
+          },
+          eliminar: async (id) => {
+            const anterior = d.items.find((i) => i.id === id)
+            const exito = await eliminarItem.mutateAsync({ id })
+            if (exito && anterior) {
+              registrarAccionDeshacer(proyectoId, {
+                descripcion: 'Eliminar ítem',
+                deshacer: async () => {
+                  // Si el servidor hizo soft-delete (fila sigue existiendo con anulado=true),
+                  // crearItemAction detecta el conflicto de id y no hace nada -- el update de
+                  // abajo es el que de verdad restaura el ítem en ese caso. Si fue hard-delete
+                  // (fila ya no existe), el create la recrea y el update queda de más pero no
+                  // hace daño: mismos valores.
+                  await crearItem.mutateAsync({ ...anterior, id: anterior.id })
+                  await actualizarItem.mutateAsync({ id: anterior.id, patch: { anulado: false } })
+                },
+              })
+            }
+            return exito
+          },
         },
         artefactos: {
           porEspacio: (espacioId) => d.artefactos.filter((a) => a.espacioVarianteId === espacioId),

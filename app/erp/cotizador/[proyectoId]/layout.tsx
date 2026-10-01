@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { CotizadorSnapBridge } from '@/lib/data/queries/CotizadorSnapBridge'
 import { BannerSinConexion } from '@/components/veta/banner-sin-conexion'
+import { HistorialDeshacerListener } from '@/components/veta/historial-deshacer-listener'
 
 export default function CotizadorProyectoLayout({ children }: { children: ReactNode }) {
   const params = useParams<{ proyectoId: string }>()
@@ -16,6 +17,7 @@ export default function CotizadorProyectoLayout({ children }: { children: ReactN
     <>
       <CotizadorSnapBridge proyectoId={proyectoId} />
       <BannerSinConexion proyectoId={proyectoId} />
+      <HistorialDeshacerListener proyectoId={proyectoId} />
       {children}
     </>
   )

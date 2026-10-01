@@ -1,0 +1,45 @@
+{
+  "id": "t-179",
+  "titulo": "Ctrl+Z global para deshacer acciones ya guardadas sobre items del cotizador",
+  "intencion_negocio": "El usuario pregunto si se puede hacer Ctrl+Z en cualquier lugar (textos, numeros, items) y pidio planificar e implementar junto con t-171/t-170. Se distinguio de t-177 (deshacer mientras se escribe, antes de guardar): esto es deshacer una accion YA guardada en la DB.",
+  "diagnostico": "No existia ningun mecanismo para deshacer una accion ya confirmada en la DB. Durante la implementacion se encontro que otra sesion en paralelo ya habia extendido ToastProvider con un boton Deshacer puntual (reclasificar un item) -- se confirmo con el usuario que ambos mecanismos son compatibles antes de seguir.",
+  "decisiones_supervisor": {
+    "alcance": "Solo items (crear/actualizar/eliminar), no los 5 tipos de entidad de t-170. eliminarEspacioAction tiene un guard (VarianteNoEliminableError) y cascada propia no auditada en esta pasada -- se prefirio entregar items correcto y bien probado antes que estirar a 5 entidades con mas riesgo.",
+    "aprobacion": "Respuesta 'segui con el Ctrl+Z general de items' tras el hallazgo del mostrarInfo de la otra sesion (2026-10-01)."
+  },
+  "zona": "lib/data/queries/ (historial-deshacer.ts nuevo + cotizador-compat.tsx) + components/veta/historial-deshacer-listener.tsx (nuevo) + app/erp/cotizador/[proyectoId]/layout.tsx",
+  "tipo": "logica_negocio",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-179.md",
+  "criterios_aceptacion": [
+    "historial-deshacer.ts: 9 casos cubren LIFO, pila vacia tras agotarse, pilas de proyectos distintos no se mezclan, deshacer que falla propaga error sin volver a registrarse, patchInverso con patch parcial/vacio",
+    "items.crear/actualizar/eliminar en cotizador-compat.tsx registran la entrada de deshacer solo despues de que la mutacion al servidor resuelve",
+    "el listener de teclado ignora Ctrl+Z cuando el foco esta en un campo editable",
+    "npx tsc --noEmit limpio",
+    "npx eslint . sin errores ni warnings nuevos",
+    "npx tsx lib/data/queries/historial-deshacer.test.ts en verde (9/9)",
+    "npx tsx lib/data/queries/optimistic.test.ts sigue en verde (36/36)"
+  ],
+  "hallazgos_colaterales": [
+    "cotizador-compat.tsx tenia cambios sin comitear de otra sesion (catalogo de acabados) al momento de implementar. El commit de esta tarea se armo con git hash-object + update-index para aislar SOLO mis dos cambios (import + bloque items), sin tocar el working tree real -- la otra sesion conserva sus cambios intactos. Verificado con un swap temporal + tsc --noEmit (los unicos errores fueron por la ausencia esperada de las APIs de acabados en page.tsx) y restaurado de inmediato."
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint (archivos tocados)": "0 errors, 0 warnings nuevos",
+    "historial-deshacer.test.ts": "9/9 en verde",
+    "optimistic.test.ts": "36/36 en verde"
+  },
+  "executor": "Claude Code (sesion interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Continuacion de 'esos 3 puntos me importan para planificar y implementar' + confirmacion explicita tras el hallazgo de trabajo concurrente en ToastProvider (2026-10-01).",
+    "fecha": "2026-10-01"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-10-01T00:00:00Z",
+  "cerrada_en": null,
+  "relacionado": ["t-170", "t-177"]
+}
