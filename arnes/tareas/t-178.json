@@ -1,0 +1,45 @@
+{
+  "id": "t-178",
+  "titulo": "Persistencia local del cotizador a localStorage + banner de sin conexion (cierra el hueco de t-170)",
+  "intencion_negocio": "t-170 corrigio la condicion de carrera que perdia items sin conexion, pero dejo explicitamente fuera la persistencia local -- el usuario comparo el comportamiento esperado con Notion ('el navegador guarda tu trabajo... en nuestro caso parece al reves, muy fragil') y pidio planificar e implementar ese tercer punto junto con el deshacer.",
+  "diagnostico": "El cache de TanStack Query del cotizador vive solo en memoria. Cerrar o recargar la pestana en plena desconexion, antes de que un cambio optimista en vuelo se confirme con el servidor, lo perdia sin rastro -- la pantalla volvia a mostrar el ultimo snapshot confirmado del servidor en vez de lo que se veia justo antes.",
+  "decisiones_supervisor": {
+    "alcance": "Persistencia a localStorage escopada SOLO al nodo ['cotizador', proyectoId] via shouldDehydrateQuery -- el resto del ERP no se persiste a proposito. Se usan los paquetes oficiales de TanStack (react-query-persist-client + query-sync-storage-persister), no una implementacion a mano.",
+    "aprobacion": "Continuacion de 'esos 3 puntos me importan para planificar y implementar' (2026-09-30) -- este era el tercer punto explicito."
+  },
+  "zona": "components/erp/query-provider.tsx + app/erp/cotizador/[proyectoId]/layout.tsx + lib/hooks/ (useConexion nuevo) + components/veta/banner-sin-conexion.tsx (nuevo)",
+  "tipo": "integracion_externa",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-178.md",
+  "criterios_aceptacion": [
+    "shouldDehydrateQuery solo persiste queries cuyo queryKey[0] === 'cotizador'",
+    "el provider no lanza sin window definido (SSR) -- guard explicito",
+    "BannerSinConexion no renderiza nada cuando navigator.onLine es true",
+    "npx tsc --noEmit limpio",
+    "npx eslint . sin errores ni warnings nuevos",
+    "DATA_IMPL=mock npx next build compila y type-checea sin errores nuevos (falla por falta de SESSION_SECRET en este entorno, esperado segun AGENTS.md, no relacionado con esta tarea)",
+    "npx tsx lib/data/queries/optimistic.test.ts sigue en verde (36/36)"
+  ],
+  "hallazgos_colaterales": [
+    "useConexion no tiene test dedicado -- wrapper fino sobre APIs del navegador sin logica pura, mismo criterio que useDebouncedInput/usePendingGuard en este repo."
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint (archivos tocados)": "0 errors, 0 warnings nuevos",
+    "DATA_IMPL=mock npx next build": "compila y type-checea limpio; falla despues en 'Collecting page data' por SESSION_SECRET ausente (pre-existente, documentado en AGENTS.md, no de esta tarea)",
+    "optimistic.test.ts": "36/36 en verde"
+  },
+  "executor": "Claude Code (sesion interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Continuacion de 'esos 3 puntos me importan para planificar y implementar' (2026-09-30).",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null,
+  "relacionado": ["t-170", "t-179"]
+}
