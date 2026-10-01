@@ -1,0 +1,50 @@
+{
+  "id": "t-176",
+  "titulo": "Parser de números agnóstico al separador + ToastProvider + 2 botones lentos restantes del cotizador",
+  "intencion_negocio": "El usuario pidió seguir diagnosticando en detalle qué botones del cotizador aún se sienten lentos, y reportó un bug de formato numérico/moneda: un ítem de 1.000.000 se ve momentáneamente como 10.000, y hay problemas generales de punto/coma al escribir decimales que quiere que sean agnósticos y resilientes. También confirmó en vivo que el peso colombiano no maneja decimales, acotando el alcance del fix de moneda a cantidades/jornadas.",
+  "diagnostico": "Dos agentes de solo lectura confirmaron: (1) 'Crear espacio' y el editor de ítem (guardar/eliminar/reemplazar) ya usan mutaciones optimistas pero su loading seguía atado al roundtrip completo del servidor, mismo patrón ya corregido en t-171; (2) NumberInput era un <input type=number> nativo sin parseo propio (el manejo de coma/punto dependía 100% del navegador/SO); formatNumber en lib/utils/format.ts tenía un parseFloat directo sobre string sin despojar separadores de miles -- landmine real aunque sin llamador activo hoy; parseMoney estaba duplicado literal entre money-input.tsx y smart-search.tsx, esta última con un toLocaleString() sin locale fijo.",
+  "decisiones_supervisor": {
+    "alcance": "Parser nuevo (lib/utils/numero.ts) solo para cantidades/jornadas -- el usuario confirmó que COP no maneja decimales, MoneyInput sigue tratando cualquier separador como ruido a descartar. Se agrega ToastProvider (primitiva nueva, mínima) para poder cerrar el editor de ítem y crear-espacio antes de confirmar el guardado sin perder visibilidad de errores.",
+    "fuera_de_alcance": "Las ~5 reimplementaciones restantes de parseNum/formatCOP (incluida una en la propuesta pública cara al cliente), ContratoModal, duplicar espacio y grupos de ítems quedan fuera -- documentadas como deuda/hallazgo pendiente, no se tocan en esta tarea."
+  },
+  "zona": "components/veta/ (NumberInput, item-editor-modal, toast-provider, smart-search) + lib/utils/ (numero.ts nuevo, format.ts) + app/erp/layout.tsx + app/erp/cotizador/[proyectoId]/page.tsx",
+  "tipo": "ui_visual",
+  "riesgo": "bajo",
+  "plan_ref": "arnes/planes/plan_t-176.md",
+  "criterios_aceptacion": [
+    "normalizarNumeroTexto/parseNumeroFlexible cubren coma/punto decimal único, repetido como miles, ambos presentes, vacío y caracteres mezclados (14 casos)",
+    "formatNumber('1.000.000') ya no da 1 -- normaliza antes de parseFloat",
+    "parseMoney tiene una sola definición real, smart-search.tsx la importa en vez de duplicarla",
+    "NumberInput es type=text con inputMode=decimal, no type=number nativo",
+    "crear espacio y guardar/eliminar/reemplazar ítem ya no esperan la respuesta del servidor antes de limpiar/cerrar",
+    "un error posterior en esas acciones aparece en un role=alert del ToastProvider, nunca como promesa rechazada sin capturar",
+    "npx tsc --noEmit limpio",
+    "npx eslint . sin errores ni warnings nuevos",
+    "npx tsx lib/utils/numero.test.ts en verde (14/14)",
+    "npx tsx lib/data/queries/optimistic.test.ts sigue en verde (36/36)"
+  ],
+  "hallazgos_colaterales": [
+    "El glitch puntual exacto reportado ('1.000.000 visto como 10.000 un instante') no se pudo fijar a una línea concreta -- no hay hoy un llamador activo de formatNumber que lo dispare. Se corrigió el mecanismo más probable y se consolidó la duplicación, pero si persiste hace falta reproducirlo con DevTools abierto.",
+    "ContratoModal tiene latencia real (dos escrituras secuenciales: cliente + contrato, sin optimismo de alta) -- candidato a evaluar paralelización en una tarea futura, no es solo un spinner mal atado.",
+    "Duplicar espacio y las mutaciones de grupos de ítems no tienen NINGÚN feedback visual hoy (ni loading ni disabled) -- baja frecuencia de uso, pendiente de un pase futuro."
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint (archivos tocados)": "0 errors, 0 warnings nuevos (2 warnings preexistentes confirmados sin cambio vía git stash)",
+    "lib/utils/numero.test.ts": "14/14 en verde",
+    "lib/data/queries/optimistic.test.ts": "36/36 en verde (confirma que t-170 sigue intacto)",
+    "lib/validacion/cotizador.test.ts": "21/21 en verde (confirma que t-172 sigue intacto)"
+  },
+  "executor": "Claude Code (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "nota": "Continuación de 'sigue diagnosticando a detalle' (2026-09-30) + decisión explícita del usuario en el chat de que COP no maneja decimales, acotando el alcance del parser nuevo.",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null
+}

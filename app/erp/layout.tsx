@@ -6,6 +6,7 @@ import { ErpShell } from '@/components/veta/erp-shell'
 // getDataStore() en lib/auth/session.ts — ver comentario en lib/data/store.ts.
 import { DataStoreProvider } from '@/lib/data/DataStoreProvider'
 import { QueryProvider } from '@/components/erp/query-provider'
+import { ToastProvider } from '@/components/veta/toast-provider'
 import type { StoreSnapshot } from '@/lib/data/snapshot'
 
 export const metadata: Metadata = {
@@ -39,7 +40,9 @@ export default async function ErpLayout({ children }: { children: React.ReactNod
     <DataStoreProvider mode={impl === 'drizzle' ? 'drizzle' : 'mock'} initialSnapshot={initialSnapshot}>
       {/* DEC-2: TanStack Query como server-state del ERP (plan_cotizador_tanstack_query.md). */}
       <QueryProvider>
-        <ErpShell>{children}</ErpShell>
+        <ToastProvider>
+          <ErpShell>{children}</ErpShell>
+        </ToastProvider>
       </QueryProvider>
     </DataStoreProvider>
   )

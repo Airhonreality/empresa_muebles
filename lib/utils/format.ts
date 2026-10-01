@@ -1,3 +1,5 @@
+import { normalizarNumeroTexto } from './numero'
+
 /**
  * Formato de moneda COP (Pesos Colombianos).
  * Convierte número o string a formato con símbolo de moneda.
@@ -15,9 +17,15 @@ export function formatCurrency(amount: string | number, fractionDigits: number =
 
 /**
  * Formato de número con miles separados.
+ *
+ * t-175 (2026-09-30): si `num` llega como string, se normaliza con `normalizarNumeroTexto` antes
+ * de parsear -- un `parseFloat` directo sobre un string YA formateado con separador de miles
+ * (ej. "1.000.000") se detiene en el primer "." extra y da 1, un corte de magnitud silencioso.
+ * Esta función no tenía ningún llamador activo cuando se detectó (código muerto), pero es
+ * exactamente el patrón que explica el síntoma reportado de un monto que se ve recortado.
  */
 export function formatNumber(num: number | string, fractionDigits: number = 0): string {
-  const n = typeof num === 'string' ? parseFloat(num) : num;
+  const n = typeof num === 'string' ? parseFloat(normalizarNumeroTexto(num)) : num;
   if (Number.isNaN(n)) return '—';
   return new Intl.NumberFormat('es-CO', {
     minimumFractionDigits: fractionDigits,

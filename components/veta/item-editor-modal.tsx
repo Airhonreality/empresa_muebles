@@ -8,6 +8,7 @@ import { SmartSearch } from '@/components/veta/smart-search'
 import { MoneyInput } from '@/components/veta/money-input'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { EntityFields } from '@/components/veta/entity-fields'
+import { useToast } from '@/components/veta/toast-provider'
 import { fichaTecnicaFormFields, type FichaTecnicaValues } from '@/lib/forms/ficha-tecnica-form-spec'
 import type { CampoPersonalizadoProducto, GrupoItem, ItemVariante, ProductoCatalogo } from '@/lib/data'
 
@@ -158,60 +159,56 @@ export function ItemEditorModal({
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoCatalogo | null>(null)
   const [mantenerPrecioActual, setMantenerPrecioActual] = useState(true)
 
-  const [guardando, setGuardando] = useState(false)
-  const [eliminando, setEliminando] = useState(false)
+  const { mostrarError } = useToast()
 
   const totalCalculado = parseNum(cantidad) * parseNum(precioUnitario)
 
-  const handleGuardarCambios = async () => {
-    setGuardando(true)
-    try {
-      await onSave({
-        nombrePersonalizado: nombrePersonalizado.trim() || null,
-        cantidad,
-        precioUnitario,
-        esReferencial,
-        fuenteReferencial: esReferencial ? (fuenteReferencial || null) : null,
-        grupoReferencial: esReferencial ? (grupoReferencial.trim() || null) : null,
-        comentario: comentario.trim() || null,
-        grupoItemId: grupoItemId || null,
-        fotoUrl: fotoUrl.trim() || null,
-        marca: marca.trim() || null,
-        referencia: referencia.trim() || null,
-        color: color.trim() || null,
-        dimensiones: dimensiones.trim() || null,
-        acabado: acabado.trim() || null,
-        espesor: espesor.trim() || null,
-        camposPersonalizados: camposPersonalizados
-          .map((c) => ({ clave: c.clave.trim(), valor: c.valor.trim() }))
-          .filter((c) => c.clave || c.valor),
+  // t-175: las tres mutaciones de abajo (actualizar/reemplazar/eliminar ítem) ya son optimistas
+  // -- la fila detrás de este modal cambia al instante, antes de que el servidor responda. Antes
+  // el modal esperaba el roundtrip completo para cerrarse (guardando/eliminando atados a
+  // `await`), lo que se sentía lento aunque el dato ya hubiera cambiado. Ahora el modal cierra en
+  // cuanto se dispara la acción; si falla después, el ToastProvider lo avisa (antes era un
+  // rechazo de promesa sin capturar -- el botón se desbloqueaba solo sin decir nada).
+  const handleGuardarCambios = () => {
+    onSave({
+      nombrePersonalizado: nombrePersonalizado.trim() || null,
+      cantidad,
+      precioUnitario,
+      esReferencial,
+      fuenteReferencial: esReferencial ? (fuenteReferencial || null) : null,
+      grupoReferencial: esReferencial ? (grupoReferencial.trim() || null) : null,
+      comentario: comentario.trim() || null,
+      grupoItemId: grupoItemId || null,
+      fotoUrl: fotoUrl.trim() || null,
+      marca: marca.trim() || null,
+      referencia: referencia.trim() || null,
+      color: color.trim() || null,
+      dimensiones: dimensiones.trim() || null,
+      acabado: acabado.trim() || null,
+      espesor: espesor.trim() || null,
+      camposPersonalizados: camposPersonalizados
+        .map((c) => ({ clave: c.clave.trim(), valor: c.valor.trim() }))
+        .filter((c) => c.clave || c.valor),
+    }).catch((err) => {
+      mostrarError(err instanceof Error ? err.message : 'No se pudo guardar el ítem. Revisa tu conexión e intenta de nuevo.')
+    })
+    onClose()
+  }
+
+  const handleConfirmarReemplazo = () => {
+    if (!productoSeleccionado) return
+    onReemplazarProducto(productoSeleccionado, mantenerPrecioActual).catch((err) => {
+      mostrarError(err instanceof Error ? err.message : 'No se pudo reemplazar el producto. Revisa tu conexión e intenta de nuevo.')
+    })
+    onClose()
+  }
+
+  const handleEliminar = () => {
+    if (window.confirm('¿Seguro que deseas eliminar este ítem de la cotización?')) {
+      onEliminar().catch((err) => {
+        mostrarError(err instanceof Error ? err.message : 'No se pudo eliminar el ítem. Revisa tu conexión e intenta de nuevo.')
       })
       onClose()
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  const handleConfirmarReemplazo = async () => {
-    if (!productoSeleccionado) return
-    setGuardando(true)
-    try {
-      await onReemplazarProducto(productoSeleccionado, mantenerPrecioActual)
-      onClose()
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  const handleEliminar = async () => {
-    if (window.confirm('¿Seguro que deseas eliminar este ítem de la cotización?')) {
-      setEliminando(true)
-      try {
-        await onEliminar()
-        onClose()
-      } finally {
-        setEliminando(false)
-      }
     }
   }
 
@@ -492,24 +489,21 @@ export function ItemEditorModal({
             <button
               type="button"
               onClick={handleEliminar}
-              disabled={eliminando || guardando}
               className="rounded px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
             >
-              {eliminando ? 'Eliminando...' :
-                <span className="inline-flex items-center gap-1.5">
-                  <IconoEliminar />
-                  Eliminar Ítem
-                </span>}
+              <span className="inline-flex items-center gap-1.5">
+                <IconoEliminar />
+                Eliminar Ítem
+              </span>
             </button>
             <div className="flex gap-2">
-              <Button variant="ghost" size="md" onClick={onClose} disabled={guardando}>
+              <Button variant="ghost" size="md" onClick={onClose}>
                 Cancelar
               </Button>
               <Button
                 variant="primary"
                 size="md"
                 onClick={handleGuardarCambios}
-                loading={guardando}
               >
                 Guardar Cambios
               </Button>
@@ -602,7 +596,6 @@ export function ItemEditorModal({
                   variant="primary"
                   size="md"
                   onClick={handleConfirmarReemplazo}
-                  loading={guardando}
                 >
                   Confirmar Reemplazo In-Situ
                 </Button>

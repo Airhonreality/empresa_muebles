@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, type KeyboardEvent } from "react";
 import { InputField } from "./input-field";
 import { useSmartSearch } from "@/lib/hooks/useSmartSearch";
+import { parseMoney } from "./money-input";
 
 export interface SmartSearchItem {
   id: string;
@@ -152,7 +153,7 @@ export function SmartSearch({
               <div className="text-xs text-text-muted">
                 {item.sku} · {item.categoriaComercial ?? item.tipo}
                 {item.precioPublico && (
-                  <span className="ml-2 font-mono">${parseMoney(item.precioPublico).toLocaleString()}</span>
+                  <span className="ml-2 font-mono">${new Intl.NumberFormat("es-CO").format(parseMoney(item.precioPublico))}</span>
                 )}
               </div>
             </li>
@@ -171,11 +172,4 @@ export function SmartSearch({
       )}
     </div>
   );
-}
-
-// Utility to parse money string
-export function parseMoney(value: string): number {
-  if (!value) return 0;
-  const raw = value.replace(/[^\d]/g, "");
-  return raw ? parseInt(raw, 10) : 0;
 }

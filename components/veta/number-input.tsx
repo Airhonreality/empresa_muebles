@@ -2,31 +2,38 @@
 
 import { type InputHTMLAttributes, useId } from "react";
 import { useDebouncedInput } from "@/lib/hooks/useDebouncedInput";
+import { normalizarNumeroTexto } from "@/lib/utils/numero";
 
-export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
+export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> {
   value: string;
   onChange: (value: string) => void;
   label?: string;
   error?: string;
-  step?: number | string;
-  min?: number | string;
 }
 
-/* Primitiva NumberInput (C4). step=0.5 para jornadas, inputmode="decimal", aria-label. */
+/* Primitiva NumberInput (C4). `type="number"` nativo delega el manejo de "," vs "." al
+   navegador/SO del usuario -- fuente real de la inconsistencia reportada (2026-09-30: "trolea"
+   según el separador, a veces vacía el campo). Se reemplaza por un `text` controlado que
+   normaliza con `normalizarNumeroTexto` (agnóstico al separador) al perder foco, igual que
+   `MoneyInput` solo reformatea al perder foco -- mientras se escribe se respeta el texto crudo. */
 export function NumberInput({
   value,
   onChange,
   label,
   error,
-  step = 1,
-  min = 0,
   className = "",
   ...props
 }: NumberInputProps) {
   const id = useId();
   const { local, onChangeLocal, onBlurLocal } = useDebouncedInput(value, onChange);
+
   const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    onChangeLocal(e.target.value);
+    onChangeLocal(e.target.value.replace(/[^\d.,]/g, ""));
+  };
+
+  const handleBlur = () => {
+    onChangeLocal(normalizarNumeroTexto(local));
+    onBlurLocal();
   };
 
   return (
@@ -38,13 +45,11 @@ export function NumberInput({
       )}
       <input
         id={id}
-        type="number"
+        type="text"
         inputMode="decimal"
-        step={step}
-        min={min}
         value={local}
         onChange={handleChange}
-        onBlur={onBlurLocal}
+        onBlur={handleBlur}
         className={`w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 text-base text-text-primary outline-none ${
           error
             ? "border-error-stroke focus:border-error-stroke"

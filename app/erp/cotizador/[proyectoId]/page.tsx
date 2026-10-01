@@ -14,7 +14,7 @@ import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { FilePicker } from '@/components/veta/file-picker'
 import { ItemMiniatura } from '@/components/veta/item-miniatura'
 import { ItemEditorModal } from '@/components/veta/item-editor-modal'
-import { AcabadoPicker, type AcabadoItem } from '@/components/veta/acabado-picker'
+import { AcabadoPicker, type AcabadoSeleccionado } from '@/components/veta/acabado-picker'
 import { Modal } from '@/components/veta/modal'
 import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-espacios'
 import { ContratoModal } from '../ContratoModal'
@@ -27,6 +27,7 @@ import { eliminarProyectoAction, crearNotaReunionAction } from '@/lib/data/actio
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { useToast } from '@/components/veta/toast-provider'
 import { useDebouncedInput } from '@/lib/hooks/useDebouncedInput'
 import { useEstadoPublicacionPropuesta } from '@/lib/data/queries/useCotizadorQueries'
 import { VersionesPropuestaModal } from '@/components/veta/versiones-propuesta-modal'
@@ -198,6 +199,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const [nuevoEspacioNombre, setNuevoEspacioNombre] = useState('')
   const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
   const { guard: guardCrearEspacio, isPending: creandoEspacio } = usePendingGuard()
+  const { mostrarError } = useToast()
 
   const aplicarPreset = useCallback(async (preset: PresetEspacio) => {
     setMostrarPlantillasModal(false)
@@ -232,12 +234,16 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
     })
   }, [guardCrearEspacio, store.espacios, store.items, proyectoId, espaciosBase.length])
 
-  const crearEspacio = useCallback(async () => {
+  const crearEspacio = useCallback(() => {
     const nombreFinal = nuevoEspacioNombre.trim()
     if (!nombreFinal) return
-    const nuevoEspacio = await store.espacios.crear({
+    // t-175: ya no se espera el roundtrip del servidor para limpiar el formulario -- la
+    // mutación es optimista (el espacio ya aparece en la lista antes de que el servidor
+    // responda). Si falla después, el ToastProvider avisa; antes el formulario se quedaba
+    // bloqueado el tiempo completo del roundtrip aunque el espacio ya se viera en pantalla.
+    store.espacios.crear({
       proyectoId,
-      nombreEspacio: nombreFinal || `Espacio ${gruposPorNombre.size + 1}`,
+      nombreEspacio: nombreFinal,
       nombreVariante: 'Inicial',
       tipoEspacio: nuevoEspacioTipo || null,
       descripcion: '',
@@ -246,11 +252,13 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       jornadasDesarrolloTecnico: '0',
       jornadasEnsamblajeTaller: '0',
       jornadasInstalacionObra: '0',
+    }).catch((err) => {
+      mostrarError(err instanceof Error ? err.message : 'No se pudo crear el espacio. Revisa tu conexión e intenta de nuevo.')
     })
-    setGruposExpandidos(prev => new Set(prev).add(nuevoEspacio.nombreEspacio))
+    setGruposExpandidos(prev => new Set(prev).add(nombreFinal))
     setNuevoEspacioNombre('')
     setNuevoEspacioTipo('')
-  }, [nuevoEspacioNombre, nuevoEspacioTipo, proyectoId, gruposPorNombre.size, espaciosBase.length, store])
+  }, [nuevoEspacioNombre, nuevoEspacioTipo, proyectoId, espaciosBase.length, store, mostrarError])
 
   const toggleGrupo = useCallback((nombreEspacio: string) => {
     setGruposExpandidos((prev) => {
@@ -474,7 +482,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && nuevoEspacioNombre.trim()) {
                   e.preventDefault()
-                  void guardCrearEspacio(crearEspacio)
+                  crearEspacio()
                 }
               }}
               placeholder="Añadir espacio..."
@@ -497,9 +505,8 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
               variant="secondary"
               size="md"
               className="h-10 text-sm w-full sm:w-auto"
-              onClick={() => void guardCrearEspacio(crearEspacio)}
+              onClick={crearEspacio}
               disabled={creandoEspacio}
-              loading={creandoEspacio}
               aria-label="Crear nuevo espacio"
             >
               + Crear
