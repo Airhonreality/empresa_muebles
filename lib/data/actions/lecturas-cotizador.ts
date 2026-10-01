@@ -20,7 +20,7 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
     return {
       proyecto: null, clientes: [], parametros: [], espacios: [], items: [],
       artefactos: [], catalogo: [], catalogoAcabados: [], contrato: null, hitos: [],
-      gruposItem: [],
+      gruposItem: [], espacioVarianteAcabados: [],
     }
   }
 
@@ -36,7 +36,7 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
 
   // Escope de los hijos por los ids de este proyecto — nunca un select global.
   const espacioIds = espacios.map((e) => e.id)
-  const [items, artefactos, hitos, gruposItem] = await Promise.all([
+  const [items, artefactos, hitos, gruposItem, espacioVarianteAcabados] = await Promise.all([
     espacioIds.length
       ? db.select().from(s.itemsVariante).where(inArray(s.itemsVariante.varianteId, espacioIds)).orderBy(s.itemsVariante.createdAt)
       : [],
@@ -47,6 +47,10 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
     // t-157 (2026-09-10): grupos de ítems de cotización, escopados a los espacios de este proyecto.
     espacioIds.length
       ? db.select().from(s.gruposItem).where(inArray(s.gruposItem.espacioVarianteId, espacioIds))
+      : [],
+    // t-172 (2026-09-30): acabados asociados a cada espacio, escopados a los espacios de este proyecto.
+    espacioIds.length
+      ? db.select().from(s.espacioVarianteAcabados).where(inArray(s.espacioVarianteAcabados.espacioVarianteId, espacioIds))
       : [],
   ])
 
@@ -62,5 +66,6 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
     contrato: contrato as unknown as CotizadorSnapshot['contrato'],
     hitos: hitos as unknown as CotizadorSnapshot['hitos'],
     gruposItem: gruposItem as unknown as CotizadorSnapshot['gruposItem'],
+    espacioVarianteAcabados: espacioVarianteAcabados as unknown as CotizadorSnapshot['espacioVarianteAcabados'],
   }
 }

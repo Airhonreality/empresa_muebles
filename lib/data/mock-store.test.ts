@@ -236,6 +236,77 @@ await test('espacios: actualizarJornadas -> se refleja en la lectura', async () 
   assert.equal(leido.jornadasInstalacionObra, '1')
 })
 
+await test('catalogoAcabados: crear con marca -> listar lo incluye con la marca', async () => {
+  const store = createMockStore()
+  const antes = store.catalogoAcabados.listar().length
+  const nuevo = await store.catalogoAcabados.crear({ nombre: 'Blanco ártico', marca: 'Pelikano' })
+  assert.equal(store.catalogoAcabados.listar().length, antes + 1)
+  assert.equal(nuevo.marca, 'Pelikano')
+})
+
+await test('catalogoAcabados: actualizar -> refleja los cambios en listar', async () => {
+  const store = createMockStore()
+  const nuevo = await store.catalogoAcabados.crear({ nombre: 'Gris cemento' })
+  const actualizado = await store.catalogoAcabados.actualizar(nuevo.id, { marca: 'Egger', colorHex: '#9A9A9A' })
+  assert.equal(actualizado?.marca, 'Egger')
+  const leido = store.catalogoAcabados.listar().find(a => a.id === nuevo.id)
+  assert.equal(leido?.colorHex, '#9A9A9A')
+})
+
+await test('catalogoAcabados: eliminar -> borra si no está en uso, bloquea si está referenciado', async () => {
+  const store = createMockStore()
+  const libre = await store.catalogoAcabados.crear({ nombre: 'Sin usar' })
+  assert.equal(await store.catalogoAcabados.eliminar(libre.id), true)
+  assert.ok(!store.catalogoAcabados.listar().some(a => a.id === libre.id))
+
+  const p = await store.proyectos.crear({ nombreProyecto: 'X' })
+  const esp = await store.espacios.crear({ proyectoId: p.id, nombreEspacio: 'Cocina' })
+  const enUso = await store.catalogoAcabados.crear({ nombre: 'En uso' })
+  await store.espacioVarianteAcabados.reemplazarTodos(esp.id, [{ acabadoId: enUso.id, descripcionUso: 'Mesón' }])
+  assert.equal(await store.catalogoAcabados.eliminar(enUso.id), false)
+  assert.ok(store.catalogoAcabados.listar().some(a => a.id === enUso.id), 'no debe borrarse si está en uso')
+})
+
+await test('t-173: espacioVarianteAcabados.reemplazarTodos -> crea 2 acabados con descripcionUso distinta, porEspacio los devuelve en orden', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'X' })
+  const esp = await store.espacios.crear({ proyectoId: p.id, nombreEspacio: 'Cocina' })
+  const [acabadoA, acabadoB] = store.catalogoAcabados.listar()
+  assert.ok(acabadoA && acabadoB, 'fixtures deben traer al menos 2 acabados')
+
+  const resultado = await store.espacioVarianteAcabados.reemplazarTodos(esp.id, [
+    { acabadoId: acabadoA.id, descripcionUso: 'Fachadas módulo superior' },
+    { acabadoId: acabadoB.id, descripcionUso: 'Mesón de isla' },
+  ])
+  assert.equal(resultado.length, 2)
+
+  const leidos = store.espacioVarianteAcabados.porEspacio(esp.id)
+  assert.equal(leidos.length, 2)
+  assert.equal(leidos[0].descripcionUso, 'Fachadas módulo superior')
+  assert.equal(leidos[0].acabadoId, acabadoA.id)
+  assert.equal(leidos[1].descripcionUso, 'Mesón de isla')
+  assert.equal(leidos[1].acabadoId, acabadoB.id)
+})
+
+await test('t-173: espacioVarianteAcabados.reemplazarTodos -> una segunda llamada reemplaza por completo (no acumula)', async () => {
+  const store = createMockStore()
+  const p = await store.proyectos.crear({ nombreProyecto: 'X' })
+  const esp = await store.espacios.crear({ proyectoId: p.id, nombreEspacio: 'Cocina' })
+  const [acabadoA, acabadoB] = store.catalogoAcabados.listar()
+
+  await store.espacioVarianteAcabados.reemplazarTodos(esp.id, [
+    { acabadoId: acabadoA.id, descripcionUso: 'Fachadas' },
+    { acabadoId: acabadoB.id, descripcionUso: 'Mesón' },
+  ])
+  await store.espacioVarianteAcabados.reemplazarTodos(esp.id, [
+    { acabadoId: acabadoA.id, descripcionUso: 'Solo fachadas ahora' },
+  ])
+
+  const leidos = store.espacioVarianteAcabados.porEspacio(esp.id)
+  assert.equal(leidos.length, 1)
+  assert.equal(leidos[0].descripcionUso, 'Solo fachadas ahora')
+})
+
 await test('items: crear/actualizar/eliminar -> round-trip completo', async () => {
   const store = createMockStore()
   const p = await store.proyectos.crear({ nombreProyecto: 'X' })

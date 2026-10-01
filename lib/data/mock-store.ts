@@ -9,7 +9,7 @@ import type {
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
-  NotaReunion, PropuestaVersion, GrupoItem, DatosContratoNuevo, DatosContratoEdicion,
+  NotaReunion, PropuestaVersion, GrupoItem, DatosContratoNuevo, DatosContratoEdicion, EspacioVarianteAcabado,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
@@ -124,6 +124,10 @@ export function createMockStore(): DataStore {
   // Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo →
   // Ítems. Arranca vacío: sin fixtures, la agrupación es opcional y nueva.
   const gruposItemArr: GrupoItem[] = []
+
+  // Acabados asociados a un espacio de cotización (t-172, 2026-09-30) — reemplaza a
+  // EspacioVariante.colores (jsonb) como fuente de verdad. Arranca vacío: sin fixtures.
+  const espacioVarianteAcabadosArr: EspacioVarianteAcabado[] = []
 
   // F4 dominios (compras: recepción, herramientas — P-13/P-14/P-15)
   const itemsOrdenCompra: ItemOrdenCompra[] = deepClone(ITEMS_ORDEN_COMPRA)
@@ -2377,10 +2381,56 @@ export function createMockStore(): DataStore {
           textura: data.textura ?? null,
           precioDiferencial: data.precioDiferencial ?? null,
           imagenTexturaUrl: data.imagenTexturaUrl ?? null,
+          marca: data.marca ?? null,
         }
         catalogoAcabados.push(nuevo)
         notify()
         return nuevo
+      },
+      async actualizar(id: string, partial: Partial<Omit<CatalogoAcabado, 'id'>>): Promise<CatalogoAcabado | null> {
+        const idx = catalogoAcabados.findIndex(a => a.id === id)
+        if (idx === -1) return null
+        catalogoAcabados[idx] = { ...catalogoAcabados[idx], ...partial }
+        notify()
+        return catalogoAcabados[idx]
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const enUso = catalogoProductoAcabados.some(c => c.acabadoId === id)
+          || acabadosMuestras.some(m => m.acabadoId === id)
+          || espacioVarianteAcabadosArr.some(a => a.acabadoId === id)
+        if (enUso) return false
+        const idx = catalogoAcabados.findIndex(a => a.id === id)
+        if (idx === -1) return false
+        catalogoAcabados.splice(idx, 1)
+        notify()
+        return true
+      },
+    },
+
+    // Acabados asociados a un espacio de cotización (t-172, 2026-09-30) — puente INSTANCIA con
+    // texto libre de destino, tabla NUEVA y SEPARADA de `modulos` (producción).
+    espacioVarianteAcabados: {
+      porEspacio(espacioVarianteId: string): EspacioVarianteAcabado[] {
+        return espacioVarianteAcabadosArr
+          .filter(a => a.espacioVarianteId === espacioVarianteId)
+          .slice()
+          .sort((a, b) => a.orden - b.orden)
+      },
+      async reemplazarTodos(espacioVarianteId: string, items: { acabadoId: string; descripcionUso: string }[]): Promise<EspacioVarianteAcabado[]> {
+        for (let i = espacioVarianteAcabadosArr.length - 1; i >= 0; i--) {
+          if (espacioVarianteAcabadosArr[i].espacioVarianteId === espacioVarianteId) espacioVarianteAcabadosArr.splice(i, 1)
+        }
+        const nuevos: EspacioVarianteAcabado[] = items.map((item, orden) => ({
+          id: generateId('eva'),
+          espacioVarianteId,
+          acabadoId: item.acabadoId,
+          descripcionUso: item.descripcionUso,
+          orden,
+          createdAt: new Date().toISOString(),
+        }))
+        espacioVarianteAcabadosArr.push(...nuevos)
+        notify()
+        return nuevos
       },
     },
 

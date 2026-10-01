@@ -405,8 +405,8 @@ export const PRODUCTOS_TIENDA_COMPONENTES: ProductoTiendaComponente[] = [
 ]
 
 export const CATALOGO_ACABADOS: CatalogoAcabado[] = [
-  { id: UUID('aca01'), nombre: 'Nogal natural', familia: 'maderas', color: 'marrón oscuro', colorHex: '#5C4033', textura: 'veta recta', precioDiferencial: '0', imagenTexturaUrl: 'https://r2.mock/acabados/nogal-natural.jpg' },
-  { id: UUID('aca02'), nombre: 'Roble blanqueado', familia: 'maderas', color: 'beige claro', colorHex: '#E8DFCA', textura: 'veta abierta', precioDiferencial: '25000', imagenTexturaUrl: 'https://r2.mock/acabados/roble-blanqueado.jpg' },
+  { id: UUID('aca01'), nombre: 'Nogal natural', familia: 'maderas', color: 'marrón oscuro', colorHex: '#5C4033', textura: 'veta recta', precioDiferencial: '0', imagenTexturaUrl: 'https://r2.mock/acabados/nogal-natural.jpg', marca: 'Egger' },
+  { id: UUID('aca02'), nombre: 'Roble blanqueado', familia: 'maderas', color: 'beige claro', colorHex: '#E8DFCA', textura: 'veta abierta', precioDiferencial: '25000', imagenTexturaUrl: 'https://r2.mock/acabados/roble-blanqueado.jpg', marca: 'Formica' },
 ]
 
 export const CATALOGO_PRODUCTO_ACABADOS: CatalogoProductoAcabado[] = [

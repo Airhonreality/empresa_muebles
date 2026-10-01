@@ -909,6 +909,23 @@ export interface CatalogoAcabado {
   textura: string | null
   precioDiferencial: string | null
   imagenTexturaUrl: string | null
+  /** t-172 (2026-09-30): marca comercial (ej. "Pelikano", "Formica", "Egger"), separada del nombre del color. */
+  marca: string | null
+}
+
+/**
+ * t-172 (2026-09-30): puente INSTANCIA — qué acabados concretos tiene un espacio cotizado,
+ * cada uno con su propio texto libre de destino ("fachadas módulo X", "mesón de isla").
+ * Reemplaza a `EspacioVariante.colores` (jsonb) como fuente de verdad. Mismo patrón que
+ * `GrupoItem` (t-157): tabla NUEVA y SEPARADA, sin relación con `Modulo` (producción).
+ */
+export interface EspacioVarianteAcabado {
+  id: string
+  espacioVarianteId: string
+  acabadoId: string
+  descripcionUso: string
+  orden: number
+  createdAt: string
 }
 
 /** Puente CLASE (REGISTRO §2): qué acabados aplican a un producto de catálogo. */
@@ -1470,6 +1487,19 @@ export interface DataStore {
   catalogoAcabados: {
     listar(): CatalogoAcabado[]
     crear(data: Partial<CatalogoAcabado> & { nombre: string }): Promise<CatalogoAcabado>
+    /** t-172/t-173: edición desde la pantalla de administración de acabados. */
+    actualizar(id: string, partial: Partial<Omit<CatalogoAcabado, 'id'>>): Promise<CatalogoAcabado | null>
+    /** t-174: borrado desde la pantalla de administración. Falla (false) si el acabado está
+     *  referenciado por catalogo_producto_acabados/acabados_muestras/espacio_variante_acabados —
+     *  las FK no tienen ON DELETE CASCADE a propósito, para no desaparecer un acabado en uso. */
+    eliminar(id: string): Promise<boolean>
+  }
+  // --- Acabados asociados a un espacio de cotización (t-172, 2026-09-30) ---
+  espacioVarianteAcabados: {
+    porEspacio(espacioVarianteId: string): EspacioVarianteAcabado[]
+    /** Reemplazo completo (mismo patrón que el plan de pagos de contratos, t-166): se borra
+     *  la asociación anterior del espacio y se reinserta la nueva con `orden` reasignado. */
+    reemplazarTodos(espacioVarianteId: string, items: { acabadoId: string; descripcionUso: string }[]): Promise<EspacioVarianteAcabado[]>
   }
   catalogoProductoAcabados: {
     porProducto(productoCatalogoId: string): CatalogoProductoAcabado[]

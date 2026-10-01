@@ -1507,6 +1507,34 @@ export const catalogoAcabados = pgTable("catalogo_acabados", {
 	textura: text(),
 	precioDiferencial: numeric("precio_diferencial", { precision: 14, scale: 2 }),
 	imagenTexturaUrl: text("imagen_textura_url"),
+	// t-172 (2026-09-30): marca comercial del acabado (ej. "Pelikano", "Formica", "Egger"),
+	// separada del nombre del color — necesaria para poder subir texturas de varias marcas
+	// de melamina/mesones y distinguirlas. Nullable: acabados existentes no tienen marca.
+	marca: text(),
+});
+
+// t-172 (2026-09-30): puente INSTANCIA (REGISTRO_DE_ENTIDADES.md §2, análogo al
+// `modulos_acabados` planeado-no-implementado de producción, pero para COTIZACIÓN) — qué
+// acabados concretos tiene un espacio cotizado, cada uno con su propio texto libre de destino
+// ("fachadas módulo X", "mesón de isla"). Reemplaza a `espacio_variantes.colores` (jsonb) como
+// fuente de verdad. Mismo patrón recursivo/puente que `grupos_item` (t-157): tabla NUEVA y
+// SEPARADA, sin ninguna relación con `modulos` (producción, post-contrato).
+export const espacioVarianteAcabados = pgTable("espacio_variante_acabados", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	espacioVarianteId: uuid("espacio_variante_id").notNull(),
+	acabadoId: uuid("acabado_id").notNull(),
+	descripcionUso: text("descripcion_uso").notNull(),
+	orden: integer().default(0).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		espacioVarianteAcabadosEspacioVarianteIdFk: foreignKey({
+			columns: [table.espacioVarianteId], foreignColumns: [espacioVariantes.id], name: "espacio_variante_acabados_espacio_variante_id_espacio_variantes_id_fk"
+		}),
+		espacioVarianteAcabadosAcabadoIdFk: foreignKey({
+			columns: [table.acabadoId], foreignColumns: [catalogoAcabados.id], name: "espacio_variante_acabados_acabado_id_catalogo_acabados_id_fk"
+		}),
+	}
 });
 
 export const catalogoProductoAcabados = pgTable("catalogo_producto_acabados", {

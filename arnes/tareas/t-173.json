@@ -1,0 +1,48 @@
+{
+  "id": "t-173",
+  "titulo": "Catálogo de acabados: campo marca + tabla relacional espacio_variante_acabados (reemplazo del jsonb colores)",
+  "intencion_negocio": "Javier (2026-09-30) quiere empezar a subir texturas de distintas marcas de melamina/mesones como un catálogo tipado (nombre + imagen), y poder asociar VARIOS acabados a un mismo espacio cotizado, cada asociación con un texto libre de destino (ej. 'fachadas de módulo X', 'mesón de isla'). Es la base de datos de las tareas t-174 (admin) y t-175 (cotizador).",
+  "diagnostico": "Ya existe `catalogo_acabados` (nombre, familia, color, colorHex, textura, imagenTexturaUrl, lib/db/schema.ts:1501) y un puente CLASE `catalogo_producto_acabados` (producto↔acabado, es_default boolean). Pero NO existe ninguna tabla puente con texto libre por asociación: hoy `espacio_variantes.colores` es un jsonb plano (array de AcabadoItem, snapshot sin fila relacional, sin texto de destino) que ya consume `components/veta/acabado-picker.tsx`. `REGISTRO_DE_ENTIDADES.md` prevé un concepto análogo (`modulos_acabados`) pero es para producción (post-contrato) y nunca se implementó — no reutilizable aquí sin romper la separación cotización/producción que el equipo ya decidió a propósito (mismo patrón que grupos_item vs modulos, t-157).",
+  "decisiones_supervisor": {
+    "nivel_de_asociacion": "Al espacio completo (espacio_variantes), no al ítem ni al grupo_item. Decisión explícita de Javier 2026-09-30.",
+    "jsonb_colores": "Se reemplaza por completo por la tabla relacional nueva — no conviven como legacy permanente.",
+    "campo_marca": "catalogo_acabados gana columna marca (text, nullable) explícita, separada del nombre del color.",
+    "fecha": "2026-09-30"
+  },
+  "zona": "datos (lib/db/schema.ts, drizzle/v3/, lib/data/contracts.ts + mock-store.ts + drizzle-impl.ts + fixtures.ts, lib/data/actions/)",
+  "tipo": "datos_schema_contrato",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-173.md",
+  "criterios_aceptacion": [
+    "catalogoAcabados incluye columna marca (text, nullable)",
+    "tabla espacio_variante_acabados existe con FK a espacio_variantes, FK a catalogo_acabados, columna descripcion_uso (text, not null), orden (integer)",
+    "las 3 implementaciones del store (contracts.ts, mock-store.ts, drizzle-impl.ts) exponen CRUD de catalogoAcabados.actualizar y de espacioVarianteAcabados (listarPorEspacio + reemplazarTodos)",
+    "test node:assert nuevo cubre: crear 2 acabados asociados al mismo espacio con descripcion_uso distinta, listar devuelve ambos en el orden esperado",
+    "migración manual aplicada y verificada contra la base de producción real (SELECT de conteos antes/después, 0 errores) ANTES de desplegar código que dependa de las columnas/tabla nuevas",
+    "npx tsc --noEmit limpio, npx eslint . sin errores nuevos"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0, sin salida",
+    "eslint (archivos tocados)": "0 errors, 0 warnings nuevos",
+    "DATABASE_URL='postgres://test:test@localhost:5432/no_connect_placeholder' npx tsx <nuevo-test>.test.ts": "verde",
+    "migración": "select current_database(), count(*) from catalogo_acabados, count(*) from espacio_variante_acabados — confirmar contra la base que lee Vercel, nunca contra .env.local (apunta a una base vacía a propósito)"
+  },
+  "executor": "Claude Code (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (decisiones de diseño resueltas en vivo por Javier, 2026-09-30) — PERO falta el checkpoint operativo de secuencia de migración: aplicar a producción ANTES del deploy del código, con verificación SELECT, siguiendo la lección dura de los incidentes de columna/tabla faltante ya documentados en arnes/estado.md (2026-09-10, 2026-09-29).",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "nota_ejecucion": "Código completo: schema + migración manual drizzle/v3/0027_catalogo_acabados_marca_espacio_variante_acabados.sql + las 3 implementaciones del store (contracts.ts/mock-store.ts/drizzle-impl.ts) + acciones (core.ts: reemplazarAcabadosEspacioAction; f7-tienda.ts: actualizarCatalogoAcabadoAction/eliminarCatalogoAcabadoAction) + wiring completo del snapshot TanStack del cotizador (hydrate.ts, snapshot.ts, lecturas-cotizador.ts, types.ts, useCotizadorQueries.ts, cotizador-compat.tsx, CotizadorSnapBridge.tsx) + 5 tests nuevos en mock-store.test.ts (crear/actualizar/eliminar catalogoAcabados, reemplazarTodos con 2 acabados, reemplazo no acumula). `npx tsc --noEmit` limpio, `npx eslint .` sin errores/warnings nuevos (3 warnings preexistentes verificados idénticos).",
+  "migracion_aplicada": {
+    "fecha": "2026-09-30",
+    "metodo": "SQL directo de drizzle/v3/0027_*.sql ejecutado a mano contra DATABASE_URL_V3_PREVIEW (producción real, neondb en ep-muddy-cherry-at5j2mz7) — NO vía `npx drizzle-kit migrate`: su tabla de tracking (drizzle.__drizzle_migrations) solo tiene hasta el id 18; las migraciones 0019-0026 se aplicaron a mano en incidentes previos sin pasar por drizzle-kit, y varias de ellas (0019/0020/0025/0026) usan ADD COLUMN SIN IF NOT EXISTS — un `migrate` ciego habría reventado contra columnas ya existentes antes de llegar a 0027. El 0027 es 100% idempotente (IF NOT EXISTS en todo), por lo que aplicarlo directo es seguro y re-corrible.",
+    "verificado": "ANTES: catalogo_acabados sin columna marca, tabla espacio_variante_acabados inexistente. DESPUÉS: columna marca presente, tabla creada (0 filas), FKs creadas (Postgres truncó el nombre de una constraint a 63 bytes por límite de identificador — cosmético, no afecta el funcionamiento). Autorizado por Javier en vivo (pegó DATABASE_URL_V3_PREVIEW en .env.local y pidió 'hazlo tú')."
+  },
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null,
+  "relacionado": ["t-174", "t-175"]
+}

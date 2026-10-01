@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from 'react'
 import type { CatalogoAcabado } from '@/lib/data'
+import { ImagePicker } from '@/components/veta/image-picker'
 
 export interface AcabadoItem {
-  id?: string
+  id: string
   nombre: string
   familia?: string | null
   colorHex?: string | null
@@ -12,12 +13,28 @@ export interface AcabadoItem {
   textura?: string | null
 }
 
+/** t-175 (2026-09-30): un acabado del espacio, con su propio texto libre de destino
+ *  ("fachadas módulo X", "mesón de isla"). Reemplaza al array plano `(AcabadoItem|string)[]`
+ *  que antes se guardaba directo en `espacio_variantes.colores` (jsonb) — ahora persiste contra
+ *  la tabla relacional `espacio_variante_acabados` (t-173). */
+export interface AcabadoSeleccionado {
+  acabado: AcabadoItem
+  descripcionUso: string
+}
+
 interface AcabadoPickerProps {
   label?: string
   acabadosDisponibles: CatalogoAcabado[]
-  value: (AcabadoItem | string)[]
-  onChange: (acabados: AcabadoItem[]) => void
+  value: AcabadoSeleccionado[]
+  onChange: (value: AcabadoSeleccionado[]) => void
+  /** t-175: alta rápida de un acabado nuevo sin salir de la pantalla ("+ Nuevo acabado").
+   *  Si se omite, el botón de alta no aparece (picker de solo-selección). */
+  onCrearAcabado?: (data: { nombre: string; marca?: string | null; imagenTexturaUrl?: string | null }) => Promise<CatalogoAcabado>
   className?: string
+}
+
+function aItem(a: CatalogoAcabado): AcabadoItem {
+  return { id: a.id, nombre: a.nombre, familia: a.familia, colorHex: a.colorHex, imagenTexturaUrl: a.imagenTexturaUrl, textura: a.textura }
 }
 
 export function AcabadoPicker({
@@ -25,47 +42,25 @@ export function AcabadoPicker({
   acabadosDisponibles,
   value,
   onChange,
+  onCrearAcabado,
   className = '',
 }: AcabadoPickerProps) {
   const [abierto, setAbierto] = useState(false)
   const [filtroTexto, setFiltroTexto] = useState('')
   const [familiaSeleccionada, setFamiliaSeleccionada] = useState<string>('todas')
-  const [customTexto, setCustomTexto] = useState('')
+  const [creando, setCreando] = useState(false)
+  const [nombreNuevo, setNombreNuevo] = useState('')
+  const [marcaNueva, setMarcaNueva] = useState('')
+  const [imagenNueva, setImagenNueva] = useState<string | null>(null)
+  const [guardandoNuevo, setGuardandoNuevo] = useState(false)
+  const [errorNuevo, setErrorNuevo] = useState<string | null>(null)
 
-  // Normalizar valor a AcabadoItem[]
-  const seleccionados = useMemo<AcabadoItem[]>(() => {
-    return (value ?? []).map((v) => {
-      if (typeof v === 'string') {
-        // Buscar si coincide con alguno del catálogo
-        const encontrado = acabadosDisponibles.find(
-          (a) => a.nombre.toLowerCase() === v.toLowerCase()
-        )
-        if (encontrado) {
-          return {
-            id: encontrado.id,
-            nombre: encontrado.nombre,
-            familia: encontrado.familia,
-            colorHex: encontrado.colorHex,
-            imagenTexturaUrl: encontrado.imagenTexturaUrl,
-            textura: encontrado.textura,
-          }
-        }
-        return { nombre: v }
-      }
-      return v
-    })
-  }, [value, acabadosDisponibles])
-
-  // Familias únicas para filtro
   const familias = useMemo(() => {
-    const setFams = new Set<string>()
-    acabadosDisponibles.forEach((a) => {
-      if (a.familia) setFams.add(a.familia)
-    })
-    return Array.from(setFams)
+    const set = new Set<string>()
+    acabadosDisponibles.forEach((a) => { if (a.familia) set.add(a.familia) })
+    return Array.from(set)
   }, [acabadosDisponibles])
 
-  // Acabados filtrados
   const acabadosFiltrados = useMemo(() => {
     return acabadosDisponibles.filter((a) => {
       const coincideFam = familiaSeleccionada === 'todas' || a.familia === familiaSeleccionada
@@ -77,96 +72,103 @@ export function AcabadoPicker({
     })
   }, [acabadosDisponibles, familiaSeleccionada, filtroTexto])
 
+  const estaSeleccionado = (id: string) => value.some((v) => v.acabado.id === id)
+
   const toggleAcabado = (acabado: CatalogoAcabado) => {
-    const yaExiste = seleccionados.some(
-      (s) => s.id === acabado.id || s.nombre.toLowerCase() === acabado.nombre.toLowerCase()
-    )
-    if (yaExiste) {
-      onChange(
-        seleccionados.filter(
-          (s) => s.id !== acabado.id && s.nombre.toLowerCase() !== acabado.nombre.toLowerCase()
-        )
-      )
+    if (estaSeleccionado(acabado.id)) {
+      onChange(value.filter((v) => v.acabado.id !== acabado.id))
     } else {
-      onChange([
-        ...seleccionados,
-        {
-          id: acabado.id,
-          nombre: acabado.nombre,
-          familia: acabado.familia,
-          colorHex: acabado.colorHex,
-          imagenTexturaUrl: acabado.imagenTexturaUrl,
-          textura: acabado.textura,
-        },
-      ])
+      onChange([...value, { acabado: aItem(acabado), descripcionUso: '' }])
     }
   }
 
-  const quitar = (nombre: string) => {
-    onChange(seleccionados.filter((s) => s.nombre !== nombre))
-  }
+  const quitar = (id: string) => onChange(value.filter((v) => v.acabado.id !== id))
 
-  const agregarCustom = () => {
-    const limpio = customTexto.trim()
-    if (!limpio) return
-    if (seleccionados.some((s) => s.nombre.toLowerCase() === limpio.toLowerCase())) return
-    onChange([...seleccionados, { nombre: limpio }])
-    setCustomTexto('')
+  const actualizarDestino = (id: string, descripcionUso: string) =>
+    onChange(value.map((v) => (v.acabado.id === id ? { ...v, descripcionUso } : v)))
+
+  const handleCrearNuevo = async () => {
+    const nombre = nombreNuevo.trim()
+    if (!nombre || !onCrearAcabado) return
+    setGuardandoNuevo(true)
+    setErrorNuevo(null)
+    try {
+      const creado = await onCrearAcabado({
+        nombre,
+        marca: marcaNueva.trim() || null,
+        imagenTexturaUrl: imagenNueva,
+      })
+      onChange([...value, { acabado: aItem(creado), descripcionUso: '' }])
+      setNombreNuevo('')
+      setMarcaNueva('')
+      setImagenNueva(null)
+      setCreando(false)
+    } catch (e) {
+      setErrorNuevo(e instanceof Error ? e.message : 'No se pudo crear el acabado.')
+    } finally {
+      setGuardandoNuevo(false)
+    }
   }
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       <span className="text-[11px] font-medium text-text-muted">{label}</span>
 
-      {/* Chips seleccionados */}
-      <div className="flex flex-wrap items-center gap-1.5 min-h-[34px] rounded border border-border-subtle bg-bg-paper p-1.5">
-        {seleccionados.map((item) => (
-          <span
-            key={item.nombre}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-bg-raised px-2.5 py-0.5 text-xs text-text-heading shadow-2xs"
-          >
-            {item.imagenTexturaUrl ? (
-              <span
-                className="h-3.5 w-3.5 rounded-full border border-black/20 bg-cover bg-center shrink-0"
-                style={{ backgroundImage: `url(${item.imagenTexturaUrl})` }}
-                title={item.nombre}
-              />
-            ) : item.colorHex ? (
-              <span
-                className="h-3.5 w-3.5 rounded-full border border-black/20 shrink-0"
-                style={{ backgroundColor: item.colorHex }}
-                title={item.colorHex}
-              />
-            ) : (
-              <span className="h-3 w-3 rounded-full bg-stone-300 shrink-0" />
-            )}
-            <span className="font-medium text-[11px]">{item.nombre}</span>
-            {item.familia && (
-              <span className="text-[9px] text-text-muted uppercase tracking-wider">
-                ({item.familia})
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => quitar(item.nombre)}
-              className="ml-0.5 text-text-muted hover:text-red-500 font-bold text-xs leading-none"
-              aria-label={`Quitar ${item.nombre}`}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-
-        {seleccionados.length === 0 && (
+      {/* Seleccionados — uno por fila, cada uno con su texto libre de destino */}
+      <div className="flex flex-col gap-1.5 rounded border border-border-subtle bg-bg-paper p-1.5">
+        {value.length === 0 && (
           <span className="text-xs text-text-muted italic px-1">
             Ningún acabado seleccionado aún
           </span>
         )}
+        {value.map((sel) => (
+          <div
+            key={sel.acabado.id}
+            className="flex items-center gap-2 rounded border border-border-subtle bg-bg-raised px-2 py-1"
+          >
+            {sel.acabado.imagenTexturaUrl ? (
+              <span
+                className="h-5 w-5 shrink-0 rounded-full border border-black/20 bg-cover bg-center"
+                style={{ backgroundImage: `url(${sel.acabado.imagenTexturaUrl})` }}
+                title={sel.acabado.nombre}
+              />
+            ) : sel.acabado.colorHex ? (
+              <span
+                className="h-5 w-5 shrink-0 rounded-full border border-black/20"
+                style={{ backgroundColor: sel.acabado.colorHex }}
+                title={sel.acabado.colorHex}
+              />
+            ) : (
+              <span className="h-4 w-4 shrink-0 rounded-full bg-stone-300" />
+            )}
+            <span
+              className="shrink-0 max-w-[110px] truncate text-xs font-medium text-text-heading"
+              title={sel.acabado.nombre}
+            >
+              {sel.acabado.nombre}
+            </span>
+            <input
+              type="text"
+              value={sel.descripcionUso}
+              onChange={(e) => actualizarDestino(sel.acabado.id, e.target.value)}
+              placeholder="¿Para qué parte? Ej: fachadas módulo X, mesón de isla"
+              className="min-w-0 flex-1 rounded border border-border-subtle bg-bg-paper px-2 py-0.5 text-xs text-text-heading focus:border-brand focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => quitar(sel.acabado.id)}
+              className="shrink-0 text-text-muted hover:text-red-500 font-bold text-xs leading-none"
+              aria-label={`Quitar ${sel.acabado.nombre}`}
+            >
+              ×
+            </button>
+          </div>
+        ))}
 
         <button
           type="button"
           onClick={() => setAbierto(!abierto)}
-          className="ml-auto rounded px-2 py-0.5 text-xs font-semibold text-gold-600 hover:bg-gold-50 border border-gold-300 transition-colors"
+          className="self-start rounded px-2 py-0.5 text-xs font-semibold text-gold-600 hover:bg-gold-50 border border-gold-300 transition-colors"
         >
           {abierto ? '▲ Cerrar Catálogo' : '+ Elegir Acabados'}
         </button>
@@ -203,16 +205,14 @@ export function AcabadoPicker({
           {/* Grilla visual de muestras */}
           <div className="max-h-48 overflow-y-auto grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 p-1">
             {acabadosFiltrados.map((acabado) => {
-              const estaSeleccionado = seleccionados.some(
-                (s) => s.id === acabado.id || s.nombre.toLowerCase() === acabado.nombre.toLowerCase()
-              )
+              const seleccionado = estaSeleccionado(acabado.id)
               return (
                 <button
                   key={acabado.id}
                   type="button"
                   onClick={() => toggleAcabado(acabado)}
                   className={`flex items-center gap-2 rounded border p-1.5 text-left text-xs transition-all ${
-                    estaSeleccionado
+                    seleccionado
                       ? 'border-gold-500 bg-gold-50/50 ring-1 ring-gold-400'
                       : 'border-border-subtle bg-bg-paper hover:border-gold-300'
                   }`}
@@ -249,30 +249,68 @@ export function AcabadoPicker({
             )}
           </div>
 
-          {/* Entrada de color libre / personalizado */}
-          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle text-xs">
-            <span className="text-text-muted shrink-0 text-[11px]">Otro tono no catalogado:</span>
-            <input
-              type="text"
-              value={customTexto}
-              onChange={(e) => setCustomTexto(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  agregarCustom()
-                }
-              }}
-              placeholder="Ej: Poliuretano Gris Nube Mate"
-              className="flex-1 rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-brand focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={agregarCustom}
-              className="rounded border border-border-subtle px-2.5 py-1 font-medium text-text-muted hover:bg-bg-alt text-xs"
-            >
-              + Agregar
-            </button>
-          </div>
+          {/* Alta rápida de un acabado nuevo, sin salir del cotizador (t-175) */}
+          {onCrearAcabado && (
+            <div className="pt-2 border-t border-border-subtle">
+              {!creando ? (
+                <button
+                  type="button"
+                  onClick={() => setCreando(true)}
+                  className="text-xs font-semibold text-gold-600 hover:underline"
+                >
+                  + Nuevo acabado
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      type="text"
+                      value={nombreNuevo}
+                      onChange={(e) => setNombreNuevo(e.target.value)}
+                      placeholder="Nombre (ej: Blanco ártico)"
+                      className="flex-1 min-w-[140px] rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-brand focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={marcaNueva}
+                      onChange={(e) => setMarcaNueva(e.target.value)}
+                      placeholder="Marca (opcional)"
+                      className="flex-1 min-w-[140px] rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-brand focus:outline-none"
+                    />
+                  </div>
+                  <ImagePicker
+                    label="Imagen (opcional)"
+                    value={imagenNueva ? [imagenNueva] : []}
+                    onChange={(v) => setImagenNueva(v[0] ?? null)}
+                    multiple={false}
+                    r2Prefix="catalogo/acabados/"
+                  />
+                  {errorNuevo && (
+                    <p className="rounded border border-red-200 bg-red-50 p-1.5 text-xs text-red-600" role="alert">
+                      {errorNuevo}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={guardandoNuevo || !nombreNuevo.trim()}
+                      onClick={handleCrearNuevo}
+                      className="rounded bg-gold-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-gold-600 disabled:opacity-50 transition-colors"
+                    >
+                      {guardandoNuevo ? 'Creando...' : 'Crear y agregar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setCreando(false); setErrorNuevo(null) }}
+                      className="rounded border border-border-subtle px-2.5 py-1 text-xs text-text-muted hover:bg-bg-alt"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

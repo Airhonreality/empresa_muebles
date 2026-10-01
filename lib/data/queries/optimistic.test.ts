@@ -33,6 +33,7 @@ function baseSnapshot(overrides = {}): CotizadorSnapshot {
     contrato: null,
     hitos: [],
     gruposItem: [],
+    espacioVarianteAcabados: [],
     ...overrides,
   }
 }

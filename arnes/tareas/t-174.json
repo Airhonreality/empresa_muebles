@@ -1,0 +1,39 @@
+{
+  "id": "t-174",
+  "titulo": "Pantalla de administración de acabados: alta en lote (N imágenes → N fichas) + edición simple",
+  "intencion_negocio": "Javier (2026-09-30) necesita subir texturas de varias marcas de melamina/mesones. Pidió explícitamente un patrón de 'simplicidad y agilidad': no una pantalla compleja separada, sino poder soltar ~20 imágenes de una vez y completar nombre/marca/color por cada una, con el mismo espíritu de inputs funcionales ya usado en otras pantallas del ERP (ficha técnica de ítem, EntityFields).",
+  "diagnostico": "Hoy no existe ninguna UI de alta para catalogo_acabados — el único dato es 2 registros mock en lib/data/fixtures.ts:407-410. No existe en el repo ningún componente de carga masiva/tabla editable (grep sin resultados). Sí existen las piezas reusables: ImagePicker (components/veta/image-picker.tsx) ya soporta selección múltiple en paralelo con preview optimista, y EntityFields (lib/forms/) ya resuelve el render genérico de un grupo de inputs (patrón usado en item-editor-modal.tsx para ficha técnica).",
+  "decisiones_supervisor": {
+    "enfoque": "Lista vertical de filas editables (NO un grid tipo Excel genérico) — una fila por acabado, con miniatura + campos inline. Alta en lote: soltar/seleccionar N imágenes de una vez genera N filas nuevas prerellenadas con esa imagen, pendientes de completar nombre/marca/etc. antes de guardar. Cada fila se guarda independientemente (ninguna bloquea a las demás).",
+    "fecha": "2026-09-30"
+  },
+  "zona": "app/erp/catalogo/ (nueva sub-ruta) + components/veta/ (nuevo componente de fila editable)",
+  "tipo": "ui_visual_mas_crud_liviano",
+  "riesgo": "medio",
+  "plan_ref": "arnes/planes/plan_t-174.md",
+  "depende_de": ["t-173"],
+  "criterios_aceptacion": [
+    "en /erp/catalogo/acabados, soltar/seleccionar N imágenes genera N filas nuevas prerellenadas con esa imagen",
+    "cada fila tiene inputs de nombre, marca, familia, color, colorHex, textura, y se guarda de forma independiente (Promise por fila, no secuencial, mismo principio de t-171)",
+    "un acabado existente se puede editar y eliminar desde la misma lista",
+    "npx tsc --noEmit limpio, npx eslint . sin errores nuevos",
+    "link de navegación agregado a components/veta/erp-sidebar.tsx"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errors, 0 warnings nuevos"
+  },
+  "executor": "Claude Code (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-09-30, decisión de enfoque 'lista editable + alta en lote' confirmada en vivo por Javier)",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "nota_ejecucion": "Código completo: app/erp/catalogo/acabados/page.tsx (zona de drop múltiple + lista), components/veta/acabado-admin-row.tsx (fila editable con ImagePicker single + EntityFields + guardar/eliminar independiente por fila), lib/forms/acabado-form-spec.ts (spec de campos), link en erp-sidebar.tsx. `npx tsc --noEmit` y `npx eslint` limpios. PENDIENTE: QA manual de Javier en `npm run dev` (subir imágenes de prueba, completar y guardar, editar, eliminar).",
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null,
+  "relacionado": ["t-173", "t-175"]
+}

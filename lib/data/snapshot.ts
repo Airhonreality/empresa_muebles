@@ -10,7 +10,7 @@ import type {
   CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
-  ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto, GrupoItem,
+  ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto, GrupoItem, EspacioVarianteAcabado,
 } from './contracts'
 
 export interface StoreSnapshot {
@@ -75,6 +75,8 @@ export interface StoreSnapshot {
   documentosProyecto: DocumentoProyecto[]
   /** t-157 (2026-09-10): grupos de ítems de cotización (árbol Espacio → Grupo → Subgrupo → Ítems). */
   gruposItem: GrupoItem[]
+  /** t-172 (2026-09-30): acabados asociados a un espacio de cotización, con texto libre de destino. */
+  espacioVarianteAcabados: EspacioVarianteAcabado[]
 }
 
 export function emptySnapshot(): StoreSnapshot {
@@ -95,6 +97,6 @@ export function emptySnapshot(): StoreSnapshot {
     catalogoAcabados: [], catalogoProductoAcabados: [], acabadosMuestras: [],
     portafolio: [], rendersConceptuales: [], atributosTecnicos: [], catalogosEspaciosArquitectonicos: [], modulosArtefactos: [], bitacoraArticulos: [], testimonios: [],
     itemsOrdenCompra: [], recepcionesMaterial: [], herramientas: [], documentosProyecto: [],
-    gruposItem: [],
+    gruposItem: [], espacioVarianteAcabados: [],
   }
 }

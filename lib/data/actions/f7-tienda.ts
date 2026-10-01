@@ -105,8 +105,31 @@ export async function crearCatalogoAcabadoAction(data: Partial<CatalogoAcabado> 
   const [nuevo] = await db.insert(s.catalogoAcabados).values({
     nombre: data.nombre, familia: data.familia ?? null, color: data.color ?? null, colorHex: data.colorHex ?? null,
     textura: data.textura ?? null, precioDiferencial: data.precioDiferencial ?? null, imagenTexturaUrl: data.imagenTexturaUrl ? sanitizarUrlIndividual(data.imagenTexturaUrl) : null,
+    marca: data.marca ?? null,
   }).returning()
   return nuevo as unknown as CatalogoAcabado
+}
+
+// t-172/t-173 (2026-09-30): edición desde la pantalla de administración de acabados.
+export async function actualizarCatalogoAcabadoAction(id: string, partial: Partial<Omit<CatalogoAcabado, 'id'>>): Promise<CatalogoAcabado | null> {
+  const cambios = { ...partial }
+  if (cambios.imagenTexturaUrl) cambios.imagenTexturaUrl = sanitizarUrlIndividual(cambios.imagenTexturaUrl)
+  const [actualizado] = await db.update(s.catalogoAcabados).set(cambios).where(eq(s.catalogoAcabados.id, id)).returning()
+  return (actualizado as unknown as CatalogoAcabado) ?? null
+}
+
+/** t-174 (2026-09-30): borrado desde la pantalla de administración. Las FK hacia
+ *  catalogo_acabados NO tienen ON DELETE CASCADE a propósito — si el acabado está en uso
+ *  (catalogo_producto_acabados, acabados_muestras, espacio_variante_acabados), Postgres
+ *  rechaza el DELETE con 23503 y esta función devuelve false sin reventar. */
+export async function eliminarCatalogoAcabadoAction(id: string): Promise<boolean> {
+  try {
+    const [eliminado] = await db.delete(s.catalogoAcabados).where(eq(s.catalogoAcabados.id, id)).returning({ id: s.catalogoAcabados.id })
+    return Boolean(eliminado)
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === '23503') return false
+    throw err
+  }
 }
 
 export async function crearCatalogoProductoAcabadoAction(data: { productoCatalogoId: string; acabadoId: string; esDefault?: boolean }): Promise<CatalogoProductoAcabado> {

@@ -17,6 +17,7 @@ import {
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
   ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial, GrupoItem, HitoPagoInput,
+  EspacioVarianteAcabado,
 } from '../contracts'
 // VarianteNoEliminableError vive en errors.ts (no en 'use server':
 // Next.js prohíbe exportar clases desde archivos 'use server').
@@ -551,6 +552,35 @@ export async function eliminarGrupoItemAction(id: string): Promise<boolean> {
     await tx.update(s.itemsVariante).set({ grupoItemId: null, updatedAt: new Date().toISOString() }).where(eq(s.itemsVariante.grupoItemId, id))
     const [eliminado] = await tx.delete(s.gruposItem).where(eq(s.gruposItem.id, id)).returning({ id: s.gruposItem.id })
     return Boolean(eliminado)
+  })
+}
+
+// --- Acabados asociados a un espacio de cotización (t-172, 2026-09-30) ---
+// Puente INSTANCIA con texto libre de destino ("fachadas módulo X", "mesón de isla"),
+// reemplaza a espacio_variantes.colores (jsonb). Tabla NUEVA y SEPARADA de `modulos`
+// (producción) — ver comentario de EspacioVarianteAcabado en contracts.ts.
+
+/**
+ * Reemplazo completo (mismo patrón que el plan de pagos de contratos, t-166): se borra la
+ * asociación anterior del espacio y se reinserta la nueva con `orden` reasignado — quitar un
+ * acabado del medio no deja huecos en la numeración.
+ */
+export async function reemplazarAcabadosEspacioAction(
+  espacioVarianteId: string,
+  items: { acabadoId: string; descripcionUso: string }[],
+): Promise<EspacioVarianteAcabado[]> {
+  return db.transaction(async (tx) => {
+    await tx.delete(s.espacioVarianteAcabados).where(eq(s.espacioVarianteAcabados.espacioVarianteId, espacioVarianteId))
+    if (items.length === 0) return []
+    const filas = await tx.insert(s.espacioVarianteAcabados).values(
+      items.map((item, orden) => ({
+        espacioVarianteId,
+        acabadoId: item.acabadoId,
+        descripcionUso: item.descripcionUso,
+        orden,
+      }))
+    ).returning()
+    return filas as unknown as EspacioVarianteAcabado[]
   })
 }
 

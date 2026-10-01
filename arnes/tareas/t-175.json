@@ -1,0 +1,43 @@
+{
+  "id": "t-175",
+  "titulo": "Cotizador: espacio con varios acabados + texto libre de destino (reemplaza espacio_variantes.colores jsonb) + alta rápida inline",
+  "intencion_negocio": "Javier (2026-09-30): en el cotizador, un espacio debe poder tener varios acabados asociados, cada uno con un texto libre que diga para qué parte del mueble es (ej. 'fachadas de módulo X', 'mesón de isla'), y poder crear un acabado nuevo sin salir de la pantalla del cotizador ('+ Nuevo acabado'), igual patrón de agilidad que otros flujos del ERP.",
+  "diagnostico": "components/veta/acabado-picker.tsx ya resuelve selección múltiple contra catalogo_acabados + un input de 'tono no catalogado', pero persiste contra espacio_variantes.colores (jsonb, sin texto de destino por ítem seleccionado) vía app/erp/cotizador/[proyectoId]/page.tsx:2451-2514. El patrón de 'crear entidad sin salir de pantalla' ya existe de forma local y no reusada en 2 lugares (SmartSearch.onCreateNew en components/veta/smart-search.tsx, y HybridClientSelector en app/erp/cotizador/new/page.tsx:149-227) — ninguno es una primitiva genérica todavía. arnes/estado.md:16 deja pendiente justamente una 'primitiva UI agnóstica de selector/creador de entidad reusable' — pero construirla en abstracto antes de tener 2 casos concretos reales repetiría el error ya corregido con ui-slots (cancelado 2026-09-10 por sobre-ingeniería, ver arnes/lineas/.../decision_axiomatica_2026-09-10...). Decisión: construir el patrón concreto para acabados ahora; generalizar solo cuando aparezca una segunda necesidad real.",
+  "decisiones_supervisor": {
+    "persistencia": "espacio_variantes.colores deja de recibir escrituras nuevas; el picker pasa a leer/escribir contra la tabla relacional espacio_variante_acabados (t-173).",
+    "alta_inline": "Botón '+ Nuevo acabado' dentro del panel del picker abre un modal mínimo (nombre, marca, color, imagen vía ImagePicker single) que crea el acabado y lo agrega de inmediato a la selección del espacio — sin salir del cotizador.",
+    "generalizacion_diferida": "NO se construye en esta tarea la primitiva universal de selector/creador de entidad. Se deja explícitamente para cuando un tercer caso concreto (más allá de clientes y acabados) la justifique.",
+    "fecha": "2026-09-30"
+  },
+  "zona": "components/veta/acabado-picker.tsx + app/erp/cotizador/[proyectoId]/page.tsx + lib/data/ (acciones de espacio_variante_acabados)",
+  "tipo": "logica_de_negocio_mas_ui",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-175.md",
+  "depende_de": ["t-173", "t-174"],
+  "criterios_aceptacion": [
+    "un espacio puede guardar N acabados, cada uno con su propio texto de destino, persistidos en espacio_variante_acabados (no en jsonb)",
+    "reabrir el cotizador para ese espacio muestra los acabados ya guardados con su texto de destino intacto",
+    "se puede crear un acabado nuevo (con imagen) desde el picker del cotizador sin navegar fuera de la pantalla, y queda inmediatamente seleccionable",
+    "ninguna llamada de este flujo escribe en espacio_variantes.colores (verificable por grep tras el cambio)",
+    "npx tsc --noEmit limpio, npx eslint . sin errores nuevos",
+    "migración de producción (de t-173) ya aplicada y verificada antes de este deploy"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errors, 0 warnings nuevos",
+    "grep -n \"colores\" app/erp/cotizador/[proyectoId]/page.tsx": "sin escrituras nuevas a espacio.colores en el flujo de guardado"
+  },
+  "executor": "Claude Code (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-09-30), incluida la decisión explícita de NO generalizar la primitiva de selector/creador todavía",
+    "fecha": "2026-09-30"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "nota_ejecucion": "components/veta/acabado-picker.tsx reescrito: value ahora es AcabadoSeleccionado[] (acabado + descripcionUso editable por fila), botón '+ Nuevo acabado' con nombre/marca/imagen (ImagePicker single) que crea y agrega al vuelo. app/erp/cotizador/[proyectoId]/page.tsx: FormDetallesEspacio hidrata/guarda contra espacioVarianteAcabados.porEspacio/reemplazarTodos en vez de espacio.colores; el resumen colapsado de la tarjeta también lee de la tabla relacional. Grep confirma cero escrituras nuevas a espacio.colores. `npx tsc --noEmit` limpio, `npx eslint` sin errores/warnings nuevos (2 warnings preexistentes verificados por diff). ⚠️ Esta tarea se ejecutó en el MISMO archivo que otra sesión concurrente de Javier estaba editando en vivo (toast-provider, creación optimista de espacios) — Javier confirmó en el momento que era seguro continuar. Migración 0027 de t-173 YA aplicada a producción (2026-09-30). PENDIENTE: solo QA manual (agregar 2 acabados con destino distinto, guardar, recargar, confirmar persistencia; crear acabado nuevo sin salir del cotizador).",
+  "creada_en": "2026-09-30T00:00:00Z",
+  "cerrada_en": null,
+  "relacionado": ["t-173", "t-174"]
+}

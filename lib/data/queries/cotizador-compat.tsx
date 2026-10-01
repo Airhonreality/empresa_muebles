@@ -26,6 +26,8 @@ import {
   useCrearGrupoItemMutation,
   useActualizarGrupoItemMutation,
   useEliminarGrupoItemMutation,
+  useReemplazarAcabadosEspacioMutation,
+  useCrearAcabadoCatalogoMutation,
   useActualizarClienteMutation,
   useCrearClienteMutation,
   useVincularClienteProyectoMutation,
@@ -37,7 +39,7 @@ import { registrarAccionDeshacer, patchInverso } from './historial-deshacer'
 import type {
   CatalogoAcabado, Cliente, Contrato, EspacioArtefacto, EspacioVariante,
   GrupoItem, HitoPago, ItemVariante, Parametro, ProductoCatalogo, Proyecto,
-  DatosContratoNuevo, DatosContratoEdicion,
+  DatosContratoNuevo, DatosContratoEdicion, EspacioVarianteAcabado,
 } from '../contracts'
 
 /** API consumible por la pantalla (cliente de `useDataStore()` devenido en TanStack Query).
@@ -86,13 +88,22 @@ export interface CotizadorCompatStore {
     actualizar(id: string, cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden'>>): Promise<GrupoItem | null>
     eliminar(id: string): Promise<boolean>
   }
+  // --- Acabados asociados a un espacio de cotización (t-172, 2026-09-30) ---
+  espacioVarianteAcabados: {
+    porEspacio(espacioVarianteId: string): EspacioVarianteAcabado[]
+    reemplazarTodos(espacioVarianteId: string, items: { acabadoId: string; descripcionUso: string }[]): Promise<EspacioVarianteAcabado[]>
+  }
   artefactos: {
     porEspacio(espacioId: string): EspacioArtefacto[]
     crear(input: Omit<InputArtefactoOptimista, 'id'>): Promise<EspacioArtefacto>
     actualizar(id: string, patch: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'descripcion' | 'fotoUrls' | 'archivosUrls'>>): Promise<EspacioArtefacto | null>
   }
   catalogo: { listar(): ProductoCatalogo[] }
-  catalogoAcabados: { listar(): CatalogoAcabado[] }
+  catalogoAcabados: {
+    listar(): CatalogoAcabado[]
+    /** Alta rápida sin salir del cotizador ("+ Nuevo acabado", t-172/t-174). */
+    crear(values: Partial<CatalogoAcabado> & { nombre: string }): Promise<CatalogoAcabado>
+  }
   parametros: { obtenerPorClave(clave: string): Parametro | undefined }
   contratos: {
     porProyecto(proyectoId: string): Contrato | undefined
@@ -131,6 +142,8 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
   const crearGrupoItem = useCrearGrupoItemMutation(proyectoId)
   const actualizarGrupoItem = useActualizarGrupoItemMutation(proyectoId)
   const eliminarGrupoItem = useEliminarGrupoItemMutation(proyectoId)
+  const reemplazarAcabadosEspacio = useReemplazarAcabadosEspacioMutation(proyectoId)
+  const crearAcabadoCatalogo = useCrearAcabadoCatalogoMutation(proyectoId)
   const actualizarCliente = useActualizarClienteMutation(proyectoId)
   const crearCliente = useCrearClienteMutation(proyectoId)
   const vincularClienteProyecto = useVincularClienteProyectoMutation(proyectoId)
@@ -143,7 +156,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
       espacios: [] as EspacioVariante[], items: [] as ItemVariante[],
       artefactos: [] as EspacioArtefacto[], catalogo: [] as ProductoCatalogo[],
       catalogoAcabados: [] as CatalogoAcabado[], contrato: null, hitos: [] as HitoPago[],
-      gruposItem: [] as GrupoItem[],
+      gruposItem: [] as GrupoItem[], espacioVarianteAcabados: [] as EspacioVarianteAcabado[],
     }
     return {
       proyectoId,
@@ -229,8 +242,15 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
           actualizar: (id, cambios) => actualizarGrupoItem.mutateAsync({ id, cambios }),
           eliminar: (id) => eliminarGrupoItem.mutateAsync({ id }),
         },
+        espacioVarianteAcabados: {
+          porEspacio: (espacioVarianteId) => d.espacioVarianteAcabados.filter((a) => a.espacioVarianteId === espacioVarianteId),
+          reemplazarTodos: (espacioVarianteId, items) => reemplazarAcabadosEspacio.mutateAsync({ espacioVarianteId, items }),
+        },
         catalogo: { listar: () => d.catalogo },
-        catalogoAcabados: { listar: () => d.catalogoAcabados },
+        catalogoAcabados: {
+          listar: () => d.catalogoAcabados,
+          crear: (values) => crearAcabadoCatalogo.mutateAsync(values),
+        },
         parametros: { obtenerPorClave: (clave) => d.parametros.find((p) => p.clave === clave) },
         contratos: {
           porProyecto: (pid) => (d.contrato && d.contrato.proyectoId === pid ? d.contrato : undefined),
@@ -247,6 +267,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
     actualizarJornadas, duplicarEspacio, actualizarParametrosFinancieros,
     crearArtefacto, actualizarArtefacto,
     crearGrupoItem, actualizarGrupoItem, eliminarGrupoItem,
+    reemplazarAcabadosEspacio, crearAcabadoCatalogo,
     actualizarCliente, crearCliente, vincularClienteProyecto, crearContrato, actualizarContrato,
   ])
 

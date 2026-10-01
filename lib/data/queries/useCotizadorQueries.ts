@@ -25,12 +25,14 @@ import {
   crearGrupoItemAction,
   actualizarGrupoItemAction,
   eliminarGrupoItemAction,
+  reemplazarAcabadosEspacioAction,
   actualizarClienteAction,
   crearClienteAction,
   actualizarProyectoAction,
   crearContratoAction,
   actualizarContratoAction,
 } from '@/lib/data/actions/core'
+import { crearCatalogoAcabadoAction } from '@/lib/data/actions/f7-tienda'
 import { obtenerSnapshotCotizadorAction } from '@/lib/data/actions/lecturas-cotizador'
 import {
   obtenerEstadoPublicacionPropuestaAction,
@@ -78,7 +80,7 @@ import {
   obtenerItemsPendientes,
 } from './optimistic'
 import type { CotizadorSnapshot } from './types'
-import type { EspacioArtefacto, EspacioVariante, GrupoItem, ItemVariante, Proyecto, Cliente, Contrato, DatosContratoNuevo, DatosContratoEdicion } from '../contracts'
+import type { EspacioArtefacto, EspacioVariante, GrupoItem, ItemVariante, Proyecto, Cliente, Contrato, DatosContratoNuevo, DatosContratoEdicion, CatalogoAcabado } from '../contracts'
 
 export function useCotizadorSnapshot(proyectoId: string) {
   return useQuery<CotizadorSnapshot>({
@@ -333,6 +335,35 @@ export function useEliminarGrupoItemMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { id: string }, boolean>(
     cotizadorKeys.detalle(proyectoId),
     ({ id }) => eliminarGrupoItemAction(id),
+    (snap) => snap,
+    undefined,
+    { invalidarSiempre: true },
+  )
+}
+
+// --- Acabados de espacio de cotización (t-172, 2026-09-30) — mismo criterio que grupos de
+// ítems arriba: escritura poco frecuente (se guarda al cerrar el picker), se resuelve con
+// invalidación selectiva en vez de un merge optimista local.
+
+export function useReemplazarAcabadosEspacioMutation(proyectoId: string) {
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
+    { espacioVarianteId: string; items: { acabadoId: string; descripcionUso: string }[] },
+    import('../contracts').EspacioVarianteAcabado[]
+  >(
+    cotizadorKeys.detalle(proyectoId),
+    ({ espacioVarianteId, items }) => reemplazarAcabadosEspacioAction(espacioVarianteId, items),
+    (snap) => snap,
+    undefined,
+    { invalidarSiempre: true },
+  )
+}
+
+/** Alta rápida de un acabado nuevo en el catálogo, sin salir del cotizador ("+ Nuevo acabado"). */
+export function useCrearAcabadoCatalogoMutation(proyectoId: string) {
+  return useMutationOptGenerico<CotizadorSnapshot, Partial<CatalogoAcabado> & { nombre: string }, CatalogoAcabado>(
+    cotizadorKeys.detalle(proyectoId),
+    (values) => crearCatalogoAcabadoAction(values),
     (snap) => snap,
     undefined,
     { invalidarSiempre: true },

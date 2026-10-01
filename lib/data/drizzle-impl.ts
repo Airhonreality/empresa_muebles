@@ -989,6 +989,35 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         notify()
         return r
       },
+      actualizar: async (id, partial) => {
+        const r = await f7.actualizarCatalogoAcabadoAction(id, partial)
+        if (r) { data = { ...data, catalogoAcabados: upsert(data.catalogoAcabados, r) }; notify() }
+        return r
+      },
+      eliminar: async (id) => {
+        const ok = await f7.eliminarCatalogoAcabadoAction(id)
+        if (ok) {
+          data = { ...data, catalogoAcabados: data.catalogoAcabados.filter((a) => a.id !== id) }
+          notify()
+        }
+        return ok
+      },
+    },
+    // Acabados asociados a un espacio de cotización (t-172, 2026-09-30).
+    espacioVarianteAcabados: {
+      porEspacio: (espacioVarianteId) => data.espacioVarianteAcabados.filter((a) => a.espacioVarianteId === espacioVarianteId),
+      reemplazarTodos: async (espacioVarianteId, items) => {
+        const r = await core.reemplazarAcabadosEspacioAction(espacioVarianteId, items)
+        data = {
+          ...data,
+          espacioVarianteAcabados: [
+            ...data.espacioVarianteAcabados.filter((a) => a.espacioVarianteId !== espacioVarianteId),
+            ...r,
+          ],
+        }
+        notify()
+        return r
+      },
     },
     catalogoProductoAcabados: {
       porProducto: (productoCatalogoId) => data.catalogoProductoAcabados.filter((c) => c.productoCatalogoId === productoCatalogoId),
