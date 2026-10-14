@@ -731,6 +731,8 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           color: #111111;
           border-bottom: 1px solid #EAEAEA;
           padding-bottom: 4px;
+          break-after: avoid;
+          page-break-after: avoid;
         }
         .parties-table {
           width: 100%;
@@ -763,6 +765,8 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           margin-top: 15px;
           margin-bottom: 8px;
           color: #111111;
+          break-after: avoid;
+          page-break-after: avoid;
         }
         .italic-note {
           font-size: 12px;
@@ -777,6 +781,8 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           border-radius: 6px;
           margin-bottom: 15px;
           font-size: 12.5px;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .tech-specs-title {
           font-family: Inter, sans-serif;
@@ -803,6 +809,8 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           border-radius: 6px;
           padding: 14px 16px;
           margin: 14px 0;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .fecha-entrega-nota {
           font-size: 11.5px;
@@ -827,6 +835,10 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           border: 1px solid #EAEAEA;
           padding: 8px 12px;
           font-size: 12px;
+        }
+        .payment-table tr, .parties-table tr {
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .payment-table th {
           background-color: #FAFAFA;

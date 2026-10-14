@@ -11,6 +11,7 @@ import { ProductSheetModal } from '@/components/veta/product-sheet-modal'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
+import { PropuestaPrintDocument } from './PropuestaPrintDocument'
 
 // F-08 Propuesta pública (disenio_F08_propuesta_publica.md). Ruta simplificada
 // a /propuesta/[proyectoId] en vez de /propuesta/{slug} — Proyecto no tiene
@@ -52,66 +53,6 @@ type GalleryImage = { url: string; alt: string; id: string }
 
 function toGalleryImages(fotos: string[], alt: string): GalleryImage[] {
   return fotos.filter(Boolean).map((url, i) => ({ url, alt: `${alt} ${i + 1}`, id: `${url}-${i}` }))
-}
-
-/** t-170: galería plana para impresión. La pantalla muestra UNA imagen con carrusel y botones
- *  ‹ ›, así que imprimir a PDF salía como una página web con sliders y una sola foto. Esta
- *  variante tiende TODAS las imágenes en una grilla estática, pensada para papel. */
-function GaleriaPlana({ etiqueta, fotos }: { etiqueta: string; fotos: string[] }) {
-  const imgs = toGalleryImages(fotos, etiqueta)
-  if (imgs.length === 0) return null
-  return (
-    <div className="mb-5">
-      <h4 className="text-sm font-semibold text-text-heading mb-2">{etiqueta}</h4>
-      <div className="grid grid-cols-2 gap-3">
-        {imgs.map((im) => (
-          <div
-            key={im.id}
-            className="relative aspect-[4/3] overflow-hidden rounded-sm border border-border-subtle bg-bg-alt"
-          >
-            <Image src={im.url} alt={im.alt} fill unoptimized className="object-cover" />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** t-170: bloque `hidden print:block` — el documento plano que reemplaza la UI interactiva en
- *  papel: todos los espacios, todas sus variantes, todos los tipos de imagen y todas las fotos,
- *  en el mismo orden en que se navegan en pantalla. Nunca se ve en el navegador, solo al
- *  imprimir/exportar a PDF. */
-function TodasLasImagenes({ grupos, espaciosActivos }: { grupos: Map<string, EspacioVariante[]>; espaciosActivos: EspacioVariante[] }) {
-  const gruposOrdenados = useMemo(() => {
-    const indices = new Map(espaciosActivos.map((e, i) => [e.nombreEspacio, i]))
-    return Array.from(grupos.entries()).sort(
-      (a, b) => (indices.get(a[0]) ?? -1) - (indices.get(b[0]) ?? -1),
-    )
-  }, [grupos, espaciosActivos])
-
-  return (
-    <section className="hidden print:block" aria-label="Todas las imágenes del proyecto">
-      <h2 className="text-lg font-bold text-text-heading mb-1">Galería completa del proyecto</h2>
-      <p className="text-sm text-text-muted mb-6">
-        Todas las imágenes, por ambiente y variante, en una sola tirada para imprimir.
-      </p>
-      {gruposOrdenados.map(([nombre, variantes]) => (
-        <div key={nombre} className="mb-8">
-          <h3 className="text-base font-bold text-text-heading border-b border-border-subtle pb-1 mb-3">
-            {nombre}
-          </h3>
-          {variantes.map((v) => (
-            <div key={v.id} className="mb-6">
-              <h4 className="text-sm font-medium text-text-muted mb-3">Variante: {v.nombreVariante}</h4>
-              <GaleriaPlana etiqueta="Espacio actual" fotos={v.fotosEspacio} />
-              <GaleriaPlana etiqueta="Diseño" fotos={v.fotosDisenio} />
-              <GaleriaPlana etiqueta="Referencia" fotos={v.fotosReferencia} />
-            </div>
-          ))}
-        </div>
-      ))}
-    </section>
-  )
 }
 
 interface ItemCardProps {
@@ -495,7 +436,11 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
   }, [proyecto.id])
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_var(--color-bg-alt)_0%,_var(--color-bg-paper)_40%,_var(--color-bg-paper)_100%)]">
+    <>
+      {/* UI interactiva: nunca entra a la hoja. El papel lo arma PropuestaPrintDocument,
+          un documento aparte sin carouseles/sticky/sidebar (ver ese archivo). Antes se
+          imprimía esta misma UI con `print:` sueltos y salía distinto en PC y celular. */}
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_var(--color-bg-alt)_0%,_var(--color-bg-paper)_40%,_var(--color-bg-paper)_100%)] print:hidden">
       {banner}
       {/* HeaderPropuesta — sticky (top-16: se acopla debajo del header de AppShell, h-16) */}
       <header className="sticky top-16 z-header bg-bg-paper/90 backdrop-blur-xl border-b border-border-subtle print:static print:bg-transparent">
@@ -862,9 +807,6 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
         </aside>
       </div>
 
-      {/* t-170: documento plano de impresión (hidden en pantalla, visible solo en print). */}
-      <TodasLasImagenes grupos={grupos} espaciosActivos={espaciosActivos} />
-
       {/* Barra flotante móvil con acceso al resumen */}
       {total > 0 && (
         <a
@@ -894,6 +836,10 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
           onClose={() => setItemDetalle(null)}
         />
       )}
-    </div>
+      </div>
+
+      {/* Documento de papel: `hidden print:block`, sin heredar nada de la UI de arriba. */}
+      <PropuestaPrintDocument data={data} />
+    </>
   )
 }

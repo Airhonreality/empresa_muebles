@@ -27,8 +27,8 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
   const isPropuestaView = pathname?.startsWith('/propuesta/');
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-100">
-      <header className="border-b border-border-subtle bg-bg-raised/80 backdrop-blur-sm sticky top-0 z-nav shadow-[var(--shadow-nav-elevated)]">
+    <div className="min-h-screen flex flex-col bg-surface-100 print:min-h-0 print:bg-white">
+      <header className="border-b border-border-subtle bg-bg-raised/80 backdrop-blur-sm sticky top-0 z-nav shadow-[var(--shadow-nav-elevated)] print:hidden">
         <div className="mx-auto max-w-7xl px-8 sm:px-12 lg:px-16">
           <div className="flex h-16 items-center justify-between">
             
@@ -107,12 +107,12 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
         </div>
       </header>
 
-      <main className="flex-1" id="main-content">
+      <main className="flex-1 print:block" id="main-content">
         {children}
       </main>
 
       {/* Footer Editorial Sello de Taller & Revista de Arquitectura */}
-      <footer className="border-t border-border-subtle bg-bg-paper text-text-primary">
+      <footer className="border-t border-border-subtle bg-bg-paper text-text-primary print:hidden">
         {/* Banner Superior Editorial - Marca & Manifiesto */}
         <div className="border-b border-border-subtle bg-bg-alt/50 py-8">
           <div className="mx-auto max-w-6xl px-6 flex flex-col md:flex-row md:items-center justify-between gap-6">

@@ -17,7 +17,7 @@ export function WhatsappFloat() {
 
   return (
     <>
-      <div className="fixed bottom-5 right-5 z-toast flex items-center justify-center">
+      <div className="fixed bottom-5 right-5 z-toast flex items-center justify-center print:hidden">
         {/* Tooltip Editorial Minimalista (Absoluto y pointer-events-none para no bloquear interacciones) */}
         <span
           role="tooltip"

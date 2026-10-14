@@ -17,7 +17,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-100 pb-14 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-surface-100 pb-14 md:pb-0 print:min-h-0 print:bg-white print:pb-0">
       <div className="flex flex-1 flex-col md:flex-row">
         {/* Sidebar */}
         <div className="hidden md:block print:hidden">
