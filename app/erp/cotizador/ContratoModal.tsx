@@ -12,6 +12,7 @@ import {
   SECCIONES_ESPECIFICACIONES,
   compilarEspecificaciones,
   compilarObjetoItems,
+  lineaObjetoItem,
   tieneItemsDeLaCategoria,
   type SeccionEspecificacion,
 } from "@/lib/data/contrato-items";
@@ -101,6 +102,28 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
     () => compilarObjetoItems(espacios, itemsPorEspacio, productMap),
     [espacios, itemsPorEspacio, productMap],
   );
+  // Vista previa del objeto tal como lo imprime el contrato (render en vivo, decisión del
+  // Supervisor 2026-10-14): agrupado por espacio — solo la variante ACTIVA de cada
+  // `nombreEspacio`—, con su nombre, su descripción, las fotos de diseño y sus ítems no
+  // referenciales. Es la misma computación que hace la página imprimible del contrato.
+  const objetoPorEspacio = useMemo(() => {
+    const porNombre = new Map<string, EspacioVariante[]>();
+    for (const e of espacios) {
+      const arr = porNombre.get(e.nombreEspacio) ?? [];
+      arr.push(e);
+      porNombre.set(e.nombreEspacio, arr);
+    }
+    return Array.from(porNombre.values())
+      .map((variantes) => variantes.find((v) => v.activa) ?? variantes[0])
+      .sort((a, b) => a.orden - b.orden)
+      .map((esp) => ({
+        espacio: esp,
+        items: (itemsPorEspacio.get(esp.id) ?? [])
+          .filter((it) => !it.esReferencial)
+          .map((it) => ({ item: it, prod: it.catalogoId ? productMap.get(it.catalogoId) : undefined })),
+      }))
+      .filter((bloque) => bloque.items.length > 0);
+  }, [espacios, itemsPorEspacio, productMap]);
   const seccionesVisibles = useMemo(
     () => SECCIONES_ESPECIFICACIONES.filter((s) => tieneItemsDeLaCategoria(espacios, itemsPorEspacio, productMap, s)),
     [espacios, itemsPorEspacio, productMap],
@@ -616,22 +639,49 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
           <section className="border-b border-border-subtle pb-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-text-heading">4. Objeto del Contrato</h3>
-              {/* t-166: el objeto se deriva de los ítems al abrir el modal, pero después queda
-                  congelado. Si el usuario edita la lista de ítems, recompilar es decisión suya. */}
+              {/* t-166: el objeto se deriva en vivo de la cotización, así que esta vista previa
+                  ya refleja los ítems actuales. El botón recompila además las especificaciones
+                  derivadas (esos sí son texto editable). */}
               <Button variant="ghost" size="sm" onClick={recompilarDesdeItems}>
-                Recompilar desde los ítems
+                Recompilar objeto de contrato
               </Button>
             </div>
-            <textarea
-              value={form.objetoItems}
-              onChange={(e) => setForm({ ...form, objetoItems: e.target.value })}
-              className="w-full min-h-[100px] rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-primary outline-none focus:border-brand focus:shadow-ring-focus"
-              placeholder="Descripción de los espacios y elementos incluidos"
-            />
+            {objetoPorEspacio.length > 0 ? (
+              <div className="space-y-3 rounded-sm border border-border-subtle bg-bg-paper px-3 py-3 text-sm">
+                {objetoPorEspacio.map((bloque) => (
+                  <div key={bloque.espacio.id}>
+                    <p className="font-semibold text-text-heading">{bloque.espacio.nombreEspacio}</p>
+                    {bloque.espacio.descripcion && (
+                      <p className="text-text-muted">{bloque.espacio.descripcion}</p>
+                    )}
+                    {bloque.espacio.fotosDisenio.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {bloque.espacio.fotosDisenio.map((url, i) => (
+                          <img
+                            key={i}
+                            src={url}
+                            alt=""
+                            className="h-12 w-auto max-w-[80px] rounded-sm border border-border-subtle object-cover"
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <ul className="mt-1 list-inside list-disc text-text-primary">
+                      {bloque.items.map(({ item, prod }) => (
+                        <li key={item.id}>{lineaObjetoItem(item, prod).replace(/^-\s+/, "")}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-sm border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-muted italic">
+                Sin ítems en la cotización: el contrato imprimirá una descripción genérica.
+              </p>
+            )}
             <p className="text-[11px] text-text-muted mt-1">
-              El contrato imprime el objeto en vivo desde la cotización: por espacio, con su
-              nombre, descripción, ítems y fotos de diseño. Este texto solo se usa como respaldo
-              si el proyecto no tiene ítems.
+              Así se imprime el objeto en el contrato: por espacio, con su nombre, descripción,
+              ítems y fotos de diseño. Se toma en vivo de la cotización.
             </p>
           </section>
 
