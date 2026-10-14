@@ -629,8 +629,9 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
               placeholder="Descripción de los espacios y elementos incluidos"
             />
             <p className="text-[11px] text-text-muted mt-1">
-              Una línea por ítem cotizado, con marca, acabado y ficha técnica. Recompilar descarta
-              las ediciones manuales de este texto.
+              El contrato imprime el objeto en vivo desde la cotización: por espacio, con su
+              nombre, descripción, ítems y fotos de diseño. Este texto solo se usa como respaldo
+              si el proyecto no tiene ítems.
             </p>
           </section>
 

@@ -5,6 +5,8 @@ import { CotizadorCompatProvider, useCotizadorCompat } from '@/lib/data/queries/
 import { Button } from '@/components/veta/button'
 import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import { ordinalesClausulas, type ClaveClausula } from '@/lib/data/contrato-clausulas'
+import { lineaObjetoItem } from '@/lib/data/contrato-items'
+import type { EspacioVariante } from '@/lib/data/contracts'
 
 // Plantilla del contrato de fabricación e instalación (t-163, 2026-09-14).
 // Adaptada de la plantilla del sistema legacy (`legacy-agnostic-backup:
@@ -130,11 +132,37 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
 
   const totalNeto = parseNum(contrato.valorTotal)
 
-  // t-166: el objeto se renderiza como elementos React, NO con dangerouslySetInnerHTML.
-  // Antes se concatenaba HTML a mano y se inyectaba sin escapar: el texto se arma con
-  // descripciones de catálogo y `nombrePersonalizado` de los ítems, ambos controlados por
-  // el usuario, así que un `<img onerror=...>` en un nombre de ítem se ejecutaba en el
-  // navegador de quien abría el contrato. React escapa por defecto y el <ul> sale igual.
+  // Objeto del contrato — RENDER EN VIVO desde la cotización (decisión del Supervisor, 2026-10-14).
+  // Antes el objeto era un volcado plano de TODOS los ítems, sin decir a qué espacio pertenecía
+  // cada uno. Ahora se agrupa por espacio: solo la variante ACTIVA de cada `nombreEspacio` (las
+  // demás son comparación y no se cotizan), con su nombre, su descripción, sus ítems no
+  // referenciales (mismo corte que el cotizador) y una retícula pequeña con las fotos de diseño.
+  const espaciosBase = store.espacios.porProyecto(proyectoId)
+  const productMap = new Map(store.catalogo.listar().map((p) => [p.id, p]))
+  const porNombre = new Map<string, EspacioVariante[]>()
+  for (const e of espaciosBase) {
+    const arr = porNombre.get(e.nombreEspacio) ?? []
+    arr.push(e)
+    porNombre.set(e.nombreEspacio, arr)
+  }
+  const espaciosActivos = Array.from(porNombre.values())
+    .map((variantes) => variantes.find((v) => v.activa) ?? variantes[0])
+    .sort((a, b) => a.orden - b.orden)
+  const objetoPorEspacio = espaciosActivos
+    .map((esp) => ({
+      espacio: esp,
+      items: store.items
+        .porVariante(esp.id)
+        .filter((it) => !it.esReferencial)
+        .map((it) => ({ item: it, prod: it.catalogoId ? productMap.get(it.catalogoId) : undefined })),
+    }))
+    .filter((bloque) => bloque.items.length > 0)
+
+  // t-166: respaldo para contratos sin datos vivos (proyectos viejos o sin ítems). Se renderiza
+  // como elementos React, NO con dangerouslySetInnerHTML: el texto se arma con descripciones de
+  // catálogo y `nombrePersonalizado`, ambos controlados por el usuario, así que un
+  // `<img onerror=...>` en un nombre de ítem se ejecutaría en el navegador de quien abriera el
+  // contrato. React escapa por defecto y el <ul> sale igual.
   const objetoItems = (contrato.objetoItems ?? '')
     .split('\n')
     .map((l) => l.trim())
@@ -284,20 +312,38 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           El Contratista se obliga a realizar la fabricación e instalación del siguiente mobiliario a medida de acuerdo con los requerimientos técnicos coordinados y validados:
         </p>
 
-        {/* Se conserva el <div> envolvente del markup original: no tiene estilos propios,
-            pero cambiar la estructura del documento firmado no es algo que deba hacer
-            un fix de seguridad sin poder mirarlo impreso. */}
-        <div>
-          {objetoItems.length > 0 ? (
-            <ul>
-              {objetoItems.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          ) : (
-            <p>Fabricación e instalación de mobiliario a medida de acuerdo con la propuesta aprobada.</p>
-          )}
-        </div>
+        {objetoPorEspacio.length > 0 ? (
+          <div className="objeto-espacios">
+            {objetoPorEspacio.map((bloque) => (
+              <div className="objeto-espacio" key={bloque.espacio.id}>
+                <div className="objeto-espacio-nombre">{bloque.espacio.nombreEspacio}</div>
+                {bloque.espacio.descripcion && (
+                  <p className="objeto-espacio-desc">{bloque.espacio.descripcion}</p>
+                )}
+                {bloque.espacio.fotosDisenio.length > 0 && (
+                  <div className="objeto-espacio-fotos">
+                    {bloque.espacio.fotosDisenio.map((url, i) => (
+                      <img key={i} src={url} alt="" className="objeto-espacio-foto" />
+                    ))}
+                  </div>
+                )}
+                <ul>
+                  {bloque.items.map(({ item, prod }) => (
+                    <li key={item.id}>{lineaObjetoItem(item, prod).replace(/^-\s+/, '')}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : objetoItems.length > 0 ? (
+          <ul>
+            {objetoItems.map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>Fabricación e instalación de mobiliario a medida de acuerdo con la propuesta aprobada.</p>
+        )}
 
         <p className="italic-note">
           Las especificaciones exactas de dimensiones, modulaciones, colores y herrajes corresponden a las descritas y renderizadas en la Propuesta de Diseño aprobada por el Contratante.
@@ -773,6 +819,47 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           color: #444444;
           margin-top: 10px;
           font-style: italic;
+        }
+        /* Objeto del contrato: bloque por espacio (nombre + descripción + fotos de diseño + ítems). */
+        .objeto-espacio {
+          margin-bottom: 14px;
+        }
+        .objeto-espacio-nombre {
+          font-family: Inter, sans-serif;
+          font-weight: 700;
+          font-size: 12.5px;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          color: #111111;
+          margin: 14px 0 4px;
+          padding-bottom: 2px;
+          border-bottom: 1px solid #EAEAEA;
+          break-after: avoid;
+          page-break-after: avoid;
+        }
+        .objeto-espacio-desc {
+          font-size: 12px;
+          color: #444444;
+          margin: 0 0 6px;
+        }
+        .objeto-espacio-fotos {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin: 6px 0 8px;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .objeto-espacio-foto {
+          height: 72px;
+          width: auto;
+          max-width: 130px;
+          object-fit: cover;
+          border: 1px solid #EAE6DF;
+          border-radius: 4px;
+        }
+        .objeto-espacio ul {
+          margin-top: 4px;
         }
         .tech-specs {
           background-color: #FAF9F6;
