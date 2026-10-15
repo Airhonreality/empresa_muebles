@@ -266,13 +266,70 @@ export interface PropuestaPublicaData {
  * Component, no dentro del snapshot, para que cubra los tres caminos (publicada, preview y
  * versión puntual) con una sola llamada.
  */
+// Carga acabadosPorEspacio para los espacios dados. Funtea el builder (cambio 1, t-177) y la
+// reparación al leer de hidratarClientePropuesta: una sola fuente de lógica para no duplicarla.
+async function cargarAcabadosPorEspacio(
+  espacioVarianteIds: string[],
+): Promise<PropuestaPublicaData['acabadosPorEspacio']> {
+  const acabadosPorEspacio: PropuestaPublicaData['acabadosPorEspacio'] = {}
+  if (espacioVarianteIds.length === 0) return acabadosPorEspacio
+
+  if (DATA_IMPL() === 'drizzle') {
+    const espacioAcabados = await db
+      .select()
+      .from(s.espacioVarianteAcabados)
+      .where(inArray(s.espacioVarianteAcabados.espacioVarianteId, espacioVarianteIds))
+    const acabadoIds = [...new Set(espacioAcabados.map((a) => a.acabadoId))]
+    if (acabadoIds.length === 0) return acabadosPorEspacio
+    const acabadoRows = await db
+      .select()
+      .from(s.catalogoAcabados)
+      .where(inArray(s.catalogoAcabados.id, acabadoIds))
+    const acabadoPorId: Record<string, CatalogoAcabado> = {}
+    for (const a of acabadoRows) acabadoPorId[a.id] = a as unknown as CatalogoAcabado
+    for (const enlace of espacioAcabados) {
+      const acabado = acabadoPorId[enlace.acabadoId]
+      if (!acabado) continue
+      ;(acabadosPorEspacio[enlace.espacioVarianteId] ??= []).push({
+        descripcionUso: enlace.descripcionUso,
+        acabado,
+      })
+    }
+    return acabadosPorEspacio
+  }
+
+  const { getDataStore } = await import('@/lib/data/store')
+  const catalogoDisponible = getDataStore().catalogoAcabados.listar()
+  for (const id of espacioVarianteIds) {
+    const enlaces = getDataStore().espacioVarianteAcabados.porEspacio(id)
+    if (enlaces.length === 0) continue
+    const lista: { descripcionUso: string; acabado: CatalogoAcabado }[] = []
+    for (const enlace of enlaces) {
+      const acabado = catalogoDisponible.find((c) => c.id === enlace.acabadoId)
+      if (acabado) lista.push({ descripcionUso: enlace.descripcionUso, acabado })
+    }
+    if (lista.length > 0) acabadosPorEspacio[id] = lista
+  }
+  return acabadosPorEspacio
+}
+
 export async function hidratarClientePropuesta(
   data: PropuestaPublicaData | null,
 ): Promise<PropuestaPublicaData | null> {
   if (!data) return null
-  if (data.cliente) return data
-  const clienteId = data.proyecto.clienteId
-  if (!clienteId) return { ...data, cliente: null }
+
+  // Snapshot congelados anteriores a t-172 no traen acabadosPorEspacio: solo el builder nuevo la
+  // escribe, así que una propuesta publicada antes de la migración no pintaría ningún acabado
+  // (45 versiones publicadas en producción estaban en ese caso). Misma razón que `cliente`, que
+  // tampoco se congela en el snapshot: se repara en el leer, cubriendo publicada / preview /
+  // ?version=N de una sola vez.
+  const base: PropuestaPublicaData = data.acabadosPorEspacio
+    ? data
+    : { ...data, acabadosPorEspacio: await cargarAcabadosPorEspacio(data.espacios.map((e) => e.id)) }
+
+  if (base.cliente) return base
+  const clienteId = base.proyecto.clienteId
+  if (!clienteId) return { ...base, cliente: null }
 
   if (DATA_IMPL() === 'drizzle') {
     const [fila] = await db
@@ -286,13 +343,13 @@ export async function hidratarClientePropuesta(
       .from(s.clientes)
       .where(eq(s.clientes.id, clienteId))
       .limit(1)
-    return { ...data, cliente: fila ? { ...fila, documento: fila.documento ?? null, telefono: fila.telefono ?? null, email: fila.email ?? null, domicilio: fila.domicilio ?? null } : null }
+    return { ...base, cliente: fila ? { ...fila, documento: fila.documento ?? null, telefono: fila.telefono ?? null, email: fila.email ?? null, domicilio: fila.domicilio ?? null } : null }
   }
 
   const { getDataStore } = await import('@/lib/data/store')
   const c = getDataStore().clientes.obtenerPorId(clienteId)
   return {
-    ...data,
+    ...base,
     cliente: c
       ? { nombre: c.nombre, documento: c.documento ?? null, telefono: c.telefono ?? null, email: c.email ?? null, domicilio: c.domicilio ?? null }
       : null,
@@ -331,7 +388,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
     const parametrosRows = parametrosRowsResult
 
     // Ronda 2: queries que dependen de Ronda 1
-    const [itemsResult, gruposItemResult, hitosResult, espacioAcabadosResult] = await Promise.all([
+    const [itemsResult, gruposItemResult, hitosResult] = await Promise.all([
       varianteIds.length
         ? db.select().from(s.itemsVariante).where(and(inArray(s.itemsVariante.varianteId, varianteIds), eq(s.itemsVariante.anulado, false)))
         : Promise.resolve([]),
@@ -341,15 +398,11 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
       contratoRow
         ? db.select().from(s.hitosPago).where(eq(s.hitosPago.contratoId, contratoRow.id))
         : Promise.resolve([]),
-      varianteIds.length
-        ? db.select().from(s.espacioVarianteAcabados).where(inArray(s.espacioVarianteAcabados.espacioVarianteId, varianteIds))
-        : Promise.resolve([]),
     ])
 
     const items = itemsResult
     const gruposItem = gruposItemResult
     const hitos = hitosResult
-    const espacioAcabados = espacioAcabadosResult
 
     // Ronda 3: query de catálogo (depende de items de Ronda 2)
     const catalogoIds = [...new Set(items.map((it) => it.catalogoId).filter((id): id is string => Boolean(id)))]
@@ -358,21 +411,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
       : []
 
     // Ronda 3b: acabados de catálogo referenciados por los espacios (t-172) + mapa por espacio
-    const acabadoIds = [...new Set(espacioAcabados.map((a) => a.acabadoId))]
-    const acabadoRows = acabadoIds.length
-      ? await db.select().from(s.catalogoAcabados).where(inArray(s.catalogoAcabados.id, acabadoIds))
-      : []
-    const acabadoPorId: Record<string, CatalogoAcabado> = {}
-    for (const a of acabadoRows) acabadoPorId[a.id] = a as unknown as CatalogoAcabado
-    const acabadosPorEspacio: PropuestaPublicaData['acabadosPorEspacio'] = {}
-    for (const enlace of espacioAcabados) {
-      const acabado = acabadoPorId[enlace.acabadoId]
-      if (!acabado) continue
-      ;(acabadosPorEspacio[enlace.espacioVarianteId] ??= []).push({
-        descripcionUso: enlace.descripcionUso,
-        acabado,
-      })
-    }
+    const acabadosPorEspacio = await cargarAcabadosPorEspacio(varianteIds)
 
     const catalogoPorId: Record<string, CatalogoItemPublico> = {}
     for (const c of catalogoRows) {
@@ -437,18 +476,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
   }
   const contrato = store.contratos.porProyecto(proyectoId) ?? null
   const hitos = contrato ? store.hitos.porContrato(contrato.id) : []
-  const catalogoAcabadosDisponibles = store.catalogoAcabados.listar()
-  const acabadosPorEspacio: PropuestaPublicaData['acabadosPorEspacio'] = {}
-  for (const e of espacios) {
-    const enlaces = store.espacioVarianteAcabados.porEspacio(e.id)
-    if (enlaces.length === 0) continue
-    const lista: { descripcionUso: string; acabado: CatalogoAcabado }[] = []
-    for (const enlace of enlaces) {
-      const acabado = catalogoAcabadosDisponibles.find((c) => c.id === enlace.acabadoId)
-      if (acabado) lista.push({ descripcionUso: enlace.descripcionUso, acabado })
-    }
-    if (lista.length > 0) acabadosPorEspacio[e.id] = lista
-  }
+  const acabadosPorEspacio = await cargarAcabadosPorEspacio(espacios.map((e) => e.id))
   const p = (clave: string) => store.parametros.obtenerPorClave(clave)?.valorTexto ?? store.parametros.obtenerPorClave(clave)?.valorNumeric ?? null
   const valorDev = Number(p('valor_hora_desarrollador')) || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.desarrollador)
   const valorCarp = Number(p('valor_hora_carpintero')) || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.carpintero)
