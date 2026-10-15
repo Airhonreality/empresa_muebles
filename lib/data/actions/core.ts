@@ -619,6 +619,13 @@ export async function eliminarEspacioAction(id: string): Promise<boolean> {
       )
     }
 
+    // t-172: los acabados de un espacio se guardan en `espacio_variante_acabados`
+    // (puente INSTANCIA) — tabla separada creada para la cotización. Debe borrarse
+    // en cascada al eliminar la variante, igual que artefactos e ítems; de lo
+    // contrario la FK puede impedir el DELETE o, en este caso concreto, puede
+    // haber datos antiguos que bloquean la eliminación por integridad si no
+    // limpiamos primero.
+    await tx.delete(s.espacioVarianteAcabados).where(eq(s.espacioVarianteAcabados.espacioVarianteId, id))
     await tx.delete(s.espaciosArtefactos).where(eq(s.espaciosArtefactos.espacioVarianteId, id))
     await tx.delete(s.itemsVariante).where(eq(s.itemsVariante.varianteId, id))
     const [eliminado] = await tx.delete(s.espacioVariantes).where(eq(s.espacioVariantes.id, id)).returning({ id: s.espacioVariantes.id })
