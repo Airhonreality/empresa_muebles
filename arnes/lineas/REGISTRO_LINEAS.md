@@ -8,6 +8,7 @@ Para abrir una línea nueva, usar `_plantilla/LEEME.md`.
 |---|---|---|---|---|
 | `ola7` | **Archivada 2026-09-30** (planeación histórica sacada del working tree, ver `arnes/INDEX.md` §Purga). Sustituida por el foco núcleo vigente en `arnes/estado.md`. | Schema (F0/F1), pantallas (F2-F7), hardening/QA (F8/F9) del ERP + sitio — histórico | `nucleo/` (propone cambios de schema/eventos) | rama `arnes-historico-fase0` |
 | `demanda` | v3 del marco, sin aprobar — bloqueada esperando Supervisor | Diagnóstico y plan de captación/conversión/marca; determinantes de pantalla para el sitio público | `nucleo/` (ej. schema de `leads`, Bloque A) | `demanda/estado_demanda.md`, `demanda/plan_demanda.md` |
+| `auditoria_cascadas` | **Abierta 2026-10-15** — plan escrito, sin ejecutar; bloqueada por decisión A/B/C del Supervisor | Diagnóstico del modelo de borrado/cascadas (119 FK) + método repetible + red de seguridad (test de cobertura) para todo el schema y reutilizable en otros proyectos | `nucleo/` (propone cambiar `onDelete` de las FK en `lib/db/schema.ts`) | `lineas/auditoria_cascadas/estado_auditoria_cascadas.md` |
 
 ## Regla de convivencia entre líneas
 

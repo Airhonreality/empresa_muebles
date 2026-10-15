@@ -1,0 +1,38 @@
+{
+  "id": "t-180",
+  "titulo": "Auditoría del modelo de cascadas/FK e integridad referencial (segunda auditoría)",
+  "intencion_negocio": "Tras el bug de produccion al eliminar un espacio del cotizador (500 al no borrarse espacio_variante_acabados), el Supervisor pidio dejar documentado el hallazgo para una segunda auditoria donde se revisen mas schemas y se haga un diagnostico de mejora general de este modelo de cascadas, aplicable no solo a este caso.",
+  "diagnostico": "El borrado en cascada de la app es manual, en codigo (lib/data/actions/core.ts), no declarativo: de 119 FK, 115 son NO ACTION (2 CASCADE, 2 SET NULL, medido 2026-10-15 sobre la base real ep-muddy-cherry). eliminarEspacioAction no cubria espacio_variante_acabados (arreglado, e7961a1) ni cubre grupos_item/portafolio (latentes, hoy 0 filas); eliminarProyectoAction tambien omite espacio_variante_acabados. Cada tabla hija nueva obliga a recordar todos los eliminar* sin red de seguridad.",
+  "zona": "datos",
+  "tipo": "datos_contrato",
+  "riesgo": "maximo",
+  "archivos_afectados": [
+    "lib/db/schema.ts",
+    "drizzle/v3/0029_cascada_fk.sql",
+    "lib/data/actions/core.ts",
+    "lib/db/cascada-fk.test.ts"
+  ],
+  "criterios_aceptacion": [
+    "Tabla de las 119 relaciones FK con politica asignada (CASCADE / RESTRICT+guardia / SET NULL) y justificacion, extraida de information_schema",
+    "Lista de huecos de cobertura en las acciones eliminar*/borrar* (mas alla de los 4 ya detectados: espacio_variante_acabados en eliminarEspacioAction y eliminarProyectoAction, grupos_item y portafolio en eliminarEspacioAction)",
+    "Migracion idempotente propuesta (ALTER TABLE DROP/ADD CONSTRAINT ... ON DELETE ...) verificada en dev-local con SQL ANTES/DESPUES, y aplicada a produccion solo tras checkpoint (mismo protocolo que 0027)",
+    "Test de cobertura en verde: recorre information_schema y falla si aparece un hijo NO ACTION sin politica declarada; corre con DATABASE_URL placeholder (npx tsx)",
+    "npx tsc --noEmit limpio",
+    "npx eslint . sin errores ni warnings nuevos",
+    "Checkpoint del Supervisor aprobado antes de aplicar en produccion"
+  ],
+  "plan_ref": "arnes/lineas/auditoria_cascadas/plan_auditoria_cascadas.md",
+  "ejecutor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "nota": "Pendiente la eleccion de la opcion de diseno A (cascada en BD), B (manual + test) o C (hibrido, recomendado) antes de ejecutar. Ver plan_auditoria_cascadas.md seccion 6.",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-10-15T14:30:00Z",
+  "cerrada_en": null,
+  "relacionado": ["t-172"]
+}

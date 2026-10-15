@@ -36,6 +36,9 @@ Contratos de los 5 roles (orquestador, iniciador, código, QA, supervisor). Se l
 ### 5. arnes/lineas/demanda/ — captación, conversión, marca del sitio público (sin código, sin tocar todavía en esta pasada de limpieza)
 No auditada en la purga del 2026-09-30 (el pedido explícito fue "olas 6 y 7"). Sigue siendo la línea de trabajo del sitio público/SEO/marketing; candidata a la misma revisión más adelante si se decide.
 
+### 7. arnes/lineas/auditoria_cascadas/ — modelo de cascadas e integridad referencial (abierta 2026-10-15)
+Nace del bug de producción al eliminar un espacio del cotizador (ver `hallazgo_2026-10-15_cascada_espacios.md`). Diagnostica el borrado/cascadas de **todo** el schema (119 FK, 115 `NO ACTION`, cascada manual en código), propone un método repetible y una red de seguridad (test de cobertura), aplicable más allá de este caso. **Bloqueada por la decisión A/B/C del Supervisor.** Empieza por `estado_auditoria_cascadas.md`.
+
 ## Foco vigente (2026-09-30)
 
 El trabajo activo es el **ciclo núcleo**: cotizador (definidor de proyecto) → ficha de proyecto → contrato → seguimiento, más clientes y catálogo como soporte directo de ese ciclo, finanzas en versión simplificada, y una primitiva UI agnóstica de selector/creador de entidad reusable en modales. Auditoría de dependencias completa (2026-09-30, ver `arnes/decisiones_cerradas.md`): de 10 módulos candidatos a recorte, solo `gates` se eliminó (cero entrelazamiento). Los otros 9 (`comercial`, `taller`, `compras`, `equipo`, `herramientas`, `pedidos-web`, `portafolio`, `catalogos/espacios-arquitectonicos`, `garantia`) **quedan congelados, no borrados** — son funcionales, algunos (`portafolio`, `garantia`) son backend real del sitio público. No se planifica trabajo nuevo ahí sin pedido explícito del Supervisor, pero el código sigue intacto y editable. Detalle en `arnes/estado.md`.
