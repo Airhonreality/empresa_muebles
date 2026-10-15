@@ -390,11 +390,19 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
         // lo escrito y se vincula al proyecto, que es lo que hacía falta para poder cerrar.
         const datosCliente = datosClienteParaGuardar(clienteForm);
         if (datosCliente.nombre) {
+          let clienteId = clienteSeleccionado?.id ?? null;
           if (clienteSeleccionado) {
             await store.clientes.actualizar(clienteSeleccionado.id, datosCliente);
           } else {
             const nuevo = await store.clientes.crear(datosCliente);
-            await store.proyectos.vincularCliente(proyecto.id, nuevo.id);
+            clienteId = nuevo.id;
+          }
+          // El vínculo al proyecto se hace SIEMPRE, no solo al crear un cliente nuevo: elegir
+          // un cliente existente en el selector tampoco lo vinculaba, así que el proyecto quedaba
+          // sin `clienteId` y el contrato imprimía el contratante en blanco (solo la dirección,
+          // que viene de `contratanteDomicilio`). Un re-vínculo al mismo id es inofensivo.
+          if (clienteId && clienteId !== proyecto.clienteId) {
+            await store.proyectos.vincularCliente(proyecto.id, clienteId);
           }
         }
 
@@ -431,7 +439,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
         );
       }
     },
-    [clienteSeleccionado, clienteForm, store, contratoExistente, construirDatos, form.codigoContrato, proyecto.id, onSaved, onClose, router],
+    [clienteSeleccionado, clienteForm, store, contratoExistente, construirDatos, form.codigoContrato, proyecto.id, proyecto.clienteId, onSaved, onClose, router],
   );
 
   const handleGuardarBorrador = useCallback(
