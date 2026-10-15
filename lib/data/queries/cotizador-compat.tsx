@@ -73,7 +73,7 @@ export interface CotizadorCompatStore {
   espacios: {
     porProyecto(proyectoId: string): EspacioVariante[]
     crear(input: Omit<InputEspacioOptimista, 'id'>): Promise<EspacioVariante>
-    actualizar(id: string, patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null>
+    actualizar(id: string, patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null>
     eliminar(id: string): Promise<boolean>
     duplicar(id: string, opciones: { vacio: boolean; nuevoNombreEspacio?: string }): Promise<EspacioVariante | null>
     marcarActiva(id: string): Promise<EspacioVariante | null>

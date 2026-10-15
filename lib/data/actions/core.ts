@@ -301,7 +301,6 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
       jornadasDesarrolloTecnico: validado.jornadasDesarrolloTecnico ?? '0',
       jornadasEnsamblajeTaller: validado.jornadasEnsamblajeTaller ?? '0',
       jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
-      colores: validado.colores ?? [],
       fotosEspacio: sanitizarUrlsFotos(validado.fotosEspacio) ?? [],
       fotosDisenio: sanitizarUrlsFotos(validado.fotosDisenio) ?? [],
       fotosReferencia: sanitizarUrlsFotos(validado.fotosReferencia) ?? [],
@@ -326,7 +325,7 @@ export async function actualizarJornadasAction(
 
 export async function actualizarEspacioAction(
   id: string,
-  partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
+  partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
 ): Promise<EspacioVariante | null> {
   const sanitized = { ...validarEntrada(espacioActualizarSchema, partial) };
   if (sanitized.fotosEspacio) sanitized.fotosEspacio = sanitizarUrlsFotos(sanitized.fotosEspacio) ?? [];
@@ -352,7 +351,7 @@ export async function duplicarEspacioAction(id: string, opciones: { vacio: boole
           proyectoId: origen.proyectoId, nombreEspacio, nombreVariante, tipoEspacio: origen.tipoEspacio, descripcion: null,
           activa: esGrupoNuevo, visibleEnPropuestaPublica: true, orden: nuevoOrden,
           jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0',
-          colores: [], fotosEspacio: [], fotosDisenio: [], fotosReferencia: [],
+          fotosEspacio: [], fotosDisenio: [], fotosReferencia: [],
         }
       : {
           ...origen, id: undefined, nombreEspacio, nombreVariante, activa: esGrupoNuevo, orden: nuevoOrden,

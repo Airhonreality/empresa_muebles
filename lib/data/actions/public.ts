@@ -244,6 +244,12 @@ export interface PropuestaPublicaData {
   /** t-157 (2026-09-10): grupos/subgrupos de todos los espacios del proyecto — permite
    * renderizar los ítems de "Qué incluye" agrupados por su grupoItemId con nombre legible. */
   gruposItem: GrupoItem[]
+  /** t-172/t-175: acabados reales de cada espacio, indexados por `espacio_variantes.id`.
+   * Reemplaza al campo fantasma `colores` (jsonb) que nunca se llenaba tras la migración del
+   * cotizador a `espacio_variante_acabados`. `CatalogoAcabado` trae `imagenTexturaUrl`/
+   * `colorHex`/`marca`, y `descripcionUso` es el texto libre destino ("fachadas módulo X").
+   * `?? {}` en el lector: snapshots publicados ANTES de t-172 no traen esta clave. */
+  acabadosPorEspacio: Record<string, { descripcionUso: string; acabado: CatalogoAcabado }[]>
   /**
    * t-167: el contratante. Va FUERA del snapshot congelado a propósito, y se hidrata en cada
    * request desde `clientes`. Razón: `snapshotJson` es inmutable por diseño — si el cliente se
@@ -325,7 +331,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
     const parametrosRows = parametrosRowsResult
 
     // Ronda 2: queries que dependen de Ronda 1
-    const [itemsResult, gruposItemResult, hitosResult] = await Promise.all([
+    const [itemsResult, gruposItemResult, hitosResult, espacioAcabadosResult] = await Promise.all([
       varianteIds.length
         ? db.select().from(s.itemsVariante).where(and(inArray(s.itemsVariante.varianteId, varianteIds), eq(s.itemsVariante.anulado, false)))
         : Promise.resolve([]),
@@ -335,17 +341,38 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
       contratoRow
         ? db.select().from(s.hitosPago).where(eq(s.hitosPago.contratoId, contratoRow.id))
         : Promise.resolve([]),
+      varianteIds.length
+        ? db.select().from(s.espacioVarianteAcabados).where(inArray(s.espacioVarianteAcabados.espacioVarianteId, varianteIds))
+        : Promise.resolve([]),
     ])
 
     const items = itemsResult
     const gruposItem = gruposItemResult
     const hitos = hitosResult
+    const espacioAcabados = espacioAcabadosResult
 
     // Ronda 3: query de catálogo (depende de items de Ronda 2)
     const catalogoIds = [...new Set(items.map((it) => it.catalogoId).filter((id): id is string => Boolean(id)))]
     const catalogoRows = catalogoIds.length
       ? await db.select().from(s.productosCatalogo).where(inArray(s.productosCatalogo.id, catalogoIds))
       : []
+
+    // Ronda 3b: acabados de catálogo referenciados por los espacios (t-172) + mapa por espacio
+    const acabadoIds = [...new Set(espacioAcabados.map((a) => a.acabadoId))]
+    const acabadoRows = acabadoIds.length
+      ? await db.select().from(s.catalogoAcabados).where(inArray(s.catalogoAcabados.id, acabadoIds))
+      : []
+    const acabadoPorId: Record<string, CatalogoAcabado> = {}
+    for (const a of acabadoRows) acabadoPorId[a.id] = a as unknown as CatalogoAcabado
+    const acabadosPorEspacio: PropuestaPublicaData['acabadosPorEspacio'] = {}
+    for (const enlace of espacioAcabados) {
+      const acabado = acabadoPorId[enlace.acabadoId]
+      if (!acabado) continue
+      ;(acabadosPorEspacio[enlace.espacioVarianteId] ??= []).push({
+        descripcionUso: enlace.descripcionUso,
+        acabado,
+      })
+    }
 
     const catalogoPorId: Record<string, CatalogoItemPublico> = {}
     for (const c of catalogoRows) {
@@ -377,6 +404,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
       catalogoPorId,
       contrato: (contratoRow as unknown as Contrato) ?? null,
       hitos: hitos as unknown as HitoPago[],
+      acabadosPorEspacio,
       tarifas: {
         tarifaDev: valorDev,
         tarifaAssembly: valorCarp,
@@ -409,6 +437,18 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
   }
   const contrato = store.contratos.porProyecto(proyectoId) ?? null
   const hitos = contrato ? store.hitos.porContrato(contrato.id) : []
+  const catalogoAcabadosDisponibles = store.catalogoAcabados.listar()
+  const acabadosPorEspacio: PropuestaPublicaData['acabadosPorEspacio'] = {}
+  for (const e of espacios) {
+    const enlaces = store.espacioVarianteAcabados.porEspacio(e.id)
+    if (enlaces.length === 0) continue
+    const lista: { descripcionUso: string; acabado: CatalogoAcabado }[] = []
+    for (const enlace of enlaces) {
+      const acabado = catalogoAcabadosDisponibles.find((c) => c.id === enlace.acabadoId)
+      if (acabado) lista.push({ descripcionUso: enlace.descripcionUso, acabado })
+    }
+    if (lista.length > 0) acabadosPorEspacio[e.id] = lista
+  }
   const p = (clave: string) => store.parametros.obtenerPorClave(clave)?.valorTexto ?? store.parametros.obtenerPorClave(clave)?.valorNumeric ?? null
   const valorDev = Number(p('valor_hora_desarrollador')) || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.desarrollador)
   const valorCarp = Number(p('valor_hora_carpintero')) || Number(PARAMETROS_DEFAULT.jornadas.valorHoraPorRol.carpintero)
@@ -416,6 +456,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
 
   return {
     proyecto, espacios, items, catalogoPorId, contrato, hitos,
+    acabadosPorEspacio,
     tarifas: {
       tarifaDev: valorDev,
       tarifaAssembly: valorCarp,

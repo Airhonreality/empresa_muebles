@@ -192,7 +192,7 @@ export function useCrearEspacioMutation(proyectoId: string) {
 export function useActualizarEspacioMutation(proyectoId: string) {
   return useMutationOptGenerico<
     CotizadorSnapshot,
-    { id: string; patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>> },
+    { id: string; patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>> },
     EspacioVariante | null
   >(
     cotizadorKeys.detalle(proyectoId),

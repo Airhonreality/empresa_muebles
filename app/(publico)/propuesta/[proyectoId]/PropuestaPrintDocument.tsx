@@ -212,6 +212,9 @@ function FilaTotal({ etiqueta, valor, fuerte = false }: { etiqueta: string; valo
 export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData }) {
   const { proyecto, espacios: espaciosBase, items: todosLosItems, catalogoPorId, contrato, hitos, tarifas, cliente } = data
   const gruposItem = data.gruposItem ?? []
+  // t-172/t-175: acabados reales por espacio (imagen/hex + destino). `?? {}`: snapshots
+  // publicados antes de migrar a espacio_variante_acabados no traen esta clave.
+  const acabadosPorEspacio = data.acabadosPorEspacio ?? {}
 
   const [fechaEmision, setFechaEmision] = useState<string | null>(null)
   useEffect(() => {
@@ -351,18 +354,36 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
 
             {esp.descripcion && <blockquote className="pp-cita">{esp.descripcion}</blockquote>}
 
-            {(esp.colores as string[]).filter(Boolean).length > 0 && (
-              <div className="pp-avoid">
-                <p className="pp-mini">Materiales y acabados</p>
-                <div className="pp-chips">
-                  {(esp.colores as string[]).filter(Boolean).map((c) => (
-                    <span key={c} className="pp-chip">
-                      {c}
-                    </span>
-                  ))}
+            {(() => {
+              const acabados = acabadosPorEspacio[esp.id] ?? []
+              if (acabados.length === 0) return null
+              return (
+                <div className="pp-avoid">
+                  <p className="pp-mini">Materiales y acabados</p>
+                  <div className="pp-acabados">
+                    {acabados.map(({ descripcionUso, acabado }) => (
+                      <div key={acabado.id} className="pp-acabado">
+                        <span
+                          className="pp-acabado-swatch"
+                          style={acabado.imagenTexturaUrl ? undefined : { background: acabado.colorHex ?? '#D9D4CC' }}
+                        >
+                          {acabado.imagenTexturaUrl ? (
+                            <Image src={acabado.imagenTexturaUrl} alt="" fill unoptimized className="pp-acabado-img" />
+                          ) : null}
+                        </span>
+                        <div className="pp-acabado-meta">
+                          <p className="pp-acabado-nombre">
+                            {acabado.nombre}
+                            {acabado.marca ? ` — ${acabado.marca}` : ''}
+                          </p>
+                          {descripcionUso && <p className="pp-acabado-destino">{descripcionUso}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             <BloqueFotos v={esp} />
 
@@ -652,20 +673,47 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
           color: #241C15;
           white-space: pre-line;
         }
-        .pp-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 2mm;
+        .pp-acabados {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 3mm;
           margin-bottom: 5mm;
         }
-        .pp-chip {
-          display: inline-block;
+        .pp-acabado {
+          display: flex;
+          align-items: center;
+          gap: 2.5mm;
           border: 0.3mm solid #E6E1D8;
-          border-radius: 10mm;
-          padding: 1mm 3mm;
-          font-size: 9pt;
-          color: #5F5D57;
+          border-radius: 1.5mm;
+          padding: 2mm;
           background: #FCFBF9;
+        }
+        .pp-acabado-swatch {
+          position: relative;
+          flex: 0 0 auto;
+          width: 10mm;
+          height: 10mm;
+          border: 0.3mm solid #E6E1D8;
+          border-radius: 1mm;
+          overflow: hidden;
+          background: #D9D4CC;
+        }
+        .pp-acabado-img {
+          object-fit: cover;
+        }
+        .pp-acabado-meta {
+          min-width: 0;
+        }
+        .pp-acabado-nombre {
+          font-size: 9pt;
+          color: #241C15;
+          margin: 0;
+        }
+        .pp-acabado-destino {
+          font-size: 8pt;
+          font-style: italic;
+          color: #5F5D57;
+          margin: 0.5mm 0 0;
         }
         /* ── Fotos ── */
         .pp-fotobloque {

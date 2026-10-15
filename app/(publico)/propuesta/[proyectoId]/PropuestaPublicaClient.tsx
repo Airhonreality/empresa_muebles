@@ -297,6 +297,9 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
   // Fallback []: snapshots publicados ANTES de t-157 (2026-09-10) no tienen esta clave —
   // sin esto, un link de propuesta ya compartido con un cliente real rompería al abrirse.
   const gruposItemTodos = data.gruposItem ?? []
+  // t-172/t-175: acabados reales del espacio (imagen/color + destino). `?? {}`: snapshots
+  // publicados ANTES de la migración a espacio_variante_acabados no traen esta clave.
+  const acabadosPorEspacio = data.acabadosPorEspacio ?? {}
 
   const [espacioActivoId, setEspacioActivoId] = useState<string | null>(null)
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState<string | null>(null)
@@ -604,20 +607,38 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 </blockquote>
               )}
 
-              {/* Colores */}
-              {(varianteActual.colores as string[]).filter(Boolean).length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Materiales y acabados</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(varianteActual.colores as string[]).filter(Boolean).map((c) => (
-                      <span key={c} className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-bg-raised px-3 py-1 text-xs text-text-muted">
-                        <span className="h-2 w-2 rounded-full bg-gold-400" />
-                        {c}
-                      </span>
-                    ))}
+              {/* Colores y acabados reales del espacio (t-172/t-175) — desde
+                  espacio_variante_acabados. Antes leía el campo fantasma `colores` (jsonb), que
+                  quedó vacío tras migrar el cotizador a la tabla relacional. Cada acabado pinta
+                  su textura/imagen o su color hex, más el destino libre del vendedor. */}
+              {(() => {
+                const acabados = acabadosPorEspacio[varianteActual.id] ?? []
+                if (acabados.length === 0) return null
+                return (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Materiales y acabados</p>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {acabados.map(({ descripcionUso, acabado }) => (
+                        <div key={acabado.id} className="flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-raised p-3">
+                          <span
+                            className="relative h-12 w-12 shrink-0 overflow-hidden rounded-sm border border-border-subtle"
+                            style={acabado.imagenTexturaUrl ? undefined : { background: acabado.colorHex ?? '#D9D4CC' }}
+                          >
+                            {acabado.imagenTexturaUrl ? (
+                              <Image src={acabado.imagenTexturaUrl} alt="" fill unoptimized className="object-cover" />
+                            ) : null}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium leading-5 text-text-heading">{acabado.nombre}</p>
+                            {acabado.marca && <p className="text-xs text-text-muted">{acabado.marca}</p>}
+                            {descripcionUso && <p className="mt-0.5 text-xs italic text-text-muted/80">{descripcionUso}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
 
               {/* Carril visual con tabs por tipo de foto del espacio: Espacio actual / Diseño / Referencia.
                   Antes solo se mostraban Diseño y Referencia lado a lado — fotosEspacio (fotos del

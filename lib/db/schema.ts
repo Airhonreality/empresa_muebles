@@ -260,7 +260,6 @@ export const espacioVariantes = pgTable("espacio_variantes", {
 	jornadasDesarrolloTecnico: numeric("jornadas_desarrollo_tecnico", { precision: 8, scale:  2 }).default('0'),
 	jornadasEnsamblajeTaller: numeric("jornadas_ensamblaje_taller", { precision: 8, scale:  2 }).default('0'),
 	jornadasInstalacionObra: numeric("jornadas_instalacion_obra", { precision: 8, scale:  2 }).default('0'),
-	colores: jsonb().default([]),
 	fotosEspacio: jsonb().default([]),
 	fotosDisenio: jsonb().default([]),
 	fotosReferencia: jsonb().default([]),

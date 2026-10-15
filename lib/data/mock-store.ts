@@ -449,7 +449,6 @@ export function createMockStore(): DataStore {
           jornadasDesarrolloTecnico: data.jornadasDesarrolloTecnico ?? '0',
           jornadasEnsamblajeTaller: data.jornadasEnsamblajeTaller ?? '0',
           jornadasInstalacionObra: data.jornadasInstalacionObra ?? '0',
-          colores: data.colores ?? [],
           fotosEspacio: data.fotosEspacio ?? [],
           fotosDisenio: data.fotosDisenio ?? [],
           fotosReferencia: data.fotosReferencia ?? [],
@@ -470,7 +469,7 @@ export function createMockStore(): DataStore {
         notify()
         return espacios[idx]
       },
-      async actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null> {
+      async actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null> {
         const idx = espacios.findIndex(e => e.id === id)
         if (idx === -1) return null
         espacios[idx] = { ...espacios[idx], ...partial }
@@ -503,7 +502,6 @@ export function createMockStore(): DataStore {
               jornadasDesarrolloTecnico: '0',
               jornadasEnsamblajeTaller: '0',
               jornadasInstalacionObra: '0',
-              colores: [],
               fotosEspacio: [],
               fotosDisenio: [],
               fotosReferencia: [],

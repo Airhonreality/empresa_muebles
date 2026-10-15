@@ -81,7 +81,6 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
     jornadasDesarrolloTecnico: '0',
     jornadasEnsamblajeTaller: '0',
     jornadasInstalacionObra: '0',
-    colores: [],
     fotosEspacio: [],
     fotosDisenio: [],
     fotosReferencia: [],

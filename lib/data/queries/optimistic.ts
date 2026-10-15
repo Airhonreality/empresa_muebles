@@ -166,7 +166,6 @@ export function construirEspacioOptimista(input: InputEspacioOptimista, orden: n
     jornadasDesarrolloTecnico: input.jornadasDesarrolloTecnico ?? '0',
     jornadasEnsamblajeTaller: input.jornadasEnsamblajeTaller ?? '0',
     jornadasInstalacionObra: input.jornadasInstalacionObra ?? '0',
-    colores: [],
     fotosEspacio: [],
     fotosDisenio: [],
     fotosReferencia: [],
@@ -182,7 +181,7 @@ export function agregarEspacio(snapshot: CotizadorSnapshot, input: InputEspacioO
 export function actualizarEspacio(
   snapshot: CotizadorSnapshot,
   espacioId: string,
-  patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>,
+  patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>,
 ): CotizadorSnapshot {
   if (!snapshot.espacios.some((e) => e.id === espacioId)) return snapshot
   return {

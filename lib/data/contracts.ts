@@ -67,7 +67,6 @@ export interface EspacioVariante {
   jornadasDesarrolloTecnico: string
   jornadasEnsamblajeTaller: string
   jornadasInstalacionObra: string
-  colores: unknown[]
   fotosEspacio: string[]
   fotosDisenio: string[]
   fotosReferencia: string[]
@@ -1146,7 +1145,7 @@ export interface DataStore {
     porProyecto(proyectoId: string): EspacioVariante[]
     crear(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante>
     actualizarJornadas(id: string, jornadas: { jornadasDesarrolloTecnico: string; jornadasEnsamblajeTaller: string; jornadasInstalacionObra: string }): Promise<EspacioVariante | null>
-    actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'colores' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null>
+    actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null>
     /**
      * Duplica una variante existente. Sin `nuevoNombreEspacio`: agrega una variante nueva
      * al mismo espacio (mismo `nombreEspacio`, `activa: false`). Con `nuevoNombreEspacio`:

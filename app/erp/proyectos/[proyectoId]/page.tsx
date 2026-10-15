@@ -387,7 +387,7 @@ function EspacioDetalle({
   return (
     <div className="space-y-4">
       {/* Descripción y datos del espacio */}
-      {(espacio.tipoEspacio || espacio.descripcion || (espacio.colores as string[]).length > 0) && (
+      {(espacio.tipoEspacio || espacio.descripcion) && (
         <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
           {espacio.tipoEspacio && (
             <div>
@@ -399,12 +399,6 @@ function EspacioDetalle({
             <div className="sm:col-span-2">
               <dt className="text-xs text-text-muted">Descripción</dt>
               <dd className="mt-0.5 text-text-heading">{espacio.descripcion}</dd>
-            </div>
-          )}
-          {(espacio.colores as string[]).length > 0 && (
-            <div className="sm:col-span-2">
-              <dt className="text-xs text-text-muted">Colores</dt>
-              <dd className="mt-0.5 text-text-heading">{(espacio.colores as string[]).join(', ')}</dd>
             </div>
           )}
         </dl>
