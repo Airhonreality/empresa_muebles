@@ -11,7 +11,9 @@ import { ProductSheetModal } from '@/components/veta/product-sheet-modal'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
+import { compararVariantes } from '@/lib/propuesta/comparar-variantes'
 import { PropuestaPrintDocument } from './PropuestaPrintDocument'
+import { ComparadorVersiones } from './ComparadorVersiones'
 
 // F-08 Propuesta pública (disenio_F08_propuesta_publica.md). Ruta simplificada
 // a /propuesta/[proyectoId] en vez de /propuesta/{slug} — Proyecto no tiene
@@ -296,13 +298,15 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
   const { tarifaDev, tarifaAssembly, tarifaInstall } = tarifas
   // Fallback []: snapshots publicados ANTES de t-157 (2026-09-10) no tienen esta clave —
   // sin esto, un link de propuesta ya compartido con un cliente real rompería al abrirse.
-  const gruposItemTodos = data.gruposItem ?? []
+  const gruposItemTodos = useMemo(() => data.gruposItem ?? [], [data.gruposItem])
   // t-172/t-175: acabados reales del espacio (imagen/color + destino). `?? {}`: snapshots
   // publicados ANTES de la migración a espacio_variante_acabados no traen esta clave.
-  const acabadosPorEspacio = data.acabadosPorEspacio ?? {}
+  const acabadosPorEspacio = useMemo(() => data.acabadosPorEspacio ?? {}, [data.acabadosPorEspacio])
 
   const [espacioActivoId, setEspacioActivoId] = useState<string | null>(null)
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState<string | null>(null)
+  const [modoComparar, setModoComparar] = useState(false)
+  const [varianteComparadaId, setVarianteComparadaId] = useState<string | null>(null)
   const [tipoImagenActivo, setTipoImagenActivo] = useState<'espacio' | 'disenio' | 'referencia'>('espacio')
   const [zoom, setZoom] = useState<{ imagenes: GalleryImage[]; index: number } | null>(null)
   const [tituloHeaderVisible, setTituloHeaderVisible] = useState(false)
@@ -320,13 +324,18 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
 
   // Solo la variante activa de cada espacio entra a la propuesta — igual regla
   // que el cotizador: alternativas de comparación no son objeto de contrato.
+  // `visibleEnPropuestaPublica=false` excluye la variante del todo (tabs y comparador) —
+  // misma semántica que lib/data/presentacion.ts:55. Aplica también al comparador:
+  // un borrador que el vendedor ocultó no debe aparecerle al cliente.
   const grupos = useMemo(() => {
     const map = new Map<string, EspacioVariante[]>()
-    espaciosBase.forEach((e) => {
-      const arr = map.get(e.nombreEspacio) ?? []
-      arr.push(e)
-      map.set(e.nombreEspacio, arr)
-    })
+    espaciosBase
+      .filter((e) => e.visibleEnPropuestaPublica !== false)
+      .forEach((e) => {
+        const arr = map.get(e.nombreEspacio) ?? []
+        arr.push(e)
+        map.set(e.nombreEspacio, arr)
+      })
     return map
   }, [espaciosBase])
 
@@ -406,6 +415,51 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
     grupos, espacioActual, varianteActual, itemsPorVariante, 
     tarifaDev, tarifaAssembly, tarifaInstall, proyecto
   ])
+
+  // Comparación de versiones (diff). Referencia fija: la variante del contrato (activa).
+  // El delta y el "cambia" se miden SIEMPRE contra ella, nunca acumulativo.
+  const varianteContractualActual = espacioActualVariantes.find((v) => v.activa) ?? espacioActualVariantes[0] ?? null
+  const varianteComparada =
+    espacioActualVariantes.find((v) => v.id === varianteComparadaId && v.id !== varianteContractualActual?.id) ??
+    espacioActualVariantes.find((v) => v.id !== varianteContractualActual?.id) ??
+    null
+
+  const diffVersiones = useMemo(() => {
+    if (!varianteContractualActual || !varianteComparada) return null
+    return compararVariantes({
+      a: varianteContractualActual,
+      b: varianteComparada,
+      items: todosLosItems,
+      grupos: gruposItemTodos,
+      acabadosPorEspacio,
+      catalogoPorId,
+      tarifas: { tarifaDev, tarifaAssembly, tarifaInstall },
+    })
+  }, [
+    varianteContractualActual,
+    varianteComparada,
+    todosLosItems,
+    gruposItemTodos,
+    acabadosPorEspacio,
+    catalogoPorId,
+    tarifaDev,
+    tarifaAssembly,
+    tarifaInstall,
+  ])
+
+  const totalAmbiente = useCallback(
+    (esp: EspacioVariante): number => {
+      const mat = itemsPorVariante(esp.id)
+        .filter((it) => !it.esReferencial)
+        .reduce((s, it) => s + parseNum(it.totalLinea), 0)
+      const mo =
+        parseNum(esp.jornadasDesarrolloTecnico) * tarifaDev +
+        parseNum(esp.jornadasEnsamblajeTaller) * tarifaAssembly +
+        parseNum(esp.jornadasInstalacionObra) * tarifaInstall
+      return mat + mo
+    },
+    [itemsPorVariante, tarifaDev, tarifaAssembly, tarifaInstall],
+  )
 
   // Datos de la variante actual para mostrar en la sección del espacio
   const itemsVarianteActual = varianteActual ? itemsPorVariante(varianteActual.id) : []
@@ -553,6 +607,8 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 onClick={() => {
                   setEspacioActivoId(esp.id)
                   setVarianteSeleccionadaId(null)
+                  setModoComparar(false)
+                  setVarianteComparadaId(null)
                 }}
                 className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-fast ${
                   espacioIdActual === esp.id
@@ -690,32 +746,84 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 )
               })()}
 
-              {/* SelectorVariantes */}
+              {/* SelectorVersiones — "variante" es jerga interna; el cliente ve "versiones".
+                  La del contrato lleva badge; el resto vive en el comparador. */}
               {espacioActualVariantes.length > 1 && (
                 <div className="print:hidden">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Variantes</p>
-                  <div className="flex flex-wrap gap-2">
-                    {espacioActualVariantes.map((var_) => (
-                      <button
-                        key={var_.id}
-                        type="button"
-                        onClick={() => setVarianteSeleccionadaId(var_.id)}
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors duration-fast ${
-                          varianteSeleccionadaId === var_.id || (varianteSeleccionadaId === null && var_.activa)
-                            ? 'bg-gold-500 text-white'
-                            : 'bg-bg-raised border border-border-subtle text-text-heading hover:border-border-brand'
-                        }`}
-                      >
-                        {var_.nombreVariante}
-                      </button>
-                    ))}
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Versiones de este ambiente</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModoComparar(true)
+                        if (varianteComparada) setVarianteComparadaId(varianteComparada.id)
+                      }}
+                      className="rounded-full border border-gold-400/60 px-3.5 py-1.5 text-xs font-medium text-gold-700 transition-colors hover:bg-gold-50"
+                    >
+                      Comparar versiones
+                    </button>
                   </div>
+                  <div className="flex flex-wrap gap-2">
+                    {espacioActualVariantes.map((var_) => {
+                      const activa = !modoComparar && (varianteSeleccionadaId === var_.id || (varianteSeleccionadaId === null && var_.activa))
+                      return (
+                        <button
+                          key={var_.id}
+                          type="button"
+                          onClick={() => {
+                            setModoComparar(false)
+                            setVarianteSeleccionadaId(var_.id)
+                          }}
+                          className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors duration-fast ${
+                            activa
+                              ? 'bg-gold-500 text-white'
+                              : 'bg-bg-raised border border-border-subtle text-text-heading hover:border-border-brand'
+                          }`}
+                        >
+                          {var_.nombreVariante}
+                          <span className={activa ? 'text-white/70' : 'text-text-muted'}>{formatCOP(totalAmbiente(var_))}</span>
+                          {var_.activa && (
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                                activa ? 'bg-white/20 text-white' : 'bg-gold-100 text-gold-700'
+                              }`}
+                            >
+                              Del contrato
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {modoComparar && diffVersiones && (
+                    <ComparadorVersiones
+                      diff={diffVersiones}
+                      variantes={espacioActualVariantes.map((v) => ({
+                        id: v.id,
+                        etiqueta: v.nombreVariante,
+                        esContractual: v.activa,
+                        total: totalAmbiente(v),
+                      }))}
+                      comparadaId={varianteComparada?.id ?? ''}
+                      onCambiarComparada={(id) => setVarianteComparadaId(id)}
+                      onElegir={(id) => {
+                        setVarianteSeleccionadaId(id)
+                        setModoComparar(false)
+                      }}
+                      onVolver={() => setModoComparar(false)}
+                    />
+                  )}
                 </div>
               )}
 
               {/* Qué incluye — ítems siempre visibles con imagen (ver nota de refinamiento arriba).
                   t-157 (2026-09-10): si el espacio tiene grupos/subgrupos, los ítems se agrupan
-                  visualmente bajo su nombre; sin ninguno, el render es la grilla plana de siempre. */}
+                  visualmente bajo su nombre; sin ninguno, el render es la grilla plana de siempre.
+                  En modo comparar se oculta: el comparador ya cubre los ítems y no hay que
+                  mostrar dos listas que digan cosas distintas. */}
+              {!modoComparar && (
+                <>
               <section>
                 <div className="flex items-baseline justify-between gap-4">
                   <h3 className="font-display text-xl text-text-heading">Qué incluye</h3>
@@ -746,6 +854,8 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 tarifaAssembly={tarifaAssembly}
                 tarifaInstall={tarifaInstall}
               />
+                </>
+              )}
             </>
           )}
 

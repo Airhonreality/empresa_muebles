@@ -5,6 +5,7 @@ import Image from 'next/image'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
+import { compararVariantes, type DiffEspacio, type ItemComparado } from '@/lib/propuesta/comparar-variantes'
 
 // Documento de impresión de la propuesta (rediseño 2026-10-14).
 //
@@ -209,6 +210,283 @@ function FilaTotal({ etiqueta, valor, fuerte = false }: { etiqueta: string; valo
   )
 }
 
+function textoEstadoItem(estado: ItemComparado['estado'], nombreA: string, nombreB: string): string {
+  if (estado === 'cambia') return 'Cambia'
+  if (estado === 'soloA') return `Solo en ${nombreA}`
+  return `Solo en ${nombreB}`
+}
+
+function TablaItemsComparados({ diff }: { diff: DiffEspacio }) {
+  const det = diff.dimensiones.items.detalle
+  const filas = [...det.cambian, ...det.soloA, ...det.soloB]
+  if (filas.length === 0) return null
+  return (
+    <table className="pp-table pp-cmp-tabla">
+      <thead>
+        <tr>
+          <th>Elemento</th>
+          <th>Estado</th>
+          <th className="pp-amount">Precio unit.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {filas.map((f, i) => (
+          <tr key={`${f.nombre}-${i}`}>
+            <td>
+              <span className="pp-item-nombre">{f.nombre}</span>
+              {f.estado === 'cambia' && f.atributosCambiados.length > 0 && (
+                <span className="pp-item-specs">
+                  {f.atributosCambiados.map((at) => (
+                    <span key={at.etiqueta}>
+                      <strong>{at.etiqueta}:</strong> {at.valorA ?? '—'} → {at.valorB ?? '—'}{' '}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </td>
+            <td className="pp-cmp-estado">{textoEstadoItem(f.estado, diff.a.nombreVariante, diff.b.nombreVariante)}</td>
+            <td className="pp-amount">{formatCOP(f.precioA || f.precioB)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+function BloquePar({ diff }: { diff: DiffEspacio }) {
+  const nombreA = diff.a.nombreVariante || 'versión del contrato'
+  const nombreB = diff.b.nombreVariante || 'alternativa'
+  const d = diff.dimensiones
+  const deltaSigno = diff.deltaTotal > 0 ? '+' : '−'
+
+  const iguales: string[] = []
+  if (d.acabados.presente && d.acabados.igual) iguales.push('materiales y acabados')
+  if (d.items.presente && d.items.igual) iguales.push('qué incluye')
+  if (d.jornadas.presente && d.jornadas.igual) iguales.push('mano de obra')
+  if (d.descripcion.presente && d.descripcion.igual) iguales.push('descripción')
+  if (d.fotos.presente && d.fotos.igual) iguales.push('material visual')
+  if (d.referenciales.presente && d.referenciales.igual) iguales.push('referencias con terceros')
+
+  return (
+    <div className="pp-cmp-par">
+      <h3 className="pp-cmp-sub">
+        {nombreB} contra {nombreA}
+      </h3>
+      <div className="pp-cmp-inversion pp-avoid">
+        <span className="pp-meta-k">Inversión del ambiente</span>
+        <span className="pp-cmp-inversion-num">
+          {formatCOP(diff.a.total)} → {formatCOP(diff.b.total)}
+          {diff.deltaTotal !== 0 && (
+            <span className={diff.deltaTotal > 0 ? 'pp-cmp-up' : 'pp-cmp-down'}>
+              {' '}
+              ({deltaSigno}
+              {formatCOP(Math.abs(diff.deltaTotal))}
+              {diff.deltaTotalPct !== null ? ` · ${diff.deltaTotalPct > 0 ? '+' : ''}${diff.deltaTotalPct}%` : ''})
+            </span>
+          )}
+        </span>
+      </div>
+
+      {diff.sinDiferencias && <p className="pp-nota">Las dos versiones son equivalentes en todo.</p>}
+
+      {d.acabados.presente && !d.acabados.igual && (
+        <div className="pp-avoid">
+          <p className="pp-mini">Materiales y acabados</p>
+          <div className="pp-cmp-acabados">
+            {[...d.acabados.detalle.cambian, ...d.acabados.detalle.exclusivos].map((f, i) => (
+              <div key={i} className="pp-cmp-acabado">
+                <div className="pp-cmp-acabado-swatches">
+                  {f.acabadoA && (
+                    <span
+                      className="pp-acabado-swatch"
+                      style={f.acabadoA.imagenTexturaUrl ? undefined : { background: f.acabadoA.colorHex ?? '#D9D4CC' }}
+                    >
+                      {f.acabadoA.imagenTexturaUrl ? (
+                        <Image src={f.acabadoA.imagenTexturaUrl} alt="" fill unoptimized className="pp-acabado-img" />
+                      ) : null}
+                    </span>
+                  )}
+                  {f.acabadoA && f.acabadoB && <span className="pp-cmp-flecha">→</span>}
+                  {f.acabadoB && (
+                    <span
+                      className="pp-acabado-swatch"
+                      style={f.acabadoB.imagenTexturaUrl ? undefined : { background: f.acabadoB.colorHex ?? '#D9D4CC' }}
+                    >
+                      {f.acabadoB.imagenTexturaUrl ? (
+                        <Image src={f.acabadoB.imagenTexturaUrl} alt="" fill unoptimized className="pp-acabado-img" />
+                      ) : null}
+                    </span>
+                  )}
+                </div>
+                <div className="pp-acabado-meta">
+                  <p className="pp-acabado-nombre">{f.nombreB ?? f.nombreA}</p>
+                  {f.estado === 'cambia' ? (
+                    <p className="pp-acabado-destino">
+                      Destino: {f.destinoA ?? '—'} → {f.destinoB ?? '—'}
+                    </p>
+                  ) : (
+                    <p className="pp-acabado-destino">
+                      {f.estado === 'soloA' ? `Solo en ${nombreA}` : `Solo en ${nombreB}`}
+                      {f.destinoA || f.destinoB ? ` · ${f.destinoA ?? f.destinoB}` : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {d.items.presente && !d.items.igual && (
+        <div className="pp-avoid">
+          <p className="pp-mini">Qué incluye</p>
+          <TablaItemsComparados diff={diff} />
+        </div>
+      )}
+
+      {d.jornadas.presente && !d.jornadas.igual && (
+        <div className="pp-avoid">
+          <p className="pp-mini">Mano de obra</p>
+          <div className="pp-desglose">
+            {d.jornadas.detalle.filas
+              .filter((f) => f.delta !== 0)
+              .map((f) => (
+                <FilaTotal
+                  key={f.clave}
+                  etiqueta={`${f.etiqueta} (${f.a} → ${f.b} jornadas)`}
+                  valor={`${f.deltaCOP > 0 ? '+' : '−'}${formatCOP(Math.abs(f.deltaCOP))}`}
+                />
+              ))}
+          </div>
+        </div>
+      )}
+
+      {d.descripcion.presente && !d.descripcion.igual && (
+        <div className="pp-avoid">
+          <p className="pp-mini">Descripción del diseño</p>
+          <div className="pp-cmp-descripcion">
+            {d.descripcion.detalle.textoA && <p className="pp-cmp-descripcion-item">{d.descripcion.detalle.textoA}</p>}
+            {d.descripcion.detalle.textoB && <p className="pp-cmp-descripcion-item">{d.descripcion.detalle.textoB}</p>}
+          </div>
+        </div>
+      )}
+
+      {d.fotos.presente && !d.fotos.igual && (
+        <div className="pp-avoid">
+          <p className="pp-mini">Material visual</p>
+          {d.fotos.detalle.porTipo.map((t) => (
+            <FilaTotal
+              key={t.etiqueta}
+              etiqueta={t.etiqueta}
+              valor={`${t.soloA.length} vs ${t.soloB.length} fotos exclusivas`}
+            />
+          ))}
+        </div>
+      )}
+
+      {d.referenciales.presente && !d.referenciales.igual && (
+        <div className="pp-avoid">
+          <p className="pp-mini">Referencias con terceros</p>
+          <table className="pp-table pp-cmp-tabla">
+            <thead>
+              <tr>
+                <th>Referencia</th>
+                <th>Estado</th>
+                <th className="pp-amount">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...d.referenciales.detalle.cambian, ...d.referenciales.detalle.soloA, ...d.referenciales.detalle.soloB].map(
+                (f, i) => (
+                  <tr key={`${f.nombre}-${i}`}>
+                    <td>
+                      <span className="pp-item-nombre">{f.nombre}</span>
+                    </td>
+                    <td className="pp-cmp-estado">{textoEstadoItem(f.estado, nombreA, nombreB)}</td>
+                    <td className="pp-amount">{formatCOP(f.precioA || f.precioB)}</td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {d.grupos.presente && !d.grupos.igual && (
+        <p className="pp-nota">
+          Cambió la organización de los elementos
+          {d.grupos.detalle.soloA.length > 0 ? ` — solo en ${nombreA}: ${d.grupos.detalle.soloA.join(', ')}` : ''}
+          {d.grupos.detalle.soloB.length > 0 ? ` — solo en ${nombreB}: ${d.grupos.detalle.soloB.join(', ')}` : ''}.
+        </p>
+      )}
+
+      {iguales.length > 0 && <p className="pp-nota">Sin cambios: {iguales.join(', ')}.</p>}
+      {diff.notas.map((n) => (
+        <p key={n} className="pp-nota">
+          {n}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+function ComparacionEspacio({
+  nombreEspacio,
+  contractual,
+  alternativas,
+  items,
+  grupos,
+  acabadosPorEspacio,
+  catalogoPorId,
+  tarifas,
+}: {
+  nombreEspacio: string
+  contractual: EspacioVariante
+  alternativas: EspacioVariante[]
+  items: ItemVariante[]
+  grupos: GrupoItem[]
+  acabadosPorEspacio: PropuestaPublicaData['acabadosPorEspacio']
+  catalogoPorId: Record<string, CatalogoItemPublico>
+  tarifas: { tarifaDev: number; tarifaAssembly: number; tarifaInstall: number }
+}) {
+  const totalAmbiente = (esp: EspacioVariante): number => {
+    const mat = items
+      .filter((it) => it.varianteId === esp.id && !it.anulado && !it.esReferencial)
+      .reduce((s, it) => s + parseNum(it.totalLinea), 0)
+    const mo =
+      parseNum(esp.jornadasDesarrolloTecnico) * tarifas.tarifaDev +
+      parseNum(esp.jornadasEnsamblajeTaller) * tarifas.tarifaAssembly +
+      parseNum(esp.jornadasInstalacionObra) * tarifas.tarifaInstall
+    return mat + mo
+  }
+
+  return (
+    <section className="pp-ambiente pp-cmp">
+      <header className="pp-ambiente-head pp-avoid">
+        <p className="pp-eyebrow">Comparación de versiones</p>
+        <h2 className="pp-ambiente-titulo">{nombreEspacio}</h2>
+      </header>
+
+      <div className="pp-cmp-totales pp-avoid">
+        {[contractual, ...alternativas].map((v) => (
+          <div key={v.id} className={`pp-cmp-total ${v.activa ? 'pp-cmp-total-base' : ''}`}>
+            <span className="pp-meta-k">{v.activa ? 'Del contrato' : 'Alternativa'}</span>
+            <span className="pp-cmp-total-nombre">{v.nombreVariante || 'Versión'}</span>
+            <span className="pp-cmp-total-num">{formatCOP(totalAmbiente(v))}</span>
+          </div>
+        ))}
+      </div>
+
+      {alternativas.map((alt) => (
+        <BloquePar
+          key={alt.id}
+          diff={compararVariantes({ a: contractual, b: alt, items, grupos, acabadosPorEspacio, catalogoPorId, tarifas })}
+        />
+      ))}
+    </section>
+  )
+}
+
 export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData }) {
   const { proyecto, espacios: espaciosBase, items: todosLosItems, catalogoPorId, contrato, hitos, tarifas, cliente } = data
   const gruposItem = data.gruposItem ?? []
@@ -224,12 +502,15 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
   }, [])
 
   const grupos = new Map<string, EspacioVariante[]>()
-  espaciosBase.forEach((e) => {
-    const arr = grupos.get(e.nombreEspacio) ?? []
-    arr.push(e)
-    grupos.set(e.nombreEspacio, arr)
-  })
+  espaciosBase
+    .filter((e) => e.visibleEnPropuestaPublica !== false)
+    .forEach((e) => {
+      const arr = grupos.get(e.nombreEspacio) ?? []
+      arr.push(e)
+      grupos.set(e.nombreEspacio, arr)
+    })
   const espaciosActivos = Array.from(grupos.values()).map((variantes) => variantes.find((v) => v.activa) ?? variantes[0])
+  const gruposConVersiones = Array.from(grupos.values()).filter((variantes) => variantes.length > 1)
 
   let materialesTotal = 0
   let moDev = 0
@@ -429,6 +710,26 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
               </div>
             )}
           </section>
+        )
+      })}
+
+      {/* ── Comparación de versiones (solo ambientes con >1 versión visible) ── */}
+      {gruposConVersiones.map((variantes) => {
+        const contractual = variantes.find((v) => v.activa) ?? variantes[0]
+        const alternativas = variantes.filter((v) => v.id !== contractual.id)
+        if (alternativas.length === 0) return null
+        return (
+          <ComparacionEspacio
+            key={`cmp-${contractual.id}`}
+            nombreEspacio={contractual.nombreEspacio}
+            contractual={contractual}
+            alternativas={alternativas}
+            items={todosLosItems}
+            grupos={gruposItem}
+            acabadosPorEspacio={acabadosPorEspacio}
+            catalogoPorId={catalogoPorId}
+            tarifas={tarifas}
+          />
         )
       })}
 
@@ -884,6 +1185,117 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
           font-family: var(--font-fraunces), Georgia, serif;
           font-size: 20pt;
           color: #241C15;
+        }
+        /* ── Comparación de versiones ── */
+        .pp-cmp-totales {
+          display: grid;
+          grid-auto-flow: column;
+          grid-auto-columns: 1fr;
+          gap: 3mm;
+          margin-bottom: 6mm;
+        }
+        .pp-cmp-total {
+          display: flex;
+          flex-direction: column;
+          border: 0.3mm solid #E6E1D8;
+          border-radius: 1.5mm;
+          padding: 3mm;
+          background: #FCFBF9;
+        }
+        .pp-cmp-total-base {
+          border-left: 0.9mm solid #8B6914;
+        }
+        .pp-cmp-total-nombre {
+          font-family: var(--font-fraunces), Georgia, serif;
+          font-size: 11pt;
+          color: #241C15;
+          margin-top: 1mm;
+        }
+        .pp-cmp-total-num {
+          font-size: 10pt;
+          color: #241C15;
+          margin-top: 0.5mm;
+        }
+        .pp-cmp-par {
+          border-top: 0.3mm solid #E6E1D8;
+          padding-top: 5mm;
+          margin-top: 5mm;
+        }
+        .pp-cmp-par:first-of-type {
+          border-top: none;
+        }
+        .pp-cmp-sub {
+          font-family: var(--font-fraunces), Georgia, serif;
+          font-size: 13pt;
+          color: #241C15;
+          margin: 0 0 3mm;
+          break-after: avoid;
+          page-break-after: avoid;
+        }
+        .pp-cmp-inversion {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          gap: 6mm;
+          margin-bottom: 4mm;
+        }
+        .pp-cmp-inversion-num {
+          font-size: 10.5pt;
+          color: #241C15;
+          font-variant-numeric: tabular-nums;
+        }
+        .pp-cmp-up {
+          color: #8B6914;
+          font-weight: 600;
+        }
+        .pp-cmp-down {
+          color: #664400;
+          font-weight: 600;
+        }
+        .pp-cmp-acabados {
+          display: grid;
+          gap: 3mm;
+        }
+        .pp-cmp-acabado {
+          display: flex;
+          align-items: center;
+          gap: 3mm;
+          border: 0.3mm solid #E6E1D8;
+          border-radius: 1.5mm;
+          padding: 2mm 3mm;
+        }
+        .pp-cmp-acabado-swatches {
+          display: flex;
+          align-items: center;
+          gap: 2mm;
+          flex: 0 0 auto;
+        }
+        .pp-cmp-flecha {
+          color: #8B6914;
+          font-weight: 700;
+        }
+        .pp-cmp-tabla {
+          margin-bottom: 2mm;
+        }
+        .pp-cmp-estado {
+          font-size: 8.5pt;
+          color: #5F5D57;
+          white-space: nowrap;
+        }
+        .pp-cmp-descripcion {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4mm;
+        }
+        .pp-cmp-descripcion-item {
+          font-family: var(--font-fraunces), Georgia, serif;
+          font-size: 10pt;
+          line-height: 1.5;
+          color: #241C15;
+          border-left: 0.6mm solid #C5A059;
+          padding-left: 3mm;
+          margin: 0;
+          white-space: pre-line;
         }
         .pp-pie {
           margin-top: 14mm;
