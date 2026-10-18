@@ -6,6 +6,7 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { InputField } from '@/components/veta/input-field'
 import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
+import { CuentasBancariasProveedorModal } from '@/components/veta/cuentas-bancarias-proveedor-modal'
 import { useDataStore, type Proveedor } from '@/lib/data'
 
 function formatCOP(amount: string | null | undefined): string {
@@ -34,7 +35,13 @@ function coincide(proveedor: Proveedor, query: string): boolean {
     proveedor.nombre,
     proveedor.nit,
     proveedor.categoria,
+    proveedor.descripcion,
+    proveedor.contactoNombre,
+    proveedor.contactoCargo,
+    proveedor.email,
+    proveedor.whatsapp,
     proveedor.telefonoComercial,
+    proveedor.telefonoAlterno,
     proveedor.ciudad,
     proveedor.medioPago,
     proveedor.transportadora,
@@ -59,6 +66,7 @@ export default function ProveedoresPage() {
   const [filtroMedioPago, setFiltroMedioPago] = useState('todos')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Proveedor | null>(null)
+  const [cuentasDe, setCuentasDe] = useState<Proveedor | null>(null)
 
   const categorias = useMemo(() => unicos(proveedores.map((p) => p.categoria)), [proveedores])
   const ciudades = useMemo(() => unicos(proveedores.map((p) => p.ciudad)), [proveedores])
@@ -72,6 +80,14 @@ export default function ProveedoresPage() {
     })
     return mapa
   }, [productos])
+
+  // Sin useMemo a propósito: `store` es estable y el store mock muta arrays en sitio,
+  // así que memoizar por [store] dejaría el conteo congelado tras agregar una cuenta.
+  const cuentasPorProveedor = new Map<string, number>()
+  store.proveedoresCuentasBancarias.listar().forEach((c) => {
+    if (!c.activa) return
+    cuentasPorProveedor.set(c.proveedorId, (cuentasPorProveedor.get(c.proveedorId) ?? 0) + 1)
+  })
 
   const visibles = useMemo(() => {
     const q = normalizar(query)
@@ -210,12 +226,22 @@ export default function ProveedoresPage() {
                     <td className="px-4 py-3">
                       <p className="font-medium text-text-heading">{p.nombre}</p>
                       <p className="font-mono text-xs text-text-muted">{p.nit || 'Sin NIT'}</p>
+                      {p.descripcion && (
+                        <p className="mt-1 line-clamp-2 max-w-xs text-xs text-text-muted" title={p.descripcion}>
+                          {p.descripcion}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-text-heading">
                       {p.categoria ? <Badge tone="neutral">{p.categoria}</Badge> : <span className="text-text-muted">—</span>}
                     </td>
                     <td className="px-4 py-3 text-text-heading">
-                      <p>{p.telefonoComercial || '—'}</p>
+                      <p className="font-medium">{p.contactoNombre || '—'}</p>
+                      <p className="text-xs text-text-muted">{p.contactoCargo || 'Sin cargo'}</p>
+                      <p className="text-xs">{p.email || 'Sin correo'}</p>
+                      <p className="text-xs text-text-muted">
+                        {[p.telefonoComercial, p.whatsapp ? `WhatsApp: ${p.whatsapp}` : null, p.telefonoAlterno].filter(Boolean).join(' · ') || 'Sin teléfono'}
+                      </p>
                       <p className="text-xs text-text-muted">{[p.ciudad, p.direccionDespacho].filter(Boolean).join(' · ') || '—'}</p>
                     </td>
                     <td className="px-4 py-3 text-text-heading">
@@ -231,7 +257,10 @@ export default function ProveedoresPage() {
                       <p className="text-xs text-text-muted">en catálogo</p>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button variant="ghost" size="md" className="text-xs" onClick={() => setCuentasDe(p)}>
+                          Cuentas ({cuentasPorProveedor.get(p.id) ?? 0})
+                        </Button>
                         <Button variant="ghost" size="md" className="text-xs" onClick={() => abrirEdicion(p)}>
                           Editar
                         </Button>
@@ -256,6 +285,14 @@ export default function ProveedoresPage() {
           open={true}
           proveedor={editando}
           onClose={cerrarModal}
+        />
+      )}
+
+      {cuentasDe && (
+        <CuentasBancariasProveedorModal
+          open={true}
+          proveedor={cuentasDe}
+          onClose={() => setCuentasDe(null)}
         />
       )}
     </div>

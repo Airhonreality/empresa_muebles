@@ -200,6 +200,24 @@
       "version": "7",
       "when": 1792100000000,
       "tag": "0028_drop_espacio_variantes_colores"
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1792200000000,
+      "tag": "0029_proveedores_descripcion"
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1792300000000,
+      "tag": "0030_proveedor_cuentas_bancarias"
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792400000000,
+      "tag": "0031_proveedores_contacto"
     }
   ]
 }

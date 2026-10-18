@@ -845,6 +845,62 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         return r
       },
     },
+    bancos: {
+      listar: () => data.bancos,
+      crear: async (values) => {
+        const r = await f6.crearBancoAction(values)
+        data = { ...data, bancos: [...data.bancos, r] }
+        notify()
+        return r
+      },
+    },
+    proveedoresCuentasBancarias: {
+      listar: () => data.proveedoresCuentasBancarias,
+      porProveedor: (proveedorId) => data.proveedoresCuentasBancarias
+        .filter((c) => c.proveedorId === proveedorId)
+        .sort((a, b) => Number(b.esPrincipal) - Number(a.esPrincipal) || Number(b.activa) - Number(a.activa)),
+      crear: async (values) => {
+        const r = await f6.crearProveedorCuentaBancariaAction(values)
+        // La cuenta principal desmarca a las demás en el server: replicamos ese efecto en
+        // el cache local para no dejar dos principales visibles en memoria.
+        data = {
+          ...data,
+          proveedoresCuentasBancarias: [
+            ...data.proveedoresCuentasBancarias.map((c) =>
+              r.esPrincipal && c.proveedorId === r.proveedorId ? { ...c, esPrincipal: false } : c
+            ),
+            r,
+          ],
+        }
+        notify()
+        return r
+      },
+      actualizar: async (id, partial) => {
+        const r = await f6.actualizarProveedorCuentaBancariaAction(id, partial)
+        if (r) {
+          data = {
+            ...data,
+            proveedoresCuentasBancarias: data.proveedoresCuentasBancarias.map((c) =>
+              c.id === id
+                ? r
+                : r.esPrincipal && c.proveedorId === r.proveedorId
+                  ? { ...c, esPrincipal: false }
+                  : c
+            ),
+          }
+          notify()
+        }
+        return r
+      },
+      eliminar: async (id) => {
+        const ok = await f6.eliminarProveedorCuentaBancariaAction(id)
+        if (ok) {
+          data = { ...data, proveedoresCuentasBancarias: data.proveedoresCuentasBancarias.filter((c) => c.id !== id) }
+          notify()
+        }
+        return ok
+      },
+    },
 
     // --- F4: Compras ---
     itemsOrdenCompra: {

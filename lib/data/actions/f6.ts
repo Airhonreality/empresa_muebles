@@ -8,7 +8,7 @@ import { calcularCajaDisponible } from '@/lib/modules/f4f5f6/gates'
 import { num } from './mappers'
 import type {
   CuentaFinanciera, ObligacionPendiente, OrigenObligacion, EstadoObligacion,
-  OrdenCompra, EstadoOrdenCompra, MovimientoFinanciero, Proveedor,
+  OrdenCompra, EstadoOrdenCompra, MovimientoFinanciero, Proveedor, ProveedorCuentaBancaria, Banco,
 } from '../contracts'
 
 export async function crearCuentaFinancieraAction(data: { nombre: string; tipo: string; saldoActual?: string }): Promise<CuentaFinanciera> {
@@ -121,7 +121,10 @@ export async function autorizarPagoCajaAction(data: { ordenCompraId: string; cue
 export async function crearProveedorAction(data: Partial<Proveedor> & { nombre: string }): Promise<Proveedor> {
   const [nuevo] = await db.insert(s.proveedores).values({
     nombre: data.nombre, nit: data.nit ?? null, categoria: data.categoria ?? null,
-    telefonoComercial: data.telefonoComercial ?? null,
+    descripcion: data.descripcion ?? null,
+    contactoNombre: data.contactoNombre ?? null, contactoCargo: data.contactoCargo ?? null,
+    email: data.email ?? null, whatsapp: data.whatsapp ?? null,
+    telefonoComercial: data.telefonoComercial ?? null, telefonoAlterno: data.telefonoAlterno ?? null,
     direccionDespacho: data.direccionDespacho ?? null, ciudad: data.ciudad ?? null, medioPago: data.medioPago ?? null,
     diasEntregaDefault: data.diasEntregaDefault ?? null, transportadora: data.transportadora ?? null,
     tarifaFlete: data.tarifaFlete ?? null,
@@ -137,7 +140,13 @@ export async function actualizarProveedorAction(
     nombre: data.nombre,
     nit: data.nit,
     categoria: data.categoria,
+    descripcion: data.descripcion,
+    contactoNombre: data.contactoNombre,
+    contactoCargo: data.contactoCargo,
+    email: data.email,
+    whatsapp: data.whatsapp,
     telefonoComercial: data.telefonoComercial,
+    telefonoAlterno: data.telefonoAlterno,
     direccionDespacho: data.direccionDespacho,
     ciudad: data.ciudad,
     medioPago: data.medioPago,
@@ -146,4 +155,83 @@ export async function actualizarProveedorAction(
     tarifaFlete: data.tarifaFlete,
   }).where(eq(s.proveedores.id, id)).returning()
   return (actualizado as unknown as Proveedor) ?? null
+}
+
+
+export async function crearBancoAction(data: Partial<Banco> & { nombre: string }): Promise<Banco> {
+  const [nuevo] = await db.insert(s.bancos).values({
+    nombre: data.nombre,
+    codigo: data.codigo ?? null,
+    activo: data.activo ?? true,
+  }).returning()
+  return nuevo as unknown as Banco
+}
+
+export async function crearProveedorCuentaBancariaAction(
+  data: Partial<ProveedorCuentaBancaria> & { proveedorId: string; tipo: ProveedorCuentaBancaria['tipo'] },
+): Promise<ProveedorCuentaBancaria> {
+  return db.transaction(async (tx) => {
+    const ahora = new Date().toISOString()
+    if (data.esPrincipal) {
+      await tx.update(s.proveedorCuentasBancarias)
+        .set({ esPrincipal: false, updatedAt: ahora })
+        .where(eq(s.proveedorCuentasBancarias.proveedorId, data.proveedorId))
+    }
+    const [nueva] = await tx.insert(s.proveedorCuentasBancarias).values({
+      proveedorId: data.proveedorId,
+      tipo: data.tipo,
+      alias: data.alias ?? null,
+      bancoId: data.bancoId ?? null,
+      tipoCuenta: data.tipoCuenta ?? null,
+      numeroCuenta: data.numeroCuenta ?? null,
+      titular: data.titular ?? null,
+      documentoTitular: data.documentoTitular ?? null,
+      tipoLlave: data.tipoLlave ?? null,
+      llave: data.llave ?? null,
+      esPrincipal: data.esPrincipal ?? false,
+      activa: data.activa ?? true,
+      notas: data.notas ?? null,
+      updatedAt: ahora,
+    }).returning()
+    return nueva as unknown as ProveedorCuentaBancaria
+  })
+}
+
+export async function actualizarProveedorCuentaBancariaAction(
+  id: string,
+  data: Partial<Omit<ProveedorCuentaBancaria, 'id' | 'proveedorId' | 'createdAt' | 'updatedAt'>>,
+): Promise<ProveedorCuentaBancaria | null> {
+  return db.transaction(async (tx) => {
+    const [actual] = await tx.select().from(s.proveedorCuentasBancarias).where(eq(s.proveedorCuentasBancarias.id, id))
+    if (!actual) return null
+    const ahora = new Date().toISOString()
+    if (data.esPrincipal) {
+      await tx.update(s.proveedorCuentasBancarias)
+        .set({ esPrincipal: false, updatedAt: ahora })
+        .where(eq(s.proveedorCuentasBancarias.proveedorId, actual.proveedorId))
+    }
+    const [actualizada] = await tx.update(s.proveedorCuentasBancarias).set({
+      tipo: data.tipo,
+      alias: data.alias,
+      bancoId: data.bancoId,
+      tipoCuenta: data.tipoCuenta,
+      numeroCuenta: data.numeroCuenta,
+      titular: data.titular,
+      documentoTitular: data.documentoTitular,
+      tipoLlave: data.tipoLlave,
+      llave: data.llave,
+      esPrincipal: data.esPrincipal,
+      activa: data.activa,
+      notas: data.notas,
+      updatedAt: ahora,
+    }).where(eq(s.proveedorCuentasBancarias.id, id)).returning()
+    return (actualizada as unknown as ProveedorCuentaBancaria) ?? null
+  })
+}
+
+export async function eliminarProveedorCuentaBancariaAction(id: string): Promise<boolean> {
+  const [eliminada] = await db.delete(s.proveedorCuentasBancarias)
+    .where(eq(s.proveedorCuentasBancarias.id, id))
+    .returning({ id: s.proveedorCuentasBancarias.id })
+  return Boolean(eliminada)
 }

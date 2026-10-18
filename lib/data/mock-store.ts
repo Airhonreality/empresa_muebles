@@ -3,7 +3,7 @@
 import type {
   DataStore, Proyecto, Cliente, EspacioVariante, ItemVariante, ProductoCatalogo, EspacioArtefacto, Parametro, Contrato, HitoPago, TransicionesProyecto, UsuarioMock, ProyectosEstadosHistorial, Cronograma, CronogramaEtapa, DesfaseCronograma, CheckProduccion, NovedadCritica, ComunicacionProgreso, SchemaProyecto, BomMaterial, Verificacion, Retoma, CambioContrato, Persona, PersonaRol, Modulo, Estimacion, LineaCronograma, EtapaCronograma, TipoGate, VeredictoGate, DesenlaceCheck, CausaDesfase, EstadoNovedadCritica, EstadoSchema, RolCanonico, OrigenBom, EstadoProyecto,
   OrdenTrabajo, TipoOrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, OrigenReproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
-  CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, OrigenObligacion, EstadoObligacion, Proveedor, OrdenCompra, EstadoOrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
+  CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, OrigenObligacion, EstadoObligacion, Proveedor, ProveedorCuentaBancaria, Banco, OrdenCompra, EstadoOrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
@@ -30,7 +30,7 @@ import {
   MODULOS, ESTIMACIONES,
   ORDENES_TRABAJO, PEDIDOS_WEB, CITACIONES_CALIDAD, REPROCESOS, INSTALACIONES, ACTAS_ENTREGA,
   CASOS_GARANTIA, CITAS_GARANTIA, CUENTAS_FINANCIERAS, MOVIMIENTOS_FINANCIEROS, OBLIGACIONES_PENDIENTES,
-  PROVEEDORES, ORDENES_COMPRA, REGISTROS_GATE_CAJA, CUENTAS_COBRO_PROVEEDOR,
+  PROVEEDORES, BANCOS, PROVEEDOR_CUENTAS_BANCARIAS, ORDENES_COMPRA, REGISTROS_GATE_CAJA, CUENTAS_COBRO_PROVEEDOR,
   CATEGORIAS, PRODUCTOS_TIENDA, PRODUCTOS_TIENDA_COMPONENTES, CATALOGO_ACABADOS, CATALOGO_PRODUCTO_ACABADOS, ACABADOS_MUESTRAS,
   PORTAFOLIO, MODULOS_ARTEFACTOS, CATALOGO_ESPACIOS_ARQUITECTONICOS,
   ITEMS_ORDEN_COMPRA, RECEPCIONES_MATERIAL, HERRAMIENTAS, DOCUMENTOS_PROYECTO,
@@ -91,6 +91,8 @@ export function createMockStore(): DataStore {
   const movimientosFinancieros: MovimientoFinanciero[] = deepClone(MOVIMIENTOS_FINANCIEROS)
   const obligacionesPendientes: ObligacionPendiente[] = deepClone(OBLIGACIONES_PENDIENTES)
   const proveedores: Proveedor[] = deepClone(PROVEEDORES)
+  const bancos: Banco[] = deepClone(BANCOS)
+  const proveedoresCuentasBancarias: ProveedorCuentaBancaria[] = deepClone(PROVEEDOR_CUENTAS_BANCARIAS)
   const ordenesCompra: OrdenCompra[] = deepClone(ORDENES_COMPRA)
   const registrosGateCaja: RegistroGateCaja[] = deepClone(REGISTROS_GATE_CAJA)
   const cuentasCobroProveedor: CuentaCobroProveedor[] = deepClone(CUENTAS_COBRO_PROVEEDOR)
@@ -1973,7 +1975,13 @@ export function createMockStore(): DataStore {
           nombre: data.nombre,
           nit: data.nit ?? null,
           categoria: data.categoria ?? null,
+          descripcion: data.descripcion ?? null,
+          contactoNombre: data.contactoNombre ?? null,
+          contactoCargo: data.contactoCargo ?? null,
+          email: data.email ?? null,
+          whatsapp: data.whatsapp ?? null,
           telefonoComercial: data.telefonoComercial ?? null,
+          telefonoAlterno: data.telefonoAlterno ?? null,
           direccionDespacho: data.direccionDespacho ?? null,
           ciudad: data.ciudad ?? null,
           medioPago: data.medioPago ?? null,
@@ -1992,6 +2000,84 @@ export function createMockStore(): DataStore {
         proveedores[idx] = { ...proveedores[idx], ...data }
         notify()
         return proveedores[idx]
+      },
+    },
+
+    bancos: {
+      listar(): Banco[] {
+        return bancos
+      },
+      async crear(data): Promise<Banco> {
+        const nuevo: Banco = {
+          id: generateId('ban'),
+          nombre: data.nombre,
+          codigo: data.codigo ?? null,
+          activo: data.activo ?? true,
+          createdAt: new Date().toISOString(),
+        }
+        bancos.push(nuevo)
+        notify()
+        return nuevo
+      },
+    },
+
+    proveedoresCuentasBancarias: {
+      listar(): ProveedorCuentaBancaria[] {
+        return proveedoresCuentasBancarias
+      },
+      porProveedor(proveedorId: string): ProveedorCuentaBancaria[] {
+        return proveedoresCuentasBancarias
+          .filter(c => c.proveedorId === proveedorId)
+          .sort((a, b) => Number(b.esPrincipal) - Number(a.esPrincipal) || Number(b.activa) - Number(a.activa))
+      },
+      async crear(data): Promise<ProveedorCuentaBancaria> {
+        if (data.esPrincipal) {
+          proveedoresCuentasBancarias.forEach(c => {
+            if (c.proveedorId === data.proveedorId) c.esPrincipal = false
+          })
+        }
+        const ahora = new Date().toISOString()
+        const nueva: ProveedorCuentaBancaria = {
+          id: generateId('pcb'),
+          proveedorId: data.proveedorId,
+          tipo: data.tipo,
+          alias: data.alias ?? null,
+          bancoId: data.bancoId ?? null,
+          tipoCuenta: data.tipoCuenta ?? null,
+          numeroCuenta: data.numeroCuenta ?? null,
+          titular: data.titular ?? null,
+          documentoTitular: data.documentoTitular ?? null,
+          tipoLlave: data.tipoLlave ?? null,
+          llave: data.llave ?? null,
+          esPrincipal: data.esPrincipal ?? false,
+          activa: data.activa ?? true,
+          notas: data.notas ?? null,
+          createdAt: ahora,
+          updatedAt: ahora,
+        }
+        proveedoresCuentasBancarias.push(nueva)
+        notify()
+        return nueva
+      },
+      async actualizar(id, data): Promise<ProveedorCuentaBancaria | null> {
+        const idx = proveedoresCuentasBancarias.findIndex(c => c.id === id)
+        if (idx === -1) return null
+        const actual = proveedoresCuentasBancarias[idx]
+        if (data.esPrincipal) {
+          proveedoresCuentasBancarias.forEach(c => {
+            if (c.proveedorId === actual.proveedorId) c.esPrincipal = false
+          })
+        }
+        proveedoresCuentasBancarias[idx] = { ...actual, ...data, updatedAt: new Date().toISOString() }
+        notify()
+        return proveedoresCuentasBancarias[idx]
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const idx = proveedoresCuentasBancarias.findIndex(c => c.id === id)
+        if (idx === -1) return false
+        proveedoresCuentasBancarias.splice(idx, 1)
+        notify()
+        return true
       },
     },
 

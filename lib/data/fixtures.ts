@@ -3,7 +3,7 @@
 import type {
   Cliente, ProductoCatalogo, Proyecto, EspacioVariante, ItemVariante, EspacioArtefacto, Parametro, Contrato, HitoPago, UsuarioMock, Cronograma, CronogramaEtapa, DesfaseCronograma, CheckProduccion, NovedadCritica, ComunicacionProgreso, SchemaProyecto, BomMaterial, Verificacion, Retoma, CambioContrato, Persona, PersonaRol, Modulo, Estimacion,
   OrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
-  CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
+  CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, ProveedorCuentaBancaria, Banco, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, CatalogoEspacioArquitectonico,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto,
@@ -360,6 +360,33 @@ export const MOVIMIENTOS_FINANCIEROS: MovimientoFinanciero[] = [
 export const PROVEEDORES: Proveedor[] = [
   { id: UUID('prov01'), nombre: 'Maderas del Llano S.A.S', nit: '900111222-1', telefonoComercial: '3101234567', direccionDespacho: 'Zona Industrial Km 5', ciudad: 'Villavicencio', medioPago: 'transferencia', diasEntregaDefault: 7, transportadora: 'Envía', tarifaFlete: '150000', createdAt: '2026-01-01T00:00:00Z' },
   { id: UUID('prov02'), nombre: 'Herrajes Blum Colombia', nit: '900333444-2', telefonoComercial: '3209876543', direccionDespacho: 'Cra 68 #25-40', ciudad: 'Bogotá', medioPago: 'transferencia', diasEntregaDefault: 3, transportadora: 'Coordinadora', tarifaFlete: '80000', createdAt: '2026-01-01T00:00:00Z' },
+]
+
+export const BANCOS: Banco[] = [
+  { id: UUID('ban01'), nombre: 'Bancolombia', codigo: null, activo: true, createdAt: '2026-01-01T00:00:00Z' },
+  { id: UUID('ban02'), nombre: 'Banco de Bogotá', codigo: null, activo: true, createdAt: '2026-01-01T00:00:00Z' },
+  { id: UUID('ban03'), nombre: 'Davivienda', codigo: null, activo: true, createdAt: '2026-01-01T00:00:00Z' },
+]
+
+export const PROVEEDOR_CUENTAS_BANCARIAS: ProveedorCuentaBancaria[] = [
+  {
+    id: UUID('pcb01'), proveedorId: UUID('prov01'), tipo: 'banco', alias: 'Bancolombia ahorros',
+    bancoId: UUID('ban01'), tipoCuenta: 'ahorros', numeroCuenta: '12345678901', titular: 'Maderas del Llano S.A.S',
+    documentoTitular: '900111222-1', tipoLlave: null, llave: null, esPrincipal: true, activa: true,
+    notas: 'Cuenta para consignación de anticipos.', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: UUID('pcb02'), proveedorId: UUID('prov01'), tipo: 'bre_b', alias: 'Llave Bre-B Maderas',
+    bancoId: null, tipoCuenta: null, numeroCuenta: null, titular: 'Maderas del Llano S.A.S', documentoTitular: '900111222-1',
+    tipoLlave: 'alfanumerica', llave: 'MADERASLLANO.BREB', esPrincipal: false, activa: true,
+    notas: null, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: UUID('pcb03'), proveedorId: UUID('prov02'), tipo: 'nequi', alias: 'Nequi Herrajes',
+    bancoId: null, tipoCuenta: null, numeroCuenta: null, titular: 'Herrajes Blum Colombia', documentoTitular: '900333444-2',
+    tipoLlave: 'telefono', llave: '3209876543', esPrincipal: true, activa: true,
+    notas: 'Pagos menores a $1.000.000.', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+  },
 ]
 
 export const ORDENES_COMPRA: OrdenCompra[] = [

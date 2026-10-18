@@ -38,7 +38,7 @@ export type {
   OrdenTrabajo, TipoOrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, OrigenReproceso,
   Instalacion, EstadoInstalacion, ActaEntrega, EstadoActaEntrega, CasoGarantia, EstadoCasoGarantia, CitaGarantia,
   CuentaFinanciera, MovimientoFinanciero, TipoMovimientoFinanciero, ObligacionPendiente, OrigenObligacion, EstadoObligacion,
-  Proveedor, OrdenCompra, EstadoOrdenCompra, MecanicaPagoOC, RegistroGateCaja, CuentaCobroProveedor, EstadoCuentaCobro,
+  Proveedor, ProveedorCuentaBancaria, TipoCuentaProveedor, TipoLlaveProveedor, Banco, OrdenCompra, EstadoOrdenCompra, MecanicaPagoOC, RegistroGateCaja, CuentaCobroProveedor, EstadoCuentaCobro,
   Categoria, ProductoTienda, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,

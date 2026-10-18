@@ -7,7 +7,7 @@ import type {
   Cronograma, CronogramaEtapa, DesfaseCronograma, CheckProduccion, NovedadCritica, ComunicacionProgreso,
   SchemaProyecto, BomMaterial, Verificacion, Retoma, CambioContrato, Persona, PersonaRol, Modulo, Estimacion,
   OrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
-  CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
+  CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, Proveedor, ProveedorCuentaBancaria, Banco, OrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto, GrupoItem, EspacioVarianteAcabado,
@@ -53,6 +53,8 @@ export interface StoreSnapshot {
   movimientosFinancieros: MovimientoFinanciero[]
   obligacionesPendientes: ObligacionPendiente[]
   proveedores: Proveedor[]
+  bancos: Banco[]
+  proveedoresCuentasBancarias: ProveedorCuentaBancaria[]
   ordenesCompra: OrdenCompra[]
   registrosGateCaja: RegistroGateCaja[]
   cuentasCobroProveedor: CuentaCobroProveedor[]
@@ -92,7 +94,7 @@ export function emptySnapshot(): StoreSnapshot {
     ordenesTrabajo: [], pedidosWeb: [], citacionesCalidad: [], reprocesos: [], instalaciones: [],
     actasEntrega: [], casosGarantia: [], citasGarantia: [],
     cuentasFinancieras: [], movimientosFinancieros: [], obligacionesPendientes: [],
-    proveedores: [], ordenesCompra: [], registrosGateCaja: [], cuentasCobroProveedor: [],
+    proveedores: [], bancos: [], proveedoresCuentasBancarias: [], ordenesCompra: [], registrosGateCaja: [], cuentasCobroProveedor: [],
     categorias: [], productosTienda: [], productosTiendaComponentes: [],
     catalogoAcabados: [], catalogoProductoAcabados: [], acabadosMuestras: [],
     portafolio: [], rendersConceptuales: [], atributosTecnicos: [], catalogosEspaciosArquitectonicos: [], modulosArtefactos: [], bitacoraArticulos: [], testimonios: [],

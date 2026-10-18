@@ -718,7 +718,15 @@ export interface Proveedor {
   nit: string | null
   /** Columna `proveedores.categoria` — ya existe en el schema (F10). */
   categoria?: string | null
+  /** Texto libre: qué vende, condiciones, notas de negociación, etc. */
+  descripcion?: string | null
+  /** Persona de contacto comercial y su cargo. */
+  contactoNombre?: string | null
+  contactoCargo?: string | null
+  email?: string | null
+  whatsapp?: string | null
   telefonoComercial: string | null
+  telefonoAlterno?: string | null
   direccionDespacho: string | null
   ciudad: string | null
   medioPago: string | null
@@ -726,6 +734,42 @@ export interface Proveedor {
   transportadora: string | null
   tarifaFlete: string | null
   createdAt: string
+}
+
+export interface Banco {
+  id: string
+  nombre: string
+  /** Código ACH/Compensación cuando se conozca. */
+  codigo: string | null
+  activo: boolean
+  createdAt: string
+}
+
+export type TipoCuentaProveedor = 'banco' | 'nequi' | 'daviplata' | 'bre_b' | 'otro'
+/** Tipo de llave de pago inmediato (Nequi/Daviplata/Bre-B). */
+export type TipoLlaveProveedor = 'telefono' | 'email' | 'documento' | 'alfanumerica'
+
+export interface ProveedorCuentaBancaria {
+  id: string
+  proveedorId: string
+  tipo: TipoCuentaProveedor
+  /** Nombre corto para reconocerla en la UI (ej. "Bancolombia ahorros"). */
+  alias: string | null
+  /** FK al catálogo `bancos` — solo cuando tipo='banco'. */
+  bancoId: string | null
+  /** ahorros | corriente — solo cuando tipo='banco'. */
+  tipoCuenta: string | null
+  numeroCuenta: string | null
+  titular: string | null
+  documentoTitular: string | null
+  /** Solo para Nequi/Daviplata/Bre-B. */
+  tipoLlave: TipoLlaveProveedor | null
+  llave: string | null
+  esPrincipal: boolean
+  activa: boolean
+  notas: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export type EstadoOrdenCompra = 'solicitada' | 'aprobada' | 'en_pago' | 'pagada' | 'recibida_verificada' | 'rechazada' | 'cancelada'
@@ -1422,6 +1466,17 @@ export interface DataStore {
     obtenerPorId(id: string): Proveedor | undefined
     crear(data: Partial<Proveedor> & { nombre: string }): Promise<Proveedor>
     actualizar(id: string, data: Partial<Omit<Proveedor, 'id' | 'createdAt'>>): Promise<Proveedor | null>
+  }
+  bancos: {
+    listar(): Banco[]
+    crear(data: Partial<Banco> & { nombre: string }): Promise<Banco>
+  }
+  proveedoresCuentasBancarias: {
+    listar(): ProveedorCuentaBancaria[]
+    porProveedor(proveedorId: string): ProveedorCuentaBancaria[]
+    crear(data: Partial<ProveedorCuentaBancaria> & { proveedorId: string; tipo: TipoCuentaProveedor }): Promise<ProveedorCuentaBancaria>
+    actualizar(id: string, data: Partial<Omit<ProveedorCuentaBancaria, 'id' | 'proveedorId' | 'createdAt' | 'updatedAt'>>): Promise<ProveedorCuentaBancaria | null>
+    eliminar(id: string): Promise<boolean>
   }
 
   // --- F4: Compras (P-13/P-14/P-15) ---

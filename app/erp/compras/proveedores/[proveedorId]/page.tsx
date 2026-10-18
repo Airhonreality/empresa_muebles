@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
-import { LinkButton } from '@/components/veta/button'
+import { Button, LinkButton } from '@/components/veta/button'
 import { useDataStore } from '@/lib/data'
+import { CuentasBancariasProveedorModal } from '@/components/veta/cuentas-bancarias-proveedor-modal'
 import { formatCurrency } from '@/lib/utils/format'
 
 type EstadoOrdenCompra = 'solicitada' | 'aprobada' | 'en_pago' | 'pagada' | 'recibida_verificada' | 'rechazada' | 'cancelada'
@@ -62,6 +63,7 @@ export default function ProveedorPerfilPage() {
   store.getVersion()
 
   const proveedorId = params.proveedorId as string
+  const [cuentasModalAbierto, setCuentasModalAbierto] = useState(false)
 
   const proveedor = useMemo(() => store.proveedores.obtenerPorId(proveedorId), [store, proveedorId])
   const ordenesCompra = useMemo(
@@ -76,6 +78,10 @@ export default function ProveedorPerfilPage() {
     () => store.cuentasCobroProveedor.porProveedor(proveedorId),
     [store, proveedorId]
   )
+  // Sin useMemo: el store mock muta en sitio y `store` es estable; memoizar por
+  // [store, proveedorId] dejaría la lista congelada al agregar/editar cuentas.
+  const cuentasBancarias = store.proveedoresCuentasBancarias.porProveedor(proveedorId)
+  const bancosPorId = new Map(store.bancos.listar().map((b) => [b.id, b]))
 
   if (!proveedor) {
     return (
@@ -118,10 +124,19 @@ export default function ProveedorPerfilPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase text-text-muted mb-1">Teléfono Comercial</p>
-                <p className="text-sm text-text-heading">
-                  {proveedor.telefonoComercial || '(no registrado)'}
-                </p>
+                <p className="text-xs font-semibold uppercase text-text-muted mb-1">Contacto</p>
+                <p className="text-sm text-text-heading">{proveedor.contactoNombre || '(no registrado)'}</p>
+                <p className="text-xs text-text-muted">{proveedor.contactoCargo || 'Sin cargo'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-muted mb-1">Correo</p>
+                <p className="text-sm text-text-heading">{proveedor.email || '(no registrado)'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-muted mb-1">Teléfonos</p>
+                <p className="text-sm text-text-heading">{proveedor.telefonoComercial || '(no registrado)'}</p>
+                {proveedor.whatsapp && <p className="text-xs text-text-muted">WhatsApp: {proveedor.whatsapp}</p>}
+                {proveedor.telefonoAlterno && <p className="text-xs text-text-muted">Alterno: {proveedor.telefonoAlterno}</p>}
               </div>
             </div>
           </div>
@@ -167,6 +182,37 @@ export default function ProveedorPerfilPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Cuentas de consignación (2026-10-17): banco, Nequi, Daviplata, Bre-B... */}
+          <div className="rounded-lg border border-border-subtle bg-bg-raised p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-text-heading">Cuentas de consignación</h2>
+              <Button variant="ghost" size="md" className="text-xs" onClick={() => setCuentasModalAbierto(true)}>
+                Administrar
+              </Button>
+            </div>
+            {cuentasBancarias.length === 0 ? (
+              <p className="text-sm text-text-muted">Sin cuentas registradas</p>
+            ) : (
+              <div className="space-y-2">
+                {cuentasBancarias.map((c) => (
+                  <div key={c.id} className="rounded border border-border-subtle p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-text-heading">{c.alias || (c.bancoId ? bancosPorId.get(c.bancoId)?.nombre : null) || c.tipo}</p>
+                      {c.esPrincipal && <Badge tone="info" dot>Principal</Badge>}
+                      {!c.activa && <Badge tone="danger">Inactiva</Badge>}
+                    </div>
+                    <p className="mt-1 font-mono text-xs text-text-muted">
+                      {c.tipo === 'banco'
+                        ? `${c.bancoId ? bancosPorId.get(c.bancoId)?.nombre ?? 'Banco' : 'Banco'} ${c.tipoCuenta ?? ''} · ${c.numeroCuenta ?? ''}`
+                        : `${c.tipo} · ${c.llave ?? ''}`}
+                    </p>
+                    {c.titular && <p className="text-xs text-text-muted">{c.titular}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -291,6 +337,14 @@ export default function ProveedorPerfilPage() {
           </div>
         </div>
       </div>
+
+      {cuentasModalAbierto && (
+        <CuentasBancariasProveedorModal
+          open={true}
+          proveedor={proveedor}
+          onClose={() => setCuentasModalAbierto(false)}
+        />
+      )}
     </div>
   )
 }

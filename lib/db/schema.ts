@@ -592,8 +592,15 @@ export const proveedores = pgTable("proveedores", {
 	nombre: text().notNull(),
 	nit: text(),
 	categoria: text(),
+	descripcion: text(),
 	// F10 (2026-08-13): columnas que faltaban contra Proveedor de contracts.ts (F4/F7, P-13).
+	/** Contacto comercial completo (2026-10-17): persona, cargo, email, WhatsApp y alterno. */
+	contactoNombre: text("contacto_nombre"),
+	contactoCargo: text("contacto_cargo"),
+	email: text(),
+	whatsapp: text(),
 	telefonoComercial: text("telefono_comercial"),
+	telefonoAlterno: text("telefono_alterno"),
 	direccionDespacho: text("direccion_despacho"),
 	ciudad: text(),
 	medioPago: text("medio_pago"),
@@ -601,6 +608,59 @@ export const proveedores = pgTable("proveedores", {
 	transportadora: text(),
 	tarifaFlete: numeric("tarifa_flete", { precision: 14, scale: 2 }),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+});
+
+// Catálogo de bancos/entidades financieras (2026-10-17): no se hardcodean nombres
+// en el formulario. El usuario crea entidades una vez y luego las asocia a las
+// cuentas de cualquier proveedor.
+export const bancos = pgTable("bancos", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	nombre: text().notNull(),
+	/** Código ACH/Compensación cuando se conozca (opcional). */
+	codigo: text(),
+	activo: boolean().default(true).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		bancosNombreUnique: unique("bancos_nombre_unique").on(table.nombre),
+	}
+});
+
+// Cuentas de consignación del proveedor (2026-10-17): un proveedor puede tener
+// varias — banco (ahorros/corriente), Nequi/Daviplata, llaves Bre-B o cualquier
+// otro medio. La cuenta marcada `esPrincipal` es la que se propone por defecto al
+// pagar; el resto queda como alternativas.
+export const proveedorCuentasBancarias = pgTable("proveedor_cuentas_bancarias", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	proveedorId: uuid("proveedor_id").notNull(),
+	/** banco | nequi | daviplata | bre_b | otro */
+	tipo: text().default('banco').notNull(),
+	/** Nombre corto para reconocerla en la UI (ej. "Bancolombia ahorros"). */
+	alias: text(),
+	/** FK al catálogo `bancos` — solo cuando tipo='banco'. */
+	bancoId: uuid("banco_id"),
+	/** ahorros | corriente — solo aplica cuando tipo='banco'. */
+	tipoCuenta: text("tipo_cuenta"),
+	numeroCuenta: text("numero_cuenta"),
+	titular: text(),
+	documentoTitular: text("documento_titular"),
+	/** telefono | email | documento | alfanumerica — solo para Nequi/Daviplata/Bre-B. */
+	tipoLlave: text("tipo_llave"),
+	llave: text(),
+	esPrincipal: boolean("es_principal").default(false).notNull(),
+	activa: boolean().default(true).notNull(),
+	notas: text(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		proveedorCuentasBancariasProveedorIdFk: foreignKey({
+			columns: [table.proveedorId], foreignColumns: [proveedores.id], name: "proveedor_cuentas_bancarias_proveedor_id_proveedores_id_fk"
+		}),
+		proveedorCuentasBancariasBancoIdFk: foreignKey({
+			columns: [table.bancoId], foreignColumns: [bancos.id], name: "proveedor_cuentas_bancarias_banco_id_bancos_id_fk"
+		}),
+	}
 });
 
 export const ordenesTrabajo = pgTable("ordenes_trabajo", {
