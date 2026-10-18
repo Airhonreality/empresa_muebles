@@ -9,6 +9,7 @@ import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import { num, sanitizarCamposPersonalizados } from './mappers'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
 import { generarSkuUnico } from '../skus'
+import { destinosProyectoValidos } from '../transiciones-proyecto'
 import { validarEntrada } from '@/lib/validacion/validar'
 import {
   itemCrearSchema, itemActualizarSchema, espacioCrearSchema, espacioActualizarSchema,
@@ -30,12 +31,10 @@ export async function actualizarEstadoProyectoAction(id: string, estado: string)
     const estadoAnterior = actual.estado
 
     const [paramTransiciones] = await tx.select().from(s.parametros).where(eq(s.parametros.clave, 'transiciones_proyecto'))
-    let transiciones: Record<string, string[]> = {}
-    if (paramTransiciones?.valorTexto) {
-      try { transiciones = JSON.parse(paramTransiciones.valorTexto) } catch { /* fall through */ }
-    }
-    const estadosValidos = transiciones[estadoAnterior]
-    if (!estadosValidos || !estadosValidos.includes(estado)) return null
+    // Si el parámetro no existe o quedó roto, cae en la matriz default: antes devolvía
+    // null para CUALQUIER transición y los proyectos quedaban congelados en Lead.
+    const estadosValidos = destinosProyectoValidos(estadoAnterior, paramTransiciones?.valorTexto)
+    if (!estadosValidos.includes(estado)) return null
 
     const [actualizado] = await tx.update(s.proyectos)
       .set({ estado: estado as EstadoProyecto, updatedAt: new Date().toISOString() })

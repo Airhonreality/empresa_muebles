@@ -14,6 +14,7 @@ import type {
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
 import { generarSkuUnico } from './skus'
+import { destinosProyectoValidos } from './transiciones-proyecto'
 import { masRecientePrimero } from './orden'
 import { generarSlugPortafolioBase } from '../utils/portafolio-slug'
 import { derivarDesenlace, derivarReduccionComision, P18, P33 } from '../modules/f3/gates'
@@ -200,15 +201,11 @@ export function createMockStore(): DataStore {
         if (idx === -1) return null
         const estadoAnterior = proyectos[idx].estado
 
-        // Validar transición según parámetro transiciones_proyecto
+        // Validar transición según parámetro transiciones_proyecto (fallback a la matriz
+        // default si el parámetro no existe o quedó roto — mismo criterio que el server).
         const paramTransiciones = parametros.find(p => p.clave === 'transiciones_proyecto')
-        let transiciones: Record<string, string[]> = {}
-        if (paramTransiciones?.valorTexto) {
-          try { transiciones = JSON.parse(paramTransiciones.valorTexto) }
-          catch { /* fall through */ }
-        }
-        const estadosValidos = transiciones[estadoAnterior as keyof typeof transiciones]
-        if (!estadosValidos || !estadosValidos.includes(estado)) {
+        const estadosValidos = destinosProyectoValidos(estadoAnterior, paramTransiciones?.valorTexto)
+        if (!estadosValidos.includes(estado)) {
           // Transición no válida: rechazar sin mutar ni notificar
           return null
         }

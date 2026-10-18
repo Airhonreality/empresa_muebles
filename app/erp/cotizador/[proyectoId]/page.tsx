@@ -33,6 +33,7 @@ import { useDebouncedInput } from '@/lib/hooks/useDebouncedInput'
 import { useEstadoPublicacionPropuesta } from '@/lib/data/queries/useCotizadorQueries'
 import { VersionesPropuestaModal } from '@/components/veta/versiones-propuesta-modal'
 import { formatRelativeDate } from '@/lib/utils/format'
+import { destinosProyectoValidos } from '@/lib/data/transiciones-proyecto'
 
 /* Wrapper local para el input de "Grupo referencial": vive dentro de un `.map()`, así que el hook
    no puede llamarse directamente en el callback del map (violaría Rules of Hooks) -- por eso se
@@ -139,13 +140,7 @@ const ESTADO_LABELS_HEADER: Record<string, string> = {
  *  no existe o no trae el estado, no hay destinos (el selector no se muestra). */
 function destinosEstadoValidos(store: Pick<CotizadorCompatStore, 'parametros'>, estadoActual: string): string[] {
   const raw = store.parametros.obtenerPorClave('transiciones_proyecto')?.valorTexto
-  if (!raw) return []
-  try {
-    const transiciones = JSON.parse(raw) as Record<string, string[]>
-    return transiciones[estadoActual] ?? []
-  } catch {
-    return []
-  }
+  return destinosProyectoValidos(estadoActual, raw)
 }
 
 export default function CotizadorPage() {
@@ -502,23 +497,21 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           badges={
             (() => {
               const destinos = destinosEstadoValidos(store, proyecto.estado)
-              if (destinos.length === 0) {
-                return (
-                  <Badge tone={proyecto.estado === 'activa' ? 'info' : proyecto.estado === 'produccion' ? 'danger' : 'warning'} dot>
-                    {ESTADO_LABELS_HEADER[proyecto.estado] ?? proyecto.estado}
-                  </Badge>
-                )
-              }
+              // Siempre es un desplegable: antes, si el parámetro `transiciones_proyecto`
+              // no existía en la base, se caía a un Badge sin acción y el proyecto quedaba
+              // congelado en Lead para siempre. Los destinos ya incluyen el fallback default.
               return (
                 <select
                   value={proyecto.estado}
+                  disabled={destinos.length === 0}
                   onChange={(e) => {
                     store.proyectos.actualizarEstado(proyecto.id, e.target.value).catch((err) => {
                       mostrarError(err instanceof Error ? err.message : 'No se pudo cambiar el estado. Revisa tu conexión e intenta de nuevo.')
                     })
                   }}
                   aria-label="Estado del proyecto"
-                  className="rounded-sm border border-border-subtle bg-bg-paper px-2 py-1 text-xs font-medium text-text-heading focus:border-brand focus:outline-none"
+                  title={destinos.length === 0 ? 'Este estado no tiene transiciones disponibles' : 'Cambiar estado del proyecto'}
+                  className="rounded-sm border border-border-subtle bg-bg-paper px-2 py-1 text-xs font-medium text-text-heading focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   <option value={proyecto.estado}>{ESTADO_LABELS_HEADER[proyecto.estado] ?? proyecto.estado}</option>
                   {destinos.map((destino) => (
