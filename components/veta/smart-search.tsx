@@ -22,7 +22,9 @@ export interface SmartSearchProps {
   label?: string;
   className?: string;
   allowCreate?: boolean;
-  onCreateNew?: () => void;
+  onCreateNew?: (query: string) => void;
+  /** Texto de la fila "crear" cuando no hay resultados. Default: `+ Crear "{query}" en catálogo`. */
+  createActionLabel?: (query: string) => string;
   /** Contexto de búsqueda (A.5): aísla historial/uso por pantalla y habilita sugerencias
    *  de "uso frecuente" cuando el campo está vacío. Ej. "comercial-kanban". */
   contexto?: string;
@@ -39,6 +41,7 @@ export function SmartSearch({
   className = "",
   allowCreate = true,
   onCreateNew,
+  createActionLabel,
   contexto,
 }: SmartSearchProps) {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -162,10 +165,10 @@ export function SmartSearch({
             <li
               role="option"
               aria-selected={false}
-              onClick={onCreateNew}
+              onClick={() => onCreateNew(query.trim())}
               className="px-3 py-2 text-sm cursor-pointer hover:bg-bg-alt text-gold-600"
             >
-              + Crear &quot;{query}&quot; en catálogo
+              {createActionLabel ? createActionLabel(query.trim()) : <>+ Crear &quot;{query}&quot; en catálogo</>}
             </li>
           )}
         </ul>

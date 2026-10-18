@@ -22,6 +22,8 @@ interface ItemEditorModalProps {
   onSave: (cambios: Partial<ItemVariante>) => Promise<void>
   onReemplazarProducto: (nuevoProducto: ProductoCatalogo, mantenerPrecioActual: boolean) => Promise<void>
   onEliminar: () => Promise<void>
+  /** Abre el form completo de producto (mismo modal que catálogo/cotizador) sin cerrar este. */
+  onEditarProducto?: (producto: ProductoCatalogo) => void
 }
 
 /** Nombre "Grupo › Subgrupo" para que el select se lea sin ambigüedad cuando hay anidamiento. */
@@ -100,6 +102,7 @@ export function ItemEditorModal({
   onSave,
   onReemplazarProducto,
   onEliminar,
+  onEditarProducto,
 }: ItemEditorModalProps) {
   const [modo, setModo] = useState<'edicion' | 'reemplazo'>('edicion')
   
@@ -291,7 +294,7 @@ export function ItemEditorModal({
                       Sin img
                     </div>
                   )}
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-[11px] font-medium text-text-heading">
                       Catálogo: {producto.descripcion}
                     </p>
@@ -299,6 +302,15 @@ export function ItemEditorModal({
                       <p className="font-mono text-[10px] text-text-muted">SKU: {producto.sku}</p>
                     )}
                   </div>
+                  {onEditarProducto && (
+                    <button
+                      type="button"
+                      onClick={() => onEditarProducto(producto)}
+                      className="shrink-0 text-[11px] font-medium text-gold-700 transition-colors hover:underline"
+                    >
+                      Editar producto
+                    </button>
+                  )}
                 </div>
               )}
             </div>

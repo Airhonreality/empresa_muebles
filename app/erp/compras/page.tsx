@@ -8,6 +8,7 @@ import { Button } from '@/components/veta/button'
 import { Modal } from '@/components/veta/modal'
 import { MoneyInput } from '@/components/veta/money-input'
 import { SmartSearch } from '@/components/veta/smart-search'
+import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
 import { useDataStore, type EstadoOrdenCompra, type MecanicaPagoOC, type OrdenCompra, type Proyecto, type Proveedor } from '@/lib/data'
 import { puedeCrearOrdenCompra } from '@/lib/modules/f4/gates'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -75,20 +76,6 @@ const FORM_INICIAL: FormNuevaOrden = {
   fechaEsperada: '',
 }
 
-interface FormNuevoProveedor {
-  nombre: string
-  nit: string
-  telefono: string
-  ciudad: string
-}
-
-const FORM_PROVEEDOR_INICIAL: FormNuevoProveedor = {
-  nombre: '',
-  nit: '',
-  telefono: '',
-  ciudad: '',
-}
-
 export default function ComprasPage() {
   const router = useRouter()
   const store = useDataStore()
@@ -134,7 +121,6 @@ export default function ComprasPage() {
   const [formNueva, setFormNueva] = useState<FormNuevaOrden>(FORM_INICIAL)
 
   const [mostrarNuevoProveedor, setMostrarNuevoProveedor] = useState(false)
-  const [formProveedor, setFormProveedor] = useState<FormNuevoProveedor>(FORM_PROVEEDOR_INICIAL)
 
   const [ordenARechazar, setOrdenARechazar] = useState<OrdenCompra | null>(null)
   const [motivoRechazo, setMotivoRechazo] = useState('')
@@ -157,7 +143,6 @@ export default function ComprasPage() {
     anticipoValido
 
   const { guard: guardCrearOrden, isPending: creandoOrden } = usePendingGuard()
-  const { guard: guardCrearProveedor, isPending: creandoProveedor } = usePendingGuard()
 
   const handleCrearOrden = useCallback(async () => {
     if (!puedeCrear) return
@@ -174,21 +159,6 @@ export default function ComprasPage() {
       setFormNueva(FORM_INICIAL)
     }
   }, [formNueva, puedeCrear, store])
-
-  const handleCrearProveedor = useCallback(async () => {
-    if (!formProveedor.nombre.trim()) return
-    const nuevo = await store.proveedores.crear({
-      nombre: formProveedor.nombre.trim(),
-      nit: formProveedor.nit.trim() || null,
-      telefonoComercial: formProveedor.telefono.trim() || null,
-      ciudad: formProveedor.ciudad.trim() || null,
-    })
-    if (nuevo) {
-      setFormNueva(prev => ({ ...prev, proveedorId: nuevo.id }))
-      setMostrarNuevoProveedor(false)
-      setFormProveedor(FORM_PROVEEDOR_INICIAL)
-    }
-  }, [formProveedor, store])
 
   const handleAprobar = useCallback(async (orden: OrdenCompra) => {
     await store.ordenesCompra.actualizarEstado(orden.id, 'aprobada')
@@ -516,67 +486,13 @@ export default function ComprasPage() {
         </div>
       </Modal>
 
-      <Modal
-        open={mostrarNuevoProveedor}
-        onClose={() => setMostrarNuevoProveedor(false)}
-        title="Nuevo proveedor"
-      >
-        <div className="space-y-3 text-sm">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Nombre*</span>
-            <input
-              type="text"
-              value={formProveedor.nombre}
-              onChange={(e) => setFormProveedor(prev => ({ ...prev, nombre: e.target.value }))}
-              placeholder="Razón social del proveedor"
-              className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-text-muted">NIT</span>
-              <input
-                type="text"
-                value={formProveedor.nit}
-                onChange={(e) => setFormProveedor(prev => ({ ...prev, nit: e.target.value }))}
-                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-text-muted">Teléfono</span>
-              <input
-                type="text"
-                value={formProveedor.telefono}
-                onChange={(e) => setFormProveedor(prev => ({ ...prev, telefono: e.target.value }))}
-                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              />
-            </label>
-          </div>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Ciudad</span>
-            <input
-              type="text"
-              value={formProveedor.ciudad}
-              onChange={(e) => setFormProveedor(prev => ({ ...prev, ciudad: e.target.value }))}
-              className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-            />
-          </label>
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => guardCrearProveedor(handleCrearProveedor)}
-              disabled={!formProveedor.nombre.trim() || creandoProveedor}
-              loading={creandoProveedor}
-            >
-              Crear proveedor
-            </Button>
-            <Button variant="ghost" size="md" onClick={() => setMostrarNuevoProveedor(false)}>
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {mostrarNuevoProveedor && (
+        <ProveedorFormModal
+          open={true}
+          onClose={() => setMostrarNuevoProveedor(false)}
+          onSaved={(nuevo) => setFormNueva(prev => ({ ...prev, proveedorId: nuevo.id }))}
+        />
+      )}
 
       <Modal
         open={!!ordenARechazar}

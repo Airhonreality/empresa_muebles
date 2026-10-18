@@ -836,6 +836,14 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         notify()
         return r
       },
+      actualizar: async (id, partial) => {
+        const r = await f6.actualizarProveedorAction(id, partial)
+        if (r) {
+          data = { ...data, proveedores: upsert(data.proveedores, r) }
+          notify()
+        }
+        return r
+      },
     },
 
     // --- F4: Compras ---

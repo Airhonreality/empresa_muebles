@@ -1975,6 +1975,7 @@ export function createMockStore(): DataStore {
           id: generateId('prov'),
           nombre: data.nombre,
           nit: data.nit ?? null,
+          categoria: data.categoria ?? null,
           telefonoComercial: data.telefonoComercial ?? null,
           direccionDespacho: data.direccionDespacho ?? null,
           ciudad: data.ciudad ?? null,
@@ -1987,6 +1988,13 @@ export function createMockStore(): DataStore {
         proveedores.push(nuevo)
         notify()
         return nuevo
+      },
+      async actualizar(id, data): Promise<Proveedor | null> {
+        const idx = proveedores.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        proveedores[idx] = { ...proveedores[idx], ...data }
+        notify()
+        return proveedores[idx]
       },
     },
 

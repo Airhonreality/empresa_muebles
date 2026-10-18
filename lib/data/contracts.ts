@@ -716,6 +716,8 @@ export interface Proveedor {
   id: string
   nombre: string
   nit: string | null
+  /** Columna `proveedores.categoria` — ya existe en el schema (F10). */
+  categoria?: string | null
   telefonoComercial: string | null
   direccionDespacho: string | null
   ciudad: string | null
@@ -1419,6 +1421,7 @@ export interface DataStore {
     listar(): Proveedor[]
     obtenerPorId(id: string): Proveedor | undefined
     crear(data: Partial<Proveedor> & { nombre: string }): Promise<Proveedor>
+    actualizar(id: string, data: Partial<Omit<Proveedor, 'id' | 'createdAt'>>): Promise<Proveedor | null>
   }
 
   // --- F4: Compras (P-13/P-14/P-15) ---

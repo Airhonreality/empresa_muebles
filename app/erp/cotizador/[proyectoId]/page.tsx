@@ -14,6 +14,7 @@ import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { FilePicker } from '@/components/veta/file-picker'
 import { ItemMiniatura } from '@/components/veta/item-miniatura'
 import { ItemEditorModal } from '@/components/veta/item-editor-modal'
+import { ProductoFormModal } from '@/components/veta/producto-form-modal'
 import { AcabadoPicker, type AcabadoSeleccionado } from '@/components/veta/acabado-picker'
 import { Modal } from '@/components/veta/modal'
 import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-espacios'
@@ -1537,6 +1538,10 @@ function VarianteContenido({
   const [itemLibreCantidad, setItemLibreCantidad] = useState('1')
   const [itemLibrePrecio, setItemLibrePrecio] = useState('0')
   const [itemLibreEsRef, setItemLibreEsRef] = useState(false)
+  // Form completo de producto dentro del cotizador (mismo modal que Catálogo): crear
+  // desde la búsqueda/ítems, o editar el producto de catálogo de un ítem existente.
+  const [crearProducto, setCrearProducto] = useState<{ descripcion?: string } | null>(null)
+  const [productoAEditar, setProductoAEditar] = useState<ProductoCatalogo | null>(null)
   const { mostrarInfo } = useToast()
   // t-157: undefined = form cerrado; null = crear grupo raíz; string = crear subgrupo bajo ese id.
   const [creandoGrupoPadreId, setCreandoGrupoPadreId] = useState<string | null | undefined>(undefined)
@@ -1794,6 +1799,15 @@ function VarianteContenido({
               (bordeado, más peso) y va primero; Grupo/Ítem Libre quedan ghost detrás. */}
           <div className="flex gap-2">
             <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setCrearProducto({})}
+              className="text-xs border border-border-subtle hover:border-gold-400"
+              title="Crear un producto nuevo en el catálogo sin salir del cotizador"
+            >
+              + Crear producto
+            </Button>
+            <Button
               variant="secondary"
               size="md"
               onClick={() => { setModoBusquedaItem('normal'); setBusquedaEsReferencial(false) }}
@@ -1885,7 +1899,11 @@ function VarianteContenido({
                 })
                 setModoBusquedaItem('off')
               }}
-              onCreateNew={() => { setCreandoItemLibre(true); setItemLibreEsRef(busquedaEsReferencial); setModoBusquedaItem('off') }}
+              onCreateNew={(descripcion) => {
+                setCrearProducto({ descripcion })
+                setModoBusquedaItem('off')
+              }}
+              createActionLabel={(q) => `+ Crear producto "${q}"`}
               placeholder="Buscar en catálogo..."
               label="Producto"
               allowCreate
@@ -2324,6 +2342,40 @@ function VarianteContenido({
           onEliminar={async () => {
             await store.items.eliminar(modalItem.id)
           }}
+          onEditarProducto={(producto) => setProductoAEditar(producto)}
+        />
+      )}
+
+      {crearProducto && (
+        <ProductoFormModal
+          open={true}
+          proyectoOrigenId={proyectoId}
+          initialDescripcion={crearProducto.descripcion}
+          onClose={() => setCrearProducto(null)}
+          onSaved={(producto) => {
+            // Crear desde el cotizador = crear + agregar al espacio actual. El id se
+            // genera acá para reutilizar el mismo resaltado optimista de la búsqueda.
+            const id = crypto.randomUUID()
+            setItemRecienCreadoId(id)
+            void store.items.crear({
+              id,
+              varianteId: espacio.id,
+              catalogoId: producto.id,
+              nombrePersonalizado: null,
+              cantidad: '1',
+              precioUnitario: producto.precioPublico ?? '0',
+              esReferencial: false,
+            })
+            setCrearProducto(null)
+          }}
+        />
+      )}
+
+      {productoAEditar && (
+        <ProductoFormModal
+          open={true}
+          producto={productoAEditar}
+          onClose={() => setProductoAEditar(null)}
         />
       )}
 

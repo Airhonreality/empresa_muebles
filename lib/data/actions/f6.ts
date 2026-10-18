@@ -120,10 +120,30 @@ export async function autorizarPagoCajaAction(data: { ordenCompraId: string; cue
 
 export async function crearProveedorAction(data: Partial<Proveedor> & { nombre: string }): Promise<Proveedor> {
   const [nuevo] = await db.insert(s.proveedores).values({
-    nombre: data.nombre, nit: data.nit ?? null, telefonoComercial: data.telefonoComercial ?? null,
+    nombre: data.nombre, nit: data.nit ?? null, categoria: data.categoria ?? null,
+    telefonoComercial: data.telefonoComercial ?? null,
     direccionDespacho: data.direccionDespacho ?? null, ciudad: data.ciudad ?? null, medioPago: data.medioPago ?? null,
     diasEntregaDefault: data.diasEntregaDefault ?? null, transportadora: data.transportadora ?? null,
     tarifaFlete: data.tarifaFlete ?? null,
   }).returning()
   return nuevo as unknown as Proveedor
+}
+
+export async function actualizarProveedorAction(
+  id: string,
+  data: Partial<Omit<Proveedor, 'id' | 'createdAt'>>,
+): Promise<Proveedor | null> {
+  const [actualizado] = await db.update(s.proveedores).set({
+    nombre: data.nombre,
+    nit: data.nit,
+    categoria: data.categoria,
+    telefonoComercial: data.telefonoComercial,
+    direccionDespacho: data.direccionDespacho,
+    ciudad: data.ciudad,
+    medioPago: data.medioPago,
+    diasEntregaDefault: data.diasEntregaDefault,
+    transportadora: data.transportadora,
+    tarifaFlete: data.tarifaFlete,
+  }).where(eq(s.proveedores.id, id)).returning()
+  return (actualizado as unknown as Proveedor) ?? null
 }

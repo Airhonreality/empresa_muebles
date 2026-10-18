@@ -73,6 +73,7 @@ export const ACCIONES_PENDIENTE_MIGRACION: readonly string[] = [
   'actualizarPortafolioAction',
   'actualizarProductoCatalogoAction',
   'actualizarProductoTiendaAction',
+  'actualizarProveedorAction',
   'actualizarProyectoAction',
   'actualizarVerificadorAction',
   'adjuntarFacturaCuentaCobroAction',
