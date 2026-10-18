@@ -218,6 +218,12 @@
       "version": "7",
       "when": 1792400000000,
       "tag": "0031_proveedores_contacto"
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792500000000,
+      "tag": "0032_movimientos_financieros_proveedor"
     }
   ]
 }

@@ -780,6 +780,22 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       listar: () => masRecientePrimero(data.movimientosFinancieros),
       porCuenta: (cuentaId) => data.movimientosFinancieros.filter((m) => m.cuentaOrigenId === cuentaId || m.cuentaDestinoId === cuentaId),
       porProyecto: (proyectoId) => data.movimientosFinancieros.filter((m) => m.proyectoId === proyectoId),
+      crear: async (values) => {
+        const r = await f6.crearMovimientoManualAction(values)
+        const monto = Number(values.monto) || 0
+        const delta = values.tipo === 'entrada' ? monto : -monto
+        data = {
+          ...data,
+          movimientosFinancieros: upsert(data.movimientosFinancieros, r),
+          cuentasFinancieras: data.cuentasFinancieras.map((c) =>
+            c.id === values.cuentaId
+              ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) + delta) }
+              : c,
+          ),
+        }
+        notify()
+        return r
+      },
     },
     obligacionesPendientes: {
       listar: () => data.obligacionesPendientes,
@@ -794,7 +810,21 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
       registrarPago: async (id, values) => {
         const r = await f6.registrarPagoObligacionAction(id, values)
-        if (r) { data = { ...data, obligacionesPendientes: upsert(data.obligacionesPendientes, r) }; notify() }
+        if (r) {
+          const monto = Number(values.monto) || 0
+          data = {
+            ...data,
+            obligacionesPendientes: upsert(data.obligacionesPendientes, r),
+            // El movimiento llega con el polling (≤4s); el saldo se refleja ya para no mostrar
+            // una caja desactualizada mientras el usuario sigue operando.
+            cuentasFinancieras: data.cuentasFinancieras.map((c) =>
+              c.id === values.cuentaId
+                ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) - monto) }
+                : c,
+            ),
+          }
+          notify()
+        }
         return r
       },
     },
@@ -821,7 +851,20 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       autorizarPago: async (values) => {
         const r = await f6.autorizarPagoCajaAction(values)
         if (r) {
-          data = { ...data, movimientosFinancieros: upsert(data.movimientosFinancieros, r) }
+          const oc = data.ordenesCompra.find((o) => o.id === values.ordenCompraId)
+          const monto = Number(oc?.montoTotal ?? r.monto) || 0
+          data = {
+            ...data,
+            movimientosFinancieros: upsert(data.movimientosFinancieros, r),
+            ordenesCompra: data.ordenesCompra.map((o) =>
+              o.id === values.ordenCompraId ? { ...o, estado: 'pagada' } : o,
+            ),
+            cuentasFinancieras: data.cuentasFinancieras.map((c) =>
+              c.id === values.cuentaId
+                ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) - monto) }
+                : c,
+            ),
+          }
           notify()
         }
         return r

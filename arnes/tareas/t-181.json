@@ -1,0 +1,52 @@
+{
+  "id": "t-181",
+  "titulo": "Finanzas simple: libro de entradas/salidas con una sola caja, comprobante R2, proyecto y proveedor opcionales",
+  "intencion_negocio": "Javier (2026-10-17): el módulo de finanzas solo muestra KPIs vacíos y no permite registrar plata. Quiere lo esencial para un libro contable: una sola caja donde entra todo el dinero, registrar entradas y salidas, sin el ruido de medio de pago, con comprobante de pago opcional (captura o PDF), y asociación opcional a proyecto (entradas y salidas) y proveedor (solo salidas). La UI se limpia; la base NO se toca salvo una columna aditiva nullable (proveedor_id) porque no existe la relación.",
+  "diagnostico": "cuentas_financieras y movimientos_financieros existen en schema con saldo_inicial/saldo_actual, tipo debito/credito, descripcion, monto y comprobante_url. El DataStore no expone movimientosFinancieros.crear, por lo que ninguna pantalla puede registrar un movimiento manual. crearCuentaFinancieraAction ignora saldo_inicial y no hay formulario para crear cuentas. /erp/finanzas solo enlaza a Parámetros. movimientos_financieros no tiene proveedor_id (solo proyecto, contrato, OC, obligación y socio). FilePicker ya sube archivos a R2 y puede reutilizarse para el comprobante.",
+  "decisiones_supervisor": {
+    "una_sola_cuenta": "Una sola caja/cuenta: 'Caja principal' (tipo='caja'). Si no existe, botón para crearla. Si hay una sola cuenta, el formulario no muestra selector; si hay más, muestra selector (fallback).",
+    "sin_medio_pago_ui": "El campo medio_pago no se muestra en el formulario; la columna se guarda null. La base no se limpia en esta tarea.",
+    "comprobante": "Comprobante de pago opcional (imagen o PDF) subido a R2 vía FilePicker existente, prefijo finanzas/comprobantes. Se guarda en movimientos_financieros.comprobante_url.",
+    "proyecto_proveedor": "Proyecto opcional tanto en entradas como en salidas. Proveedor opcional solo en salidas. Ambos dentro de 'Más opciones', cerrado por defecto.",
+    "proveedor_id": "Se agrega proveedor_id nullable con FK a proveedores (migración aditiva 0032). No se relaciona por nombre: el nombre no es único ni estable.",
+    "saldo_negativo": "Se permite saldo negativo; no se bloquea la salida por falta de saldo.",
+    "base_no_se_limpia": "No se borran columnas ni tablas en esta tarea. La auditoría de huérfanos y relaciones queda documentada como t-182.",
+    "fecha": "2026-10-17"
+  },
+  "zona": "lib/db/schema.ts + drizzle/v3/0032* + lib/data/contracts.ts + lib/data/actions/f6.ts + lib/data/mock-store.ts + lib/data/drizzle-impl.ts + lib/data/queries/coverage-manifest.ts + lib/validacion/finanzas.ts + components/veta/movimiento-financiero-modal.tsx + components/veta/cuenta-financiera-modal.tsx + app/erp/finanzas/page.tsx + app/erp/finanzas/caja/page.tsx",
+  "tipo": "logica_de_negocio_mas_ui",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-181.md",
+  "depende_de": [],
+  "criterios_aceptacion": [
+    "se puede crear 'Caja principal' con saldo inicial desde la UI",
+    "se puede registrar una entrada: suma al saldo de la cuenta y crea movimiento tipo credito con cuenta_destino_id",
+    "se puede registrar una salida: resta del saldo de la cuenta y crea movimiento tipo debito con cuenta_origen_id",
+    "el comprobante opcional se sube a R2 y queda visible/abrible desde el libro",
+    "proyecto es opcional en entradas y salidas; proveedor es opcional solo en salidas y se persiste en proveedor_id",
+    "un proveedor enviado en una entrada es rechazado por validación",
+    "el saldo, los KPIs y el libro se actualizan sin recargar la página",
+    "saldo negativo permitido",
+    "no se borra ninguna columna ni tabla en esta tarea",
+    "npx tsc --noEmit limpio y npx eslint . sin errores nuevos",
+    "tests de mock-store y validación en verde"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errors (2 warnings preexistentes _proyectoId)",
+    "next build": "OK con SESSION_SECRET de build (el .env.local no lo tiene; falla previa de entorno, no de codigo)",
+    "tests": "lib/validacion/finanzas.test.ts 8/8 OK; mock-store.test.ts: los 5 tests nuevos de finanzas OK (falla preexistente en portafolio, linea 1115); coverage.test.ts 4/4 OK",
+    "migracion_0032": "aplicada y verificada en ep-muddy-cherry-at5j2mz7 (columna + FK presentes) el 2026-10-17"
+  },
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-10-17) en conversación: una sola caja, sin medio de pago en UI, comprobante R2, proyecto opcional en ambos, proveedor opcional en salidas, proveedor_id aditivo, limpieza de columnas diferida a t-182",
+    "fecha": "2026-10-17"
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "nota_ejecucion": "UI: botones Registrar entrada/salida y Nueva cuenta en /erp/finanzas y /erp/finanzas/caja; modales reutilizables con comprobante R2 (FilePicker, finanzas/comprobantes), proyecto opcional en ambos tipos y proveedor solo en salida; libro con proyecto/proveedor y link al comprobante; KPIs del mes y accesos. Datos: movimientosFinancieros.crear en contracts/mock/drizzle, crearMovimientoManualAction transaccional con zod y saldo atomico, crearCuentaFinancieraAction guarda saldo_inicial. Migracion 0032 aplicada a produccion. PENDIENTE: QA manual en npm run dev (crear caja, registrar entrada/salida, comprobar saldo, comprobante y asociaciones).",
+  "creada_en": "2026-10-17T00:00:00Z"
+}

@@ -1,21 +1,69 @@
 'use server'
 // Server Actions del cluster F6: finanzas (cuentas, obligaciones, órdenes de compra, caja, proveedores).
 // Porta 1:1 la lógica de lib/data/mock-store.ts. Ver plan_f10_migracion.md §3.1d.
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { calcularCajaDisponible } from '@/lib/modules/f4f5f6/gates'
+import { validarEntrada } from '@/lib/validacion/validar'
+import { cuentaFinancieraCrearSchema, movimientoManualSchema } from '@/lib/validacion/finanzas'
 import { num } from './mappers'
 import type {
   CuentaFinanciera, ObligacionPendiente, OrigenObligacion, EstadoObligacion,
-  OrdenCompra, EstadoOrdenCompra, MovimientoFinanciero, Proveedor, ProveedorCuentaBancaria, Banco,
+  OrdenCompra, EstadoOrdenCompra, MovimientoFinanciero, MovimientoManualInput,
+  Proveedor, ProveedorCuentaBancaria, Banco,
 } from '../contracts'
 
-export async function crearCuentaFinancieraAction(data: { nombre: string; tipo: string; saldoActual?: string }): Promise<CuentaFinanciera> {
+export async function crearCuentaFinancieraAction(
+  data: { nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string },
+): Promise<CuentaFinanciera> {
+  const validado = validarEntrada(cuentaFinancieraCrearSchema, data)
+  const saldo = validado.saldoInicial ?? validado.saldoActual ?? '0'
   const [nuevo] = await db.insert(s.cuentasFinancieras).values({
-    nombre: data.nombre, tipo: data.tipo, saldoActual: data.saldoActual ?? '0',
+    nombre: validado.nombre,
+    tipo: validado.tipo,
+    saldoInicial: saldo,
+    saldoActual: saldo,
   }).returning()
   return nuevo as unknown as CuentaFinanciera
+}
+
+/** t-181: entrada (credito a la cuenta) o salida (debito de la cuenta) manual.
+ *  El saldo se actualiza con aritmética SQL atómica dentro de la misma transacción.
+ *  Se permite saldo negativo a propósito (decisión de Supervisor 2026-10-17). */
+export async function crearMovimientoManualAction(data: MovimientoManualInput): Promise<MovimientoFinanciero> {
+  const validado = validarEntrada(movimientoManualSchema, data)
+  const esEntrada = validado.tipo === 'entrada'
+
+  return db.transaction(async (tx) => {
+    const [cuenta] = await tx
+      .select()
+      .from(s.cuentasFinancieras)
+      .where(eq(s.cuentasFinancieras.id, validado.cuentaId))
+    if (!cuenta) throw new Error('La cuenta financiera no existe.')
+
+    const [movimiento] = await tx.insert(s.movimientosFinancieros).values({
+      fecha: validado.fecha,
+      descripcion: validado.descripcion,
+      tipo: esEntrada ? 'credito' : 'debito',
+      monto: validado.monto,
+      estado: 'asentado',
+      cuentaOrigenId: esEntrada ? null : cuenta.id,
+      cuentaDestinoId: esEntrada ? cuenta.id : null,
+      proyectoId: validado.proyectoId ?? null,
+      proveedorId: validado.proveedorId ?? null,
+      medioPago: null,
+      comprobanteUrl: validado.comprobanteUrl ?? null,
+    }).returning()
+
+    await tx.update(s.cuentasFinancieras).set({
+      saldoActual: esEntrada
+        ? sql`${s.cuentasFinancieras.saldoActual} + ${validado.monto}::numeric`
+        : sql`${s.cuentasFinancieras.saldoActual} - ${validado.monto}::numeric`,
+    }).where(eq(s.cuentasFinancieras.id, cuenta.id))
+
+    return movimiento as unknown as MovimientoFinanciero
+  })
 }
 
 export async function crearObligacionAction(data: Partial<ObligacionPendiente> & { descripcion: string; origen: OrigenObligacion; montoTotal: string; fechaVencimiento: string }): Promise<ObligacionPendiente> {

@@ -650,8 +650,9 @@ export interface CitaGarantia {
 export interface CuentaFinanciera {
   id: string
   nombre: string
-  /** 'caja' | 'banco' | 'proveedor' ... */
+  /** 'caja' | 'caja_menor' | 'banco' | 'billetera_digital' | 'otro' ... */
   tipo: string
+  saldoInicial: string
   saldoActual: string
   createdAt: string
 }
@@ -672,10 +673,27 @@ export interface MovimientoFinanciero {
   contratoId: string | null
   /** A quién se pagó (P-21 columnas). */
   socioId: string | null
+  /** t-181: proveedor asociado a una salida (opcional). */
+  proveedorId: string | null
   medioPago: string | null
   comprobanteUrl: string | null
   prioridadPago: number | null
   createdAt: string
+}
+
+/** t-181: entrada/salida manual del libro contable simplificado. */
+export interface MovimientoManualInput {
+  /** 'entrada' = ingreso (credito) | 'salida' = egreso (debito). */
+  tipo: 'entrada' | 'salida'
+  fecha: string
+  descripcion: string
+  monto: string
+  cuentaId: string
+  /** Solo salidas: proveedor del catálogo. */
+  proveedorId?: string | null
+  proyectoId?: string | null
+  /** Imagen o PDF del comprobante subido a R2. */
+  comprobanteUrl?: string | null
 }
 
 export type OrigenObligacion = 'contrato_hito' | 'proveedor' | 'diseno_3d' | 'nomina' | 'comision' | 'arriendo'
@@ -1427,7 +1445,7 @@ export interface DataStore {
   // --- F6: Finanzas ---
   cuentasFinancieras: {
     listar(): CuentaFinanciera[]
-    crear(data: { nombre: string; tipo: string; saldoActual?: string }): Promise<CuentaFinanciera>
+    crear(data: { nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string }): Promise<CuentaFinanciera>
     /** P-21 R4/E-20: SUM real recalculado en cada consulta, nunca cacheado. */
     disponible(): number
   }
@@ -1435,6 +1453,8 @@ export interface DataStore {
     listar(): MovimientoFinanciero[]
     porCuenta(cuentaId: string): MovimientoFinanciero[]
     porProyecto(proyectoId: string): MovimientoFinanciero[]
+    /** t-181: registra una entrada (credito) o salida (debito) manual y actualiza el saldo. */
+    crear(data: MovimientoManualInput): Promise<MovimientoFinanciero>
   }
   obligacionesPendientes: {
     listar(): ObligacionPendiente[]

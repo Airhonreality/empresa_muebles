@@ -1,0 +1,36 @@
+{
+  "id": "t-182",
+  "titulo": "Auditoría de huérfanos, columnas y relaciones + plan de depuración a lo esencial",
+  "intencion_negocio": "Javier (2026-10-17): quiere depurar el ERP para quedarse con lo esencial. Sospecha que buena parte de módulos, tablas, columnas y relaciones no se usan (menciona gates y el ruido general). Antes de borrar nada hace falta evidencia mecánica: qué se lee/escribe, qué alimenta el sitio público y qué es soporte real del ciclo núcleo. Ninguna eliminación destructiva se ejecuta sin checkpoint.",
+  "diagnostico": "El repo tiene ~70 tablas, 14 secciones de navegación y varios módulos declarados congelados el 2026-09-30 (comercial, taller, compras, equipo, herramientas, pedidos-web, portafolio, catálogos de espacios, garantía) además de gates, ya eliminado. No existe un inventario único que cruce tabla/columna con uso real en código, rutas, Server Actions, tests, scripts y sitio público. 'Vacío en la base' no equivale a 'sin uso': hay columnas que se escriben desde flujos de pago aunque la UI no las muestre.",
+  "decisiones_supervisor": {
+    "no_borrar_sin_evidencia": "La auditoría produce un informe y un plan por fases; ninguna tabla/columna se borra en la propia auditoría.",
+    "dependencias_publicas": "Portafolio y garantía alimentan el sitio público; se verifican antes de proponer cualquier retiro.",
+    "orden_de_retiro": "sidebar/rutas -> Server Actions/contratos -> tablas/columnas en migraciones separadas con respaldo y rollback.",
+    "checkpoint": "Cada lote destructivo requiere aprobación explícita del Supervisor."
+  },
+  "zona": "arnes/ (auditoría y plan) + lectura de app/, lib/, drizzle/, scripts/ y base de datos",
+  "tipo": "auditoria",
+  "riesgo": "medio",
+  "plan_ref": "arnes/planes/plan_t-182.md",
+  "depende_de": ["t-181"],
+  "criterios_aceptacion": [
+    "existe un inventario de tablas, rutas, componentes, Server Actions y entradas del sidebar",
+    "cada elemento queda clasificado: esencial, soporte, congelado, candidato a eliminar o dependencia pública",
+    "cada candidato a eliminar tiene evidencia de desuso (grep + datos + dependencias)",
+    "existe una lista explícita de lo que NO se toca y por qué",
+    "existe un plan de retiro por fases con respaldo y rollback",
+    "no se ejecuta ninguna eliminación destructiva en esta tarea"
+  ],
+  "verificacion_ejecutor": {},
+  "executor": null,
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente: aprobar el informe y cada lote de eliminación",
+    "fecha": null
+  },
+  "estado": "creada",
+  "creada_en": "2026-10-17T00:00:00Z"
+}

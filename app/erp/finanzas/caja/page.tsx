@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { CuentaFinancieraModal } from '@/components/veta/cuenta-financiera-modal'
+import { MovimientoFinancieroModal, type TipoMovimientoManual } from '@/components/veta/movimiento-financiero-modal'
 import { useDataStore, type CuentaFinanciera, type MovimientoFinanciero, type Proveedor, type OrdenCompra, type RegistroGateCaja } from '@/lib/data'
 import { calcularCajaDisponible } from '@/lib/modules/f4f5f6/gates'
 
@@ -65,7 +67,11 @@ export default function CajaPage() {
   const obligaciones = store.obligacionesPendientes.listar()
   const ordenesCompra = store.ordenesCompra.listar()
   const proveedores = store.proveedores.listar()
+  const proyectos = store.proyectos.listar()
   const registrosGate = store.registrosGateCaja.listar()
+
+  const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoManual | null>(null)
+  const [mostrarCuenta, setMostrarCuenta] = useState(false)
 
   const cajaDisponible = calcularCajaDisponible(cuentas, obligaciones)
 
@@ -76,6 +82,12 @@ export default function CajaPage() {
   const proveedorMap = (() => {
     const m = new Map<string, Proveedor>()
     proveedores.forEach(p => m.set(p.id, p))
+    return m
+  })()
+
+  const proyectoMap = (() => {
+    const m = new Map<string, { nombreProyecto: string }>()
+    proyectos.forEach(p => m.set(p.id, p))
     return m
   })()
 
@@ -115,15 +127,40 @@ export default function CajaPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
-      <header className="mb-8 flex items-center justify-between gap-4">
+      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-semibold text-text-heading">Caja</h1>
           <p className="text-sm text-text-muted mt-1">Control de caja, autorización de pagos y libro mayor</p>
         </div>
-        <Button variant="ghost" size="md" onClick={() => router.back()}>
-          ← Volver
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="md" onClick={() => setTipoMovimiento('entrada')}>
+            Registrar entrada
+          </Button>
+          <Button variant="primary" size="md" onClick={() => setTipoMovimiento('salida')}>
+            Registrar salida
+          </Button>
+          <Button variant="outline" size="md" onClick={() => setMostrarCuenta(true)}>
+            Nueva cuenta
+          </Button>
+          <Button variant="ghost" size="md" onClick={() => router.back()}>
+            ← Volver
+          </Button>
+        </div>
       </header>
+
+      {cuentas.length === 0 && (
+        <section className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-amber-900">Todavía no hay una caja.</p>
+            <p className="text-xs text-amber-800">
+              Crea “Caja principal” para empezar a registrar entradas y salidas.
+            </p>
+          </div>
+          <Button variant="primary" size="md" onClick={() => setMostrarCuenta(true)}>
+            Crear caja principal
+          </Button>
+        </section>
+      )}
 
       {/* --- Dashboard: Saldo disponible + cuentas --- */}
       <section className="mb-6 rounded-lg border border-border-subtle bg-bg-raised overflow-hidden">
@@ -149,19 +186,23 @@ export default function CajaPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {cuentas.map((cuenta: CuentaFinanciera) => (
-                <div key={cuenta.id} className="rounded border border-border-subtle bg-bg-paper p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-text-heading">{cuenta.nombre}</p>
-                      <p className="text-xs text-text-muted">{cuenta.tipo}</p>
+              {cuentas.length === 0 ? (
+                <p className="text-sm text-text-muted">Sin cuentas registradas.</p>
+              ) : (
+                cuentas.map((cuenta: CuentaFinanciera) => (
+                  <div key={cuenta.id} className="rounded border border-border-subtle bg-bg-paper p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-text-heading">{cuenta.nombre}</p>
+                        <p className="text-xs text-text-muted">{cuenta.tipo}</p>
+                      </div>
+                      <p className="font-mono text-lg font-semibold text-text-heading">
+                        {formatCOP(numDe(cuenta.saldoActual))}
+                      </p>
                     </div>
-                    <p className="font-mono text-lg font-semibold text-text-heading">
-                      {formatCOP(numDe(cuenta.saldoActual))}
-                    </p>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
@@ -299,9 +340,11 @@ export default function CajaPage() {
                     <tr>
                       <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Fecha</th>
                       <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Descripción</th>
+                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Proyecto / proveedor</th>
                       <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Tipo</th>
                       <th className="border-b border-border-subtle text-right px-2 py-2 font-semibold text-text-heading">Monto</th>
                       <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Cuenta</th>
+                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Comprobante</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -309,20 +352,40 @@ export default function CajaPage() {
                       const cuentaDestino = mov.cuentaDestinoId ? cuentas.find(c => c.id === mov.cuentaDestinoId) : null
                       const cuentaOrigen = mov.cuentaOrigenId ? cuentas.find(c => c.id === mov.cuentaOrigenId) : null
                       const cuentaNombre = cuentaDestino || cuentaOrigen
+                      const proyecto = mov.proyectoId ? proyectoMap.get(mov.proyectoId) : null
+                      const proveedor = mov.proveedorId ? proveedorMap.get(mov.proveedorId) : null
                       return (
                         <tr key={mov.id} className="border-b border-border-subtle/50">
                           <td className="px-2 py-2 text-xs font-mono text-text-muted">{formatDate(mov.fecha)}</td>
                           <td className="px-2 py-2 text-sm text-text-heading">{mov.descripcion}</td>
+                          <td className="px-2 py-2 text-xs text-text-muted">
+                            {proyecto ? proyecto.nombreProyecto : '—'}
+                            {proveedor ? ` · ${proveedor.nombre}` : ''}
+                          </td>
                           <td className="px-2 py-2 text-center">
                             <Badge tone={mov.tipo === 'debito' ? 'danger' : 'info'} dot>
                               {origenLabel(mov.tipo)}
                             </Badge>
                           </td>
                           <td className={`px-2 py-2 text-right font-mono ${mov.tipo === 'debito' ? 'text-red-600' : 'text-emerald-600'}`}>
-                            {formatCOP(numDe(mov.monto))}
+                            {mov.tipo === 'debito' ? '−' : '+'}{formatCOP(numDe(mov.monto))}
                           </td>
                           <td className="px-2 py-2 text-center text-xs text-text-muted">
                             {cuentaNombre ? cuentaNombre.nombre : '—'}
+                          </td>
+                          <td className="px-2 py-2 text-center text-xs">
+                            {mov.comprobanteUrl ? (
+                              <a
+                                href={mov.comprobanteUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-gold-700 underline hover:text-gold-800"
+                              >
+                                Ver
+                              </a>
+                            ) : (
+                              <span className="text-text-muted">—</span>
+                            )}
                           </td>
                         </tr>
                       )
@@ -392,6 +455,13 @@ export default function CajaPage() {
           </div>
         )}
       </section>
+
+      <MovimientoFinancieroModal
+        open={tipoMovimiento !== null}
+        onClose={() => setTipoMovimiento(null)}
+        tipoInicial={tipoMovimiento ?? 'salida'}
+      />
+      <CuentaFinancieraModal open={mostrarCuenta} onClose={() => setMostrarCuenta(false)} />
     </div>
   )
 }

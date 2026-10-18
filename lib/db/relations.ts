@@ -101,6 +101,10 @@ export const movimientosFinancierosRelations = relations(movimientosFinancieros,
 		fields: [movimientosFinancieros.contratoId],
 		references: [contratos.id]
 	}),
+	proveedor: one(proveedores, {
+		fields: [movimientosFinancieros.proveedorId],
+		references: [proveedores.id]
+	}),
 }));
 
 export const cuentasFinancierasRelations = relations(cuentasFinancieras, ({many}) => ({
@@ -142,6 +146,7 @@ export const clientesRelations = relations(clientes, ({many}) => ({
 export const proveedoresRelations = relations(proveedores, ({many}) => ({
 	obligacionesPendientes: many(obligacionesPendientes),
 	productosCatalogos: many(productosCatalogo),
+	movimientosFinancieros: many(movimientosFinancieros),
 }));
 
 export const ordenesTrabajoRelations = relations(ordenesTrabajo, ({one, many}) => ({

@@ -3,7 +3,7 @@
 import type {
   DataStore, Proyecto, Cliente, EspacioVariante, ItemVariante, ProductoCatalogo, EspacioArtefacto, Parametro, Contrato, HitoPago, TransicionesProyecto, UsuarioMock, ProyectosEstadosHistorial, Cronograma, CronogramaEtapa, DesfaseCronograma, CheckProduccion, NovedadCritica, ComunicacionProgreso, SchemaProyecto, BomMaterial, Verificacion, Retoma, CambioContrato, Persona, PersonaRol, Modulo, Estimacion, LineaCronograma, EtapaCronograma, TipoGate, VeredictoGate, DesenlaceCheck, CausaDesfase, EstadoNovedadCritica, EstadoSchema, RolCanonico, OrigenBom, EstadoProyecto,
   OrdenTrabajo, TipoOrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, OrigenReproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
-  CuentaFinanciera, MovimientoFinanciero, ObligacionPendiente, OrigenObligacion, EstadoObligacion, Proveedor, ProveedorCuentaBancaria, Banco, OrdenCompra, EstadoOrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
+  CuentaFinanciera, MovimientoFinanciero, MovimientoManualInput, ObligacionPendiente, OrigenObligacion, EstadoObligacion, Proveedor, ProveedorCuentaBancaria, Banco, OrdenCompra, EstadoOrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
@@ -1717,12 +1717,14 @@ export function createMockStore(): DataStore {
       listar(): CuentaFinanciera[] {
         return cuentasFinancieras
       },
-      async crear(data: { nombre: string; tipo: string; saldoActual?: string }): Promise<CuentaFinanciera> {
+      async crear(data: { nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string }): Promise<CuentaFinanciera> {
+        const saldo = data.saldoInicial ?? data.saldoActual ?? '0'
         const nuevo: CuentaFinanciera = {
           id: generateId('cta'),
           nombre: data.nombre,
           tipo: data.tipo,
-          saldoActual: data.saldoActual ?? '0',
+          saldoInicial: saldo,
+          saldoActual: saldo,
           createdAt: new Date().toISOString(),
         }
         cuentasFinancieras.push(nuevo)
@@ -1744,6 +1746,45 @@ export function createMockStore(): DataStore {
       },
       porProyecto(proyectoId: string): MovimientoFinanciero[] {
         return movimientosFinancieros.filter(m => m.proyectoId === proyectoId)
+      },
+      async crear(data: MovimientoManualInput): Promise<MovimientoFinanciero> {
+        const cuentaIdx = cuentasFinancieras.findIndex(c => c.id === data.cuentaId)
+        if (cuentaIdx === -1) throw new Error('La cuenta financiera no existe.')
+        if (data.tipo === 'entrada' && data.proveedorId) {
+          throw new Error('Solo se puede asociar un proveedor a una salida.')
+        }
+
+        const esEntrada = data.tipo === 'entrada'
+        const monto = numDe(data.monto)
+        if (!(monto > 0)) throw new Error('El monto debe ser mayor que cero.')
+
+        const nuevo: MovimientoFinanciero = {
+          id: generateId('mov'),
+          fecha: data.fecha,
+          descripcion: data.descripcion,
+          tipo: esEntrada ? 'credito' : 'debito',
+          monto: data.monto,
+          cuentaOrigenId: esEntrada ? null : data.cuentaId,
+          cuentaDestinoId: esEntrada ? data.cuentaId : null,
+          obligacionId: null,
+          ordenCompraId: null,
+          proyectoId: data.proyectoId ?? null,
+          contratoId: null,
+          socioId: null,
+          proveedorId: data.proveedorId ?? null,
+          medioPago: null,
+          comprobanteUrl: data.comprobanteUrl ?? null,
+          prioridadPago: null,
+          createdAt: new Date().toISOString(),
+        }
+        movimientosFinancieros.push(nuevo)
+        const cuenta = cuentasFinancieras[cuentaIdx]
+        cuentasFinancieras[cuentaIdx] = {
+          ...cuenta,
+          saldoActual: String(numDe(cuenta.saldoActual) + (esEntrada ? monto : -monto)),
+        }
+        notify()
+        return nuevo
       },
     },
 
@@ -1811,6 +1852,7 @@ export function createMockStore(): DataStore {
           proyectoId: obligacion.proyectoId,
           contratoId: obligacion.contratoId,
           socioId: obligacion.personaId,
+          proveedorId: null,
           medioPago: data.medioPago ?? null,
           comprobanteUrl: null,
           prioridadPago: null,
@@ -1942,6 +1984,7 @@ export function createMockStore(): DataStore {
           proyectoId: oc.proyectoId,
           contratoId: null,
           socioId: null,
+          proveedorId: null,
           medioPago: data.medioPago ?? null,
           comprobanteUrl: null,
           prioridadPago: null,

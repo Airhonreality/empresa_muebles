@@ -108,6 +108,7 @@ export const ACCIONES_PENDIENTE_MIGRACION: readonly string[] = [
   'crearItemOrdenCompraAction',
   'crearItemsOrdenCompraDesdeSugeridosAction',
   'crearModuloArtefactoAction',
+  'crearMovimientoManualAction',
   'crearNotaReunionAction',
   'crearNovedadAction',
   'crearObligacionAction',

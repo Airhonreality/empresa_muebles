@@ -471,6 +471,9 @@ export const movimientosFinancieros = pgTable("movimientos_financieros", {
 	// F10 (2026-08-13): faltaban contra MovimientoFinanciero de contracts.ts (P-21/P-22/P-23).
 	ordenCompraId: uuid("orden_compra_id"),
 	socioId: uuid("socio_id"),
+	// t-181 (2026-10-17): asociación opcional de una salida a un proveedor del catálogo.
+	// Se agrega como FK (no por nombre) porque proveedores.nombre no es único ni estable.
+	proveedorId: uuid("proveedor_id"),
 	medioPago: text("medio_pago"),
 	comprobanteUrl: text("comprobante_url"),
 	prioridadPago: integer("prioridad_pago"),
@@ -506,6 +509,11 @@ export const movimientosFinancieros = pgTable("movimientos_financieros", {
 			columns: [table.ordenCompraId],
 			foreignColumns: [ordenesCompra.id],
 			name: "movimientos_financieros_orden_compra_id_ordenes_compra_id_fk"
+		}),
+		movimientosFinancierosProveedorIdFk: foreignKey({
+			columns: [table.proveedorId],
+			foreignColumns: [proveedores.id],
+			name: "movimientos_financieros_proveedor_id_fk"
 		}),
 	}
 });

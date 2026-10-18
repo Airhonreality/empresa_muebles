@@ -863,6 +863,78 @@ await test('f6 cuentasFinancieras.disponible: recalcula siempre desde cuentas - 
   assert.equal(store.cuentasFinancieras.disponible(), disponibleInicial + 1000000)
 })
 
+await test('t-181 movimientosFinancieros.crear: entrada suma al saldo y crea credito en cuenta destino', async () => {
+  const store = createMockStore()
+  const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Caja principal', tipo: 'caja', saldoInicial: '100000' })
+  const proyecto = store.proyectos.listar()[0]
+
+  const mov = await store.movimientosFinancieros.crear({
+    tipo: 'entrada',
+    fecha: '2026-10-17',
+    descripcion: 'Anticipo cliente',
+    monto: '250000',
+    cuentaId: cuenta.id,
+    proyectoId: proyecto.id,
+    comprobanteUrl: 'https://r2.example/comprobante.jpg',
+  })
+
+  assert.equal(mov.tipo, 'credito')
+  assert.equal(mov.cuentaDestinoId, cuenta.id)
+  assert.equal(mov.cuentaOrigenId, null)
+  assert.equal(mov.proyectoId, proyecto.id)
+  assert.equal(mov.comprobanteUrl, 'https://r2.example/comprobante.jpg')
+  assert.equal(store.cuentasFinancieras.listar().find(c => c.id === cuenta.id)?.saldoActual, '350000')
+})
+
+await test('t-181 movimientosFinancieros.crear: salida resta del saldo, crea debito y guarda proveedor', async () => {
+  const store = createMockStore()
+  const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Caja principal', tipo: 'caja', saldoInicial: '500000' })
+  const proveedor = store.proveedores.listar()[0]
+
+  const mov = await store.movimientosFinancieros.crear({
+    tipo: 'salida',
+    fecha: '2026-10-17',
+    descripcion: 'Compra de herrajes',
+    monto: '200000',
+    cuentaId: cuenta.id,
+    proveedorId: proveedor.id,
+  })
+
+  assert.equal(mov.tipo, 'debito')
+  assert.equal(mov.cuentaOrigenId, cuenta.id)
+  assert.equal(mov.cuentaDestinoId, null)
+  assert.equal(mov.proveedorId, proveedor.id)
+  assert.equal(store.cuentasFinancieras.listar().find(c => c.id === cuenta.id)?.saldoActual, '300000')
+})
+
+await test('t-181 movimientosFinancieros.crear: permite saldo negativo', async () => {
+  const store = createMockStore()
+  const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Caja principal', tipo: 'caja', saldoInicial: '100' })
+  await store.movimientosFinancieros.crear({
+    tipo: 'salida', fecha: '2026-10-17', descripcion: 'Sobregiro', monto: '500', cuentaId: cuenta.id,
+  })
+  assert.equal(store.cuentasFinancieras.listar().find(c => c.id === cuenta.id)?.saldoActual, '-400')
+})
+
+await test('t-181 movimientosFinancieros.crear: rechaza proveedor en entrada y cuenta inexistente', async () => {
+  const store = createMockStore()
+  const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Caja principal', tipo: 'caja', saldoInicial: '1000' })
+  const proveedor = store.proveedores.listar()[0]
+
+  await assert.rejects(
+    () => store.movimientosFinancieros.crear({
+      tipo: 'entrada', fecha: '2026-10-17', descripcion: 'X', monto: '100', cuentaId: cuenta.id, proveedorId: proveedor.id,
+    }),
+    /solo se puede asociar un proveedor a una salida/i,
+  )
+  await assert.rejects(
+    () => store.movimientosFinancieros.crear({
+      tipo: 'entrada', fecha: '2026-10-17', descripcion: 'X', monto: '100', cuentaId: 'no-existe',
+    }),
+    /no existe/i,
+  )
+})
+
 await test('f6 obligacionesPendientes.registrarPago: mueve a parcial y luego a pagado, crea movimiento (R3)', async () => {
   const store = createMockStore()
   const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Cuenta Test', tipo: 'banco', saldoActual: '5000000' })

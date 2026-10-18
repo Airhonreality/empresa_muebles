@@ -347,12 +347,12 @@ export const CITAS_GARANTIA: CitaGarantia[] = [
 // --- F6: Finanzas (REGISTRO §9) ---
 
 export const CUENTAS_FINANCIERAS: CuentaFinanciera[] = [
-  { id: UUID('cta01'), nombre: 'Caja principal', tipo: 'caja', saldoActual: '8000000', createdAt: '2026-01-01T00:00:00Z' },
-  { id: UUID('cta02'), nombre: 'Bancolombia Ahorros', tipo: 'banco', saldoActual: '15000000', createdAt: '2026-01-01T00:00:00Z' },
+  { id: UUID('cta01'), nombre: 'Caja principal', tipo: 'caja', saldoInicial: '8000000', saldoActual: '8000000', createdAt: '2026-01-01T00:00:00Z' },
+  { id: UUID('cta02'), nombre: 'Bancolombia Ahorros', tipo: 'banco', saldoInicial: '15000000', saldoActual: '15000000', createdAt: '2026-01-01T00:00:00Z' },
 ]
 
 export const MOVIMIENTOS_FINANCIEROS: MovimientoFinanciero[] = [
-  { id: UUID('mov01'), fecha: '2026-07-01', descripcion: 'Anticipo contrato Cocina Márquez — Integral', tipo: 'credito', monto: '720000', cuentaOrigenId: null, cuentaDestinoId: UUID('cta02'), obligacionId: UUID('obl01'), ordenCompraId: null, proyectoId: UUID('proj01'), contratoId: UUID('ctr01'), socioId: null, medioPago: 'transferencia', comprobanteUrl: null, prioridadPago: null, createdAt: '2026-07-01T10:00:00Z' },
+  { id: UUID('mov01'), fecha: '2026-07-01', descripcion: 'Anticipo contrato Cocina Márquez — Integral', tipo: 'credito', monto: '720000', cuentaOrigenId: null, cuentaDestinoId: UUID('cta02'), obligacionId: UUID('obl01'), ordenCompraId: null, proyectoId: UUID('proj01'), contratoId: UUID('ctr01'), socioId: null, proveedorId: null, medioPago: 'transferencia', comprobanteUrl: null, prioridadPago: null, createdAt: '2026-07-01T10:00:00Z' },
 ]
 
 // --- F7 (Compras): proveedores y órdenes de compra — contexto de F5/F6 (REGISTRO §7) ---
