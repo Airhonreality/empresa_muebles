@@ -81,3 +81,10 @@ Cambios de datos:
 - `movimientosFinancieros.anular(id)`: revierte saldo y deja `estado='anulado'`; idempotente.
 - `MovimientoFinanciero.estado` tipado como `'asentado' | 'anulado'`.
 - El libro muestra anulados con badge y los excluye de KPIs; filtros por mes, estado y búsqueda.
+
+## Seguimiento — orden del libro por fecha del movimiento
+
+- Selector "Ordenar por" en `/erp/finanzas` (libro resumen) y `/erp/finanzas/caja`:
+  fecha del movimiento reciente/antigua o fecha de registro reciente/antigua.
+- Ambas fechas visibles: "Fecha mov." y "Registro".
+- Lógica pura en `lib/utils/movimientos.ts` con test `lib/utils/movimientos.test.ts` (4/4).

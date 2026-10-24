@@ -9,6 +9,7 @@ import { MovimientoFinancieroModal, type TipoMovimientoManual } from '@/componen
 import { useToast } from '@/components/veta/toast-provider'
 import { useDataStore, type CuentaFinanciera, type MovimientoFinanciero, type Proveedor, type OrdenCompra, type RegistroGateCaja } from '@/lib/data'
 import { calcularCajaDisponible } from '@/lib/modules/f4f5f6/gates'
+import { ordenarMovimientos, type OrdenMovimientos } from '@/lib/utils/movimientos'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -100,6 +101,7 @@ export default function CajaPage() {
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'asentado' | 'anulado'>('todos')
   const [filtroMes, setFiltroMes] = useState<string>('')
   const [busqueda, setBusqueda] = useState<string>('')
+  const [ordenLibro, setOrdenLibro] = useState<OrdenMovimientos>('movimiento-desc')
 
   let movimientosFiltrados = movimientos
   if (filtroTipo !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === filtroTipo)
@@ -116,7 +118,7 @@ export default function CajaPage() {
         || (proveedor?.nombre.toLowerCase().includes(q) ?? false)
     })
   }
-  movimientosFiltrados = [...movimientosFiltrados].sort((a, b) => b.fecha.localeCompare(a.fecha))
+  movimientosFiltrados = ordenarMovimientos(movimientosFiltrados, ordenLibro)
 
   const handleAnular = useCallback(async (mov: MovimientoFinanciero) => {
     if (!window.confirm(`¿Anular el movimiento "${mov.descripcion}"? Se revertirá el saldo y quedará en el libro como anulado.`)) return
@@ -388,6 +390,19 @@ export default function CajaPage() {
                   ))}
                 </select>
               </label>
+              <label className="flex items-center gap-1">
+                <span className="text-xs text-text-muted">Ordenar por:</span>
+                <select
+                  value={ordenLibro}
+                  onChange={(e) => setOrdenLibro(e.target.value as OrdenMovimientos)}
+                  className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+                >
+                  <option value="movimiento-desc">Movimiento (reciente)</option>
+                  <option value="movimiento-asc">Movimiento (antiguo)</option>
+                  <option value="registro-desc">Registro (reciente)</option>
+                  <option value="registro-asc">Registro (antiguo)</option>
+                </select>
+              </label>
             </div>
 
             {movimientosFiltrados.length === 0 ? (
@@ -397,7 +412,8 @@ export default function CajaPage() {
                 <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr>
-                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Fecha</th>
+                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Fecha mov.</th>
+                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Registro</th>
                       <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Descripción</th>
                       <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Proyecto / proveedor</th>
                       <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Tipo</th>
@@ -417,6 +433,7 @@ export default function CajaPage() {
                       return (
                         <tr key={mov.id} className={`border-b border-border-subtle/50 ${mov.estado === 'anulado' ? 'opacity-60' : ''}`}>
                           <td className="px-2 py-2 text-xs font-mono text-text-muted">{formatDate(mov.fecha)}</td>
+                          <td className="px-2 py-2 text-xs font-mono text-text-muted">{formatDate(mov.createdAt)}</td>
                           <td className="px-2 py-2 text-sm text-text-heading">{mov.descripcion}</td>
                           <td className="px-2 py-2 text-xs text-text-muted">
                             {proyecto ? proyecto.nombreProyecto : '—'}

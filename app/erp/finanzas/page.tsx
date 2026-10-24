@@ -20,6 +20,7 @@ import {
   type TipoMovimientoManual,
 } from "@/components/veta/movimiento-financiero-modal";
 import { formatCurrency } from "@/lib/utils/format";
+import { ordenarMovimientos, type OrdenMovimientos } from "@/lib/utils/movimientos";
 
 const ORIGEN_OBLIGACION_LABELS: Record<OrigenObligacion, string> = {
   contrato_hito: "Cobro cliente",
@@ -75,6 +76,7 @@ export default function FinanzasPage() {
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoManual | null>(null);
   const [movimientoEditando, setMovimientoEditando] = useState<MovimientoFinanciero | null>(null);
   const [mostrarCuenta, setMostrarCuenta] = useState(false);
+  const [ordenLibro, setOrdenLibro] = useState<OrdenMovimientos>("movimiento-desc");
 
   const cuentas = store.cuentasFinancieras.listar();
   const movimientos = store.movimientosFinancieros.listar();
@@ -120,7 +122,7 @@ export default function FinanzasPage() {
 
   const proyectoMap = new Map(store.proyectos.listar().map((p) => [p.id, p]));
   const proveedorMap = new Map(store.proveedores.listar().map((p) => [p.id, p]));
-  const ultimosMovimientos = movimientosActivos.slice(0, 8);
+  const ultimosMovimientos = ordenarMovimientos(movimientosActivos, ordenLibro).slice(0, 8);
 
   const handleAnular = async (mov: MovimientoFinanciero) => {
     if (!window.confirm(`¿Anular el movimiento "${mov.descripcion}"? Se revertirá el saldo y quedará en el libro como anulado.`)) return;
@@ -223,9 +225,24 @@ export default function FinanzasPage() {
       <section className="mb-8 rounded-lg border border-border-subtle bg-bg-raised overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
           <h2 className="font-semibold text-text-heading">Últimos movimientos</h2>
-          <Button variant="ghost" size="sm" onClick={() => router.push("/erp/finanzas/caja")}>
-            Ver libro completo
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1 text-xs text-text-muted">
+              Ordenar por:
+              <select
+                value={ordenLibro}
+                onChange={(e) => setOrdenLibro(e.target.value as OrdenMovimientos)}
+                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+              >
+                <option value="movimiento-desc">Fecha del movimiento (reciente)</option>
+                <option value="movimiento-asc">Fecha del movimiento (antigua)</option>
+                <option value="registro-desc">Fecha de registro (reciente)</option>
+                <option value="registro-asc">Fecha de registro (antigua)</option>
+              </select>
+            </label>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/erp/finanzas/caja")}>
+              Ver libro completo
+            </Button>
+          </div>
         </div>
 
         {ultimosMovimientos.length === 0 ? (
@@ -239,7 +256,8 @@ export default function FinanzasPage() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr>
-                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Fecha</th>
+                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Fecha mov.</th>
+                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Registro</th>
                   <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Descripción</th>
                   <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Proyecto / proveedor</th>
                   <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Tipo</th>
@@ -255,6 +273,7 @@ export default function FinanzasPage() {
                   return (
                     <tr key={mov.id} className="border-b border-border-subtle/50">
                       <td className="px-3 py-2 text-xs font-mono text-text-muted">{formatDate(mov.fecha)}</td>
+                      <td className="px-3 py-2 text-xs font-mono text-text-muted">{formatDate(mov.createdAt)}</td>
                       <td className="px-3 py-2 text-text-heading">{mov.descripcion}</td>
                       <td className="px-3 py-2 text-xs text-text-muted">
                         {proyecto ? proyecto.nombreProyecto : "—"}
