@@ -267,6 +267,47 @@ export default function CajaPage() {
     setSeccionesExpandidas(prev => ({ ...prev, [seccion]: !prev[seccion] }))
   }, [])
 
+  const columnasGate: DataTableColumn<RegistroGateCaja>[] = [
+    {
+      key: 'orden',
+      header: 'Orden',
+      sortValue: (reg) => ordenesCompra.find(o => o.id === reg.ordenCompraId)?.codigoOrden ?? reg.ordenCompraId,
+      render: (reg) => {
+        const oc = ordenesCompra.find(o => o.id === reg.ordenCompraId)
+        return <span className="font-mono text-xs text-text-muted">{oc ? oc.codigoOrden : reg.ordenCompraId}</span>
+      },
+    },
+    {
+      key: 'solicitado',
+      header: 'Solicitado',
+      align: 'center',
+      sortValue: (reg) => numDe(reg.montoSolicitado),
+      render: (reg) => <span className="font-mono">{formatCOP(numDe(reg.montoSolicitado))}</span>,
+    },
+    {
+      key: 'disponible',
+      header: 'Disponible',
+      align: 'center',
+      sortValue: (reg) => numDe(reg.saldoDisponible),
+      render: (reg) => <span className="font-mono">{formatCOP(numDe(reg.saldoDisponible))}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      align: 'center',
+      sortValue: (reg) => (reg.bloqueado ? 1 : 0),
+      render: (reg) => reg.bloqueado
+        ? <Badge tone="danger" dot>Bloqueado</Badge>
+        : <Badge tone="info" dot>Desbloqueado</Badge>,
+    },
+    {
+      key: 'resolucion',
+      header: 'Resolución',
+      sortValue: (reg) => reg.resolucion ?? '',
+      render: (reg) => <span className="text-xs text-text-muted">{reg.resolucion ? reg.resolucion : '—'}</span>,
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
       <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
@@ -536,47 +577,14 @@ export default function CajaPage() {
 
         {seccionesExpandidas.gateLog && (
           <div className="border-t border-border-subtle px-4 py-4 space-y-3">
-            {registrosGate.length === 0 ? (
-              <p className="text-sm text-text-muted">Sin bloqueos registrados.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr>
-                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Orden</th>
-                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Solicitado</th>
-                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Disponible</th>
-                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Estado</th>
-                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Resolución</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {registrosGate.map((reg: RegistroGateCaja) => {
-                      const oc = ordenesCompra.find(o => o.id === reg.ordenCompraId)
-                      return (
-                        <tr key={reg.id} className="border-b border-border-subtle/50">
-                          <td className="px-2 py-2 text-xs font-mono text-text-muted">
-                            {oc ? oc.codigoOrden : reg.ordenCompraId}
-                          </td>
-                          <td className="px-2 py-2 text-right font-mono">{formatCOP(numDe(reg.montoSolicitado))}</td>
-                          <td className="px-2 py-2 text-right font-mono">{formatCOP(numDe(reg.saldoDisponible))}</td>
-                          <td className="px-2 py-2 text-center">
-                            {reg.bloqueado ? (
-                              <Badge tone="danger" dot>Bloqueado</Badge>
-                            ) : (
-                              <Badge tone="info" dot>Desbloqueado</Badge>
-                            )}
-                          </td>
-                          <td className="px-2 py-2 text-xs text-text-muted">
-                            {reg.resolucion ? reg.resolucion : '—'}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <DataTable
+              rows={registrosGate}
+              columns={columnasGate}
+              rowKey={(reg) => reg.id}
+              density="compact"
+              caption="Bloqueos de caja E-20"
+              empty="Sin bloqueos registrados."
+            />
           </div>
         )}
       </section>

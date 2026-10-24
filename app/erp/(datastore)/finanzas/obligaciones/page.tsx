@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { CuentaFinancieraModal } from '@/components/veta/cuenta-financiera-modal'
 import { MoneyInput, parseMoney } from '@/components/veta/money-input'
 import { Modal } from '@/components/veta/modal'
@@ -141,6 +142,107 @@ export default function ObligacionesPage() {
     return Math.max(0, numDe(o.montoTotal) - numDe(o.montoPagado))
   }
 
+  const columnas: DataTableColumn<ObligacionPendiente>[] = [
+    {
+      key: 'origen',
+      header: 'Origen',
+      sortValue: (o) => ORIGEN_LABELS[o.origen],
+      render: (o) => (
+        <Badge tone="neutral" dot>
+          {ORIGEN_LABELS[o.origen]}
+        </Badge>
+      ),
+    },
+    {
+      key: 'descripcion',
+      header: 'Descripción',
+      sortValue: (o) => o.descripcion,
+      render: (o) => {
+        const prov = o.proveedorId ? proveedorMap.get(o.proveedorId) : null
+        const cli = o.clienteId ? clienteMap.get(o.clienteId) : null
+        const pers = o.personaId ? personaMap.get(o.personaId) : null
+        const proy = o.proyectoId ? proyectoMap.get(o.proyectoId) : null
+        return (
+          <div>
+            <p className="text-text-heading">{o.descripcion}</p>
+            {proy && (
+              <p className="text-xs text-text-muted">
+                {proy.nombreProyecto}
+                {prov && ` · ${prov.nombre}`}
+                {cli && ` · ${cli.nombre}`}
+                {pers && ` · ${pers.nombre}`}
+              </p>
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'monto',
+      header: 'Monto total',
+      align: 'center',
+      sortValue: (o) => numDe(o.montoTotal),
+      render: (o) => <span className="font-mono">{formatCOP(numDe(o.montoTotal))}</span>,
+    },
+    {
+      key: 'pagado',
+      header: 'Pagado',
+      align: 'center',
+      sortValue: (o) => numDe(o.montoPagado),
+      render: (o) => <span className="font-mono">{formatCOP(numDe(o.montoPagado))}</span>,
+    },
+    {
+      key: 'saldo',
+      header: 'Saldo',
+      align: 'center',
+      sortValue: (o) => saldoPendiente(o),
+      render: (o) => <span className="font-mono text-text-heading">{formatCOP(saldoPendiente(o))}</span>,
+    },
+    {
+      key: 'vencimiento',
+      header: 'Vencimiento',
+      align: 'center',
+      sortValue: (o) => o.fechaVencimiento,
+      render: (o) => (
+        <div className="text-xs font-mono text-text-muted">
+          {formatDate(o.fechaVencimiento)}
+          {venceEnDias(o) <= ALERTA_DIAS && venceEnDias(o) > 0 && (
+            <span className="ml-1"><Badge tone="warning" dot>Próxima</Badge></span>
+          )}
+          {venceEnDias(o) < 0 && o.estado !== 'pagado' && (
+            <span className="ml-1"><Badge tone="danger" dot>Vencida</Badge></span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      align: 'center',
+      sortValue: (o) => ESTADO_LABELS[o.estado],
+      render: (o) => (
+        <Badge tone={getEstadoBadgeTone(o.estado)} dot>
+          {ESTADO_LABELS[o.estado]}
+        </Badge>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'center',
+      render: (o) => {
+        const puedePagar = o.estado !== 'pagado' && saldoPendiente(o) > 0
+        return puedePagar ? (
+          <Button variant="secondary" size="md" onClick={() => handleAbrirPago(o)}>
+            Registrar pago
+          </Button>
+        ) : (
+          <span className="text-xs text-text-muted">—</span>
+        )
+      },
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
       <header className="mb-8 flex items-center justify-between gap-4">
@@ -200,84 +302,14 @@ export default function ObligacionesPage() {
 
       {/* --- Lista de obligaciones --- */}
       <section className="rounded-lg border border-border-subtle bg-bg-raised overflow-hidden">
-        {obligacionesFiltradas.length === 0 ? (
-          <div className="px-4 py-6 text-center">
-            <p className="text-sm text-text-muted">Sin obligaciones que coincidan con los filtros.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Origen</th>
-                  <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Descripción</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Monto total</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Pagado</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Saldo</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Vencimiento</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Estado</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {obligacionesFiltradas.map((obligacion: ObligacionPendiente) => {
-                  const prov = obligacion.proveedorId ? proveedorMap.get(obligacion.proveedorId) : null
-                  const cli = obligacion.clienteId ? clienteMap.get(obligacion.clienteId) : null
-                  const pers = obligacion.personaId ? personaMap.get(obligacion.personaId) : null
-                  const proy = obligacion.proyectoId ? proyectoMap.get(obligacion.proyectoId) : null
-                  const puedePagar = obligacion.estado !== 'pagado' && saldoPendiente(obligacion) > 0
-
-                  return (
-                    <tr key={obligacion.id} className="border-b border-border-subtle/50">
-                      <td className="px-2 py-2">
-                        <Badge tone="neutral" dot>
-                          {ORIGEN_LABELS[obligacion.origen]}
-                        </Badge>
-                      </td>
-                      <td className="px-2 py-2">
-                        <p className="text-text-heading">{obligacion.descripcion}</p>
-                        {proy && (
-                          <p className="text-xs text-text-muted">
-                            {proy.nombreProyecto}
-                            {prov && ` · ${prov.nombre}`}
-                            {cli && ` · ${cli.nombre}`}
-                            {pers && ` · ${pers.nombre}`}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-2 py-2 text-center font-mono">{formatCOP(numDe(obligacion.montoTotal))}</td>
-                      <td className="px-2 py-2 text-center font-mono">{formatCOP(numDe(obligacion.montoPagado))}</td>
-                      <td className="px-2 py-2 text-center font-mono text-text-heading">{formatCOP(saldoPendiente(obligacion))}</td>
-                      <td className="px-2 py-2 text-center text-xs font-mono text-text-muted">
-                        {formatDate(obligacion.fechaVencimiento)}
-                        {venceEnDias(obligacion) <= ALERTA_DIAS && venceEnDias(obligacion) > 0 && (
-                          <span className="ml-1"><Badge tone="warning" dot>Próxima</Badge></span>
-                        )}
-                        {venceEnDias(obligacion) < 0 && obligacion.estado !== 'pagado' && (
-                          <span className="ml-1"><Badge tone="danger" dot>Vencida</Badge></span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        <Badge tone={getEstadoBadgeTone(obligacion.estado)} dot>
-                          {ESTADO_LABELS[obligacion.estado]}
-                        </Badge>
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        {puedePagar ? (
-                          <Button variant="secondary" size="md" onClick={() => handleAbrirPago(obligacion)}>
-                            Registrar pago
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-text-muted">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable
+          rows={obligacionesFiltradas}
+          columns={columnas}
+          rowKey={(o) => o.id}
+          density="compact"
+          caption="Obligaciones pendientes"
+          empty="Sin obligaciones que coincidan con los filtros."
+        />
       </section>
 
       {/* --- RegistrarPagoModal --- */}

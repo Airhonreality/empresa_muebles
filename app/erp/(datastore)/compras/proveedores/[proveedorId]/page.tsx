@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { Button, LinkButton } from '@/components/veta/button'
 import { useDataStore } from '@/lib/data'
 import { CuentasBancariasProveedorModal } from '@/components/veta/cuentas-bancarias-proveedor-modal'
@@ -93,6 +94,61 @@ export default function ProveedorPerfilPage() {
       </div>
     )
   }
+
+  type OrdenFila = (typeof ordenesCompra)[number]
+  type CuentaCobroFila = (typeof cuentasCobroProveedor)[number]
+
+  const columnasOC: DataTableColumn<OrdenFila>[] = [
+    {
+      key: 'codigo',
+      header: 'Código',
+      sortValue: (oc) => oc.codigoOrden,
+      render: (oc) => <span className="text-text-heading">{oc.codigoOrden}</span>,
+    },
+    {
+      key: 'monto',
+      header: 'Monto',
+      align: 'right',
+      sortValue: (oc) => Number(oc.montoTotal) || 0,
+      render: (oc) => <span className="text-right text-text-heading">{formatCurrency(oc.montoTotal)}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      sortValue: (oc) => ESTADO_OC_LABELS[oc.estado as EstadoOrdenCompra],
+      render: (oc) => (
+        <Badge tone={ESTADOS_OC_TONE[oc.estado as EstadoOrdenCompra]}>
+          {ESTADO_OC_LABELS[oc.estado as EstadoOrdenCompra]}
+        </Badge>
+      ),
+    },
+  ]
+
+  const columnasCuentasCobro: DataTableColumn<CuentaCobroFila>[] = [
+    {
+      key: 'concepto',
+      header: 'Concepto',
+      sortValue: (cc) => cc.concepto,
+      render: (cc) => <span className="text-text-heading">{cc.concepto}</span>,
+    },
+    {
+      key: 'valor',
+      header: 'Valor',
+      align: 'right',
+      sortValue: (cc) => Number(cc.valor) || 0,
+      render: (cc) => <span className="text-right text-text-heading">{formatCurrency(cc.valor)}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      sortValue: (cc) => ESTADO_CC_LABELS[cc.estado as EstadoCuentaCobro],
+      render: (cc) => (
+        <Badge tone={ESTADOS_CC_TONE[cc.estado as EstadoCuentaCobro]}>
+          {ESTADO_CC_LABELS[cc.estado as EstadoCuentaCobro]}
+        </Badge>
+      ),
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
@@ -226,32 +282,14 @@ export default function ProveedorPerfilPage() {
             {ordenesCompra.length === 0 ? (
               <p className="text-sm text-text-muted">Sin órdenes de compra</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border-subtle">
-                      <th className="px-2 py-2 text-left font-semibold text-text-heading">Código</th>
-                      <th className="px-2 py-2 text-right font-semibold text-text-heading">Monto</th>
-                      <th className="px-2 py-2 text-left font-semibold text-text-heading">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ordenesCompra.map((oc) => (
-                      <tr key={oc.id} className="border-b border-border-subtle hover:bg-bg-alt">
-                        <td className="px-2 py-2 text-text-heading">{oc.codigoOrden}</td>
-                        <td className="px-2 py-2 text-right text-text-heading">
-                          {formatCurrency(oc.montoTotal)}
-                        </td>
-                        <td className="px-2 py-2">
-                          <Badge tone={ESTADOS_OC_TONE[oc.estado as EstadoOrdenCompra]}>
-                            {ESTADO_OC_LABELS[oc.estado as EstadoOrdenCompra]}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+              rows={ordenesCompra}
+              columns={columnasOC}
+              rowKey={(oc) => oc.id}
+              density="compact"
+              caption="Órdenes de compra del proveedor"
+              empty="Sin órdenes de compra"
+            />
             )}
           </div>
 
@@ -307,32 +345,14 @@ export default function ProveedorPerfilPage() {
             {cuentasCobroProveedor.length === 0 ? (
               <p className="text-sm text-text-muted">Sin cuentas de cobro</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border-subtle">
-                      <th className="px-2 py-2 text-left font-semibold text-text-heading">Concepto</th>
-                      <th className="px-2 py-2 text-right font-semibold text-text-heading">Valor</th>
-                      <th className="px-2 py-2 text-left font-semibold text-text-heading">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cuentasCobroProveedor.map((cc) => (
-                      <tr key={cc.id} className="border-b border-border-subtle hover:bg-bg-alt">
-                        <td className="px-2 py-2 text-text-heading">{cc.concepto}</td>
-                        <td className="px-2 py-2 text-right text-text-heading">
-                          {formatCurrency(cc.valor)}
-                        </td>
-                        <td className="px-2 py-2">
-                          <Badge tone={ESTADOS_CC_TONE[cc.estado as EstadoCuentaCobro]}>
-                            {ESTADO_CC_LABELS[cc.estado as EstadoCuentaCobro]}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+              rows={cuentasCobroProveedor}
+              columns={columnasCuentasCobro}
+              rowKey={(cc) => cc.id}
+              density="compact"
+              caption="Cuentas de cobro del proveedor"
+              empty="Sin cuentas de cobro"
+            />
             )}
           </div>
         </div>

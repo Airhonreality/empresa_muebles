@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { Busqueda } from '@/components/veta/busqueda'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { Modal } from '@/components/veta/modal'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { useDataStore, type PedidoWeb, type Proyecto } from '@/lib/data'
@@ -127,6 +128,82 @@ export default function PedidosWebPage() {
     categoriaComercial: 'Proyecto',
   }))
 
+  const columnas: DataTableColumn<PedidoWeb>[] = [
+    {
+      key: 'id',
+      header: 'ID',
+      sortValue: (p) => p.id,
+      render: (p) => <span className="font-mono text-xs text-text-muted">{p.id.slice(0, 8)}</span>,
+    },
+    {
+      key: 'cliente',
+      header: 'Cliente',
+      sortValue: (p) => clienteMap.get(p.clienteId) ?? p.clienteId,
+      render: (p) => <span className="text-text-heading">{clienteMap.get(p.clienteId) ?? p.clienteId}</span>,
+    },
+    {
+      key: 'total',
+      header: 'Total',
+      align: 'right',
+      sortValue: (p) => parseInt(p.totalPedido.replace(/[^\d]/g, ''), 10) || 0,
+      render: (p) => <span className="font-mono text-text-heading">{formatMoney(p.totalPedido)}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      sortValue: (p) => ETIQUETA_ESTADO[p.estado as EstadoPedido] ?? p.estado,
+      render: (p) => (
+        <Badge tone={BADGE_TONE[p.estado as EstadoPedido] ?? 'neutral'} dot>
+          {ETIQUETA_ESTADO[p.estado as EstadoPedido] ?? p.estado}
+        </Badge>
+      ),
+    },
+    {
+      key: 'fecha',
+      header: 'Fecha',
+      sortValue: (p) => p.createdAt,
+      render: (p) => <span className="text-xs text-text-muted">{formatDate(p.createdAt)}</span>,
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      render: (p) => (
+        <div className="flex items-center justify-end gap-2">
+          {p.estado === 'nuevo' && (
+            <>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  resetModalEnganchar()
+                  setModalEnganchar(p)
+                }}
+              >
+                Enganchar
+              </Button>
+              <Button
+                variant="destructive"
+                size="md"
+                onClick={() => {
+                  resetModalCancelar()
+                  setModalCancelar(p)
+                }}
+              >
+                Cancelar
+              </Button>
+            </>
+          )}
+          {p.estado === 'enganchado' && p.proyectoId && (
+            <span className="text-xs text-text-muted">
+              Proyecto: {proyectos.find(pr => pr.id === p.proyectoId)?.nombreProyecto ?? p.proyectoId}
+            </span>
+          )}
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-6">
       <header className="mb-8">
@@ -182,74 +259,15 @@ export default function PedidosWebPage() {
             Pedidos <span className="text-text-muted font-normal">({pedidosFiltrados.length})</span>
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle bg-bg-alt/40">
-                <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-text-heading">ID</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-text-heading">Cliente</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wide text-text-heading">Total</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-text-heading">Estado</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-text-heading">Fecha</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wide text-text-heading">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pedidosFiltrados.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-text-muted italic">
-                    No hay pedidos con los filtros seleccionados.
-                  </td>
-                </tr>
-              ) : (
-                pedidosFiltrados.map(pedido => (
-                  <tr key={pedido.id} className="border-b border-border-subtle last:border-b-0 hover:bg-bg-alt/30">
-                    <td className="px-4 py-3 font-mono text-xs text-text-muted">{pedido.id.slice(0, 8)}</td>
-                    <td className="px-4 py-3 text-text-heading">{clienteMap.get(pedido.clienteId) ?? pedido.clienteId}</td>
-                    <td className="px-4 py-3 text-right font-mono text-text-heading">{formatMoney(pedido.totalPedido)}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={BADGE_TONE[pedido.estado as EstadoPedido] ?? 'neutral'} dot>
-                        {ETIQUETA_ESTADO[pedido.estado as EstadoPedido] ?? pedido.estado}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-text-muted">{formatDate(pedido.createdAt)}</td>
-                    <td className="px-4 py-3 text-right">
-                      {pedido.estado === 'nuevo' && (
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="primary"
-                            size="md"
-                            onClick={() => {
-                              resetModalEnganchar()
-                              setModalEnganchar(pedido)
-                            }}
-                          >
-                            Enganchar
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="md"
-                            onClick={() => {
-                              resetModalCancelar()
-                              setModalCancelar(pedido)
-                            }}
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      )}
-                      {pedido.estado === 'enganchado' && pedido.proyectoId && (
-                        <span className="text-xs text-text-muted">
-                          Proyecto: {proyectos.find(p => p.id === pedido.proyectoId)?.nombreProyecto ?? pedido.proyectoId}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          rows={pedidosFiltrados}
+          columns={columnas}
+          rowKey={(p) => p.id}
+          initialSort={{ key: 'fecha', direction: 'desc' }}
+          density="spacious"
+          caption="Pedidos web"
+          empty="No hay pedidos con los filtros seleccionados."
+        />
       </section>
 
       {/* --- Modal Enganchar --- */}

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { Button, LinkButton } from '@/components/veta/button'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { useDataStore, type OrigenObligacion, type EstadoObligacion } from '@/lib/data'
@@ -143,6 +144,47 @@ export default function PersonaPerfilPage() {
       setGuardando(false)
     }
   }
+
+  type ObligacionFila = (typeof obligacionesPendientes)[number]
+
+  const columnasObligaciones: DataTableColumn<ObligacionFila>[] = [
+    {
+      key: 'descripcion',
+      header: 'Descripción',
+      sortValue: (o) => o.descripcion,
+      render: (o) => <span className="text-text-heading">{o.descripcion}</span>,
+    },
+    {
+      key: 'origen',
+      header: 'Origen',
+      sortValue: (o) => ORIGEN_OBLIGACION_LABELS[o.origen],
+      render: (o) => <span className="text-xs text-text-muted">{ORIGEN_OBLIGACION_LABELS[o.origen]}</span>,
+    },
+    {
+      key: 'monto',
+      header: 'Monto Total',
+      align: 'right',
+      sortValue: (o) => Number(o.montoTotal) || 0,
+      render: (o) => <span className="text-text-heading">{formatCurrency(o.montoTotal)}</span>,
+    },
+    {
+      key: 'pagado',
+      header: 'Pagado',
+      align: 'right',
+      sortValue: (o) => Number(o.montoPagado) || 0,
+      render: (o) => <span className="text-text-heading">{formatCurrency(o.montoPagado)}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      sortValue: (o) => ESTADO_OBLIGACION_LABELS[o.estado],
+      render: (o) => (
+        <Badge tone={o.estado === 'pagado' ? 'info' : o.estado === 'atrasada' ? 'danger' : 'warning'}>
+          {ESTADO_OBLIGACION_LABELS[o.estado]}
+        </Badge>
+      ),
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-6">
@@ -423,44 +465,14 @@ export default function PersonaPerfilPage() {
           {obligacionesPendientes.length === 0 ? (
             <p className="text-sm text-text-muted">Sin saldos pendientes</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-subtle">
-                    <th className="px-2 py-2 text-left font-semibold text-text-heading">Descripción</th>
-                    <th className="px-2 py-2 text-left font-semibold text-text-heading">Origen</th>
-                    <th className="px-2 py-2 text-right font-semibold text-text-heading">Monto Total</th>
-                    <th className="px-2 py-2 text-right font-semibold text-text-heading">Pagado</th>
-                    <th className="px-2 py-2 text-left font-semibold text-text-heading">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {obligacionesPendientes.map((oblig) => (
-                    <tr key={oblig.id} className="border-b border-border-subtle hover:bg-bg-alt">
-                      <td className="px-2 py-2 text-text-heading">{oblig.descripcion}</td>
-                      <td className="px-2 py-2 text-text-muted text-xs">{ORIGEN_OBLIGACION_LABELS[oblig.origen]}</td>
-                      <td className="px-2 py-2 text-right text-text-heading">
-                        {formatCurrency(oblig.montoTotal)}
-                      </td>
-                      <td className="px-2 py-2 text-right text-text-heading">
-                        {formatCurrency(oblig.montoPagado)}
-                      </td>
-                      <td className="px-2 py-2">
-                        <Badge
-                          tone={
-                            oblig.estado === 'pagado' ? 'info' :
-                            oblig.estado === 'atrasada' ? 'danger' :
-                            'warning'
-                          }
-                        >
-                          {ESTADO_OBLIGACION_LABELS[oblig.estado]}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              rows={obligacionesPendientes}
+              columns={columnasObligaciones}
+              rowKey={(o) => o.id}
+              density="compact"
+              caption="Saldos pendientes por comisiones"
+              empty="Sin saldos pendientes"
+            />
           )}
         </div>
       </div>

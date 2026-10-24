@@ -93,3 +93,17 @@ Cambios de datos:
 - Columnas ordenables: fecha del movimiento, fecha de registro, descripción, proyecto/proveedor,
   tipo, monto y cuenta. Comprobante/acciones quedan como columnas no ordenables.
 - Ambas fechas visibles: "Fecha mov." y "Registro".
+
+## Seguimiento — migración de tablas ERP al DataTable
+
+Migradas a `components/veta/data-table.tsx` (orden por clic en encabezado):
+- clientes, proveedores, pedidos web
+- compras: lista de OC, ítems de OC, recepción, perfil de proveedor (OC y cuentas de cobro)
+- equipo: saldos pendientes por comisiones
+- finanzas: obligaciones, cuentas de cobro, libros resumen/mayor y bloqueos de caja E-20
+- catálogos: espacios arquitectónicos
+
+Excepciones deliberadas:
+- Contrato y propuesta imprimibles: son documentos de impresión/PDF con CSS propio, no tablas interactivas.
+- Cronograma del proyecto: encabezado agrupado de dos filas con `colSpan`, que la primitiva plana no representa.
+- `item-descriptor-modal`: tabla clave/valor sin encabezado, no es un listado de entidades.

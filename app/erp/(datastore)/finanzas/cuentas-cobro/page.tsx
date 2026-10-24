@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { MoneyInput } from '@/components/veta/money-input'
 import { Modal } from '@/components/veta/modal'
 import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
@@ -150,6 +151,97 @@ export default function CuentasCobroPage() {
     setCuentaAAnular(null)
   }, [cuentaAAnular, store])
 
+  const columnas: DataTableColumn<CuentaCobroProveedor>[] = [
+    {
+      key: 'proveedor',
+      header: 'Proveedor',
+      sortValue: (c) => proveedorMap.get(c.proveedorId)?.nombre ?? c.proveedorId,
+      render: (c) => <span className="text-sm">{proveedorMap.get(c.proveedorId)?.nombre ?? c.proveedorId}</span>,
+    },
+    {
+      key: 'concepto',
+      header: 'Concepto',
+      sortValue: (c) => c.concepto,
+      render: (c) => <span className="text-text-heading">{c.concepto}</span>,
+    },
+    {
+      key: 'valor',
+      header: 'Valor',
+      align: 'center',
+      sortValue: (c) => numDe(c.valor),
+      render: (c) => <span className="font-mono">{formatCOP(numDe(c.valor))}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      align: 'center',
+      sortValue: (c) => ESTADO_LABELS[c.estado],
+      render: (c) => (
+        <Badge tone={getEstadoBadgeTone(c.estado)} dot>
+          {ESTADO_LABELS[c.estado]}
+        </Badge>
+      ),
+    },
+    {
+      key: 'emision',
+      header: 'Emisión',
+      align: 'center',
+      sortValue: (c) => c.fechaEmision,
+      render: (c) => <span className="text-xs font-mono text-text-muted">{formatDate(c.fechaEmision)}</span>,
+    },
+    {
+      key: 'vencimiento',
+      header: 'Vencimiento',
+      align: 'center',
+      sortValue: (c) => c.fechaVencimiento ?? '',
+      render: (c) => <span className="text-xs font-mono text-text-muted">{c.fechaVencimiento ? formatDate(c.fechaVencimiento) : '—'}</span>,
+    },
+    {
+      key: 'oc',
+      header: 'OC',
+      align: 'center',
+      sortValue: (c) => c.ordenCompraId ? ordenesCompra.find(o => o.id === c.ordenCompraId)?.codigoOrden ?? '' : '',
+      render: (c) => {
+        const oc = c.ordenCompraId ? ordenesCompra.find(o => o.id === c.ordenCompraId) : null
+        return <span className="text-xs font-mono text-text-muted">{oc ? oc.codigoOrden : '—'}</span>
+      },
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'center',
+      render: (c) => {
+        const puedeMarcarPagada = c.estado === 'vinculada' && tieneObligacionPagada(c)
+        return (
+          <div className="flex items-center gap-1 justify-center">
+            {c.estado !== 'anulada' && (
+              <>
+                {!c.ordenCompraId && (
+                  <Button variant="ghost" size="md" className="text-xs" onClick={() => setCuentaAVincular(c)}>
+                    Vincular OC
+                  </Button>
+                )}
+                {!c.urlDocumento && (
+                  <Button variant="ghost" size="md" className="text-xs" onClick={() => { setCuentaAFactura(c); setUrlFactura('') }}>
+                    Factura
+                  </Button>
+                )}
+                {puedeMarcarPagada && (
+                  <Button variant="secondary" size="md" className="text-xs" onClick={() => handleMarcarPagada(c.id)}>
+                    Marcar pagada
+                  </Button>
+                )}
+                <Button variant="ghost" size="md" className="text-xs text-red-600" onClick={() => setCuentaAAnular(c)}>
+                  Anular
+                </Button>
+              </>
+            )}
+          </div>
+        )
+      },
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
       <header className="mb-8 flex items-center justify-between gap-4">
@@ -201,101 +293,14 @@ export default function CuentasCobroPage() {
       </section>
 
       <section className="rounded-lg border border-border-subtle bg-bg-raised overflow-hidden">
-        {cuentasFiltradas.length === 0 ? (
-          <div className="px-4 py-6 text-center">
-            <p className="text-sm text-text-muted">Sin cuentas de cobro registradas.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Proveedor</th>
-                  <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Concepto</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Valor</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Estado</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Emisión</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Vencimiento</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">OC</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cuentasFiltradas.map((cuenta: CuentaCobroProveedor) => {
-                  const prov = proveedorMap.get(cuenta.proveedorId)
-                  const oc = cuenta.ordenCompraId ? ordenesCompra.find(o => o.id === cuenta.ordenCompraId) : null
-                  const puedeMarcarPagada = cuenta.estado === 'vinculada' && tieneObligacionPagada(cuenta)
-
-                  return (
-                    <tr key={cuenta.id} className="border-b border-border-subtle/50">
-                      <td className="px-2 py-2 text-sm">{prov ? prov.nombre : cuenta.proveedorId}</td>
-                      <td className="px-2 py-2 text-text-heading">{cuenta.concepto}</td>
-                      <td className="px-2 py-2 text-center font-mono">{formatCOP(numDe(cuenta.valor))}</td>
-                      <td className="px-2 py-2 text-center">
-                        <Badge tone={getEstadoBadgeTone(cuenta.estado)} dot>
-                          {ESTADO_LABELS[cuenta.estado]}
-                        </Badge>
-                      </td>
-                      <td className="px-2 py-2 text-center text-xs font-mono text-text-muted">{formatDate(cuenta.fechaEmision)}</td>
-                      <td className="px-2 py-2 text-center text-xs font-mono text-text-muted">
-                        {cuenta.fechaVencimiento ? formatDate(cuenta.fechaVencimiento) : '—'}
-                      </td>
-                      <td className="px-2 py-2 text-center text-xs font-mono text-text-muted">
-                        {oc ? oc.codigoOrden : '—'}
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        <div className="flex items-center gap-1 justify-center">
-                          {cuenta.estado !== 'anulada' && (
-                            <>
-                              {!cuenta.ordenCompraId && (
-                                <Button
-                                  variant="ghost"
-                                  size="md"
-                                  className="text-xs"
-                                  onClick={() => setCuentaAVincular(cuenta)}
-                                >
-                                  Vincular OC
-                                </Button>
-                              )}
-                              {!cuenta.urlDocumento && (
-                                <Button
-                                  variant="ghost"
-                                  size="md"
-                                  className="text-xs"
-                                  onClick={() => { setCuentaAFactura(cuenta); setUrlFactura('') }}
-                                >
-                                  Factura
-                                </Button>
-                              )}
-                              {puedeMarcarPagada && (
-                                <Button
-                                  variant="secondary"
-                                  size="md"
-                                  className="text-xs"
-                                  onClick={() => handleMarcarPagada(cuenta.id)}
-                                >
-                                  Marcar pagada
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="md"
-                                className="text-xs text-red-600"
-                                onClick={() => setCuentaAAnular(cuenta)}
-                              >
-                                Anular
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable
+          rows={cuentasFiltradas}
+          columns={columnas}
+          rowKey={(c) => c.id}
+          density="compact"
+          caption="Cuentas de cobro de proveedores"
+          empty="Sin cuentas de cobro registradas."
+        />
       </section>
 
       <Modal

@@ -7,6 +7,7 @@ import { useMemo, useState, type ChangeEvent } from 'react'
 import type { CatalogoEspacioArquitectonico } from '@/lib/data'
 import { Button, LinkButton } from '@/components/veta/button'
 import { Badge } from '@/components/veta/badge'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import { useCatalogoEspacios, useCrearCatalogoEspacioMutation, useActualizarCatalogoEspacioMutation, useEliminarCatalogoEspacioMutation } from '@/lib/data/queries/useCatalogoEspaciosQueries'
 
@@ -117,6 +118,65 @@ export default function CatalogoEspaciosArquitectonicosPage() {
     }
   }
 
+  const columnas: DataTableColumn<CatalogoEspacioArquitectonico>[] = [
+    {
+      key: 'codigo',
+      header: 'Código',
+      sortValue: (c) => c.codigo,
+      render: (c) => <span className="font-mono text-xs font-bold text-brand">{c.codigo}</span>,
+    },
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      sortValue: (c) => c.nombre,
+      render: (c) => (
+        <div>
+          <p className="font-medium text-text-heading">{c.nombre}</p>
+          {c.descripcion && <p className="line-clamp-2 text-xs text-text-muted">{c.descripcion}</p>}
+        </div>
+      ),
+    },
+    {
+      key: 'unidad',
+      header: 'Unidad',
+      sortValue: (c) => c.unidadBase ?? '',
+      render: (c) => c.unidadBase ? (
+        <Badge tone="neutral">{UNIDADES.find((u) => u.valor === c.unidadBase)?.label ?? c.unidadBase}</Badge>
+      ) : <span className="text-text-muted">—</span>,
+    },
+    {
+      key: 'rango',
+      header: 'Rango',
+      sortValue: (c) => c.rangoMinimo ?? '',
+      render: (c) => c.rangoMinimo || c.rangoMaximo
+        ? `${c.rangoMinimo ?? '?'} – ${c.rangoMaximo ?? '?'}`
+        : <span className="text-text-muted">—</span>,
+    },
+    {
+      key: 'modulos',
+      header: 'Módulos',
+      sortValue: (c) => (c.modulosTipicosJson ? 1 : 0),
+      render: (c) => c.modulosTipicosJson ? <Badge tone="info">Sí</Badge> : <span className="text-text-muted">—</span>,
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      render: (c) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" size="md" onClick={() => empezarEditar(c)}>Editar</Button>
+          <Button variant="destructive" size="md"
+            onClick={() => guardGuardar(async () => {
+              if (confirm(`Eliminar ${c.codigo} · ${c.nombre}?`)) {
+                await eliminarCatalogoEspacio.mutateAsync(c.id)
+              }
+            })}
+            disabled={guardando}>Eliminar</Button>
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
       <header className="mb-6 flex items-start justify-between">
@@ -206,53 +266,14 @@ export default function CatalogoEspaciosArquitectonicosPage() {
 
       {/* Tabla */}
       <div className="overflow-hidden rounded-xl border border-border-subtle bg-bg-raised shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border-subtle bg-bg-alt text-xs uppercase tracking-wider text-text-muted">
-            <tr>
-              <th className="px-4 py-3 font-semibold">Código</th>
-              <th className="px-4 py-3 font-semibold">Nombre</th>
-              <th className="px-4 py-3 font-semibold">Unidad</th>
-              <th className="px-4 py-3 font-semibold">Rango</th>
-              <th className="px-4 py-3 font-semibold">Módulos</th>
-              <th className="px-4 py-3 text-right font-semibold">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-subtle">
-            {filas.map((c) => (
-              <tr key={c.id} className="hover:bg-bg-alt/50">
-                <td className="px-4 py-3 font-mono text-xs font-bold text-brand">{c.codigo}</td>
-                <td className="px-4 py-3">
-                  <p className="font-medium text-text-heading">{c.nombre}</p>
-                  {c.descripcion && <p className="text-xs text-text-muted line-clamp-2">{c.descripcion}</p>}
-                </td>
-                <td className="px-4 py-3">
-                  {c.unidadBase ? (
-                    <Badge tone="neutral">{UNIDADES.find((u) => u.valor === c.unidadBase)?.label ?? c.unidadBase}</Badge>
-                  ) : <span className="text-text-muted">—</span>}
-                </td>
-                <td className="px-4 py-3 text-text-primary">
-                  {c.rangoMinimo || c.rangoMaximo ? `${c.rangoMinimo ?? '?'} – ${c.rangoMaximo ?? '?'}` : <span className="text-text-muted">—</span>}
-                </td>
-                <td className="px-4 py-3">{c.modulosTipicosJson ? <Badge tone="info">Sí</Badge> : <span className="text-text-muted">—</span>}</td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="secondary" size="md" onClick={() => empezarEditar(c)}>Editar</Button>
-                    <Button variant="destructive" size="md"
-                      onClick={() => guardGuardar(async () => {
-                        if (confirm(`Eliminar ${c.codigo} · ${c.nombre}?`)) {
-                          await eliminarCatalogoEspacio.mutateAsync(c.id)
-                        }
-                      })}
-                      disabled={guardando}>Eliminar</Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filas.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-text-muted">No hay espacios en la taxonomía orgánica todavía.</td></tr>
-            )}
-          </tbody>
-        </table>
+        <DataTable
+          rows={filas}
+          columns={columnas}
+          rowKey={(c) => c.id}
+          density="spacious"
+          caption="Catálogo de espacios arquitectónicos"
+          empty="No hay espacios en la taxonomía orgánica todavía."
+        />
       </div>
     </div>
   )

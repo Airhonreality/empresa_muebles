@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { InputField } from '@/components/veta/input-field'
 import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
 import { CuentasBancariasProveedorModal } from '@/components/veta/cuentas-bancarias-proveedor-modal'
@@ -124,6 +125,95 @@ export default function ProveedoresPage() {
     setFiltroMedioPago('todos')
   }
 
+  const columnas: DataTableColumn<Proveedor>[] = [
+    {
+      key: 'proveedor',
+      header: 'Proveedor',
+      sortValue: (p) => p.nombre,
+      render: (p) => (
+        <div>
+          <p className="font-medium text-text-heading">{p.nombre}</p>
+          <p className="font-mono text-xs text-text-muted">{p.nit || 'Sin NIT'}</p>
+          {p.descripcion && (
+            <p className="mt-1 line-clamp-2 max-w-xs text-xs text-text-muted" title={p.descripcion}>
+              {p.descripcion}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'categoria',
+      header: 'Categoría',
+      sortValue: (p) => p.categoria,
+      render: (p) => p.categoria ? <Badge tone="neutral">{p.categoria}</Badge> : <span className="text-text-muted">—</span>,
+    },
+    {
+      key: 'contacto',
+      header: 'Contacto',
+      sortValue: (p) => p.contactoNombre,
+      render: (p) => (
+        <div className="text-text-heading">
+          <p className="font-medium">{p.contactoNombre || '—'}</p>
+          <p className="text-xs text-text-muted">{p.contactoCargo || 'Sin cargo'}</p>
+          <p className="text-xs">{p.email || 'Sin correo'}</p>
+          <p className="text-xs text-text-muted">
+            {[p.telefonoComercial, p.whatsapp ? `WhatsApp: ${p.whatsapp}` : null, p.telefonoAlterno].filter(Boolean).join(' · ') || 'Sin teléfono'}
+          </p>
+          <p className="text-xs text-text-muted">{[p.ciudad, p.direccionDespacho].filter(Boolean).join(' · ') || '—'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'logistica',
+      header: 'Logística',
+      sortValue: (p) => p.transportadora,
+      render: (p) => (
+        <div className="text-text-heading">
+          <p>{p.transportadora || '—'}</p>
+          <p className="text-xs text-text-muted">
+            {p.diasEntregaDefault != null ? `${p.diasEntregaDefault} días` : 'Plazo no definido'}
+            {p.medioPago ? ` · ${p.medioPago}` : ''}
+          </p>
+          <p className="text-xs text-text-muted">Flete: {formatCOP(p.tarifaFlete)}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'productos',
+      header: 'Productos',
+      align: 'right',
+      sortValue: (p) => productosPorProveedor.get(p.id) ?? 0,
+      render: (p) => (
+        <div className="text-right">
+          <span className="font-mono text-text-heading">{productosPorProveedor.get(p.id) ?? 0}</span>
+          <p className="text-xs text-text-muted">en catálogo</p>
+        </div>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      render: (p) => (
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="ghost" size="md" className="text-xs" onClick={() => setCuentasDe(p)}>
+            Cuentas ({cuentasPorProveedor.get(p.id) ?? 0})
+          </Button>
+          <Button variant="ghost" size="md" className="text-xs" onClick={() => abrirEdicion(p)}>
+            Editar
+          </Button>
+          <Link
+            href={`/erp/compras/proveedores/${p.id}`}
+            className="inline-flex items-center rounded-sm border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-heading transition-colors hover:border-gold-400 hover:text-gold-600"
+          >
+            Perfil
+          </Link>
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -201,84 +291,15 @@ export default function ProveedoresPage() {
         </span>
       </div>
 
-      {visibles.length === 0 ? (
-        <p className="rounded-lg border border-border-subtle bg-bg-raised px-4 py-8 text-sm text-text-muted italic">
-          {hayFiltros ? 'Sin proveedores para los filtros actuales.' : 'Sin proveedores registrados.'}
-        </p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border-subtle bg-bg-raised">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
-                <th className="px-4 py-3 font-semibold">Proveedor</th>
-                <th className="px-4 py-3 font-semibold">Categoría</th>
-                <th className="px-4 py-3 font-semibold">Contacto</th>
-                <th className="px-4 py-3 font-semibold">Logística</th>
-                <th className="px-4 py-3 font-semibold text-right">Productos</th>
-                <th className="px-4 py-3 font-semibold text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibles.map((p) => {
-                const cantidadProductos = productosPorProveedor.get(p.id) ?? 0
-                return (
-                  <tr key={p.id} className="border-b border-border-subtle/70 last:border-0 hover:bg-bg-alt/60">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-text-heading">{p.nombre}</p>
-                      <p className="font-mono text-xs text-text-muted">{p.nit || 'Sin NIT'}</p>
-                      {p.descripcion && (
-                        <p className="mt-1 line-clamp-2 max-w-xs text-xs text-text-muted" title={p.descripcion}>
-                          {p.descripcion}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-text-heading">
-                      {p.categoria ? <Badge tone="neutral">{p.categoria}</Badge> : <span className="text-text-muted">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-text-heading">
-                      <p className="font-medium">{p.contactoNombre || '—'}</p>
-                      <p className="text-xs text-text-muted">{p.contactoCargo || 'Sin cargo'}</p>
-                      <p className="text-xs">{p.email || 'Sin correo'}</p>
-                      <p className="text-xs text-text-muted">
-                        {[p.telefonoComercial, p.whatsapp ? `WhatsApp: ${p.whatsapp}` : null, p.telefonoAlterno].filter(Boolean).join(' · ') || 'Sin teléfono'}
-                      </p>
-                      <p className="text-xs text-text-muted">{[p.ciudad, p.direccionDespacho].filter(Boolean).join(' · ') || '—'}</p>
-                    </td>
-                    <td className="px-4 py-3 text-text-heading">
-                      <p>{p.transportadora || '—'}</p>
-                      <p className="text-xs text-text-muted">
-                        {p.diasEntregaDefault != null ? `${p.diasEntregaDefault} días` : 'Plazo no definido'}
-                        {p.medioPago ? ` · ${p.medioPago}` : ''}
-                      </p>
-                      <p className="text-xs text-text-muted">Flete: {formatCOP(p.tarifaFlete)}</p>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="font-mono text-text-heading">{cantidadProductos}</span>
-                      <p className="text-xs text-text-muted">en catálogo</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <Button variant="ghost" size="md" className="text-xs" onClick={() => setCuentasDe(p)}>
-                          Cuentas ({cuentasPorProveedor.get(p.id) ?? 0})
-                        </Button>
-                        <Button variant="ghost" size="md" className="text-xs" onClick={() => abrirEdicion(p)}>
-                          Editar
-                        </Button>
-                        <Link
-                          href={`/erp/compras/proveedores/${p.id}`}
-                          className="inline-flex items-center rounded-sm border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-heading transition-colors hover:border-gold-400 hover:text-gold-600"
-                        >
-                          Perfil
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        rows={visibles}
+        columns={columnas}
+        rowKey={(p) => p.id}
+        initialSort={{ key: 'proveedor', direction: 'asc' }}
+        density="spacious"
+        caption="Proveedores"
+        empty={hayFiltros ? 'Sin proveedores para los filtros actuales.' : 'Sin proveedores registrados.'}
+      />
 
       {modalAbierto && (
         <ProveedorFormModal

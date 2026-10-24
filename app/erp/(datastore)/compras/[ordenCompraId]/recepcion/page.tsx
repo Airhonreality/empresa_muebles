@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { useDataStore, type EstadoRecepcionMaterial, type ItemOrdenCompra } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
@@ -146,6 +147,50 @@ export default function RecepcionMaterialPage() {
       </div>
     )
   }
+
+  const columnasItems: DataTableColumn<ItemOrdenCompra>[] = [
+    {
+      key: 'producto',
+      header: 'Producto',
+      sortValue: (item) => {
+        const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
+        return prod?.descripcion ?? item.especificacion ?? item.productoCatalogoId ?? ''
+      },
+      render: (item) => {
+        const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
+        return (
+          <div>
+            <span className="text-text-heading">{prod?.descripcion ?? item.especificacion ?? item.productoCatalogoId}</span>
+            {prod && <span className="block text-xs text-text-muted">{prod.sku} · {prod.unidadMedida}</span>}
+            {!prod && item.especificacion && <span className="block text-xs text-text-muted">A pedido</span>}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'esperada',
+      header: 'Cantidad esperada',
+      align: 'center',
+      sortValue: (item) => Number(item.cantidadEsperada) || 0,
+      render: (item) => <span className="font-mono">{item.cantidadEsperada}</span>,
+    },
+    {
+      key: 'recibida',
+      header: 'Recibido',
+      align: 'center',
+      sortValue: (item) => Number(item.recibidoCantidad) || 0,
+      render: (item) => <span className="font-mono">{item.recibidoCantidad}</span>,
+    },
+    {
+      key: 'defectos',
+      header: 'Sin defectos',
+      align: 'center',
+      sortValue: (item) => (item.sinDefectos ? 1 : 0),
+      render: (item) => item.sinDefectos
+        ? <span className="text-emerald-600">Sí</span>
+        : <span className="text-text-muted">No</span>,
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-6">
@@ -291,49 +336,14 @@ export default function RecepcionMaterialPage() {
         <div className="px-4 py-3 border-b border-border-subtle">
           <h2 className="font-semibold text-text-heading">Ítems esperados</h2>
         </div>
-        {items.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-text-muted text-center">Sin ítems registrados para esta orden de compra.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Producto</th>
-                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Cantidad esperada</th>
-                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Recibido</th>
-                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Sin defectos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item: ItemOrdenCompra) => {
-                  const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
-                  return (
-                    <tr key={item.id} className="border-b border-border-subtle/50">
-                      <td className="px-3 py-2">
-                        <span className="text-text-heading">{prod?.descripcion ?? item.especificacion ?? item.productoCatalogoId}</span>
-                        {prod && (
-                          <span className="block text-xs text-text-muted">{prod.sku} · {prod.unidadMedida}</span>
-                        )}
-                        {!prod && item.especificacion && (
-                          <span className="block text-xs text-text-muted">A pedido</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-center font-mono">{item.cantidadEsperada}</td>
-                      <td className="px-3 py-2 text-center font-mono">{item.recibidoCantidad}</td>
-                      <td className="px-3 py-2 text-center">
-                        {item.sinDefectos ? (
-                          <span className="text-emerald-600">Sí</span>
-                        ) : (
-                          <span className="text-text-muted">No</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable
+          rows={items}
+          columns={columnasItems}
+          rowKey={(item) => item.id}
+          density="comfortable"
+          caption="Ítems esperados de la recepción"
+          empty="Sin ítems registrados para esta orden de compra."
+        />
       </section>
     </div>
   )

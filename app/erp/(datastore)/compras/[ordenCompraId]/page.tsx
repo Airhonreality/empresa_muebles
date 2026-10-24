@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type EstadoOrdenCompra, type ItemOrdenCompra, type ProductoCatalogo } from '@/lib/data'
 import { derivarListaCompraSugerida } from '@/lib/modules/f4/gates'
@@ -165,6 +166,51 @@ export default function DetalleOrdenCompraPage() {
     )
   }
 
+  const columnasItems: DataTableColumn<ItemOrdenCompra>[] = [
+    {
+      key: 'producto',
+      header: 'Producto / Especificación',
+      sortValue: (item) => {
+        const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
+        return prod?.descripcion ?? item.especificacion ?? item.productoCatalogoId ?? ''
+      },
+      render: (item) => {
+        const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
+        return prod ? (
+          <div>
+            <span className="font-medium text-text-heading">{prod.descripcion}</span>
+            <span className="block text-xs text-text-muted">{prod.sku}</span>
+          </div>
+        ) : (
+          <div>
+            <span className="text-text-heading">{item.especificacion}</span>
+            <span className="block text-xs text-text-muted">A pedido</span>
+          </div>
+        )
+      },
+    },
+    {
+      key: 'cantidad',
+      header: 'Cantidad esperada',
+      align: 'center',
+      sortValue: (item) => Number(item.cantidadEsperada) || 0,
+      render: (item) => <span className="font-mono">{item.cantidadEsperada}</span>,
+    },
+    {
+      key: 'unidad',
+      header: 'Unidad',
+      align: 'center',
+      sortValue: (item) => {
+        const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
+        return prod?.unidadMedida ?? ''
+      },
+      render: (item) => {
+        const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
+        return <span className="text-xs text-text-muted">{prod?.unidadMedida ?? '—'}</span>
+      },
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-6">
       <header className="mb-8 flex items-center justify-between gap-4">
@@ -235,47 +281,14 @@ export default function DetalleOrdenCompraPage() {
           )}
         </div>
 
-        {items.length === 0 ? (
-          <div className="px-4 py-6 text-center">
-            <p className="text-sm text-text-muted">Sin ítems registrados en esta orden de compra.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Producto / Especificación</th>
-                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Cantidad esperada</th>
-                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Unidad</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item: ItemOrdenCompra) => {
-                  const prod = item.productoCatalogoId ? productoMap.get(item.productoCatalogoId) : undefined
-                  return (
-                    <tr key={item.id} className="border-b border-border-subtle/50">
-                      <td className="px-3 py-2">
-                        {prod ? (
-                          <>
-                            <span className="text-text-heading font-medium">{prod.descripcion}</span>
-                            <span className="block text-xs text-text-muted">{prod.sku}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-text-heading">{item.especificacion}</span>
-                            <span className="block text-xs text-text-muted">A pedido</span>
-                          </>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-center font-mono">{item.cantidadEsperada}</td>
-                      <td className="px-3 py-2 text-center text-xs text-text-muted">{prod?.unidadMedida ?? '—'}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable
+          rows={items}
+          columns={columnasItems}
+          rowKey={(item) => item.id}
+          density="comfortable"
+          caption="Ítems de la orden de compra"
+          empty="Sin ítems registrados en esta orden de compra."
+        />
 
         <div className="px-4 py-3 border-t border-border-subtle">
           <Button

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { Modal } from '@/components/veta/modal'
 import { MoneyInput } from '@/components/veta/money-input'
 import { SmartSearch } from '@/components/veta/smart-search'
@@ -183,6 +184,128 @@ export default function ComprasPage() {
 
   const usuarioPuedeFlujo = ROLES_FLUJO_APROBACION.includes(usuario.rol)
 
+  const columnas: DataTableColumn<OrdenCompra>[] = [
+    {
+      key: 'codigo',
+      header: 'Código',
+      sortValue: (o) => o.codigoOrden,
+      render: (o) => <span className="font-mono text-xs text-text-muted">{o.codigoOrden}</span>,
+    },
+    {
+      key: 'proveedor',
+      header: 'Proveedor',
+      sortValue: (o) => proveedorMap.get(o.proveedorId)?.nombre ?? o.proveedorId,
+      render: (o) => {
+        const prov = proveedorMap.get(o.proveedorId)
+        return prov ? (
+          <Link href={`/erp/compras/proveedores/${prov.id}`} className="text-brand hover:underline">
+            {prov.nombre}
+          </Link>
+        ) : o.proveedorId
+      },
+    },
+    {
+      key: 'proyecto',
+      header: 'Proyecto',
+      sortValue: (o) => (o.proyectoId ? proyectoMap.get(o.proyectoId)?.nombreProyecto ?? '' : ''),
+      render: (o) => {
+        const proy = o.proyectoId ? proyectoMap.get(o.proyectoId) : undefined
+        return proy ? proy.nombreProyecto : <span className="text-text-muted">Operativa</span>
+      },
+    },
+    {
+      key: 'monto',
+      header: 'Monto',
+      align: 'center',
+      sortValue: (o) => numDe(o.montoTotal),
+      render: (o) => <span className="font-mono">{formatCOP(numDe(o.montoTotal))}</span>,
+    },
+    {
+      key: 'mecanica',
+      header: 'Mecánica de pago',
+      align: 'center',
+      sortValue: (o) => MECANICA_LABELS[o.mecanicaPago],
+      render: (o) => <span className="text-xs text-text-muted">{MECANICA_LABELS[o.mecanicaPago]}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      align: 'center',
+      sortValue: (o) => ESTADO_LABELS[o.estado],
+      render: (o) => (
+        <Badge tone={getEstadoBadgeTone(o.estado)} dot>
+          {ESTADO_LABELS[o.estado]}
+        </Badge>
+      ),
+    },
+    {
+      key: 'caja',
+      header: 'Caja',
+      align: 'center',
+      sortValue: (o) => (bloqueosPorOrden.get(o.id) ? 1 : 0),
+      render: (o) => bloqueosPorOrden.get(o.id) ? (
+        <Badge tone="warning" dot>Bloqueada por caja</Badge>
+      ) : (
+        <span className="text-xs text-text-muted">—</span>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'center',
+      render: (o) => {
+        const estadoAvanzado = o.estado === 'pagada' || o.estado === 'recibida_verificada'
+        return (
+          <div className="flex items-center gap-1 justify-center flex-wrap">
+            {o.estado === 'solicitada' && (
+              <>
+                {usuarioPuedeFlujo && (
+                  <Button variant="secondary" size="md" className="text-xs" onClick={() => handleAprobar(o)}>
+                    Aprobar
+                  </Button>
+                )}
+                <Button variant="ghost" size="md" className="text-xs" onClick={() => { setOrdenARechazar(o); setMotivoRechazo('') }}>
+                  Rechazar
+                </Button>
+                <Button variant="ghost" size="md" className="text-xs text-red-600" onClick={() => setOrdenACancelar(o)}>
+                  Cancelar
+                </Button>
+              </>
+            )}
+            {o.estado === 'aprobada' && (
+              <>
+                {usuarioPuedeFlujo && (
+                  <Button variant="secondary" size="md" className="text-xs" onClick={() => handleEnviarAPago(o)}>
+                    Enviar a pago
+                  </Button>
+                )}
+                <Button variant="ghost" size="md" className="text-xs" onClick={() => { setOrdenARechazar(o); setMotivoRechazo('') }}>
+                  Rechazar
+                </Button>
+                <Button variant="ghost" size="md" className="text-xs text-red-600" onClick={() => setOrdenACancelar(o)}>
+                  Cancelar
+                </Button>
+              </>
+            )}
+            {o.estado === 'en_pago' && (
+              <Button variant="ghost" size="md" className="text-xs text-red-600" onClick={() => setOrdenACancelar(o)}>
+                Cancelar
+              </Button>
+            )}
+            {estadoAvanzado && (
+              <Button variant="secondary" size="md" className="text-xs" onClick={() => router.push(`/erp/compras/${o.id}/recepcion`)}>
+                {o.estado === 'pagada' ? 'Registrar recepción' : 'Ver recepción'}
+              </Button>
+            )}
+            <Button variant="ghost" size="md" className="text-xs" onClick={() => router.push(`/erp/compras/${o.id}`)}>
+              Ver detalle
+            </Button>
+          </div>
+        )
+      },
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
       <header className="mb-8 flex items-center justify-between gap-4">
@@ -234,113 +357,14 @@ export default function ComprasPage() {
       </section>
 
       <section className="rounded-lg border border-border-subtle bg-bg-raised overflow-hidden">
-        {ordenesFiltradas.length === 0 ? (
-          <div className="px-4 py-6 text-center">
-            <p className="text-sm text-text-muted">Sin órdenes de compra registradas.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Código</th>
-                  <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Proveedor</th>
-                  <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Proyecto</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Monto</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Mecánica de pago</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Estado</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Caja</th>
-                  <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ordenesFiltradas.map((orden: OrdenCompra) => {
-                  const prov = proveedorMap.get(orden.proveedorId)
-                  const proy = orden.proyectoId ? proyectoMap.get(orden.proyectoId) : undefined
-                  const bloqueadaCaja = bloqueosPorOrden.get(orden.id) ?? false
-                  const estadoAvanzado = orden.estado === 'pagada' || orden.estado === 'recibida_verificada'
-
-                  return (
-                    <tr key={orden.id} className="border-b border-border-subtle/50">
-                      <td className="px-2 py-2 font-mono text-xs text-text-muted">{orden.codigoOrden}</td>
-                      <td className="px-2 py-2">
-                        {prov ? (
-                          <Link href={`/erp/compras/proveedores/${prov.id}`} className="text-brand hover:underline">
-                            {prov.nombre}
-                          </Link>
-                        ) : orden.proveedorId}
-                      </td>
-                      <td className="px-2 py-2">
-                        {proy ? proy.nombreProyecto : <span className="text-text-muted">Operativa</span>}
-                      </td>
-                      <td className="px-2 py-2 text-center font-mono">{formatCOP(numDe(orden.montoTotal))}</td>
-                      <td className="px-2 py-2 text-center text-xs text-text-muted">{MECANICA_LABELS[orden.mecanicaPago]}</td>
-                      <td className="px-2 py-2 text-center">
-                        <Badge tone={getEstadoBadgeTone(orden.estado)} dot>
-                          {ESTADO_LABELS[orden.estado]}
-                        </Badge>
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        {bloqueadaCaja ? (
-                          <Badge tone="warning" dot>Bloqueada por caja</Badge>
-                        ) : (
-                          <span className="text-xs text-text-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        <div className="flex items-center gap-1 justify-center flex-wrap">
-                          {orden.estado === 'solicitada' && (
-                            <>
-                              {usuarioPuedeFlujo && (
-                                <Button variant="secondary" size="md" className="text-xs" onClick={() => handleAprobar(orden)}>
-                                  Aprobar
-                                </Button>
-                              )}
-                              <Button variant="ghost" size="md" className="text-xs" onClick={() => { setOrdenARechazar(orden); setMotivoRechazo('') }}>
-                                Rechazar
-                              </Button>
-                              <Button variant="ghost" size="md" className="text-xs text-red-600" onClick={() => setOrdenACancelar(orden)}>
-                                Cancelar
-                              </Button>
-                            </>
-                          )}
-                          {orden.estado === 'aprobada' && (
-                            <>
-                              {usuarioPuedeFlujo && (
-                                <Button variant="secondary" size="md" className="text-xs" onClick={() => handleEnviarAPago(orden)}>
-                                  Enviar a pago
-                                </Button>
-                              )}
-                              <Button variant="ghost" size="md" className="text-xs" onClick={() => { setOrdenARechazar(orden); setMotivoRechazo('') }}>
-                                Rechazar
-                              </Button>
-                              <Button variant="ghost" size="md" className="text-xs text-red-600" onClick={() => setOrdenACancelar(orden)}>
-                                Cancelar
-                              </Button>
-                            </>
-                          )}
-                          {orden.estado === 'en_pago' && (
-                            <Button variant="ghost" size="md" className="text-xs text-red-600" onClick={() => setOrdenACancelar(orden)}>
-                              Cancelar
-                            </Button>
-                          )}
-                          {estadoAvanzado && (
-                            <Button variant="secondary" size="md" className="text-xs" onClick={() => router.push(`/erp/compras/${orden.id}/recepcion`)}>
-                              {orden.estado === 'pagada' ? 'Registrar recepción' : 'Ver recepción'}
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="md" className="text-xs" onClick={() => router.push(`/erp/compras/${orden.id}`)}>
-                            Ver detalle
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable
+          rows={ordenesFiltradas}
+          columns={columnas}
+          rowKey={(o) => o.id}
+          density="compact"
+          caption="Órdenes de compra"
+          empty="Sin órdenes de compra registradas."
+        />
       </section>
 
       <Modal

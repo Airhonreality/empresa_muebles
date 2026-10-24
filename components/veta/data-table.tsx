@@ -32,8 +32,8 @@ export interface DataTableProps<T> {
   initialSort?: { key: string; direction: SortDirection }
   empty?: ReactNode
   rowClassName?: (row: T) => string
-  /** 'compact' = px-2 (libro denso); 'comfortable' = px-3. */
-  density?: 'compact' | 'comfortable'
+  /** 'compact' = px-2 (libro denso); 'comfortable' = px-3; 'spacious' = px-4. */
+  density?: 'compact' | 'comfortable' | 'spacious'
   /** Ej. 'max-h-[28rem]' para que la tabla scrollee sin empujar el resto de la página. */
   maxHeightClassName?: string
   caption?: string
@@ -84,7 +84,7 @@ export function DataTable<T>({
     })
   }
 
-  const padding = density === 'compact' ? 'px-2 py-2' : 'px-3 py-2'
+  const padding = density === 'compact' ? 'px-2 py-2' : density === 'spacious' ? 'px-4 py-3' : 'px-3 py-2'
 
   return (
     <div className={`overflow-auto ${maxHeightClassName}`}>
@@ -138,7 +138,7 @@ export function DataTable<T>({
             </tr>
           ) : (
             filasOrdenadas.map((row) => (
-              <tr key={rowKey(row)} className={`border-b border-border-subtle/50 ${rowClassName?.(row) ?? ''}`}>
+              <tr key={rowKey(row)} className={`border-b border-border-subtle/50 transition-colors hover:bg-bg-alt/40 ${rowClassName?.(row) ?? ''}`}>
                 {columns.map((columna) => (
                   <td
                     key={columna.key}
