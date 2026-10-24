@@ -6,6 +6,7 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { MoneyInput } from '@/components/veta/money-input'
 import { Modal } from '@/components/veta/modal'
+import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
 import { useDataStore, type CuentaCobroProveedor, type EstadoCuentaCobro, type Proveedor, type OrdenCompra } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
@@ -81,6 +82,7 @@ export default function CuentasCobroPage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   const [mostrarCrear, setMostrarCrear] = useState(false)
+  const [proveedorModalAbierto, setProveedorModalAbierto] = useState(false)
   const [cuentaAVincular, setCuentaAVincular] = useState<CuentaCobroProveedor | null>(null)
   const [cuentaAFactura, setCuentaAFactura] = useState<CuentaCobroProveedor | null>(null)
   const [urlFactura, setUrlFactura] = useState('')
@@ -302,19 +304,24 @@ export default function CuentasCobroPage() {
         title="Crear cuenta de cobro"
       >
         <div className="space-y-3 text-sm">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Proveedor*</span>
-            <select
-              value={formCrear.proveedorId}
-              onChange={(e) => setFormCrear(prev => ({ ...prev, proveedorId: e.target.value }))}
-              className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-            >
-              <option value="">Seleccionar proveedor</option>
-              {proveedores.map(p => (
-                <option key={p.id} value={p.id}>{p.nombre}</option>
-              ))}
-            </select>
-          </label>
+          <div className="flex items-end gap-2">
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-xs text-text-muted">Proveedor*</span>
+              <select
+                value={formCrear.proveedorId}
+                onChange={(e) => setFormCrear(prev => ({ ...prev, proveedorId: e.target.value }))}
+                className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+              >
+                <option value="">Seleccionar proveedor</option>
+                {proveedores.map(p => (
+                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                ))}
+              </select>
+            </label>
+            <Button variant="secondary" size="md" onClick={() => setProveedorModalAbierto(true)}>
+              + Nuevo
+            </Button>
+          </div>
           <label className="flex flex-col gap-1">
             <span className="text-xs text-text-muted">Concepto*</span>
             <input
@@ -473,6 +480,12 @@ export default function CuentasCobroPage() {
           </div>
         )}
       </Modal>
+
+      <ProveedorFormModal
+        open={proveedorModalAbierto}
+        onClose={() => setProveedorModalAbierto(false)}
+        onSaved={(proveedor) => setFormCrear(prev => ({ ...prev, proveedorId: proveedor.id }))}
+      />
     </div>
   )
 }

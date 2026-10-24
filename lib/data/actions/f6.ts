@@ -6,11 +6,11 @@ import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { calcularCajaDisponible } from '@/lib/modules/f4f5f6/gates'
 import { validarEntrada } from '@/lib/validacion/validar'
-import { cuentaFinancieraCrearSchema, movimientoManualSchema } from '@/lib/validacion/finanzas'
+import { cuentaFinancieraCrearSchema, movimientoEdicionSchema, movimientoManualSchema } from '@/lib/validacion/finanzas'
 import { num } from './mappers'
 import type {
   CuentaFinanciera, ObligacionPendiente, OrigenObligacion, EstadoObligacion,
-  OrdenCompra, EstadoOrdenCompra, MovimientoFinanciero, MovimientoManualInput,
+  OrdenCompra, EstadoOrdenCompra, MovimientoFinanciero, MovimientoManualInput, MovimientoManualEdicionInput,
   Proveedor, ProveedorCuentaBancaria, Banco,
 } from '../contracts'
 
@@ -63,6 +63,78 @@ export async function crearMovimientoManualAction(data: MovimientoManualInput): 
     }).where(eq(s.cuentasFinancieras.id, cuenta.id))
 
     return movimiento as unknown as MovimientoFinanciero
+  })
+}
+
+/** t-181: completa/corrige un movimiento ya registrado. No cambia tipo ni cuenta; si el
+ *  monto cambia, ajusta el saldo de la cuenta por la diferencia en la dirección original. */
+export async function actualizarMovimientoManualAction(
+  id: string,
+  data: MovimientoManualEdicionInput,
+): Promise<MovimientoFinanciero | null> {
+  const validado = validarEntrada(movimientoEdicionSchema, data)
+
+  return db.transaction(async (tx) => {
+    const [existente] = await tx
+      .select()
+      .from(s.movimientosFinancieros)
+      .where(eq(s.movimientosFinancieros.id, id))
+    if (!existente) return null
+    if (existente.estado === 'anulado') throw new Error('No se puede editar un movimiento anulado.')
+
+    // El proveedor solo tiene sentido en una salida (debito). Se valida contra el tipo real
+    // del movimiento, no contra lo que diga el cliente.
+    if (existente.tipo === 'credito' && validado.proveedorId) {
+      throw new Error('Solo se puede asociar un proveedor a una salida.')
+    }
+
+    const [actualizado] = await tx.update(s.movimientosFinancieros).set({
+      fecha: validado.fecha,
+      descripcion: validado.descripcion,
+      monto: validado.monto,
+      proyectoId: validado.proyectoId ?? null,
+      proveedorId: validado.proveedorId ?? null,
+      comprobanteUrl: validado.comprobanteUrl ?? null,
+    }).where(eq(s.movimientosFinancieros.id, id)).returning()
+
+    const cuentaId = existente.cuentaOrigenId ?? existente.cuentaDestinoId
+    if (cuentaId) {
+      const delta = (num(validado.monto) - num(existente.monto)) * (existente.tipo === 'credito' ? 1 : -1)
+      if (delta !== 0) {
+        await tx.update(s.cuentasFinancieras).set({
+          saldoActual: sql`${s.cuentasFinancieras.saldoActual} + ${delta}::numeric`,
+        }).where(eq(s.cuentasFinancieras.id, cuentaId))
+      }
+    }
+
+    return actualizado as unknown as MovimientoFinanciero
+  })
+}
+
+/** t-181: anulación (soft delete) con reverso del saldo. No borra la fila: el libro
+ *  conserva el rastro y el movimiento queda marcado como anulado. */
+export async function anularMovimientoManualAction(id: string): Promise<MovimientoFinanciero | null> {
+  return db.transaction(async (tx) => {
+    const [existente] = await tx
+      .select()
+      .from(s.movimientosFinancieros)
+      .where(eq(s.movimientosFinancieros.id, id))
+    if (!existente) return null
+    if (existente.estado === 'anulado') return existente as unknown as MovimientoFinanciero
+
+    const cuentaId = existente.cuentaOrigenId ?? existente.cuentaDestinoId
+    if (cuentaId) {
+      const reverso = num(existente.monto) * (existente.tipo === 'credito' ? -1 : 1)
+      await tx.update(s.cuentasFinancieras).set({
+        saldoActual: sql`${s.cuentasFinancieras.saldoActual} + ${reverso}::numeric`,
+      }).where(eq(s.cuentasFinancieras.id, cuentaId))
+    }
+
+    const [anulado] = await tx.update(s.movimientosFinancieros)
+      .set({ estado: 'anulado' })
+      .where(eq(s.movimientosFinancieros.id, id))
+      .returning()
+    return anulado as unknown as MovimientoFinanciero
   })
 }
 

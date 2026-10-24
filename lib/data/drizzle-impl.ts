@@ -796,6 +796,46 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         notify()
         return r
       },
+      actualizar: async (id, values) => {
+        const existente = data.movimientosFinancieros.find((m) => m.id === id)
+        const r = await f6.actualizarMovimientoManualAction(id, values)
+        if (!r) return null
+        const cuentaId = r.cuentaOrigenId ?? r.cuentaDestinoId
+        const delta = existente && cuentaId
+          ? ((Number(values.monto) || 0) - (Number(existente.monto) || 0)) * (existente.tipo === 'credito' ? 1 : -1)
+          : 0
+        data = {
+          ...data,
+          movimientosFinancieros: upsert(data.movimientosFinancieros, r),
+          cuentasFinancieras: delta === 0 || !cuentaId
+            ? data.cuentasFinancieras
+            : data.cuentasFinancieras.map((c) =>
+                c.id === cuentaId ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) + delta) } : c,
+              ),
+        }
+        notify()
+        return r
+      },
+      anular: async (id) => {
+        const existente = data.movimientosFinancieros.find((m) => m.id === id)
+        const r = await f6.anularMovimientoManualAction(id)
+        if (!r) return null
+        const cuentaId = r.cuentaOrigenId ?? r.cuentaDestinoId
+        const reverso = existente && cuentaId && existente.estado !== 'anulado'
+          ? (Number(existente.monto) || 0) * (existente.tipo === 'credito' ? -1 : 1)
+          : 0
+        data = {
+          ...data,
+          movimientosFinancieros: upsert(data.movimientosFinancieros, r),
+          cuentasFinancieras: reverso === 0 || !cuentaId
+            ? data.cuentasFinancieras
+            : data.cuentasFinancieras.map((c) =>
+                c.id === cuentaId ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) + reverso) } : c,
+              ),
+        }
+        notify()
+        return r
+      },
     },
     obligacionesPendientes: {
       listar: () => data.obligacionesPendientes,

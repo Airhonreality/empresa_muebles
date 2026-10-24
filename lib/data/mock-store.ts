@@ -3,7 +3,7 @@
 import type {
   DataStore, Proyecto, Cliente, EspacioVariante, ItemVariante, ProductoCatalogo, EspacioArtefacto, Parametro, Contrato, HitoPago, TransicionesProyecto, UsuarioMock, ProyectosEstadosHistorial, Cronograma, CronogramaEtapa, DesfaseCronograma, CheckProduccion, NovedadCritica, ComunicacionProgreso, SchemaProyecto, BomMaterial, Verificacion, Retoma, CambioContrato, Persona, PersonaRol, Modulo, Estimacion, LineaCronograma, EtapaCronograma, TipoGate, VeredictoGate, DesenlaceCheck, CausaDesfase, EstadoNovedadCritica, EstadoSchema, RolCanonico, OrigenBom, EstadoProyecto,
   OrdenTrabajo, TipoOrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, OrigenReproceso, Instalacion, ActaEntrega, CasoGarantia, CitaGarantia,
-  CuentaFinanciera, MovimientoFinanciero, MovimientoManualInput, ObligacionPendiente, OrigenObligacion, EstadoObligacion, Proveedor, ProveedorCuentaBancaria, Banco, OrdenCompra, EstadoOrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
+  CuentaFinanciera, MovimientoFinanciero, MovimientoManualInput, MovimientoManualEdicionInput, ObligacionPendiente, OrigenObligacion, EstadoObligacion, Proveedor, ProveedorCuentaBancaria, Banco, OrdenCompra, EstadoOrdenCompra, RegistroGateCaja, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta,
@@ -1763,6 +1763,7 @@ export function createMockStore(): DataStore {
           fecha: data.fecha,
           descripcion: data.descripcion,
           tipo: esEntrada ? 'credito' : 'debito',
+          estado: 'asentado',
           monto: data.monto,
           cuentaOrigenId: esEntrada ? null : data.cuentaId,
           cuentaDestinoId: esEntrada ? data.cuentaId : null,
@@ -1785,6 +1786,67 @@ export function createMockStore(): DataStore {
         }
         notify()
         return nuevo
+      },
+      async actualizar(id: string, data: MovimientoManualEdicionInput): Promise<MovimientoFinanciero | null> {
+        const idx = movimientosFinancieros.findIndex(m => m.id === id)
+        if (idx === -1) return null
+        const existente = movimientosFinancieros[idx]
+        if (existente.estado === 'anulado') throw new Error('No se puede editar un movimiento anulado.')
+        if (existente.tipo === 'credito' && data.proveedorId) {
+          throw new Error('Solo se puede asociar un proveedor a una salida.')
+        }
+        const montoNuevo = numDe(data.monto)
+        if (!(montoNuevo > 0)) throw new Error('El monto debe ser mayor que cero.')
+
+        const cuentaId = existente.cuentaOrigenId ?? existente.cuentaDestinoId
+        if (cuentaId) {
+          const cuentaIdx = cuentasFinancieras.findIndex(c => c.id === cuentaId)
+          if (cuentaIdx !== -1) {
+            const delta = (montoNuevo - numDe(existente.monto)) * (existente.tipo === 'credito' ? 1 : -1)
+            if (delta !== 0) {
+              cuentasFinancieras[cuentaIdx] = {
+                ...cuentasFinancieras[cuentaIdx],
+                saldoActual: String(numDe(cuentasFinancieras[cuentaIdx].saldoActual) + delta),
+              }
+            }
+          }
+        }
+
+        const actualizado: MovimientoFinanciero = {
+          ...existente,
+          fecha: data.fecha,
+          descripcion: data.descripcion,
+          monto: data.monto,
+          proyectoId: data.proyectoId ?? null,
+          proveedorId: data.proveedorId ?? null,
+          comprobanteUrl: data.comprobanteUrl ?? null,
+        }
+        movimientosFinancieros[idx] = actualizado
+        notify()
+        return actualizado
+      },
+      async anular(id: string): Promise<MovimientoFinanciero | null> {
+        const idx = movimientosFinancieros.findIndex(m => m.id === id)
+        if (idx === -1) return null
+        const existente = movimientosFinancieros[idx]
+        if (existente.estado === 'anulado') return existente
+
+        const cuentaId = existente.cuentaOrigenId ?? existente.cuentaDestinoId
+        if (cuentaId) {
+          const cuentaIdx = cuentasFinancieras.findIndex(c => c.id === cuentaId)
+          if (cuentaIdx !== -1) {
+            const reverso = numDe(existente.monto) * (existente.tipo === 'credito' ? -1 : 1)
+            cuentasFinancieras[cuentaIdx] = {
+              ...cuentasFinancieras[cuentaIdx],
+              saldoActual: String(numDe(cuentasFinancieras[cuentaIdx].saldoActual) + reverso),
+            }
+          }
+        }
+
+        const anulado: MovimientoFinanciero = { ...existente, estado: 'anulado' }
+        movimientosFinancieros[idx] = anulado
+        notify()
+        return anulado
       },
     },
 
@@ -1844,6 +1906,7 @@ export function createMockStore(): DataStore {
           fecha: new Date().toISOString().slice(0, 10),
           descripcion: `Pago obligación: ${obligacion.descripcion}`,
           tipo: 'debito',
+          estado: 'asentado',
           monto: data.monto,
           cuentaOrigenId: cuentasFinancieras[cuentaIdx].id,
           cuentaDestinoId: null,
@@ -1976,6 +2039,7 @@ export function createMockStore(): DataStore {
           fecha: ahora.slice(0, 10),
           descripcion: `Pago OC ${oc.codigoOrden}`,
           tipo: 'debito',
+          estado: 'asentado',
           monto: oc.montoTotal,
           cuentaOrigenId: cuentasFinancieras[cuentaIdx].id,
           cuentaDestinoId: null,

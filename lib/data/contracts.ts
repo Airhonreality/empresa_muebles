@@ -658,12 +658,15 @@ export interface CuentaFinanciera {
 }
 
 export type TipoMovimientoFinanciero = 'debito' | 'credito'
+/** t-181: un movimiento anulado revierte el saldo pero se conserva en el libro (auditoría). */
+export type EstadoMovimientoFinanciero = 'asentado' | 'anulado'
 
 export interface MovimientoFinanciero {
   id: string
   fecha: string
   descripcion: string
   tipo: TipoMovimientoFinanciero
+  estado: EstadoMovimientoFinanciero
   monto: string
   cuentaOrigenId: string | null
   cuentaDestinoId: string | null
@@ -693,6 +696,18 @@ export interface MovimientoManualInput {
   proveedorId?: string | null
   proyectoId?: string | null
   /** Imagen o PDF del comprobante subido a R2. */
+  comprobanteUrl?: string | null
+}
+
+/** t-181: edición de un movimiento ya registrado. El tipo y la cuenta no se cambian
+ *  (cambiar de cuenta sería otro movimiento); sí se puede completar el proveedor/proyecto
+ *  que faltó o corregir monto/descripción/comprobante. */
+export interface MovimientoManualEdicionInput {
+  fecha: string
+  descripcion: string
+  monto: string
+  proveedorId?: string | null
+  proyectoId?: string | null
   comprobanteUrl?: string | null
 }
 
@@ -1455,6 +1470,10 @@ export interface DataStore {
     porProyecto(proyectoId: string): MovimientoFinanciero[]
     /** t-181: registra una entrada (credito) o salida (debito) manual y actualiza el saldo. */
     crear(data: MovimientoManualInput): Promise<MovimientoFinanciero>
+    /** t-181: edita un movimiento existente y ajusta el saldo si cambia el monto. */
+    actualizar(id: string, data: MovimientoManualEdicionInput): Promise<MovimientoFinanciero | null>
+    /** t-181: anula (soft delete) y revierte el saldo; el movimiento queda en el libro como anulado. */
+    anular(id: string): Promise<MovimientoFinanciero | null>
   }
   obligacionesPendientes: {
     listar(): ObligacionPendiente[]

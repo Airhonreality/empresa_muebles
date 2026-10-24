@@ -6,6 +6,7 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { CuentaFinancieraModal } from '@/components/veta/cuenta-financiera-modal'
 import { MovimientoFinancieroModal, type TipoMovimientoManual } from '@/components/veta/movimiento-financiero-modal'
+import { useToast } from '@/components/veta/toast-provider'
 import { useDataStore, type CuentaFinanciera, type MovimientoFinanciero, type Proveedor, type OrdenCompra, type RegistroGateCaja } from '@/lib/data'
 import { calcularCajaDisponible } from '@/lib/modules/f4f5f6/gates'
 
@@ -61,6 +62,7 @@ function origenLabel(origen: MovimientoFinanciero['tipo']): string {
 export default function CajaPage() {
   const router = useRouter()
   const store = useDataStore()
+  const { mostrarError, mostrarInfo } = useToast()
 
   const cuentas = store.cuentasFinancieras.listar()
   const movimientos = store.movimientosFinancieros.listar()
@@ -71,6 +73,7 @@ export default function CajaPage() {
   const registrosGate = store.registrosGateCaja.listar()
 
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoManual | null>(null)
+  const [movimientoEditando, setMovimientoEditando] = useState<MovimientoFinanciero | null>(null)
   const [mostrarCuenta, setMostrarCuenta] = useState(false)
 
   const cajaDisponible = calcularCajaDisponible(cuentas, obligaciones)
@@ -94,11 +97,36 @@ export default function CajaPage() {
   // --- Libro mayor filters ---
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'debito' | 'credito'>('todos')
   const [filtroCuenta, setFiltroCuenta] = useState<string>('todos')
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'asentado' | 'anulado'>('todos')
+  const [filtroMes, setFiltroMes] = useState<string>('')
+  const [busqueda, setBusqueda] = useState<string>('')
 
   let movimientosFiltrados = movimientos
   if (filtroTipo !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === filtroTipo)
   if (filtroCuenta !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.cuentaOrigenId === filtroCuenta || m.cuentaDestinoId === filtroCuenta)
+  if (filtroEstado !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.estado === filtroEstado)
+  if (filtroMes) movimientosFiltrados = movimientosFiltrados.filter(m => m.fecha.startsWith(filtroMes))
+  if (busqueda.trim()) {
+    const q = busqueda.trim().toLowerCase()
+    movimientosFiltrados = movimientosFiltrados.filter(m => {
+      const proyecto = m.proyectoId ? proyectoMap.get(m.proyectoId) : null
+      const proveedor = m.proveedorId ? proveedorMap.get(m.proveedorId) : null
+      return m.descripcion.toLowerCase().includes(q)
+        || (proyecto?.nombreProyecto.toLowerCase().includes(q) ?? false)
+        || (proveedor?.nombre.toLowerCase().includes(q) ?? false)
+    })
+  }
   movimientosFiltrados = [...movimientosFiltrados].sort((a, b) => b.fecha.localeCompare(a.fecha))
+
+  const handleAnular = useCallback(async (mov: MovimientoFinanciero) => {
+    if (!window.confirm(`¿Anular el movimiento "${mov.descripcion}"? Se revertirá el saldo y quedará en el libro como anulado.`)) return
+    try {
+      await store.movimientosFinancieros.anular(mov.id)
+      mostrarInfo('Movimiento anulado. El saldo fue revertido.')
+    } catch (e) {
+      mostrarError(e instanceof Error ? e.message : 'No se pudo anular el movimiento.')
+    }
+  }, [store, mostrarError, mostrarInfo])
 
   // --- Autorizar pago ---
   const [autorizandoOc, setAutorizandoOc] = useState<string | null>(null)
@@ -133,10 +161,10 @@ export default function CajaPage() {
           <p className="text-sm text-text-muted mt-1">Control de caja, autorización de pagos y libro mayor</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="md" onClick={() => setTipoMovimiento('entrada')}>
+          <Button variant="secondary" size="md" onClick={() => { setMovimientoEditando(null); setTipoMovimiento('entrada') }}>
             Registrar entrada
           </Button>
-          <Button variant="primary" size="md" onClick={() => setTipoMovimiento('salida')}>
+          <Button variant="primary" size="md" onClick={() => { setMovimientoEditando(null); setTipoMovimiento('salida') }}>
             Registrar salida
           </Button>
           <Button variant="outline" size="md" onClick={() => setMostrarCuenta(true)}>
@@ -303,7 +331,26 @@ export default function CajaPage() {
         {seccionesExpandidas.libroMayor && (
           <div className="border-t border-border-subtle px-4 py-4 space-y-3">
             {/* Filters */}
-            <div className="flex items-center gap-3 text-sm">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <label className="flex items-center gap-1">
+                <span className="text-xs text-text-muted">Buscar:</span>
+                <input
+                  type="text"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Descripción, proyecto o proveedor"
+                  className="min-h-[32px] w-56 rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+                />
+              </label>
+              <label className="flex items-center gap-1">
+                <span className="text-xs text-text-muted">Mes:</span>
+                <input
+                  type="month"
+                  value={filtroMes}
+                  onChange={(e) => setFiltroMes(e.target.value)}
+                  className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+                />
+              </label>
               <label className="flex items-center gap-1">
                 <span className="text-xs text-text-muted">Tipo:</span>
                 <select
@@ -314,6 +361,18 @@ export default function CajaPage() {
                   <option value="todos">Todos</option>
                   <option value="debito">Egresos</option>
                   <option value="credito">Ingresos</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-1">
+                <span className="text-xs text-text-muted">Estado:</span>
+                <select
+                  value={filtroEstado}
+                  onChange={(e) => setFiltroEstado(e.target.value as typeof filtroEstado)}
+                  className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+                >
+                  <option value="todos">Todos</option>
+                  <option value="asentado">Asentados</option>
+                  <option value="anulado">Anulados</option>
                 </select>
               </label>
               <label className="flex items-center gap-1">
@@ -345,6 +404,7 @@ export default function CajaPage() {
                       <th className="border-b border-border-subtle text-right px-2 py-2 font-semibold text-text-heading">Monto</th>
                       <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Cuenta</th>
                       <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Comprobante</th>
+                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -355,7 +415,7 @@ export default function CajaPage() {
                       const proyecto = mov.proyectoId ? proyectoMap.get(mov.proyectoId) : null
                       const proveedor = mov.proveedorId ? proveedorMap.get(mov.proveedorId) : null
                       return (
-                        <tr key={mov.id} className="border-b border-border-subtle/50">
+                        <tr key={mov.id} className={`border-b border-border-subtle/50 ${mov.estado === 'anulado' ? 'opacity-60' : ''}`}>
                           <td className="px-2 py-2 text-xs font-mono text-text-muted">{formatDate(mov.fecha)}</td>
                           <td className="px-2 py-2 text-sm text-text-heading">{mov.descripcion}</td>
                           <td className="px-2 py-2 text-xs text-text-muted">
@@ -363,11 +423,16 @@ export default function CajaPage() {
                             {proveedor ? ` · ${proveedor.nombre}` : ''}
                           </td>
                           <td className="px-2 py-2 text-center">
-                            <Badge tone={mov.tipo === 'debito' ? 'danger' : 'info'} dot>
-                              {origenLabel(mov.tipo)}
-                            </Badge>
+                            <div className="flex flex-col items-center gap-1">
+                              <Badge tone={mov.tipo === 'debito' ? 'danger' : 'info'} dot>
+                                {origenLabel(mov.tipo)}
+                              </Badge>
+                              {mov.estado === 'anulado' && (
+                                <Badge tone="neutral" dot>Anulado</Badge>
+                              )}
+                            </div>
                           </td>
-                          <td className={`px-2 py-2 text-right font-mono ${mov.tipo === 'debito' ? 'text-red-600' : 'text-emerald-600'}`}>
+                          <td className={`px-2 py-2 text-right font-mono ${mov.tipo === 'debito' ? 'text-red-600' : 'text-emerald-600'} ${mov.estado === 'anulado' ? 'line-through' : ''}`}>
                             {mov.tipo === 'debito' ? '−' : '+'}{formatCOP(numDe(mov.monto))}
                           </td>
                           <td className="px-2 py-2 text-center text-xs text-text-muted">
@@ -385,6 +450,20 @@ export default function CajaPage() {
                               </a>
                             ) : (
                               <span className="text-text-muted">—</span>
+                            )}
+                          </td>
+                          <td className="px-2 py-2 text-center">
+                            {mov.estado === 'anulado' ? (
+                              <span className="text-xs text-text-muted">—</span>
+                            ) : (
+                              <div className="flex items-center justify-center gap-1">
+                                <Button variant="ghost" size="sm" onClick={() => setMovimientoEditando(mov)}>
+                                  Editar
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => { void handleAnular(mov); }}>
+                                  Anular
+                                </Button>
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -457,9 +536,10 @@ export default function CajaPage() {
       </section>
 
       <MovimientoFinancieroModal
-        open={tipoMovimiento !== null}
-        onClose={() => setTipoMovimiento(null)}
-        tipoInicial={tipoMovimiento ?? 'salida'}
+        open={tipoMovimiento !== null || movimientoEditando !== null}
+        onClose={() => { setTipoMovimiento(null); setMovimientoEditando(null) }}
+        tipoInicial={movimientoEditando ? (movimientoEditando.tipo === 'credito' ? 'entrada' : 'salida') : (tipoMovimiento ?? 'salida')}
+        movimiento={movimientoEditando}
       />
       <CuentaFinancieraModal open={mostrarCuenta} onClose={() => setMostrarCuenta(false)} />
     </div>

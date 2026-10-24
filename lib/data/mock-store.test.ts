@@ -935,6 +935,90 @@ await test('t-181 movimientosFinancieros.crear: rechaza proveedor en entrada y c
   )
 })
 
+await test('t-181 movimientosFinancieros.actualizar: completa proveedor/proyecto de una salida ya registrada', async () => {
+  const store = createMockStore()
+  const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Caja principal', tipo: 'caja', saldoInicial: '500000' })
+  const proveedor = store.proveedores.listar()[0]
+  const proyecto = store.proyectos.listar()[0]
+
+  const mov = await store.movimientosFinancieros.crear({
+    tipo: 'salida', fecha: '2026-10-17', descripcion: 'Compra sin proveedor', monto: '200000', cuentaId: cuenta.id,
+  })
+  assert.equal(mov.proveedorId, null)
+
+  const actualizado = await store.movimientosFinancieros.actualizar(mov.id, {
+    fecha: '2026-10-18',
+    descripcion: 'Compra con proveedor',
+    monto: '200000',
+    proveedorId: proveedor.id,
+    proyectoId: proyecto.id,
+    comprobanteUrl: 'https://r2.example/factura.pdf',
+  })
+
+  assert.equal(actualizado?.proveedorId, proveedor.id)
+  assert.equal(actualizado?.proyectoId, proyecto.id)
+  assert.equal(actualizado?.descripcion, 'Compra con proveedor')
+  assert.equal(store.movimientosFinancieros.listar().find(m => m.id === mov.id)?.proveedorId, proveedor.id)
+})
+
+await test('t-181 movimientosFinancieros.actualizar: si cambia el monto, ajusta el saldo por la diferencia', async () => {
+  const store = createMockStore()
+  const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Caja principal', tipo: 'caja', saldoInicial: '500000' })
+  const mov = await store.movimientosFinancieros.crear({
+    tipo: 'salida', fecha: '2026-10-17', descripcion: 'Compra', monto: '200000', cuentaId: cuenta.id,
+  })
+  assert.equal(store.cuentasFinancieras.listar().find(c => c.id === cuenta.id)?.saldoActual, '300000')
+
+  await store.movimientosFinancieros.actualizar(mov.id, {
+    fecha: '2026-10-17', descripcion: 'Compra corregida', monto: '350000',
+  })
+  assert.equal(store.cuentasFinancieras.listar().find(c => c.id === cuenta.id)?.saldoActual, '150000')
+})
+
+await test('t-181 movimientosFinancieros.actualizar: rechaza proveedor en entrada y devuelve null si no existe', async () => {
+  const store = createMockStore()
+  const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Caja principal', tipo: 'caja', saldoInicial: '1000' })
+  const proveedor = store.proveedores.listar()[0]
+  const entrada = await store.movimientosFinancieros.crear({
+    tipo: 'entrada', fecha: '2026-10-17', descripcion: 'Ingreso', monto: '100', cuentaId: cuenta.id,
+  })
+
+  await assert.rejects(
+    () => store.movimientosFinancieros.actualizar(entrada.id, {
+      fecha: '2026-10-17', descripcion: 'Ingreso', monto: '100', proveedorId: proveedor.id,
+    }),
+    /solo se puede asociar un proveedor a una salida/i,
+  )
+  assert.equal(await store.movimientosFinancieros.actualizar('no-existe', {
+    fecha: '2026-10-17', descripcion: 'X', monto: '1',
+  }), null)
+})
+
+await test('t-181 movimientosFinancieros.anular: revierte el saldo y conserva el movimiento como anulado', async () => {
+  const store = createMockStore()
+  const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Caja principal', tipo: 'caja', saldoInicial: '500000' })
+  const mov = await store.movimientosFinancieros.crear({
+    tipo: 'salida', fecha: '2026-10-17', descripcion: 'Compra', monto: '200000', cuentaId: cuenta.id,
+  })
+  assert.equal(store.cuentasFinancieras.listar().find(c => c.id === cuenta.id)?.saldoActual, '300000')
+
+  const anulado = await store.movimientosFinancieros.anular(mov.id)
+  assert.equal(anulado?.estado, 'anulado')
+  assert.equal(store.cuentasFinancieras.listar().find(c => c.id === cuenta.id)?.saldoActual, '500000')
+  assert.equal(store.movimientosFinancieros.listar().find(m => m.id === mov.id)?.estado, 'anulado')
+
+  // Idempotente: anular dos veces no vuelve a sumar el reverso.
+  await store.movimientosFinancieros.anular(mov.id)
+  assert.equal(store.cuentasFinancieras.listar().find(c => c.id === cuenta.id)?.saldoActual, '500000')
+
+  await assert.rejects(
+    () => store.movimientosFinancieros.actualizar(mov.id, {
+      fecha: '2026-10-17', descripcion: 'Compra editada', monto: '200000',
+    }),
+    /anulado/i,
+  )
+})
+
 await test('f6 obligacionesPendientes.registrarPago: mueve a parcial y luego a pagado, crea movimiento (R3)', async () => {
   const store = createMockStore()
   const cuenta = await store.cuentasFinancieras.crear({ nombre: 'Cuenta Test', tipo: 'banco', saldoActual: '5000000' })

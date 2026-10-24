@@ -66,3 +66,18 @@ pago en la UI. La base no se limpia: solo se agrega `movimientos_financieros.pro
 - Código: revert del commit.
 - Migración: `ALTER TABLE movimientos_financieros DROP COLUMN proveedor_id` (pierde solo
   asociaciones nuevas de proveedor).
+
+## Seguimiento 2026-10-17 — edición, anulación y modales anidados
+
+Casos reales detectados al usar el libro:
+- Fecha equivocada: se puede corregir editando el movimiento (el modal precarga todos los campos).
+- Salida creada sin proveedor: se puede completar después con "Editar".
+- Tipo equivocado o duplicado: se anula el movimiento (soft delete) y se crea uno nuevo.
+- Faltaba crear entidades desde los desplegables: proveedor y proyecto se crean en un modal
+  anidado desde el movimiento; cuenta desde obligaciones; proveedor desde cuentas de cobro.
+
+Cambios de datos:
+- `movimientosFinancieros.actualizar(id, data)`: ajusta saldo por diferencia de monto.
+- `movimientosFinancieros.anular(id)`: revierte saldo y deja `estado='anulado'`; idempotente.
+- `MovimientoFinanciero.estado` tipado como `'asentado' | 'anulado'`.
+- El libro muestra anulados con badge y los excluye de KPIs; filtros por mes, estado y búsqueda.

@@ -37,7 +37,7 @@ export type {
   Retoma, CambioContrato, Persona, PersonaRol, RolCanonico, Modulo, Estimacion,
   OrdenTrabajo, TipoOrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, OrigenReproceso,
   Instalacion, EstadoInstalacion, ActaEntrega, EstadoActaEntrega, CasoGarantia, EstadoCasoGarantia, CitaGarantia,
-  CuentaFinanciera, MovimientoFinanciero, MovimientoManualInput, TipoMovimientoFinanciero, ObligacionPendiente, OrigenObligacion, EstadoObligacion,
+  CuentaFinanciera, MovimientoFinanciero, MovimientoManualInput, MovimientoManualEdicionInput, TipoMovimientoFinanciero, EstadoMovimientoFinanciero, ObligacionPendiente, OrigenObligacion, EstadoObligacion,
   Proveedor, ProveedorCuentaBancaria, TipoCuentaProveedor, TipoLlaveProveedor, Banco, OrdenCompra, EstadoOrdenCompra, MecanicaPagoOC, RegistroGateCaja, CuentaCobroProveedor, EstadoCuentaCobro,
   Categoria, ProductoTienda, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, TipoModuloArtefacto, FuenteModuloArtefacto,

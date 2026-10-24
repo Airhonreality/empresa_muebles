@@ -40,6 +40,18 @@ export const movimientoManualSchema = z
   })
 export type MovimientoManualValidado = z.infer<typeof movimientoManualSchema>
 
+/** Edición de un movimiento ya registrado (t-181). No incluye tipo ni cuenta:
+ *  el server los toma del movimiento existente para no reinterpretar la dirección del dinero. */
+export const movimientoEdicionSchema = z.object({
+  fecha: fechaISO,
+  descripcion: z.string().trim().min(1, 'no puede estar vacía').max(500, 'máximo 500 caracteres'),
+  monto: montoPositivoTexto,
+  proyectoId: textoOpcional,
+  proveedorId: textoOpcional,
+  comprobanteUrl: z.string().trim().min(1).nullable().optional(),
+})
+export type MovimientoEdicionValidado = z.infer<typeof movimientoEdicionSchema>
+
 export const cuentaFinancieraCrearSchema = z.object({
   nombre: z.string().trim().min(1, 'no puede estar vacío').max(120, 'máximo 120 caracteres'),
   tipo: z.enum(['caja', 'caja_menor', 'banco', 'billetera_digital', 'otro']),

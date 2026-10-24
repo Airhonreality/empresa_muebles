@@ -14,6 +14,7 @@ import { Badge } from "@/components/veta/badge";
 import { Button } from "@/components/veta/button";
 import { StatCard } from "@/components/veta/stat-card";
 import { CuentaFinancieraModal } from "@/components/veta/cuenta-financiera-modal";
+import { useToast } from "@/components/veta/toast-provider";
 import {
   MovimientoFinancieroModal,
   type TipoMovimientoManual,
@@ -70,7 +71,9 @@ function mesActual(): string {
 export default function FinanzasPage() {
   const router = useRouter();
   const store = useDataStore();
+  const { mostrarError, mostrarInfo } = useToast();
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoManual | null>(null);
+  const [movimientoEditando, setMovimientoEditando] = useState<MovimientoFinanciero | null>(null);
   const [mostrarCuenta, setMostrarCuenta] = useState(false);
 
   const cuentas = store.cuentasFinancieras.listar();
@@ -78,7 +81,8 @@ export default function FinanzasPage() {
   const saldoDisponible = store.cuentasFinancieras.disponible();
 
   const mes = mesActual();
-  const movimientosMes = movimientos.filter((m) => m.fecha.startsWith(mes));
+  const movimientosActivos = movimientos.filter((m) => m.estado !== "anulado");
+  const movimientosMes = movimientosActivos.filter((m) => m.fecha.startsWith(mes));
   const entradasMes = movimientosMes
     .filter((m) => m.tipo === "credito")
     .reduce((sum, m) => sum + numDe(m.monto), 0);
@@ -116,7 +120,17 @@ export default function FinanzasPage() {
 
   const proyectoMap = new Map(store.proyectos.listar().map((p) => [p.id, p]));
   const proveedorMap = new Map(store.proveedores.listar().map((p) => [p.id, p]));
-  const ultimosMovimientos = movimientos.slice(0, 8);
+  const ultimosMovimientos = movimientosActivos.slice(0, 8);
+
+  const handleAnular = async (mov: MovimientoFinanciero) => {
+    if (!window.confirm(`¿Anular el movimiento "${mov.descripcion}"? Se revertirá el saldo y quedará en el libro como anulado.`)) return;
+    try {
+      await store.movimientosFinancieros.anular(mov.id);
+      mostrarInfo("Movimiento anulado. El saldo fue revertido.");
+    } catch (e) {
+      mostrarError(e instanceof Error ? e.message : "No se pudo anular el movimiento.");
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
@@ -130,10 +144,10 @@ export default function FinanzasPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="md" onClick={() => setTipoMovimiento("entrada")}>
+          <Button variant="secondary" size="md" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("entrada"); }}>
             Registrar entrada
           </Button>
-          <Button variant="primary" size="md" onClick={() => setTipoMovimiento("salida")}>
+          <Button variant="primary" size="md" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("salida"); }}>
             Registrar salida
           </Button>
           <Button variant="outline" size="md" onClick={() => setMostrarCuenta(true)}>
@@ -231,6 +245,7 @@ export default function FinanzasPage() {
                   <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Tipo</th>
                   <th className="border-b border-border-subtle text-right px-3 py-2 font-semibold text-text-heading">Monto</th>
                   <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Comprobante</th>
+                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -266,6 +281,16 @@ export default function FinanzasPage() {
                         ) : (
                           <span className="text-text-muted">—</span>
                         )}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => setMovimientoEditando(mov)}>
+                            Editar
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => { void handleAnular(mov); }}>
+                            Anular
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -428,9 +453,10 @@ export default function FinanzasPage() {
       </section>
 
       <MovimientoFinancieroModal
-        open={tipoMovimiento !== null}
-        onClose={() => setTipoMovimiento(null)}
-        tipoInicial={tipoMovimiento ?? "salida"}
+        open={tipoMovimiento !== null || movimientoEditando !== null}
+        onClose={() => { setTipoMovimiento(null); setMovimientoEditando(null); }}
+        tipoInicial={movimientoEditando ? (movimientoEditando.tipo === "credito" ? "entrada" : "salida") : (tipoMovimiento ?? "salida")}
+        movimiento={movimientoEditando}
       />
       <CuentaFinancieraModal open={mostrarCuenta} onClose={() => setMostrarCuenta(false)} />
     </div>

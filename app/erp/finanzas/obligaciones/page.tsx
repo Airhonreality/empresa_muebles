@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
+import { CuentaFinancieraModal } from '@/components/veta/cuenta-financiera-modal'
 import { MoneyInput, parseMoney } from '@/components/veta/money-input'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type ObligacionPendiente, type OrigenObligacion, type EstadoObligacion, type CuentaFinanciera, type Proveedor, type Cliente, type Proyecto, type Persona } from '@/lib/data'
@@ -114,6 +115,7 @@ export default function ObligacionesPage() {
   const [obligacionAPagar, setObligacionAPagar] = useState<ObligacionPendiente | null>(null)
   const [montoPago, setMontoPago] = useState('')
   const [cuentaPago, setCuentaPago] = useState<string>('')
+  const [cuentaModalAbierto, setCuentaModalAbierto] = useState(false)
 
   const handleAbrirPago = (obligacion: ObligacionPendiente) => {
     setObligacionAPagar(obligacion)
@@ -298,20 +300,25 @@ export default function ObligacionesPage() {
               onChange={setMontoPago}
               placeholder="0"
             />
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-text-muted">Cuenta*</span>
-              <select
-                value={cuentaPago}
-                onChange={(e) => setCuentaPago(e.target.value)}
-                className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              >
-                {cuentas.map((c: CuentaFinanciera) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre} — {formatCOP(numDe(c.saldoActual))}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="flex items-end gap-2">
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-text-muted">Cuenta*</span>
+                <select
+                  value={cuentaPago}
+                  onChange={(e) => setCuentaPago(e.target.value)}
+                  className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+                >
+                  {cuentas.map((c: CuentaFinanciera) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} — {formatCOP(numDe(c.saldoActual))}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button variant="secondary" size="md" onClick={() => setCuentaModalAbierto(true)}>
+                + Nueva
+              </Button>
+            </div>
             <div className="flex gap-2 pt-2">
               <Button variant="primary" size="md" onClick={handleRegistrarPago}>
                 Confirmar pago
@@ -323,6 +330,12 @@ export default function ObligacionesPage() {
           </div>
         )}
       </Modal>
+
+      <CuentaFinancieraModal
+        open={cuentaModalAbierto}
+        onClose={() => setCuentaModalAbierto(false)}
+        onSaved={(cuenta) => setCuentaPago(cuenta.id)}
+      />
     </div>
   )
 }

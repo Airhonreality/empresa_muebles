@@ -352,7 +352,7 @@ export const CUENTAS_FINANCIERAS: CuentaFinanciera[] = [
 ]
 
 export const MOVIMIENTOS_FINANCIEROS: MovimientoFinanciero[] = [
-  { id: UUID('mov01'), fecha: '2026-07-01', descripcion: 'Anticipo contrato Cocina Márquez — Integral', tipo: 'credito', monto: '720000', cuentaOrigenId: null, cuentaDestinoId: UUID('cta02'), obligacionId: UUID('obl01'), ordenCompraId: null, proyectoId: UUID('proj01'), contratoId: UUID('ctr01'), socioId: null, proveedorId: null, medioPago: 'transferencia', comprobanteUrl: null, prioridadPago: null, createdAt: '2026-07-01T10:00:00Z' },
+  { id: UUID('mov01'), fecha: '2026-07-01', descripcion: 'Anticipo contrato Cocina Márquez — Integral', tipo: 'credito', estado: 'asentado', monto: '720000', cuentaOrigenId: null, cuentaDestinoId: UUID('cta02'), obligacionId: UUID('obl01'), ordenCompraId: null, proyectoId: UUID('proj01'), contratoId: UUID('ctr01'), socioId: null, proveedorId: null, medioPago: 'transferencia', comprobanteUrl: null, prioridadPago: null, createdAt: '2026-07-01T10:00:00Z' },
 ]
 
 // --- F7 (Compras): proveedores y órdenes de compra — contexto de F5/F6 (REGISTRO §7) ---

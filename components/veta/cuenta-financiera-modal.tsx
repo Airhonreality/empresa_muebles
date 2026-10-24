@@ -5,13 +5,14 @@ import { Button } from '@/components/veta/button'
 import { InputField } from '@/components/veta/input-field'
 import { Modal } from '@/components/veta/modal'
 import { MoneyInput, parseMoney } from '@/components/veta/money-input'
-import { useDataStore } from '@/lib/data'
+import { useDataStore, type CuentaFinanciera } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 
 interface CuentaFinancieraModalProps {
   open: boolean
   onClose: () => void
   nombreInicial?: string
+  onSaved?: (cuenta: CuentaFinanciera) => void
 }
 
 const TIPOS_CUENTA = [
@@ -24,7 +25,7 @@ const TIPOS_CUENTA = [
 
 /** t-181 — Alta de cuenta financiera con saldo inicial. Para el flujo simple se usa
  *  una sola “Caja principal”; el formulario sigue disponible si más adelante agregan bancos. */
-export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja principal' }: CuentaFinancieraModalProps) {
+export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja principal', onSaved }: CuentaFinancieraModalProps) {
   const store = useDataStore()
   const { guard, isPending } = usePendingGuard()
 
@@ -49,17 +50,18 @@ export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja pri
         return
       }
       try {
-        await store.cuentasFinancieras.crear({
+        const cuenta = await store.cuentasFinancieras.crear({
           nombre: nombre.trim(),
           tipo,
           saldoInicial: String(parseMoney(saldoInicial)),
         })
+        onSaved?.(cuenta)
         onClose()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'No se pudo crear la cuenta.')
       }
     })
-  }, [nombre, tipo, saldoInicial, store, onClose, guard])
+  }, [nombre, tipo, saldoInicial, store, onClose, onSaved, guard])
 
   return (
     <Modal open={open} onClose={onClose} title="Nueva cuenta financiera">
