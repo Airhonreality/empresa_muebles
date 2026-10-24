@@ -49,7 +49,7 @@ function getR2Context(): { client: S3Client; bucket: string; publicDomain: strin
     });
   }
 
-  // Fallback canónico seguro: el dominio público r2.dev de Veta de Oro.
+  // Fallback canónico seguro: el dominio público r2.dev de Veta Dorada.
   // Nunca debe apuntar al endpoint privado r2.cloudflarestorage.com porque requiere credenciales S3 y no es público.
   const configuredDomain = process.env.CF_R2_PUBLIC_DOMAIN;
   const publicDomain = (configuredDomain && !configuredDomain.includes("r2.cloudflarestorage.com"))

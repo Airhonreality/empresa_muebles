@@ -62,7 +62,8 @@ backup/dev-v2-arquitectura-20260804
                             Todo el conocimiento valioso ya está en `arnes/`.
 dev                      → rama huérfana (sin historia de main) donde se construye la V3. DESDE 2026-08-28 es la
                             "Production Branch" real de Vercel: cada push se despliega automáticamente al
-                            dominio público (`vetadeoro.co`) y al ERP nuevo en `/erp/**` del mismo dominio.
+                            dominio público (`vetadorada.co`, con `vetadeoro.co` en 301 permanente desde el
+                            2026-10-23) y al ERP nuevo en `/erp/**` del mismo dominio.
                             Se trabaja en el worktree `../empresa_muebles_clone_v3` (ESTA carpeta), nunca en el
                             working tree principal del humano (que sigue en `main` con su propio trabajo en curso).
 ```

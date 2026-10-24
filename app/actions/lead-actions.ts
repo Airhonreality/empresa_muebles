@@ -67,8 +67,8 @@ export async function submitLeadAction(input: SubmitLeadInput): Promise<SubmitLe
       .returning({ id: leads.id });
 
     // 3. Generar mensaje de WhatsApp pre-llenado
-    const whatsappNumber = "573025922101"; // Teléfono oficial Veta de Oro
-    const mensajeText = `Hola Veta de Oro, mi nombre es ${input.nombre.trim()}. Estoy interesado en un proyecto de ${
+    const whatsappNumber = "573025922101"; // Teléfono oficial Veta Dorada
+    const mensajeText = `Hola Veta Dorada, mi nombre es ${input.nombre.trim()}. Estoy interesado en un proyecto de ${
       input.tipoProyecto || "Cocina"
     } en ${input.ubicacion || "Bogotá"}. Solicito mi asesoría.`;
 

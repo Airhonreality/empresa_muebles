@@ -552,7 +552,7 @@ export async function generarPDFCotizacion(input: CotizacionPDFInput): Promise<B
   <div class="quote-container">
     <header class="brand-section">
       <div class="brand-logo">
-        <h1>Veta de Oro</h1>
+        <h1>Veta Dorada</h1>
         <p class="brand-subtitle">Estetica y Confort</p>
         <p class="brand-contact">302 5922101 &nbsp;&nbsp;|&nbsp;&nbsp; www.vetadorada.co &nbsp;&nbsp;|&nbsp;&nbsp; Cra 72A 71A 57</p>
       </div>
@@ -581,7 +581,7 @@ export async function generarPDFCotizacion(input: CotizacionPDFInput): Promise<B
       <section class="technical-notes-section">
         <h4>Consideraciones Importantes</h4>
         <ol class="notes-list">
-          <li><strong>Mano de Obra Civil</strong> Esta cotización contempla únicamente los servicios de fabricación e instalación de la cocina integral. Si se requiere obra civil, debe realizarse con un profesional especializado, veta de oro podrá suministrar contactos de confianza, sin embargo el contrato con terceros será ajeno a la empresa.</li>
+          <li><strong>Mano de Obra Civil</strong> Esta cotización contempla únicamente los servicios de fabricación e instalación de la cocina integral. Si se requiere obra civil, debe realizarse con un profesional especializado, Veta Dorada podrá suministrar contactos de confianza, sin embargo el contrato con terceros será ajeno a la empresa.</li>
           <li><strong>Selección de Acabados:</strong> La textura final y tonos se elegirán sobre muestras físicas que presentaremos antes de la producción.</li>
           <li><strong>Vigencia:</strong> Esta propuesta tiene una validez de 15 días hábiles a partir de la fecha de emisión.</li>
         </ol>
@@ -591,9 +591,9 @@ export async function generarPDFCotizacion(input: CotizacionPDFInput): Promise<B
     <section class="closing-page">
       <div class="closing-grid">
         <div class="policy-block">
-          <h4>Políticas Veta de Oro</h4>
+          <h4>Políticas Veta Dorada</h4>
           <div class="policy-text">
-            <p>En Veta de Oro diseñamos y fabricamos sin intermediarios. Nuestro proceso es directo, preciso y sin margen para errores: lo que diseñamos es exactamente lo que usted recibe.</p>
+            <p>En Veta Dorada diseñamos y fabricamos sin intermediarios. Nuestro proceso es directo, preciso y sin margen para errores: lo que diseñamos es exactamente lo que usted recibe.</p>
             <p>Más de 25 años de experiencia respaldan nuestra calidad. Contamos con un equipo especializado en carpintería, enchapado y acabados, asegurando ejecución impecable en cada detalle.</p>
             <p>Lo que nos distingue no es solo la estética, sino la precisión. Creamos espacios con carácter, hechos para durar, reflejando su estilo sin concesiones.</p>
           </div>
@@ -616,7 +616,7 @@ export async function generarPDFCotizacion(input: CotizacionPDFInput): Promise<B
       </div>
 
       <div class="legal-footer">
-        Veta de Oro es una firma de diseño de Hermanos García Gonzalez SAS | NIT 901421357-9
+        Veta Dorada es una firma de diseño de Hermanos García Gonzalez SAS | NIT 901421357-9
       </div>
     </section>
   </div>

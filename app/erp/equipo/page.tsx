@@ -299,7 +299,7 @@ export default function EquipoPage() {
                 type="email"
                 value={nuevoEmail}
                 onChange={(e) => setNuevoEmail(e.target.value)}
-                placeholder="Ej: juan@vetadeoro.co"
+                placeholder="Ej: juan@vetadorada.co"
                 className="rounded border border-border-subtle bg-bg-paper px-3 py-2 text-sm text-text-heading focus:border-gold-400 focus:outline-none"
               />
               <span className="text-xs text-text-muted">
