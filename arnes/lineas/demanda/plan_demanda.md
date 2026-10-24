@@ -24,7 +24,7 @@ Salen de [`diagnostico_de_proceso.md`](../diagnostico/diagnostico_de_proceso.md)
 |---|---|
 | **Antigüedad** | *"Tradición familiar desde 1995. Estudio de diseño desde 2014."* En datos estructurados va **2014**; 1995 vive en el relato. |
 | **Identidad legal** | Marca comercial arriba, sociedad abajo: *"Veta Dorada es una marca comercial registrada. Facturación, contratos, recaudos y garantías son operados por HERMANOS GARCIA GONZALEZ SAS, NIT 901421357-9."* |
-| **Nombre de marca** | **Veta Dorada.** El renombre del Perfil de Empresa va **aparte y después** del corte, con medición antes/después. |
+| **Nombre de marca** | **Veta Dorada.** Renombre del Perfil de Empresa hecho 2026-08-19. **Dominio `vetadorada.co` comprado y `vetadeoro.co` → `vetadorada.co` con 301 permanente en Vercel el 2026-10-23** (ver `estado_demanda.md`). |
 | **Tema visual** | **Luz & Biofilia** (aprobado, "no reabrir"): luz solar y fotografía natural, **nunca verde literal en los tokens**. Acento dorado intacto. |
 | **Arquetipo y tono** | El Creador Experto. Directo, elegante, sin jerga pretenciosa. Anti-posicionamiento: *no* estudio esnob, *no* muebles baratos, *no* CNC industrial masivo → **híbrido artesanal**. |
 | **Geografía** | **La decide el portafolio real, no una apuesta a priori.** Nada de páginas locales artificiales: se gana Chicó habiendo hecho una cocina en Chicó. Mientras tanto la pauta cubre lo que el portafolio todavía no. |
@@ -97,7 +97,7 @@ Salen de [`diagnostico_de_proceso.md`](../diagnostico/diagnostico_de_proceso.md)
 | **F-08 Propuesta Pública** — `/propuesta/{slug}`, snapshot inmutable + MO derivada, viewer 3D diferido | destilacion_f3_publico.md §3 |
 
 **Depende de:** A (para verificar que la conversión no se rompió) y D1.
-**Después:** esperar **4-8 semanas de métricas estables** antes de mover el dominio. Secuenciar, no combinar.
+**Después:** esperar **4-8 semanas de métricas estables** antes de mover el dominio. Secuenciar, no combinar. — ✅ **Condición cumplida en tiempo y ejecutada 2026-10-23** (`vetadeoro.co` → `vetadorada.co`, 301 permanente). Nota honesta: la mudanza se hizo **sin haber corrido el análisis de métricas** que la regla exigía; el corte quedó registrado para hacerse hasta el 2026-10-23.
 
 > **✅ DESBLOQUEADAS para migración ERP:** F-06 y F-08 ya no bloquean la migración de datos maestros (productos, clientes, catálogos). Pueden seguirse a su propio ritmo.
 
@@ -155,7 +155,7 @@ Una vez autorizada la API y con la data estructurada en la web, el agente asume 
 | Qué | Cuándo vuelve |
 |---|---|
 | Autoridad, backlinks, prensa | Después de E |
-| Segundo dominio | 4-8 semanas de métricas estables tras C |
+| Segundo dominio | ~~4-8 semanas de métricas estables tras C~~ **EJECUTADO 2026-10-23** — `vetadorada.co` comprado, `vetadeoro.co` con 301 permanente. (Se ejecutó sin el análisis de métricas previo.) |
 | Renombre del Perfil de Empresa | Después de C, medido, nunca el día del corte |
 | Silo B2B (diseño por m² a arquitectos y constructoras) | Requiere decisión de modelo de negocio; toca Parte I |
 | Capa ecológica / biomateriales / "transición solar punk" | **Si y solo si** un atributo material aparece en el lenguaje real del cliente como razón de compra u objeción |

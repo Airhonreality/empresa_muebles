@@ -98,7 +98,7 @@ async function main(): Promise<void> {
     console.log(`Cuenta creada: ${email} (usuarios.id=${creado.id}, rol=${rol}).`)
   }
 
-  console.log(`Listo. Entrá en https://vetadeoro.co/erp/login con ${email} y la contraseña que definiste.`)
+  console.log(`Listo. Entrá en https://www.vetadorada.co/erp/login con ${email} y la contraseña que definiste.`)
 }
 
 main()

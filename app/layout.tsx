@@ -32,7 +32,7 @@ const teachers = Teachers({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vetadeoro.co"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.vetadorada.co"),
   title: "Veta Dorada — Carpintería arquitectónica en Bogotá",
   description:
     "Estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera a la medida. Tres generaciones de oficio.",

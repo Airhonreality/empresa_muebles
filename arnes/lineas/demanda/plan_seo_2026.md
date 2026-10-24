@@ -2,6 +2,8 @@
 
 **Fecha:** 2026-08-08 · **Estado:** propuesta · **Tipo:** síntesis (no schema, no código) · **Riesgo:** medio (decisiones de SEO afectan visibilidad orgánica; los datos estructurados mal aplicados pueden acarrear acción manual de Google)
 
+> **ACTUALIZACIÓN 2026-10-23 — migración de dominio ejecutada (resuelve el punto 7 de §7 y la línea 30).** Se compró `vetadorada.co` y `vetadeoro.co` quedó con **301 permanente hacia el dominio nuevo** en Vercel. El código se ajustó para dejar de declarar el dominio viejo: `SITE_URL` en `lib/seo/jsonld.ts` → `https://www.vetadorada.co`, `metadataBase` en `app/layout.tsx` → `https://www.vetadorada.co` (fallback; puede sobreescribirse con `NEXT_PUBLIC_SITE_URL`), dominio en el pie de los PDF (`lib/pdf/cotizacion.ts`) y en `scripts/bootstrap-admin-produccion.ts`. **Decisión documentada en `estado_demanda.md` (entrada 2026-10-23).** Pendiente de verificación/humano: Search Console (propiedad nueva + Change of Address + sitemap), GA4 (URL del flujo de datos), GBP (URL del sitio) y que las conversiones de Ads sigan disparando en el dominio nuevo.
+
 **Regla de sucesión (C3, `diagnostico_de_proceso.md` §6):** el único artefacto SEO vivo en el repo nuevo es `lib/seo/jsonld.ts` (LocalBusiness con NAP incompleto a propósito) y `app/robots.ts`/`app/sitemap.ts`. El plan de julio (`06_PLAN_SEO_TECNICO.md` en `DOCS VETA DORADA/SESION_2026-07-02/`) fue escrito para el motor Agnostic y **nunca se ejecutó**. Este documento no lo reemplaza sino que **porta sus decisiones vigentes al repo nuevo**, filtrando lo obsoleto (zaps, esquemas Agnostic) y rescatando el contenido (JSON-LD, Respuesta Atómica, reglas anti-invención, tokens). Tampoco reemplaza `plan_diseno_web_publica.md` — ese cubre las pantallas; este cubre la capa transversal de SEO.
 
 **Alcance:** indexación total de todas las páginas públicas del sitio nuevo (F-00..F-19 de `plan_diseno_web_publica.md`) + mejores prácticas 2026 verificables mecánicamente.
@@ -27,7 +29,7 @@
 | 4 | **Robots.txt** permitiendo rastreo completo de rutas públicas + bots de IA (`ChatGPT-User`, `GPTBot`, `PerplexityBot`, `ClaudeBot`). | Todo el sitio | `GET /robots.txt` → contiene `Allow: /` y los 4 user-agents de IA |
 | 5 | **`llms.txt`** en la raíz generado **después** de finalizar el contenido (I-038), no antes. Lista las URLs clave con descripción. | Raíz | `GET /llms.txt` → 200, lista al menos F-01..F-16 |
 | 6 | **Sin páginas huérfanas.** Cada página está enlazada desde al menos otra (nav, footer, sitemap HTML, o breadcrumb). | F-09..F-19 | Auditoría manual o crawler |
-| 7 | **Redirecciones 301 desde el Wix legacy.** Mapa de URLs del sitio actual (`vetadeoro.co/cocinas`, `vetadeoro.co/*`) → rutas equivalentes del sitio nuevo. | Corte a producción | Archivo de redirecciones en Vercel/Next.js |
+| 7 | **Redirecciones 301 desde el Wix legacy.** Mapa de URLs del sitio actual (`vetadeoro.co/cocinas`, `vetadeoro.co/*`) → rutas equivalentes del sitio nuevo. | Corte a producción | Archivo de redirecciones en Vercel/Next.js. **Hecho 2026-08-29** el redirect urgente `/cocinas → /espacios/cocinas-integrales-bogota` (`next.config.ts`); Javier confirma que el resto del mapa del Wix se completó el mismo día (ubicación exacta por confirmar — ver `estado_demanda.md` 2026-10-23). |
 | 8 | **Sin contenido duplicado entre páginas.** Cada landing SEO (F-09) tiene contenido único, no un template genérico con la misma prosa. | F-09 ×6 | Comparación manual de bloques de texto |
 | 9 | **BreadcrumbList JSON-LD** en páginas con jerarquía (F-09 → F-10, F-15 artículo → F-15 portada). | F-09, F-10, F-15 | Validador de datos estructurados |
 
@@ -144,7 +146,7 @@ Fuente: I-038, `Practicas de codigo UX y responsive.md` (sesión julio 2026). Re
 
 - No implementa código. Las acciones de la tabla §5 son para el agente Código cuando el bucle F7 de la línea técnica llegue a las pantallas públicas.
 - No reemplaza `plan_diseno_web_publica.md` — ese cubre estructura y contenido por pantalla; este cubre la capa transversal de SEO.
-- No decide la migración de dominio (`vetadeoro.co` → dominio nuevo) — eso es del Supervisor y está documentado en `destilacion_docs_veta.md` §9 (secuenciar, esperar 4-8 semanas de métricas estables).
+- ~~No decide la migración de dominio~~ **DECIDIDO Y EJECUTADO 2026-10-23:** `vetadeoro.co` → `vetadorada.co` (301 permanente en Vercel). Se cumplió la condición de secuencia (8 semanas desde el corte del 29-ago), aunque **sin el análisis de métricas que la regla pedía** — la decisión se tomó por experiencia empírica del Supervisor (los leads subieron notablemente), no por un informe. El corte de métricas queda registrado y se hará hasta el 2026-10-23 (ver `estado_demanda.md`).
 - No crea contenido. El contenido real (copy, imágenes, testimonios) es prerrequisito de las pantallas F-09..F-19.
 - No toca `nucleo/` ni schema.
 - **Criterio de "hecho" (C2):** el validador de datos estructurados de Google pasa sin errores ni advertencias en home + 1 landing + 1 producto + 1 artículo, y el sitemap lista todas las rutas públicas con 200. Hasta entonces, este documento es un plan, no un cierre.

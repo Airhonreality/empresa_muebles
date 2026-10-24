@@ -4,6 +4,35 @@ Progreso de la línea de demanda (captación, conversión, marca). Ver `plan_dem
 
 ---
 
+## Cambio de dominio `vetadeoro.co` → `vetadorada.co` — 2026-10-23
+
+**Hechos (reportados por el Supervisor, Javier):**
+- Se compró el dominio **`vetadorada.co`** hoy (2026-10-23).
+- En Vercel, **`vetadeoro.co` quedó con redirección permanente (301) hacia `vetadorada.co`**.
+- Los destinos de los **2 anuncios de Google Ads de cocinas** se actualizaron a la página de cocinas del sitio nuevo.
+- Marca ya resuelta desde el 2026-08-19 (Perfil de Empresa renombrado a "Veta Dorada").
+- El **mapa de redirecciones 301 del Wix legacy** que estaba pendiente se hizo el mismo 2026-08-29 (confirmado por Javier; el repo solo tiene el redirect urgente `/cocinas` en `next.config.ts` — ubicación exacta del resto del mapa por confirmar).
+
+**Cómo se tomó la decisión (queda registrado, sin maquillarlo):** la regla del plan era secuenciar y esperar **4-8 semanas de métricas estables** antes de mover el dominio. Se cumplieron las 8 semanas desde el corte del 2026-08-29, **pero la mudanza se hizo sin haber corrido el análisis de métricas** que esa regla exigía. La razón de la decisión fue **experiencia empírica del Supervisor**: los leads subieron notablemente durante casi 2 meses de operación del sitio nuevo. No es un informe; es una lectura de campo. Ver `plan_demanda.md` §1 y §3.
+
+**Corte de métricas registrado (se hará después, por ahora queda escrito):** el análisis de Ads/analítica debe cortarse **hasta hoy, 2026-10-23**, y leerse en **tres tramos sin mezclar**:
+1. Histórico **27-mar → 21-ago** (ya analizado, no se toca).
+2. Post-relanzamiento **29-ago → 22-oct** (≈8 semanas sobre dominio viejo). Este es el tramo que faltaba y que valida (o refuta) la subida de leads.
+3. **Desde 2026-10-23**: dominio nuevo, sin datos todavía — tramo nuevo, con su propia regla de corte.
+
+**Código ajustado hoy (para terminar la actualización):** `SITE_URL` en `lib/seo/jsonld.ts` → `https://www.vetadorada.co`; `metadataBase` en `app/layout.tsx` → `https://www.vetadorada.co` (fallback, sobreescribible con `NEXT_PUBLIC_SITE_URL`); dominio en el pie de PDF (`lib/pdf/cotizacion.ts`) y en `scripts/bootstrap-admin-produccion.ts`. Esto propaga canonical, JSON-LD, `robots.txt`, `sitemap.xml`, OG y `llms.txt`.
+
+**Pendientes que NO son de código (requieren a Javier en navegador):**
+- **Search Console:** añadir `vetadorada.co` como propiedad nueva, enviar `sitemap.xml`, y hacer **Change of Address** desde la propiedad antigua. Dejar la propiedad antigua viva para monitorear el 301.
+- **GA4:** editar el *Data Stream* de la propiedad existente (no crear una nueva) para actualizar la URL a `vetadorada.co`. Verificar con Tag Assistant que las conversiones (clic WhatsApp / envío de formulario) siguen disparando en el dominio nuevo.
+- **Google Business Profile:** actualizar la URL del sitio a `vetadorada.co`.
+- **Ads:** además del Final URL, revisar *display URL*, sitelinks/extensiones y que las conversiones sigan registrando en el dominio nuevo.
+- **Dominio viejo:** mantener `vetadeoro.co` registrado y con el 301 indefinidamente (no dejar que expire).
+
+**Riesgo a monitorear:** los hits al dominio viejo sobre rutas legacy hacen **2 saltos** (`vetadeoro.co/cocinas` → `vetadorada.co/cocinas` → `/espacios/...`). Aceptable, pero conviene revisar en Search Console que no aparezcan como "soft 404" ni cadenas problemáticas.
+
+---
+
 ## Relanzamiento 2026-08-29 — sitio V3 en producción + ciclo de Ads reanudado
 
 **El sitio V3 se lanzó a producción el 2026-08-28** (ver `arnes/estado.md`, entrada "CORTE DE PRODUCCIÓN DEL SITIO PÚBLICO"). Al día siguiente, **2026-08-29, se reanudó el ciclo de pago de Google Ads** ya corriendo sobre el sitio nuevo — no sobre Wix ni sobre una preview. Configuración reportada por el Supervisor: presupuesto **$1.122 COP/día**, CPA objetivo **$7.200 COP**, grupo de anuncios **Cocinas** activo, dirección directa a la landing de cocinas. Detalle completo, incluyendo lo pendiente de verificar, en `archivo/Ads_hisotrico_agosto_2026/RELANZAMIENTO_29_AGOSTO_2026.md`.

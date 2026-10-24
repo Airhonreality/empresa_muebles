@@ -9,16 +9,17 @@
 //   verificable, HERMANOS GARCIA GONZALEZ S.A.S. NIT 901421357-9) — decisión ya documentada
 //   en plan_seo_2026.md línea 43.
 //
-// Dominio + datos legales (2026-08-16, `arnes/parameros de branding y data  veta dorada.txt`,
-// dato directo de Javier): `PAGINA_WEB: www.vetadeoro.co` — el dominio real hoy, consistente con
-// plan_demanda.md línea 150 ("Segundo dominio: 4-8 semanas de métricas estables tras C" — un
-// dominio nuevo es una fase futura, no la de hoy). `NOMBRE_MARCA: Veta de Oro` y
+// Dominio (2026-08-16, `arnes/parameros de branding y data  veta dorada.txt`, dato directo de
+// Javier): `PAGINA_WEB: www.vetadeoro.co`. ACTUALIZADO 2026-10-23: se compró `vetadorada.co` y
+// `vetadeoro.co` quedó con 301 permanente hacia él en Vercel — SITE_URL pasa al dominio nuevo
+// (ver plan_demanda.md §1 "Nombre de marca" y estado_demanda.md, entrada 2026-10-23). Sigue
+// `NOMBRE_MARCA: Veta de Oro` y
 // `ESLOGAN_EMPRESA: Estética y Confort` de ese mismo archivo NO se aplican acá — son datos de
 // registro legal/legacy, superados por decisiones de diseño ya cerradas y confirmadas por el
 // Supervisor: nombre de marca "Veta Dorada" (plan_demanda.md línea 27, renombre del Perfil de
 // Empresa deliberadamente diferido a "después del corte") y eslogan "Diseña tu espacio. Habita
 // el bienestar." (plan_demanda.md línea 42, D1 RESUELTA 2026-08-09).
-export const SITE_URL = 'https://www.vetadeoro.co'
+export const SITE_URL = 'https://www.vetadorada.co'
 
 // Redes sociales reales (2026-08-16, pasadas por Javier). Facebook incluido acá (identidad de
 // entidad para Google/IA) aunque no se muestre como ícono clickeable en el footer — está

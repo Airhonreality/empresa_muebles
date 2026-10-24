@@ -554,7 +554,7 @@ export async function generarPDFCotizacion(input: CotizacionPDFInput): Promise<B
       <div class="brand-logo">
         <h1>Veta de Oro</h1>
         <p class="brand-subtitle">Estetica y Confort</p>
-        <p class="brand-contact">302 5922101 &nbsp;&nbsp;|&nbsp;&nbsp; www.vetadeoro.co &nbsp;&nbsp;|&nbsp;&nbsp; Cra 72A 71A 57</p>
+        <p class="brand-contact">302 5922101 &nbsp;&nbsp;|&nbsp;&nbsp; www.vetadorada.co &nbsp;&nbsp;|&nbsp;&nbsp; Cra 72A 71A 57</p>
       </div>
       <div class="proposal-meta">
         <h2>PROPUESTA COMERCIAL</h2>
