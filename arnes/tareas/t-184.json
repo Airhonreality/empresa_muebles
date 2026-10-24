@@ -38,7 +38,7 @@
     "veredicto_humano": "aprobado (2026-10-24): aprobación total para ejecutar todas las fases",
     "fecha": "2026-10-24"
   },
-  "estado": "ejecutada_pendiente_despliegue",
+  "estado": "desplegada_pendiente_qa",
   "creada_en": "2026-10-24T00:00:00Z",
-  "nota_ejecucion": "Movimiento y cuenta con id cliente UUID, ON CONFLICT DO NOTHING en el servidor, estado optimista de crear/editar/anular en drizzle-impl con rollback dirigido, modales que cierran al instante y toast de error. Sin migracion de schema. Pendiente deploy + QA de produccion."
+  "nota_ejecucion": "Movimiento y cuenta con id cliente UUID, ON CONFLICT DO NOTHING en el servidor, estado optimista de crear/editar/anular en drizzle-impl con rollback dirigido, modales que cierran al instante y toast de error. Sin migracion de schema. Pendiente deploy + QA de produccion. Desplegada en produccion (commit abb4563)."
 }

@@ -41,7 +41,7 @@
     "veredicto_humano": "aprobado (2026-10-24): solo producción, tocar núcleo autorizado, migración 0033 autorizada, primer deploy solo Fase 1",
     "fecha": "2026-10-24"
   },
-  "estado": "ejecutada_pendiente_despliegue",
-  "nota_ejecucion": "Delta sync implementado: fetchSnapshotTablesAction con allowlist y resultado por tabla, mappers reutilizados, debounce de 100 ms en longpoll, applyTables con un solo notify, fallback completo ante tabla desconocida/error/tablas vacías, BroadcastChannel de deltas y retry de 500 ms. Migración 0033 escrita y validada con ROLLBACK en producción; no aplicada. Pendiente: commit/push a dev y, después del deploy, aplicar 0033 y hacer QA manual de producción.",
+  "estado": "desplegada_pendiente_qa",
+  "nota_ejecucion": "Delta sync implementado: fetchSnapshotTablesAction con allowlist y resultado por tabla, mappers reutilizados, debounce de 100 ms en longpoll, applyTables con un solo notify, fallback completo ante tabla desconocida/error/tablas vacías, BroadcastChannel de deltas y retry de 500 ms. Migración 0033 escrita y validada con ROLLBACK en producción; no aplicada. Pendiente: commit/push a dev y, después del deploy, aplicar 0033 y hacer QA manual de producción. Desplegada en produccion (commit ff6211a).",
   "creada_en": "2026-10-24T00:00:00Z"
 }

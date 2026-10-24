@@ -12,7 +12,9 @@
   "tipo": "rendimiento_y_arquitectura",
   "riesgo": "alto",
   "plan_ref": "arnes/planes/plan_t-185.md",
-  "depende_de": ["t-184"],
+  "depende_de": [
+    "t-184"
+  ],
   "criterios_aceptacion": [
     "/erp/finanzas y /erp/finanzas/caja no hidratan el snapshot de 76 tablas",
     "las lecturas de finanzas se limitan a las 8 tablas del snapshot escopado",
@@ -35,7 +37,7 @@
     "veredicto_humano": "aprobado (2026-10-24): aprobación total para ejecutar todas las fases",
     "fecha": "2026-10-24"
   },
-  "estado": "ejecutada_pendiente_despliegue",
-  "nota_ejecucion": "Route groups (datastore)/(modern), snapshot escopado de finanzas, hooks TanStack con persistencia, bridge por tablas, prefetch SSR y compat store para páginas/modales. El DataStore moderno es event-only pero sigue retransmitiendo deltas. Sin migracion de schema.",
+  "estado": "desplegada_pendiente_qa",
+  "nota_ejecucion": "Route groups (datastore)/(modern), snapshot escopado de finanzas, hooks TanStack con persistencia, bridge por tablas, prefetch SSR y compat store para páginas/modales. El DataStore moderno es event-only pero sigue retransmitiendo deltas. Sin migracion de schema. Desplegada en produccion (commit 99a352c).",
   "creada_en": "2026-10-24T00:00:00Z"
 }

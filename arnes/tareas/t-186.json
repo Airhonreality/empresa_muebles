@@ -12,7 +12,9 @@
   "tipo": "rendimiento_y_arquitectura",
   "riesgo": "alto",
   "plan_ref": "arnes/planes/plan_t-186.md",
-  "depende_de": ["t-185"],
+  "depende_de": [
+    "t-185"
+  ],
   "criterios_aceptacion": [
     "el detalle del cotizador y la ficha de proyecto no hidratan el snapshot global",
     "el cotizador conserva sus lecturas/escrituras optimistas y la creación de producto/proveedor",
@@ -34,7 +36,7 @@
     "veredicto_humano": "aprobado (2026-10-24): aprobación total para ejecutar todas las fases",
     "fecha": "2026-10-24"
   },
-  "estado": "ejecutada_pendiente_despliegue",
-  "nota_ejecucion": "Cotizador detalle+contrato y ficha de proyecto movidos a (modern). Prefetch SSR, snapshots escopados y bridges. ProductoFormModal con callbacks de catálogo/proveedor. /erp/cotizador/new espera la creación antes de navegar. Sin migracion de schema.",
+  "estado": "desplegada_pendiente_qa",
+  "nota_ejecucion": "Cotizador detalle+contrato y ficha de proyecto movidos a (modern). Prefetch SSR, snapshots escopados y bridges. ProductoFormModal con callbacks de catálogo/proveedor. /erp/cotizador/new espera la creación antes de navegar. Sin migracion de schema. Desplegada en produccion (commit 371fc3d).",
   "creada_en": "2026-10-24T00:00:00Z"
 }

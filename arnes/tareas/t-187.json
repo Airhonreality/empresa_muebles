@@ -12,7 +12,9 @@
   "tipo": "rendimiento_y_arquitectura",
   "riesgo": "alto",
   "plan_ref": "arnes/planes/plan_t-187.md",
-  "depende_de": ["t-186"],
+  "depende_de": [
+    "t-186"
+  ],
   "criterios_aceptacion": [
     "clientes, catálogo, listado y alta de cotizador no hidratan el snapshot global",
     "editar cliente/proyecto y crear/editar/eliminar producto siguen funcionando",
@@ -34,7 +36,7 @@
     "veredicto_humano": "aprobado (2026-10-24): aprobación total para ejecutar todas las fases",
     "fecha": "2026-10-24"
   },
-  "estado": "ejecutada_pendiente_despliegue",
-  "nota_ejecucion": "Clientes, catalogo principal y listado/alta de cotizador movidos a (modern) con snapshots escopados, prefetch SSR, bridges y mutations. Modales adaptados con callbacks opcionales. /erp/catalogo/acabados y las subrutas legacy siguen en (datastore).",
+  "estado": "desplegada_pendiente_qa",
+  "nota_ejecucion": "Clientes, catalogo principal y listado/alta de cotizador movidos a (modern) con snapshots escopados, prefetch SSR, bridges y mutations. Modales adaptados con callbacks opcionales. /erp/catalogo/acabados y las subrutas legacy siguen en (datastore). Desplegada en produccion (commit 909e6f6; el primer intento de Vercel fallo por causa transitoria y el redeploy ae93699 quedo success).",
   "creada_en": "2026-10-24T00:00:00Z"
 }
