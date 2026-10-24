@@ -17,6 +17,7 @@ const montoPositivoTexto = z
   })
 
 const idNoVacio = z.string().trim().min(1, 'no puede estar vacío')
+const idOpcional = z.uuid().optional()
 const textoOpcional = z.string().nullable().optional()
 
 const fechaISO = z
@@ -25,6 +26,7 @@ const fechaISO = z
 
 export const movimientoManualSchema = z
   .object({
+    id: idOpcional,
     tipo: z.enum(['entrada', 'salida']),
     fecha: fechaISO,
     descripcion: z.string().trim().min(1, 'no puede estar vacía').max(500, 'máximo 500 caracteres'),
@@ -53,6 +55,7 @@ export const movimientoEdicionSchema = z.object({
 export type MovimientoEdicionValidado = z.infer<typeof movimientoEdicionSchema>
 
 export const cuentaFinancieraCrearSchema = z.object({
+  id: idOpcional,
   nombre: z.string().trim().min(1, 'no puede estar vacío').max(120, 'máximo 120 caracteres'),
   tipo: z.enum(['caja', 'caja_menor', 'banco', 'billetera_digital', 'otro']),
   saldoInicial: numeroDecimalTexto.optional(),

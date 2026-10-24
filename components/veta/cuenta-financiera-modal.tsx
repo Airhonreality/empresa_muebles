@@ -7,6 +7,7 @@ import { Modal } from '@/components/veta/modal'
 import { MoneyInput, parseMoney } from '@/components/veta/money-input'
 import { useDataStore, type CuentaFinanciera } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { useToast } from '@/components/veta/toast-provider'
 
 interface CuentaFinancieraModalProps {
   open: boolean
@@ -28,6 +29,7 @@ const TIPOS_CUENTA = [
 export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja principal', onSaved }: CuentaFinancieraModalProps) {
   const store = useDataStore()
   const { guard, isPending } = usePendingGuard()
+  const { mostrarError } = useToast()
 
   const [nombre, setNombre] = useState(nombreInicial)
   const [tipo, setTipo] = useState<string>('caja')
@@ -49,19 +51,18 @@ export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja pri
         setError('El nombre de la cuenta es obligatorio.')
         return
       }
-      try {
-        const cuenta = await store.cuentasFinancieras.crear({
-          nombre: nombre.trim(),
-          tipo,
-          saldoInicial: String(parseMoney(saldoInicial)),
-        })
-        onSaved?.(cuenta)
-        onClose()
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'No se pudo crear la cuenta.')
-      }
+      const promesa = store.cuentasFinancieras.crear({
+        id: crypto.randomUUID(),
+        nombre: nombre.trim(),
+        tipo,
+        saldoInicial: String(parseMoney(saldoInicial)),
+      })
+      onClose()
+      void promesa
+        .then((cuenta) => onSaved?.(cuenta))
+        .catch((e) => mostrarError(e instanceof Error ? e.message : 'No se pudo crear la cuenta.'))
     })
-  }, [nombre, tipo, saldoInicial, store, onClose, onSaved, guard])
+  }, [nombre, tipo, saldoInicial, store, onClose, onSaved, guard, mostrarError])
 
   return (
     <Modal open={open} onClose={onClose} title="Nueva cuenta financiera">

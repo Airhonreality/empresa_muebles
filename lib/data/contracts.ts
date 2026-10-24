@@ -686,6 +686,8 @@ export interface MovimientoFinanciero {
 
 /** t-181: entrada/salida manual del libro contable simplificado. */
 export interface MovimientoManualInput {
+  /** Id generado por el cliente para idempotencia y optimismo (la PK ya es UUID). */
+  id?: string
   /** 'entrada' = ingreso (credito) | 'salida' = egreso (debito). */
   tipo: 'entrada' | 'salida'
   fecha: string
@@ -1460,7 +1462,7 @@ export interface DataStore {
   // --- F6: Finanzas ---
   cuentasFinancieras: {
     listar(): CuentaFinanciera[]
-    crear(data: { nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string }): Promise<CuentaFinanciera>
+    crear(data: { id?: string; nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string }): Promise<CuentaFinanciera>
     /** P-21 R4/E-20: SUM real recalculado en cada consulta, nunca cacheado. */
     disponible(): number
   }

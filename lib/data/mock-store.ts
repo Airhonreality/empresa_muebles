@@ -1717,10 +1717,14 @@ export function createMockStore(): DataStore {
       listar(): CuentaFinanciera[] {
         return cuentasFinancieras
       },
-      async crear(data: { nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string }): Promise<CuentaFinanciera> {
+      async crear(data: { id?: string; nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string }): Promise<CuentaFinanciera> {
+        if (data.id) {
+          const existente = cuentasFinancieras.find((c) => c.id === data.id)
+          if (existente) return existente
+        }
         const saldo = data.saldoInicial ?? data.saldoActual ?? '0'
         const nuevo: CuentaFinanciera = {
-          id: generateId('cta'),
+          id: data.id ?? generateId('cta'),
           nombre: data.nombre,
           tipo: data.tipo,
           saldoInicial: saldo,
@@ -1748,6 +1752,10 @@ export function createMockStore(): DataStore {
         return movimientosFinancieros.filter(m => m.proyectoId === proyectoId)
       },
       async crear(data: MovimientoManualInput): Promise<MovimientoFinanciero> {
+        if (data.id) {
+          const existente = movimientosFinancieros.find((m) => m.id === data.id)
+          if (existente) return existente
+        }
         const cuentaIdx = cuentasFinancieras.findIndex(c => c.id === data.cuentaId)
         if (cuentaIdx === -1) throw new Error('La cuenta financiera no existe.')
         if (data.tipo === 'entrada' && data.proveedorId) {
@@ -1759,7 +1767,7 @@ export function createMockStore(): DataStore {
         if (!(monto > 0)) throw new Error('El monto debe ser mayor que cero.')
 
         const nuevo: MovimientoFinanciero = {
-          id: generateId('mov'),
+          id: data.id ?? generateId('mov'),
           fecha: data.fecha,
           descripcion: data.descripcion,
           tipo: esEntrada ? 'credito' : 'debito',

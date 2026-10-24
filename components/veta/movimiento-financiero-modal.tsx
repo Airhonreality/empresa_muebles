@@ -12,6 +12,7 @@ import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
 import { ProyectoRapidoModal } from '@/components/veta/proyecto-rapido-modal'
 import { useDataStore, type CuentaFinanciera, type MovimientoFinanciero } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { useToast } from '@/components/veta/toast-provider'
 
 export type TipoMovimientoManual = 'entrada' | 'salida'
 
@@ -53,6 +54,7 @@ export function MovimientoFinancieroModal({
   const proyectos = store.proyectos.listar()
   const proveedores = store.proveedores.listar()
   const { guard, isPending } = usePendingGuard()
+  const { mostrarError } = useToast()
 
   const editando = Boolean(movimiento)
   const [tipo, setTipo] = useState<TipoMovimientoManual>(tipoInicial)
@@ -130,40 +132,44 @@ export function MovimientoFinancieroModal({
         return
       }
 
-      try {
-        if (movimiento) {
-          const actualizado = await store.movimientosFinancieros.actualizar(movimiento.id, {
-            fecha,
-            descripcion: descripcion.trim(),
-            monto,
-            proyectoId: proyectoId || null,
-            proveedorId: tipo === 'salida' ? proveedorId || null : null,
-            comprobanteUrl: comprobantes[0] ?? null,
-          })
-          if (!actualizado) {
-            setError('No se encontró el movimiento a editar.')
-            return
-          }
-          onSaved?.(actualizado)
-        } else {
-          const creado = await store.movimientosFinancieros.crear({
-            tipo,
-            fecha,
-            descripcion: descripcion.trim(),
-            monto,
-            cuentaId,
-            proyectoId: proyectoId || null,
-            proveedorId: tipo === 'salida' ? proveedorId || null : null,
-            comprobanteUrl: comprobantes[0] ?? null,
-          })
-          onSaved?.(creado)
-        }
+      if (movimiento) {
+        const promesa = store.movimientosFinancieros.actualizar(movimiento.id, {
+          fecha,
+          descripcion: descripcion.trim(),
+          monto,
+          proyectoId: proyectoId || null,
+          proveedorId: tipo === 'salida' ? proveedorId || null : null,
+          comprobanteUrl: comprobantes[0] ?? null,
+        })
         onClose()
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'No se pudo guardar el movimiento.')
+        void promesa
+          .then((actualizado) => {
+            if (!actualizado) {
+              mostrarError('No se encontró el movimiento a editar.')
+              return
+            }
+            onSaved?.(actualizado)
+          })
+          .catch((e) => mostrarError(e instanceof Error ? e.message : 'No se pudo guardar el movimiento.'))
+      } else {
+        const promesa = store.movimientosFinancieros.crear({
+          id: crypto.randomUUID(),
+          tipo,
+          fecha,
+          descripcion: descripcion.trim(),
+          monto,
+          cuentaId,
+          proyectoId: proyectoId || null,
+          proveedorId: tipo === 'salida' ? proveedorId || null : null,
+          comprobanteUrl: comprobantes[0] ?? null,
+        })
+        onClose()
+        void promesa
+          .then((creado) => onSaved?.(creado))
+          .catch((e) => mostrarError(e instanceof Error ? e.message : 'No se pudo registrar el movimiento.'))
       }
     })
-  }, [cuentaId, descripcion, monto, tipo, fecha, proyectoId, proveedorId, comprobantes, store, movimiento, onSaved, onClose, guard])
+  }, [cuentaId, descripcion, monto, tipo, fecha, proyectoId, proveedorId, comprobantes, store, movimiento, onSaved, onClose, guard, mostrarError])
 
   const sinCuentas = cuentas.length === 0
   const cuentaActual = cuentas.find((c) => c.id === cuentaId)

@@ -15,17 +15,25 @@ import type {
 } from '../contracts'
 
 export async function crearCuentaFinancieraAction(
-  data: { nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string },
+  data: { id?: string; nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string },
 ): Promise<CuentaFinanciera> {
   const validado = validarEntrada(cuentaFinancieraCrearSchema, data)
   const saldo = validado.saldoInicial ?? validado.saldoActual ?? '0'
   const [nuevo] = await db.insert(s.cuentasFinancieras).values({
+    ...(validado.id ? { id: validado.id } : {}),
     nombre: validado.nombre,
     tipo: validado.tipo,
     saldoInicial: saldo,
     saldoActual: saldo,
-  }).returning()
-  return nuevo as unknown as CuentaFinanciera
+  }).onConflictDoNothing({ target: s.cuentasFinancieras.id }).returning()
+  if (nuevo) return nuevo as unknown as CuentaFinanciera
+  if (!validado.id) throw new Error('No se pudo crear la cuenta financiera.')
+  const [existente] = await db
+    .select()
+    .from(s.cuentasFinancieras)
+    .where(eq(s.cuentasFinancieras.id, validado.id))
+  if (!existente) throw new Error('No se pudo crear la cuenta financiera.')
+  return existente as unknown as CuentaFinanciera
 }
 
 /** t-181: entrada (credito a la cuenta) o salida (debito de la cuenta) manual.
@@ -36,6 +44,14 @@ export async function crearMovimientoManualAction(data: MovimientoManualInput): 
   const esEntrada = validado.tipo === 'entrada'
 
   return db.transaction(async (tx) => {
+    if (validado.id) {
+      const [existente] = await tx
+        .select()
+        .from(s.movimientosFinancieros)
+        .where(eq(s.movimientosFinancieros.id, validado.id))
+      if (existente) return existente as unknown as MovimientoFinanciero
+    }
+
     const [cuenta] = await tx
       .select()
       .from(s.cuentasFinancieras)
@@ -43,6 +59,7 @@ export async function crearMovimientoManualAction(data: MovimientoManualInput): 
     if (!cuenta) throw new Error('La cuenta financiera no existe.')
 
     const [movimiento] = await tx.insert(s.movimientosFinancieros).values({
+      ...(validado.id ? { id: validado.id } : {}),
       fecha: validado.fecha,
       descripcion: validado.descripcion,
       tipo: esEntrada ? 'credito' : 'debito',
@@ -54,7 +71,17 @@ export async function crearMovimientoManualAction(data: MovimientoManualInput): 
       proveedorId: validado.proveedorId ?? null,
       medioPago: null,
       comprobanteUrl: validado.comprobanteUrl ?? null,
-    }).returning()
+    }).onConflictDoNothing({ target: s.movimientosFinancieros.id }).returning()
+
+    if (!movimiento) {
+      if (!validado.id) throw new Error('No se pudo registrar el movimiento.')
+      const [existente] = await tx
+        .select()
+        .from(s.movimientosFinancieros)
+        .where(eq(s.movimientosFinancieros.id, validado.id))
+      if (!existente) throw new Error('No se pudo registrar el movimiento.')
+      return existente as unknown as MovimientoFinanciero
+    }
 
     await tx.update(s.cuentasFinancieras).set({
       saldoActual: esEntrada

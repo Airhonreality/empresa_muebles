@@ -1,0 +1,44 @@
+{
+  "id": "t-184",
+  "titulo": "Finanzas optimista: crear, editar y anular movimientos sin esperar la red",
+  "intencion_negocio": "Javier (2026-10-24): el delta sync ya evita el snapshot completo por escritura, pero el usuario sigue esperando la Server Action antes de ver el cambio. Finanzas debe sentirse instantánea en producción, con reversión y aviso si el servidor falla.",
+  "diagnostico": "lib/data/drizzle-impl.ts aplicaba los cambios de finanzas solo después de await de la Server Action. El modal esperaba la promesa para cerrarse. La tabla ya tiene PK UUID con default; no hace falta migración.",
+  "decisiones_supervisor": {
+    "aprobacion_total": "Ejecutar el plan completo sin detenerse a pedir autorización.",
+    "sin_schema": "No se cambia el schema; el id del movimiento se genera en el cliente.",
+    "idempotencia": "El servidor usa ON CONFLICT DO NOTHING y no vuelve a mover el saldo si el id ya existe."
+  },
+  "zona": "lib/data/contracts.ts + lib/validacion/finanzas.ts + lib/data/actions/f6.ts + lib/data/drizzle-impl.ts + components/veta/movimiento-financiero-modal.tsx + components/veta/cuenta-financiera-modal.tsx",
+  "tipo": "rendimiento_y_ux",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-184.md",
+  "depende_de": [
+    "t-183"
+  ],
+  "criterios_aceptacion": [
+    "registrar entrada/salida pinta el movimiento y el saldo antes de la respuesta del servidor",
+    "editar un movimiento pinta el cambio y ajusta el saldo antes de la respuesta",
+    "anular pinta el estado anulado y revierte el saldo antes de la respuesta",
+    "crear una cuenta pinta la cuenta antes de la respuesta",
+    "si el servidor falla, la UI revierte y muestra un toast de error",
+    "el mismo id no duplica el movimiento ni mueve el saldo dos veces",
+    "tsc, eslint de archivos tocados, tests de finanzas y build en verde"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errores; 2 warnings preexistentes (_proyectoId en drizzle-impl.ts y mock-store.ts)",
+    "tests": "finanzas.test.ts 8/8 OK; mock-store.test.ts: tests de finanzas OK, falla preexistente f3-portafolio en linea 1199",
+    "next build": "OK tras limpiar .next (la primera corrida fallo por cache stale/_ssgManifest.js)"
+  },
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-10-24): aprobación total para ejecutar todas las fases",
+    "fecha": "2026-10-24"
+  },
+  "estado": "ejecutada_pendiente_despliegue",
+  "creada_en": "2026-10-24T00:00:00Z",
+  "nota_ejecucion": "Movimiento y cuenta con id cliente UUID, ON CONFLICT DO NOTHING en el servidor, estado optimista de crear/editar/anular en drizzle-impl con rollback dirigido, modales que cierran al instante y toast de error. Sin migracion de schema. Pendiente deploy + QA de produccion."
+}

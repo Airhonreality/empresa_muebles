@@ -14,7 +14,7 @@
 // de inmediato el registro PRINCIPAL devuelto por el Action; los registros secundarios llegan con
 // el siguiente ciclo de polling (≤4s), no instantáneamente. Es una degradación aceptada explícita,
 // no un bug — ver plan_f10_migracion.md §3.1d.
-import type { DataStore, Proyecto, NotaReunion } from './contracts'
+import type { DataStore, Proyecto, NotaReunion, CuentaFinanciera, MovimientoFinanciero, MovimientoManualInput } from './contracts'
 import type { StoreSnapshot } from './snapshot'
 import { esCampoSnapshotLista, type SnapshotTableUpdate } from './snapshot-tables'
 import { coincide } from '../search/normalizar'
@@ -130,6 +130,54 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
 
   function removeById<T extends { id: string }>(arr: T[], id: string): T[] {
     return arr.filter((x) => x.id !== id)
+  }
+
+  function construirCuentaOptimista(
+    values: { nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string },
+    id: string,
+  ): CuentaFinanciera {
+    const saldo = values.saldoInicial ?? values.saldoActual ?? '0'
+    return {
+      id,
+      nombre: values.nombre,
+      tipo: values.tipo,
+      saldoInicial: saldo,
+      saldoActual: saldo,
+      createdAt: new Date().toISOString(),
+    }
+  }
+
+  function construirMovimientoOptimista(values: MovimientoManualInput, id: string): MovimientoFinanciero {
+    const esEntrada = values.tipo === 'entrada'
+    return {
+      id,
+      fecha: values.fecha,
+      descripcion: values.descripcion,
+      tipo: esEntrada ? 'credito' : 'debito',
+      estado: 'asentado',
+      monto: values.monto,
+      cuentaOrigenId: esEntrada ? null : values.cuentaId,
+      cuentaDestinoId: esEntrada ? values.cuentaId : null,
+      obligacionId: null,
+      ordenCompraId: null,
+      proyectoId: values.proyectoId ?? null,
+      contratoId: null,
+      socioId: null,
+      proveedorId: values.proveedorId ?? null,
+      medioPago: null,
+      comprobanteUrl: values.comprobanteUrl ?? null,
+      prioridadPago: null,
+      createdAt: new Date().toISOString(),
+    }
+  }
+
+  function ajustarSaldo(cuentaId: string | null, delta: number): CuentaFinanciera[] {
+    if (!cuentaId || delta === 0) return data.cuentasFinancieras
+    return data.cuentasFinancieras.map((c) =>
+      c.id === cuentaId
+        ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) + delta) }
+        : c,
+    )
   }
 
   /** Elimina de un arreglo todas las filas cuyo proyectoId === id. */
@@ -787,10 +835,20 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
     cuentasFinancieras: {
       listar: () => data.cuentasFinancieras,
       crear: async (values) => {
-        const r = await f6.crearCuentaFinancieraAction(values)
-        data = { ...data, cuentasFinancieras: upsert(data.cuentasFinancieras, r) }
+        const id = values.id ?? crypto.randomUUID()
+        const optimista = construirCuentaOptimista(values, id)
+        data = { ...data, cuentasFinancieras: upsert(data.cuentasFinancieras, optimista) }
         notify()
-        return r
+        try {
+          const r = await f6.crearCuentaFinancieraAction({ ...values, id })
+          data = { ...data, cuentasFinancieras: upsert(data.cuentasFinancieras, r) }
+          notify()
+          return r
+        } catch (err) {
+          data = { ...data, cuentasFinancieras: removeById(data.cuentasFinancieras, id) }
+          notify()
+          throw err
+        }
       },
       disponible: () => {
         const sumaCuentas = data.cuentasFinancieras.reduce((acc, c) => acc + Number(c.saldoActual || 0), 0)
@@ -803,60 +861,122 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       porCuenta: (cuentaId) => data.movimientosFinancieros.filter((m) => m.cuentaOrigenId === cuentaId || m.cuentaDestinoId === cuentaId),
       porProyecto: (proyectoId) => data.movimientosFinancieros.filter((m) => m.proyectoId === proyectoId),
       crear: async (values) => {
-        const r = await f6.crearMovimientoManualAction(values)
+        const id = values.id ?? crypto.randomUUID()
+        const optimista = construirMovimientoOptimista(values, id)
         const monto = Number(values.monto) || 0
         const delta = values.tipo === 'entrada' ? monto : -monto
         data = {
           ...data,
-          movimientosFinancieros: upsert(data.movimientosFinancieros, r),
-          cuentasFinancieras: data.cuentasFinancieras.map((c) =>
-            c.id === values.cuentaId
-              ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) + delta) }
-              : c,
-          ),
+          movimientosFinancieros: upsert(data.movimientosFinancieros, optimista),
+          cuentasFinancieras: ajustarSaldo(values.cuentaId, delta),
         }
         notify()
-        return r
+        try {
+          const r = await f6.crearMovimientoManualAction({ ...values, id })
+          data = { ...data, movimientosFinancieros: upsert(data.movimientosFinancieros, r) }
+          notify()
+          return r
+        } catch (err) {
+          data = {
+            ...data,
+            movimientosFinancieros: removeById(data.movimientosFinancieros, id),
+            cuentasFinancieras: ajustarSaldo(values.cuentaId, -delta),
+          }
+          notify()
+          throw err
+        }
       },
       actualizar: async (id, values) => {
         const existente = data.movimientosFinancieros.find((m) => m.id === id)
-        const r = await f6.actualizarMovimientoManualAction(id, values)
-        if (!r) return null
-        const cuentaId = r.cuentaOrigenId ?? r.cuentaDestinoId
-        const delta = existente && cuentaId
-          ? ((Number(values.monto) || 0) - (Number(existente.monto) || 0)) * (existente.tipo === 'credito' ? 1 : -1)
-          : 0
+        if (!existente || existente.estado === 'anulado') {
+          const r = await f6.actualizarMovimientoManualAction(id, values)
+          if (!r) return null
+          data = { ...data, movimientosFinancieros: upsert(data.movimientosFinancieros, r) }
+          notify()
+          return r
+        }
+        const cuentaId = existente.cuentaOrigenId ?? existente.cuentaDestinoId
+        const delta = ((Number(values.monto) || 0) - (Number(existente.monto) || 0)) * (existente.tipo === 'credito' ? 1 : -1)
+        const optimista: MovimientoFinanciero = {
+          ...existente,
+          fecha: values.fecha,
+          descripcion: values.descripcion,
+          monto: values.monto,
+          proyectoId: values.proyectoId ?? null,
+          proveedorId: values.proveedorId ?? null,
+          comprobanteUrl: values.comprobanteUrl ?? null,
+        }
         data = {
           ...data,
-          movimientosFinancieros: upsert(data.movimientosFinancieros, r),
-          cuentasFinancieras: delta === 0 || !cuentaId
-            ? data.cuentasFinancieras
-            : data.cuentasFinancieras.map((c) =>
-                c.id === cuentaId ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) + delta) } : c,
-              ),
+          movimientosFinancieros: upsert(data.movimientosFinancieros, optimista),
+          cuentasFinancieras: ajustarSaldo(cuentaId, delta),
         }
         notify()
-        return r
+        try {
+          const r = await f6.actualizarMovimientoManualAction(id, values)
+          if (!r) {
+            data = {
+              ...data,
+              movimientosFinancieros: upsert(data.movimientosFinancieros, existente),
+              cuentasFinancieras: ajustarSaldo(cuentaId, -delta),
+            }
+            notify()
+            return null
+          }
+          data = { ...data, movimientosFinancieros: upsert(data.movimientosFinancieros, r) }
+          notify()
+          return r
+        } catch (err) {
+          data = {
+            ...data,
+            movimientosFinancieros: upsert(data.movimientosFinancieros, existente),
+            cuentasFinancieras: ajustarSaldo(cuentaId, -delta),
+          }
+          notify()
+          throw err
+        }
       },
       anular: async (id) => {
         const existente = data.movimientosFinancieros.find((m) => m.id === id)
-        const r = await f6.anularMovimientoManualAction(id)
-        if (!r) return null
-        const cuentaId = r.cuentaOrigenId ?? r.cuentaDestinoId
-        const reverso = existente && cuentaId && existente.estado !== 'anulado'
-          ? (Number(existente.monto) || 0) * (existente.tipo === 'credito' ? -1 : 1)
-          : 0
+        if (!existente || existente.estado === 'anulado') {
+          const r = await f6.anularMovimientoManualAction(id)
+          if (!r) return null
+          data = { ...data, movimientosFinancieros: upsert(data.movimientosFinancieros, r) }
+          notify()
+          return r
+        }
+        const cuentaId = existente.cuentaOrigenId ?? existente.cuentaDestinoId
+        const reverso = (Number(existente.monto) || 0) * (existente.tipo === 'credito' ? -1 : 1)
+        const optimista: MovimientoFinanciero = { ...existente, estado: 'anulado' }
         data = {
           ...data,
-          movimientosFinancieros: upsert(data.movimientosFinancieros, r),
-          cuentasFinancieras: reverso === 0 || !cuentaId
-            ? data.cuentasFinancieras
-            : data.cuentasFinancieras.map((c) =>
-                c.id === cuentaId ? { ...c, saldoActual: String((Number(c.saldoActual) || 0) + reverso) } : c,
-              ),
+          movimientosFinancieros: upsert(data.movimientosFinancieros, optimista),
+          cuentasFinancieras: ajustarSaldo(cuentaId, reverso),
         }
         notify()
-        return r
+        try {
+          const r = await f6.anularMovimientoManualAction(id)
+          if (!r) {
+            data = {
+              ...data,
+              movimientosFinancieros: upsert(data.movimientosFinancieros, existente),
+              cuentasFinancieras: ajustarSaldo(cuentaId, -reverso),
+            }
+            notify()
+            return null
+          }
+          data = { ...data, movimientosFinancieros: upsert(data.movimientosFinancieros, r) }
+          notify()
+          return r
+        } catch (err) {
+          data = {
+            ...data,
+            movimientosFinancieros: upsert(data.movimientosFinancieros, existente),
+            cuentasFinancieras: ajustarSaldo(cuentaId, -reverso),
+          }
+          notify()
+          throw err
+        }
       },
     },
     obligacionesPendientes: {
