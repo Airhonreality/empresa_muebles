@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Briefcase, Calculator, Package, Menu } from 'lucide-react'
 import { ErpSidebar } from '@/components/veta/erp-sidebar'
 
-export function ErpShell({ children }: { children: React.ReactNode }) {
+export function ErpShell({ children, usuario }: { children: React.ReactNode; usuario: { nombre: string; rol: string } | null }) {
   // /erp/login y /erp/login/activar (D-08b, F10 2026-08-15) son las únicas
   // rutas de /erp/** sin sesión (middleware.ts las deja pasar) — el sidebar
   // no tiene sentido ahí (todos sus links redirigirían de vuelta al login).
@@ -21,7 +21,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col md:flex-row">
         {/* Sidebar */}
         <div className="hidden md:block print:hidden">
-          <ErpSidebar />
+          <ErpSidebar usuario={usuario} />
         </div>
 
         {/* Main content area */}

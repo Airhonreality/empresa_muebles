@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { ErpShell } from '@/components/veta/erp-shell'
 import { QueryProvider } from '@/components/erp/query-provider'
 import { ToastProvider } from '@/components/veta/toast-provider'
+import { requireSesionEmpleado } from '@/lib/auth/session'
 
 export const metadata: Metadata = {
   title: 'ERP — Veta Dorada',
@@ -13,11 +14,12 @@ export const metadata: Metadata = {
 export const maxDuration = 25
 export const dynamic = 'force-dynamic'
 
-export default function ErpLayout({ children }: { children: React.ReactNode }) {
+export default async function ErpLayout({ children }: { children: React.ReactNode }) {
+  const sesion = await requireSesionEmpleado()
   return (
     <QueryProvider>
       <ToastProvider>
-        <ErpShell>{children}</ErpShell>
+        <ErpShell usuario={sesion ? { nombre: sesion.nombre, rol: sesion.rol } : null}>{children}</ErpShell>
       </ToastProvider>
     </QueryProvider>
   )

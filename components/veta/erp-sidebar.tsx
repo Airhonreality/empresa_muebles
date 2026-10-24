@@ -28,7 +28,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import { useDataStore } from '@/lib/data'
 
 interface NavItem {
   href: string
@@ -100,10 +99,10 @@ const ERP_NAV_SECTIONS: NavSection[] = [
   },
 ]
 
-export function ErpSidebar() {
+export function ErpSidebar({ usuario }: { usuario: { nombre: string; rol: string } | null }) {
   const pathname = usePathname()
-  const store = useDataStore()
-  const usuario = store.auth.usuarioActual()
+  const nombreUsuario = usuario?.nombre ?? 'Sin sesión'
+  const rolUsuario = usuario?.rol ?? 'admin'
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const isItemActive = (href: string) => {
@@ -174,8 +173,8 @@ export function ErpSidebar() {
               </span>
             </div>
             <div className="text-[11px] text-text-muted">
-              <p className="font-medium text-text-primary truncate">{usuario.nombre}</p>
-              <p className="text-text-muted truncate">{ROLES_ETIQUETAS[usuario.rol] ?? usuario.rol}</p>
+              <p className="font-medium text-text-primary truncate">{nombreUsuario}</p>
+              <p className="text-text-muted truncate">{ROLES_ETIQUETAS[rolUsuario] ?? rolUsuario}</p>
             </div>
             <form action={logoutEmpleadoAction} className="mt-2">
               <Button type="submit" variant="ghost" size="md" className="w-full justify-center text-[11px] h-6">
