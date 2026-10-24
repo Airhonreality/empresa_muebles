@@ -224,6 +224,12 @@
       "version": "7",
       "when": 1792500000000,
       "tag": "0032_movimientos_financieros_proveedor"
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792600000000,
+      "tag": "0033_notify_triggers_faltantes"
     }
   ]
 }

@@ -1,0 +1,47 @@
+{
+  "id": "t-183",
+  "titulo": "Latencia de producción: delta sync por tabla en la reactividad del ERP",
+  "intencion_negocio": "Javier (2026-10-24): en producción web cada botón y cada actualización tarda demasiado. El ERP trae un snapshot de 76 tablas (~2,56 MB) en cada carga y en cada NOTIFY, aunque la escritura ya se haya aplicado localmente. Se quiere llegar a sensación instantánea en producción, sin depender de pruebas en la PC local.",
+  "diagnostico": "app/erp/layout.tsx:36 hidrata el snapshot completo en cada carga dura. lib/data/DataStoreProvider.tsx:176 vuelve a pedir fetchSnapshotAction() completo en cada NOTIFY. lib/data/drizzle-impl.ts:783 espera la Server Action antes de actualizar la caché local (finanzas no es optimista). longpoll.ts resuelve en el primer NOTIFY y descarta el resto del batch. Ocho tablas de negocio no tienen trigger de NOTIFY.",
+  "decisiones_supervisor": {
+    "solo_produccion": "No se trabaja ni se prueba en la PC local; la validación es en producción web o su preview de Vercel con la misma base.",
+    "tocar_nucleo": "Autorizado tocar DataStoreProvider, longpoll y drizzle-impl.",
+    "migracion_0033": "Autorizada la migración de triggers faltantes en Neon producción, después de que el código de delta esté desplegado.",
+    "primer_deploy": "El primer deploy es solo esta fase (delta sync). Optimismo de finanzas y migración a TanStack quedan para t-184/t-185.",
+    "staleTime": "No se cambia el staleTime global ahora: el cotizador lo tiene hardcodeado en 0 y las pantallas sin bridge podrían quedar desactualizadas.",
+    "medicion": "Sin instrumentación custom ni alerting; se exige una verificación manual mínima de payload y clic→pintado en producción."
+  },
+  "zona": "lib/data/snapshot-tables.ts + lib/data/actions/hydrate.ts + lib/data/actions/longpoll.ts + lib/data/DataStoreProvider.tsx + lib/data/drizzle-impl.ts + lib/data/queries/coverage-manifest.ts + drizzle/v3/0033_notify_triggers_faltantes.sql + drizzle/v3/meta/_journal.json",
+  "tipo": "reactividad_y_rendimiento",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-183.md",
+  "depende_de": [],
+  "criterios_aceptacion": [
+    "una escritura que notifica 1-5 tablas ya no descarga el snapshot completo de 76 tablas",
+    "el delta reemplaza solo los campos afectados y emite un único notify() por batch",
+    "tabla desconocida, error de delta o tablas=[] caen al snapshot completo",
+    "el debounce del long-poll acumula todas las tablas de una transacción",
+    "las 8 tablas sin trigger quedan cubiertas por la migración 0033",
+    "la sincronización entre pestañas sigue funcionando",
+    "tsc, eslint de archivos tocados, test del mapa y coverage.test.ts en verde",
+    "sin cambios de schema ni de datos; solo triggers aditivos"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errores; 1 warning preexistente (_proyectoId en drizzle-impl.ts:1359)",
+    "tests": "snapshot-tables.test.ts OK; coverage.test.ts 4/4 OK; cotizador-reactividad.test.ts OK",
+    "next build": "OK con SESSION_SECRET y DATABASE_URL placeholder",
+    "migracion_0033": "SQL validado en Neon producción dentro de una transacción con ROLLBACK: 66 triggers antes, 74 dentro, 66 después. Las 8 tablas existen y notify_veta_change existe. NO aplicada todavía: debe aplicarse después de que el código de delta esté desplegado."
+  },
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-10-24): solo producción, tocar núcleo autorizado, migración 0033 autorizada, primer deploy solo Fase 1",
+    "fecha": "2026-10-24"
+  },
+  "estado": "ejecutada_pendiente_despliegue",
+  "nota_ejecucion": "Delta sync implementado: fetchSnapshotTablesAction con allowlist y resultado por tabla, mappers reutilizados, debounce de 100 ms en longpoll, applyTables con un solo notify, fallback completo ante tabla desconocida/error/tablas vacías, BroadcastChannel de deltas y retry de 500 ms. Migración 0033 escrita y validada con ROLLBACK en producción; no aplicada. Pendiente: commit/push a dev y, después del deploy, aplicar 0033 y hacer QA manual de producción.",
+  "creada_en": "2026-10-24T00:00:00Z"
+}

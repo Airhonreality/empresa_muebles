@@ -16,9 +16,14 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { DataStore } from './contracts'
 import type { StoreSnapshot } from './snapshot'
 import { createMockStore } from './mock-store'
-import { createDrizzleStore } from './drizzle-impl'
-import { fetchSnapshotAction } from './actions/hydrate'
+import { createDrizzleStore, type DrizzleStoreHandle } from './drizzle-impl'
+import { fetchSnapshotAction, fetchSnapshotTablesAction } from './actions/hydrate'
 import { longPollVersionAction } from './actions/longpoll'
+import {
+  updatesDesdeResultados,
+  type SnapshotTableUpdate,
+  type SnapshotTablesResponse,
+} from './snapshot-tables'
 
 const DataStoreContext = createContext<DataStore | null>(null)
 
@@ -41,10 +46,26 @@ const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'whe
 
 type BroadcastMessage =
   | { type: 'snapshot'; snapshot: StoreSnapshot; tablas: string[] }
+  | { type: 'tables'; version: string; tablas: string[]; updates: SnapshotTableUpdate[] }
   | { type: 'activity'; at: number }
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function fetchDeltaConReintento(tablas: string[]): Promise<SnapshotTablesResponse | null> {
+  for (let intento = 0; intento < 2; intento++) {
+    try {
+      return await fetchSnapshotTablesAction(tablas)
+    } catch (error) {
+      if (intento === 0) {
+        await sleep(500)
+        continue
+      }
+      console.error('Delta de reactividad falló, se usa el snapshot completo', error)
+    }
+  }
+  return null
 }
 
 export function DataStoreProvider({
@@ -56,11 +77,15 @@ export function DataStoreProvider({
   mode: 'mock' | 'drizzle'
   initialSnapshot?: StoreSnapshot
 }) {
-  const [handle] = useState(() => {
+  const [handle] = useState<DrizzleStoreHandle>(() => {
     if (mode === 'drizzle' && initialSnapshot) {
       return createDrizzleStore(initialSnapshot)
     }
-    return { store: createMockStore(), applySnapshot: () => {} }
+    return {
+      store: createMockStore(),
+      applySnapshot: () => {},
+      applyTables: () => {},
+    }
   })
   const versionRef = useRef<string>(initialSnapshot?.version ?? '0')
   const [storeChange, setStoreChange] = useState<StoreChangeInfo>(() => ({
@@ -79,7 +104,7 @@ export function DataStoreProvider({
     const channel = 'BroadcastChannel' in window ? new BroadcastChannel(BROADCAST_CHANNEL_NAME) : null
 
     function applyRemoteSnapshot(snapshot: StoreSnapshot, tablas: string[]): void {
-      if (cancelled || snapshot.version === versionRef.current) return
+      if (cancelled) return
       versionRef.current = snapshot.version
       handle.applySnapshot(snapshot)
       setStoreChange({ tablas, at: Date.now() })
@@ -87,6 +112,17 @@ export function DataStoreProvider({
 
     function broadcastSnapshot(snapshot: StoreSnapshot, tablas: string[]): void {
       channel?.postMessage({ type: 'snapshot', snapshot, tablas } satisfies BroadcastMessage)
+    }
+
+    function broadcastTables(updates: SnapshotTableUpdate[], tablas: string[], version: string): void {
+      channel?.postMessage({ type: 'tables', version, tablas, updates } satisfies BroadcastMessage)
+    }
+
+    function applyRemoteTables(updates: SnapshotTableUpdate[], tablas: string[], version: string): void {
+      if (cancelled) return
+      versionRef.current = version
+      handle.applyTables(updates, version)
+      setStoreChange({ tablas, at: Date.now() })
     }
 
     function onLocalActivity(): void {
@@ -107,6 +143,8 @@ export function DataStoreProvider({
         const msg = event.data
         if (msg.type === 'snapshot') {
           applyRemoteSnapshot(msg.snapshot, msg.tablas)
+        } else if (msg.type === 'tables') {
+          applyRemoteTables(msg.updates, msg.tablas, msg.version)
         } else if (msg.type === 'activity' && msg.at > lastActivityAt) {
           lastActivityAt = msg.at
         }
@@ -167,17 +205,23 @@ export function DataStoreProvider({
           const result = await longPollVersionAction(versionRef.current)
           if (cancelled) return
           if (result.changed) {
-            // `changed` viene de un NOTIFY real (o del atajo al suscribirse) — se refresca
-            // siempre, sin volver a comparar versiones (esa comparación es la que tiene el
-            // punto ciego de las tablas fuera de fetchVersionTokenAction()).
-            const snapshot = await fetchSnapshotAction()
-            if (cancelled) return
-            versionRef.current = snapshot.version
-            handle.applySnapshot(snapshot)
-            // F1: se propagan las tablas del NOTIFY (payload "tabla:op") para que cada
-            // pestaña invalide solo sus queries escopados — no un refetch global.
-            setStoreChange({ tablas: result.tablas, at: Date.now() })
-            broadcastSnapshot(snapshot, result.tablas)
+            const respuestaDelta =
+              result.tablas.length > 0 ? await fetchDeltaConReintento(result.tablas) : null
+            const delta = respuestaDelta ? updatesDesdeResultados(respuestaDelta.tablas) : null
+
+            if (respuestaDelta && delta && !delta.requiereCompleto) {
+              versionRef.current = respuestaDelta.version
+              handle.applyTables(delta.updates, respuestaDelta.version)
+              setStoreChange({ tablas: result.tablas, at: Date.now() })
+              broadcastTables(delta.updates, result.tablas, respuestaDelta.version)
+            } else {
+              const snapshot = await fetchSnapshotAction()
+              if (cancelled) return
+              versionRef.current = snapshot.version
+              handle.applySnapshot(snapshot)
+              setStoreChange({ tablas: result.tablas, at: Date.now() })
+              broadcastSnapshot(snapshot, result.tablas)
+            }
           }
           // Si !result.changed, el long-poll volvió por timeout sin cambios reales: se
           // reabre de inmediato, sin esperar nada adicional.

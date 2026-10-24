@@ -9,6 +9,13 @@ import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { num, numOrNull } from './mappers'
 import { emptySnapshot, type StoreSnapshot } from '../snapshot'
+import {
+  TABLAS_CONOCIDAS,
+  campoDeTabla,
+  type SnapshotTable,
+  type SnapshotTableResult,
+  type SnapshotTablesResponse,
+} from '../snapshot-tables'
 import { requireSesionEmpleado } from '@/lib/auth/session'
 
 export async function fetchVersionTokenAction(): Promise<string> {
@@ -33,7 +40,119 @@ export async function fetchVersionTokenAction(): Promise<string> {
   return `${row?.max_updated ?? '0'}:${row?.total ?? '0'}`
 }
 
+const CARGADORES: Record<SnapshotTable, () => Promise<unknown[]>> = {
+  proyectos: async () => db.select().from(s.proyectos),
+  clientes: async () => db.select().from(s.clientes),
+  espacio_variantes: async () => db.select().from(s.espacioVariantes),
+  items_variante: async () => db.select().from(s.itemsVariante),
+  espacios_artefactos: async () => db.select().from(s.espaciosArtefactos),
+  productos_catalogo: async () => db.select().from(s.productosCatalogo),
+  parametros: async () => db.select().from(s.parametros),
+  contratos: async () => db.select().from(s.contratos),
+  hitos_pago: async () => db.select().from(s.hitosPago),
+  proyectos_estados_historial: async () => db.select().from(s.proyectosEstadosHistorial),
+  cronogramas: async () => db.select().from(s.cronogramas),
+  cronograma_etapas: async () => db.select().from(s.cronogramaEtapas),
+  desfases_cronograma: async () => db.select().from(s.desfasesCronograma),
+  checks_produccion: async () =>
+    (await db.select().from(s.checksProduccion)).map((c) => ({
+      ...c,
+      ratioInsumos: num(c.ratioInsumos),
+      ratioPagos: num(c.ratioPagos),
+      ratioProduccion: num(c.ratioProduccion),
+      comisionesReducidasPct: numOrNull(c.comisionesReducidasPct),
+    })),
+  novedades_criticas: async () => db.select().from(s.novedadesCriticas),
+  comunicaciones_progreso: async () => db.select().from(s.comunicacionesProgreso),
+  schemas_proyecto: async () => db.select().from(s.schemasProyecto),
+  bom_material: async () => db.select().from(s.bomMaterial),
+  verificaciones: async () => db.select().from(s.verificaciones),
+  retomas: async () => db.select().from(s.retomas),
+  cambios_contrato: async () => db.select().from(s.cambiosContrato),
+  personas: async () => db.select().from(s.personas),
+  personas_roles: async () => db.select().from(s.personasRoles),
+  modulos: async () => db.select().from(s.modulos),
+  estimaciones: async () =>
+    (await db.select().from(s.estimaciones)).map((e) => ({
+      ...e,
+      factorCrecimiento: num(e.factorCrecimiento),
+    })),
+  ordenes_trabajo: async () => db.select().from(s.ordenesTrabajo),
+  pedidos_web: async () => db.select().from(s.pedidosWeb),
+  citaciones_calidad: async () => db.select().from(s.citacionesCalidad),
+  reprocesos: async () => db.select().from(s.reprocesos),
+  instalaciones: async () => db.select().from(s.instalaciones),
+  actas_entrega: async () => db.select().from(s.actasEntrega),
+  casos_garantia: async () => db.select().from(s.casosGarantia),
+  citas_garantia: async () => db.select().from(s.citasGarantia),
+  cuentas_financieras: async () => db.select().from(s.cuentasFinancieras),
+  movimientos_financieros: async () => db.select().from(s.movimientosFinancieros),
+  obligaciones_pendientes: async () => db.select().from(s.obligacionesPendientes),
+  proveedores: async () => db.select().from(s.proveedores),
+  bancos: async () => db.select().from(s.bancos),
+  proveedor_cuentas_bancarias: async () => db.select().from(s.proveedorCuentasBancarias),
+  ordenes_compra: async () => db.select().from(s.ordenesCompra),
+  registros_gate_caja: async () => db.select().from(s.registrosGateCaja),
+  cuentas_cobro_proveedor: async () => db.select().from(s.cuentasCobroProveedor),
+  categorias: async () => db.select().from(s.categorias),
+  productos_tienda: async () =>
+    (await db.select().from(s.productosTienda)).map((p) => ({
+      ...p,
+      calificacionPromedio: numOrNull(p.calificacionPromedio),
+    })),
+  productos_tienda_componentes: async () => db.select().from(s.productosTiendaComponentes),
+  catalogo_acabados: async () => db.select().from(s.catalogoAcabados),
+  catalogo_producto_acabados: async () => db.select().from(s.catalogoProductoAcabados),
+  acabados_muestras: async () => db.select().from(s.acabadosMuestras),
+  portafolio: async () => db.select().from(s.portafolio),
+  renders_conceptuales: async () => db.select().from(s.rendersConceptuales),
+  atributos_tecnicos: async () => db.select().from(s.atributosTecnicos),
+  catalogo_espacios_arquitectonicos: async () => db.select().from(s.catalogoEspaciosArquitectonicos),
+  modulos_artefactos: async () => db.select().from(s.modulosArtefactos),
+  bitacora_articulos: async () => db.select().from(s.bitacoraArticulos),
+  testimonios: async () => db.select().from(s.testimonios),
+  items_orden_compra: async () => db.select().from(s.itemsOrdenCompra),
+  recepciones_material: async () => db.select().from(s.recepcionesMaterial),
+  herramientas: async () => db.select().from(s.herramientas),
+  documentos_proyecto: async () => db.select().from(s.documentosProyecto),
+  grupos_item: async () => db.select().from(s.gruposItem),
+  espacio_variante_acabados: async () => db.select().from(s.espacioVarianteAcabados),
+}
+
+export async function fetchSnapshotTablesAction(tablas: string[]): Promise<SnapshotTablesResponse> {
+  const sesion = await requireSesionEmpleado()
+  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
+
+  const unicas = [...new Set(tablas)]
+  const version = await fetchVersionTokenAction()
+  const resultados = await Promise.all(
+    unicas.map(async (tabla): Promise<SnapshotTableResult> => {
+      if (!TABLAS_CONOCIDAS.has(tabla)) {
+        return { tabla, ok: false, motivo: 'unmapped' }
+      }
+      const campo = campoDeTabla(tabla)
+      if (!campo) {
+        return { tabla, ok: true, motivo: 'ignorada' }
+      }
+      try {
+        const filas = await CARGADORES[tabla as SnapshotTable]()
+        return { tabla, ok: true, campo, filas }
+      } catch (error) {
+        return {
+          tabla,
+          ok: false,
+          motivo: 'error',
+          error: error instanceof Error ? error.message : String(error),
+        }
+      }
+    }),
+  )
+
+  return { version, tablas: resultados }
+}
+
 export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
+  const version = await fetchVersionTokenAction()
   const [
     proyectos, clientes, espacios, items, artefactos, catalogo, parametros, contratosRows, hitos,
     proyectosEstadosHistorial,
@@ -113,7 +232,6 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     db.select().from(s.espacioVarianteAcabados),
   ])
 
-  const version = await fetchVersionTokenAction()
   const base = emptySnapshot()
 
   // Usuario real de la sesión de empleado (D-08b, F10 2026-08-15) — sin

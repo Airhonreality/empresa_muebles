@@ -16,6 +16,7 @@
 // no un bug — ver plan_f10_migracion.md §3.1d.
 import type { DataStore, Proyecto, NotaReunion } from './contracts'
 import type { StoreSnapshot } from './snapshot'
+import { esCampoSnapshotLista, type SnapshotTableUpdate } from './snapshot-tables'
 import { coincide } from '../search/normalizar'
 import { masRecientePrimero } from './orden'
 import * as core from './actions/core'
@@ -32,6 +33,7 @@ import * as catEsp from './actions/catalogo-espacios'
 export interface DrizzleStoreHandle {
   store: DataStore
   applySnapshot: (snapshot: StoreSnapshot) => void
+  applyTables: (updates: readonly SnapshotTableUpdate[], version: string) => void
 }
 
 export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
@@ -62,6 +64,26 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       }
     }
     data = siguiente
+    notify()
+  }
+
+  function applyTables(updates: readonly SnapshotTableUpdate[], nextVersion: string): void {
+    const cambios: Record<string, unknown> = {}
+    for (const update of updates) {
+      if (!esCampoSnapshotLista(update.campo)) continue
+      cambios[update.campo] = update.filas
+    }
+    if (Array.isArray(cambios.proyectos)) {
+      const filas = [...(cambios.proyectos as Proyecto[])]
+      for (const id of pendientesOptimistas.proyectos) {
+        if (!filas.some((p) => p.id === id)) {
+          const enCurso = data.proyectos.find((p) => p.id === id)
+          if (enCurso) filas.push(enCurso)
+        }
+      }
+      cambios.proyectos = filas
+    }
+    data = { ...data, ...cambios, version: nextVersion } as StoreSnapshot
     notify()
   }
 
@@ -1375,5 +1397,5 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
     getVersion: () => version,
   }
 
-  return { store, applySnapshot }
+  return { store, applySnapshot, applyTables }
 }

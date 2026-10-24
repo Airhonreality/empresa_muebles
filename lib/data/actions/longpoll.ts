@@ -13,6 +13,7 @@ import { fetchVersionTokenAction } from './hydrate'
 // rechaza en build). Verificar ese valor contra el límite configurado en el dashboard de Vercel
 // antes de subir MAX_WAIT_MS.
 const MAX_WAIT_MS = 20_000
+const NOTIFY_DEBOUNCE_MS = 100
 
 export interface LongPollResult {
   // true solo si se resolvió por un NOTIFY real del trigger (o por el chequeo puntual al
@@ -42,18 +43,20 @@ export async function longPollVersionAction(clientVersion: string): Promise<Long
   return new Promise((resolve, reject) => {
     let settled = false
     let unlistenFn: (() => void) | undefined
+    let flushTimer: ReturnType<typeof setTimeout> | undefined
     // Tablas notificadas en este ciclo. El trigger emite "TG_TABLE_NAME:TG_OP" por notify;
     // si llegan varios NOTIFY coalescidos antes de que el ciclo cierre, se acumulan todas.
     const tablas = new Set<string>()
 
     const timer = setTimeout(() => {
-      void finish(false)
+      void finish(tablas.size > 0)
     }, MAX_WAIT_MS)
 
     async function finish(changed: boolean) {
       if (settled) return
       settled = true
       clearTimeout(timer)
+      if (flushTimer) clearTimeout(flushTimer)
       try {
         unlistenFn?.()
       } catch {
@@ -72,7 +75,11 @@ export async function longPollVersionAction(clientVersion: string): Promise<Long
         // payload del trigger 0004: "TG_TABLE_NAME:TG_OP" (ej. "items_variante:UPDATE").
         const tabla = payload?.split(':')[0]
         if (tabla) tablas.add(tabla)
-        void finish(true)
+        if (!settled && !flushTimer) {
+          flushTimer = setTimeout(() => {
+            void finish(true)
+          }, NOTIFY_DEBOUNCE_MS)
+        }
       })
       .then(async (sub) => {
         unlistenFn = () => { void sub.unlisten() }
