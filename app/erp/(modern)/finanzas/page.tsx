@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  useDataStore,
   type OrigenObligacion,
   type EstadoObligacion,
   type EstadoCuentaCobro,
   type EstadoOrdenCompra,
   type MovimientoFinanciero,
 } from "@/lib/data";
+import { useFinanzasCompat } from "@/lib/data/queries/finanzas-compat";
 import { Badge } from "@/components/veta/badge";
 import { Button } from "@/components/veta/button";
 import { StatCard } from "@/components/veta/stat-card";
@@ -71,7 +71,7 @@ function mesActual(): string {
 
 export default function FinanzasPage() {
   const router = useRouter();
-  const store = useDataStore();
+  const { store } = useFinanzasCompat();
   const { mostrarError, mostrarInfo } = useToast();
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoManual | null>(null);
   const [movimientoEditando, setMovimientoEditando] = useState<MovimientoFinanciero | null>(null);
@@ -477,7 +477,7 @@ export default function FinanzasPage() {
         tipoInicial={movimientoEditando ? (movimientoEditando.tipo === "credito" ? "entrada" : "salida") : (tipoMovimiento ?? "salida")}
         movimiento={movimientoEditando}
       />
-      <CuentaFinancieraModal open={mostrarCuenta} onClose={() => setMostrarCuenta(false)} />
+      <CuentaFinancieraModal open={mostrarCuenta} onClose={() => setMostrarCuenta(false)} crearCuenta={store.cuentasFinancieras.crear} />
     </div>
   );
 }

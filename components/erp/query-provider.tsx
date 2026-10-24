@@ -53,7 +53,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         persister,
         maxAge: VEINTICUATRO_HORAS_MS,
         dehydrateOptions: {
-          shouldDehydrateQuery: (query) => query.queryKey[0] === 'cotizador',
+          shouldDehydrateQuery: (query) => query.queryKey[0] === 'cotizador' || query.queryKey[0] === 'finanzas',
         },
       }}
     >

@@ -29,3 +29,9 @@ export const rendersConceptualesKeys = {
 export const catalogoEspaciosKeys = {
   listado: ['catalogo-espacios-arquitectonicos'] as const,
 } as const
+// Finanzas (t-185): un solo nodo escopado — cuentas, movimientos y catálogos de apoyo.
+// El bridge invalida `all` cuando el NOTIFY toca una tabla de finanzas.
+export const finanzasKeys = {
+  all: ['finanzas'] as const,
+  snapshot: ['finanzas', 'snapshot'] as const,
+} as const

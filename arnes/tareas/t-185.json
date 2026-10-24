@@ -1,0 +1,41 @@
+{
+  "id": "t-185",
+  "titulo": "Finanzas con TanStack Query y rutas modernas sin snapshot global",
+  "intencion_negocio": "Javier (2026-10-24): finanzas debe cargar rápido y actualizarse al instante en producción, sin heredar el snapshot de 76 tablas. Las rutas legacy deben seguir funcionando mientras se migran por fases.",
+  "diagnostico": "El layout /erp hidrataba el snapshot completo para todas las rutas. Las pantallas de finanzas usaban useDataStore. Se separan las rutas en route groups: (datastore) conserva el snapshot completo; (modern) usa lecturas escopadas y TanStack Query.",
+  "decisiones_supervisor": {
+    "aprobacion_total": "Ejecutar todas las fases sin detenerse.",
+    "route_groups": "Se prefiere route groups a headers de middleware: elimina el riesgo de listas de rutas desincronizadas y hace que la navegación cliente monte el layout correcto.",
+    "event_only": "El DataStoreProvider moderno mantiene el long-poll y retransmite deltas para no romper la sincronización de pestañas legacy; solo omite el snapshot completo de arranque."
+  },
+  "zona": "app/erp/** (route groups) + app/erp/layout.tsx + lib/data/actions/lecturas-finanzas.ts + lib/data/queries/finanzas-* + lib/data/DataStoreProvider.tsx + components/erp/query-provider.tsx + components/veta/{movimiento-financiero,cuenta-financiera,proveedor-form,proyecto-rapido}-modal.tsx",
+  "tipo": "rendimiento_y_arquitectura",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-185.md",
+  "depende_de": ["t-184"],
+  "criterios_aceptacion": [
+    "/erp/finanzas y /erp/finanzas/caja no hidratan el snapshot de 76 tablas",
+    "las lecturas de finanzas se limitan a las 8 tablas del snapshot escopado",
+    "crear/editar/anular movimientos y crear cuentas siguen siendo optimistas",
+    "la sincronización entre pestañas modernas y legacy sigue funcionando",
+    "las rutas legacy cargan su DataStore completo al navegar desde finanzas",
+    "tsc, eslint, tests puros y next build en verde"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errores",
+    "tests": "finanzas-optimistic.test.ts OK; snapshot-tables.test.ts OK; finanzas.test.ts 8/8; coverage.test.ts 4/4 (41/164 actions con hook)",
+    "next build": "OK con SESSION_SECRET y DATABASE_URL placeholder; rutas /erp/finanzas y /erp/finanzas/caja generadas"
+  },
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-10-24): aprobación total para ejecutar todas las fases",
+    "fecha": "2026-10-24"
+  },
+  "estado": "ejecutada_pendiente_despliegue",
+  "nota_ejecucion": "Route groups (datastore)/(modern), snapshot escopado de finanzas, hooks TanStack con persistencia, bridge por tablas, prefetch SSR y compat store para páginas/modales. El DataStore moderno es event-only pero sigue retransmitiendo deltas. Sin migracion de schema.",
+  "creada_en": "2026-10-24T00:00:00Z"
+}

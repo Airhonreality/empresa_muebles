@@ -7,7 +7,8 @@ import { Button } from '@/components/veta/button'
 import { CuentaFinancieraModal } from '@/components/veta/cuenta-financiera-modal'
 import { MovimientoFinancieroModal, type TipoMovimientoManual } from '@/components/veta/movimiento-financiero-modal'
 import { useToast } from '@/components/veta/toast-provider'
-import { useDataStore, type CuentaFinanciera, type MovimientoFinanciero, type Proveedor, type OrdenCompra, type RegistroGateCaja } from '@/lib/data'
+import { type CuentaFinanciera, type MovimientoFinanciero, type OrdenCompra, type RegistroGateCaja } from '@/lib/data'
+import { useFinanzasCompat } from '@/lib/data/queries/finanzas-compat'
 import { calcularCajaDisponible } from '@/lib/modules/f4f5f6/gates'
 import { ordenarMovimientos, type OrdenMovimientos } from '@/lib/utils/movimientos'
 
@@ -62,7 +63,7 @@ function origenLabel(origen: MovimientoFinanciero['tipo']): string {
 
 export default function CajaPage() {
   const router = useRouter()
-  const store = useDataStore()
+  const { store } = useFinanzasCompat()
   const { mostrarError, mostrarInfo } = useToast()
 
   const cuentas = store.cuentasFinancieras.listar()
@@ -84,7 +85,7 @@ export default function CajaPage() {
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
   const proveedorMap = (() => {
-    const m = new Map<string, Proveedor>()
+    const m = new Map<string, { nombre: string }>()
     proveedores.forEach(p => m.set(p.id, p))
     return m
   })()
@@ -558,7 +559,7 @@ export default function CajaPage() {
         tipoInicial={movimientoEditando ? (movimientoEditando.tipo === 'credito' ? 'entrada' : 'salida') : (tipoMovimiento ?? 'salida')}
         movimiento={movimientoEditando}
       />
-      <CuentaFinancieraModal open={mostrarCuenta} onClose={() => setMostrarCuenta(false)} />
+      <CuentaFinancieraModal open={mostrarCuenta} onClose={() => setMostrarCuenta(false)} crearCuenta={store.cuentasFinancieras.crear} />
     </div>
   )
 }

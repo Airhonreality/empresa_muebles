@@ -115,9 +115,11 @@ export interface ProveedorFormModalProps {
   /** Si viene, el mismo modal edita; si no, crea. */
   proveedor?: Proveedor | null
   onSaved?: (proveedor: Proveedor) => void
+  /** Permite crear fuera del DataStore (ej. finanzas con TanStack Query). */
+  crearProveedor?: (payload: Partial<Proveedor> & { nombre: string }) => Promise<Proveedor>
 }
 
-export function ProveedorFormModal({ open, onClose, proveedor, onSaved }: ProveedorFormModalProps) {
+export function ProveedorFormModal({ open, onClose, proveedor, onSaved, crearProveedor }: ProveedorFormModalProps) {
   const store = useDataStore()
   const [form, setForm] = useState<ProveedorFormValues>(() =>
     proveedor ? formFromProveedor(proveedor) : EMPTY_FORM
@@ -161,7 +163,7 @@ export function ProveedorFormModal({ open, onClose, proveedor, onSaved }: Provee
 
     const resultado = proveedor
       ? await store.proveedores.actualizar(proveedor.id, payload)
-      : await store.proveedores.crear(payload)
+      : await (crearProveedor ?? ((values) => store.proveedores.crear(values)))(payload)
 
     if (!resultado) {
       setError('No se pudo guardar el proveedor')

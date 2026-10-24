@@ -17,7 +17,7 @@ import type { DataStore } from './contracts'
 import type { StoreSnapshot } from './snapshot'
 import { createMockStore } from './mock-store'
 import { createDrizzleStore, type DrizzleStoreHandle } from './drizzle-impl'
-import { fetchSnapshotAction, fetchSnapshotTablesAction } from './actions/hydrate'
+import { fetchSnapshotAction, fetchSnapshotTablesAction, fetchVersionTokenAction } from './actions/hydrate'
 import { longPollVersionAction } from './actions/longpoll'
 import {
   updatesDesdeResultados,
@@ -72,10 +72,12 @@ export function DataStoreProvider({
   children,
   mode,
   initialSnapshot,
+  eventOnly = false,
 }: {
   children: React.ReactNode
   mode: 'mock' | 'drizzle'
   initialSnapshot?: StoreSnapshot
+  eventOnly?: boolean
 }) {
   const [handle] = useState<DrizzleStoreHandle>(() => {
     if (mode === 'drizzle' && initialSnapshot) {
@@ -152,6 +154,14 @@ export function DataStoreProvider({
     }
 
     async function catchUp(): Promise<void> {
+      if (eventOnly) {
+        try {
+          versionRef.current = await fetchVersionTokenAction()
+        } catch (err) {
+          console.error('No se pudo leer la versión inicial de reactividad', err)
+        }
+        return
+      }
       // Deliberadamente incondicional: fetchVersionTokenAction() es una aproximación barata
       // que no cubre las 64 tablas de negocio (ver comentario en hydrate.ts), así que comparar
       // versiones acá podría saltarse un cambio real ocurrido en una tabla fuera de esa lista.
@@ -259,7 +269,7 @@ export function DataStoreProvider({
         channel.close()
       }
     }
-  }, [mode, handle])
+  }, [mode, handle, eventOnly])
 
   return (
     <DataStoreContext.Provider value={handle.store}>

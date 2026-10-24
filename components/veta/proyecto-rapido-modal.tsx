@@ -11,11 +11,18 @@ interface ProyectoRapidoModalProps {
   open: boolean
   onClose: () => void
   onSaved?: (proyecto: Proyecto) => void
+  /** Permite crear fuera del DataStore (ej. finanzas con TanStack Query). */
+  crearProyecto?: (values: {
+    nombreProyecto: string
+    direccionObra: string | null
+    tipoProyecto: Proyecto['tipoProyecto']
+    estado: Proyecto['estado']
+  }) => Promise<Proyecto>
 }
 
 /** Alta mínima de proyecto desde un selector (t-181). Solo el nombre es obligatorio;
  *  cliente, dirección y el resto se completan después en el proyecto. */
-export function ProyectoRapidoModal({ open, onClose, onSaved }: ProyectoRapidoModalProps) {
+export function ProyectoRapidoModal({ open, onClose, onSaved, crearProyecto }: ProyectoRapidoModalProps) {
   const store = useDataStore()
   const { guard, isPending } = usePendingGuard()
   const [nombreProyecto, setNombreProyecto] = useState('')
@@ -37,7 +44,8 @@ export function ProyectoRapidoModal({ open, onClose, onSaved }: ProyectoRapidoMo
         return
       }
       try {
-        const proyecto = await store.proyectos.crear({
+        const crear = crearProyecto ?? ((values: Parameters<NonNullable<ProyectoRapidoModalProps['crearProyecto']>>[0]) => store.proyectos.crear(values))
+        const proyecto = await crear({
           nombreProyecto: nombreProyecto.trim(),
           direccionObra: direccionObra.trim() || null,
           tipoProyecto: 'personalizado',
@@ -49,7 +57,7 @@ export function ProyectoRapidoModal({ open, onClose, onSaved }: ProyectoRapidoMo
         setError(e instanceof Error ? e.message : 'No se pudo crear el proyecto.')
       }
     })
-  }, [nombreProyecto, direccionObra, store, onSaved, onClose, guard])
+  }, [nombreProyecto, direccionObra, store, onSaved, onClose, guard, crearProyecto])
 
   return (
     <Modal open={open} onClose={onClose} title="Nuevo proyecto">

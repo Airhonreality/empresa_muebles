@@ -10,7 +10,8 @@ import { Modal } from '@/components/veta/modal'
 import { MoneyInput, parseMoney } from '@/components/veta/money-input'
 import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
 import { ProyectoRapidoModal } from '@/components/veta/proyecto-rapido-modal'
-import { useDataStore, type CuentaFinanciera, type MovimientoFinanciero } from '@/lib/data'
+import { type CuentaFinanciera, type MovimientoFinanciero } from '@/lib/data'
+import { useFinanzasCompat } from '@/lib/data/queries/finanzas-compat'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import { useToast } from '@/components/veta/toast-provider'
 
@@ -49,7 +50,7 @@ export function MovimientoFinancieroModal({
   movimiento = null,
   onSaved,
 }: MovimientoFinancieroModalProps) {
-  const store = useDataStore()
+  const { store } = useFinanzasCompat()
   const cuentas = store.cuentasFinancieras.listar()
   const proyectos = store.proyectos.listar()
   const proveedores = store.proveedores.listar()
@@ -357,6 +358,7 @@ export function MovimientoFinancieroModal({
       <ProveedorFormModal
         open={proveedorModalAbierto}
         onClose={() => setProveedorModalAbierto(false)}
+        crearProveedor={store.proveedores.crear}
         onSaved={(proveedor) => {
           setProveedorId(proveedor.id)
           setMasOpciones(true)
@@ -366,6 +368,7 @@ export function MovimientoFinancieroModal({
       <ProyectoRapidoModal
         open={proyectoModalAbierto}
         onClose={() => setProyectoModalAbierto(false)}
+        crearProyecto={store.proyectos.crear}
         onSaved={(proyecto) => {
           setProyectoId(proyecto.id)
           setMasOpciones(true)
@@ -375,6 +378,7 @@ export function MovimientoFinancieroModal({
       <CuentaFinancieraModal
         open={cuentaModalAbierto}
         onClose={() => setCuentaModalAbierto(false)}
+        crearCuenta={store.cuentasFinancieras.crear}
         onSaved={(cuenta) => setCuentaId(cuenta.id)}
       />
     </>

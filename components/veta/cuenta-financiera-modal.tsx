@@ -14,6 +14,8 @@ interface CuentaFinancieraModalProps {
   onClose: () => void
   nombreInicial?: string
   onSaved?: (cuenta: CuentaFinanciera) => void
+  /** Permite crear fuera del DataStore (ej. finanzas con TanStack Query). */
+  crearCuenta?: (data: { id?: string; nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string }) => Promise<CuentaFinanciera>
 }
 
 const TIPOS_CUENTA = [
@@ -26,7 +28,7 @@ const TIPOS_CUENTA = [
 
 /** t-181 — Alta de cuenta financiera con saldo inicial. Para el flujo simple se usa
  *  una sola “Caja principal”; el formulario sigue disponible si más adelante agregan bancos. */
-export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja principal', onSaved }: CuentaFinancieraModalProps) {
+export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja principal', onSaved, crearCuenta }: CuentaFinancieraModalProps) {
   const store = useDataStore()
   const { guard, isPending } = usePendingGuard()
   const { mostrarError } = useToast()
@@ -51,7 +53,8 @@ export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja pri
         setError('El nombre de la cuenta es obligatorio.')
         return
       }
-      const promesa = store.cuentasFinancieras.crear({
+      const crear = crearCuenta ?? ((values) => store.cuentasFinancieras.crear(values))
+      const promesa = crear({
         id: crypto.randomUUID(),
         nombre: nombre.trim(),
         tipo,
@@ -62,7 +65,7 @@ export function CuentaFinancieraModal({ open, onClose, nombreInicial = 'Caja pri
         .then((cuenta) => onSaved?.(cuenta))
         .catch((e) => mostrarError(e instanceof Error ? e.message : 'No se pudo crear la cuenta.'))
     })
-  }, [nombre, tipo, saldoInicial, store, onClose, onSaved, guard, mostrarError])
+  }, [nombre, tipo, saldoInicial, store, onClose, onSaved, guard, mostrarError, crearCuenta])
 
   return (
     <Modal open={open} onClose={onClose} title="Nueva cuenta financiera">
