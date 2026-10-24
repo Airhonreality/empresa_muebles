@@ -19,18 +19,19 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
   if (!proyecto) {
     return {
       proyecto: null, clientes: [], parametros: [], espacios: [], items: [],
-      artefactos: [], catalogo: [], catalogoAcabados: [], contrato: null, hitos: [],
+      artefactos: [], catalogo: [], catalogoAcabados: [], proveedores: [], contrato: null, hitos: [],
       gruposItem: [], espacioVarianteAcabados: [],
     }
   }
 
-  const [espacios, contratosRows, catalogo, parametros, clientes, catalogoAcabados] = await Promise.all([
+  const [espacios, contratosRows, catalogo, parametros, clientes, catalogoAcabados, proveedores] = await Promise.all([
     db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyectoId)).orderBy(s.espacioVariantes.orden),
     db.select().from(s.contratos).where(eq(s.contratos.proyectoId, proyectoId)),
     db.select().from(s.productosCatalogo),
     db.select().from(s.parametros),
     db.select().from(s.clientes),
     db.select().from(s.catalogoAcabados),
+    db.select().from(s.proveedores),
   ])
   const contrato = contratosRows[0] ?? null
 
@@ -63,6 +64,7 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
     artefactos: artefactos as unknown as CotizadorSnapshot['artefactos'],
     catalogo: catalogo as unknown as CotizadorSnapshot['catalogo'],
     catalogoAcabados: catalogoAcabados as unknown as CotizadorSnapshot['catalogoAcabados'],
+    proveedores: proveedores as unknown as CotizadorSnapshot['proveedores'],
     contrato: contrato as unknown as CotizadorSnapshot['contrato'],
     hitos: hitos as unknown as CotizadorSnapshot['hitos'],
     gruposItem: gruposItem as unknown as CotizadorSnapshot['gruposItem'],

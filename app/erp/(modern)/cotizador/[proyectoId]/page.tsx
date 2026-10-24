@@ -2344,6 +2344,12 @@ function VarianteContenido({
           open={true}
           proyectoOrigenId={proyectoId}
           initialDescripcion={crearProducto.descripcion}
+          catalogo={store.catalogo.listar()}
+          proveedores={store.proveedores.listar()}
+          crearProducto={store.catalogo.crear}
+          actualizarProducto={store.catalogo.actualizar}
+          eliminarProducto={store.catalogo.eliminar}
+          crearProveedor={store.proveedores.crear}
           onClose={() => setCrearProducto(null)}
           onSaved={(producto) => {
             // Crear desde el cotizador = crear + agregar al espacio actual. El id se
@@ -2368,6 +2374,12 @@ function VarianteContenido({
         <ProductoFormModal
           open={true}
           producto={productoAEditar}
+          catalogo={store.catalogo.listar()}
+          proveedores={store.proveedores.listar()}
+          crearProducto={store.catalogo.crear}
+          actualizarProducto={store.catalogo.actualizar}
+          eliminarProducto={store.catalogo.eliminar}
+          crearProveedor={store.proveedores.crear}
           onClose={() => setProductoAEditar(null)}
         />
       )}

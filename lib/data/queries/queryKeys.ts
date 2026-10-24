@@ -35,3 +35,8 @@ export const finanzasKeys = {
   all: ['finanzas'] as const,
   snapshot: ['finanzas', 'snapshot'] as const,
 } as const
+
+// Ficha de proyecto (t-186): snapshot escopado del ciclo de producción del proyecto.
+export const proyectoKeys = {
+  detalle: (proyectoId: string) => ['proyecto', proyectoId] as const,
+} as const

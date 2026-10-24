@@ -11,6 +11,7 @@ import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
 import {
   useDataStore,
   type CampoPersonalizadoProducto,
+  type DataStore,
   type ProductoCatalogo,
   type Proveedor,
 } from '@/lib/data'
@@ -135,6 +136,12 @@ export interface ProductoFormModalProps {
   /** Precarga la descripción al crear desde la búsqueda del cotizador. */
   initialDescripcion?: string
   onSaved?: (producto: ProductoCatalogo) => void
+  catalogo?: ProductoCatalogo[]
+  proveedores?: Proveedor[]
+  crearProducto?: DataStore['catalogo']['crear']
+  actualizarProducto?: DataStore['catalogo']['actualizar']
+  eliminarProducto?: DataStore['catalogo']['eliminar']
+  crearProveedor?: (payload: Partial<Proveedor> & { nombre: string }) => Promise<Proveedor>
 }
 
 export function ProductoFormModal({
@@ -144,10 +151,19 @@ export function ProductoFormModal({
   proyectoOrigenId,
   initialDescripcion,
   onSaved,
+  catalogo,
+  proveedores,
+  crearProducto,
+  actualizarProducto,
+  eliminarProducto,
+  crearProveedor,
 }: ProductoFormModalProps) {
   const store = useDataStore()
-  const productos = store.catalogo.listar()
-  const proveedores = store.proveedores.listar()
+  const productos = catalogo ?? store.catalogo.listar()
+  const listaProveedores = proveedores ?? store.proveedores.listar()
+  const crear = crearProducto ?? store.catalogo.crear
+  const actualizar = actualizarProducto ?? store.catalogo.actualizar
+  const eliminar = eliminarProducto ?? store.catalogo.eliminar
 
   const [form, setForm] = useState<ProductoForm>(() =>
     producto
@@ -235,8 +251,8 @@ export function ProductoFormModal({
       proyectoOrigenId: form.proyectoOrigenId || null,
     }
     const resultado = producto
-      ? await store.catalogo.actualizar(producto.id, payload)
-      : await store.catalogo.crear(payload)
+      ? await actualizar(producto.id, payload)
+      : await crear(payload)
 
     if (!resultado) {
       setForm((prev) => ({ ...prev, error: 'No se pudo guardar el producto: alguna regla de validación falló' }))
@@ -248,7 +264,7 @@ export function ProductoFormModal({
 
   const anularProducto = async () => {
     if (!producto) return
-    await store.catalogo.eliminar(producto.id)
+    await eliminar(producto.id)
     onClose()
   }
 
@@ -323,7 +339,7 @@ export function ProductoFormModal({
                   className="min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-sm text-text-heading focus:border-brand focus:shadow-ring-focus focus:outline-none"
                 >
                   <option value="">Sin proveedor</option>
-                  {proveedores.map((prov) => (
+                  {listaProveedores.map((prov) => (
                     <option key={prov.id} value={prov.id}>{prov.nombre}</option>
                   ))}
                   <option value="__crear_proveedor__">+ Crear proveedor…</option>
@@ -467,6 +483,7 @@ export function ProductoFormModal({
         <ProveedorFormModal
           open={true}
           onClose={() => setProveedorModalAbierto(false)}
+          crearProveedor={crearProveedor}
           onSaved={onProveedorCreado}
         />
       )}

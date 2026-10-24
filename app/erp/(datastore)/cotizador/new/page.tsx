@@ -18,11 +18,13 @@ export default function NuevoProyectoPage() {
   const [errores, setErrores] = useState<{
     nombreProyecto?: string;
   }>({});
+  const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
 
   const clientes = store.clientes.listar();
   const { guard: guardCrearProyecto, isPending: creandoProyecto } = usePendingGuard();
 
   const handleSubmit = useCallback(async () => {
+    setErrorGeneral(null);
     const nuevosErrores: typeof errores = {};
 
     // Validar nombre proyecto (R1) — único campo obligatorio (2026-08-11, Javier: cliente/dirección se completan después)
@@ -35,11 +37,6 @@ export default function NuevoProyectoPage() {
     // Detener si hay errores
     if (Object.keys(nuevosErrores).length > 0) return;
 
-    // Id generado acá, no en el servidor -- es el id PERMANENTE del proyecto (piloto optimistic
-    // create, 2026-08-20), no uno temporal a reconciliar después. Deja navegar de inmediato sin
-    // esperar la confirmación de la DB: store.proyectos.crear ya insertó la fila localmente antes
-    // de este punto (ver lib/data/drizzle-impl.ts) y la pantalla del proyecto lee de ese mismo
-    // store, así que renderiza igual sin tener que esperar la red.
     const id = crypto.randomUUID();
     const nuevoProyecto: Partial<Proyecto> & { nombreProyecto: string } = {
       id,
@@ -59,13 +56,13 @@ export default function NuevoProyectoPage() {
       diasEntregaEstimados: null,
     };
 
-    // No se espera esta promesa: si falla (raro -- red/DB), el store revierte la fila optimista
-    // y quien esté en /erp/cotizador/{id} ve el estado "Proyecto no encontrado" que esa pantalla
-    // ya maneja hoy para ids desconocidos.
-    store.proyectos.crear(nuevoProyecto).catch((err) => {
+    try {
+      await store.proyectos.crear(nuevoProyecto);
+      router.push(`/erp/cotizador/${id}`);
+    } catch (err) {
       console.error('No se pudo crear el proyecto', err);
-    });
-    router.push(`/erp/cotizador/${id}`);
+      setErrorGeneral('No se pudo crear el proyecto. Intenta de nuevo.');
+    }
   }, [nombreProyecto, clienteSeleccionado, direccionObra, descripcionSemantica, router, store]);
 
   return (
@@ -125,6 +122,12 @@ export default function NuevoProyectoPage() {
           placeholder="Ej: Cocina integral con isla central y muebles altos"
         />
       </div>
+
+      {errorGeneral && (
+        <p role="alert" className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {errorGeneral}
+        </p>
+      )}
 
       <div className="mt-8 flex gap-3">
         <Button

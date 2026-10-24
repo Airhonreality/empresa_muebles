@@ -32,8 +32,12 @@ import {
   actualizarProyectoAction,
   crearContratoAction,
   actualizarContratoAction,
+  crearProductoCatalogoAction,
+  actualizarProductoCatalogoAction,
+  eliminarProductoCatalogoAction,
 } from '@/lib/data/actions/core'
 import { crearCatalogoAcabadoAction } from '@/lib/data/actions/f7-tienda'
+import { crearProveedorAction } from '@/lib/data/actions/f6'
 import { obtenerSnapshotCotizadorAction } from '@/lib/data/actions/lecturas-cotizador'
 import {
   obtenerEstadoPublicacionPropuestaAction,
@@ -81,7 +85,7 @@ import {
   obtenerItemsPendientes,
 } from './optimistic'
 import type { CotizadorSnapshot } from './types'
-import type { EspacioArtefacto, EspacioVariante, GrupoItem, ItemVariante, Proyecto, Cliente, Contrato, DatosContratoNuevo, DatosContratoEdicion, CatalogoAcabado } from '../contracts'
+import type { EspacioArtefacto, EspacioVariante, GrupoItem, ItemVariante, Proyecto, Cliente, Contrato, DatosContratoNuevo, DatosContratoEdicion, CatalogoAcabado, ProductoCatalogo, Proveedor } from '../contracts'
 
 export function useCotizadorSnapshot(proyectoId: string) {
   return useQuery<CotizadorSnapshot>({
@@ -90,8 +94,8 @@ export function useCotizadorSnapshot(proyectoId: string) {
       const snap = await obtenerSnapshotCotizadorAction(proyectoId)
       return fusionarPendientes(snap, obtenerItemsPendientes(proyectoId))
     },
-    // Config de DEC-2 (ERP-wide): datos colaborativos siempre frescos; el long-poll manda.
-    staleTime: 0,
+    // El bridge invalida por tabla; 30 s evita refetch redundante al montar/navegar.
+    staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: 1,
     // Un refetch que momentáneamente no trae data (p.ej. tras GC de cache) NO debe vaciar la
@@ -530,5 +534,73 @@ export function useEliminarVersionPropuestaMutation(proyectoId: string) {
         void qc.invalidateQueries({ queryKey: propuestaVersionKeys.estadoPublicacion(proyectoId) })
       },
     },
+  )
+}
+
+export function useCrearProductoCatalogoMutation(proyectoId: string) {
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
+    Parameters<typeof crearProductoCatalogoAction>[0],
+    ProductoCatalogo | null
+  >(
+    cotizadorKeys.detalle(proyectoId),
+    (data) => crearProductoCatalogoAction(data),
+    (snap) => snap,
+    (snap, row) => (row ? { ...snap, catalogo: upsertPorId(snap.catalogo, row) } : snap),
+  )
+}
+
+export function useActualizarProductoCatalogoMutation(proyectoId: string) {
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
+    { id: string; patch: Parameters<typeof actualizarProductoCatalogoAction>[1] },
+    ProductoCatalogo | null
+  >(
+    cotizadorKeys.detalle(proyectoId),
+    ({ id, patch }) => actualizarProductoCatalogoAction(id, patch),
+    (snap, { id, patch }) => ({
+      ...snap,
+      catalogo: snap.catalogo.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+    }),
+    (snap, row) => (row ? { ...snap, catalogo: upsertPorId(snap.catalogo, row) } : snap),
+    {
+      revertirOptimista: (actual, { id }, previo) => {
+        const anterior = previo.catalogo.find((p) => p.id === id)
+        return anterior
+          ? { ...actual, catalogo: upsertPorId(actual.catalogo, anterior) }
+          : actual
+      },
+    },
+  )
+}
+
+export function useEliminarProductoCatalogoMutation(proyectoId: string) {
+  return useMutationOptGenerico<CotizadorSnapshot, string, boolean>(
+    cotizadorKeys.detalle(proyectoId),
+    (id) => eliminarProductoCatalogoAction(id),
+    (snap, id) => ({ ...snap, catalogo: snap.catalogo.filter((p) => p.id !== id) }),
+    undefined,
+    {
+      invalidarSiempre: true,
+      revertirOptimista: (actual, id, previo) => {
+        const anterior = previo.catalogo.find((p) => p.id === id)
+        return anterior
+          ? { ...actual, catalogo: upsertPorId(actual.catalogo, anterior) }
+          : actual
+      },
+    },
+  )
+}
+
+export function useCrearProveedorCotizadorMutation(proyectoId: string) {
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
+    Parameters<typeof crearProveedorAction>[0],
+    Proveedor
+  >(
+    cotizadorKeys.detalle(proyectoId),
+    (data) => crearProveedorAction(data),
+    (snap) => snap,
+    (snap, row) => ({ ...snap, proveedores: upsertPorId(snap.proveedores, row) }),
   )
 }

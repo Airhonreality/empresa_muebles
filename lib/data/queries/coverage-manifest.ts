@@ -50,6 +50,7 @@ export const ACCIONES_CON_HOOK: readonly string[] = [
   'publicarPropuestaAction',
   'publicarTestimonioAction',
   'obtenerSnapshotFinanzasAction',
+  'obtenerSnapshotProyectoAction',
   'actualizarMovimientoManualAction',
   'anularMovimientoManualAction',
   'autorizarPagoCajaAction',

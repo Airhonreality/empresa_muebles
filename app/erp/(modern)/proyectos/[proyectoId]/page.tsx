@@ -7,7 +7,6 @@ import { LinkButton } from '@/components/veta/button'
 import { EntityHeader } from '@/components/veta/entity-header'
 import { EntityActionsBar } from '@/components/veta/entity-actions-bar'
 import {
-  useDataStore,
   type ActaEntrega,
   type CitacionCalidad,
   type DesfaseCronograma,
@@ -22,6 +21,7 @@ import {
   type Reproceso,
   type Verificacion,
 } from '@/lib/data'
+import { useProyectoCompat } from '@/lib/data/queries/proyecto-compat'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -652,7 +652,7 @@ function GateNodeChip({ nodo }: { nodo: GateNodo }) {
 export default function ProyectoHubPage() {
   const params = useParams()
   const proyectoId = params.proyectoId as string
-  const store = useDataStore()
+  const { store } = useProyectoCompat()
   const version = store.getVersion()
 
   const [espaciosExpandidos, setEspaciosExpandidos] = useState<Set<string>>(new Set())

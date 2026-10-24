@@ -30,6 +30,7 @@ function baseSnapshot(overrides = {}): CotizadorSnapshot {
     artefactos: [],
     catalogo: [],
     catalogoAcabados: [],
+    proveedores: [],
     contrato: null,
     hitos: [],
     gruposItem: [],

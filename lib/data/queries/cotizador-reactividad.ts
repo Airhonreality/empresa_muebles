@@ -34,6 +34,7 @@ export const TABLAS_COTIZADOR: ReadonlySet<string> = new Set([
   'contratos',
   'hitos_pago',
   'catalogo_acabados',
+  'proveedores',
 ])
 
 /** Ventana de supresión del eco propio: cuánto tiempo después de asentar una mutación del

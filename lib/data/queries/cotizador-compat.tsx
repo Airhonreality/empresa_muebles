@@ -34,12 +34,16 @@ import {
   useVincularClienteProyectoMutation,
   useCrearContratoMutation,
   useActualizarContratoMutation,
+  useCrearProductoCatalogoMutation,
+  useActualizarProductoCatalogoMutation,
+  useEliminarProductoCatalogoMutation,
+  useCrearProveedorCotizadorMutation,
 } from './useCotizadorQueries'
 import type { InputArtefactoOptimista, InputEspacioOptimista, InputItemOptimista } from './optimistic'
 import { registrarAccionDeshacer, patchInverso } from './historial-deshacer'
 import type {
   CatalogoAcabado, Cliente, Contrato, EspacioArtefacto, EspacioVariante,
-  GrupoItem, HitoPago, ItemVariante, Parametro, ProductoCatalogo, Proyecto,
+  GrupoItem, HitoPago, ItemVariante, Parametro, ProductoCatalogo, Proyecto, Proveedor,
   DatosContratoNuevo, DatosContratoEdicion, EspacioVarianteAcabado,
 } from '../contracts'
 
@@ -108,7 +112,16 @@ export interface CotizadorCompatStore {
     crear(input: Omit<InputArtefactoOptimista, 'id'>): Promise<EspacioArtefacto>
     actualizar(id: string, patch: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'descripcion' | 'fotoUrls' | 'archivosUrls'>>): Promise<EspacioArtefacto | null>
   }
-  catalogo: { listar(): ProductoCatalogo[] }
+  catalogo: {
+    listar(): ProductoCatalogo[]
+    crear(data: Parameters<typeof import('../actions/core').crearProductoCatalogoAction>[0]): Promise<ProductoCatalogo | null>
+    actualizar(id: string, patch: Parameters<typeof import('../actions/core').actualizarProductoCatalogoAction>[1]): Promise<ProductoCatalogo | null>
+    eliminar(id: string): Promise<boolean>
+  }
+  proveedores: {
+    listar(): Proveedor[]
+    crear(data: Partial<Proveedor> & { nombre: string }): Promise<Proveedor>
+  }
   catalogoAcabados: {
     listar(): CatalogoAcabado[]
     /** Alta rápida sin salir del cotizador ("+ Nuevo acabado", t-172/t-174). */
@@ -160,12 +173,16 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
   const vincularClienteProyecto = useVincularClienteProyectoMutation(proyectoId)
   const crearContrato = useCrearContratoMutation(proyectoId)
   const actualizarContrato = useActualizarContratoMutation(proyectoId)
+  const crearProductoCatalogo = useCrearProductoCatalogoMutation(proyectoId)
+  const actualizarProductoCatalogo = useActualizarProductoCatalogoMutation(proyectoId)
+  const eliminarProductoCatalogo = useEliminarProductoCatalogoMutation(proyectoId)
+  const crearProveedorCotizador = useCrearProveedorCotizadorMutation(proyectoId)
 
   const value = useMemo<CotizadorCompatContexto>(() => {
     const d = data ?? {
       proyecto: null, clientes: [] as Cliente[], parametros: [] as Parametro[],
       espacios: [] as EspacioVariante[], items: [] as ItemVariante[],
-      artefactos: [] as EspacioArtefacto[], catalogo: [] as ProductoCatalogo[],
+      artefactos: [] as EspacioArtefacto[], catalogo: [] as ProductoCatalogo[], proveedores: [] as Proveedor[],
       catalogoAcabados: [] as CatalogoAcabado[], contrato: null, hitos: [] as HitoPago[],
       gruposItem: [] as GrupoItem[], espacioVarianteAcabados: [] as EspacioVarianteAcabado[],
     }
@@ -258,7 +275,16 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
           porEspacio: (espacioVarianteId) => d.espacioVarianteAcabados.filter((a) => a.espacioVarianteId === espacioVarianteId),
           reemplazarTodos: (espacioVarianteId, items) => reemplazarAcabadosEspacio.mutateAsync({ espacioVarianteId, items }),
         },
-        catalogo: { listar: () => d.catalogo },
+        catalogo: {
+          listar: () => d.catalogo,
+          crear: (values) => crearProductoCatalogo.mutateAsync(values),
+          actualizar: (id, patch) => actualizarProductoCatalogo.mutateAsync({ id, patch }),
+          eliminar: (id) => eliminarProductoCatalogo.mutateAsync(id),
+        },
+        proveedores: {
+          listar: () => d.proveedores,
+          crear: (values) => crearProveedorCotizador.mutateAsync(values),
+        },
         catalogoAcabados: {
           listar: () => d.catalogoAcabados,
           crear: (values) => crearAcabadoCatalogo.mutateAsync(values),
@@ -281,6 +307,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
     crearGrupoItem, actualizarGrupoItem, eliminarGrupoItem,
     reemplazarAcabadosEspacio, crearAcabadoCatalogo,
     actualizarCliente, crearCliente, vincularClienteProyecto, crearContrato, actualizarContrato,
+    crearProductoCatalogo, actualizarProductoCatalogo, eliminarProductoCatalogo, crearProveedorCotizador,
   ])
 
   return <CotizadorCompatContext.Provider value={value}>{children}</CotizadorCompatContext.Provider>

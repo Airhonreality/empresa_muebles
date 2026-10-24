@@ -40,6 +40,7 @@ export function mapSnapshotCotizadorDesdeStore(store: DataStore, proyectoId: str
     artefactos: espacios.flatMap((e) => store.artefactos.porEspacio(e.id)),
     catalogo: store.catalogo.listar(),
     catalogoAcabados: store.catalogoAcabados.listar(),
+    proveedores: store.proveedores.listar(),
     contrato,
     hitos: contrato ? store.hitos.porContrato(contrato.id) : [],
     // t-157 (2026-09-10): grupos de ítems de cotización (árbol Espacio → Grupo → Subgrupo → Ítems).

@@ -1,0 +1,40 @@
+{
+  "id": "t-186",
+  "titulo": "Cotizador y ficha de proyecto con lecturas escopadas",
+  "intencion_negocio": "Javier (2026-10-24): el detalle del cotizador y la ficha del proyecto son las rutas más usadas del ciclo núcleo; no pueden seguir cargando el snapshot de 76 tablas.",
+  "diagnostico": "Ambas rutas vivían en el route group (datastore) y usaban useDataStore. El cotizador ya tenía TanStack Query; la ficha era un hub de solo lectura.",
+  "decisiones_supervisor": {
+    "route_groups": "Mover detalle de cotizador y ficha a (modern); las subrutas legacy permanecen en (datastore).",
+    "producto_modal": "ProductoFormModal acepta callbacks opcionales de catálogo/proveedor para funcionar con el compat del cotizador sin depender del DataStore.",
+    "new_proyecto": "El alta de proyecto espera la confirmación del server antes de navegar, porque la ficha moderna no comparte el store optimista del DataStore."
+  },
+  "zona": "app/erp/(modern)/cotizador/** + app/erp/(modern)/proyectos/** + lib/data/queries/{types,useCotizadorQueries,cotizador-compat,CotizadorSnapBridge,cotizador-reactividad,proyecto-*}.ts* + lib/data/actions/lecturas-{cotizador,proyecto}.ts + components/veta/producto-form-modal.tsx + app/erp/(datastore)/cotizador/new/page.tsx",
+  "tipo": "rendimiento_y_arquitectura",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-186.md",
+  "depende_de": ["t-185"],
+  "criterios_aceptacion": [
+    "el detalle del cotizador y la ficha de proyecto no hidratan el snapshot global",
+    "el cotizador conserva sus lecturas/escrituras optimistas y la creación de producto/proveedor",
+    "la ficha de proyecto conserva todos sus datos y se actualiza por las tablas del ciclo",
+    "las subrutas legacy de proyecto siguen funcionando",
+    "tsc, eslint, tests y next build en verde"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errores; 1 warning preexistente HORAS_POR_JORNADA",
+    "tests": "cotizador-reactividad.test.ts OK; optimistic.test.ts 36/36; coverage.test.ts 4/4 (42/165 con hook)",
+    "next build": "OK con SESSION_SECRET y DATABASE_URL placeholder; BUILD_ID generado"
+  },
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-10-24): aprobación total para ejecutar todas las fases",
+    "fecha": "2026-10-24"
+  },
+  "estado": "ejecutada_pendiente_despliegue",
+  "nota_ejecucion": "Cotizador detalle+contrato y ficha de proyecto movidos a (modern). Prefetch SSR, snapshots escopados y bridges. ProductoFormModal con callbacks de catálogo/proveedor. /erp/cotizador/new espera la creación antes de navegar. Sin migracion de schema.",
+  "creada_en": "2026-10-24T00:00:00Z"
+}
