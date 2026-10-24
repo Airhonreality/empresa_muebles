@@ -604,3 +604,17 @@ export function useCrearProveedorCotizadorMutation(proyectoId: string) {
     (snap, row) => ({ ...snap, proveedores: upsertPorId(snap.proveedores, row) }),
   )
 }
+
+export function useActualizarProyectoMutation(proyectoId: string) {
+  return useMutationOptGenerico<
+    CotizadorSnapshot,
+    { id: string; partial: Parameters<typeof actualizarProyectoAction>[1] },
+    Proyecto | null
+  >(
+    cotizadorKeys.detalle(proyectoId),
+    ({ id, partial }) => actualizarProyectoAction(id, partial),
+    (snap, { id, partial }) => actualizarProyecto(snap, id, partial),
+    (snap, row) => (row ? upsertProyecto(snap, row) : snap),
+    { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
+  )
+}

@@ -4,12 +4,13 @@ import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/veta/button";
 import { InputField } from "@/components/veta/input-field";
-import { useDataStore, type Proyecto, type Cliente } from "@/lib/data";
+import { type Proyecto, type Cliente } from "@/lib/data";
+import { useCotizadorListaCompat } from "@/lib/data/queries/cotizador-lista-compat";
 import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
 
 export default function NuevoProyectoPage() {
   const router = useRouter();
-  const store = useDataStore();
+  const { store } = useCotizadorListaCompat();
 
   const [nombreProyecto, setNombreProyecto] = useState("");
   const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
@@ -158,7 +159,7 @@ function HybridClientSelector({
   valor: Cliente | null
   onSelect: (cliente: Cliente) => void
 }) {
-  const store = useDataStore()
+  const { store } = useCotizadorListaCompat()
   const [abierto, setAbierto] = useState(false)
   const [query, setQuery] = useState(valor?.nombre ?? "")
 

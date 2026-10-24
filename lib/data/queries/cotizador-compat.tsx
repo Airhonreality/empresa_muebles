@@ -34,6 +34,7 @@ import {
   useVincularClienteProyectoMutation,
   useCrearContratoMutation,
   useActualizarContratoMutation,
+  useActualizarProyectoMutation,
   useCrearProductoCatalogoMutation,
   useActualizarProductoCatalogoMutation,
   useEliminarProductoCatalogoMutation,
@@ -62,6 +63,7 @@ export interface CotizadorCompatStore {
     /** Selector de estado del header (2026-10-01): valida transiciones server-side contra
      *  el parámetro `transiciones_proyecto` (mismo criterio que el Kanban comercial). */
     actualizarEstado(id: string, estado: string): Promise<Proyecto | null>
+    actualizar(id: string, partial: Parameters<typeof import('../actions/core').actualizarProyectoAction>[1]): Promise<Proyecto | null>
   }
   clientes: {
     obtenerPorId(id: string): Cliente | undefined
@@ -173,6 +175,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
   const vincularClienteProyecto = useVincularClienteProyectoMutation(proyectoId)
   const crearContrato = useCrearContratoMutation(proyectoId)
   const actualizarContrato = useActualizarContratoMutation(proyectoId)
+  const actualizarProyecto = useActualizarProyectoMutation(proyectoId)
   const crearProductoCatalogo = useCrearProductoCatalogoMutation(proyectoId)
   const actualizarProductoCatalogo = useActualizarProductoCatalogoMutation(proyectoId)
   const eliminarProductoCatalogo = useEliminarProductoCatalogoMutation(proyectoId)
@@ -196,6 +199,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
             actualizarParametrosFinancieros.mutateAsync({ id, partial }),
           vincularCliente: (id, clienteId) => vincularClienteProyecto.mutateAsync({ id, clienteId }),
           actualizarEstado: (id, estado) => actualizarEstadoProyecto.mutateAsync({ id, estado }),
+          actualizar: (id, partial) => actualizarProyecto.mutateAsync({ id, partial }),
         },
         clientes: {
           obtenerPorId: (id) => d.clientes.find((c) => c.id === id),
@@ -306,7 +310,7 @@ export function CotizadorCompatProvider({ proyectoId, children }: { proyectoId: 
     crearArtefacto, actualizarArtefacto,
     crearGrupoItem, actualizarGrupoItem, eliminarGrupoItem,
     reemplazarAcabadosEspacio, crearAcabadoCatalogo,
-    actualizarCliente, crearCliente, vincularClienteProyecto, crearContrato, actualizarContrato,
+    actualizarCliente, crearCliente, vincularClienteProyecto, crearContrato, actualizarContrato, actualizarProyecto,
     crearProductoCatalogo, actualizarProductoCatalogo, eliminarProductoCatalogo, crearProveedorCotizador,
   ])
 

@@ -7,7 +7,8 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ProductoFormModal } from '@/components/veta/producto-form-modal'
-import { useDataStore, type ProductoCatalogo } from '@/lib/data'
+import { type ProductoCatalogo } from '@/lib/data'
+import { useCatalogoCompat } from '@/lib/data/queries/catalogo-compat'
 import { formatRelativeDate } from '@/lib/utils/format'
 
 function formatCOP(amount: number): string {
@@ -26,7 +27,7 @@ function parseNum(s: string | null | undefined): number {
 }
 
 function CatalogoPageContent() {
-  const store = useDataStore()
+  const { store } = useCatalogoCompat()
   const searchParams = useSearchParams()
   const productos = store.catalogo.listar()
 
@@ -195,6 +196,12 @@ function CatalogoPageContent() {
           cotizador — crear y editar son exactamente el mismo formulario. */}
       {modalAbierto && (
         <ProductoFormModal
+          catalogo={store.catalogo.listar()}
+          proveedores={store.proveedores.listar()}
+          crearProducto={store.catalogo.crear}
+          actualizarProducto={store.catalogo.actualizar}
+          eliminarProducto={store.catalogo.eliminar}
+          crearProveedor={store.proveedores.crear}
           open={true}
           producto={editando}
           proyectoOrigenId={proyectoOrigenId}

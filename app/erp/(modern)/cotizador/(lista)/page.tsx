@@ -6,7 +6,8 @@ import { Button, LinkButton } from '@/components/veta/button'
 import { Badge } from '@/components/veta/badge'
 import { Busqueda } from '@/components/veta/busqueda'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
-import { useDataStore, type Proyecto } from '@/lib/data'
+import { type Proyecto } from '@/lib/data'
+import { useCotizadorListaCompat } from '@/lib/data/queries/cotizador-lista-compat'
 import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
 import { formatRelativeDate } from '@/lib/utils/format'
 
@@ -33,7 +34,7 @@ const ESTADO_TONE: Record<string, 'info' | 'warning' | 'neutral' | 'danger'> = {
 }
 
 export default function CotizadorIndexPage() {
-  const store = useDataStore()
+  const { store } = useCotizadorListaCompat()
   const proyectos = store.proyectos.listar()
   const clientes = store.clientes.listar()
 
@@ -173,6 +174,7 @@ export default function CotizadorIndexPage() {
       {/* Modal Editar proyecto */}
       {mostrarEditarModal && proyectoEditando && (
         <EditarProyectoModal
+          actualizarProyecto={store.proyectos.actualizar}
           proyecto={proyectoEditando}
           clientes={clientes}
           onClose={() => {

@@ -5,16 +5,22 @@ import { Button } from "@/components/veta/button";
 import { EntityFields } from "@/components/veta/entity-fields";
 import { useDataStore, type Cliente } from "@/lib/data";
 import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
+import { useToast } from "@/components/veta/toast-provider";
 import { clienteFormFields, datosClienteParaGuardar, valoresClienteDesde } from "@/lib/forms/cliente-form-spec";
 
 export interface EditarClienteModalProps {
   cliente: Cliente;
   onClose: () => void;
   onSaved: () => void;
+  actualizarCliente?: (
+    id: string,
+    partial: Partial<Pick<Cliente, "nombre" | "documento" | "telefono" | "email" | "domicilio">>,
+  ) => Promise<Cliente | null>;
 }
 
-export function EditarClienteModal({ cliente, onClose, onSaved }: EditarClienteModalProps) {
+export function EditarClienteModal({ cliente, onClose, onSaved, actualizarCliente }: EditarClienteModalProps) {
   const store = useDataStore();
+  const { mostrarError } = useToast();
   const { guard: guardGuardar, isPending: guardando } = usePendingGuard();
 
   const [form, setForm] = useState(() => valoresClienteDesde(cliente));
@@ -22,8 +28,19 @@ export function EditarClienteModal({ cliente, onClose, onSaved }: EditarClienteM
   const guardar = async () => {
     const datos = datosClienteParaGuardar(form)
     if (!datos.nombre) return
-    await store.clientes.actualizar(cliente.id, datos)
-    onSaved()
+    const actualizar = actualizarCliente ?? store.clientes.actualizar
+    const promesa = actualizar(cliente.id, datos)
+    onClose()
+    try {
+      const actualizado = await promesa
+      if (!actualizado) {
+        mostrarError("No se pudo actualizar el cliente.")
+        return
+      }
+      onSaved()
+    } catch (e) {
+      mostrarError(e instanceof Error ? e.message : "No se pudo actualizar el cliente.")
+    }
   }
 
   const set = (campo: keyof typeof form, valor: string) => {

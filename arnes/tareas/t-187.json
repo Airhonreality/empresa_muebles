@@ -1,0 +1,40 @@
+{
+  "id": "t-187",
+  "titulo": "Clientes, catálogo y listado/alta de cotizador escopados",
+  "intencion_negocio": "Javier (2026-10-24): cerrar el ciclo núcleo sin rutas que carguen el snapshot global de 76 tablas.",
+  "diagnostico": "Clientes, catálogo y el listado/alta de cotizador seguían en (datastore) usando useDataStore.",
+  "decisiones_supervisor": {
+    "route_groups": "Clientes y catálogo pasan a (modern); /erp/catalogo/acabados queda legacy.",
+    "cotizador_lista": "Listado y alta comparten un layout propio con snapshot de proyectos+clientes; el detalle conserva su layout escopado.",
+    "modales": "EditarClienteModal, EditarProyectoModal y ProductoFormModal aceptan callbacks opcionales para funcionar sin DataStore."
+  },
+  "zona": "app/erp/(modern)/{clientes,catalogo,cotizador/(lista)}/** + lib/data/queries/{clientes,catalogo,cotizador-lista}-* + lib/data/actions/lecturas-{clientes,catalogo,cotizador-lista}.ts + components/veta/{editar-cliente-modal,editar-proyecto-modal,producto-form-modal}.tsx",
+  "tipo": "rendimiento_y_arquitectura",
+  "riesgo": "alto",
+  "plan_ref": "arnes/planes/plan_t-187.md",
+  "depende_de": ["t-186"],
+  "criterios_aceptacion": [
+    "clientes, catálogo, listado y alta de cotizador no hidratan el snapshot global",
+    "editar cliente/proyecto y crear/editar/eliminar producto siguen funcionando",
+    "el detalle del cotizador y la ficha no se rompen",
+    "las rutas legacy restantes siguen accesibles desde el sidebar",
+    "tsc, eslint, coverage, tests y next build en verde"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errores",
+    "tests": "coverage.test.ts 4/4 (52/168 con hook); finanzas-optimistic, cotizador-reactividad y snapshot-tables OK",
+    "next build": "OK con SESSION_SECRET y DATABASE_URL placeholder; BUILD_ID generado"
+  },
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-10-24): aprobación total para ejecutar todas las fases",
+    "fecha": "2026-10-24"
+  },
+  "estado": "ejecutada_pendiente_despliegue",
+  "nota_ejecucion": "Clientes, catalogo principal y listado/alta de cotizador movidos a (modern) con snapshots escopados, prefetch SSR, bridges y mutations. Modales adaptados con callbacks opcionales. /erp/catalogo/acabados y las subrutas legacy siguen en (datastore).",
+  "creada_en": "2026-10-24T00:00:00Z"
+}

@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button, LinkButton } from '@/components/veta/button'
 import { EditarClienteModal } from '@/components/veta/editar-cliente-modal'
-import { useDataStore, type Contrato, type EstadoProyecto, type ObligacionPendiente, type PedidoWeb, type Proyecto } from '@/lib/data'
+import { type Contrato, type EstadoProyecto, type ObligacionPendiente, type PedidoWeb, type Proyecto } from '@/lib/data'
+import { useClientesCompat } from '@/lib/data/queries/clientes-compat'
 import { formatCurrency } from '@/lib/utils/format'
 
 type TabActiva = 'proyectos' | 'pedidos' | 'obligaciones'
@@ -90,7 +91,7 @@ const TABS: { key: TabActiva; label: string }[] = [
 
 export default function ClienteDetallePage() {
   const params = useParams()
-  const store = useDataStore()
+  const { store } = useClientesCompat()
   const version = store.getVersion()
 
   const clienteId = params.clienteId as string
@@ -293,6 +294,7 @@ export default function ClienteDetallePage() {
 
       {mostrarEditarCliente && (
         <EditarClienteModal
+          actualizarCliente={store.clientes.actualizar}
           cliente={cliente}
           onClose={() => setMostrarEditarCliente(false)}
           onSaved={() => setMostrarEditarCliente(false)}

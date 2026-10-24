@@ -3,7 +3,9 @@
 import { useMemo, useState } from 'react'
 import { LinkButton } from '@/components/veta/button'
 import { Busqueda } from '@/components/veta/busqueda'
-import { useDataStore, type Cliente } from '@/lib/data'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
+import { type Cliente } from '@/lib/data'
+import { useClientesCompat } from '@/lib/data/queries/clientes-compat'
 import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
 
 interface ClienteFila {
@@ -14,7 +16,7 @@ interface ClienteFila {
 }
 
 export default function ClientesTableroPage() {
-  const store = useDataStore()
+  const { store } = useClientesCompat()
   const version = store.getVersion()
 
   const [soloConObligaciones, setSoloConObligaciones] = useState(false)
@@ -71,6 +73,63 @@ export default function ClientesTableroPage() {
     })
   }, [filasBuscadas, soloConObligaciones])
 
+  type FilaCliente = (typeof filasFiltradas)[number]
+
+  const columnas: DataTableColumn<FilaCliente>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      sortValue: (f) => f.cliente.nombre,
+      render: (f) => <span className="font-medium text-text-heading">{f.cliente.nombre}</span>,
+    },
+    {
+      key: 'telefono',
+      header: 'Teléfono',
+      sortValue: (f) => f.cliente.telefono,
+      render: (f) => <span className="text-text-muted">{f.cliente.telefono || '—'}</span>,
+    },
+    {
+      key: 'email',
+      header: 'Correo',
+      sortValue: (f) => f.cliente.email,
+      render: (f) => <span className="text-text-muted">{f.cliente.email || '—'}</span>,
+    },
+    {
+      key: 'documento',
+      header: 'Documento',
+      sortValue: (f) => f.cliente.documento,
+      render: (f) => <span className="text-text-muted">{f.cliente.documento || '—'}</span>,
+    },
+    {
+      key: 'domicilio',
+      header: 'Domicilio',
+      sortValue: (f) => f.cliente.domicilio,
+      render: (f) => <span className="text-text-muted">{f.cliente.domicilio || '—'}</span>,
+    },
+    {
+      key: 'actividad',
+      header: 'Actividad',
+      sortValue: (f) => f.proyectosCount,
+      render: (f) => (
+        <span className="text-xs text-text-muted">
+          {f.proyectosCount} proyecto{f.proyectosCount === 1 ? '' : 's'} ·{' '}
+          {f.obligacionesCount} obligación{f.obligacionesCount === 1 ? '' : 'es'} pendiente{f.obligacionesCount === 1 ? '' : 's'} ·{' '}
+          {f.pedidosCount} pedido{f.pedidosCount === 1 ? '' : 's'} web
+        </span>
+      ),
+    },
+    {
+      key: 'detalle',
+      header: 'Detalle',
+      align: 'right',
+      render: (f) => (
+        <LinkButton href={`/erp/clientes/${f.cliente.id}`} variant="secondary" size="md">
+          Ver detalle
+        </LinkButton>
+      ),
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-full px-6 py-6">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -99,63 +158,30 @@ export default function ClientesTableroPage() {
         </label>
       </div>
 
-      {filasFiltradas.length === 0 ? (
-        <div className="rounded-lg border border-border-subtle bg-bg-paper p-8 text-center">
-          <p className="text-text-muted mb-4">No hay clientes con estos filtros</p>
-          <LinkButton
-            href="/erp/clientes"
-            variant="ghost"
-            size="md"
-            onClick={() => {
-              setBusqueda('')
-              setSoloConObligaciones(false)
-            }}
-          >
-            Limpiar filtros
-          </LinkButton>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border-subtle bg-bg-raised">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle bg-bg-alt/60">
-                <th className="px-4 py-3 text-left font-semibold text-text-heading" scope="col">Nombre</th>
-                <th className="px-4 py-3 text-left font-semibold text-text-heading" scope="col">Teléfono</th>
-                <th className="px-4 py-3 text-left font-semibold text-text-heading" scope="col">Correo</th>
-                <th className="px-4 py-3 text-left font-semibold text-text-heading" scope="col">Documento</th>
-                <th className="px-4 py-3 text-left font-semibold text-text-heading" scope="col">Domicilio</th>
-                <th className="px-4 py-3 text-left font-semibold text-text-heading" scope="col">Actividad</th>
-                <th className="px-4 py-3 text-right font-semibold text-text-heading" scope="col">Detalle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filasFiltradas.map((fila) => (
-                <tr key={fila.cliente.id} className="border-b border-border-subtle hover:bg-bg-alt">
-                  <td className="px-4 py-3 font-medium text-text-heading">{fila.cliente.nombre}</td>
-                  <td className="px-4 py-3 text-text-muted">{fila.cliente.telefono || '—'}</td>
-                  <td className="px-4 py-3 text-text-muted">{fila.cliente.email || '—'}</td>
-                  <td className="px-4 py-3 text-text-muted">{fila.cliente.documento || '—'}</td>
-                  <td className="px-4 py-3 text-text-muted">{fila.cliente.domicilio || '—'}</td>
-                  <td className="px-4 py-3 text-xs text-text-muted">
-                    {fila.proyectosCount} proyecto{fila.proyectosCount === 1 ? '' : 's'} ·{' '}
-                    {fila.obligacionesCount} obligación{fila.obligacionesCount === 1 ? '' : 'es'} pendiente{fila.obligacionesCount === 1 ? '' : 's'} ·{' '}
-                    {fila.pedidosCount} pedido{fila.pedidosCount === 1 ? '' : 's'} web
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <LinkButton
-                      href={`/erp/clientes/${fila.cliente.id}`}
-                      variant="secondary"
-                      size="md"
-                    >
-                      Ver detalle
-                    </LinkButton>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        rows={filasFiltradas}
+        columns={columnas}
+        rowKey={(f) => f.cliente.id}
+        initialSort={{ key: 'nombre', direction: 'asc' }}
+        density="spacious"
+        caption="Clientes"
+        empty={
+          <div className="p-4">
+            <p className="mb-4 text-text-muted">No hay clientes con estos filtros</p>
+            <LinkButton
+              href="/erp/clientes"
+              variant="ghost"
+              size="md"
+              onClick={() => {
+                setBusqueda('')
+                setSoloConObligaciones(false)
+              }}
+            >
+              Limpiar filtros
+            </LinkButton>
+          </div>
+        }
+      />
     </div>
   )
 }

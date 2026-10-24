@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/veta/button";
 import { InputField } from "@/components/veta/input-field";
-import { useDataStore, type Proyecto, type Cliente } from "@/lib/data";
+import { useDataStore, type DataStore, type Proyecto, type Cliente } from "@/lib/data";
 import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
 
 const TIPOS_PROYECTO: { codigo: string; label: string }[] = [
@@ -16,9 +16,10 @@ export interface EditarProyectoModalProps {
   clientes: Cliente[];
   onClose: () => void;
   onSaved: () => void;
+  actualizarProyecto?: DataStore['proyectos']['actualizar'];
 }
 
-export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: EditarProyectoModalProps) {
+export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved, actualizarProyecto }: EditarProyectoModalProps) {
   const store = useDataStore();
   const { guard: guardGuardar, isPending: guardando } = usePendingGuard();
 
@@ -34,7 +35,8 @@ export function EditarProyectoModal({ proyecto, clientes, onClose, onSaved }: Ed
   const guardar = async () => {
     const nombre = form.nombreProyecto.trim()
     if (!nombre) return
-    await store.proyectos.actualizar(proyecto.id, {
+    const actualizar = actualizarProyecto ?? store.proyectos.actualizar
+    await actualizar(proyecto.id, {
       nombreProyecto: nombre,
       clienteId: form.clienteId ? form.clienteId : null,
       tipoProyecto: form.tipoProyecto,

@@ -838,6 +838,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           <EditarProyectoModal
             proyecto={proyecto}
             clientes={store.clientes.listar()}
+            actualizarProyecto={store.proyectos.actualizar}
             onClose={() => setMostrarEditarProyecto(false)}
             onSaved={() => setMostrarEditarProyecto(false)}
           />
