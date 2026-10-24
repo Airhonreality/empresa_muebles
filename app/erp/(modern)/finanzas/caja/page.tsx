@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { CuentaFinancieraModal } from '@/components/veta/cuenta-financiera-modal'
+import { DataTable, type DataTableColumn } from '@/components/veta/data-table'
 import { MovimientoFinancieroModal, type TipoMovimientoManual } from '@/components/veta/movimiento-financiero-modal'
 import { useToast } from '@/components/veta/toast-provider'
 import { type CuentaFinanciera, type MovimientoFinanciero, type OrdenCompra, type RegistroGateCaja } from '@/lib/data'
 import { useFinanzasCompat } from '@/lib/data/queries/finanzas-compat'
 import { calcularCajaDisponible } from '@/lib/modules/f4f5f6/gates'
-import { ordenarMovimientos, type OrdenMovimientos } from '@/lib/utils/movimientos'
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -102,7 +102,6 @@ export default function CajaPage() {
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'asentado' | 'anulado'>('todos')
   const [filtroMes, setFiltroMes] = useState<string>('')
   const [busqueda, setBusqueda] = useState<string>('')
-  const [ordenLibro, setOrdenLibro] = useState<OrdenMovimientos>('movimiento-desc')
 
   let movimientosFiltrados = movimientos
   if (filtroTipo !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === filtroTipo)
@@ -119,7 +118,6 @@ export default function CajaPage() {
         || (proveedor?.nombre.toLowerCase().includes(q) ?? false)
     })
   }
-  movimientosFiltrados = ordenarMovimientos(movimientosFiltrados, ordenLibro)
 
   const handleAnular = useCallback(async (mov: MovimientoFinanciero) => {
     if (!window.confirm(`¿Anular el movimiento "${mov.descripcion}"? Se revertirá el saldo y quedará en el libro como anulado.`)) return
@@ -130,6 +128,119 @@ export default function CajaPage() {
       mostrarError(e instanceof Error ? e.message : 'No se pudo anular el movimiento.')
     }
   }, [store, mostrarError, mostrarInfo])
+
+  const columnasLibro: DataTableColumn<MovimientoFinanciero>[] = [
+    {
+      key: 'fecha',
+      header: 'Fecha mov.',
+      sortValue: (mov) => mov.fecha,
+      render: (mov) => <span className="font-mono text-xs text-text-muted">{formatDate(mov.fecha)}</span>,
+    },
+    {
+      key: 'registro',
+      header: 'Registro',
+      sortValue: (mov) => mov.createdAt,
+      render: (mov) => <span className="font-mono text-xs text-text-muted">{formatDate(mov.createdAt)}</span>,
+    },
+    {
+      key: 'descripcion',
+      header: 'Descripción',
+      sortValue: (mov) => mov.descripcion,
+      render: (mov) => <span className="text-sm text-text-heading">{mov.descripcion}</span>,
+    },
+    {
+      key: 'proyecto',
+      header: 'Proyecto / proveedor',
+      sortValue: (mov) => {
+        const proyecto = mov.proyectoId ? proyectoMap.get(mov.proyectoId) : null
+        const proveedor = mov.proveedorId ? proveedorMap.get(mov.proveedorId) : null
+        return `${proyecto?.nombreProyecto ?? ''} ${proveedor?.nombre ?? ''}`.trim()
+      },
+      render: (mov) => {
+        const proyecto = mov.proyectoId ? proyectoMap.get(mov.proyectoId) : null
+        const proveedor = mov.proveedorId ? proveedorMap.get(mov.proveedorId) : null
+        return (
+          <span className="text-xs text-text-muted">
+            {proyecto ? proyecto.nombreProyecto : '—'}
+            {proveedor ? ` · ${proveedor.nombre}` : ''}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'tipo',
+      header: 'Tipo',
+      align: 'center',
+      sortValue: (mov) => origenLabel(mov.tipo),
+      render: (mov) => (
+        <div className="flex flex-col items-center gap-1">
+          <Badge tone={mov.tipo === 'debito' ? 'danger' : 'info'} dot>
+            {origenLabel(mov.tipo)}
+          </Badge>
+          {mov.estado === 'anulado' && <Badge tone="neutral" dot>Anulado</Badge>}
+        </div>
+      ),
+    },
+    {
+      key: 'monto',
+      header: 'Monto',
+      align: 'right',
+      sortValue: (mov) => numDe(mov.monto),
+      render: (mov) => (
+        <span className={`font-mono ${mov.tipo === 'debito' ? 'text-red-600' : 'text-emerald-600'} ${mov.estado === 'anulado' ? 'line-through' : ''}`}>
+          {mov.tipo === 'debito' ? '−' : '+'}{formatCOP(numDe(mov.monto))}
+        </span>
+      ),
+    },
+    {
+      key: 'cuenta',
+      header: 'Cuenta',
+      align: 'center',
+      sortValue: (mov) => {
+        const cuentaId = mov.cuentaDestinoId ?? mov.cuentaOrigenId
+        return cuentas.find((c) => c.id === cuentaId)?.nombre ?? ''
+      },
+      render: (mov) => {
+        const cuentaId = mov.cuentaDestinoId ?? mov.cuentaOrigenId
+        const cuenta = cuentas.find((c) => c.id === cuentaId)
+        return <span className="text-xs text-text-muted">{cuenta?.nombre ?? '—'}</span>
+      },
+    },
+    {
+      key: 'comprobante',
+      header: 'Comprobante',
+      align: 'center',
+      render: (mov) => mov.comprobanteUrl ? (
+        <a
+          href={mov.comprobanteUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs text-gold-700 underline hover:text-gold-800"
+        >
+          Ver
+        </a>
+      ) : (
+        <span className="text-xs text-text-muted">—</span>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'center',
+      render: (mov) => mov.estado === 'anulado' ? (
+        <span className="text-xs text-text-muted">—</span>
+      ) : (
+        <div className="flex items-center justify-center gap-1">
+          <Button variant="ghost" size="sm" onClick={() => setMovimientoEditando(mov)}>
+            Editar
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { void handleAnular(mov) }}>
+            Anular
+          </Button>
+        </div>
+      ),
+    },
+  ]
 
   // --- Autorizar pago ---
   const [autorizandoOc, setAutorizandoOc] = useState<string | null>(null)
@@ -391,106 +502,23 @@ export default function CajaPage() {
                   ))}
                 </select>
               </label>
-              <label className="flex items-center gap-1">
-                <span className="text-xs text-text-muted">Ordenar por:</span>
-                <select
-                  value={ordenLibro}
-                  onChange={(e) => setOrdenLibro(e.target.value as OrdenMovimientos)}
-                  className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-                >
-                  <option value="movimiento-desc">Movimiento (reciente)</option>
-                  <option value="movimiento-asc">Movimiento (antiguo)</option>
-                  <option value="registro-desc">Registro (reciente)</option>
-                  <option value="registro-asc">Registro (antiguo)</option>
-                </select>
-              </label>
             </div>
 
-            {movimientosFiltrados.length === 0 ? (
-              <p className="text-sm text-text-muted">Sin movimientos registrados.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr>
-                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Fecha mov.</th>
-                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Registro</th>
-                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Descripción</th>
-                      <th className="border-b border-border-subtle text-left px-2 py-2 font-semibold text-text-heading">Proyecto / proveedor</th>
-                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Tipo</th>
-                      <th className="border-b border-border-subtle text-right px-2 py-2 font-semibold text-text-heading">Monto</th>
-                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Cuenta</th>
-                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Comprobante</th>
-                      <th className="border-b border-border-subtle text-center px-2 py-2 font-semibold text-text-heading">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {movimientosFiltrados.map((mov: MovimientoFinanciero) => {
-                      const cuentaDestino = mov.cuentaDestinoId ? cuentas.find(c => c.id === mov.cuentaDestinoId) : null
-                      const cuentaOrigen = mov.cuentaOrigenId ? cuentas.find(c => c.id === mov.cuentaOrigenId) : null
-                      const cuentaNombre = cuentaDestino || cuentaOrigen
-                      const proyecto = mov.proyectoId ? proyectoMap.get(mov.proyectoId) : null
-                      const proveedor = mov.proveedorId ? proveedorMap.get(mov.proveedorId) : null
-                      return (
-                        <tr key={mov.id} className={`border-b border-border-subtle/50 ${mov.estado === 'anulado' ? 'opacity-60' : ''}`}>
-                          <td className="px-2 py-2 text-xs font-mono text-text-muted">{formatDate(mov.fecha)}</td>
-                          <td className="px-2 py-2 text-xs font-mono text-text-muted">{formatDate(mov.createdAt)}</td>
-                          <td className="px-2 py-2 text-sm text-text-heading">{mov.descripcion}</td>
-                          <td className="px-2 py-2 text-xs text-text-muted">
-                            {proyecto ? proyecto.nombreProyecto : '—'}
-                            {proveedor ? ` · ${proveedor.nombre}` : ''}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <div className="flex flex-col items-center gap-1">
-                              <Badge tone={mov.tipo === 'debito' ? 'danger' : 'info'} dot>
-                                {origenLabel(mov.tipo)}
-                              </Badge>
-                              {mov.estado === 'anulado' && (
-                                <Badge tone="neutral" dot>Anulado</Badge>
-                              )}
-                            </div>
-                          </td>
-                          <td className={`px-2 py-2 text-right font-mono ${mov.tipo === 'debito' ? 'text-red-600' : 'text-emerald-600'} ${mov.estado === 'anulado' ? 'line-through' : ''}`}>
-                            {mov.tipo === 'debito' ? '−' : '+'}{formatCOP(numDe(mov.monto))}
-                          </td>
-                          <td className="px-2 py-2 text-center text-xs text-text-muted">
-                            {cuentaNombre ? cuentaNombre.nombre : '—'}
-                          </td>
-                          <td className="px-2 py-2 text-center text-xs">
-                            {mov.comprobanteUrl ? (
-                              <a
-                                href={mov.comprobanteUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-gold-700 underline hover:text-gold-800"
-                              >
-                                Ver
-                              </a>
-                            ) : (
-                              <span className="text-text-muted">—</span>
-                            )}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            {mov.estado === 'anulado' ? (
-                              <span className="text-xs text-text-muted">—</span>
-                            ) : (
-                              <div className="flex items-center justify-center gap-1">
-                                <Button variant="ghost" size="sm" onClick={() => setMovimientoEditando(mov)}>
-                                  Editar
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => { void handleAnular(mov); }}>
-                                  Anular
-                                </Button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <p className="text-xs text-text-muted">
+              Hacé clic en el encabezado de una columna para ordenar ascendente o descendente.
+            </p>
+
+            <DataTable
+              rows={movimientosFiltrados}
+              columns={columnasLibro}
+              rowKey={(mov) => mov.id}
+              initialSort={{ key: 'fecha', direction: 'desc' }}
+              density="compact"
+              maxHeightClassName="max-h-[36rem]"
+              caption="Libro mayor de movimientos financieros"
+              rowClassName={(mov) => mov.estado === 'anulado' ? 'opacity-60' : ''}
+              empty="Sin movimientos registrados."
+            />
           </div>
         )}
       </section>

@@ -41,7 +41,7 @@
     "tests": "lib/validacion/finanzas.test.ts 8/8 OK; mock-store.test.ts: los 5 tests nuevos de finanzas OK (falla preexistente en portafolio, linea 1115); coverage.test.ts 4/4 OK",
     "migracion_0032": "aplicada y verificada en ep-muddy-cherry-at5j2mz7 (columna + FK presentes) el 2026-10-17",
     "integracion_dev": "crear cuenta -> crear salida -> editar monto/proveedor -> anular; saldo 1000 -> 700 -> 1000 y estado='anulado' verificado contra la base dev",
-    "orden_libro": "lib/utils/movimientos.test.ts 4/4 OK"
+    "data_table": "components/veta/data-table.tsx: tsc/eslint/build OK; usada en libro resumen y libro mayor"
   },
   "executor": "opencode (sesión interactiva)",
   "verificador": null,
@@ -52,6 +52,6 @@
     "fecha": "2026-10-17"
   },
   "estado": "ejecutada_pendiente_qa",
-  "nota_ejecucion": "UI: botones Registrar entrada/salida y Nueva cuenta en /erp/finanzas y /erp/finanzas/caja; modales reutilizables con comprobante R2 (FilePicker, finanzas/comprobantes), proyecto opcional en ambos tipos y proveedor solo en salida; libro con proyecto/proveedor y link al comprobante; KPIs del mes y accesos. Datos: movimientosFinancieros.crear en contracts/mock/drizzle, crearMovimientoManualAction transaccional con zod y saldo atomico, crearCuentaFinancieraAction guarda saldo_inicial. Migracion 0032 aplicada a produccion. PENDIENTE: QA manual en npm run dev (crear caja, registrar entrada/salida, comprobar saldo, comprobante y asociaciones). Seguimiento (mismo dia): edicion de movimientos ya registrados (incluida fecha, proveedor/proyecto y comprobante), anulacion con reverso de saldo (soft delete, estado='anulado') y filtros de libro por mes/estado/busqueda. Modales anidados: proveedor y proyecto en el movimiento, cuenta en obligaciones, proveedor en cuentas de cobro. Orden del libro configurable: fecha del movimiento (reciente/antigua) o fecha de registro (reciente/antigua), con ambas fechas visibles en la tabla.",
+  "nota_ejecucion": "UI: botones Registrar entrada/salida y Nueva cuenta en /erp/finanzas y /erp/finanzas/caja; modales reutilizables con comprobante R2 (FilePicker, finanzas/comprobantes), proyecto opcional en ambos tipos y proveedor solo en salida; libro con proyecto/proveedor y link al comprobante; KPIs del mes y accesos. Datos: movimientosFinancieros.crear en contracts/mock/drizzle, crearMovimientoManualAction transaccional con zod y saldo atomico, crearCuentaFinancieraAction guarda saldo_inicial. Migracion 0032 aplicada a produccion. PENDIENTE: QA manual en npm run dev (crear caja, registrar entrada/salida, comprobar saldo, comprobante y asociaciones). Seguimiento (mismo dia): edicion de movimientos ya registrados (incluida fecha, proveedor/proyecto y comprobante), anulacion con reverso de saldo (soft delete, estado='anulado') y filtros de libro por mes/estado/busqueda. Modales anidados: proveedor y proyecto en el movimiento, cuenta en obligaciones, proveedor en cuentas de cobro. Orden por clic en encabezados de columna mediante la primitiva agnóstica components/veta/data-table.tsx (fecha mov., registro, descripción, proyecto/proveedor, tipo, monto, cuenta), con ambas fechas visibles.",
   "creada_en": "2026-10-17T00:00:00Z"
 }

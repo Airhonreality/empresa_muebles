@@ -82,9 +82,14 @@ Cambios de datos:
 - `MovimientoFinanciero.estado` tipado como `'asentado' | 'anulado'`.
 - El libro muestra anulados con badge y los excluye de KPIs; filtros por mes, estado y búsqueda.
 
-## Seguimiento — orden del libro por fecha del movimiento
+## Seguimiento — tabla agnóstica y orden por clic en encabezado
 
-- Selector "Ordenar por" en `/erp/finanzas` (libro resumen) y `/erp/finanzas/caja`:
-  fecha del movimiento reciente/antigua o fecha de registro reciente/antigua.
+- Se descartó el desplegable "Ordenar por" (parche local): el patrón correcto es clic en el
+  encabezado de la columna, ascendente/descendente, con indicador y `aria-sort`.
+- Nueva primitiva `components/veta/data-table.tsx` (`DataTable<T>` + `DataTableColumn<T>`):
+  recibe filas y columnas, ordena con `sortValue`, no agrega dependencias y se puede
+  instanciar en cualquier listado. Usada en `/erp/finanzas` (libro resumen) y
+  `/erp/finanzas/caja` (libro mayor).
+- Columnas ordenables: fecha del movimiento, fecha de registro, descripción, proyecto/proveedor,
+  tipo, monto y cuenta. Comprobante/acciones quedan como columnas no ordenables.
 - Ambas fechas visibles: "Fecha mov." y "Registro".
-- Lógica pura en `lib/utils/movimientos.ts` con test `lib/utils/movimientos.test.ts` (4/4).

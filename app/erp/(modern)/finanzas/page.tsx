@@ -14,13 +14,13 @@ import { Badge } from "@/components/veta/badge";
 import { Button } from "@/components/veta/button";
 import { StatCard } from "@/components/veta/stat-card";
 import { CuentaFinancieraModal } from "@/components/veta/cuenta-financiera-modal";
+import { DataTable, type DataTableColumn } from "@/components/veta/data-table";
 import { useToast } from "@/components/veta/toast-provider";
 import {
   MovimientoFinancieroModal,
   type TipoMovimientoManual,
 } from "@/components/veta/movimiento-financiero-modal";
 import { formatCurrency } from "@/lib/utils/format";
-import { ordenarMovimientos, type OrdenMovimientos } from "@/lib/utils/movimientos";
 
 const ORIGEN_OBLIGACION_LABELS: Record<OrigenObligacion, string> = {
   contrato_hito: "Cobro cliente",
@@ -76,7 +76,6 @@ export default function FinanzasPage() {
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoManual | null>(null);
   const [movimientoEditando, setMovimientoEditando] = useState<MovimientoFinanciero | null>(null);
   const [mostrarCuenta, setMostrarCuenta] = useState(false);
-  const [ordenLibro, setOrdenLibro] = useState<OrdenMovimientos>("movimiento-desc");
 
   const cuentas = store.cuentasFinancieras.listar();
   const movimientos = store.movimientosFinancieros.listar();
@@ -122,7 +121,6 @@ export default function FinanzasPage() {
 
   const proyectoMap = new Map(store.proyectos.listar().map((p) => [p.id, p]));
   const proveedorMap = new Map(store.proveedores.listar().map((p) => [p.id, p]));
-  const ultimosMovimientos = ordenarMovimientos(movimientosActivos, ordenLibro).slice(0, 8);
 
   const handleAnular = async (mov: MovimientoFinanciero) => {
     if (!window.confirm(`¿Anular el movimiento "${mov.descripcion}"? Se revertirá el saldo y quedará en el libro como anulado.`)) return;
@@ -133,6 +131,100 @@ export default function FinanzasPage() {
       mostrarError(e instanceof Error ? e.message : "No se pudo anular el movimiento.");
     }
   };
+
+  const columnasLibro: DataTableColumn<MovimientoFinanciero>[] = [
+    {
+      key: "fecha",
+      header: "Fecha mov.",
+      sortValue: (mov) => mov.fecha,
+      render: (mov) => <span className="font-mono text-xs text-text-muted">{formatDate(mov.fecha)}</span>,
+    },
+    {
+      key: "registro",
+      header: "Registro",
+      sortValue: (mov) => mov.createdAt,
+      render: (mov) => <span className="font-mono text-xs text-text-muted">{formatDate(mov.createdAt)}</span>,
+    },
+    {
+      key: "descripcion",
+      header: "Descripción",
+      sortValue: (mov) => mov.descripcion,
+      render: (mov) => <span className="text-text-heading">{mov.descripcion}</span>,
+    },
+    {
+      key: "proyecto",
+      header: "Proyecto / proveedor",
+      sortValue: (mov) => {
+        const proyecto = mov.proyectoId ? proyectoMap.get(mov.proyectoId) : null;
+        const proveedor = mov.proveedorId ? proveedorMap.get(mov.proveedorId) : null;
+        return `${proyecto?.nombreProyecto ?? ""} ${proveedor?.nombre ?? ""}`.trim();
+      },
+      render: (mov) => {
+        const proyecto = mov.proyectoId ? proyectoMap.get(mov.proyectoId) : null;
+        const proveedor = mov.proveedorId ? proveedorMap.get(mov.proveedorId) : null;
+        return (
+          <span className="text-xs text-text-muted">
+            {proyecto ? proyecto.nombreProyecto : "—"}
+            {proveedor ? ` · ${proveedor.nombre}` : ""}
+          </span>
+        );
+      },
+    },
+    {
+      key: "tipo",
+      header: "Tipo",
+      align: "center",
+      sortValue: (mov) => (mov.tipo === "debito" ? "Salida" : "Entrada"),
+      render: (mov) => (
+        <Badge tone={mov.tipo === "debito" ? "danger" : "info"} dot>
+          {mov.tipo === "debito" ? "Salida" : "Entrada"}
+        </Badge>
+      ),
+    },
+    {
+      key: "monto",
+      header: "Monto",
+      align: "right",
+      sortValue: (mov) => numDe(mov.monto),
+      render: (mov) => (
+        <span className={`font-mono ${mov.tipo === "debito" ? "text-red-600" : "text-emerald-600"}`}>
+          {mov.tipo === "debito" ? "−" : "+"}{formatCurrency(numDe(mov.monto), 0)}
+        </span>
+      ),
+    },
+    {
+      key: "comprobante",
+      header: "Comprobante",
+      align: "center",
+      render: (mov) => mov.comprobanteUrl ? (
+        <a
+          href={mov.comprobanteUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs text-gold-700 underline hover:text-gold-800"
+        >
+          Ver
+        </a>
+      ) : (
+        <span className="text-xs text-text-muted">—</span>
+      ),
+    },
+    {
+      key: "acciones",
+      header: "Acciones",
+      align: "center",
+      render: (mov) => (
+        <div className="flex items-center justify-center gap-1">
+          <Button variant="ghost" size="sm" onClick={() => setMovimientoEditando(mov)}>
+            Editar
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { void handleAnular(mov); }}>
+            Anular
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
@@ -223,101 +315,27 @@ export default function FinanzasPage() {
       </section>
 
       <section className="mb-8 rounded-lg border border-border-subtle bg-bg-raised overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
-          <h2 className="font-semibold text-text-heading">Últimos movimientos</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-1 text-xs text-text-muted">
-              Ordenar por:
-              <select
-                value={ordenLibro}
-                onChange={(e) => setOrdenLibro(e.target.value as OrdenMovimientos)}
-                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              >
-                <option value="movimiento-desc">Fecha del movimiento (reciente)</option>
-                <option value="movimiento-asc">Fecha del movimiento (antigua)</option>
-                <option value="registro-desc">Fecha de registro (reciente)</option>
-                <option value="registro-asc">Fecha de registro (antigua)</option>
-              </select>
-            </label>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/erp/finanzas/caja")}>
-              Ver libro completo
-            </Button>
-          </div>
-        </div>
-
-        {ultimosMovimientos.length === 0 ? (
-          <div className="px-4 py-6 text-center">
-            <p className="text-sm text-text-muted">
-              Sin movimientos registrados. Usa “Registrar entrada” o “Registrar salida”.
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+          <div>
+            <h2 className="font-semibold text-text-heading">Libro resumen</h2>
+            <p className="text-xs text-text-muted">
+              Hacé clic en el encabezado de una columna para ordenar ascendente o descendente.
             </p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Fecha mov.</th>
-                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Registro</th>
-                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Descripción</th>
-                  <th className="border-b border-border-subtle text-left px-3 py-2 font-semibold text-text-heading">Proyecto / proveedor</th>
-                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Tipo</th>
-                  <th className="border-b border-border-subtle text-right px-3 py-2 font-semibold text-text-heading">Monto</th>
-                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Comprobante</th>
-                  <th className="border-b border-border-subtle text-center px-3 py-2 font-semibold text-text-heading">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ultimosMovimientos.map((mov: MovimientoFinanciero) => {
-                  const proyecto = mov.proyectoId ? proyectoMap.get(mov.proyectoId) : null;
-                  const proveedor = mov.proveedorId ? proveedorMap.get(mov.proveedorId) : null;
-                  return (
-                    <tr key={mov.id} className="border-b border-border-subtle/50">
-                      <td className="px-3 py-2 text-xs font-mono text-text-muted">{formatDate(mov.fecha)}</td>
-                      <td className="px-3 py-2 text-xs font-mono text-text-muted">{formatDate(mov.createdAt)}</td>
-                      <td className="px-3 py-2 text-text-heading">{mov.descripcion}</td>
-                      <td className="px-3 py-2 text-xs text-text-muted">
-                        {proyecto ? proyecto.nombreProyecto : "—"}
-                        {proveedor ? ` · ${proveedor.nombre}` : ""}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <Badge tone={mov.tipo === "debito" ? "danger" : "info"} dot>
-                          {mov.tipo === "debito" ? "Salida" : "Entrada"}
-                        </Badge>
-                      </td>
-                      <td className={`px-3 py-2 text-right font-mono ${mov.tipo === "debito" ? "text-red-600" : "text-emerald-600"}`}>
-                        {mov.tipo === "debito" ? "−" : "+"}{formatCurrency(numDe(mov.monto), 0)}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs">
-                        {mov.comprobanteUrl ? (
-                          <a
-                            href={mov.comprobanteUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-gold-700 underline hover:text-gold-800"
-                          >
-                            Ver
-                          </a>
-                        ) : (
-                          <span className="text-text-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => setMovimientoEditando(mov)}>
-                            Editar
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { void handleAnular(mov); }}>
-                            Anular
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+          <Button variant="ghost" size="sm" onClick={() => router.push("/erp/finanzas/caja")}>
+            Ver libro completo
+          </Button>
+        </div>
+        <DataTable
+          rows={movimientosActivos}
+          columns={columnasLibro}
+          rowKey={(mov) => mov.id}
+          initialSort={{ key: "fecha", direction: "desc" }}
+          density="comfortable"
+          maxHeightClassName="max-h-[28rem]"
+          caption="Libro resumen de movimientos financieros"
+          empty={<span>Sin movimientos registrados. Usa “Registrar entrada” o “Registrar salida”.</span>}
+        />
       </section>
 
       <section className="mb-8">
