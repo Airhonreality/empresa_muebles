@@ -10,9 +10,9 @@ const afectados = await db.execute(sql`
     AND nombre_personalizado ILIKE '%bronce%'
 `);
 
-console.log('Encontrados:', afectados.rows);
+console.log('Encontrados:', afectados);
 
-if (afectados.rows.length > 0) {
+if (afectados.length > 0) {
   const upd = await db.execute(sql`
     UPDATE cotizacion_items
     SET nombre_personalizado = NULL
@@ -20,7 +20,11 @@ if (afectados.rows.length > 0) {
       AND nombre_personalizado ILIKE '%bronce%'
     RETURNING id, nombre_personalizado
   `);
-  console.log('Actualizados:', upd.rows);
+  console.log('Actualizados:', upd);
+
+  for (const r of upd) {
+    console.log(`  ${r.item_number}: display="${r.nombre_personalizado ?? r.catalogo}" (nombre_personalizado=${r.nombre_personalizado === null ? 'NULL→catálogo' : `"${r.nombre_personalizado}"`})`);
+  }
 }
 
 const verify = await db.execute(sql`
@@ -33,6 +37,6 @@ const verify = await db.execute(sql`
   ORDER BY i.item_number
 `);
 console.log('Verificación (ítems con catálogo):');
-for (const r of verify.rows) {
+for (const r of verify) {
   console.log(`  ${r.item_number}: display="${r.nombre_personalizado ?? r.catalogo}" (nombre_personalizado=${r.nombre_personalizado === null ? 'NULL→catálogo' : `"${r.nombre_personalizado}"`})`);
 }
