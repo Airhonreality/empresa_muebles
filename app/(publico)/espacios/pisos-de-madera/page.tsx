@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { SITE_URL } from '@/lib/seo/jsonld'
 import { socialMeta } from '@/lib/seo/social'
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton'
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public'
 
 const TIPO_ESPACIO_CODIGO = 'pisos_madera'
@@ -21,8 +22,7 @@ export const metadata = {
 // que el resto del sitio público con datos vivos (ver app/(publico)/page.tsx).
 export const dynamic = 'force-dynamic'
 
-const WHATSAPP_URL =
-  'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20un%20diagn%C3%B3stico%20gratuito%20para%20restaurar%20mi%20piso%20de%20madera.'
+// t-188: los CTA abren el formulario (lead + teléfono + gclid) en vez de ir directo a wa.me.
 
 export default async function PisosDeMaderaLanding() {
   const galeria = await obtenerGaleriaEspacioAction(TIPO_ESPACIO_CODIGO)
@@ -53,9 +53,9 @@ export default async function PisosDeMaderaLanding() {
             {/* B6 (auditoría 2026-08-15): apuntaba a /asesoria, ruta inexistente (F-12 sin
                 construir, diferida en TAREAS_DIFERIDAS.md) — mismo criterio que el resto del
                 sitio, CTA a WhatsApp mientras F-12 no exista. */}
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl">
+            <AsesoriaBoton className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl">
               Solicitar diagnóstico gratuito
-            </a>
+            </AsesoriaBoton>
             
           </div>
         </div>
@@ -132,15 +132,15 @@ export default async function PisosDeMaderaLanding() {
             Contáctanos para un diagnóstico gratuito. Evaluamos el estado de tu piso y te decimos con honestidad qué necesita.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white text-lg font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-md hover:shadow-lg">
+            <AsesoriaBoton className="px-8 py-4 bg-[var(--color-primary)] text-white text-lg font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-md hover:shadow-lg">
               Solicitar diagnóstico gratuito
-            </a>
+            </AsesoriaBoton>
           </div>
           <div className="mt-8">
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] font-medium hover:underline inline-flex items-center gap-2">
+            <AsesoriaBoton className="text-[var(--color-accent)] font-medium hover:underline inline-flex items-center gap-2">
               O escríbenos por WhatsApp
               <span>→</span>
-            </a>
+            </AsesoriaBoton>
           </div>
         </div>
       </section>

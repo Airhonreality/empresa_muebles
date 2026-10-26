@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { submitLeadAction } from '@/app/actions/lead-actions';
+import { leerAtribucion } from '@/lib/hooks/useGclidCapture';
+import { construirUserDataGtag } from '@/lib/leads/enhanced-conversions';
+import { construirMensajeWhatsApp, construirUrlWhatsApp, generarRefLead } from '@/lib/leads/ref';
 
 interface AsesoriaModalProps {
   isOpen: boolean;
@@ -67,22 +70,14 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
 
   if (!isOpen || !mounted) return null;
 
+  const WHATSAPP_NUMBER = '573025922101';
+
   const executeRedirect = (url: string) => {
     setFormStatus('redirecting');
-    
-    const gtagFn = typeof window !== 'undefined' ? (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag : undefined;
-    if (gtagFn) {
-      try {
-        const sendTo = process.env.NEXT_PUBLIC_GTAG_SEND_TO || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
-        gtagFn('event', 'conversion', { send_to: sendTo });
-      } catch {
-        // Ignorar
-      }
-    }
 
     // Abordaje Axiomático: Navegación directa en la misma pestaña para evadir Popup Blockers y forzar Deep Linking en móviles
     window.location.href = url;
-    
+
     // Limpieza resiliente
     setTimeout(() => {
       if (formStatus !== 'idle') {
@@ -91,53 +86,93 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
     }, 800);
   };
 
+  /**
+   * t-188: la conversión se dispara SIEMPRE con los datos de la persona (teléfono hasheado).
+   * Antes se enviaba anónima, así que Google no podía cruzar el clic con el lead.
+   */
+  const dispararConversion = async () => {
+    const gtagFn = typeof window !== 'undefined'
+      ? (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
+      : undefined;
+    if (!gtagFn) return;
+
+    try {
+      const userData = await construirUserDataGtag({ telefono });
+      if (Object.keys(userData).length > 0) {
+        gtagFn('set', 'user_data', userData);
+      }
+      const sendTo = process.env.NEXT_PUBLIC_GTAG_SEND_TO || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
+      gtagFn('event', 'conversion', { send_to: sendTo });
+    } catch {
+      // Si el navegador no soporta Web Crypto, la conversión igual se dispara sin user_data.
+      const sendTo = process.env.NEXT_PUBLIC_GTAG_SEND_TO || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
+      gtagFn('event', 'conversion', { send_to: sendTo });
+    }
+  };
+
+  const generarLeadId = (): string => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  };
+
   const handleWhatsApp = async () => {
     if (!isPhoneValid || formStatus !== 'idle') return;
 
     setFormStatus('submitting');
-    
+
     const tipoProyectoTexto = tipo === 'gratis' ? 'Asesoría Base' : tipo === '3d' ? 'Asesoría 3D' : 'Cotización con medidas';
-    const fallbackUrl = `https://api.whatsapp.com/send/?phone=573025922101&text=${encodeURIComponent(`Hola, me interesa la ${tipoProyectoTexto}. Mi proyecto es en ${ubicacion}.`)}`;
+
+    // La referencia y el mensaje se arman ANTES de llamar al servidor: si la escritura tarda o
+    // falla, el usuario igual llega a WhatsApp con su nombre y la referencia (nunca con un
+    // mensaje genérico que pierda el enlace con la persona).
+    const leadId = generarLeadId();
+    const ref = generarRefLead(leadId);
+    const mensaje = construirMensajeWhatsApp({
+      nombre,
+      tipoProyecto: tipoProyectoTexto,
+      ubicacion,
+      ref,
+    });
+    const urlLocal = construirUrlWhatsApp(WHATSAPP_NUMBER, mensaje);
 
     try {
-      const gclid = typeof window !== 'undefined' ? sessionStorage.getItem('veta_gclid') || undefined : undefined;
-      const wbraid = typeof window !== 'undefined' ? sessionStorage.getItem('veta_wbraid') || undefined : undefined;
-      const gbraid = typeof window !== 'undefined' ? sessionStorage.getItem('veta_gbraid') || undefined : undefined;
-      const utmSource = typeof window !== 'undefined' ? sessionStorage.getItem('veta_utm_source') || undefined : undefined;
-      const utmMedium = typeof window !== 'undefined' ? sessionStorage.getItem('veta_utm_medium') || undefined : undefined;
-      const utmCampaign = typeof window !== 'undefined' ? sessionStorage.getItem('veta_utm_campaign') || undefined : undefined;
-      const utmTerm = typeof window !== 'undefined' ? sessionStorage.getItem('veta_utm_term') || undefined : undefined;
-      const utmContent = typeof window !== 'undefined' ? sessionStorage.getItem('veta_utm_content') || undefined : undefined;
+      const atribucion = leerAtribucion();
 
       const fetchPromise = submitLeadAction({
-        nombre: nombre.trim() || 'Cliente Web',
+        leadId,
+        nombre,
         telefono: telefono.trim(),
         tipoProyecto: tipoProyectoTexto,
         ubicacion,
-        gclid,
-        wbraid,
-        gbraid,
-        utmSource,
-        utmMedium,
-        utmCampaign,
-        utmTerm,
-        utmContent,
+        gclid: atribucion.gclid,
+        wbraid: atribucion.wbraid,
+        gbraid: atribucion.gbraid,
+        utmSource: atribucion.utm_source,
+        utmMedium: atribucion.utm_medium,
+        utmCampaign: atribucion.utm_campaign,
+        utmTerm: atribucion.utm_term,
+        utmContent: atribucion.utm_content,
       });
 
-      // Patrón Circuit Breaker: si Neon DB o Vercel Actions tardan más de 1.5s, forzamos el fallo
-      const timeoutPromise = new Promise<{ whatsappUrl?: string }>((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout_Circuit_Breaker')), 1500);
+      // Tope de 5 s (antes 1.5 s): si se agota, el mensaje local ya lleva el mismo nombre y la
+      // misma ref, así que la conversación sigue siendo rastreable.
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout_Guardado_Lead')), 5000);
       });
 
       const result = await Promise.race([fetchPromise, timeoutPromise]);
-      
-      const targetUrl = result.whatsappUrl || fallbackUrl;
-      executeRedirect(targetUrl);
 
+      await dispararConversion();
+      executeRedirect(result.whatsappUrl || urlLocal);
     } catch (error) {
       console.error('Fallback activado: Error al procesar lead', error);
-      // Graceful Degradation: El usuario igual va a WhatsApp con la URL estática
-      executeRedirect(fallbackUrl);
+      // Degradación elegante: mismo mensaje (nombre + ref), aunque la fila no se haya guardado.
+      await dispararConversion();
+      executeRedirect(urlLocal);
     }
   };
 

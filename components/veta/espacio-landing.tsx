@@ -7,8 +7,8 @@ import { HeroCarousel } from '@/components/veta/hero-carousel';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 import { ValidacionTecnicaSlider } from '@/components/veta/validacion-tecnica-slider';
 
-const WHATSAPP_URL =
-  'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
+// t-188: los CTA de WhatsApp ya no navegan directo a wa.me — abren AsesoriaBoton/AsesoriaModal
+// para que el clic quede como lead con teléfono, gclid y referencia.
 
 // Reutilizado de app/(publico)/page.tsx (VALIDACION_TECNICA/PASOS), copy idéntico en las 6
 // landings F-09 por diseño — contenido_F09_landings.md §3.8. No se refactoriza el home para
@@ -65,23 +65,8 @@ export interface EspacioLandingConfig {
   faqs?: { pregunta: string; respuesta: string }[];
 }
 
-function CtaPrimary({ href, children }: { href: string; children: React.ReactNode }) {
-  const externa = href.startsWith('http');
-  const className =
-    'inline-flex items-center justify-center rounded-sm bg-gold-600 px-6 py-3 text-sm font-bold text-white transition-colors duration-300 hover:bg-gold-700';
-  if (externa) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
-  );
-}
+const CTA_CLASS =
+  'inline-flex items-center justify-center rounded-sm bg-gold-600 px-6 py-3 text-sm font-bold text-white transition-colors duration-300 hover:bg-gold-700';
 
 
 
@@ -155,7 +140,7 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
             </p>
 
             <div className="mt-12 flex items-center gap-6">
-              <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
+              <AsesoriaBoton className={CTA_CLASS}>Agenda tu asesoría gratuita</AsesoriaBoton>
             </div>
           </div>
         </div>
@@ -180,7 +165,7 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
             Recibe una cotización sin costo enviando las dimensiones de tu espacio. Saltamos directo a los números.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <CtaPrimary href={WHATSAPP_URL}>Enviar medidas</CtaPrimary>
+            <AsesoriaBoton className={CTA_CLASS}>Enviar medidas</AsesoriaBoton>
             <Link href="/blog/como-medir-tu-espacio" className="text-sm text-gold-600 hover:text-gold-700 underline underline-offset-4 font-medium transition-colors">
               ¿No sabes cómo? Aprende a tomar tus medidas aquí
             </Link>

@@ -51,6 +51,57 @@ export interface Cliente {
   createdAt?: string
 }
 
+// t-188: etapa del lead según el enum `estado_lead` del schema (misma lista, sin Drizzle).
+export type EstadoLead =
+  | 'nuevo_lead' | 'contactado' | 'asesoria_agendada' | 'cotizado' | 'contrato_firmado' | 'descartado'
+
+/** t-188: lead captado por el sitio (formulario de asesoría), con su atribución de Google Ads. */
+export interface Lead {
+  id: string
+  nombre: string
+  telefonoWhatsapp: string | null
+  email: string | null
+  gclid: string | null
+  wbraid: string | null
+  gbraid: string | null
+  utmSource: string | null
+  utmMedium: string | null
+  utmCampaign: string | null
+  utmTerm: string | null
+  utmContent: string | null
+  hashedPhone: string | null
+  hashedEmail: string | null
+  tipoProyecto: string | null
+  ubicacion: string | null
+  scoreConversion: number | null
+  etapa: EstadoLead
+  proyectoId: string | null
+  clienteId: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type EstadoEnvioGoogle = 'pendiente' | 'procesando' | 'enviado_exitoso' | 'error_matching'
+
+/**
+ * t-188: cola de conversiones offline. Se escribe al firmar contrato y queda en `pendiente`
+ * hasta que exista la integración con la API de Google Ads (t-110, bloqueada por credenciales).
+ */
+export interface EventoConversionOffline {
+  id: string
+  leadId: string
+  contratoId: string | null
+  nombreEventoGoogle: string
+  valorConversion: string
+  gclidUsado: string | null
+  hashedPhoneUsado: string | null
+  estadoEnvio: EstadoEnvioGoogle
+  respuestaGoogleApi: unknown
+  reintentos: number | null
+  createdAt: string
+  enviadoEn: string | null
+}
+
 export interface EspacioVariante {
   id: string
   proyectoId: string

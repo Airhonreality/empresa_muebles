@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { HOME_IMAGES_SEO } from '@/lib/seo/home-images';
 import { SITE_URL } from '@/lib/seo/jsonld';
 import { socialMeta } from '@/lib/seo/social';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -19,8 +20,9 @@ export const metadata: Metadata = {
   }),
 };
 
-const WHATSAPP_URL =
-  'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
+// t-188: el CTA abre el formulario (lead + teléfono + gclid) en vez de saltar a wa.me.
+const CTA_CLASS =
+  'inline-flex items-center justify-center rounded-sm bg-gold-600 px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:bg-gold-700';
 
 const ESPACIOS = [
   { 
@@ -66,25 +68,6 @@ const ESPACIOS = [
     description: 'Restauración de pisos de madera: pulido, reparación y sellado de casonas.' 
   },
 ];
-
-function CtaPrimary({ href, children }: { href: string; children: React.ReactNode }) {
-  const externa = href.startsWith('http');
-  const className =
-    'inline-flex items-center justify-center rounded-sm bg-gold-600 px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:bg-gold-700';
-  if (externa) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
-  );
-}
-
 
 export default function EspaciosPage() {
   const jsonLd = {
@@ -145,7 +128,7 @@ export default function EspaciosPage() {
             Cada espacio de tu hogar merece una solución a la medida: la medida de tu cocina, de tu closet, de tu forma de vivir. Tres generaciones de oficio en la construcción, un estudio de diseño al frente y la fábrica en el mismo lugar.
           </p>
           <div className="mt-10 flex flex-wrap justify-center items-center gap-4">
-            <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
+            <AsesoriaBoton className={CTA_CLASS}>Agenda tu asesoría gratuita</AsesoriaBoton>
             
           </div>
         </div>
@@ -223,7 +206,7 @@ export default function EspaciosPage() {
             Cuéntanos qué espacio tienes en mente. Un diseñador te escucha, visita tu espacio y te entrega una cotización detallada sin compromiso.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <CtaPrimary href={WHATSAPP_URL}>Agenda tu asesoría gratuita</CtaPrimary>
+            <AsesoriaBoton className={CTA_CLASS}>Agenda tu asesoría gratuita</AsesoriaBoton>
             
           </div>
         </div>

@@ -7,6 +7,7 @@ import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import { num, sanitizarCamposPersonalizados } from './mappers'
+import { registrarConversionOfflineDeContrato } from '../conversion-offline'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
 import { generarSkuUnico } from '../skus'
 import { destinosProyectoValidos } from '../transiciones-proyecto'
@@ -821,17 +822,20 @@ function filasHitos(contratoId: string, hitos: HitoPagoInput[]) {
 }
 
 export async function crearContratoAction(data: import('@/lib/data/contracts').DatosContratoNuevo): Promise<Contrato> {
-  return db.transaction(async (tx) => {
-    const [nuevo] = await tx
+  const nuevo = await db.transaction(async (tx) => {
+    const [creado] = await tx
       .insert(s.contratos)
       .values({ proyectoId: data.proyectoId, codigoContrato: data.codigoContrato, ...columnasContrato(data) })
       .returning()
     const hitos = data.hitos ?? []
     if (hitos.length > 0) {
-      await tx.insert(s.hitosPago).values(filasHitos(nuevo.id, hitos))
+      await tx.insert(s.hitosPago).values(filasHitos(creado.id, hitos))
     }
-    return nuevo as unknown as Contrato
+    return creado as unknown as Contrato
   })
+
+  await registrarConversionOfflineDeContrato(nuevo)
+  return nuevo
 }
 
 /**
@@ -848,13 +852,13 @@ export async function actualizarContratoAction(
   id: string,
   data: import('@/lib/data/contracts').DatosContratoEdicion,
 ): Promise<Contrato | null> {
-  return db.transaction(async (tx) => {
-    const [actualizado] = await tx
+  const actualizado = await db.transaction(async (tx) => {
+    const [fila] = await tx
       .update(s.contratos)
       .set({ ...columnasContrato(data), updatedAt: new Date().toISOString() })
       .where(eq(s.contratos.id, id))
       .returning()
-    if (!actualizado) return null
+    if (!fila) return null
 
     if (data.hitos !== undefined) {
       // Reemplazo completo del plan de pagos: se borra el anterior y se reinserta el nuevo
@@ -864,8 +868,12 @@ export async function actualizarContratoAction(
         await tx.insert(s.hitosPago).values(filasHitos(id, data.hitos))
       }
     }
-    return actualizado as unknown as Contrato
+    return fila as unknown as Contrato
   })
+
+  // t-188: la cola es idempotente, así que re-editar el contrato no duplica el evento.
+  if (actualizado) await registrarConversionOfflineDeContrato(actualizado)
+  return actualizado
 }
 
 // ── F-08-ext · Modo Presentación Comercial — Server Action (ZN-004) ──────

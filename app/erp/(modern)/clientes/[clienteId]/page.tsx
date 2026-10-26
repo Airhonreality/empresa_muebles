@@ -5,11 +5,12 @@ import { useParams } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button, LinkButton } from '@/components/veta/button'
 import { EditarClienteModal } from '@/components/veta/editar-cliente-modal'
-import { type Contrato, type EstadoProyecto, type ObligacionPendiente, type PedidoWeb, type Proyecto } from '@/lib/data'
+import { type Contrato, type EstadoProyecto, type Lead, type ObligacionPendiente, type PedidoWeb, type Proyecto } from '@/lib/data'
 import { useClientesCompat } from '@/lib/data/queries/clientes-compat'
 import { formatCurrency } from '@/lib/utils/format'
+import { generarRefLead } from '@/lib/leads/ref'
 
-type TabActiva = 'proyectos' | 'pedidos' | 'obligaciones'
+type TabActiva = 'proyectos' | 'pedidos' | 'obligaciones' | 'conversiones'
 
 const ESTADO_PROYECTO_LABELS: Partial<Record<EstadoProyecto, string>> = {
   activa: 'Lead',
@@ -87,7 +88,17 @@ const TABS: { key: TabActiva; label: string }[] = [
   { key: 'proyectos', label: 'Proyectos' },
   { key: 'pedidos', label: 'Pedidos web' },
   { key: 'obligaciones', label: 'Obligaciones' },
+  { key: 'conversiones', label: 'Conversiones' },
 ]
+
+const ETAPA_CONVERSION_LABELS: Record<string, string> = {
+  nuevo_lead: 'Nuevo lead',
+  contactado: 'Contactado',
+  asesoria_agendada: 'Asesoría agendada',
+  cotizado: 'Cotizado',
+  contrato_firmado: 'Contrato firmado',
+  descartado: 'Descartado',
+}
 
 export default function ClienteDetallePage() {
   const params = useParams()
@@ -121,6 +132,19 @@ export default function ClienteDetallePage() {
     return mapa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, proyectos, version])
+
+  // t-189: incluye las conversiones vinculadas al cliente y las vinculadas a cualquiera de sus
+  // proyectos (el mapping inverso puede asociar por proyecto sin tocar `leads.clienteId`).
+  const conversiones = useMemo(() => {
+    const idsProyecto = new Set(proyectos.map((p) => p.id))
+    const porId = new Map<string, Lead>()
+    store.leads.porCliente(clienteId).forEach((l) => porId.set(l.id, l))
+    store.leads.listar().forEach((l) => {
+      if (l.proyectoId && idsProyecto.has(l.proyectoId)) porId.set(l.id, l)
+    })
+    return Array.from(porId.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, clienteId, proyectos, version])
 
   const obligaciones = useMemo<ObligacionPendiente[]>(() => {
     const porId = new Map<string, ObligacionPendiente>()
@@ -284,6 +308,42 @@ export default function ClienteDetallePage() {
                     <Badge tone={OBLIGACION_BADGE_TONE[obligacion.estado] ?? 'neutral'}>
                       {OBLIGACION_ESTADO_LABELS[obligacion.estado] ?? obligacion.estado}
                     </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tabActiva === 'conversiones' && (
+        <div className="rounded-lg border border-border-subtle bg-bg-raised p-4">
+          {conversiones.length === 0 ? (
+            <p className="text-sm text-text-muted py-4 text-center">
+              Este cliente no tiene conversiones del sitio asociadas.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {conversiones.map((conversion) => (
+                <div
+                  key={conversion.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle bg-bg-paper p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-text-heading">
+                      {conversion.tipoProyecto || 'Asesoría'} · {conversion.ubicacion || 'Sin ubicación'}
+                    </p>
+                    <p className="mt-0.5 text-xs text-text-muted">
+                      {formatDate(conversion.createdAt)}
+                      {conversion.utmCampaign ? ` · Campaña ${conversion.utmCampaign}` : ' · Sin UTM'}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <p className="font-mono text-xs text-text-muted">{generarRefLead(conversion.id)}</p>
+                    <Badge tone={conversion.gclid || conversion.wbraid || conversion.gbraid ? 'info' : 'neutral'}>
+                      {conversion.gclid || conversion.wbraid || conversion.gbraid ? 'Clic Google Ads' : 'Sin clic Ads'}
+                    </Badge>
+                    <Badge tone="neutral">{ETAPA_CONVERSION_LABELS[conversion.etapa] ?? conversion.etapa}</Badge>
                   </div>
                 </div>
               ))}

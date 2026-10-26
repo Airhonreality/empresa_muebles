@@ -1,0 +1,44 @@
+{
+  "id": "t-189",
+  "titulo": "Mapping bidireccional cliente ↔ conversión en la pantalla fusionada",
+  "intencion_negocio": "Javier (2026-10-26): la pantalla Clientes solo tiene sentido por su vínculo con marketing; separarla en /erp/marketing agrega ruido al menú. Se mantiene fusionada y se agrega la opción de asociar una conversión puntual de Google a clientes/proyectos ya cotizados, porque hoy son universos separados. El fin es mapear y analizar toda la información que capturan los pixeles.",
+  "diagnostico": "leads solo se enlazaba a clientes por cliente_id; un cliente/proyecto creado a mano en el cotizador podía no tener conversión y no había forma de mapearlo. eventos_conversion_offline solo se escribía al crear/editar contrato, así que un contrato previo quedaba fuera. La tabla de clientes no indicaba quién no tenía conversión.",
+  "decisiones_supervisor": {
+    "pantalla": "Fusionada en /erp/clientes (Clientes + Conversiones). NO se crea /erp/marketing.",
+    "datos": "Reutilizar el mismo snapshot de clientes (leads, eventos, proyectos, contratos, clientes).",
+    "mapping": "Asociar una conversión concreta a un cliente/proyecto ya existente, en ambas direcciones.",
+    "schema": "Sin cambios de schema ni migraciones."
+  },
+  "zona": "lib/data/actions/{leads,core}.ts + lib/data/conversion-offline.ts + lib/data/queries/clientes-compat.tsx + components/veta/asociar-conversion-modal.tsx + app/erp/(modern)/clientes/**",
+  "tipo": "producto_marketing_atribucion",
+  "riesgo": "medio",
+  "plan_ref": "arnes/planes/plan_t-189.md",
+  "criterios_aceptacion": [
+    "La pantalla sigue fusionada; no existe /erp/marketing.",
+    "Se puede asociar una conversión a un cliente existente y elegir su proyecto cotizado.",
+    "Se puede partir del cliente (Vincular conversión) y elegir la conversión del sitio.",
+    "Si el proyecto ya tiene contrato, la conversión se encola para Google Ads de forma idempotente.",
+    "La tabla de clientes muestra Origen y permite filtrar Solo sin conversión.",
+    "El botón Datos muestra gclid/wbraid/gbraid, UTMs y hasheados de cada conversión (solo lectura).",
+    "La ficha del cliente cuenta también las conversiones vinculadas por proyecto.",
+    "tsc 0, eslint 0 errores, tests en verde y next build sin errores ajenos a conexión."
+  ],
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-10-26): mantener fusionada, reutilizar snapshot y agregar mapping inverso",
+    "fecha": "2026-10-26"
+  },
+  "verificacion_ejecutor": {
+    "fecha": "2026-10-26",
+    "tsc": "0 errores en el proyecto. Único fallo: scripts/clear-bronce-nombre.ts (untracked, ajeno).",
+    "eslint": "0 errores en los archivos tocados (1 warning preexistente: 'ne' en core.ts).",
+    "tests": "conversiones.test.ts OK; coverage.test.ts 4/4; snapshot-tables.test.ts OK.",
+    "build": "npx next build exit 0; /erp/clientes y /erp/clientes/[clienteId] compilan."
+  },
+  "estado": "completada_pendiente_qa",
+  "creada_en": "2026-10-26T00:00:00Z",
+  "commit": null
+}

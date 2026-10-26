@@ -48,6 +48,7 @@ export type {
   CategoriaNotaReunion, NotaReunion,
   GrupoItem,
   PropuestaVersion,
+  Lead, EstadoLead, EventoConversionOffline, EstadoEnvioGoogle,
 } from './contracts'
 
 export { generarSlides } from './presentacion'

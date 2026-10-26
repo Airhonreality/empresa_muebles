@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton'
 import Image from 'next/image';
 import type { Portafolio } from '@/lib/data/contracts';
 import Link from 'next/link';
@@ -292,13 +293,11 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
 
           {/* CTA FINAL DEBAJO DE LA FICHA TÉCNICA */}
           <div className="mt-12 flex items-center justify-between">
-            <Link 
-              href="https://wa.me/573025922101?text=Hola%2C%20estuve%20revisando%20el%20portafolio%20Veta%20Dorada%20y%20quiero%20iniciar%20un%20proyecto." 
-              target="_blank"
+            <AsesoriaBoton
               className="inline-flex justify-center items-center px-6 py-3 border border-text-heading text-text-heading uppercase text-[10px] tracking-widest font-bold rounded-sm hover:bg-text-heading hover:text-bg-paper transition-colors"
             >
               Agendar Asesoría
-            </Link>
+            </AsesoriaBoton>
           </div>
 
         </main>
