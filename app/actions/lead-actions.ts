@@ -32,7 +32,8 @@ export interface SubmitLeadInput {
 export interface SubmitLeadResponse {
   success: boolean;
   leadId?: string;
-  /** Referencia corta que viaja en el mensaje de WhatsApp (VD-XXXXXXXX). */
+  /** Referencia corta (VD-XXXXXXXX). Se conserva en el response para compatibilidad ERP;
+   * ya NO viaja en el cuerpo del mensaje de WhatsApp. */
   ref?: string;
   whatsappUrl?: string;
   error?: string;
@@ -63,9 +64,12 @@ const WHATSAPP_NUMBER = "573025922101";
  * Server Action para guardar un lead con atribución completa (GCLID/GBRAID/WBRAID),
  * hasheado Enhanced Conversions SHA-256 en PostgreSQL y generar la URL de WhatsApp.
  *
- * El `leadId` lo genera el navegador antes de llamar: así el mensaje que el usuario envía
- * lleva una referencia que ya corresponde a la fila, incluso si la escritura tarda o el
- * usuario abandona la página apenas se abre WhatsApp.
+ * El `leadId` lo genera el navegador antes de llamar: así la fila de la DB se identifica
+ * aunque la escritura tarde o el usuario abandone la página apenas se abre WhatsApp.
+ * La referencia corta (`ref`) se devuelve en el response para compatibilidad con el ERP,
+ * pero ya NO se inyecta en el cuerpo del mensaje de WhatsApp; el enlace clic->persona se
+ * hace por teléfono y el seguimiento va por el píxel (gtag con user_data: nombre + teléfono
+ * hasheado).
  */
 export async function submitLeadAction(input: SubmitLeadInput): Promise<SubmitLeadResponse> {
   const parsed = submitLeadSchema.safeParse(input);
@@ -129,17 +133,18 @@ export async function submitLeadAction(input: SubmitLeadInput): Promise<SubmitLe
       leadId = existente?.id;
     }
 
-    // 3. Generar mensaje de WhatsApp pre-llenado (nombre real o saludo sin nombre + ref)
+    // 3. Generar mensaje de WhatsApp pre-llenado (nombre real o saludo sin él; ya sin referencia corta)
     const mensajeText = construirMensajeWhatsApp({
       nombre,
       tipoProyecto,
       ubicacion,
-      ref,
     });
 
     return {
       success: true,
       leadId,
+      /** ref se conserva en el response para compatibilidad ERP (tablas/modales de conversión);
+       * ya NO viaja en el cuerpo del mensaje de WhatsApp. */
       ref,
       whatsappUrl: construirUrlWhatsApp(WHATSAPP_NUMBER, mensajeText),
     };

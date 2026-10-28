@@ -18,7 +18,6 @@ export interface MensajeWhatsAppInput {
   nombre?: string | null
   tipoProyecto?: string | null
   ubicacion?: string | null
-  ref: string
 }
 
 /** Mensaje pre-llenado del primer contacto. Nunca inventa un nombre: si no hay, saluda sin él. */
@@ -26,7 +25,6 @@ export function construirMensajeWhatsApp({
   nombre,
   tipoProyecto,
   ubicacion,
-  ref,
 }: MensajeWhatsAppInput): string {
   const nombreLimpio = nombre?.trim()
   const tipo = tipoProyecto?.trim() || 'Cocina'
@@ -36,7 +34,7 @@ export function construirMensajeWhatsApp({
     ? `Hola Veta Dorada, mi nombre es ${nombreLimpio}.`
     : 'Hola Veta Dorada.'
 
-  return `${saludo} Estoy interesado en un proyecto de ${tipo} en ${ubi}. Ref: ${ref}. Solicito mi asesoría.`
+  return `${saludo} Estoy interesado en un proyecto de ${tipo} en ${ubi}. Solicito mi asesoría.`
 }
 
 export function construirUrlWhatsApp(numero: string, mensaje: string): string {

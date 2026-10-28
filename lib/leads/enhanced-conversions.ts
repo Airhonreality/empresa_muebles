@@ -7,6 +7,7 @@
 export interface UserDataGtag {
   sha256_phone_number?: string
   sha256_email_address?: string
+  name?: string
 }
 
 /** Normaliza a E.164 asumiendo Colombia cuando el número viene sin prefijo país. */
@@ -43,9 +44,11 @@ export async function sha256Hex(value: string): Promise<string | null> {
 export async function construirUserDataGtag({
   telefono,
   email,
+  nombre,
 }: {
   telefono?: string | null
   email?: string | null
+  nombre?: string | null
 }): Promise<UserDataGtag> {
   const userData: UserDataGtag = {}
 
@@ -59,6 +62,11 @@ export async function construirUserDataGtag({
   if (emailLimpio) {
     const hash = await sha256Hex(emailLimpio)
     if (hash) userData.sha256_email_address = hash
+  }
+
+  const nombreLimpio = nombre?.trim()
+  if (nombreLimpio) {
+    userData.name = nombreLimpio
   }
 
   return userData

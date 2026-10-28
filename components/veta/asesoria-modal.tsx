@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import { submitLeadAction } from '@/app/actions/lead-actions';
 import { leerAtribucion } from '@/lib/hooks/useGclidCapture';
 import { construirUserDataGtag } from '@/lib/leads/enhanced-conversions';
-import { construirMensajeWhatsApp, construirUrlWhatsApp, generarRefLead } from '@/lib/leads/ref';
+import { construirMensajeWhatsApp, construirUrlWhatsApp } from '@/lib/leads/ref';
 
 interface AsesoriaModalProps {
   isOpen: boolean;
@@ -87,17 +87,23 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
   };
 
   /**
-   * t-188: la conversión se dispara SIEMPRE con los datos de la persona (teléfono hasheado).
-   * Antes se enviaba anónima, así que Google no podía cruzar el clic con el lead.
+   * t-188: la conversión se dispara SIEMPRE con los datos de la persona (nombre + teléfono hasheado).
+   * El seguimiento va por el píxel (gtag Enhanced Conversions), no por un código en el mensaje.
    */
-  const dispararConversion = async () => {
+  const dispararConversion = async ({
+    nombre,
+    telefono,
+  }: {
+    nombre?: string
+    telefono: string
+  }) => {
     const gtagFn = typeof window !== 'undefined'
       ? (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
       : undefined;
     if (!gtagFn) return;
 
     try {
-      const userData = await construirUserDataGtag({ telefono });
+      const userData = await construirUserDataGtag({ telefono, nombre });
       if (Object.keys(userData).length > 0) {
         gtagFn('set', 'user_data', userData);
       }
@@ -126,16 +132,14 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
 
     const tipoProyectoTexto = tipo === 'gratis' ? 'Asesoría Base' : tipo === '3d' ? 'Asesoría 3D' : 'Cotización con medidas';
 
-    // La referencia y el mensaje se arman ANTES de llamar al servidor: si la escritura tarda o
-    // falla, el usuario igual llega a WhatsApp con su nombre y la referencia (nunca con un
-    // mensaje genérico que pierda el enlace con la persona).
+    // El mensaje pre-llenado lleva el nombre real o saluda sin él; ya no lleva referencia corta
+    // porque el enlace clic->persona se hace por teléfono y el seguimiento va por el píxel (gtag
+    // con user_data: nombre + teléfono hasheado). El leadId sigue siendo necesario para la DB.
     const leadId = generarLeadId();
-    const ref = generarRefLead(leadId);
     const mensaje = construirMensajeWhatsApp({
       nombre,
       tipoProyecto: tipoProyectoTexto,
       ubicacion,
-      ref,
     });
     const urlLocal = construirUrlWhatsApp(WHATSAPP_NUMBER, mensaje);
 
@@ -166,12 +170,12 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
 
       const result = await Promise.race([fetchPromise, timeoutPromise]);
 
-      await dispararConversion();
+      await dispararConversion({ nombre, telefono: telefono.trim() });
       executeRedirect(result.whatsappUrl || urlLocal);
     } catch (error) {
       console.error('Fallback activado: Error al procesar lead', error);
       // Degradación elegante: mismo mensaje (nombre + ref), aunque la fila no se haya guardado.
-      await dispararConversion();
+      await dispararConversion({ nombre, telefono: telefono.trim() });
       executeRedirect(urlLocal);
     }
   };
