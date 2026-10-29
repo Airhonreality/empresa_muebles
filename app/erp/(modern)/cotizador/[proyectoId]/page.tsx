@@ -1568,6 +1568,7 @@ function VarianteContenido({
   const [menuAñadirAbierto, setMenuAñadirAbierto] = useState(false)
   const [itemDropdownAbierto, setItemDropdownAbierto] = useState<string | null>(null)
   const [grupoAñadiendo, setGrupoAñadiendo] = useState<string | null>(null)
+  const [itemAnidando, setItemAnidando] = useState<string | null>(null)
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
   const tieneContexto = Boolean(espacio.descripcion) || espacio.fotosEspacio.length > 0 ||
@@ -2128,12 +2129,11 @@ function VarianteContenido({
                         <button
                           type="button"
                           onClick={() => {
+                            setItemAnidando(item.id)
                             setItemDropdownAbierto(null)
-                            // TODO: Phase 2 - implement group nesting modal/selector
                           }}
                           className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-                          title="Drag & drop para anidar (próximamente)"
-                          disabled
+                          title="Anidar este item en un grupo"
                         >
                           📁 Anidar en grupo
                         </button>
@@ -2564,6 +2564,51 @@ function VarianteContenido({
           }}
           onEditarProducto={(producto) => setProductoAEditar(producto)}
         />
+      )}
+
+      {/* Modal para anidar item en grupo */}
+      {itemAnidando && (
+        <Modal
+          open={true}
+          onClose={() => setItemAnidando(null)}
+          title="Anidar Item en Grupo"
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-text-muted">
+              Selecciona el grupo donde deseas anidar este item:
+            </p>
+            {grupos.length === 0 ? (
+              <p className="text-xs text-text-muted italic">
+                No hay grupos creados. Crea un grupo primero.
+              </p>
+            ) : (
+              <div className="space-y-1 max-h-64 overflow-y-auto">
+                {grupos.map((grupo) => (
+                  <button
+                    key={grupo.id}
+                    type="button"
+                    onClick={async () => {
+                      await store.items.actualizar(itemAnidando, { grupoItemId: grupo.id })
+                      setItemAnidando(null)
+                    }}
+                    className="w-full text-left px-3 py-2 rounded border border-border-subtle hover:bg-bg-alt hover:border-gold-400 transition-all text-xs text-text-heading"
+                  >
+                    {'  '.repeat(grupo.padreId ? 1 : 0)}📁 {grupo.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end pt-2 border-t border-border-subtle">
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={() => setItemAnidando(null)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {crearProducto && (
