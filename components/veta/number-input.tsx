@@ -50,6 +50,10 @@ export function NumberInput({
     onBlurLocal();
   };
 
+  const handleFocus: React.FocusEventHandler<HTMLInputElement> = (e) => {
+    e.target.select();
+  };
+
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       {label && (
@@ -65,6 +69,7 @@ export function NumberInput({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
+        onFocus={handleFocus}
         className={`w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 text-base text-text-primary outline-none ${
           error
             ? "border-error-stroke focus:border-error-stroke"
