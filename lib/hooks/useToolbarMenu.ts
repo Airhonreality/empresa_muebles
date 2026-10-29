@@ -12,7 +12,7 @@ export function useToolbarMenu(initialOpen = false) {
     setOpen(false)
   }, [])
 
-  const open_ = useCallback(() => {
+  const openMenu = useCallback(() => {
     setOpen(true)
   }, [])
 
@@ -34,7 +34,7 @@ export function useToolbarMenu(initialOpen = false) {
     open,
     toggle,
     close,
-    open: open_,
+    openMenu,
     menuRef,
   }
 }
