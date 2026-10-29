@@ -1,3 +1,6 @@
 export { ItemRow, type ItemRowProps } from './ItemRow'
 export { GrupoNodo, type GrupoNodoProps } from './GrupoNodo'
 export { BulkActionsBar, type BulkActionsBarProps } from './BulkActionsBar'
+export { DragDropContainer, type DragDropContainerProps } from './DragDropContainer'
+export { DraggableItemRow, type DraggableItemRowProps } from './DraggableItemRow'
+export { DroppableGrupo, type DroppableGrupoProps } from './DroppableGrupo'
