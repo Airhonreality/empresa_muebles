@@ -435,7 +435,7 @@ export async function generarPDFCuentaCobro(input: CuentaCobroPDFInput): Promise
   `
 
   const template = {
-    basePdf: null as never,
+    basePdf: undefined as unknown as never,
     schemas: [
       [
         {
