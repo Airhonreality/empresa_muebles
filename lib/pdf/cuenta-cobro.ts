@@ -6,6 +6,7 @@
  */
 
 import { generate } from '@pdfme/generator'
+import { BLANK_PDF } from '@pdfme/common'
 
 const D4_TOKENS = {
   brand: '#8B6914',
@@ -435,7 +436,7 @@ export async function generarPDFCuentaCobro(input: CuentaCobroPDFInput): Promise
   `
 
   const template = {
-    basePdf: undefined as unknown as never,
+    basePdf: BLANK_PDF,
     schemas: [
       [
         {
