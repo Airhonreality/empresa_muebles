@@ -7,7 +7,7 @@ import type {
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, CatalogoEspacioArquitectonico,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto,
-  BitacoraArticulo, Testimonio,
+  BitacoraArticulo, Testimonio, GrupoItem, ContenedorDescriptivo,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 
@@ -562,5 +562,82 @@ export const HERRAMIENTAS: Herramienta[] = [
 export const DOCUMENTOS_PROYECTO: DocumentoProyecto[] = [
   { id: UUID('doc01'), proyectoId: UUID('proj10'), etapa: 'produccion', alojador: 'r2', url: 'https://r2.mock/proyectos/proj10-avance1.jpg', nombre: 'Avance de armado — cocina', createdAt: '2026-08-06T09:00:00Z' },
   { id: UUID('doc02'), proyectoId: UUID('proj10'), etapa: 'cotizacion', alojador: 'drive_veta_erp', url: 'https://drive.google.com/mock/proj10-diseno-skp', nombre: 'Modelo SketchUp — versión 2', createdAt: '2026-08-02T09:00:00Z' },
+]
+
+// --- Fase 3.1: Grupos de Items y Contenedores Descriptivos (2026-10-29) ---
+
+export const GRUPOS_ITEM: GrupoItem[] = [
+  { id: UUID('grupo-isla'), espacioVarianteId: UUID('esp02'), nombre: 'Isla Central', padreId: null, orden: 0, jornadasDesarrolloTecnico: '2.0', jornadasEnsamblajeTaller: '3.0', jornadasInstalacionObra: '2.0', estado: 'temporal', productoCatalogoId: null },
+  { id: UUID('grupo-altos'), espacioVarianteId: UUID('esp01'), nombre: 'Muebles Altos', padreId: null, orden: 0, jornadasDesarrolloTecnico: '1.5', jornadasEnsamblajeTaller: '2.0', jornadasInstalacionObra: '1.5', estado: 'temporal', productoCatalogoId: null },
+  { id: UUID('grupo-bajos'), espacioVarianteId: UUID('esp01'), nombre: 'Muebles Bajos', padreId: null, orden: 1, jornadasDesarrolloTecnico: '2.0', jornadasEnsamblajeTaller: '3.0', jornadasInstalacionObra: '2.0', estado: 'temporal', productoCatalogoId: null },
+  { id: UUID('grupo-despensa'), espacioVarianteId: UUID('esp03'), nombre: 'Despensa', padreId: null, orden: 0, jornadasDesarrolloTecnico: '1.0', jornadasEnsamblajeTaller: '2.0', jornadasInstalacionObra: '1.0', estado: 'temporal', productoCatalogoId: null },
+]
+
+export const CONTENEDORES_DESCRIPTIVOS: ContenedorDescriptivo[] = [
+  // Grupo "Isla Central" del espacio "Isla central"
+  {
+    id: UUID('cond-isla-central'),
+    espacioVarianteId: null,
+    grupoItemId: UUID('grupo-isla'),
+    descripcion: 'Isla central con cubierta en granito negro, gavetas con frentes en blanco brillante',
+    fotosEspacio: [],
+    fotosDisenio: [
+      'https://r2.mock/proyectos/cotizacion/isla-frente.jpg',
+      'https://r2.mock/proyectos/cotizacion/isla-arriba.jpg',
+    ],
+    fotosReferencia: [
+      'https://r2.mock/catalogos/referencias/isla-granito-1.jpg',
+    ],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
+  // Grupo "Muebles Altos"
+  {
+    id: UUID('cond-muebles-altos'),
+    espacioVarianteId: null,
+    grupoItemId: UUID('grupo-altos'),
+    descripcion: 'Muebles altos con vidrio templado en puertas',
+    fotosEspacio: [],
+    fotosDisenio: [],
+    fotosReferencia: [],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
+  // Grupo "Muebles Bajos"
+  {
+    id: UUID('cond-muebles-bajos'),
+    espacioVarianteId: null,
+    grupoItemId: UUID('grupo-bajos'),
+    descripcion: 'Muebles bajos con cubierta en roble',
+    fotosEspacio: [],
+    fotosDisenio: [],
+    fotosReferencia: [],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
+  // Grupo "Despensa"
+  {
+    id: UUID('cond-despensa'),
+    espacioVarianteId: null,
+    grupoItemId: UUID('grupo-despensa'),
+    descripcion: 'Estantería de despensa en roble con 6 baldas',
+    fotosEspacio: [],
+    fotosDisenio: [],
+    fotosReferencia: [],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
+  // Contenedor para espacio "Cocina principal"
+  {
+    id: UUID('cond-esp-cocina'),
+    espacioVarianteId: UUID('esp01'),
+    grupoItemId: null,
+    descripcion: 'Muebles bajos + altos + isla central',
+    fotosEspacio: [],
+    fotosDisenio: [],
+    fotosReferencia: [],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
 ]
 
