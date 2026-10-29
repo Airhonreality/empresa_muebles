@@ -375,9 +375,9 @@ function EspacioDetalle({
   nombreItem: (item: ItemVariante) => string
 }) {
   const fotos: Array<{ label: string; urls: string[] }> = [
-    { label: 'Fotos del espacio', urls: espacio.fotosEspacio },
-    { label: 'Fotos de diseño', urls: espacio.fotosDisenio },
-    { label: 'Fotos de referencia', urls: espacio.fotosReferencia },
+    { label: 'Fotos del espacio', urls: espacio.fotosEspacio ?? [] },
+    { label: 'Fotos de diseño', urls: espacio.fotosDisenio ?? [] },
+    { label: 'Fotos de referencia', urls: espacio.fotosReferencia ?? [] },
   ].filter((g) => g.urls.length > 0)
   const tieneJornadas =
     numDe(espacio.jornadasDesarrolloTecnico) > 0 ||

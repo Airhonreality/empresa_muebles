@@ -2989,6 +2989,11 @@ export function createMockStore(): DataStore {
           nombre,
           padreId,
           orden: hermanos.length,
+          jornadasDesarrolloTecnico: '0',
+          jornadasEnsamblajeTaller: '0',
+          jornadasInstalacionObra: '0',
+          estado: 'temporal',
+          productoCatalogoId: null,
         }
         gruposItemArr.push(nuevo)
         notify()

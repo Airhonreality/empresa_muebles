@@ -28,7 +28,7 @@ export function ConvertirGrupoAProductoModal({ grupo, abierto, onClose, onSucces
     try {
       await convertirGrupoAProductoAction(grupo.id, {
         nombreProducto: nombre,
-        descripcion: grupo.contenedor?.descripcion,
+        descripcion: grupo.contenedor?.descripcion ?? undefined,
         precioPublico: grupo.precioPublicoGrupo,
         categoria: categoria || undefined,
       })

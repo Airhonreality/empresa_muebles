@@ -294,16 +294,12 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
       nombreEspacio: validado.nombreEspacio,
       nombreVariante: validado.nombreVariante ?? 'Inicial',
       tipoEspacio: validado.tipoEspacio ?? null,
-      descripcion: validado.descripcion ?? null,
       activa: validado.activa ?? true,
       visibleEnPropuestaPublica: validado.visibleEnPropuestaPublica ?? true,
       orden,
       jornadasDesarrolloTecnico: validado.jornadasDesarrolloTecnico ?? '0',
       jornadasEnsamblajeTaller: validado.jornadasEnsamblajeTaller ?? '0',
       jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
-      fotosEspacio: sanitizarUrlsFotos(validado.fotosEspacio) ?? [],
-      fotosDisenio: sanitizarUrlsFotos(validado.fotosDisenio) ?? [],
-      fotosReferencia: sanitizarUrlsFotos(validado.fotosReferencia) ?? [],
     }).onConflictDoNothing({ target: s.espacioVariantes.id }).returning()
 
     if (nuevo) return nuevo as unknown as EspacioVariante

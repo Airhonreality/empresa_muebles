@@ -7,7 +7,7 @@ import { useState } from 'react'
 interface Props {
   grupo: GrupoItemHidratado
   parametros: ParametrosManoObra
-  onUpdate: (cambios: Partial<typeof grupo>) => Promise<void>
+  onUpdate: (cambios: Partial<GrupoItemHidratado>) => Promise<void>
   onConvert: () => void
 }
 

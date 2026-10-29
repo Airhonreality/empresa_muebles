@@ -1652,9 +1652,9 @@ function VarianteContenido({
             onClick={() => setContextoForzado(true)}
             className="w-full flex items-center gap-3 py-1 text-left hover:bg-bg-alt/50 rounded transition-colors duration-fast"
           >
-            {(espacio.fotosEspacio[0] ?? espacio.fotosDisenio[0]) ? (
+            {(( espacio.fotosEspacio ?? [] )[0] ?? ( espacio.fotosDisenio ?? [] )[0]) ? (
               // eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob:, no assets estáticos optimizables
-              <img src={espacio.fotosEspacio[0] ?? espacio.fotosDisenio[0]} alt="" className="w-10 h-10 rounded object-cover border border-border-subtle flex-shrink-0" />
+              <img src={( espacio.fotosEspacio ?? [] )[0] ?? ( espacio.fotosDisenio ?? [] )[0]} alt="" className="w-10 h-10 rounded object-cover border border-border-subtle flex-shrink-0" />
             ) : (
               <div className="w-10 h-10 rounded border border-dashed border-border-subtle flex-shrink-0" />
             )}
@@ -2979,9 +2979,9 @@ function FormDetallesEspacio({
       })
       .filter((x): x is AcabadoSeleccionado => x !== null)
   })
-  const [fotosEspacio, setFotosEspacio] = useState<string[]>(espacio.fotosEspacio)
-  const [fotosDisenio, setFotosDisenio] = useState<string[]>(espacio.fotosDisenio)
-  const [fotosReferencia, setFotosReferencia] = useState<string[]>(espacio.fotosReferencia)
+  const [fotosEspacio, setFotosEspacio] = useState<string[]>(espacio.fotosEspacio ?? [])
+  const [fotosDisenio, setFotosDisenio] = useState<string[]>(espacio.fotosDisenio ?? [])
+  const [fotosReferencia, setFotosReferencia] = useState<string[]>(espacio.fotosReferencia ?? [])
 
   const handleGuardar = useCallback(async () => {
     await store.espacios.actualizar(espacio.id, {

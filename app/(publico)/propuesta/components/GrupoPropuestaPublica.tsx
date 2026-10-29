@@ -1,6 +1,6 @@
 'use client'
 
-import type { GrupoItemCalculado } from '@/lib/data/contracts'
+import type { GrupoItemCalculado, GrupoItemHidratado } from '@/lib/data/contracts'
 import { calcularGrupoConSubgrupos, type ParametrosManoObra } from '@/lib/data/queries/grupo-calculado'
 import { useState } from 'react'
 import Image from 'next/image'
@@ -85,14 +85,17 @@ export function GrupoPropuestaPublica({ grupo, parametros }: Props) {
           </div>
 
           {/* Subgrupos */}
-          {grupo.subgrupos.length > 0 && (
+          {grupo.subgrupos && grupo.subgrupos.length > 0 && (
             <div className="mt-4 border-t pt-4">
               <h4 className="font-semibold text-sm mb-2">Componentes:</h4>
-              {grupo.subgrupos.map((sub) => (
-                <div key={sub.id} className="ml-4 border-l-2 border-gray-300 pl-4 mb-3">
-                  <GrupoPropuestaPublica grupo={sub} parametros={parametros} />
-                </div>
-              ))}
+              {(grupo.subgrupos as GrupoItemHidratado[]).map((sub) => {
+                const subCalculado = calcularGrupoConSubgrupos(sub, parametros)
+                return (
+                  <div key={sub.id} className="ml-4 border-l-2 border-gray-300 pl-4 mb-3">
+                    <GrupoPropuestaPublica grupo={subCalculado} parametros={parametros} />
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
