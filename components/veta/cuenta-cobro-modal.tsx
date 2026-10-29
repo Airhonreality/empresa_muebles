@@ -3,12 +3,10 @@
 import { useState, useCallback, useMemo } from 'react'
 import { Button } from '@/components/veta/button'
 import { Modal } from '@/components/veta/modal'
-import { generarPDFCuentaCobroAction } from '@/app/actions/pdf/cuenta-cobro'
 import { type Contrato } from '@/lib/data/contracts'
 import { type HitoPago } from '@/lib/data/contracts'
 import { type Cliente } from '@/lib/data/contracts'
 import { type Proyecto } from '@/lib/data/contracts'
-import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import { useToast } from '@/components/veta/toast-provider'
 
 function parseNum(s: string | null | undefined): number {
@@ -44,24 +42,17 @@ export function CuentaCobroModal({
   proyecto,
 }: CuentaCobroModalProps) {
   const { mostrarError } = useToast()
-  const { guard, isPending } = usePendingGuard()
 
   const [hitoSeleccionado, setHitoSeleccionado] = useState<HitoPago | null>(null)
   const [numeroDocumento, setNumeroDocumento] = useState('')
   const [fechaVencimiento, setFechaVencimiento] = useState('')
-  const [generando, setGenerando] = useState(false)
 
   const fechaEmision = useMemo(() => {
     const hoy = new Date()
     return hoy.toISOString().slice(0, 10)
   }, [])
 
-  const valorHito = useMemo(() => {
-    if (!hitoSeleccionado) return '0'
-    return hitoSeleccionado.montoOPorcentaje
-  }, [hitoSeleccionado])
-
-  const generarPDF = useCallback(async () => {
+  const generarPDF = useCallback(() => {
     if (!hitoSeleccionado) {
       mostrarError('Selecciona un hito antes de generar la cuenta de cobro.')
       return
@@ -75,66 +66,15 @@ export function CuentaCobroModal({
       return
     }
 
-    setGenerando(true)
-    try {
-      const resultado = await guard(async () => {
-        return await generarPDFCuentaCobroAction({
-          numeroDocumento: numeroDocumento.trim(),
-          fechaEmision,
-          fechaVencimiento: fechaVencimiento || fechaEmision,
-          emisorNombre: 'Hermanos García González S.A.S',
-          emisorNit: '901421357-9',
-          emisorDomicilio: 'Cra 72a 71a 57, Bogotá D.C., Colombia',
-          emisorRepLegal: 'Airhon Javier García Rozo',
-          emisorCc: '123.350.6023',
-          emisorEmail: 'Vetadeoro.co@gmail.com',
-          emisorTelefono: '302 5922101',
-          emisorBanco: 'Bancolombia',
-          emisorTipoCuenta: 'Cuenta de Ahorros',
-          emisorNumeroCuenta: '62700003257',
-          clienteNombre: cliente.nombre,
-          clienteDocumento: cliente.documento ?? 's/documento',
-          clienteDomicilio: cliente.domicilio ?? 's/domicilio',
-          clienteEmail: cliente.email ?? 's/email',
-          clienteTelefono: cliente.telefono ?? 's/tel',
-          contratoCodigo: contrato.codigoContrato,
-          contratoObjeto: contrato.objetoItems ?? proyecto.nombreProyecto,
-          hitoOrden: hitoSeleccionado.orden,
-          hitoRazon: hitoSeleccionado.razon ?? 'Hito de pago',
-          hitoMonto: valorHito,
-          valorNumero: valorHito,
-          valorLetras: '',
-        })
-      })
-
-      if (!resultado) return
-
-      if (!resultado.ok) {
-        throw new Error(resultado.error ?? 'Error desconocido generando el PDF')
-      }
-
-      const byteCharacters = atob(resultado.pdfBase64!)
-      const byteArrays = []
-      for (let offset = 0; offset < byteCharacters.length; offset++) {
-        byteArrays.push(byteCharacters.charCodeAt(offset))
-      }
-      const blob = new Blob([new Uint8Array(byteArrays)], { type: 'application/pdf' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = resultado.filename!
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
-      onClose()
-    } catch (err) {
-      mostrarError(err instanceof Error ? err.message : 'No se pudo generar la cuenta de cobro.')
-    } finally {
-      setGenerando(false)
-    }
-  }, [guard, hitoSeleccionado, numeroDocumento, fechaEmision, fechaVencimiento, cliente, contrato, proyecto, valorHito, mostrarError, onClose])
+    // Mismo pipeline que el contrato: página imprimible + window.print(), sin PDF binario.
+    const query = new URLSearchParams({
+      hitoId: hitoSeleccionado.id,
+      numeroDocumento: numeroDocumento.trim(),
+      fechaVencimiento: fechaVencimiento || fechaEmision,
+    })
+    window.open(`/erp/cotizador/${proyecto.id}/cuenta-cobro?${query.toString()}`, '_blank', 'noopener')
+    onClose()
+  }, [hitoSeleccionado, numeroDocumento, fechaEmision, fechaVencimiento, cliente, proyecto.id, mostrarError, onClose])
 
   if (!open) return null
 
@@ -150,7 +90,7 @@ export function CuentaCobroModal({
     <Modal open={open} onClose={onClose} title="Generar Cuenta de Cobro" maxWidthClassName="max-w-2xl">
       <div className="space-y-4">
         <p className="text-xs text-text-muted">
-          Completa los datos y selecciona el hito de contrato para generar la cuenta de cobro en PDF.
+          Completa los datos y selecciona el hito. La cuenta de cobro se abrirá en una pestaña nueva lista para imprimir o guardar como PDF.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -226,19 +166,16 @@ export function CuentaCobroModal({
         )}
 
         <div className="pt-2 flex justify-end gap-2">
-          <Button variant="ghost" size="md" onClick={onClose} disabled={isPending || generando}>
+          <Button variant="ghost" size="md" onClick={onClose}>
             Cancelar
           </Button>
           <Button
             variant="primary"
             size="md"
             onClick={generarPDF}
-            disabled={
-              !hitoSeleccionado || !numeroDocumento.trim() || !cliente || isPending || generando
-            }
-            loading={isPending || generando}
+            disabled={!hitoSeleccionado || !numeroDocumento.trim() || !cliente}
           >
-            Generar PDF
+            Abrir e imprimir
           </Button>
         </div>
       </div>
