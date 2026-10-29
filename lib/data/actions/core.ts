@@ -625,6 +625,8 @@ export async function convertirGrupoAProductoAction(
   datosProducto: {
     nombreProducto: string
     descripcion?: string
+    imagenUrl?: string
+    galeriaImagenesUrl?: string[]
     precioPublico: string
     categoria?: string
   }
@@ -639,6 +641,8 @@ export async function convertirGrupoAProductoAction(
       sku,
       descripcion: datosProducto.nombreProducto,
       tipo: 'compuesto', // Tipo especial para productos multi-item
+      imagenUrl: datosProducto.imagenUrl ?? null,
+      galeriaImagenesUrl: datosProducto.galeriaImagenesUrl ?? [],
       precioPublico: datosProducto.precioPublico,
       categoriaComercial: datosProducto.categoria ?? null,
       publicadoWeb: false,

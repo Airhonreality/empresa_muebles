@@ -29,6 +29,11 @@ export function ConvertirGrupoAProductoModal({ grupo, abierto, onClose, onSucces
       await convertirGrupoAProductoAction(grupo.id, {
         nombreProducto: nombre,
         descripcion: grupo.contenedor?.descripcion ?? undefined,
+        imagenUrl: grupo.contenedor?.fotosDisenio?.[0] ?? undefined,
+        galeriaImagenesUrl: [
+          ...(grupo.contenedor?.fotosDisenio ?? []),
+          ...(grupo.contenedor?.fotosReferencia ?? []),
+        ],
         precioPublico: grupo.precioPublicoGrupo,
         categoria: categoria || undefined,
       })
