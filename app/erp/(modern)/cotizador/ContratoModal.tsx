@@ -662,9 +662,9 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                     {bloque.espacio.descripcion && (
                       <p className="text-text-muted">{bloque.espacio.descripcion}</p>
                     )}
-                    {bloque.espacio.fotosDisenio.length > 0 && (
+                    {(bloque.espacio.fotosDisenio ?? []).length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-2">
-                        {bloque.espacio.fotosDisenio.map((url, i) => (
+                        {(bloque.espacio.fotosDisenio ?? []).map((url, i) => (
                           <img
                             key={i}
                             src={url}
