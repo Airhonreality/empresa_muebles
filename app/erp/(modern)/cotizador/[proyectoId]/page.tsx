@@ -35,6 +35,10 @@ import { useEstadoPublicacionPropuesta } from '@/lib/data/queries/useCotizadorQu
 import { VersionesPropuestaModal } from '@/components/veta/versiones-propuesta-modal'
 import { formatRelativeDate } from '@/lib/utils/format'
 import { destinosProyectoValidos } from '@/lib/data/transiciones-proyecto'
+import { ItemRow } from '@/components/cotizador/ItemRow'
+import { GrupoNodo } from '@/components/cotizador/GrupoNodo'
+import { BulkActionsBar } from '@/components/cotizador/BulkActionsBar'
+import { useItemSelection } from '@/lib/hooks/useItemSelection'
 
 /* Wrapper local para el input de "Grupo referencial": vive dentro de un `.map()`, así que el hook
    no puede llamarse directamente en el callback del map (violaría Rules of Hooks) -- por eso se
@@ -1564,7 +1568,7 @@ function VarianteContenido({
   const [creandoGrupoPadreId, setCreandoGrupoPadreId] = useState<string | null | undefined>(undefined)
   const [nombreNuevoGrupo, setNombreNuevoGrupo] = useState('')
   // t-160 (2026-10-29): selección múltiple para acciones en lote sobre items
-  const [itemsSeleccionados, setItemsSeleccionados] = useState<Set<string>>(new Set())
+  const { selected: itemsSeleccionados, toggle: toggleItemSelection, clearAll: clearItemSelection } = useItemSelection()
   const [menuAñadirAbierto, setMenuAñadirAbierto] = useState(false)
   const [itemDropdownAbierto, setItemDropdownAbierto] = useState<string | null>(null)
   const [grupoAñadiendo, setGrupoAñadiendo] = useState<string | null>(null)
@@ -2012,15 +2016,7 @@ function VarianteContenido({
                   <input
                     type="checkbox"
                     checked={itemsSeleccionados.has(item.id)}
-                    onChange={(e) => {
-                      const nuevo = new Set(itemsSeleccionados)
-                      if (e.target.checked) {
-                        nuevo.add(item.id)
-                      } else {
-                        nuevo.delete(item.id)
-                      }
-                      setItemsSeleccionados(nuevo)
-                    }}
+                    onChange={(e) => toggleItemSelection(item.id)}
                     aria-label={`Seleccionar ${item.nombrePersonalizado ?? 'ítem'}`}
                     className="shrink-0 w-4 h-4 rounded text-gold-500 cursor-pointer"
                   />
@@ -2241,54 +2237,28 @@ function VarianteContenido({
               )}
               {!hayGrupos && itemsContractuales.map(renderItemRow)}
 
-              {/* t-160 (2026-10-29): menú de acciones en lote — aparece cuando hay items seleccionados */}
-              {itemsSeleccionados.size > 0 && (
-                <div className="mt-4 p-4 rounded border border-gold-400 bg-gold-50/40 flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold text-gold-700">
-                    {itemsSeleccionados.size} item{itemsSeleccionados.size !== 1 ? 's' : ''} seleccionado{itemsSeleccionados.size !== 1 ? 's' : ''}
-                  </span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button
-                      variant="secondary"
-                      size="md"
-                      className="text-xs"
-                      onClick={() => {
-                        itemsSeleccionados.forEach((id) => {
-                          const item = items.find((i) => i.id === id)
-                          if (item) {
-                            actualizarItem(id, 'esReferencial', !item.esReferencial)
-                          }
-                        })
-                        setItemsSeleccionados(new Set())
-                      }}
-                    >
-                      ↔ Mover
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="md"
-                      className="text-xs"
-                      onClick={() => {
-                        if (window.confirm(`¿Eliminar ${itemsSeleccionados.size} ítem${itemsSeleccionados.size !== 1 ? 's' : ''}?`)) {
-                          itemsSeleccionados.forEach((id) => {
-                            void store.items.eliminar(id)
-                          })
-                          setItemsSeleccionados(new Set())
-                        }
-                      }}
-                    >
-                      🗑 Eliminar
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={() => setItemsSeleccionados(new Set())}
-                      className="ml-2 text-xs text-text-muted hover:text-text-heading transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              )}
+              {/* t-160 (2026-10-29): menú de acciones en lote — componente reutilizable */}
+              <BulkActionsBar
+                selectedCount={itemsSeleccionados.size}
+                selectedItems={itemsSeleccionados}
+                items={items}
+                onMove={(ids) => {
+                  ids.forEach((id) => {
+                    const item = items.find((i) => i.id === id)
+                    if (item) {
+                      actualizarItem(id, 'esReferencial', !item.esReferencial)
+                    }
+                  })
+                  clearItemSelection()
+                }}
+                onDelete={(ids) => {
+                  ids.forEach((id) => {
+                    void store.items.eliminar(id)
+                  })
+                  clearItemSelection()
+                }}
+                onClear={clearItemSelection}
+              />
             </>
           )
         })()}
@@ -2340,15 +2310,7 @@ function VarianteContenido({
                       <input
                         type="checkbox"
                         checked={itemsSeleccionados.has(item.id)}
-                        onChange={(e) => {
-                          const nuevo = new Set(itemsSeleccionados)
-                          if (e.target.checked) {
-                            nuevo.add(item.id)
-                          } else {
-                            nuevo.delete(item.id)
-                          }
-                          setItemsSeleccionados(nuevo)
-                        }}
+                        onChange={(e) => toggleItemSelection(item.id)}
                         aria-label={`Seleccionar ${item.nombrePersonalizado ?? 'ítem'}`}
                         className="shrink-0 w-4 h-4 rounded text-gold-500 cursor-pointer"
                       />
