@@ -19,6 +19,7 @@ import { AcabadoPicker, type AcabadoSeleccionado } from '@/components/veta/acaba
 import { Modal } from '@/components/veta/modal'
 import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-espacios'
 import { ContratoModal } from '../ContratoModal'
+import { CuentaCobroModal } from '@/components/veta/cuenta-cobro-modal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { ParametrosFinancierosModal } from '@/components/veta/parametros-financieros-modal'
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
@@ -213,6 +214,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
     new Set(espaciosBase.map((e) => e.nombreEspacio)),
   )
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
+  const [mostrarCuentaCobroModal, setMostrarCuentaCobroModal] = useState(false)
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [mostrarParametrosFinancieros, setMostrarParametrosFinancieros] = useState(false)
   // 2026-10-01 (diagnóstico UX, ronda 2): vuelve a arrancar colapsado -- Costos Operativos (la
@@ -460,6 +462,13 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       label: contrato ? 'Editar Contrato' : 'Generar Contrato',
       variant: 'primary',
       onClick: () => setMostrarContratoModal(true),
+    },
+    {
+      id: 'generar-cuenta-cobro',
+      label: 'Cuenta de Cobro',
+      variant: 'secondary',
+      hidden: !contrato || hitosList.length === 0,
+      onClick: () => setMostrarCuentaCobroModal(true),
     },
     {
       id: 'eliminar',
@@ -830,6 +839,20 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             hitosExistentes={hitosList}
             onClose={() => setMostrarContratoModal(false)}
             onSaved={() => setMostrarContratoModal(false)}
+          />
+        )}
+
+        {/* Modal Generar Cuenta de Cobro: permite seleccionar un hito del contrato y generar
+              el PDF de cuenta de cobro estándar Colombia (emisor → "Debe a" cliente, concepto,
+              valor en número y letras, firma del representante legal). */}
+        {mostrarCuentaCobroModal && proyecto && contrato && (
+          <CuentaCobroModal
+            open={mostrarCuentaCobroModal}
+            onClose={() => setMostrarCuentaCobroModal(false)}
+            contrato={contrato}
+            hitos={hitosList}
+            cliente={cliente}
+            proyecto={proyecto}
           />
         )}
 
