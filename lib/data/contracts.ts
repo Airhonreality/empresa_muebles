@@ -109,7 +109,6 @@ export interface EspacioVariante {
   nombreVariante: string
   /** Tipo canónico del espacio (lib/catalogos/tipos-espacio.ts) — Portafolio lo hereda vía espacioVarianteId. */
   tipoEspacio: string | null
-  descripcion: string | null
   /** Variante activa (la que se cotiza y factura). Se controla desde el header/tab del espacio, no desde formulario. */
   activa: boolean
   /** Visible en la propuesta pública (PDF + pantalla de propuesta al cliente). */
@@ -118,9 +117,61 @@ export interface EspacioVariante {
   jornadasDesarrolloTecnico: string
   jornadasEnsamblajeTaller: string
   jornadasInstalacionObra: string
+  // Campos descriptivos (2026-10-29): movidos a ContenedorDescriptivo, cargados opcionalmente
+  descripcion?: string | null
+  fotosEspacio?: string[]
+  fotosDisenio?: string[]
+  fotosReferencia?: string[]
+}
+
+/** NUEVA (2026-10-29): Schema descriptivo compartido — espacios y grupos usan la misma tabla para
+ * descripción, fotos y artefactos. Relación polimorfa: uno u otro FK es NOT NULL, nunca ambos. */
+export interface ContenedorDescriptivo {
+  id: string
+  espacioVarianteId: string | null
+  grupoItemId: string | null
+  descripcion: string | null
   fotosEspacio: string[]
   fotosDisenio: string[]
   fotosReferencia: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+/** Helper: EspacioVariante + ContenedorDescriptivo cargado.
+ * Usado por queries y componentes que necesitan los datos descriptivos.
+ * El contenedor puede ser null si no existe fila en contenedores_descriptivos (caso legacy). */
+export interface EspacioVarianteHidratado extends EspacioVariante {
+  contenedor: ContenedorDescriptivo | null
+}
+
+/** Acceso de conveniencia: si contenedor existe, sus fotos; si no, arrays vacíos. */
+export function obtenerFotosEspacio(e: EspacioVarianteHidratado): string[] {
+  return e.contenedor?.fotosEspacio ?? []
+}
+export function obtenerFotosDisenio(e: EspacioVarianteHidratado): string[] {
+  return e.contenedor?.fotosDisenio ?? []
+}
+export function obtenerFotosReferencia(e: EspacioVarianteHidratado): string[] {
+  return e.contenedor?.fotosReferencia ?? []
+}
+export function obtenerDescripcion(e: EspacioVarianteHidratado): string | null {
+  return e.contenedor?.descripcion ?? null
+}
+
+/** GrupoItem + ContenedorDescriptivo + ítems cargados. Objeto completo para UI. */
+export interface GrupoItemHidratado extends GrupoItem {
+  contenedor: ContenedorDescriptivo | null
+  items: ItemVariante[]  // Ítems que pertenecen a este grupo
+  subgrupos: GrupoItemHidratado[]  // Subgrupos anidados
+}
+
+/** Cálculo de precio público de grupo: suma de ítems + valor mano de obra */
+export interface GrupoItemCalculado extends GrupoItemHidratado {
+  sumaItemsNeto: string
+  sumaItemsConIVA: string
+  valorManoObraEstimada: string
+  precioPublicoGrupo: string  // sumaItemsConIVA + valorManoObraEstimada
 }
 
 export interface ItemVariante {
@@ -169,6 +220,9 @@ export interface ItemVariante {
  * pero un concepto NUEVO y SEPARADO de `Modulo`: `Modulo` es de PRODUCCIÓN (taller/calidad/
  * garantía, post-contrato); `GrupoItem` es de COTIZACIÓN (pre-contrato, vive en
  * `app/erp/cotizador/`). Cero relación entre los dos — ver arnes/tareas/t-157.json.
+ *
+ * 2026-10-29: extendido para ser entidad completa con jornadas propias + ciclo de vida
+ * (temporal → permanente al convertirse en ProductoCatalogo).
  */
 export interface GrupoItem {
   id: string
@@ -176,6 +230,11 @@ export interface GrupoItem {
   nombre: string
   padreId: string | null
   orden: number
+  jornadasDesarrolloTecnico: string
+  jornadasEnsamblajeTaller: string
+  jornadasInstalacionObra: string
+  estado: 'temporal' | 'permanente'
+  productoCatalogoId: string | null
 }
 
 export interface CampoPersonalizadoProducto {

@@ -252,7 +252,6 @@ export const espacioVariantes = pgTable("espacio_variantes", {
 	// proyecto tipa su espacio acá, y Portafolio lo hereda vía espacioVarianteId en vez de
 	// volver a tipar a mano.
 	tipoEspacio: text("tipo_espacio"),
-	descripcion: text(),
 	activa: boolean().default(false).notNull(),
 	// F10 (2026-08-13): renombrado de visiblePdf — contracts.ts usa visibleEnPropuestaPublica.
 	visibleEnPropuestaPublica: boolean("visible_en_propuesta_publica").default(true).notNull(),
@@ -260,9 +259,9 @@ export const espacioVariantes = pgTable("espacio_variantes", {
 	jornadasDesarrolloTecnico: numeric("jornadas_desarrollo_tecnico", { precision: 8, scale:  2 }).default('0'),
 	jornadasEnsamblajeTaller: numeric("jornadas_ensamblaje_taller", { precision: 8, scale:  2 }).default('0'),
 	jornadasInstalacionObra: numeric("jornadas_instalacion_obra", { precision: 8, scale:  2 }).default('0'),
-	fotosEspacio: jsonb().default([]),
-	fotosDisenio: jsonb().default([]),
-	fotosReferencia: jsonb().default([]),
+	// Campos descriptivos movidos a contenedoresDescriptivos (2026-10-29):
+	// - descripcion, fotosEspacio, fotosDisenio, fotosReferencia, artefactos
+	// Relación 1:1 vía FK en contenedoresDescriptivos.espacioVarianteId
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {
@@ -402,13 +401,24 @@ export const itemsVariante = pgTable("items_variante", {
 // post-contrato); `grupos_item` es de COTIZACIÓN (pre-contrato). Cero relación de FK o de
 // código entre las dos — decisión explícita de Javier 2026-09-10 (ver arnes/tareas/t-157.json)
 // para no repetir la conflación de ciclos de vida que D-16 ya identificó como riesgo.
+// 2026-10-29: extendido para ser entidad completa — jornadas propias, estado (temporal/permanente),
+// relación opcional a catálogo si se convierte en producto compuesto.
 export const gruposItem = pgTable("grupos_item", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	espacioVarianteId: uuid("espacio_variante_id").notNull(),
 	nombre: text().notNull(),
 	padreId: uuid("padre_id"),
 	orden: integer().default(0).notNull(),
+	// Mano de obra propia del grupo (se suma al precio público)
+	jornadasDesarrolloTecnico: numeric("jornadas_desarrollo_tecnico", { precision: 8, scale: 2 }).default('0').notNull(),
+	jornadasEnsamblajeTaller: numeric("jornadas_ensamblaje_taller", { precision: 8, scale: 2 }).default('0').notNull(),
+	jornadasInstalacionObra: numeric("jornadas_instalacion_obra", { precision: 8, scale: 2 }).default('0').notNull(),
+	// 'temporal' = solo en cotización | 'permanente' = convertido a ProductoCatalogo
+	estado: text("estado").default('temporal').notNull().$type<"temporal" | "permanente">(),
+	// FK a ProductoCatalogo si este grupo se convirtió en un producto compuesto (archivo)
+	productoCatalogoId: uuid("producto_catalogo_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {
 	return {
 		gruposItemEspacioVarianteIdFk: foreignKey({
@@ -416,6 +426,68 @@ export const gruposItem = pgTable("grupos_item", {
 		}),
 		gruposItemPadreIdFk: foreignKey({
 			columns: [table.padreId], foreignColumns: [table.id], name: "grupos_item_padre_id_grupos_item_id_fk"
+		}),
+		gruposItemProductoCatalogoIdFk: foreignKey({
+			columns: [table.productoCatalogoId], foreignColumns: [productosCatalogo.id], name: "grupos_item_producto_catalogo_id_productos_catalogo_id_fk"
+		}),
+	}
+});
+
+// Schema descriptivo compartido: espacios y grupos usan la misma tabla para
+// descripción, fotos (diseño, referencia, espacio) y artefactos.
+// Relación polimorfa simple: uno u otro (FK) es NOT NULL, nunca ambos.
+export const contenedoresDescriptivos = pgTable("contenedores_descriptivos", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	espacioVarianteId: uuid("espacio_variante_id"),
+	grupoItemId: uuid("grupo_item_id"),
+	descripcion: text(),
+	fotosEspacio: jsonb().default([]).notNull(),
+	fotosDisenio: jsonb().default([]).notNull(),
+	fotosReferencia: jsonb().default([]).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		contenedoresEspacioVarianteIdFk: foreignKey({
+			columns: [table.espacioVarianteId],
+			foreignColumns: [espacioVariantes.id],
+			name: "contenedores_descriptivos_espacio_variante_id_fk"
+		}),
+		contenedoresGrupoItemIdFk: foreignKey({
+			columns: [table.grupoItemId],
+			foreignColumns: [gruposItem.id],
+			name: "contenedores_descriptivos_grupo_item_id_fk"
+		}),
+		contenedoresOneParentCheck: check("one_parent", sql`
+			(${table.espacioVarianteId} IS NOT NULL AND ${table.grupoItemId} IS NULL) OR
+			(${table.espacioVarianteId} IS NULL AND ${table.grupoItemId} IS NOT NULL)
+		`),
+		contenedoresEspacioVarianteIdUnique: unique("contenedores_descriptivos_espacio_variante_id_unique").on(table.espacioVarianteId),
+		contenedoresGrupoItemIdUnique: unique("contenedores_descriptivos_grupo_item_id_unique").on(table.grupoItemId),
+	}
+});
+
+// Artefactos apuntan al contenedor descriptivo, no directamente a espacio/grupo.
+export const contenedoresArtefactos = pgTable("contenedores_artefactos", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	contenedorDescriptivoId: uuid("contenedor_descriptivo_id").notNull(),
+	categoria: text().notNull(),
+	dimensionesMm: text("dimensiones_mm"),
+	tipoSpecifique: text("tipo_specifique"),
+	ubicacion: text(),
+	fotoUrls: text("foto_urls").array().notNull().default([]),
+	archivosUrls: text("archivos_urls").array().notNull().default([]),
+	requiereVerificacion: boolean("requiere_verificacion").default(false).notNull(),
+	validadoPor: uuid("validado_por"),
+	validadoEn: timestamp("validado_en", { mode: 'string' }),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		contenedoresArtefactosContenedorDescriptivoIdFk: foreignKey({
+			columns: [table.contenedorDescriptivoId],
+			foreignColumns: [contenedoresDescriptivos.id],
+			name: "contenedores_artefactos_contenedor_descriptivo_id_fk"
 		}),
 	}
 });
