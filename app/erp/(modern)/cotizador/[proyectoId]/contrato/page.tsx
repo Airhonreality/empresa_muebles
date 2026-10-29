@@ -320,9 +320,9 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
                 {bloque.espacio.descripcion && (
                   <p className="objeto-espacio-desc">{bloque.espacio.descripcion}</p>
                 )}
-                {bloque.espacio.fotosDisenio.length > 0 && (
+                {(bloque.espacio.fotosDisenio ?? []).length > 0 && (
                   <div className="objeto-espacio-fotos">
-                    {bloque.espacio.fotosDisenio.map((url, i) => (
+                    {(bloque.espacio.fotosDisenio ?? []).map((url, i) => (
                       <img key={i} src={url} alt="" className="objeto-espacio-foto" />
                     ))}
                   </div>

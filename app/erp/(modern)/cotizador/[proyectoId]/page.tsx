@@ -1575,8 +1575,8 @@ function VarianteContenido({
   const [itemAnidando, setItemAnidando] = useState<string | null>(null)
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
-  const tieneContexto = Boolean(espacio.descripcion) || espacio.fotosEspacio.length > 0 ||
-    espacio.fotosDisenio.length > 0 || espacio.fotosReferencia.length > 0 ||
+  const tieneContexto = Boolean(espacio.descripcion) || ( espacio.fotosEspacio ?? [] ).length > 0 ||
+    ( espacio.fotosDisenio ?? [] ).length > 0 || ( espacio.fotosReferencia ?? [] ).length > 0 ||
     acabadosDelEspacio.length > 0 || artefactosList.length > 0
   const mostrarContexto = contextoForzado ?? !tieneContexto
 
