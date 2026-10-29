@@ -703,9 +703,9 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
               {(() => {
                 const tiposImagen = (
                   [
-                    { key: 'espacio', etiqueta: 'Espacio actual', fotos: varianteActual.fotosEspacio },
-                    { key: 'disenio', etiqueta: 'Diseño', fotos: varianteActual.fotosDisenio },
-                    { key: 'referencia', etiqueta: 'Referencia', fotos: varianteActual.fotosReferencia },
+                    { key: 'espacio', etiqueta: 'Espacio actual', fotos: varianteActual.fotosEspacio ?? [] },
+                    { key: 'disenio', etiqueta: 'Diseño', fotos: varianteActual.fotosDisenio ?? [] },
+                    { key: 'referencia', etiqueta: 'Referencia', fotos: varianteActual.fotosReferencia ?? [] },
                   ] as const
                 )
                   .map((t) => ({ ...t, fotos: toGalleryImages(t.fotos, varianteActual.nombreEspacio) }))
