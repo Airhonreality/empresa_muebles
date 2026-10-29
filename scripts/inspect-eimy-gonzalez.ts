@@ -31,7 +31,6 @@ async function main() {
         nombreEspacio: s.espacioVariantes.nombreEspacio,
         nombreVariante: s.espacioVariantes.nombreVariante,
         tipoEspacio: s.espacioVariantes.tipoEspacio,
-        descripcion: s.espacioVariantes.descripcion,
         activa: s.espacioVariantes.activa,
         visibleEnPropuestaPublica: s.espacioVariantes.visibleEnPropuestaPublica,
         orden: s.espacioVariantes.orden,
