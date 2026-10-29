@@ -1567,6 +1567,7 @@ function VarianteContenido({
   const [itemsSeleccionados, setItemsSeleccionados] = useState<Set<string>>(new Set())
   const [menuAñadirAbierto, setMenuAñadirAbierto] = useState(false)
   const [itemDropdownAbierto, setItemDropdownAbierto] = useState<string | null>(null)
+  const [grupoAñadiendo, setGrupoAñadiendo] = useState<string | null>(null)
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
   const tieneContexto = Boolean(espacio.descripcion) || espacio.fotosEspacio.length > 0 ||
@@ -1931,10 +1932,15 @@ function VarianteContenido({
           // botón de catálogo de arriba, o "+ Presupuesto adicional" en su propia sección más
           // abajo), el MODO queda visualmente inconfundible mientras se está creando el ítem,
           // no solo en el checkbox chiquito que antes era la única señal.
-          <div id={`panel-busqueda-item-${espacio.id}`} className={`mb-3 space-y-2 rounded border p-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30' : 'border-transparent'}`}>
+          <div id={`panel-busqueda-item-${espacio.id}`} className={`mb-3 space-y-2 rounded border p-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30' : grupoAñadiendo ? 'border-dashed border-blue-400 bg-blue-50/30' : 'border-transparent'}`}>
             {busquedaEsReferencial && (
               <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">
                 Agregando a Presupuesto Adicional — no cuenta en el contrato
+              </p>
+            )}
+            {grupoAñadiendo && (
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                Agregando dentro del grupo — se anidarán automáticamente
               </p>
             )}
             <SmartSearch
@@ -1954,8 +1960,10 @@ function VarianteContenido({
                   cantidad: '1',
                   precioUnitario: producto.precioPublico ?? '0',
                   esReferencial: busquedaEsReferencial,
+                  grupoItemId: grupoAñadiendo ?? undefined,
                 })
                 setModoBusquedaItem('off')
+                setGrupoAñadiendo(null)
               }}
               onCreateNew={(descripcion) => {
                 setCrearProducto({ descripcion })
@@ -2145,15 +2153,33 @@ function VarianteContenido({
             const itemsPropios = itemsDelGrupo(grupo.id)
             return (
               <div key={grupo.id} className="mb-2" style={{ marginLeft: nivel * 16 }}>
-                <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-2 py-1.5 border border-border-subtle/60">
+                {/* t-160: Toolbar de grupo — diseñada para agregar items dentro de este grupo */}
+                <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-3 py-2 border border-border-subtle/60">
                   <span className="text-xs font-semibold text-text-heading truncate">📁 {grupo.nombre}</span>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Botón principal: Añadir item DENTRO de este grupo */}
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      className="text-xs h-6"
+                      onClick={() => {
+                        setModoBusquedaItem('normal')
+                        setBusquedaEsReferencial(false)
+                        setGrupoAñadiendo(grupo.id)
+                      }}
+                      title="Agregar item dentro de este grupo"
+                    >
+                      + Item
+                    </Button>
+
+                    {/* Menú de opciones del grupo */}
                     <button
                       type="button"
                       onClick={() => { setCreandoGrupoPadreId(grupo.id); setNombreNuevoGrupo('') }}
                       className="text-[11px] text-gold-600 hover:text-gold-700 px-1.5 py-0.5 rounded transition-colors duration-fast"
+                      title="Crear subgrupo dentro de este grupo"
                     >
-                      + Subgrupo
+                      + Sub
                     </button>
                     <button
                       type="button"
@@ -2637,8 +2663,16 @@ function VarianteContenido({
               />
               <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
             </label>
+            {grupoAñadiendo && (
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 rounded bg-blue-50/50 px-2 py-1">
+                ✓ Se agregará dentro del grupo
+              </p>
+            )}
             <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
-              <Button variant="ghost" size="md" onClick={() => setCreandoItemLibre(false)}>
+              <Button variant="ghost" size="md" onClick={() => {
+                setCreandoItemLibre(false)
+                setGrupoAñadiendo(null)
+              }}>
                 Cancelar
               </Button>
               <Button
@@ -2658,8 +2692,10 @@ function VarianteContenido({
                     cantidad: itemLibreCantidad,
                     precioUnitario: itemLibrePrecio,
                     esReferencial: itemLibreEsRef,
+                    grupoItemId: grupoAñadiendo ?? undefined,
                   })
                   setCreandoItemLibre(false)
+                  setGrupoAñadiendo(null)
                   setItemLibreNombre('')
                   setItemLibreCantidad('1')
                   setItemLibrePrecio('0')
