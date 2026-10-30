@@ -481,6 +481,10 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
     acabado: validado.acabado ?? null,
     espesor: validado.espesor ?? null,
     camposPersonalizados: sanitizarCamposPersonalizados(validado.camposPersonalizados),
+    // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+    jornadasDesarrolloTecnico: validado.jornadasDesarrolloTecnico ?? '0',
+    jornadasEnsamblajeTaller: validado.jornadasEnsamblajeTaller ?? '0',
+    jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
   }).onConflictDoNothing({ target: s.itemsVariante.id }).returning()
 
   if (!nuevo) {
@@ -494,7 +498,7 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
 
 export async function actualizarItemAction(
   id: string,
-  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>
+  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados' | 'jornadasDesarrolloTecnico' | 'jornadasEnsamblajeTaller' | 'jornadasInstalacionObra'>>
 ): Promise<ItemVariante | null> {
   const validado = validarEntrada(itemActualizarSchema, partial)
   return db.transaction(async (tx) => {
@@ -1070,4 +1074,59 @@ export async function crearNotaReunionAction(data: {
     })
     .returning()
   return nota as unknown as import('@/lib/data/contracts').NotaReunion
+}
+
+// ── Fase 3.2 (2026-10-29) · Contenedores descriptivos con fotos ────────────
+/**
+ * Actualiza un contenedor descriptivo asociado a un grupo de items.
+ * Sanitiza URLs de fotos automáticamente (R2 whitelist).
+ */
+export async function actualizarContenedorDescriptivoGrupoAction(
+  grupoItemId: string,
+  cambios: Partial<Pick<import('@/lib/data/contracts').ContenedorDescriptivo, 'descripcion' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
+): Promise<import('@/lib/data/contracts').ContenedorDescriptivo | null> {
+  return db.transaction(async (tx) => {
+    // Sanitizar URLs de fotos
+    const sanitized = {
+      descripcion: cambios.descripcion,
+      fotosEspacio: cambios.fotosEspacio ? (sanitizarUrlsFotos(cambios.fotosEspacio) ?? []) : undefined,
+      fotosDisenio: cambios.fotosDisenio ? (sanitizarUrlsFotos(cambios.fotosDisenio) ?? []) : undefined,
+      fotosReferencia: cambios.fotosReferencia ? (sanitizarUrlsFotos(cambios.fotosReferencia) ?? []) : undefined,
+    }
+
+    // Buscar contenedor existente
+    const [contenedor] = await tx
+      .select()
+      .from(s.contenedoresDescriptivos)
+      .where(eq(s.contenedoresDescriptivos.grupoItemId, grupoItemId))
+
+    if (!contenedor) {
+      // Crear contenedor nuevo si no existe
+      const [nuevo] = await tx
+        .insert(s.contenedoresDescriptivos)
+        .values({
+          grupoItemId,
+          espacioVarianteId: null,
+          ...Object.fromEntries(
+            Object.entries(sanitized).filter(([_, v]) => v !== undefined)
+          ),
+        })
+        .returning()
+      return nuevo as unknown as import('@/lib/data/contracts').ContenedorDescriptivo
+    }
+
+    // Actualizar existente
+    const [actualizado] = await tx
+      .update(s.contenedoresDescriptivos)
+      .set({
+        ...Object.fromEntries(
+          Object.entries(sanitized).filter(([_, v]) => v !== undefined)
+        ),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(s.contenedoresDescriptivos.id, contenedor.id))
+      .returning()
+
+    return actualizado as unknown as import('@/lib/data/contracts').ContenedorDescriptivo
+  })
 }

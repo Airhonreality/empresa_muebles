@@ -62,6 +62,10 @@ function item(id: string, overrides: Partial<ItemVariante> = {}): ItemVariante {
     acabado: null,
     espesor: null,
     camposPersonalizados: [],
+    // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+    jornadasDesarrolloTecnico: '0',
+    jornadasEnsamblajeTaller: '0',
+    jornadasInstalacionObra: '0',
     createdAt: '2026-09-05T00:00:00Z',
     updatedAt: '2026-09-05T00:00:00Z',
     ...overrides,

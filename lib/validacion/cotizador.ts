@@ -49,6 +49,10 @@ export const itemCrearSchema = z.object({
   acabado: textoOpcional,
   espesor: textoOpcional,
   camposPersonalizados: camposPersonalizadosSchema.optional(),
+  // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+  jornadasDesarrolloTecnico: numeroDecimalTexto.optional(),
+  jornadasEnsamblajeTaller: numeroDecimalTexto.optional(),
+  jornadasInstalacionObra: numeroDecimalTexto.optional(),
 })
 export type ItemCrearInput = z.infer<typeof itemCrearSchema>
 
@@ -71,6 +75,10 @@ export const itemActualizarSchema = z.object({
   acabado: textoOpcional,
   espesor: textoOpcional,
   camposPersonalizados: camposPersonalizadosSchema.optional(),
+  // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+  jornadasDesarrolloTecnico: numeroDecimalTexto.optional(),
+  jornadasEnsamblajeTaller: numeroDecimalTexto.optional(),
+  jornadasInstalacionObra: numeroDecimalTexto.optional(),
 })
 export type ItemActualizarInput = z.infer<typeof itemActualizarSchema>
 

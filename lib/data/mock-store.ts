@@ -601,6 +601,10 @@ export function createMockStore(): DataStore {
           acabado: data.acabado ?? null,
           espesor: data.espesor ?? null,
           camposPersonalizados: data.camposPersonalizados ?? [],
+          // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+          jornadasDesarrolloTecnico: data.jornadasDesarrolloTecnico ?? '0',
+          jornadasEnsamblajeTaller: data.jornadasEnsamblajeTaller ?? '0',
+          jornadasInstalacionObra: data.jornadasInstalacionObra ?? '0',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }

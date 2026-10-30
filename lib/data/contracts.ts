@@ -210,6 +210,10 @@ export interface ItemVariante {
    * que ProductoCatalogo.camposPersonalizados (clave/valor libres). jsonb `[{clave, valor}]`,
    * default [] NOT NULL. */
   camposPersonalizados: CampoPersonalizadoProducto[]
+  /** 🆕 Jornadas propias del item (Fase 3.2, 2026-10-29): horas de trabajo por fase */
+  jornadasDesarrolloTecnico: string
+  jornadasEnsamblajeTaller: string
+  jornadasInstalacionObra: string
   createdAt: string
   updatedAt: string
 }

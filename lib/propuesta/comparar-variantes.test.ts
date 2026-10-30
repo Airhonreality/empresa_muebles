@@ -46,6 +46,10 @@ function item(over: Partial<ItemVariante> & { id: string; varianteId: string }):
     acabado: null,
     espesor: null,
     camposPersonalizados: [],
+    // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+    jornadasDesarrolloTecnico: '0',
+    jornadasEnsamblajeTaller: '0',
+    jornadasInstalacionObra: '0',
     createdAt: '2026-01-01',
     updatedAt: '2026-01-01',
     ...over,

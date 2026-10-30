@@ -46,7 +46,7 @@ export type {
   BitacoraArticulo, BitacoraCategoria, Testimonio, AtributoTecnico,
   CatalogoEspacioArquitectonico,
   CategoriaNotaReunion, NotaReunion,
-  GrupoItem,
+  GrupoItem, ContenedorDescriptivo,
   PropuestaVersion,
   Lead, EstadoLead, EventoConversionOffline, EstadoEnvioGoogle,
 } from './contracts'

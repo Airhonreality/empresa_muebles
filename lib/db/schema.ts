@@ -373,6 +373,10 @@ export const itemsVariante = pgTable("items_variante", {
 	acabado: text(),
 	espesor: text(),
 	camposPersonalizados: jsonb("campos_personalizados").default([]).notNull(),
+	// 🆕 Jornadas propias del item (Fase 3.2, 2026-10-29)
+	jornadasDesarrolloTecnico: numeric("jornadas_desarrollo_tecnico", { precision: 8, scale: 2 }).default('0').notNull(),
+	jornadasEnsamblajeTaller: numeric("jornadas_ensamblaje_taller", { precision: 8, scale: 2 }).default('0').notNull(),
+	jornadasInstalacionObra: numeric("jornadas_instalacion_obra", { precision: 8, scale: 2 }).default('0').notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {

@@ -65,6 +65,10 @@ export function construirItemOptimista(input: InputItemOptimista): ItemVariante 
     acabado: input.acabado ?? null,
     espesor: input.espesor ?? null,
     camposPersonalizados: input.camposPersonalizados ?? [],
+    // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+    jornadasDesarrolloTecnico: '0',
+    jornadasEnsamblajeTaller: '0',
+    jornadasInstalacionObra: '0',
     createdAt: ahora,
     updatedAt: ahora,
   }
