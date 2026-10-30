@@ -9,7 +9,7 @@
 import { eq, and, or, inArray, desc, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
-import { aplicarContenedoresAEspacios } from '@/lib/data/contenedores'
+import { aplicarContenedoresAEspacios, normalizarDescripcion } from '@/lib/data/contenedores'
 import type {
   Portafolio, ProductoTienda, CatalogoAcabado, AcabadoMuestra,
   Proyecto, EspacioVariante, ItemVariante, Contrato, HitoPago,
@@ -349,6 +349,14 @@ export async function hidratarClientePropuesta(
     base = { ...base, acabadosPorEspacio: await cargarAcabadosPorEspacio(espacioIds) }
   }
 
+  // El editor guarda los saltos de línea como `\n\n`; en pantalla eso se veía como
+  // interlineado doble. Se normaliza SOLO para la propuesta (pantalla y PDF). El dato
+  // almacenado y el editor no se tocan, así que no hace falta republicar.
+  base = {
+    ...base,
+    espacios: base.espacios.map((e) => ({ ...e, descripcion: normalizarDescripcion(e.descripcion) })),
+  }
+
   if (base.cliente) return base
   const clienteId = base.proyecto.clienteId
   if (!clienteId) return { ...base, cliente: null }
@@ -429,7 +437,10 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
     const items = itemsResult
     const gruposItem = gruposItemResult
     const hitos = hitosResult
-    const espacios = aplicarContenedoresAEspacios(espaciosResult, contenedoresResult) as unknown as EspacioVariante[]
+    const espacios = aplicarContenedoresAEspacios(espaciosResult, contenedoresResult).map((e) => ({
+      ...e,
+      descripcion: normalizarDescripcion(e.descripcion),
+    })) as unknown as EspacioVariante[]
 
     // Ronda 3: query de catálogo (depende de items de Ronda 2)
     const catalogoIds = [...new Set(items.map((it) => it.catalogoId).filter((id): id is string => Boolean(id)))]

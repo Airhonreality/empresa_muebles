@@ -15,6 +15,20 @@ export interface CamposDescriptivos {
   fotosReferencia?: string[]
 }
 
+/** Normaliza saltos de línea para lectura en documentos al cliente.
+ *  El editor guarda los saltos como `\n\n` (línea en blanco intermedia), lo que en la
+ *  propuesta se ve como interlineado doble. Aquí se colapsan los saltos repetidos y se
+ *  recortan espacios sobrantes SIN tocar el dato almacenado ni el editor. */
+export function normalizarDescripcion(texto: string | null | undefined): string | null {
+  if (!texto) return null
+  const limpio = texto
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{2,}/g, '\n')
+    .trim()
+  return limpio.length > 0 ? limpio : null
+}
+
 /** Aplica el contenedor de cada espacio (si existe) sobre la fila del espacio. */
 export function aplicarContenedoresAEspacios<T extends { id: string }>(
   espacios: readonly T[],
