@@ -456,42 +456,85 @@ html:focus-within {
 .veta-md--documento h4,
 .veta-md--documento strong { color: #222222; }
 
-/* Editor: alinea @uiw/react-md-editor con los tokens de marca (solo luz). */
+
+/* ============================================================
+   Editor markdown propio (2026-10-29)
+   Toolbar minimalista con Lucide, textarea con los tokens de Veta
+   y vista previa. Sin CSS de terceros.
+   ============================================================ */
+
 .veta-md-editor {
-  --color-canvas-default: var(--color-bg-paper);
-  --color-canvas-subtle: var(--color-bg-alt);
-  --color-border-default: var(--color-border-subtle);
-  --color-fg-default: var(--color-text-primary);
-  --color-fg-muted: var(--color-text-muted);
-  --color-accent-fg: var(--color-gold-600);
-  --color-accent-emphasis: var(--color-gold-500);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
-.veta-md-editor .w-md-editor {
-  background: var(--color-bg-paper);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-sm);
-  box-shadow: none;
-}
-.veta-md-editor .w-md-editor-toolbar {
-  background: var(--color-bg-alt);
+
+.veta-md-editor .veta-md-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.35rem 0.5rem;
   border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-alt);
 }
-.veta-md-editor .w-md-editor-toolbar li > button { color: var(--color-text-muted); }
-.veta-md-editor .w-md-editor-toolbar li > button:hover {
+
+.veta-md-editor .veta-md-toolbar .veta-md-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.veta-md-editor .veta-md-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.veta-md-editor .veta-md-toolbar button:hover:not(:disabled) {
   color: var(--color-gold-600);
-  background: var(--color-bg-raised);
+  background: var(--color-bg-surface);
 }
-.veta-md-editor .w-md-editor-text-pre,
-.veta-md-editor .w-md-editor-text-input,
-.veta-md-editor .w-md-editor-text {
+
+.veta-md-editor .veta-md-toolbar button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.veta-md-editor textarea {
   font-family: var(--font-sans);
   font-size: 13px;
-  line-height: 1.5;
-}
-.veta-md-editor .w-md-editor-text-input {
+  line-height: 1.55;
   color: var(--color-text-heading);
-  -webkit-text-fill-color: currentColor;
+  background: var(--color-bg-paper);
+  border: none;
+  resize: vertical;
+  min-height: 96px;
 }
-.veta-md-editor .w-md-editor-preview,
-.veta-md-editor .wmde-markdown { font-family: var(--font-sans); }
-.veta-md-editor .wmde-markdown { background: var(--color-bg-paper); }
+
+.veta-md-editor textarea:focus {
+  outline: none;
+}
+
+.veta-md-editor .veta-md-preview {
+  border: 1px solid var(--color-border-subtle);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
+  background: var(--color-bg-paper);
+  padding: 0.75rem;
+  overflow: auto;
+  max-height: 40vh;
+}
+
