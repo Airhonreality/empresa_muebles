@@ -662,6 +662,69 @@ export async function convertirGrupoAProductoAction(
   })
 }
 
+/**
+ * Duplicar un grupo completo (copia nombre, jornadas, contenedor descriptivo e items).
+ * El grupo se inserta con orden = max(orden) + 1 y siempre en estado 'temporal'.
+ * Los items copiados reciben nuevos ids automáticos.
+ */
+export async function duplicarGrupoAction(grupoId: string): Promise<GrupoItem | null> {
+  return db.transaction(async (tx) => {
+    const [grupoOrigen] = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.id, grupoId))
+    if (!grupoOrigen) return null
+
+    // Obtener hermanos para calcular nuevo orden
+    const hermanos = await tx.select().from(s.gruposItem).where(
+      grupoOrigen.padreId
+        ? and(eq(s.gruposItem.espacioVarianteId, grupoOrigen.espacioVarianteId), eq(s.gruposItem.padreId, grupoOrigen.padreId))
+        : and(eq(s.gruposItem.espacioVarianteId, grupoOrigen.espacioVarianteId), isNull(s.gruposItem.padreId))
+    )
+
+    // Crear el grupo duplicado
+    const [grupoNuevo] = await tx.insert(s.gruposItem).values({
+      espacioVarianteId: grupoOrigen.espacioVarianteId,
+      nombre: `${grupoOrigen.nombre} (copia)`,
+      padreId: grupoOrigen.padreId,
+      orden: hermanos.length,
+      jornadasDesarrolloTecnico: grupoOrigen.jornadasDesarrolloTecnico,
+      jornadasEnsamblajeTaller: grupoOrigen.jornadasEnsamblajeTaller,
+      jornadasInstalacionObra: grupoOrigen.jornadasInstalacionObra,
+      estado: 'temporal',
+      productoCatalogoId: null,
+    }).returning()
+
+    if (!grupoNuevo) return null
+
+    // Copiar contenedor descriptivo si existe
+    const [contenedorOrigen] = await tx.select().from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.grupoItemId, grupoId))
+    if (contenedorOrigen) {
+      await tx.insert(s.contenedoresDescriptivos).values({
+        espacioVarianteId: null,
+        grupoItemId: grupoNuevo.id,
+        descripcion: contenedorOrigen.descripcion,
+        fotosEspacio: contenedorOrigen.fotosEspacio,
+        fotosDisenio: contenedorOrigen.fotosDisenio,
+        fotosReferencia: contenedorOrigen.fotosReferencia,
+      })
+    }
+
+    // Copiar items del grupo
+    const itemsOrigen = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.grupoItemId, grupoId))
+    if (itemsOrigen.length > 0) {
+      await tx.insert(s.itemsVariante).values(
+        itemsOrigen.map(item => ({
+          ...item,
+          id: undefined as any,
+          grupoItemId: grupoNuevo.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }))
+      )
+    }
+
+    return grupoNuevo as unknown as GrupoItem
+  })
+}
+
 // --- Acabados asociados a un espacio de cotización (t-172, 2026-09-30) ---
 // Puente INSTANCIA con texto libre de destino ("fachadas módulo X", "mesón de isla"),
 // reemplaza a espacio_variantes.colores (jsonb). Tabla NUEVA y SEPARADA de `modulos`
