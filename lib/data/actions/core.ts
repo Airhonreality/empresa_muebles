@@ -19,7 +19,7 @@ import {
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
   ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial, GrupoItem, HitoPagoInput,
-  EspacioVarianteAcabado,
+  EspacioVarianteAcabado, ContenedorDescriptivo,
 } from '../contracts'
 // VarianteNoEliminableError vive en errors.ts (no en 'use server':
 // Next.js prohíbe exportar clases desde archivos 'use server').
@@ -1132,6 +1132,19 @@ export async function crearNotaReunionAction(data: {
  * Actualiza un contenedor descriptivo asociado a un grupo de items.
  * Sanitiza URLs de fotos automáticamente (R2 whitelist).
  */
+/** Lee el contenedor descriptivo de un grupo (descripción + fotos). Devuelve null si el
+ *  grupo todavía no tiene contenedor — el editor de descripción lo trata como texto vacío. */
+export async function obtenerContenedorDescriptivoGrupoAction(
+  grupoItemId: string
+): Promise<ContenedorDescriptivo | null> {
+  const [contenedor] = await db
+    .select()
+    .from(s.contenedoresDescriptivos)
+    .where(eq(s.contenedoresDescriptivos.grupoItemId, grupoItemId))
+    .limit(1)
+  return (contenedor as unknown as ContenedorDescriptivo) ?? null
+}
+
 export async function actualizarContenedorDescriptivoGrupoAction(
   grupoItemId: string,
   cambios: Partial<Pick<import('@/lib/data/contracts').ContenedorDescriptivo, 'descripcion' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>

@@ -23,6 +23,7 @@
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-query-persist-client": "^5.104.0",
     "@tanstack/react-table": "^9.3.1",
+    "@uiw/react-md-editor": "^4.1.6",
     "drizzle-orm": "^0.36.4",
     "iron-session": "^8.0.4",
     "libphonenumber-js": "^1.13.11",
@@ -32,6 +33,9 @@
     "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-markdown": "^10.1.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
     "sharp": "^0.35.3",
     "zod": "^4.6.5",
     "zustand": "^5.0.15"

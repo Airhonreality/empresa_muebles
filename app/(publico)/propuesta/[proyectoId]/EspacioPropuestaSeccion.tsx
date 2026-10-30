@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Expand } from 'lucide-react'
 import { GaleriaPropuesta, type GaleriaPropuestaFoto } from '@/components/veta/galeria-propuesta'
+import { MarkdownContent } from '@/components/veta/markdown-content'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 import { compararVariantes } from '@/lib/propuesta/comparar-variantes'
@@ -237,6 +238,9 @@ function renderItemsAgrupados(
         className="mb-5 scroll-mt-28 last:mb-0"
       >
         <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gold-600">{grupo.nombre}</h4>
+        {grupo.descripcion && (
+          <MarkdownContent value={grupo.descripcion} variant="compacto" className="mb-3 max-w-2xl text-text-muted" />
+        )}
         {propios.length > 0 && grid(propios)}
         {hijos.map((h) => renderGrupoNodo(h, nivel + 1))}
       </div>
@@ -372,9 +376,7 @@ export function EspacioPropuestaSeccion({
 
       {varianteActual.descripcion && (
         <blockquote className="max-w-2xl border-l-2 border-gold-400 pl-5">
-          <p className="whitespace-pre-line font-display text-lg leading-relaxed text-text-heading first-letter:font-medium">
-            {varianteActual.descripcion}
-          </p>
+          <MarkdownContent value={varianteActual.descripcion} variant="propuesta" />
         </blockquote>
       )}
 

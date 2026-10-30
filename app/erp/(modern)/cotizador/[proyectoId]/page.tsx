@@ -37,6 +37,8 @@ import { formatRelativeDate } from '@/lib/utils/format'
 import { destinosProyectoValidos } from '@/lib/data/transiciones-proyecto'
 import { ItemRow } from '@/components/cotizador/ItemRow'
 import { GrupoNodo } from '@/components/cotizador/GrupoNodo'
+import { GrupoDescripcionEditor } from '@/components/cotizador/GrupoDescripcionEditor'
+import { MarkdownField } from '@/components/veta/markdown-field'
 import { BulkActionsBar } from '@/components/cotizador/BulkActionsBar'
 import { useItemSelection } from '@/lib/hooks/useItemSelection'
 import { useAutosave, combinarEstados } from '@/lib/hooks/autosave'
@@ -2191,6 +2193,7 @@ function VarianteContenido({
                     </button>
                   </div>
                 </div>
+                <GrupoDescripcionEditor grupoId={grupo.id} />
                 {creandoGrupoPadreId === grupo.id && (
                   <div className="flex items-center gap-2 mt-2 ml-2">
                     <input
@@ -3018,7 +3021,6 @@ function FormDetallesEspacio({
     onGuardado()
   }
 
-  const inputCls = 'rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none'
   const ayudaCls = 'text-[11px] text-text-muted'
 
   return (
@@ -3036,10 +3038,16 @@ function FormDetallesEspacio({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <label className="flex flex-col gap-1 col-span-2">
-          <span className="text-[11px] text-text-muted">Descripción</span>
-          <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={2} className={inputCls} />
-        </label>
+        <div className="col-span-2">
+          <MarkdownField
+            label="Descripción"
+            value={descripcion}
+            onChange={setDescripcion}
+            height={150}
+            placeholder="Describe el espacio: títulos, listas, negritas…"
+            helpText="Se muestra en la propuesta pública y en el PDF."
+          />
+        </div>
       </div>
 
       <p className={ayudaCls}>

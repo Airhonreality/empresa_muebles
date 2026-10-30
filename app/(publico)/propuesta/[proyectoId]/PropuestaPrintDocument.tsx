@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactElement } from 'react'
 import Image from 'next/image'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
+import { MarkdownContent } from '@/components/veta/markdown-content'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 import { compararVariantes, type DiffEspacio, type ItemComparado } from '@/lib/propuesta/comparar-variantes'
 
@@ -174,6 +175,11 @@ function TablaItems({
     return (
       <div key={g.id} className={`pp-grupo pp-grupo-${Math.min(nivel, 2)}`}>
         <p className="pp-grupo-nombre">{g.nombre}</p>
+        {g.descripcion && (
+          <div className="pp-grupo-desc">
+            <MarkdownContent value={g.descripcion} variant="compacto" />
+          </div>
+        )}
         {propios.length > 0 && (
           <table className="pp-table">
             {cabecera}
@@ -650,7 +656,11 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
               )}
             </header>
 
-            {esp.descripcion && <blockquote className="pp-cita">{esp.descripcion}</blockquote>}
+            {esp.descripcion && (
+              <blockquote className="pp-cita">
+                <MarkdownContent value={esp.descripcion} variant="documento" />
+              </blockquote>
+            )}
 
             {(() => {
               const acabados = acabadosPorEspacio[esp.id] ?? []
@@ -1011,8 +1021,24 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
           font-size: 12pt;
           line-height: 1.5;
           color: #241C15;
-          white-space: pre-line;
         }
+        .pp-cita .veta-md {
+          font-family: var(--font-fraunces), Georgia, serif;
+          font-size: 12pt;
+          line-height: 1.5;
+          color: #241C15;
+        }
+        .pp-cita .veta-md p { margin: 0 0 2mm; }
+        .pp-cita .veta-md h1,
+        .pp-cita .veta-md h2,
+        .pp-cita .veta-md h3,
+        .pp-cita .veta-md h4 {
+          font-size: 12.5pt;
+          margin: 3mm 0 1.5mm;
+        }
+        .pp-cita .veta-md ul,
+        .pp-cita .veta-md ol { margin: 0 0 2mm; padding-left: 5mm; }
+        .pp-cita .veta-md li { margin: 0 0 0.6mm; }
         .pp-acabados {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
@@ -1110,6 +1136,21 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
           break-after: avoid;
           page-break-after: avoid;
         }
+        .pp-grupo-desc { margin: 0 0 2.5mm; }
+        .pp-grupo-desc .veta-md {
+          font-size: 8.5pt;
+          line-height: 1.45;
+          color: #555555;
+        }
+        .pp-grupo-desc .veta-md p { margin: 0 0 1.5mm; }
+        .pp-grupo-desc .veta-md h1,
+        .pp-grupo-desc .veta-md h2,
+        .pp-grupo-desc .veta-md h3 {
+          font-size: 9pt;
+          margin: 2mm 0 1mm;
+        }
+        .pp-grupo-desc .veta-md ul,
+        .pp-grupo-desc .veta-md ol { margin: 0 0 1.5mm; padding-left: 4mm; }
         .pp-table {
           width: 100%;
           border-collapse: collapse;

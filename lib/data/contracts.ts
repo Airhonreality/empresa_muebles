@@ -239,6 +239,10 @@ export interface GrupoItem {
   jornadasInstalacionObra: string
   estado: 'temporal' | 'permanente'
   productoCatalogoId: string | null
+  /** 2026-10-29: descripción markdown del grupo. Vive en `contenedores_descriptivos`
+   *  (`grupoItemId`) y se proyecta al leer, igual que los campos descriptivos del espacio.
+   *  No es columna de `grupos_item`: opcional y solo presente cuando el consumidor la carga. */
+  descripcion?: string | null
 }
 
 export interface CampoPersonalizadoProducto {

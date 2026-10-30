@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation'
 import { CotizadorCompatProvider, useCotizadorCompat } from '@/lib/data/queries/cotizador-compat'
 import { Button } from '@/components/veta/button'
+import { MarkdownContent } from '@/components/veta/markdown-content'
 import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import { ordinalesClausulas, type ClaveClausula } from '@/lib/data/contrato-clausulas'
 import { lineaObjetoItem } from '@/lib/data/contrato-items'
@@ -318,7 +319,11 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
               <div className="objeto-espacio" key={bloque.espacio.id}>
                 <div className="objeto-espacio-nombre">{bloque.espacio.nombreEspacio}</div>
                 {bloque.espacio.descripcion && (
-                  <p className="objeto-espacio-desc">{bloque.espacio.descripcion}</p>
+                  <MarkdownContent
+                    value={bloque.espacio.descripcion}
+                    variant="documento"
+                    className="objeto-espacio-desc"
+                  />
                 )}
                 {(bloque.espacio.fotosDisenio ?? []).length > 0 && (
                   <div className="objeto-espacio-fotos">
@@ -837,11 +842,24 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
           break-after: avoid;
           page-break-after: avoid;
         }
-        .objeto-espacio-desc {
+        .objeto-espacio-desc,
+        .objeto-espacio-desc.veta-md {
           font-size: 12px;
+          line-height: 1.55;
           color: #444444;
           margin: 0 0 6px;
         }
+        .objeto-espacio-desc p { margin: 0 0 3px; }
+        .objeto-espacio-desc h1,
+        .objeto-espacio-desc h2,
+        .objeto-espacio-desc h3 {
+          font-size: 12.5px;
+          margin: 6px 0 2px;
+          color: #222222;
+        }
+        .objeto-espacio-desc ul,
+        .objeto-espacio-desc ol { margin: 0 0 4px; padding-left: 18px; }
+        .objeto-espacio-desc li { margin: 0 0 1px; }
         .objeto-espacio-fotos {
           display: flex;
           flex-wrap: wrap;

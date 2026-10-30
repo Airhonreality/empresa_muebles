@@ -16,17 +16,36 @@ export interface CamposDescriptivos {
 }
 
 /** Normaliza saltos de línea para lectura en documentos al cliente.
- *  El editor guarda los saltos como `\n\n` (línea en blanco intermedia), lo que en la
- *  propuesta se ve como interlineado doble. Aquí se colapsan los saltos repetidos y se
- *  recortan espacios sobrantes SIN tocar el dato almacenado ni el editor. */
+ *  2026-10-29 (markdown): se conserva UNA línea en blanco, que es la separación de bloques
+ *  que usa markdown (párrafos, listas, encabezados). Solo se colapsan 3+ saltos seguidos,
+ *  se normaliza CRLF y se recortan espacios al final de línea. No toca el dato guardado. */
 export function normalizarDescripcion(texto: string | null | undefined): string | null {
   if (!texto) return null
   const limpio = texto
     .replace(/\r\n?/g, '\n')
     .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{2,}/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
   return limpio.length > 0 ? limpio : null
+}
+
+/** Aplica la descripción de cada contenedor de grupo (si existe) sobre la fila del grupo.
+ *  Los grupos comparten `contenedores_descriptivos` con los espacios, pero se indexan por
+ *  `grupoItemId`. Si no hay contenedor se conserva la descripción que ya trajera el grupo
+ *  (los snapshots publicados antes de este cambio no la traen: queda null). */
+export function aplicarContenedoresAGrupos<T extends { id: string; descripcion?: string | null }>(
+  grupos: readonly T[],
+  contenedores: readonly ContenedorDescriptivo[],
+): Array<T & { descripcion: string | null }> {
+  const porGrupo = new Map<string, ContenedorDescriptivo>()
+  for (const contenedor of contenedores) {
+    if (contenedor.grupoItemId) porGrupo.set(contenedor.grupoItemId, contenedor)
+  }
+  return grupos.map((grupo) => {
+    const contenedor = porGrupo.get(grupo.id)
+    if (!contenedor) return { ...grupo, descripcion: grupo.descripcion ?? null }
+    return { ...grupo, descripcion: contenedor.descripcion }
+  })
 }
 
 /** Aplica el contenedor de cada espacio (si existe) sobre la fila del espacio. */

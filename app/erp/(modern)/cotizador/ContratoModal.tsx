@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/veta/button";
+import { MarkdownContent } from "@/components/veta/markdown-content";
 import { InputField } from "@/components/veta/input-field";
 import { MoneyInput } from "@/components/veta/money-input";
 import { EntityFields } from "@/components/veta/entity-fields";
@@ -660,7 +661,11 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
                   <div key={bloque.espacio.id}>
                     <p className="font-semibold text-text-heading">{bloque.espacio.nombreEspacio}</p>
                     {bloque.espacio.descripcion && (
-                      <p className="text-text-muted">{bloque.espacio.descripcion}</p>
+                      <MarkdownContent
+                        value={bloque.espacio.descripcion}
+                        variant="compacto"
+                        className="text-text-muted"
+                      />
                     )}
                     {(bloque.espacio.fotosDisenio ?? []).length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-2">
