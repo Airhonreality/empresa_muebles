@@ -1,36 +1,35 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, useMemo, type ReactElement, type ReactNode } from 'react'
-import Image from 'next/image'
-import { ArrowDown, Building2, Expand, LayoutGrid, MapPin } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
+import { ArrowDown, LayoutGrid, Wallet } from 'lucide-react'
 import { Button } from '@/components/veta/button'
 import { MetaItem } from '@/components/veta/meta-item'
 import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
-import { GalleryRail } from '@/components/veta/gallery-rail'
 import { ProductSheetModal } from '@/components/veta/product-sheet-modal'
+import type { GaleriaPropuestaFoto } from '@/components/veta/galeria-propuesta'
+import {
+  SidebarTreePropuesta,
+  ResumenCostosPropuesta,
+  type NodoEspacioPropuesta,
+} from '@/components/veta/sidebar-tree-propuesta'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
-import { compararVariantes } from '@/lib/propuesta/comparar-variantes'
 import { PropuestaPrintDocument } from './PropuestaPrintDocument'
-import { ComparadorVersiones } from './ComparadorVersiones'
+import { EspacioPropuestaSeccion } from './EspacioPropuestaSeccion'
 
 // F-08 Propuesta pública (disenio_F08_propuesta_publica.md). Ruta simplificada
-// a /propuesta/[proyectoId] en vez de /propuesta/{slug} — Proyecto no tiene
-// campo slug todavía en F10 (gap anotado, no bloqueante: agregar slug es
-// trabajo de la migración real, no cambia nada del diseño de esta pantalla).
+// a /propuesta/[proyectoId] en vez de /propuesta/{slug}.
+//
+// Rediseño 2026-10-29 (scroll acumulativo): antes la pantalla mostraba un solo
+// ambiente a la vez con tabs. Ahora el cliente baja por TODOS los ambientes en
+// una sola página; un sidebar-árbol (SidebarTreePropuesta) señala en vivo el
+// espacio grupo que se está leyendo y reemplaza el frame estático de "Inversión
+// total". En móvil hay dos vistas conmutables desde la barra inferior: el scroll
+// de espacios/ítems y el resumen-factura. Los ítems referenciales (terceros) NO
+// entran a ningún total oficial: viven en el anexo "Cuadro de otros presupuestos".
+//
 // R1: snapshot de solo lectura, sin mutaciones. R5: sin botones de pago.
-//
-// Refinamiento visual 2026-08-11 (ver disenio_F08 §9.4 nota): los ítems de
-// "Qué incluye" se muestran siempre visibles con imagen (paridad con la
-// referencia premium desplegada en empresa_muebles_clone) en vez de ir
-// dentro del accordion cerrado por defecto. El accordion se conserva solo
-// para mano de obra / referenciales / notas — detalle técnico secundario.
-//
-// Auditoría 2026-08-15: extraído de page.tsx — ya no lee useDataStore() (el snapshot completo
-// del ERP ya no hidrata el árbol público). Recibe los datos ya escopados a este proyecto vía
-// obtenerPropuestaPublicaAction() (lib/data/actions/public.ts), pasados como prop desde el
-// Server Component padre.
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -41,276 +40,35 @@ function formatCOP(amount: number): string {
   }).format(amount)
 }
 
-function formatQty(s: string | null | undefined): string {
-  const n = Number(s)
-  return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(Number.isFinite(n) ? n : 0)
-}
-
 function parseNum(s: string | null | undefined): number {
   const n = Number(s)
   return Number.isFinite(n) ? n : 0
 }
 
-type GalleryImage = { url: string; alt: string; id: string }
+type ZoomImagen = { url: string; alt: string; id: string }
 
-function toGalleryImages(fotos: string[], alt: string): GalleryImage[] {
-  return fotos.filter(Boolean).map((url, i) => ({ url, alt: `${alt} ${i + 1}`, id: `${url}-${i}` }))
-}
-
-interface ItemCardProps {
-  item: ItemVariante
-  producto: CatalogoItemPublico | undefined
-  onZoom: (imagenes: GalleryImage[], index: number) => void
-  onDetalle: (item: ItemVariante, producto: CatalogoItemPublico | undefined) => void
-}
-
-function ItemCard({ item, producto, onZoom, onDetalle }: ItemCardProps) {
-  const nombre = item.nombrePersonalizado ?? producto?.descripcion ?? 'Ítem'
-  const unidad = producto?.unidadMedida || 'unidad'
-  const precioUnitario = parseNum(item.precioUnitario)
-  const total = parseNum(item.totalLinea)
-  const galeria = [producto?.imagenUrl, ...(producto?.galeriaImagenesUrl ?? [])].filter(Boolean) as string[]
-  const imagen = galeria[0] ?? null
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onDetalle(item, producto)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onDetalle(item, producto)
-        }
-      }}
-      className="group flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-raised p-3 shadow-xs transition-colors duration-fast cursor-pointer hover:border-border-brand"
-    >
-      <div className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-sm bg-bg-alt">
-        {imagen ? (
-          <>
-            {/* unoptimized: propuesta es snapshot de solo lectura y sus URLs pueden ser mock/blob temporales */}
-            <Image src={imagen} alt="" fill unoptimized className="object-cover" />
-            <span className="absolute inset-0 grid place-items-center bg-black/0 text-white opacity-0 transition-opacity duration-base group-hover:bg-black/30 group-hover:opacity-100">
-              <Expand size={13} />
-            </span>
-          </>
-        ) : (
-          <span className="text-[10px] text-text-muted">{producto?.sku?.charAt(0) ?? '·'}</span>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium leading-5 text-text-heading">{nombre}</p>
-        <p className="mt-0.5 text-xs text-text-muted">
-          {formatQty(item.cantidad)} {unidad}
-          {precioUnitario > 0 ? <> · {formatCOP(precioUnitario)} c/u</> : null}
-        </p>
-        {/* Comentario libre por ítem (requerimiento Supervisor 2026-09-10) — discreto, no
-            interfiere con precio/cantidad ni con el total a la derecha. */}
-        {item.comentario && (
-          <p className="mt-0.5 text-xs italic text-text-muted/80">{item.comentario}</p>
-        )}
-        {/* Ficha técnica del ítem (2026-09-22) — solo campos con dato, en línea discreta. */}
-        {(() => {
-          const pares: Array<[string, string]> = [
-            item.marca ? ['Marca', item.marca] : null,
-            item.referencia ? ['Ref.', item.referencia] : null,
-            item.color ? ['Color', item.color] : null,
-            item.dimensiones ? ['Dim.', item.dimensiones] : null,
-            item.acabado ? ['Acabado', item.acabado] : null,
-            item.espesor ? ['Espesor', item.espesor] : null,
-            ...(item.camposPersonalizados ?? [])
-              .filter((c) => c.clave || c.valor)
-              .map((c): [string, string] => [c.clave, c.valor]),
-          ].filter((p): p is [string, string] => p !== null)
-          if (pares.length === 0) return null
-          return (
-            <p className="mt-1 text-[11px] leading-4 text-text-muted/70">
-              {pares.map(([k, v], i) => (
-                <span key={k}>
-                  {i > 0 && <span className="mx-1 text-border-subtle">·</span>}
-                  <span className="font-medium">{k}:</span> {v}
-                </span>
-              ))}
-            </p>
-          )
-        })()}
-      </div>
-      {total > 0 && (
-        <div className="shrink-0 self-center text-right">
-          <span className="block text-[9px] uppercase tracking-[0.12em] text-text-muted">Total</span>
-          <strong className="font-display text-sm tabular-nums text-text-heading">{formatCOP(total)}</strong>
-        </div>
-      )}
-    </div>
-  )
-}
-
-interface DetalleTecnicoProps {
-  referenciales: ItemVariante[]
-  jornadasDev: string
-  jornadasEns: string
-  jornadasInst: string
-  tarifaDev: number
-  tarifaAssembly: number
-  tarifaInstall: number
-}
-
-function DetalleTecnico({
-  referenciales,
-  jornadasDev,
-  jornadasEns,
-  jornadasInst,
-  tarifaDev,
-  tarifaAssembly,
-  tarifaInstall,
-}: DetalleTecnicoProps) {
-  const [abierto, setAbierto] = useState(false)
-
-  const moDev = parseNum(jornadasDev) * tarifaDev
-  const moEns = parseNum(jornadasEns) * tarifaAssembly
-  const moInst = parseNum(jornadasInst) * tarifaInstall
-  const moTotal = moDev + moEns + moInst
-
-  if (moTotal === 0 && referenciales.length === 0) return null
-
-  return (
-    <div className="rounded-lg border border-border-subtle">
-      <button
-        type="button"
-        onClick={() => setAbierto((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-alt/60 transition-colors duration-fast"
-      >
-        <span className="text-sm font-medium text-text-heading">Ver desglose técnico</span>
-        <svg
-          className={`w-4 h-4 text-text-muted transition-transform duration-base ${abierto ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {abierto && (
-        <div className="border-t border-border-subtle px-4 py-3 space-y-3">
-          {moTotal > 0 && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-1">Mano de obra</p>
-              {moDev > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">· Desarrollo técnico</span><span className="font-mono">{formatCOP(moDev)}</span></div>}
-              {moEns > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
-              {moInst > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
-              <div className="flex justify-between text-sm pt-2 border-t border-border-subtle/50 mt-2">
-                <span className="text-text-muted font-medium">Subtotal MO</span>
-                <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
-              </div>
-            </div>
-          )}
-
-          {referenciales.length > 0 && (
-            <div className="pt-2 border-t border-dashed border-border-subtle">
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Ref. con terceros</p>
-              {Object.entries(
-                referenciales.reduce<Record<string, ItemVariante[]>>((acc, it) => {
-                  const key = it.grupoReferencial?.trim() || 'Otros'
-                  acc[key] = acc[key] ?? []
-                  acc[key].push(it)
-                  return acc
-                }, {})
-              ).map(([grupo, items]) => (
-                <div key={grupo} className="mb-1.5 last:mb-0">
-                  <p className="text-xs font-medium text-text-muted">{grupo}</p>
-                  {items.map((it) => (
-                    <div key={it.id} className="flex justify-between text-xs text-text-muted pl-3 py-0.5">
-                      <span>{it.nombrePersonalizado ?? 'Ítem'}</span>
-                      <span className="font-mono">{formatCOP(parseNum(it.totalLinea))}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-              <p className="text-xs text-text-muted italic mt-1">No incluida en el total.</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// t-157 (2026-09-10): agrupa visualmente los ítems de "Qué incluye" por su grupo/subgrupo
-// (árbol Espacio → Grupo → Subgrupo → Ítems). Sin grupos creados para el espacio, el render
-// es idéntico a la grilla plana de siempre — la agrupación es puramente aditiva.
-function renderItemsAgrupados(
-  items: ItemVariante[],
-  grupos: GrupoItem[],
-  catalogoPorId: Record<string, CatalogoItemPublico>,
-  onZoom: (imagenes: GalleryImage[], index: number) => void,
-  onDetalle: (item: ItemVariante, producto: CatalogoItemPublico | undefined) => void,
-): ReactElement {
-  const gruposRaiz = grupos.filter((g) => !g.padreId).sort((a, b) => a.orden - b.orden)
-  const hijosDe = (padreId: string) => grupos.filter((g) => g.padreId === padreId).sort((a, b) => a.orden - b.orden)
-  const itemsDelGrupo = (grupoId: string) => items.filter((it) => it.grupoItemId === grupoId)
-  const itemsSinGrupo = items.filter((it) => !it.grupoItemId)
-  const hayGrupos = grupos.length > 0
-
-  const grid = (lista: ItemVariante[]): ReactElement => (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {lista.map((item) => (
-        <ItemCard
-          key={item.id}
-          item={item}
-          producto={item.catalogoId ? catalogoPorId[item.catalogoId] : undefined}
-          onZoom={onZoom}
-          onDetalle={onDetalle}
-        />
-      ))}
-    </div>
-  )
-
-  const renderGrupoNodo = (grupo: GrupoItem, nivel: number): ReactElement => {
-    const propios = itemsDelGrupo(grupo.id)
-    const hijos = hijosDe(grupo.id)
-    return (
-      <div key={grupo.id} className="mb-5 last:mb-0" style={{ marginLeft: nivel * 16 }}>
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-gold-600 mb-2">{grupo.nombre}</h4>
-        {propios.length > 0 && grid(propios)}
-        {hijos.map((h) => renderGrupoNodo(h, nivel + 1))}
-      </div>
-    )
-  }
-
-  if (!hayGrupos) return grid(items)
-
-  return (
-    <>
-      {gruposRaiz.map((g) => renderGrupoNodo(g, 0))}
-      {itemsSinGrupo.length > 0 && (
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Sin grupo</h4>
-          {grid(itemsSinGrupo)}
-        </div>
-      )}
-    </>
-  )
-}
+type VistaMovil = 'espacios' | 'resumen'
 
 export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublicaData; banner?: ReactNode }) {
   const { proyecto, espacios: espaciosBase, items: todosLosItems, catalogoPorId, contrato, hitos: hitosList, tarifas } = data
   /** t-167: hidratado en vivo por el Server Component; puede no venir en snapshots antiguos. */
   const cliente = data.cliente ?? null
   const { tarifaDev, tarifaAssembly, tarifaInstall } = tarifas
-  // Fallback []: snapshots publicados ANTES de t-157 (2026-09-10) no tienen esta clave —
-  // sin esto, un link de propuesta ya compartido con un cliente real rompería al abrirse.
+  // Fallback []: snapshots publicados ANTES de t-157 (2026-09-10) no tienen esta clave.
   const gruposItemTodos = useMemo(() => data.gruposItem ?? [], [data.gruposItem])
-  // t-172/t-175: acabados reales del espacio (imagen/color + destino). `?? {}`: snapshots
-  // publicados ANTES de la migración a espacio_variante_acabados no traen esta clave.
+  // t-172/t-175: acabados reales del espacio. `?? {}` para snapshots previos.
   const acabadosPorEspacio = useMemo(() => data.acabadosPorEspacio ?? {}, [data.acabadosPorEspacio])
 
-  const [espacioActivoId, setEspacioActivoId] = useState<string | null>(null)
-  const [varianteSeleccionadaId, setVarianteSeleccionadaId] = useState<string | null>(null)
-  const [modoComparar, setModoComparar] = useState(false)
-  const [varianteComparadaId, setVarianteComparadaId] = useState<string | null>(null)
-  const [tipoImagenActivo, setTipoImagenActivo] = useState<'espacio' | 'disenio' | 'referencia'>('espacio')
-  const [zoom, setZoom] = useState<{ imagenes: GalleryImage[]; index: number } | null>(null)
+  // Versión elegida por el cliente para cada ambiente (clave = nombreEspacio).
+  const [variantesSeleccionadas, setVariantesSeleccionadas] = useState<Record<string, string>>({})
+  const [zoom, setZoom] = useState<{ imagenes: ZoomImagen[]; index: number } | null>(null)
   const [tituloHeaderVisible, setTituloHeaderVisible] = useState(false)
   const [itemDetalle, setItemDetalle] = useState<{ item: ItemVariante; producto: CatalogoItemPublico | undefined } | null>(null)
+  const [vistaMovil, setVistaMovil] = useState<VistaMovil>('espacios')
+  const [enVista, setEnVista] = useState<{ espacioId: string | null; grupoId: string | null }>({
+    espacioId: null,
+    grupoId: null,
+  })
 
   useEffect(() => {
     const handleScroll = () => {
@@ -320,13 +78,51 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const itemsPorVariante = useCallback((varianteId: string): ItemVariante[] => todosLosItems.filter((it) => it.varianteId === varianteId), [todosLosItems])
+  // Scroll-spy: marca el espacio/grupo que el cliente está leyendo. Los anclajes
+  // están en el DOM en el mismo orden que se ven, así que basta con tomar el
+  // último que ya cruzó el umbral superior.
+  useEffect(() => {
+    let raf = 0
+    const medir = () => {
+      raf = 0
+      // Sólo anclas visibles: al conmutar a la vista resumen en móvil la
+      // columna narrativa queda en display:none y no debe mover el resaltado.
+      const anclas = Array.from(document.querySelectorAll<HTMLElement>('[data-pp-ancla]')).filter(
+        (el) => el.offsetParent !== null,
+      )
+      if (anclas.length === 0) return
+      let actual = anclas[0]
+      for (const el of anclas) {
+        if (el.getBoundingClientRect().top <= 160) actual = el
+        else break
+      }
+      const espacioId = actual.dataset.ppEspacio ?? null
+      const grupoId = actual.dataset.ppGrupo ?? null
+      setEnVista((prev) =>
+        prev.espacioId === espacioId && prev.grupoId === grupoId ? prev : { espacioId, grupoId },
+      )
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(medir)
+    }
+    medir()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
 
-  // Solo la variante activa de cada espacio entra a la propuesta — igual regla
-  // que el cotizador: alternativas de comparación no son objeto de contrato.
-  // `visibleEnPropuestaPublica=false` excluye la variante del todo (tabs y comparador) —
-  // misma semántica que lib/data/presentacion.ts:55. Aplica también al comparador:
-  // un borrador que el vendedor ocultó no debe aparecerle al cliente.
+  const itemsPorVariante = useCallback(
+    (varianteId: string): ItemVariante[] => todosLosItems.filter((it) => it.varianteId === varianteId),
+    [todosLosItems],
+  )
+
+  // Solo la variante activa de cada espacio entra a la propuesta — alternativas
+  // de comparación no son objeto de contrato. `visibleEnPropuestaPublica=false`
+  // excluye la variante del todo (selector y comparador).
   const grupos = useMemo(() => {
     const map = new Map<string, EspacioVariante[]>()
     espaciosBase
@@ -339,113 +135,25 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
     return map
   }, [espaciosBase])
 
-  const espaciosActivos = useMemo(() => Array.from(grupos.values()).map((variantes) => variantes.find((v) => v.activa) ?? variantes[0]), [grupos])
+  const espaciosActivos = useMemo(
+    () => Array.from(grupos.values()).map((variantes) => variantes.find((v) => v.activa) ?? variantes[0]),
+    [grupos],
+  )
 
-  // Inicializa espacioActivoId la primera vez que hay espacios (useEffect para no mutar en render)
-  useEffect(() => {
-    if (espacioActivoId === null && espaciosActivos.length > 0) {
-      setEspacioActivoId(espaciosActivos[0].id)
-    }
-  }, [espacioActivoId, espaciosActivos])
+  const varianteProyectada = useCallback(
+    (nombre: string, variantes: EspacioVariante[]): EspacioVariante => {
+      const elegida = variantesSeleccionadas[nombre]
+      return variantes.find((v) => v.id === elegida) ?? variantes.find((v) => v.activa) ?? variantes[0]
+    },
+    [variantesSeleccionadas],
+  )
 
-  const espacioIdActual = espacioActivoId ?? espaciosActivos[0]?.id ?? null
-
-  // Obtener todas las variantes del espacio actual (para selector de variantes)
-  const espacioActual = espaciosActivos.find((e) => e.id === espacioIdActual)
-  const espacioActualVariantes = espacioActual ? Array.from(grupos.get(espacioActual.nombreEspacio) ?? []) : []
-
-  // Variante a mostrar: si está seleccionada, usarla; si no, la activa; si ninguna, la primera
-  const varianteActual =
-    espacioActualVariantes.find((v) => v.id === varianteSeleccionadaId) ??
-    espacioActualVariantes.find((v) => v.activa) ??
-    espacioActualVariantes[0] ??
-    null
-
-  // Calcular totales (para resumen financiero general)
-  // Proyectar: si el usuario está viendo una variante alternativa en el espacio actual,
-  // el resumen financiero global (Sidebar) debe reflejar ese escenario "What If".
-  // [Axioma de Información]: Memoizado para no re-ejecutar N x M iteraciones en cada scroll event.
-  const { materialesTotal, moDev, moEns, moInst, moTotal, subtotal, total, iva, costosOperativos, imprevistos, descuento, ajuste } = useMemo(() => {
-    let mTotal = 0
-    let moDev = 0
-    let moEns = 0
-    let moInst = 0
-
-    const espaciosProyectados = Array.from(grupos.entries()).map(([nombre, variantes]) => {
-      if (espacioActual && nombre === espacioActual.nombreEspacio && varianteActual) {
-        return varianteActual
-      }
-      return variantes.find((v) => v.activa) ?? variantes[0]
-    })
-
-    espaciosProyectados.forEach((esp) => {
-      const items = itemsPorVariante(esp.id)
-      const contractuales = items.filter((it) => !it.esReferencial)
-      
-      mTotal += contractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
-      moDev += parseNum(esp.jornadasDesarrolloTecnico) * tarifaDev
-      moEns += parseNum(esp.jornadasEnsamblajeTaller) * tarifaAssembly
-      moInst += parseNum(esp.jornadasInstalacionObra) * tarifaInstall
-    })
-
-    const mOperativos = parseNum(proyecto.costosOperativos)
-    const mImprevistos = parseNum(proyecto.imprevistosInstalacion)
-    const mDescuento = parseNum(proyecto.descuentoComercial)
-    const mAjuste = parseNum(proyecto.ajusteArbitrario)
-
-    const moT = moDev + moEns + moInst
-    const sTotal = mTotal + moT + mOperativos + mImprevistos - mDescuento + mAjuste
-    const mIva = proyecto.aplicaIva ? Math.round(sTotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
-
-    return {
-      materialesTotal: mTotal,
-      moDev,
-      moEns,
-      moInst,
-      moTotal: moT,
-      costosOperativos: mOperativos,
-      imprevistos: mImprevistos,
-      descuento: mDescuento,
-      ajuste: mAjuste,
-      subtotal: sTotal,
-      iva: mIva,
-      total: sTotal + mIva
-    }
-  }, [
-    grupos, espacioActual, varianteActual, itemsPorVariante, 
-    tarifaDev, tarifaAssembly, tarifaInstall, proyecto
-  ])
-
-  // Comparación de versiones (diff). Referencia fija: la variante del contrato (activa).
-  // El delta y el "cambia" se miden SIEMPRE contra ella, nunca acumulativo.
-  const varianteContractualActual = espacioActualVariantes.find((v) => v.activa) ?? espacioActualVariantes[0] ?? null
-  const varianteComparada =
-    espacioActualVariantes.find((v) => v.id === varianteComparadaId && v.id !== varianteContractualActual?.id) ??
-    espacioActualVariantes.find((v) => v.id !== varianteContractualActual?.id) ??
-    null
-
-  const diffVersiones = useMemo(() => {
-    if (!varianteContractualActual || !varianteComparada) return null
-    return compararVariantes({
-      a: varianteContractualActual,
-      b: varianteComparada,
-      items: todosLosItems,
-      grupos: gruposItemTodos,
-      acabadosPorEspacio,
-      catalogoPorId,
-      tarifas: { tarifaDev, tarifaAssembly, tarifaInstall },
-    })
-  }, [
-    varianteContractualActual,
-    varianteComparada,
-    todosLosItems,
-    gruposItemTodos,
-    acabadosPorEspacio,
-    catalogoPorId,
-    tarifaDev,
-    tarifaAssembly,
-    tarifaInstall,
-  ])
+  // Proyección "what if": si el cliente eligió otra versión de un ambiente, los
+  // totales globales reflejan ese escenario.
+  const espaciosProyectados = useMemo(
+    () => Array.from(grupos.entries()).map(([nombre, variantes]) => varianteProyectada(nombre, variantes)),
+    [grupos, varianteProyectada],
+  )
 
   const totalAmbiente = useCallback(
     (esp: EspacioVariante): number => {
@@ -461,515 +169,419 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
     [itemsPorVariante, tarifaDev, tarifaAssembly, tarifaInstall],
   )
 
-  // Datos de la variante actual para mostrar en la sección del espacio
-  const itemsVarianteActual = varianteActual ? itemsPorVariante(varianteActual.id) : []
-  const contractualesActuales = itemsVarianteActual.filter((it) => !it.esReferencial)
-  const referencialesActuales = itemsVarianteActual.filter((it) => it.esReferencial)
+  const { materialesTotal, moDev, moEns, moInst, moTotal, subtotal, total, iva, costosOperativos, imprevistos, descuento, ajuste } = useMemo(() => {
+    let mTotal = 0
+    let vDev = 0
+    let vEns = 0
+    let vInst = 0
 
-  // t-157 (2026-09-10): grupos/subgrupos de ESTE espacio — "Qué incluye" se agrupa
-  // visualmente por ellos cuando existen; sin ninguno, el render es idéntico al de antes.
-  const gruposDelEspacioActual = varianteActual
-    ? gruposItemTodos.filter((g) => g.espacioVarianteId === varianteActual.id)
-    : []
+    espaciosProyectados.forEach((esp) => {
+      const contractuales = itemsPorVariante(esp.id).filter((it) => !it.esReferencial)
+      mTotal += contractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
+      vDev += parseNum(esp.jornadasDesarrolloTecnico) * tarifaDev
+      vEns += parseNum(esp.jornadasEnsamblajeTaller) * tarifaAssembly
+      vInst += parseNum(esp.jornadasInstalacionObra) * tarifaInstall
+    })
+
+    const mOperativos = parseNum(proyecto.costosOperativos)
+    const mImprevistos = parseNum(proyecto.imprevistosInstalacion)
+    const mDescuento = parseNum(proyecto.descuentoComercial)
+    const mAjuste = parseNum(proyecto.ajusteArbitrario)
+
+    const moT = vDev + vEns + vInst
+    const sTotal = mTotal + moT + mOperativos + mImprevistos - mDescuento + mAjuste
+    const mIva = proyecto.aplicaIva ? Math.round(sTotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
+
+    return {
+      materialesTotal: mTotal,
+      moDev: vDev,
+      moEns: vEns,
+      moInst: vInst,
+      moTotal: moT,
+      costosOperativos: mOperativos,
+      imprevistos: mImprevistos,
+      descuento: mDescuento,
+      ajuste: mAjuste,
+      subtotal: sTotal,
+      iva: mIva,
+      total: sTotal + mIva,
+    }
+  }, [espaciosProyectados, itemsPorVariante, tarifaDev, tarifaAssembly, tarifaInstall, proyecto])
+
+  // Árbol del sidebar: espacio + grupos/subgrupos + versiones, con su valor.
+  const nodos = useMemo<NodoEspacioPropuesta[]>(() => {
+    return Array.from(grupos.entries()).map(([nombre, variantes]) => {
+      const esp = varianteProyectada(nombre, variantes)
+      const itemsEsp = todosLosItems.filter((it) => it.varianteId === esp.id && !it.esReferencial)
+      const gruposEsp = gruposItemTodos.filter((g) => g.espacioVarianteId === esp.id)
+
+      const sumaGrupo = (grupoId: string): number => {
+        const propios = itemsEsp
+          .filter((it) => it.grupoItemId === grupoId)
+          .reduce((s, it) => s + parseNum(it.totalLinea), 0)
+        const hijos = gruposEsp.filter((g) => g.padreId === grupoId)
+        return propios + hijos.reduce((s, h) => s + sumaGrupo(h.id), 0)
+      }
+
+      const construir = (g: GrupoItem): NodoEspacioPropuesta['grupos'][number] => ({
+        id: g.id,
+        nombre: g.nombre,
+        total: sumaGrupo(g.id),
+        hijos: gruposEsp
+          .filter((h) => h.padreId === g.id)
+          .sort((a, b) => a.orden - b.orden)
+          .map(construir),
+      })
+
+      return {
+        id: esp.id,
+        nombre,
+        total: totalAmbiente(esp),
+        grupos: gruposEsp.filter((g) => !g.padreId).sort((a, b) => a.orden - b.orden).map(construir),
+        variantes: variantes.map((v) => ({
+          id: v.id,
+          nombre: v.nombreVariante,
+          total: totalAmbiente(v),
+          esContractual: v.activa,
+        })),
+      }
+    })
+  }, [grupos, varianteProyectada, todosLosItems, gruposItemTodos, totalAmbiente])
+
+  // Anexo "Cuadro de otros presupuestos": referenciales con terceros. Se
+  // mantienen completamente fuera de los valores oficiales de la cotización.
+  const anexo = useMemo(() => {
+    const filas: Array<{ id: string; espacio: string; grupo: string; nombre: string; valor: number }> = []
+    espaciosProyectados.forEach((esp) => {
+      todosLosItems
+        .filter((it) => it.varianteId === esp.id && it.esReferencial && !it.anulado)
+        .forEach((it) => {
+          const producto = it.catalogoId ? catalogoPorId[it.catalogoId] : undefined
+          filas.push({
+            id: it.id,
+            espacio: esp.nombreEspacio,
+            grupo: it.grupoReferencial?.trim() || 'Otros',
+            nombre: it.nombrePersonalizado ?? producto?.descripcion ?? 'Ítem',
+            valor: parseNum(it.totalLinea),
+          })
+        })
+    })
+    const mapa = new Map<string, typeof filas>()
+    filas.forEach((f) => {
+      const arr = mapa.get(f.grupo) ?? []
+      arr.push(f)
+      mapa.set(f.grupo, arr)
+    })
+    return { filas, porGrupo: Array.from(mapa.entries()), total: filas.reduce((s, f) => s + f.valor, 0) }
+  }, [espaciosProyectados, todosLosItems, catalogoPorId])
+
+  const irA = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const elegirVariante = (nombreEspacio: string, varianteId: string) => {
+    setVariantesSeleccionadas((prev) => ({ ...prev, [nombreEspacio]: varianteId }))
+    // El ancla de la sección cambia con la versión elegida; esperar al commit.
+    setTimeout(() => irA(`espacio-${varianteId}`), 0)
+  }
 
   const scrollToContenido = () => {
     document.getElementById('contenido-propuesta')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   // ── Receptor BroadcastChannel para modo presentación (ZN-004) ──
-  const seccionRefs = useRef<Record<string, HTMLElement | null>>({})
   useEffect(() => {
     if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return
     const canal = new BroadcastChannel(`presentacion-${proyecto.id}`)
     canal.onmessage = (ev: MessageEvent<{ tipo: string; espacioId: string }>) => {
       if (ev.data?.tipo === 'ir_a') {
-        setEspacioActivoId(ev.data.espacioId)
-        setVarianteSeleccionadaId(null)
-        const el = seccionRefs.current[ev.data.espacioId]
-        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        document
+          .getElementById(`espacio-${ev.data.espacioId}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     }
     return () => canal.close()
   }, [proyecto.id])
 
+  const costos = useMemo(
+    () => ({
+      materialesTotal,
+      moTotal,
+      moDev,
+      moEns,
+      moInst,
+      costosOperativos,
+      imprevistos,
+      descuento,
+      ajuste,
+      subtotal,
+      iva,
+      porcentajeIva: parseNum(proyecto.porcentajeIva),
+      total,
+    }),
+    [
+      materialesTotal,
+      moTotal,
+      moDev,
+      moEns,
+      moInst,
+      costosOperativos,
+      imprevistos,
+      descuento,
+      ajuste,
+      subtotal,
+      iva,
+      proyecto.porcentajeIva,
+      total,
+    ],
+  )
+
+  const sidebar = (
+    <SidebarTreePropuesta
+      nodos={nodos}
+      costos={costos}
+      espacioActivoId={enVista.espacioId}
+      grupoActivoId={enVista.grupoId}
+      onIrEspacio={(id) => irA(`espacio-${id}`)}
+      onIrGrupo={(id) => irA(`grupo-${id}`)}
+      onElegirVariante={elegirVariante}
+    />
+  )
+
   return (
     <>
-      {/* UI interactiva: nunca entra a la hoja. El papel lo arma PropuestaPrintDocument,
-          un documento aparte sin carouseles/sticky/sidebar (ver ese archivo). Antes se
-          imprimía esta misma UI con `print:` sueltos y salía distinto en PC y celular. */}
+      {/* UI interactiva: nunca entra a la hoja. El papel lo arma PropuestaPrintDocument. */}
       <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_var(--color-bg-alt)_0%,_var(--color-bg-paper)_40%,_var(--color-bg-paper)_100%)] print:hidden">
-      {banner}
-      {/* HeaderPropuesta — sticky (top-16: se acopla debajo del header de AppShell, h-16) */}
-      <header className="sticky top-16 z-header bg-bg-paper/90 backdrop-blur-xl border-b border-border-subtle print:static print:bg-transparent">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className={`transition-all duration-500 ease-out ${tituloHeaderVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-500">Propuesta</p>
-            <h1 className="font-display text-2xl font-semibold text-text-heading mt-0.5">{proyecto.nombreProyecto}</h1>
-          </div>
-          <div className="flex items-center gap-2 print:hidden">
-            <button
-              onClick={() => {
-                window.open(
-                  `/erp/cotizador/${proyecto.id}?presentar=1`,
-                  'presentador',
-                  'width=900,height=680,left=100,top=100,menubar=no,toolbar=no,location=no,status=no'
-                )
-              }}
-              className="inline-flex items-center gap-2 rounded-full border border-gold-400/50 px-4 py-2 text-sm font-medium text-gold-700 hover:bg-gold-50 transition-colors"
-            >
-              ▶ Presentar
-            </button>
-            <Button variant="primary" size="md" onClick={() => window.print()}>
-              Guardar como PDF
-            </Button>
-          </div>
-        </div>
-      </header>
+        {banner}
 
-      {/* Viewer 3D — DIFERIDO hasta integración SketchUp/OpenCutList → CVC */}
-      {/* <Viewer3DModal proyectoId={proyecto.id} /> */}
-
-      {/* Hero editorial */}
-      <section className="mx-auto max-w-7xl px-6 pt-12 pb-8 lg:pt-20 lg:pb-12">
-        <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">Propuesta comercial</p>
-          <h2 className="font-display mt-5 text-[clamp(2.25rem,1.6rem+2.6vw,4.25rem)] leading-[0.96] tracking-[-0.03em] text-text-heading">
-            {proyecto.nombreProyecto}
-          </h2>
-          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
-            {proyecto.direccionObra && <MetaItem icon={MapPin}>{proyecto.direccionObra}</MetaItem>}
-            <MetaItem icon={Building2}>{proyecto.tipoProyecto}</MetaItem>
-            <MetaItem icon={LayoutGrid}>
-              {espaciosActivos.length} {espaciosActivos.length === 1 ? 'ambiente incluido' : 'ambientes incluidos'}
-            </MetaItem>
-          </div>
-          <p className="mt-8 max-w-2xl text-base leading-7 text-text-muted">
-            Revisa el alcance por ambiente, las alternativas seleccionadas y las referencias visuales.
-            Los detalles técnicos se presentan solo cuando ayudan a tomar una decisión.
-          </p>
-          {/* t-167: la propuesta es un documento que después se anexa al contrato, y anexa sin
-              nombre no es anexo. El bloque se imprime con la propuesta. */}
-          {cliente && (
-            <div className="mt-8 rounded-lg border border-border-subtle bg-bg-raised p-5 print:border-neutral-300">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-text-muted">
-                Preparada para
-              </p>
-              <p className="mt-2 font-display text-xl text-text-heading">{cliente.nombre}</p>
-              <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
-                {cliente.documento && (
-                  <div className="flex gap-2">
-                    <dt className="text-text-muted">Identificación:</dt>
-                    <dd className="text-text-primary">{cliente.documento}</dd>
-                  </div>
-                )}
-                {cliente.telefono && (
-                  <div className="flex gap-2">
-                    <dt className="text-text-muted">Teléfono:</dt>
-                    <dd className="text-text-primary">{cliente.telefono}</dd>
-                  </div>
-                )}
-                {cliente.email && (
-                  <div className="flex gap-2">
-                    <dt className="text-text-muted">Correo:</dt>
-                    <dd className="text-text-primary break-all">{cliente.email}</dd>
-                  </div>
-                )}
-                {cliente.domicilio && (
-                  <div className="flex gap-2">
-                    <dt className="text-text-muted">Domicilio:</dt>
-                    <dd className="text-text-primary">{cliente.domicilio}</dd>
-                  </div>
-                )}
-              </dl>
+        {/* HeaderPropuesta — sticky (top-16: se acopla debajo del header de AppShell, h-16) */}
+        <header className="sticky top-16 z-header border-b border-border-subtle bg-bg-paper/90 backdrop-blur-xl print:static print:bg-transparent">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+            <div className={`transition-all duration-500 ease-out ${tituloHeaderVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'}`}>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-gold-500">Propuesta</p>
+              <h1 className="mt-0.5 font-display text-2xl font-semibold text-text-heading">{proyecto.nombreProyecto}</h1>
             </div>
-          )}
-          {espaciosActivos.length > 0 && (
-            <button
-              type="button"
-              onClick={scrollToContenido}
-              className="mt-6 inline-flex min-h-12 items-center gap-2.5 rounded-full border-2 border-gold-400 px-6 text-sm font-semibold text-gold-700 transition-colors duration-base hover:bg-gold-400 hover:text-white"
-            >
-              Ver propuesta <ArrowDown size={18} />
-            </button>
-          )}
-        </div>
-      </section>
-
-      {/* NavegacionAmbientes — tabs sticky bajo el header */}
-      {espaciosActivos.length > 0 && (
-        <nav className="sticky top-[144px] z-nav bg-bg-paper/90 backdrop-blur-xl border-y border-border-subtle print:hidden">
-          <div className="mx-auto max-w-7xl px-6 py-3 flex flex-wrap gap-2">
-            {espaciosActivos.map((esp, index) => (
+            <div className="flex items-center gap-2 print:hidden">
               <button
-                key={esp.id}
-                ref={(el) => { seccionRefs.current[esp.id] = el }}
-                type="button"
                 onClick={() => {
-                  setEspacioActivoId(esp.id)
-                  setVarianteSeleccionadaId(null)
-                  setModoComparar(false)
-                  setVarianteComparadaId(null)
+                  window.open(
+                    `/erp/cotizador/${proyecto.id}?presentar=1`,
+                    'presentador',
+                    'width=900,height=680,left=100,top=100,menubar=no,toolbar=no,location=no,status=no',
+                  )
                 }}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-fast ${
-                  espacioIdActual === esp.id
-                    ? 'bg-gold-500 text-white'
-                    : 'bg-bg-raised border border-border-subtle text-text-heading hover:border-border-brand'
-                }`}
+                className="inline-flex items-center gap-2 rounded-full border border-gold-400/50 px-4 py-2 text-sm font-medium text-gold-700 transition-colors hover:bg-gold-50"
               >
-                <span className="mr-1.5 opacity-70 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
-                {esp.nombreEspacio}
+                ▶ Presentar
               </button>
-            ))}
-          </div>
-        </nav>
-      )}
-
-      {/* Layout principal: narrativa + sidebar */}
-      <div id="contenido-propuesta" className="scroll-mt-24 mx-auto max-w-7xl px-6 py-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
-        {/* Columna narrativa */}
-        <div className="space-y-10 min-w-0">
-          {varianteActual && (
-            <>
-              {/* Encabezado del espacio */}
-              <div className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-500">
-                    Ambiente {String(espaciosActivos.findIndex((e) => e.id === espacioIdActual) + 1).padStart(2, '0')}
-                  </p>
-                  <h2 className="font-display text-display-publico font-semibold text-text-heading mt-1">{varianteActual.nombreEspacio}</h2>
-                  <p className="text-xs uppercase tracking-wide text-text-muted mt-1">{varianteActual.nombreVariante}</p>
-                </div>
-                {(() => {
-                  const espTotal = contractualesActuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
-                  const espMo =
-                    parseNum(varianteActual.jornadasDesarrolloTecnico) * tarifaDev +
-                    parseNum(varianteActual.jornadasEnsamblajeTaller) * tarifaAssembly +
-                    parseNum(varianteActual.jornadasInstalacionObra) * tarifaInstall
-                  const espSubtotal = espTotal + espMo
-                  return espSubtotal > 0 ? (
-                    <p className="text-right">
-                      <span className="block text-[10px] uppercase tracking-[0.14em] text-text-muted">Inversión del ambiente</span>
-                      <strong className="font-display block text-xl text-text-heading">{formatCOP(espSubtotal)}</strong>
-                    </p>
-                  ) : null
-                })()}
-              </div>
-
-              {varianteActual.descripcion && (
-                <blockquote className="-mt-6 max-w-2xl border-l-2 border-gold-400 pl-5">
-                  <p className="font-display text-lg leading-relaxed text-text-heading whitespace-pre-line first-letter:font-medium">
-                    {varianteActual.descripcion}
-                  </p>
-                </blockquote>
-              )}
-
-              {/* Colores y acabados reales del espacio (t-172/t-175) — desde
-                  espacio_variante_acabados. Antes leía el campo fantasma `colores` (jsonb), que
-                  quedó vacío tras migrar el cotizador a la tabla relacional. Cada acabado pinta
-                  su textura/imagen o su color hex, más el destino libre del vendedor. */}
-              {(() => {
-                const acabados = acabadosPorEspacio[varianteActual.id] ?? []
-                if (acabados.length === 0) return null
-                return (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Materiales y acabados</p>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {acabados.map(({ descripcionUso, acabado }) => (
-                        <div key={acabado.id} className="flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-raised p-3">
-                          <span
-                            className="relative h-12 w-12 shrink-0 overflow-hidden rounded-sm border border-border-subtle"
-                            style={acabado.imagenTexturaUrl ? undefined : { background: acabado.colorHex ?? '#D9D4CC' }}
-                          >
-                            {acabado.imagenTexturaUrl ? (
-                              <Image src={acabado.imagenTexturaUrl} alt="" fill unoptimized className="object-cover" />
-                            ) : null}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium leading-5 text-text-heading">{acabado.nombre}</p>
-                            {acabado.marca && <p className="text-xs text-text-muted">{acabado.marca}</p>}
-                            {descripcionUso && <p className="mt-0.5 text-xs italic text-text-muted/80">{descripcionUso}</p>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })()}
-
-              {/* Carril visual con tabs por tipo de foto del espacio: Espacio actual / Diseño / Referencia.
-                  Antes solo se mostraban Diseño y Referencia lado a lado — fotosEspacio (fotos del
-                  espacio real del cliente) nunca llegaba a la propuesta pública. Los tabs sin fotos
-                  no se muestran (sin campos vacíos que contaminen el layout). */}
-              {(() => {
-                const tiposImagen = (
-                  [
-                    { key: 'espacio', etiqueta: 'Espacio actual', fotos: varianteActual.fotosEspacio ?? [] },
-                    { key: 'disenio', etiqueta: 'Diseño', fotos: varianteActual.fotosDisenio ?? [] },
-                    { key: 'referencia', etiqueta: 'Referencia', fotos: varianteActual.fotosReferencia ?? [] },
-                  ] as const
-                )
-                  .map((t) => ({ ...t, fotos: toGalleryImages(t.fotos, varianteActual.nombreEspacio) }))
-                  .filter((t) => t.fotos.length > 0)
-
-                if (tiposImagen.length === 0) return null
-
-                const activo = tiposImagen.find((t) => t.key === tipoImagenActivo) ?? tiposImagen[0]
-
-                return (
-                  <div className="print:hidden">
-                    {tiposImagen.length > 1 && (
-                      <div className="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="Tipo de imagen del ambiente">
-                        {tiposImagen.map((t) => (
-                          <button
-                            key={t.key}
-                            type="button"
-                            role="tab"
-                            aria-selected={activo.key === t.key}
-                            onClick={() => setTipoImagenActivo(t.key)}
-                            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-fast ${
-                              activo.key === t.key
-                                ? 'bg-gold-500 text-white'
-                                : 'bg-bg-raised border border-border-subtle text-text-heading hover:border-border-brand'
-                            }`}
-                          >
-                            {t.etiqueta}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <GalleryRail
-                      fotos={activo.fotos}
-                      etiqueta={activo.etiqueta}
-                      onZoom={(imagenes, index) => setZoom({ imagenes: imagenes.map((im, i) => ({ url: im.url, alt: im.alt, id: `${index}-${i}` })), index })}
-                    />
-                  </div>
-                )
-              })()}
-
-              {/* SelectorVersiones — "variante" es jerga interna; el cliente ve "versiones".
-                  La del contrato lleva badge; el resto vive en el comparador. */}
-              {espacioActualVariantes.length > 1 && (
-                <div className="print:hidden">
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Versiones de este ambiente</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModoComparar(true)
-                        if (varianteComparada) setVarianteComparadaId(varianteComparada.id)
-                      }}
-                      className="rounded-full border border-gold-400/60 px-3.5 py-1.5 text-xs font-medium text-gold-700 transition-colors hover:bg-gold-50"
-                    >
-                      Comparar versiones
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {espacioActualVariantes.map((var_) => {
-                      const activa = !modoComparar && (varianteSeleccionadaId === var_.id || (varianteSeleccionadaId === null && var_.activa))
-                      return (
-                        <button
-                          key={var_.id}
-                          type="button"
-                          onClick={() => {
-                            setModoComparar(false)
-                            setVarianteSeleccionadaId(var_.id)
-                          }}
-                          className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors duration-fast ${
-                            activa
-                              ? 'bg-gold-500 text-white'
-                              : 'bg-bg-raised border border-border-subtle text-text-heading hover:border-border-brand'
-                          }`}
-                        >
-                          {var_.nombreVariante}
-                          <span className={activa ? 'text-white/70' : 'text-text-muted'}>{formatCOP(totalAmbiente(var_))}</span>
-                          {var_.activa && (
-                            <span
-                              className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                                activa ? 'bg-white/20 text-white' : 'bg-gold-100 text-gold-700'
-                              }`}
-                            >
-                              Del contrato
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {modoComparar && diffVersiones && (
-                    <ComparadorVersiones
-                      diff={diffVersiones}
-                      variantes={espacioActualVariantes.map((v) => ({
-                        id: v.id,
-                        etiqueta: v.nombreVariante,
-                        esContractual: v.activa,
-                        total: totalAmbiente(v),
-                      }))}
-                      comparadaId={varianteComparada?.id ?? ''}
-                      onCambiarComparada={(id) => setVarianteComparadaId(id)}
-                      onElegir={(id) => {
-                        setVarianteSeleccionadaId(id)
-                        setModoComparar(false)
-                      }}
-                      onVolver={() => setModoComparar(false)}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Qué incluye — ítems siempre visibles con imagen (ver nota de refinamiento arriba).
-                  t-157 (2026-09-10): si el espacio tiene grupos/subgrupos, los ítems se agrupan
-                  visualmente bajo su nombre; sin ninguno, el render es la grilla plana de siempre.
-                  En modo comparar se oculta: el comparador ya cubre los ítems y no hay que
-                  mostrar dos listas que digan cosas distintas. */}
-              {!modoComparar && (
-                <>
-              <section>
-                <div className="flex items-baseline justify-between gap-4">
-                  <h3 className="font-display text-xl text-text-heading">Qué incluye</h3>
-                  <span className="text-xs text-text-muted">{contractualesActuales.length} items</span>
-                </div>
-                {contractualesActuales.length > 0 ? (
-                  <div className="mt-4">
-                    {renderItemsAgrupados(
-                      contractualesActuales,
-                      gruposDelEspacioActual,
-                      catalogoPorId,
-                      (imagenes, index) => setZoom({ imagenes, index }),
-                      (item, producto) => setItemDetalle({ item, producto })
-                    )}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm text-text-muted">El alcance detallado se confirmará con el equipo comercial.</p>
-                )}
-              </section>
-
-              {/* Desglose financiero técnico (MO + referenciales) — accordion cerrado por defecto */}
-              <DetalleTecnico
-                referenciales={referencialesActuales}
-                jornadasDev={varianteActual.jornadasDesarrolloTecnico}
-                jornadasEns={varianteActual.jornadasEnsamblajeTaller}
-                jornadasInst={varianteActual.jornadasInstalacionObra}
-                tarifaDev={tarifaDev}
-                tarifaAssembly={tarifaAssembly}
-                tarifaInstall={tarifaInstall}
-              />
-                </>
-              )}
-            </>
-          )}
-
-          {/* ResumenFinanciero — versión mobile (aparece en flujo, no sticky) */}
-          <section id="resumen-movil" className="lg:hidden scroll-mt-24 rounded-lg border border-border-subtle bg-bg-raised p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-4">Inversión total</h2>
-            <div className="space-y-1.5 text-sm">
-              <div className="flex justify-between"><span className="text-text-muted">Materiales</span><span className="font-mono">{formatCOP(materialesTotal)}</span></div>
-              <div className="flex justify-between"><span className="text-text-muted">Mano de obra</span><span className="font-mono">{formatCOP(moTotal)}</span></div>
-              {moDev > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Desarrollo técnico</span><span className="font-mono">{formatCOP(moDev)}</span></div>}
-              {moEns > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
-              {moInst > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
-              {costosOperativos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos operativos</span><span className="font-mono">{formatCOP(costosOperativos)}</span></div>}
-              {imprevistos > 0 && <div className="flex justify-between"><span className="text-text-muted">Imprevistos</span><span className="font-mono">{formatCOP(imprevistos)}</span></div>}
-              {descuento > 0 && <div className="flex justify-between"><span className="text-text-muted">Descuento</span><span className="font-mono text-red-600">−{formatCOP(descuento)}</span></div>}
-              {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{ajuste > 0 ? '+' : '−'}{formatCOP(Math.abs(ajuste))}</span></div>}
-              {iva > 0 && <hr className="border-border-subtle my-2" />}
-              {iva > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">Subtotal</span><span className="font-mono">{formatCOP(subtotal)}</span></div>}
-              {iva > 0 && <div className="flex justify-between"><span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span><span className="font-mono">{formatCOP(iva)}</span></div>}
-              <hr className="border-border-subtle my-2" />
-              <div className="flex justify-between items-baseline border-l-2 border-gold-400 pl-3">
-                <span className="text-sm font-medium text-text-heading">Inversión total</span>
-                <span className="font-display text-xl text-text-heading">{formatCOP(total)}</span>
-              </div>
+              <Button variant="primary" size="md" onClick={() => window.print()}>
+                Guardar como PDF
+              </Button>
             </div>
-          </section>
+          </div>
+        </header>
 
-          {/* PlanPagos — solo si hay contrato (R7/CA-7/CA-8) */}
-          {contrato && hitosList.length > 0 && (
-            <section className="rounded-lg border border-border-subtle bg-bg-raised p-6 shadow-sm">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-3">Plan de pagos</h2>
-              <div className="space-y-1">
-                {hitosList.map((h) => (
-                  <div key={h.id} className="flex justify-between text-sm border-b border-border-subtle/50 py-1.5 last:border-0">
-                    <span>{h.orden}. {h.razon}</span>
-                    <span className="font-mono">{h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCOP(parseNum(h.montoOPorcentaje))}</span>
+        {/* Hero editorial — sólo título, cantidad de ambientes y (escritorio) valor total. */}
+        <section className="mx-auto max-w-7xl px-6 pb-8 pt-12 lg:pb-12 lg:pt-20">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">Propuesta comercial</p>
+            <h2 className="mt-5 font-display text-[clamp(2.25rem,1.6rem+2.6vw,4.25rem)] leading-[0.96] tracking-[-0.03em] text-text-heading">
+              {proyecto.nombreProyecto}
+            </h2>
+            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+              <MetaItem icon={LayoutGrid}>
+                {espaciosActivos.length} {espaciosActivos.length === 1 ? 'ambiente incluido' : 'ambientes incluidos'}
+              </MetaItem>
+              {total > 0 && (
+                <span className="hidden lg:inline-flex">
+                  <MetaItem icon={Wallet}>{formatCOP(total)}</MetaItem>
+                </span>
+              )}
+            </div>
+
+            {/* t-167: la propuesta es un documento que después se anexa al contrato. */}
+            {cliente && (
+              <div className="mt-8 rounded-lg border border-border-subtle bg-bg-raised p-5 print:border-neutral-300">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-text-muted">Preparada para</p>
+                <p className="mt-2 font-display text-xl text-text-heading">{cliente.nombre}</p>
+                <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
+                  {cliente.documento && (
+                    <div className="flex gap-2">
+                      <dt className="text-text-muted">Identificación:</dt>
+                      <dd className="text-text-primary">{cliente.documento}</dd>
+                    </div>
+                  )}
+                  {cliente.telefono && (
+                    <div className="flex gap-2">
+                      <dt className="text-text-muted">Teléfono:</dt>
+                      <dd className="text-text-primary">{cliente.telefono}</dd>
+                    </div>
+                  )}
+                  {cliente.email && (
+                    <div className="flex gap-2">
+                      <dt className="text-text-muted">Correo:</dt>
+                      <dd className="break-all text-text-primary">{cliente.email}</dd>
+                    </div>
+                  )}
+                  {cliente.domicilio && (
+                    <div className="flex gap-2">
+                      <dt className="text-text-muted">Domicilio:</dt>
+                      <dd className="text-text-primary">{cliente.domicilio}</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            )}
+
+            {espaciosActivos.length > 0 && (
+              <button
+                type="button"
+                onClick={scrollToContenido}
+                className="mt-6 inline-flex min-h-12 items-center gap-2.5 rounded-full border-2 border-gold-400 px-6 text-sm font-semibold text-gold-700 transition-colors duration-base hover:bg-gold-400 hover:text-white"
+              >
+                Ver propuesta <ArrowDown size={18} />
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* Contenido: scroll acumulativo + sidebar árbol */}
+        <div id="contenido-propuesta" className="mx-auto grid max-w-7xl scroll-mt-24 grid-cols-1 gap-10 px-6 py-10 lg:grid-cols-[1fr_320px]">
+          {/* Columna narrativa — todos los ambientes apilados */}
+          <div className={`min-w-0 space-y-16 ${vistaMovil === 'resumen' ? 'hidden lg:block' : ''}`}>
+            {Array.from(grupos.entries()).map(([nombreEspacio, variantes], index) => (
+              <EspacioPropuestaSeccion
+                key={nombreEspacio}
+                indice={index}
+                nombreEspacio={nombreEspacio}
+                variantes={variantes}
+                varianteActual={varianteProyectada(nombreEspacio, variantes)}
+                items={todosLosItems}
+                gruposTodos={gruposItemTodos}
+                catalogoPorId={catalogoPorId}
+                acabados={acabadosPorEspacio}
+                tarifas={tarifas}
+                onSeleccionarVariante={(varianteId) =>
+                  setVariantesSeleccionadas((prev) => ({ ...prev, [nombreEspacio]: varianteId }))
+                }
+                onZoom={(fotos: GaleriaPropuestaFoto[], idx) =>
+                  setZoom({
+                    imagenes: fotos.map((f, i) => ({ url: f.url, alt: f.alt, id: `${idx}-${i}` })),
+                    index: idx,
+                  })
+                }
+                onDetalle={(item, producto) => setItemDetalle({ item, producto })}
+              />
+            ))}
+
+            {/* PlanPagos — solo si hay contrato (R7/CA-7/CA-8) */}
+            {contrato && hitosList.length > 0 && (
+              <section className="rounded-lg border border-border-subtle bg-bg-raised p-6 shadow-sm">
+                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-muted">Plan de pagos</h2>
+                <div className="space-y-1">
+                  {hitosList.map((h) => (
+                    <div key={h.id} className="flex justify-between border-b border-border-subtle/50 py-1.5 text-sm last:border-0">
+                      <span>{h.orden}. {h.razon}</span>
+                      <span className="font-mono">
+                        {h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCOP(parseNum(h.montoOPorcentaje))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-text-muted">
+                  Garantía: {contrato.garantiaAnios} años · Plazo:{' '}
+                  {textoPlazoSemanas(contrato.plazoSemanas)
+                    ?? contrato.plazoEjecucionTexto
+                    ?? 'el acordado con el Contratista'}
+                </p>
+              </section>
+            )}
+
+            {/* Filas extra de costos al final del scroll — sólo móvil: en escritorio
+                viven en el sidebar sticky. */}
+            <section className="lg:hidden">
+              <ResumenCostosPropuesta costos={costos} />
+            </section>
+          </div>
+
+          {/* Sidebar móvil (vista factura) — se conmuta desde la barra inferior */}
+          <div className={`lg:hidden ${vistaMovil === 'resumen' ? 'block' : 'hidden'}`}>{sidebar}</div>
+
+          {/* Sidebar escritorio — sticky */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-36 max-h-[calc(100vh-10rem)] overflow-y-auto pr-1">{sidebar}</div>
+          </aside>
+        </div>
+
+        {/* Anexo: otros presupuestos (referenciales). Fuera de todo valor oficial. */}
+        {anexo.filas.length > 0 && (
+          <section className={`mx-auto max-w-7xl px-6 pb-28 ${vistaMovil === 'resumen' ? 'hidden lg:block' : ''}`}>
+            <div className="rounded-lg border border-dashed border-border-subtle bg-bg-raised/60 p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-500">Anexo</p>
+              <h2 className="mt-1 font-display text-xl text-text-heading">Cuadro de otros presupuestos</h2>
+              <p className="mt-1 max-w-2xl text-sm text-text-muted">
+                Estimación de elementos y servicios con terceros. Estos valores no afectan ni aparecen en
+                los totales oficiales de esta cotización.
+              </p>
+              <div className="mt-5 space-y-4">
+                {anexo.porGrupo.map(([grupo, filas]) => (
+                  <div key={grupo}>
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{grupo}</p>
+                    {filas.map((f) => (
+                      <div key={f.id} className="flex justify-between gap-3 border-b border-border-subtle/50 py-1 text-sm">
+                        <span className="min-w-0 text-text-primary">
+                          {f.nombre}
+                          <span className="ml-2 text-xs text-text-muted">· {f.espacio}</span>
+                        </span>
+                        <span className="shrink-0 font-mono tabular-nums">{formatCOP(f.valor)}</span>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
-              {/* t-171: el plazo sale del NÚMERO (`plazoSemanas`), igual que en el contrato, con
-                  la misma cadena de respaldo. Antes esta línea imprimía `plazoEjecucionTexto`, el
-                  texto libre legacy: son dos campos distintos para lo mismo, así que la Propuesta
-                  y el contrato podían decir plazos diferentes siendo el mismo contrato. */}
-              <p className="text-xs text-text-muted mt-3">
-                Garantía: {contrato.garantiaAnios} años · Plazo:{' '}
-                {textoPlazoSemanas(contrato.plazoSemanas)
-                  ?? contrato.plazoEjecucionTexto
-                  ?? 'el acordado con el Contratista'}
-              </p>
-            </section>
-          )}
-        </div>
-
-        {/* Sidebar financiero — desktop únicamente, sticky */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-[212px] space-y-6">
-            <section className="rounded-lg border border-border-subtle bg-bg-raised p-5 shadow-sm">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-4">Inversión total</h2>
-              <div className="space-y-1.5 text-sm">
-                <div className="flex justify-between"><span className="text-text-muted">Materiales</span><span className="font-mono">{formatCOP(materialesTotal)}</span></div>
-                <div className="flex justify-between"><span className="text-text-muted">Mano de obra</span><span className="font-mono">{formatCOP(moTotal)}</span></div>
-                {moDev > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Desarrollo técnico</span><span className="font-mono">{formatCOP(moDev)}</span></div>}
-                {moEns > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Ensamblaje</span><span className="font-mono">{formatCOP(moEns)}</span></div>}
-                {moInst > 0 && <div className="flex justify-between pl-4 text-xs"><span className="text-text-muted">· Instalación</span><span className="font-mono">{formatCOP(moInst)}</span></div>}
-                {costosOperativos > 0 && <div className="flex justify-between"><span className="text-text-muted">Costos operativos</span><span className="font-mono">{formatCOP(costosOperativos)}</span></div>}
-                {imprevistos > 0 && <div className="flex justify-between"><span className="text-text-muted">Imprevistos</span><span className="font-mono">{formatCOP(imprevistos)}</span></div>}
-                {descuento > 0 && <div className="flex justify-between"><span className="text-text-muted">Descuento</span><span className="font-mono text-red-600">−{formatCOP(descuento)}</span></div>}
-                {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{ajuste > 0 ? '+' : '−'}{formatCOP(Math.abs(ajuste))}</span></div>}
-                {iva > 0 && <hr className="border-border-subtle my-2" />}
-                {iva > 0 && <div className="flex justify-between text-sm"><span className="text-text-muted">Subtotal</span><span className="font-mono">{formatCOP(subtotal)}</span></div>}
-                {iva > 0 && <div className="flex justify-between"><span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span><span className="font-mono">{formatCOP(iva)}</span></div>}
-                <hr className="border-border-subtle my-2" />
-                <div className="border-l-2 border-gold-400 pl-3">
-                  <span className="block text-xs font-medium text-text-muted">Inversión total</span>
-                  <span className="font-display text-2xl text-text-heading">{formatCOP(total)}</span>
-                </div>
+              <div className="mt-4 flex items-baseline justify-between border-t border-border-subtle pt-3">
+                <span className="text-sm font-medium text-text-heading">Total otros presupuestos</span>
+                <span className="font-display text-lg text-text-heading">{formatCOP(anexo.total)}</span>
               </div>
-            </section>
+            </div>
+          </section>
+        )}
+
+        {/* Barra inferior móvil: total + conmutar entre espacios y resumen-factura */}
+        {espaciosActivos.length > 0 && (
+          <div className="fixed inset-x-3 bottom-3 z-header flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-gold-400 bg-gold-700 px-4 text-white shadow-lg lg:hidden">
+            <span>
+              <span className="block text-[10px] uppercase tracking-[0.14em] text-white/70">Inversión total</span>
+              <strong className="text-sm">{formatCOP(total)}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setVistaMovil((v) => (v === 'resumen' ? 'espacios' : 'resumen'))}
+              className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium"
+            >
+              {vistaMovil === 'resumen' ? 'Ver espacios' : 'Ver resumen'}
+            </button>
           </div>
-        </aside>
+        )}
+
+        {zoom && (
+          <GalleryOverlay
+            imagenes={zoom.imagenes}
+            initialIndex={zoom.index}
+            onClose={() => setZoom(null)}
+          />
+        )}
+
+        {itemDetalle && (
+          <ProductSheetModal
+            item={itemDetalle.item}
+            producto={itemDetalle.producto}
+            onClose={() => setItemDetalle(null)}
+          />
+        )}
       </div>
 
-      {/* Barra flotante móvil con acceso al resumen */}
-      {total > 0 && (
-        <a
-          href="#resumen-movil"
-          className="fixed inset-x-3 bottom-3 z-header flex min-h-14 items-center justify-between rounded-2xl border border-gold-400 bg-gold-700 px-4 text-white shadow-lg sm:hidden"
-        >
-          <span>
-            <span className="block text-[10px] uppercase tracking-[0.14em] text-white/70">Inversión total</span>
-            <strong className="text-sm">{formatCOP(total)}</strong>
-          </span>
-          <span className="text-sm font-medium">Ver resumen</span>
-        </a>
-      )}
-
-      {zoom && (
-        <GalleryOverlay
-          imagenes={zoom.imagenes}
-          initialIndex={zoom.index}
-          onClose={() => setZoom(null)}
-        />
-      )}
-
-      {itemDetalle && (
-        <ProductSheetModal
-          item={itemDetalle.item}
-          producto={itemDetalle.producto}
-          onClose={() => setItemDetalle(null)}
-        />
-      )}
-      </div>
-
-      {/* Documento de papel: `hidden print:block`, sin heredar nada de la UI de arriba. */}
+      {/* Documento de papel */}
       <PropuestaPrintDocument data={data} />
     </>
   )

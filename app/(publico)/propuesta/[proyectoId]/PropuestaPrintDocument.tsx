@@ -534,6 +534,24 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
 
   const hitosOrdenados = (hitos ?? []).slice().sort((a, b) => a.orden - b.orden)
 
+  // Anexo "Cuadro de otros presupuestos": referenciales con terceros. Queda
+  // completamente fuera de los totales oficiales de la propuesta.
+  const referencialesGlobales = espaciosActivos.flatMap((esp) =>
+    todosLosItems
+      .filter((it) => it.varianteId === esp.id && it.esReferencial && !it.anulado)
+      .map((it) => {
+        const producto = it.catalogoId ? catalogoPorId[it.catalogoId] : undefined
+        return {
+          id: it.id,
+          espacio: esp.nombreEspacio,
+          grupo: it.grupoReferencial?.trim() || 'Otros',
+          nombre: nombreItem(it, producto),
+          valor: parseNum(it.totalLinea),
+        }
+      }),
+  )
+  const totalReferenciales = referencialesGlobales.reduce((s, f) => s + f.valor, 0)
+
   return (
     <article className="pp hidden print:block">
       {/* ── Portada ── */}
@@ -608,7 +626,6 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
       {espaciosActivos.map((esp, indice) => {
         const items = todosLosItems.filter((it) => it.varianteId === esp.id)
         const contractuales = items.filter((it) => !it.esReferencial)
-        const referenciales = items.filter((it) => it.esReferencial)
         const gruposDelEspacio = gruposItem.filter((g) => g.espacioVarianteId === esp.id)
         const espMateriales = contractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
         const espMo =
@@ -677,36 +694,22 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
               )}
             </div>
 
-            {(espMo > 0 || referenciales.length > 0) && (
+            {espMo > 0 && (
               <div className="pp-bloque pp-avoid">
-                <h3 className="pp-bloque-titulo">Desglose técnico</h3>
-                {espMo > 0 && (
-                  <div className="pp-desglose">
-                    <p className="pp-mini">Mano de obra</p>
-                    {parseNum(esp.jornadasDesarrolloTecnico) * tarifas.tarifaDev > 0 && (
-                      <FilaTotal etiqueta="Desarrollo técnico" valor={formatCOP(parseNum(esp.jornadasDesarrolloTecnico) * tarifas.tarifaDev)} />
-                    )}
-                    {parseNum(esp.jornadasEnsamblajeTaller) * tarifas.tarifaAssembly > 0 && (
-                      <FilaTotal etiqueta="Ensamblaje" valor={formatCOP(parseNum(esp.jornadasEnsamblajeTaller) * tarifas.tarifaAssembly)} />
-                    )}
-                    {parseNum(esp.jornadasInstalacionObra) * tarifas.tarifaInstall > 0 && (
-                      <FilaTotal etiqueta="Instalación" valor={formatCOP(parseNum(esp.jornadasInstalacionObra) * tarifas.tarifaInstall)} />
-                    )}
-                    <FilaTotal etiqueta="Subtotal mano de obra" valor={formatCOP(espMo)} fuerte />
-                  </div>
-                )}
-                {referenciales.length > 0 && (
-                  <div className="pp-desglose pp-referencial">
-                    <p className="pp-mini">Con terceros (no incluido en el total)</p>
-                    {referenciales.map((it) => (
-                      <FilaTotal
-                        key={it.id}
-                        etiqueta={it.grupoReferencial ? `${it.grupoReferencial}: ${nombreItem(it, it.catalogoId ? catalogoPorId[it.catalogoId] : undefined)}` : nombreItem(it, it.catalogoId ? catalogoPorId[it.catalogoId] : undefined)}
-                        valor={formatCOP(parseNum(it.totalLinea))}
-                      />
-                    ))}
-                  </div>
-                )}
+                <h3 className="pp-bloque-titulo">Desglose de mano de obra</h3>
+                <div className="pp-desglose">
+                  <p className="pp-mini">Mano de obra</p>
+                  {parseNum(esp.jornadasDesarrolloTecnico) * tarifas.tarifaDev > 0 && (
+                    <FilaTotal etiqueta="Desarrollo técnico" valor={formatCOP(parseNum(esp.jornadasDesarrolloTecnico) * tarifas.tarifaDev)} />
+                  )}
+                  {parseNum(esp.jornadasEnsamblajeTaller) * tarifas.tarifaAssembly > 0 && (
+                    <FilaTotal etiqueta="Ensamblaje" valor={formatCOP(parseNum(esp.jornadasEnsamblajeTaller) * tarifas.tarifaAssembly)} />
+                  )}
+                  {parseNum(esp.jornadasInstalacionObra) * tarifas.tarifaInstall > 0 && (
+                    <FilaTotal etiqueta="Instalación" valor={formatCOP(parseNum(esp.jornadasInstalacionObra) * tarifas.tarifaInstall)} />
+                  )}
+                  <FilaTotal etiqueta="Subtotal mano de obra" valor={formatCOP(espMo)} fuerte />
+                </div>
               </div>
             )}
           </section>
@@ -788,11 +791,47 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
           </div>
         )}
 
-        <footer className="pp-pie">
-          <span>Veta Dorada · Hermanos García González S.A.S · NIT 901421357-9</span>
-          <span>Cra 72a #71A 57, Bogotá · +57 302 5922101</span>
-        </footer>
       </section>
+
+      {/* ── Anexo: cuadro de otros presupuestos (fuera de los totales oficiales) ── */}
+      {referencialesGlobales.length > 0 && (
+        <section className="pp-resumen pp-anexo">
+          <h2 className="pp-resumen-titulo">Cuadro de otros presupuestos</h2>
+          <p className="pp-nota">
+            Valores estimados con terceros. No afectan ni aparecen en los totales oficiales de esta cotización.
+          </p>
+          <table className="pp-table pp-avoid">
+            <thead>
+              <tr>
+                <th>Referencia</th>
+                <th>Ambiente</th>
+                <th className="pp-amount">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {referencialesGlobales.map((f) => (
+                <tr key={f.id}>
+                  <td>
+                    <span className="pp-item-nombre">{f.nombre}</span>
+                    <span className="pp-item-nota">{f.grupo}</span>
+                  </td>
+                  <td>{f.espacio}</td>
+                  <td className="pp-amount">{formatCOP(f.valor)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="pp-grand pp-avoid">
+            <span>Total otros presupuestos</span>
+            <strong>{formatCOP(totalReferenciales)}</strong>
+          </div>
+        </section>
+      )}
+
+      <footer className="pp-pie pp-pie-final">
+        <span>Veta Dorada · Hermanos García González S.A.S · NIT 901421357-9</span>
+        <span>Cra 72a #71A 57, Bogotá · +57 302 5922101</span>
+      </footer>
 
       <style jsx global>{`
         @page {
@@ -1022,8 +1061,8 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
         }
         .pp-imgs {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 4mm;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 3mm;
         }
         .pp-img {
           margin: 0;
