@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 import { ArrowDown, LayoutGrid, Wallet } from 'lucide-react'
-import { Button } from '@/components/veta/button'
 import { MetaItem } from '@/components/veta/meta-item'
 import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { ProductSheetModal } from '@/components/veta/product-sheet-modal'
@@ -361,23 +360,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
               <p className="text-[10px] uppercase tracking-[0.2em] text-gold-500">Propuesta</p>
               <h1 className="mt-0.5 font-display text-2xl font-semibold text-text-heading">{proyecto.nombreProyecto}</h1>
             </div>
-            <div className="flex items-center gap-2 print:hidden">
-              <button
-                onClick={() => {
-                  window.open(
-                    `/erp/cotizador/${proyecto.id}?presentar=1`,
-                    'presentador',
-                    'width=900,height=680,left=100,top=100,menubar=no,toolbar=no,location=no,status=no',
-                  )
-                }}
-                className="inline-flex items-center gap-2 rounded-full border border-gold-400/50 px-4 py-2 text-sm font-medium text-gold-700 transition-colors hover:bg-gold-50"
-              >
-                ▶ Presentar
-              </button>
-              <Button variant="primary" size="md" onClick={() => window.print()}>
-                Guardar como PDF
-              </Button>
-            </div>
+            <div className="flex items-center gap-2 print:hidden"></div>
           </div>
         </header>
 
@@ -393,9 +376,11 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 {espaciosActivos.length} {espaciosActivos.length === 1 ? 'ambiente incluido' : 'ambientes incluidos'}
               </MetaItem>
               {total > 0 && (
-                <span className="hidden lg:inline-flex">
-                  <MetaItem icon={Wallet}>{formatCOP(total)}</MetaItem>
-                </span>
+                <div className="inline-flex items-center gap-1.5 text-sm text-text-muted">
+                  <Wallet size={16} strokeWidth={1.75} className="shrink-0 text-gold-400" />
+                  <span className="block text-[10px] uppercase tracking-[0.14em] text-text-muted">Inversión total</span>
+                  <strong className="text-sm text-text-heading">{formatCOP(total)}</strong>
+                </div>
               )}
             </div>
 
@@ -545,23 +530,6 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
               </div>
             </div>
           </section>
-        )}
-
-        {/* Barra inferior móvil: total + conmutar entre espacios y resumen-factura */}
-        {espaciosActivos.length > 0 && (
-          <div className="fixed inset-x-3 bottom-3 z-header flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-gold-400 bg-gold-700 px-4 text-white shadow-lg lg:hidden">
-            <span>
-              <span className="block text-[10px] uppercase tracking-[0.14em] text-white/70">Inversión total</span>
-              <strong className="text-sm">{formatCOP(total)}</strong>
-            </span>
-            <button
-              type="button"
-              onClick={() => setVistaMovil((v) => (v === 'resumen' ? 'espacios' : 'resumen'))}
-              className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium"
-            >
-              {vistaMovil === 'resumen' ? 'Ver espacios' : 'Ver resumen'}
-            </button>
-          </div>
         )}
 
         {zoom && (

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Phone, Clock, LayoutGrid, Images, UserCircle, Home } from 'lucide-react';
 import { NavItem } from '@/components/veta/nav-item';
+import { Button } from '@/components/veta/button';
 import { MetaItem } from '@/components/veta/meta-item';
 import { WhatsappFloat } from '@/components/veta/whatsapp-float';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
@@ -49,13 +50,11 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
             </div>
 
             {/* 2. Centro: Enlaces de Navegación (Centrados) */}
-            {!isPropuestaView && (
-              <nav className="hidden md:flex flex-[2] items-center justify-center gap-8" aria-label="Navegación principal">
-                {navigation.filter(item => item.href !== '/cuenta').map((item) => (
-                  <NavItem key={item.href} {...item} />
-                ))}
-              </nav>
-            )}
+            <nav className="hidden md:flex flex-[2] items-center justify-center gap-8" aria-label="Navegación principal">
+              {navigation.filter(item => item.href !== '/cuenta').map((item) => (
+                <NavItem key={item.href} {...item} />
+              ))}
+            </nav>
 
             {/* 3. Derecha: Acciones (Botón y Login) */}
             <div className="hidden md:flex flex-1 items-center justify-end gap-5">
@@ -66,6 +65,11 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
                 Agenda tu asesoría
               </AsesoriaBoton>
               <div className="h-3 w-px bg-border-strong/40 hidden lg:block" aria-hidden="true" />
+              {isPropuestaView && (
+                <Button variant="primary" size="sm" onClick={() => window.print()}>
+                  Guardar como PDF
+                </Button>
+              )}
               <Link
                 href="/cuenta"
                 className="text-text-muted hover:text-gold-700 transition-colors duration-300"
