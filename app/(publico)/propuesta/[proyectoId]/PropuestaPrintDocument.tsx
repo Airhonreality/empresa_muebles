@@ -1023,7 +1023,7 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
           color: #241C15;
         }
         .pp-cita .veta-md {
-          font-family: var(--font-fraunces), Georgia, serif;
+          font-family: var(--font-sans);
           font-size: 12pt;
           line-height: 1.5;
           color: #241C15;

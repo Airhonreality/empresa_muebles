@@ -25,7 +25,7 @@ import { ParametrosFinancierosModal } from '@/components/veta/parametros-financi
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
 import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem } from '@/lib/data'
 import { CotizadorCompatProvider, useCotizadorCompat, type CotizadorCompatStore } from '@/lib/data/queries/cotizador-compat'
-import { eliminarProyectoAction, crearNotaReunionAction } from '@/lib/data/actions/core'
+import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, actualizarGrupoItemAction } from '@/lib/data/actions/core'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -2155,7 +2155,16 @@ function VarianteContenido({
                 <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-3 py-2 border border-border-subtle/60">
                   <span className="text-xs font-semibold text-text-heading truncate">📁 {grupo.nombre}</span>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Botón principal: Añadir item DENTRO de este grupo */}
+                    {/* 📋 Clonar */}
+                    <button type="button" onClick={async () => { if (!confirm("¿Clonar?")) return; await duplicarGrupoAction(grupo.id) }} className="text-xs px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded">📋</button>
+                    {/* ✏️ Editar */}
+                    <button type="button" onClick={() => { setNombreNuevoGrupo(grupo.nombre) }} className="text-xs px-2 py-0.5 bg-blue-200 hover:bg-blue-300 rounded">✏️</button>
+                    {/* 📢 Publicar */}
+                    <button type="button" onClick={async () => { await actualizarGrupoItemAction(grupo.id, { estado: "permanente" }) }} disabled={grupo.estado === "permanente"} className="text-xs px-2 py-0.5 bg-green-200 hover:bg-green-300 disabled:opacity-50 rounded">📢</button>
+                    {/* 📊 Detalles */}
+                    <button type="button" onClick={() => alert(`${grupo.nombre}`)} className="text-xs px-2 py-0.5 bg-purple-200 hover:bg-purple-300 rounded">📊</button>
+                    {/* 📦 Convertir */}
+                    <button type="button" onClick={() => alert(`Convertir: ${grupo.nombre}`)} className="text-xs px-2 py-0.5 bg-yellow-200 hover:bg-yellow-300 rounded">📦</button>
                     <Button
                       variant="secondary"
                       size="md"
