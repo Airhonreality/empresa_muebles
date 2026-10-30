@@ -85,7 +85,7 @@ export function ConvertirGrupoAProductoModal({ grupo, abierto, onClose, onSucces
             <p>
               <strong>Precio público:</strong> ${grupo.precioPublicoGrupo}
             </p>
-            {grupo.contenedor?.fotosDisenio.length ? <p>✅ Tiene fotos</p> : <p>❌ Sin fotos</p>}
+            {grupo.contenedor?.fotosDisenio.length ? <p>Tiene fotos</p> : <p>Sin fotos</p>}
           </div>
         </div>
 

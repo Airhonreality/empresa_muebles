@@ -148,9 +148,9 @@ export function ItemRow({
                     setDropdownOpen(false)
                   }}
                   className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-                >
-                  ✏️ Editar
-                </button>
+                  >
+                    Editar
+                  </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -171,7 +171,7 @@ export function ItemRow({
                   className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                   title="Anidar este item en un grupo"
                 >
-                  📁 Anidar en grupo
+                  Anidar en grupo
                 </button>
               </div>
             )}

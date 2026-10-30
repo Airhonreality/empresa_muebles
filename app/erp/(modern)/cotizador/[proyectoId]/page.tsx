@@ -35,7 +35,6 @@ import { useEstadoPublicacionPropuesta } from '@/lib/data/queries/useCotizadorQu
 import { VersionesPropuestaModal } from '@/components/veta/versiones-propuesta-modal'
 import { formatRelativeDate } from '@/lib/utils/format'
 import { destinosProyectoValidos } from '@/lib/data/transiciones-proyecto'
-import { ItemRow } from '@/components/cotizador/ItemRow'
 import { GrupoNodo } from '@/components/cotizador/GrupoNodo'
 import { GrupoDescripcionEditor } from '@/components/cotizador/GrupoDescripcionEditor'
 import { MarkdownField } from '@/components/veta/markdown-field'
@@ -1498,16 +1497,8 @@ function VarianteContenido({
   // Lectura de items desde el snapshot TanStack Query (B2, plan_cotizador_tanstack_query.md).
   const items = store.items.porVariante(espacio.id)
   const productMap = useMemo(() => new Map(catalogo.map((p) => [p.id, p])), [catalogo])
-  // 2026-10-01 (diagnóstico UX, ronda 2): los ítems se guardan en orden de creación (push al
-  // final, sin orderBy -- store.items.porVariante no reordena), que es el orden correcto para
-  // contratos/propuestas/impresión (siguen leyendo porVariante() directo, sin pasar por acá, así
-  // que no cambian). Pero en ESTE editor el botón de agregar vive arriba, junto al resto de los
-  // controles del espacio -- si el ítem nuevo aparece al final, cada ítem agregado aumenta la
-  // distancia entre el botón y el resultado (Ley de Fitts) y obliga a scrollear. Invertir solo
-  // la vista de edición hace que el ítem recién creado aparezca justo debajo del botón que lo
-  // creó, sin mover el cursor del usuario -- es la UI la que se desplaza, no la persona.
-  const itemsContractuales = items.filter((it) => !it.esReferencial).reverse()
-  const itemsReferenciales = items.filter((it) => it.esReferencial).reverse()
+  const itemsContractuales = items.filter((it) => !it.esReferencial)
+  const itemsReferenciales = items.filter((it) => it.esReferencial)
   const subtotalItems = itemsContractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
   const totalReferencial = itemsReferenciales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
 
@@ -1550,15 +1541,8 @@ function VarianteContenido({
   // penaliza el caso más común (reabrir una cotización ya poblada) con una sección vacía
   // forzando scroll de más.
   const [contextoForzado, setContextoForzado] = useState<boolean | null>(null)
-  // 2026-09-30 (diagnóstico UX): los ítems nuevos se insertan siempre al final de la lista
-  // (sin orderBy en ningún punto de lectura) -- en un espacio con muchos ítems ya cargados, la
-  // fila nueva aterriza fuera de la vista y nada avisaba dónde quedó. `itemRecienCreadoId` guarda
-  // el id del último ítem creado en esta variante; el efecto de abajo le hace scroll y lo resalta
-  // brevemente, y se limpia solo para no dejar el resaltado pegado si el usuario sigue trabajando.
-  const [itemRecienCreadoId, setItemRecienCreadoId] = useState<string | null>(null)
-  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [modalItemId, setModalItemId] = useState<string | null>(null)
   const [creandoItemLibre, setCreandoItemLibre] = useState(false)
+  const [modalItemId, setModalItemId] = useState<string | null>(null)
   const [itemLibreNombre, setItemLibreNombre] = useState('')
   const [itemLibreCantidad, setItemLibreCantidad] = useState('1')
   const [itemLibrePrecio, setItemLibrePrecio] = useState('0')
@@ -1596,24 +1580,9 @@ function VarianteContenido({
     await store.items.actualizar(id, { [field]: value } as Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>)
   }
 
-  useEffect(() => {
-    if (!itemRecienCreadoId) return
-    document.getElementById(`item-row-${itemRecienCreadoId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
-    highlightTimeoutRef.current = setTimeout(() => setItemRecienCreadoId(null), 1600)
-    return () => {
-      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
-    }
-  }, [itemRecienCreadoId])
-
-  // 2026-10-01: "+ Presupuesto adicional" vive en su propia sección, más abajo que el panel de
-  // búsqueda (que siempre se renderiza junto a Ítems, arriba). Sin esto, abrir el panel desde ese
-  // botón lo dejaría fuera de la vista -- el mismo problema de scroll manual que se corrigió para
-  // la creación de ítems, pero por el lado del disparador en vez del resultado.
-  useEffect(() => {
-    if (modoBusquedaItem !== 'normal') return
-    document.getElementById(`panel-busqueda-item-${espacio.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [modoBusquedaItem, espacio.id])
+  const actualizarComentario = async (id: string, value: string) => {
+    await store.items.actualizar(id, { comentario: value.trim() || null })
+  }
 
   // t-160 (2026-10-29): click-outside para cerrar el dropdown de "Añadir item"
   const dropdownAñadirRef = useRef<HTMLDivElement>(null)
@@ -1871,7 +1840,7 @@ function VarianteContenido({
                   className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                   title="Buscar producto del catálogo"
                 >
-                  📚 Catálogo
+                  Catálogo
                 </button>
                 <button
                   type="button"
@@ -1879,7 +1848,7 @@ function VarianteContenido({
                   className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                   title="Agregar ítem especial o a medida"
                 >
-                  ✏️ Ítem Libre
+                  Ítem Libre
                 </button>
                 <button
                   type="button"
@@ -1887,7 +1856,7 @@ function VarianteContenido({
                   className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                   title="Agrupar ítems (Grupo → Subgrupo → Ítems)"
                 >
-                  📁 Grupo
+                  Grupo
                 </button>
                 <div className="border-t border-border-subtle my-1" />
                 <button
@@ -1896,7 +1865,7 @@ function VarianteContenido({
                   className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                   title="Crear producto nuevo en el catálogo"
                 >
-                  ⭐ Crear producto
+                  Crear producto
                 </button>
               </div>
             )}
@@ -1958,7 +1927,6 @@ function VarianteContenido({
                 // round-trip de red), así el resaltado de la fila nueva no espera al servidor
                 // (bug real reportado por Javier: "el feedback de agregación tarda mucho en salir").
                 const id = crypto.randomUUID()
-                setItemRecienCreadoId(id)
                 void store.items.crear({
                   id,
                   varianteId: espacio.id,
@@ -2010,7 +1978,7 @@ function VarianteContenido({
             <div
               key={item.id}
               id={`item-row-${item.id}`}
-              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0 rounded transition-colors duration-500 ${item.id === itemRecienCreadoId ? 'bg-gold-100/80' : ''}`}
+              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0 rounded transition-colors duration-500`}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 sm:gap-2">
@@ -2029,6 +1997,16 @@ function VarianteContenido({
                     </span>
                     {prod && (
                       <span className="text-xs text-text-muted font-mono truncate">{prod.sku}</span>
+                    )}
+                    {item.comentario && (
+                      <input
+                        type="text"
+                        value={item.comentario}
+                        onChange={(e) => actualizarComentario(item.id, e.target.value)}
+                        placeholder="Comentario del ítem…"
+                        className="w-full border-b border-border-subtle bg-transparent px-0 py-0.5 text-[10px] text-text-muted focus:border-brand focus:ring-0 placeholder-text-text-muted/40"
+                        aria-label={`Comentario ${item.nombrePersonalizado ?? item.id}`}
+                      />
                     )}
                   </div>
                 </div>
@@ -2105,8 +2083,8 @@ function VarianteContenido({
                             setItemDropdownAbierto(null)
                           }}
                           className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-                        >
-                          ✏️ Editar
+                          >
+                          Editar
                         </button>
                         <button
                           type="button"
@@ -2133,7 +2111,7 @@ function VarianteContenido({
                           className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                           title="Anidar este item en un grupo"
                         >
-                          📁 Anidar en grupo
+                          Anidar en grupo
                         </button>
                       </div>
                     )}
@@ -2153,18 +2131,18 @@ function VarianteContenido({
               <div key={grupo.id} className="mb-2" style={{ marginLeft: nivel * 16 }}>
                 {/* t-160: Toolbar de grupo — diseñada para agregar items dentro de este grupo */}
                 <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-3 py-2 border border-border-subtle/60">
-                  <span className="text-xs font-semibold text-text-heading truncate">📁 {grupo.nombre}</span>
+                  <span className="text-xs font-semibold text-text-heading truncate">{grupo.nombre}</span>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* 📋 Clonar */}
-                    <button type="button" onClick={async () => { if (!confirm("¿Clonar?")) return; await duplicarGrupoAction(grupo.id) }} className="text-xs px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded">📋</button>
-                    {/* ✏️ Editar */}
-                    <button type="button" onClick={() => { setNombreNuevoGrupo(grupo.nombre) }} className="text-xs px-2 py-0.5 bg-blue-200 hover:bg-blue-300 rounded">✏️</button>
-                    {/* 📢 Publicar */}
-                    <button type="button" onClick={async () => { await actualizarGrupoItemAction(grupo.id, { estado: "permanente" }) }} disabled={grupo.estado === "permanente"} className="text-xs px-2 py-0.5 bg-green-200 hover:bg-green-300 disabled:opacity-50 rounded">📢</button>
-                    {/* 📊 Detalles */}
-                    <button type="button" onClick={() => alert(`${grupo.nombre}`)} className="text-xs px-2 py-0.5 bg-purple-200 hover:bg-purple-300 rounded">📊</button>
-                    {/* 📦 Convertir */}
-                    <button type="button" onClick={() => alert(`Convertir: ${grupo.nombre}`)} className="text-xs px-2 py-0.5 bg-yellow-200 hover:bg-yellow-300 rounded">📦</button>
+                    {/* Clonar */}
+                    <button type="button" onClick={async () => { if (!confirm("¿Clonar?")) return; await duplicarGrupoAction(grupo.id) }} className="text-xs px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded">Clonar</button>
+                    {/* Editar */}
+                    <button type="button" onClick={() => { setNombreNuevoGrupo(grupo.nombre) }} className="text-xs px-2 py-0.5 bg-blue-200 hover:bg-blue-300 rounded">Editar</button>
+                    {/* Publicar */}
+                    <button type="button" onClick={async () => { await actualizarGrupoItemAction(grupo.id, { estado: "permanente" }) }} disabled={grupo.estado === "permanente"} className="text-xs px-2 py-0.5 bg-green-200 hover:bg-green-300 disabled:opacity-50 rounded">Publicar</button>
+                    {/* Detalles */}
+                    <button type="button" onClick={() => alert(`${grupo.nombre}`)} className="text-xs px-2 py-0.5 bg-purple-200 hover:bg-purple-300 rounded">Detalles</button>
+                    {/* Convertir */}
+                    <button type="button" onClick={() => alert(`Convertir: ${grupo.nombre}`)} className="text-xs px-2 py-0.5 bg-yellow-200 hover:bg-yellow-300 rounded">Convertir</button>
                     <Button
                       variant="secondary"
                       size="md"
@@ -2314,7 +2292,7 @@ function VarianteContenido({
                 <div
                   key={item.id}
                   id={`item-row-${item.id}`}
-                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-1 last:pb-0 last:border-0 rounded transition-colors duration-500 ${item.id === itemRecienCreadoId ? 'bg-gold-100/80' : ''}`}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-1 last:pb-0 last:border-0 rounded transition-colors duration-500`}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 sm:gap-2">
@@ -2348,6 +2326,16 @@ function VarianteContenido({
                             value={item.grupoReferencial ?? ''}
                             onChange={(v) => actualizarItem(item.id, 'grupoReferencial', v)}
                           />
+                          {item.comentario && (
+                            <input
+                              type="text"
+                              value={item.comentario}
+                              onChange={(e) => actualizarComentario(item.id, e.target.value)}
+                              placeholder="Comentario del ítem…"
+                              className="w-full border-b border-border-subtle bg-transparent px-0 py-0.5 text-[10px] text-text-muted focus:border-brand focus:ring-0 placeholder-text-text-muted/40 mt-1 sm:mt-0"
+                              aria-label={`Comentario ${item.nombrePersonalizado ?? item.id}`}
+                            />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -2425,7 +2413,7 @@ function VarianteContenido({
                               }}
                               className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                             >
-                              ✏️ Editar
+                              Editar
                             </button>
                             <button
                               type="button"
@@ -2567,7 +2555,7 @@ function VarianteContenido({
                     }}
                     className="w-full text-left px-3 py-2 rounded border border-border-subtle hover:bg-bg-alt hover:border-gold-400 transition-all text-xs text-text-heading"
                   >
-                    {'  '.repeat(grupo.padreId ? 1 : 0)}📁 {grupo.nombre}
+                    {'  '.repeat(grupo.padreId ? 1 : 0)}{grupo.nombre}
                   </button>
                 ))}
               </div>
@@ -2601,7 +2589,6 @@ function VarianteContenido({
             // Crear desde el cotizador = crear + agregar al espacio actual. El id se
             // genera acá para reutilizar el mismo resaltado optimista de la búsqueda.
             const id = crypto.randomUUID()
-            setItemRecienCreadoId(id)
             void store.items.crear({
               id,
               varianteId: espacio.id,
@@ -2702,7 +2689,6 @@ function VarianteContenido({
                   // 2026-10-01: mismo patrón que la búsqueda de catálogo -- id generado antes de
                   // disparar la mutación, para que el resaltado no espere al servidor.
                   const id = crypto.randomUUID()
-                  setItemRecienCreadoId(id)
                   void store.items.crear({
                     id,
                     varianteId: espacio.id,

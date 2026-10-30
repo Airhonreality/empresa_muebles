@@ -100,7 +100,7 @@ export function GrupoDescripcionEditor({ grupoId }: { grupoId: string }) {
         aria-expanded={abierto}
         className="text-[11px] text-gold-600 transition-colors duration-fast hover:text-gold-700"
       >
-        📝 {abierto ? 'Ocultar descripción' : 'Descripción del grupo'}
+        {abierto ? 'Ocultar descripción' : 'Descripción del grupo'}
       </button>
 
       {abierto && (

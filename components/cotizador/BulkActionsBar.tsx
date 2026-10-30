@@ -40,7 +40,7 @@ export function BulkActionsBar({
           ↔ Mover
         </Button>
         <Button variant="destructive" size="md" className="text-xs" onClick={handleDelete}>
-          🗑 Eliminar
+          Eliminar
         </Button>
         <button
           type="button"

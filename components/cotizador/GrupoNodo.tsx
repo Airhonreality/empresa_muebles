@@ -88,7 +88,7 @@ export function GrupoNodo({
             className="text-xs font-semibold text-text-heading truncate cursor-pointer hover:underline"
             onClick={() => setEditandoNombre(true)}
           >
-            📁 {grupo.nombre}
+            {grupo.nombre}
           </span>
         )}
 

@@ -143,7 +143,7 @@ export default function CotizadorIndexPage() {
                       title="Editar proyecto"
                       aria-label="Editar proyecto"
                     >
-                      ✏️
+                      Editar
                     </Button>
                     <Badge tone={ESTADO_TONE[proj.estado] ?? 'neutral'} dot>
                       {ESTADO_LABEL[proj.estado] ?? proj.estado}

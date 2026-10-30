@@ -118,8 +118,6 @@ export function ItemEditorModal({
     item.fuenteReferencial ?? null
   )
   const [grupoReferencial, setGrupoReferencial] = useState(item.grupoReferencial ?? '')
-  // Requerimiento Supervisor 2026-09-10: comentario libre por ítem, visible en la propuesta pública.
-  const [comentario, setComentario] = useState(item.comentario ?? '')
   // t-157 (2026-09-10): grupo/subgrupo al que pertenece este ítem dentro de su espacio.
   const [grupoItemId, setGrupoItemId] = useState(item.grupoItemId ?? '')
   // Reinicio modal 2026-09-18: foto propia del ítem (precedencia sobre imagen de catálogo).
@@ -184,7 +182,6 @@ export function ItemEditorModal({
       esReferencial,
       fuenteReferencial: esReferencial ? (fuenteReferencial || null) : null,
       grupoReferencial: esReferencial ? (grupoReferencial.trim() || null) : null,
-      comentario: comentario.trim() || null,
       grupoItemId: grupoItemId || null,
       fotoUrl: fotoUrl.trim() || null,
       marca: marca.trim() || null,
@@ -419,19 +416,6 @@ export function ItemEditorModal({
                   </p>
                 </div>
               )}
-
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">
-                  Comentario (visible para el cliente en la propuesta)
-                </label>
-                <textarea
-                  value={comentario}
-                  onChange={(e) => setComentario(e.target.value)}
-                  rows={2}
-                  className="w-full resize-none rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
-                  placeholder="Ej: Incluye herrajes de cierre suave"
-                />
-              </div>
 
               {grupos.length > 0 && (
                 <div>

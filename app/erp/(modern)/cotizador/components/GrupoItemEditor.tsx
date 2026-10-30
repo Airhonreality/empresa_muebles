@@ -123,7 +123,7 @@ export function GrupoItemEditor({ grupo, parametros, onUpdate, onConvert, onRefr
               title="Clonar grupo"
               className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              📋
+              Clonar
             </button>
             <button
               onClick={() => setEditandoNombre(true)}
@@ -131,7 +131,7 @@ export function GrupoItemEditor({ grupo, parametros, onUpdate, onConvert, onRefr
               title="Editar nombre"
               className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ✏️
+              Editar
             </button>
             <button
               onClick={handlePublicar}
@@ -139,7 +139,7 @@ export function GrupoItemEditor({ grupo, parametros, onUpdate, onConvert, onRefr
               title={grupo.productoCatalogoId ? 'No puede publicar un grupo convertido' : grupo.estado === 'permanente' ? 'Ya está publicado' : 'Publicar grupo'}
               className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              📢
+              Publicar
             </button>
             <button
               onClick={() => setMostrarDetalles(!mostrarDetalles)}
@@ -147,7 +147,7 @@ export function GrupoItemEditor({ grupo, parametros, onUpdate, onConvert, onRefr
               title="Ver detalles"
               className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              📊
+              Detalles
             </button>
             <button
               onClick={(e) => {
@@ -158,7 +158,7 @@ export function GrupoItemEditor({ grupo, parametros, onUpdate, onConvert, onRefr
               title="Convertir a producto"
               className="px-3 py-1 text-sm bg-blue-500 text-white hover:bg-blue-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              📦
+              Convertir
             </button>
             <button
               onClick={handleEliminar}
@@ -166,7 +166,7 @@ export function GrupoItemEditor({ grupo, parametros, onUpdate, onConvert, onRefr
               title="Eliminar grupo"
               className="px-3 py-1 text-sm bg-red-100 text-red-600 hover:bg-red-200 border border-red-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🗑️
+              Eliminar
             </button>
           </div>
         </div>

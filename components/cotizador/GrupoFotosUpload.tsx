@@ -45,7 +45,7 @@ export function GrupoFotosUpload({ grupoId, contenedor, onUpdate }: GrupoFotosUp
         onClick={() => setExpandido(!expandido)}
         className="w-full text-left font-semibold flex justify-between items-center hover:opacity-70"
       >
-        <span>📸 Fotos del Grupo {totalFotos > 0 && `(${totalFotos})`}</span>
+        <span>Fotos del Grupo {totalFotos > 0 && `(${totalFotos})`}</span>
         <span>{expandido ? '▼' : '▶'}</span>
       </button>
 
