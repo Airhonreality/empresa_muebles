@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { ImagePicker } from '@/components/veta/image-picker'
-import { Button } from '@/components/veta/button'
 import { actualizarContenedorDescriptivoGrupoAction } from '@/lib/data/actions/core'
 import type { ContenedorDescriptivo } from '@/lib/data'
 
