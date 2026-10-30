@@ -203,7 +203,9 @@ export function useActualizarEspacioMutation(proyectoId: string) {
     ({ id, patch }) => actualizarEspacioAction(id, patch),
     (snap, { id, patch }) => actualizarEspacio(snap, id, patch),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
-    { revertirOptimista: (actual, { id }, previo) => revertirEspacio(actual, id, previo) },
+    // Autoguardado de "Detalles del espacio": serializa todas las escrituras de espacios para
+    // que un rename y un autosave concurrentes no se pisen (última llamada gana, en orden).
+    { revertirOptimista: (actual, { id }, previo) => revertirEspacio(actual, id, previo), scopeId: 'escritura-espacios' },
   )
 }
 
@@ -370,7 +372,9 @@ export function useReemplazarAcabadosEspacioMutation(proyectoId: string) {
     ({ espacioVarianteId, items }) => reemplazarAcabadosEspacioAction(espacioVarianteId, items),
     (snap) => snap,
     undefined,
-    { invalidarSiempre: true },
+    // Reemplaza todos los acabados del espacio (delete+insert): serializado para que dos
+    // autoguardados seguidos no se intercalen.
+    { invalidarSiempre: true, scopeId: 'escritura-acabados' },
   )
 }
 

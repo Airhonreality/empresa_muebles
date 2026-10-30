@@ -329,41 +329,63 @@ export async function actualizarEspacioAction(
     // Separar campos de metadata de campos descriptivos
     const { descripcion, fotosEspacio, fotosDisenio, fotosReferencia, ...metadataFields } = sanitized;
 
-    // Actualizar metadata en espacioVariantes
-    const [actualizado] = await tx.update(s.espacioVariantes).set(metadataFields).where(eq(s.espacioVariantes.id, id)).returning();
-    if (!actualizado) return null;
+    // 2026-10-29 (bug real "Guardar detalles no guarda nada"): "Detalles del espacio"
+    // manda SOLO campos descriptivos, así que `metadataFields` viene vacío y Drizzle lanza
+    // "No values to set" con `.set({})` — eso revertía la transacción COMPLETA y ni siquiera
+    // se escribía el contenedor. Solo se actualiza la fila cuando hay algo que actualizar;
+    // si no, se lee tal cual para poder devolver el espacio (hidratado) al cliente.
+    let base: typeof s.espacioVariantes.$inferSelect;
+    if (Object.keys(metadataFields).length > 0) {
+      const [actualizado] = await tx.update(s.espacioVariantes).set(metadataFields).where(eq(s.espacioVariantes.id, id)).returning();
+      if (!actualizado) return null;
+      base = actualizado;
+    } else {
+      const [existente] = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, id));
+      if (!existente) return null;
+      base = existente;
+    }
 
     // Actualizar/crear contenedor descriptivo
+    let contenedor: typeof s.contenedoresDescriptivos.$inferSelect | null = null;
     if (descripcion !== undefined || fotosEspacio !== undefined || fotosDisenio !== undefined || fotosReferencia !== undefined) {
-      const sanitizedFotos = {
-        fotosEspacio: fotosEspacio ? (sanitizarUrlsFotos(fotosEspacio) ?? []) : undefined,
-        fotosDisenio: fotosDisenio ? (sanitizarUrlsFotos(fotosDisenio) ?? []) : undefined,
-        fotosReferencia: fotosReferencia ? (sanitizarUrlsFotos(fotosReferencia) ?? []) : undefined,
-      };
+      const patch: Partial<typeof s.contenedoresDescriptivos.$inferInsert> = { updatedAt: new Date().toISOString() };
+      if (descripcion !== undefined) patch.descripcion = descripcion;
+      if (fotosEspacio !== undefined) patch.fotosEspacio = sanitizarUrlsFotos(fotosEspacio) ?? [];
+      if (fotosDisenio !== undefined) patch.fotosDisenio = sanitizarUrlsFotos(fotosDisenio) ?? [];
+      if (fotosReferencia !== undefined) patch.fotosReferencia = sanitizarUrlsFotos(fotosReferencia) ?? [];
 
-      const [contenedor] = await tx.select().from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.espacioVarianteId, id));
+      const [existente] = await tx.select().from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.espacioVarianteId, id));
 
-      if (contenedor) {
-        await tx.update(s.contenedoresDescriptivos).set({
-          descripcion: descripcion ?? contenedor.descripcion,
-          fotosEspacio: sanitizedFotos.fotosEspacio ?? contenedor.fotosEspacio,
-          fotosDisenio: sanitizedFotos.fotosDisenio ?? contenedor.fotosDisenio,
-          fotosReferencia: sanitizedFotos.fotosReferencia ?? contenedor.fotosReferencia,
-          updatedAt: new Date().toISOString(),
-        }).where(eq(s.contenedoresDescriptivos.id, contenedor.id));
+      if (existente) {
+        const [actualizado] = await tx.update(s.contenedoresDescriptivos).set(patch).where(eq(s.contenedoresDescriptivos.id, existente.id)).returning();
+        contenedor = actualizado ?? existente;
       } else {
-        await tx.insert(s.contenedoresDescriptivos).values({
+        const [insertado] = await tx.insert(s.contenedoresDescriptivos).values({
           espacioVarianteId: id,
           grupoItemId: null,
           descripcion: descripcion ?? null,
-          fotosEspacio: sanitizedFotos.fotosEspacio ?? [],
-          fotosDisenio: sanitizedFotos.fotosDisenio ?? [],
-          fotosReferencia: sanitizedFotos.fotosReferencia ?? [],
-        });
+          fotosEspacio: sanitizarUrlsFotos(fotosEspacio) ?? [],
+          fotosDisenio: sanitizarUrlsFotos(fotosDisenio) ?? [],
+          fotosReferencia: sanitizarUrlsFotos(fotosReferencia) ?? [],
+        }).returning();
+        contenedor = insertado ?? null;
       }
     }
 
-    return (actualizado as unknown as EspacioVariante) ?? null;
+    // Devuelve el espacio con los campos descriptivos proyectados: la UI los lee de acá
+    // (EspacioVariante.descripcion/fotos* son "cargados opcionalmente") y `upsertEspacio`
+    // reemplaza la fila completa en el cache al reconciliar la mutación optimista.
+    return {
+      ...(base as unknown as EspacioVariante),
+      ...(contenedor
+        ? {
+            descripcion: contenedor.descripcion,
+            fotosEspacio: contenedor.fotosEspacio,
+            fotosDisenio: contenedor.fotosDisenio,
+            fotosReferencia: contenedor.fotosReferencia,
+          }
+        : {}),
+    };
   });
 }
 
@@ -616,6 +638,16 @@ export async function eliminarGrupoItemAction(id: string): Promise<boolean> {
     if (subgrupo) return false
 
     await tx.update(s.itemsVariante).set({ grupoItemId: null, updatedAt: new Date().toISOString() }).where(eq(s.itemsVariante.grupoItemId, id))
+
+    // 2026-10-29: el contenedor descriptivo del grupo tiene FK sin cascade — hay que
+    // borrar sus artefactos y el contenedor antes del grupo, o el DELETE falla.
+    const contenedores = await tx.select({ id: s.contenedoresDescriptivos.id }).from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.grupoItemId, id))
+    if (contenedores.length > 0) {
+      const ids = contenedores.map((c) => c.id)
+      await tx.delete(s.contenedoresArtefactos).where(inArray(s.contenedoresArtefactos.contenedorDescriptivoId, ids))
+      await tx.delete(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.id, ids))
+    }
+
     const [eliminado] = await tx.delete(s.gruposItem).where(eq(s.gruposItem.id, id)).returning({ id: s.gruposItem.id })
     return Boolean(eliminado)
   })
@@ -711,18 +743,17 @@ export async function duplicarGrupoAction(grupoId: string): Promise<GrupoItem | 
       })
     }
 
-    // Copiar items del grupo
+    // Copiar items del grupo (id nuevo: el de la fila origen no se reutiliza)
     const itemsOrigen = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.grupoItemId, grupoId))
     if (itemsOrigen.length > 0) {
-      await tx.insert(s.itemsVariante).values(
-        itemsOrigen.map(item => ({
-          ...item,
-          id: undefined as any,
-          grupoItemId: grupoNuevo.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }))
-      )
+      const copias: (typeof s.itemsVariante.$inferInsert)[] = itemsOrigen.map((item) => ({
+        ...item,
+        id: undefined,
+        grupoItemId: grupoNuevo.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }))
+      await tx.insert(s.itemsVariante).values(copias)
     }
 
     return grupoNuevo as unknown as GrupoItem
@@ -802,6 +833,26 @@ export async function eliminarEspacioAction(id: string): Promise<boolean> {
     await tx.delete(s.espacioVarianteAcabados).where(eq(s.espacioVarianteAcabados.espacioVarianteId, id))
     await tx.delete(s.espaciosArtefactos).where(eq(s.espaciosArtefactos.espacioVarianteId, id))
     await tx.delete(s.itemsVariante).where(eq(s.itemsVariante.varianteId, id))
+
+    // 2026-10-29 (Fase 2/3): grupos_item y contenedores_descriptivos tienen FK SIN cascade
+    // hacia espacio_variantes/grupos_item, así que sin esta limpieza el DELETE del espacio
+    // revienta con violación de FK (y deja el espacio imposible de borrar). Se borran primero
+    // los hijos de los contenedores (contenedores_artefactos) y luego los contenedores.
+    const grupos = await tx.select({ id: s.gruposItem.id }).from(s.gruposItem).where(eq(s.gruposItem.espacioVarianteId, id))
+    const idsGrupos = grupos.map((g) => g.id)
+    const contenedoresEspacio = await tx.select({ id: s.contenedoresDescriptivos.id }).from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.espacioVarianteId, id))
+    const contenedoresGrupo = idsGrupos.length > 0
+      ? await tx.select({ id: s.contenedoresDescriptivos.id }).from(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.grupoItemId, idsGrupos))
+      : []
+    const idsContenedores = [...contenedoresEspacio, ...contenedoresGrupo].map((c) => c.id)
+    if (idsContenedores.length > 0) {
+      await tx.delete(s.contenedoresArtefactos).where(inArray(s.contenedoresArtefactos.contenedorDescriptivoId, idsContenedores))
+      await tx.delete(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.id, idsContenedores))
+    }
+    if (idsGrupos.length > 0) {
+      await tx.delete(s.gruposItem).where(inArray(s.gruposItem.id, idsGrupos))
+    }
+
     const [eliminado] = await tx.delete(s.espacioVariantes).where(eq(s.espacioVariantes.id, id)).returning({ id: s.espacioVariantes.id })
     return Boolean(eliminado)
   })

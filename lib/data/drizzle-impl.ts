@@ -17,6 +17,7 @@
 import type { DataStore, Proyecto, NotaReunion, CuentaFinanciera, MovimientoFinanciero, MovimientoManualInput } from './contracts'
 import type { StoreSnapshot } from './snapshot'
 import { esCampoSnapshotLista, type SnapshotTableUpdate } from './snapshot-tables'
+import { conservarCamposDescriptivos } from './contenedores'
 import { coincide } from '../search/normalizar'
 import { masRecientePrimero } from './orden'
 import * as core from './actions/core'
@@ -82,6 +83,12 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
         }
       }
       cambios.proyectos = filas
+    }
+    // 2026-10-29 (Fase 2): una fila "seca" de espacio_variantes NO trae descripción/fotos
+    // (viven en contenedores_descriptivos). Si se reemplaza la lista tal cual, la pantalla
+    // pierde esos datos aunque sigan intactos en la base — se conservan los ya proyectados.
+    if (Array.isArray(cambios.espacios)) {
+      cambios.espacios = conservarCamposDescriptivos(cambios.espacios as StoreSnapshot['espacios'], data.espacios)
     }
     data = { ...data, ...cambios, version: nextVersion } as StoreSnapshot
     notify()

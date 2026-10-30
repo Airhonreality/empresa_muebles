@@ -35,6 +35,11 @@ export const TABLAS_COTIZADOR: ReadonlySet<string> = new Set([
   'hitos_pago',
   'catalogo_acabados',
   'proveedores',
+  // 2026-10-29 (Fase 2/3): el snapshot del cotizador también lee estos; sin esto, editar
+  // descripción/fotos o grupos en otra pestaña no dispara el refetch de esta.
+  'contenedores_descriptivos',
+  'grupos_item',
+  'espacio_variante_acabados',
 ])
 
 /** Ventana de supresión del eco propio: cuánto tiempo después de asentar una mutación del

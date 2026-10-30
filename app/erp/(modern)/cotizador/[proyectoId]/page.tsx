@@ -39,6 +39,8 @@ import { ItemRow } from '@/components/cotizador/ItemRow'
 import { GrupoNodo } from '@/components/cotizador/GrupoNodo'
 import { BulkActionsBar } from '@/components/cotizador/BulkActionsBar'
 import { useItemSelection } from '@/lib/hooks/useItemSelection'
+import { useAutosave, combinarEstados } from '@/lib/hooks/autosave'
+import { AutosaveStatus } from '@/components/veta/autosave-status'
 
 /* Wrapper local para el input de "Grupo referencial": vive dentro de un `.map()`, así que el hook
    no puede llamarse directamente en el callback del map (violaría Rules of Hooks) -- por eso se
@@ -1687,7 +1689,6 @@ function VarianteContenido({
             <FormDetallesEspacio
               espacio={espacio}
               onGuardado={() => setContextoForzado(false)}
-              onCancelar={() => setContextoForzado(false)}
             />
 
             <div className="border-t border-border-subtle pt-3">
@@ -1725,7 +1726,6 @@ function VarianteContenido({
                       <FormArtefactoEdicion
                         artefacto={artefacto}
                         onGuardado={() => setEditarArtefactoId(null)}
-                        onCancelar={() => setEditarArtefactoId(null)}
                       />
                     ) : (
                       <>
@@ -2855,11 +2855,9 @@ function FormArtefacto({
 function FormArtefactoEdicion({
   artefacto,
   onGuardado,
-  onCancelar,
 }: {
   artefacto: EspacioArtefacto
   onGuardado: () => void
-  onCancelar: () => void
 }) {
   const { store } = useCotizadorCompat()
   const [dimensiones, setDimensiones] = useState(artefacto.dimensionesMm ?? '')
@@ -2869,17 +2867,27 @@ function FormArtefactoEdicion({
   const [fotoUrls, setFotoUrls] = useState<string[]>(artefacto.fotoUrls ?? [])
   const [archivosUrls, setArchivosUrls] = useState<string[]>(artefacto.archivosUrls ?? [])
 
-  const handleGuardar = useCallback(async () => {
-    await store.artefactos.actualizar(artefacto.id, {
+  // Editar un artefacto existente es autoguardado: no hay "requeridos" que impidan guardar a
+  // medias (crear uno nuevo sí exige nombre → ese form conserva su botón explícito).
+  const cambios = useMemo(
+    () => ({
       tipoSpecifique: tipo.trim() || null,
       dimensionesMm: dimensiones.trim() || null,
       ubicacion: ubicacion.trim() || null,
       descripcion: descripcion.trim() || null,
       fotoUrls,
       archivosUrls,
-    })
+    }),
+    [tipo, dimensiones, ubicacion, descripcion, fotoUrls, archivosUrls],
+  )
+  const autosave = useAutosave({
+    valor: cambios,
+    guardar: (patch) => store.artefactos.actualizar(artefacto.id, patch),
+  })
+  const cerrar = () => {
+    autosave.flush()
     onGuardado()
-  }, [store, artefacto.id, tipo, dimensiones, ubicacion, descripcion, fotoUrls, archivosUrls, onGuardado])
+  }
 
   return (
     <div className="space-y-2 rounded border border-border-subtle bg-bg-paper p-3">
@@ -2925,20 +2933,14 @@ function FormArtefactoEdicion({
       <ImagePicker label="Fotos (una o varias)" value={fotoUrls} onChange={setFotoUrls} uploadToR2 r2Prefix="cotizador/artefactos" />
       <FilePicker label="Fichas técnicas / archivos (PDF, planos...)" value={archivosUrls} onChange={setArchivosUrls} accept=".pdf,.dwg,.dxf,.doc,.docx,.xls,.xlsx,.zip"
         r2Prefix="cotizador/artefactos/archivos" />
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <AutosaveStatus estado={autosave.estado} onReintentar={autosave.reintentar} />
         <button
           type="button"
-          onClick={handleGuardar}
-          className="rounded bg-gold-500 px-3 py-1 text-xs font-medium text-white hover:bg-gold-600 transition-colors duration-fast"
-        >
-          Actualizar
-        </button>
-        <button
-          type="button"
-          onClick={onCancelar}
+          onClick={cerrar}
           className="rounded border border-border-subtle px-3 py-1 text-xs text-text-muted hover:bg-bg-alt transition-colors duration-fast"
         >
-          Cancelar
+          Listo
         </button>
       </div>
     </div>
@@ -2948,11 +2950,9 @@ function FormArtefactoEdicion({
 function FormDetallesEspacio({
   espacio,
   onGuardado,
-  onCancelar,
 }: {
   espacio: EspacioVariante
   onGuardado: () => void
-  onCancelar: () => void
 }) {
   const { store } = useCotizadorCompat()
   const [descripcion, setDescripcion] = useState(espacio.descripcion ?? '')
@@ -2983,21 +2983,40 @@ function FormDetallesEspacio({
   const [fotosDisenio, setFotosDisenio] = useState<string[]>(espacio.fotosDisenio ?? [])
   const [fotosReferencia, setFotosReferencia] = useState<string[]>(espacio.fotosReferencia ?? [])
 
-  const handleGuardar = useCallback(async () => {
-    await store.espacios.actualizar(espacio.id, {
-      descripcion: descripcion.trim() || null,
-      fotosEspacio,
-      fotosDisenio,
-      fotosReferencia,
-    })
-    // t-175: reemplaza por completo a espacio.colores (jsonb) como fuente de verdad — relación
-    // real con texto libre de destino por acabado.
-    await store.espacioVarianteAcabados.reemplazarTodos(
-      espacio.id,
-      colores.map((c) => ({ acabadoId: c.acabado.id, descripcionUso: c.descripcionUso })),
-    )
+  // 2026-10-29: autoguardado por sección. Cada grupo de campos es un patch coalescido
+  // (debounce 700 ms + una sola escritura en vuelo) y las mutaciones van serializadas por
+  // scope de TanStack, así el servidor termina con lo último que vio el usuario.
+  const detalles = useMemo(
+    () => ({ descripcion: descripcion.trim() || null, fotosEspacio, fotosDisenio, fotosReferencia }),
+    [descripcion, fotosEspacio, fotosDisenio, fotosReferencia],
+  )
+  const autosaveDetalles = useAutosave({
+    valor: detalles,
+    guardar: (patch) => store.espacios.actualizar(espacio.id, patch),
+  })
+
+  // t-175: reemplaza por completo a espacio.colores (jsonb) como fuente de verdad — relación
+  // real con texto libre de destino por acabado. Es otra mutación (delete+insert), por eso
+  // tiene su propio autoguardado.
+  const acabadosAsociados = useMemo(
+    () => colores.map((c) => ({ acabadoId: c.acabado.id, descripcionUso: c.descripcionUso })),
+    [colores],
+  )
+  const autosaveAcabados = useAutosave({
+    valor: acabadosAsociados,
+    guardar: (items) => store.espacioVarianteAcabados.reemplazarTodos(espacio.id, items),
+  })
+
+  const estadoAutosave = combinarEstados(autosaveDetalles.estado, autosaveAcabados.estado)
+  const reintentarAutosave = () => {
+    autosaveDetalles.reintentar()
+    autosaveAcabados.reintentar()
+  }
+  const cerrarSeccion = () => {
+    autosaveDetalles.flush()
+    autosaveAcabados.flush()
     onGuardado()
-  }, [store, espacio.id, descripcion, colores, fotosEspacio, fotosDisenio, fotosReferencia, onGuardado])
+  }
 
   const inputCls = 'rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none'
   const ayudaCls = 'text-[11px] text-text-muted'
@@ -3036,20 +3055,14 @@ function FormDetallesEspacio({
         onCrearAcabado={(data) => store.catalogoAcabados.crear(data)}
       />
 
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <AutosaveStatus estado={estadoAutosave} onReintentar={reintentarAutosave} />
         <button
           type="button"
-          onClick={handleGuardar}
-          className="rounded bg-gold-500 px-3 py-1 text-xs font-medium text-white hover:bg-gold-600 transition-colors duration-fast"
-        >
-          Guardar detalles
-        </button>
-        <button
-          type="button"
-          onClick={onCancelar}
+          onClick={cerrarSeccion}
           className="rounded border border-border-subtle px-3 py-1 text-xs text-text-muted hover:bg-bg-alt transition-colors duration-fast"
         >
-          Cancelar
+          Listo
         </button>
       </div>
     </div>

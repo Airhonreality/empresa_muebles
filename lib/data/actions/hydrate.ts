@@ -9,6 +9,7 @@ import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { num, numOrNull } from './mappers'
 import { emptySnapshot, type StoreSnapshot } from '../snapshot'
+import { aplicarContenedoresAEspacios } from '../contenedores'
 import {
   TABLAS_CONOCIDAS,
   campoDeTabla,
@@ -167,7 +168,7 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     catalogoAcabados, catalogoProductoAcabados, acabadosMuestras,
     portafolio, rendersConceptuales, atributosTecnicos, catalogosEspaciosArquitectonicos, modulosArtefactos, bitacoraArticulos, testimonios,
     itemsOrdenCompra, recepcionesMaterial, herramientas, documentosProyecto,
-    gruposItem, espacioVarianteAcabados,
+    gruposItem, espacioVarianteAcabados, contenedoresDescriptivos,
   ] = await Promise.all([
     db.select().from(s.proyectos),
     db.select().from(s.clientes),
@@ -230,6 +231,7 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     db.select().from(s.documentosProyecto),
     db.select().from(s.gruposItem),
     db.select().from(s.espacioVarianteAcabados),
+    db.select().from(s.contenedoresDescriptivos),
   ])
 
   const base = emptySnapshot()
@@ -249,7 +251,7 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     version,
     proyectos: proyectos as StoreSnapshot['proyectos'],
     clientes: clientes as StoreSnapshot['clientes'],
-    espacios: espacios as StoreSnapshot['espacios'],
+    espacios: aplicarContenedoresAEspacios(espacios, contenedoresDescriptivos) as StoreSnapshot['espacios'],
     items: items as StoreSnapshot['items'],
     artefactos: artefactos as StoreSnapshot['artefactos'],
     catalogo: catalogo as StoreSnapshot['catalogo'],

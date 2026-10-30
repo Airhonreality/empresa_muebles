@@ -445,9 +445,9 @@ export const contenedoresDescriptivos = pgTable("contenedores_descriptivos", {
 	espacioVarianteId: uuid("espacio_variante_id"),
 	grupoItemId: uuid("grupo_item_id"),
 	descripcion: text(),
-	fotosEspacio: jsonb().default([]).notNull(),
-	fotosDisenio: jsonb().default([]).notNull(),
-	fotosReferencia: jsonb().default([]).notNull(),
+	fotosEspacio: jsonb().$type<string[]>().default([]).notNull(),
+	fotosDisenio: jsonb().$type<string[]>().default([]).notNull(),
+	fotosReferencia: jsonb().$type<string[]>().default([]).notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {

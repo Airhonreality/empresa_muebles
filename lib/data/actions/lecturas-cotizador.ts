@@ -9,6 +9,7 @@ import * as s from '@/lib/db/schema'
 import { requireSesionEmpleado } from '@/lib/auth/session'
 import type { CotizadorSnapshot } from '../queries/types'
 import type { GrupoItemHidratado, ItemVariante } from '@/lib/data/contracts'
+import { aplicarContenedoresAEspacios } from '@/lib/data/contenedores'
 
 export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promise<CotizadorSnapshot> {
   // Defensa en profundidad: middleware.ts ya bloquea /erp/** sin sesión, pero esta
@@ -38,7 +39,7 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
 
   // Escope de los hijos por los ids de este proyecto — nunca un select global.
   const espacioIds = espacios.map((e) => e.id)
-  const [items, artefactos, hitos, gruposItem, espacioVarianteAcabados] = await Promise.all([
+  const [items, artefactos, hitos, gruposItem, espacioVarianteAcabados, contenedores] = await Promise.all([
     espacioIds.length
       ? db.select().from(s.itemsVariante).where(inArray(s.itemsVariante.varianteId, espacioIds)).orderBy(s.itemsVariante.createdAt)
       : [],
@@ -54,13 +55,19 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
     espacioIds.length
       ? db.select().from(s.espacioVarianteAcabados).where(inArray(s.espacioVarianteAcabados.espacioVarianteId, espacioIds))
       : [],
+    // 2026-10-29 (Fase 2): descripción/fotos viven en contenedores_descriptivos. Se leen acá y se
+    // proyectan sobre cada espacio para no romper a todos los consumidores que usan
+    // espacio.descripcion / espacio.fotos* (cotizador, propuesta, contrato, presentación).
+    espacioIds.length
+      ? db.select().from(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.espacioVarianteId, espacioIds))
+      : [],
   ])
 
   return {
     proyecto: proyecto as unknown as CotizadorSnapshot['proyecto'],
     clientes: clientes as unknown as CotizadorSnapshot['clientes'],
     parametros: parametros as unknown as CotizadorSnapshot['parametros'],
-    espacios: espacios as unknown as CotizadorSnapshot['espacios'],
+    espacios: aplicarContenedoresAEspacios(espacios, contenedores) as unknown as CotizadorSnapshot['espacios'],
     items: items as unknown as CotizadorSnapshot['items'],
     artefactos: artefactos as unknown as CotizadorSnapshot['artefactos'],
     catalogo: catalogo as unknown as CotizadorSnapshot['catalogo'],
