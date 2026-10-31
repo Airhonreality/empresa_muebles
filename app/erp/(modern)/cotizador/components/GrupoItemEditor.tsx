@@ -4,6 +4,8 @@ import type { GrupoItemHidratado, GrupoItemCalculado } from '@/lib/data/contract
 import { calcularGrupoConSubgrupos, type ParametrosManoObra } from '@/lib/data/queries/grupo-calculado'
 import { duplicarGrupoAction, actualizarGrupoItemAction, eliminarGrupoItemAction } from '@/lib/data/actions/core'
 import { useState } from 'react'
+import { DropdownMenu } from '@/components/veta/dropdown-menu'
+import { ContenedorDetalles } from '@/components/veta/contenedor-detalles'
 
 interface Props {
   grupo: GrupoItemHidratado
@@ -115,64 +117,66 @@ export function GrupoItemEditor({ grupo, parametros, onUpdate, onConvert, onRefr
             </p>
           </div>
 
-          {/* Toolbar - 6 botones */}
-          <div className="flex gap-2 ml-4">
-            <button
-              onClick={handleClonar}
-              disabled={cargando}
-              title="Clonar grupo"
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Clonar
-            </button>
-            <button
-              onClick={() => setEditandoNombre(true)}
-              disabled={cargando || editandoNombre}
-              title="Editar nombre"
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Editar
-            </button>
-            <button
-              onClick={handlePublicar}
-              disabled={cargando || grupo.estado === 'permanente' || grupo.productoCatalogoId !== null}
-              title={grupo.productoCatalogoId ? 'No puede publicar un grupo convertido' : grupo.estado === 'permanente' ? 'Ya está publicado' : 'Publicar grupo'}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Publicar
-            </button>
-            <button
-              onClick={() => setMostrarDetalles(!mostrarDetalles)}
-              disabled={cargando}
-              title="Ver detalles"
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Detalles
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                onConvert()
-              }}
-              disabled={cargando}
-              title="Convertir a producto"
-              className="px-3 py-1 text-sm bg-blue-500 text-white hover:bg-blue-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Convertir
-            </button>
-            <button
-              onClick={handleEliminar}
-              disabled={cargando}
-              title="Eliminar grupo"
-              className="px-3 py-1 text-sm bg-red-100 text-red-600 hover:bg-red-200 border border-red-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Eliminar
-            </button>
-          </div>
+          {/* Toolbar - acciones de grupo en menú desplegable */}
+          <DropdownMenu
+            items={[
+              {
+                id: 'editar-grupo',
+                label: 'Editar nombre',
+                disabled: cargando || editandoNombre,
+                onClick: () => setEditandoNombre(true),
+                title: 'Editar nombre del grupo',
+              },
+              {
+                id: 'clonar-grupo',
+                label: 'Clonar grupo',
+                disabled: cargando,
+                onClick: handleClonar,
+                title: 'Clonar grupo y sus ítems',
+              },
+              {
+                id: 'publicar-grupo',
+                label: 'Publicar grupo',
+                variant: 'secondary',
+                disabled: cargando || grupo.estado === 'permanente' || grupo.productoCatalogoId !== null,
+                onClick: handlePublicar,
+                title: grupo.productoCatalogoId ? 'No puede publicar un grupo convertido' : grupo.estado === 'permanente' ? 'Ya está publicado' : 'Publicar grupo',
+              },
+              {
+                id: 'detalles-grupo',
+                label: 'Detalles',
+                disabled: cargando,
+                onClick: () => setMostrarDetalles(true),
+                title: 'Ver detalles del grupo',
+              },
+              {
+                id: 'convertir-grupo',
+                label: 'Convertir a producto',
+                variant: 'secondary',
+                disabled: cargando,
+                onClick: onConvert,
+                title: 'Convertir grupo a producto del catálogo',
+              },
+              {
+                id: 'eliminar-grupo',
+                label: 'Eliminar grupo',
+                variant: 'destructive',
+                disabled: cargando,
+                onClick: handleEliminar,
+                title: 'Eliminar grupo (los ítems se desagruparán)',
+              },
+            ]}
+            menuWidth="w-56"
+          />
         </div>
 
-        {/* Panel de Detalles (colapsable) */}
-        {mostrarDetalles && <TablaDetalles grupo={calculado} />}
+        {/* Panel de Detalles (compartido con espacio vía ContenedorDescriptivo) */}
+        {mostrarDetalles && (
+          <div className="space-y-4">
+            <ContenedorDetalles contenedor={grupo.contenedor} titulo="Detalles del grupo" />
+            <TablaDetalles grupo={calculado} />
+          </div>
+        )}
       </div>
 
       {/* Título colapsable para el contenido */}

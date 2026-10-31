@@ -23,9 +23,9 @@ import { CuentaCobroModal } from '@/components/veta/cuenta-cobro-modal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { ParametrosFinancierosModal } from '@/components/veta/parametros-financieros-modal'
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
-import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem } from '@/lib/data'
+import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem, type ContenedorDescriptivo } from '@/lib/data'
 import { CotizadorCompatProvider, useCotizadorCompat, type CotizadorCompatStore } from '@/lib/data/queries/cotizador-compat'
-import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, actualizarGrupoItemAction } from '@/lib/data/actions/core'
+import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, actualizarGrupoItemAction, obtenerContenedorDescriptivoGrupoAction } from '@/lib/data/actions/core'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -37,6 +37,8 @@ import { formatRelativeDate } from '@/lib/utils/format'
 import { destinosProyectoValidos } from '@/lib/data/transiciones-proyecto'
 import { GrupoNodo } from '@/components/cotizador/GrupoNodo'
 import { GrupoDescripcionEditor } from '@/components/cotizador/GrupoDescripcionEditor'
+import { DropdownMenu } from '@/components/veta/dropdown-menu'
+import { ContenedorDetalles } from '@/components/veta/contenedor-detalles'
 import { MarkdownField } from '@/components/veta/markdown-field'
 import { BulkActionsBar } from '@/components/cotizador/BulkActionsBar'
 import { useItemSelection } from '@/lib/hooks/useItemSelection'
@@ -1543,6 +1545,7 @@ function VarianteContenido({
   const [contextoForzado, setContextoForzado] = useState<boolean | null>(null)
   const [creandoItemLibre, setCreandoItemLibre] = useState(false)
   const [modalItemId, setModalItemId] = useState<string | null>(null)
+  const [contenedorModal, setContenedorModal] = useState<{ grupoId: string; contenedor: ContenedorDescriptivo | null; cargando: boolean } | null>(null)
   const [itemLibreNombre, setItemLibreNombre] = useState('')
   const [itemLibreCantidad, setItemLibreCantidad] = useState('1')
   const [itemLibrePrecio, setItemLibrePrecio] = useState('0')
@@ -2133,16 +2136,71 @@ function VarianteContenido({
                 <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-3 py-2 border border-border-subtle/60">
                   <span className="text-xs font-semibold text-text-heading truncate">{grupo.nombre}</span>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Clonar */}
-                    <button type="button" onClick={async () => { if (!confirm("¿Clonar?")) return; await duplicarGrupoAction(grupo.id) }} className="text-xs px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded">Clonar</button>
-                    {/* Editar */}
-                    <button type="button" onClick={() => { setNombreNuevoGrupo(grupo.nombre) }} className="text-xs px-2 py-0.5 bg-blue-200 hover:bg-blue-300 rounded">Editar</button>
-                    {/* Publicar */}
-                    <button type="button" onClick={async () => { await actualizarGrupoItemAction(grupo.id, { estado: "permanente" }) }} disabled={grupo.estado === "permanente"} className="text-xs px-2 py-0.5 bg-green-200 hover:bg-green-300 disabled:opacity-50 rounded">Publicar</button>
-                    {/* Detalles */}
-                    <button type="button" onClick={() => alert(`${grupo.nombre}`)} className="text-xs px-2 py-0.5 bg-purple-200 hover:bg-purple-300 rounded">Detalles</button>
-                    {/* Convertir */}
-                    <button type="button" onClick={() => alert(`Convertir: ${grupo.nombre}`)} className="text-xs px-2 py-0.5 bg-yellow-200 hover:bg-yellow-300 rounded">Convertir</button>
+                    <DropdownMenu
+                      items={[
+                        {
+                          id: 'editar-grupo',
+                          label: 'Editar nombre',
+                          onClick: () => setNombreNuevoGrupo(grupo.nombre),
+                          title: 'Editar nombre del grupo',
+                        },
+                        {
+                          id: 'clonar-grupo',
+                          label: 'Clonar grupo',
+                          onClick: async () => {
+                            if (!confirm("¿Clonar este grupo y sus ítems?")) return
+                            const clonado = await duplicarGrupoAction(grupo.id)
+                            if (clonado) {
+                              // refresh handled by store reactivity
+                            }
+                          },
+                          title: 'Clonar grupo y sus ítems',
+                        },
+                        {
+                          id: 'publicar-grupo',
+                          label: 'Publicar grupo',
+                          variant: 'secondary',
+                          disabled: grupo.estado === 'permanente',
+                          onClick: async () => {
+                            await actualizarGrupoItemAction(grupo.id, { estado: 'permanente' })
+                          },
+                          title: grupo.estado === 'permanente' ? 'Ya está publicado' : 'Publicar grupo',
+                        },
+                        {
+                          id: 'detalles-grupo',
+                          label: 'Detalles',
+                          onClick: () => {
+                            setContenedorModal({ grupoId: grupo.id, contenedor: null, cargando: true })
+                            void obtenerContenedorDescriptivoGrupoAction(grupo.id).then((c) => {
+                              setContenedorModal({ grupoId: grupo.id, contenedor: c ?? null, cargando: false })
+                            })
+                          },
+                          title: 'Ver detalles del grupo',
+                        },
+                        {
+                          id: 'convertir-grupo',
+                          label: 'Convertir a producto',
+                          variant: 'secondary',
+                          onClick: () => {
+                            setCrearProducto({})
+                            setContenedorModal(null)
+                          },
+                          title: 'Convertir grupo a producto del catálogo',
+                        },
+                        {
+                          id: 'eliminar-grupo',
+                          label: 'Eliminar grupo',
+                          variant: 'destructive',
+                          onClick: async () => {
+                            const ok = await store.gruposItem.eliminar(grupo.id)
+                            if (!ok) window.alert('No se puede eliminar: este grupo tiene subgrupos dentro. Elimínalos primero.')
+                            setContenedorModal(null)
+                          },
+                          title: 'Eliminar grupo (los ítems pasan a Sin grupo)',
+                        },
+                      ]}
+                      menuWidth="w-56"
+                    />
                     <Button
                       variant="secondary"
                       size="md"
@@ -2165,18 +2223,6 @@ function VarianteContenido({
                       title="Crear subgrupo dentro de este grupo"
                     >
                       + Sub
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const ok = await store.gruposItem.eliminar(grupo.id)
-                        if (!ok) window.alert('No se puede eliminar: este grupo tiene subgrupos dentro. Elimínalos primero.')
-                      }}
-                      aria-label={`Eliminar grupo ${grupo.nombre}`}
-                      title="Eliminar grupo (los ítems dentro pasan a 'Sin grupo')"
-                      className="text-text-muted hover:text-red-500 px-1.5 py-0.5 rounded"
-                    >
-                      ×
                     </button>
                   </div>
                 </div>
@@ -2526,6 +2572,22 @@ function VarianteContenido({
           }}
           onEditarProducto={(producto) => setProductoAEditar(producto)}
         />
+      )}
+
+      {/* Modal de detalles del grupo (Compartido con espacio vía ContenedorDescriptivo) */}
+      {contenedorModal && (
+        <Modal
+          open={true}
+          onClose={() => setContenedorModal(null)}
+          title={contenedorModal.cargando ? 'Cargando detalles…' : `Detalles del grupo`}
+          maxWidthClassName="max-w-2xl"
+        >
+          {contenedorModal.cargando ? (
+            <p className="text-xs text-text-muted italic">Cargando detalles del grupo…</p>
+          ) : (
+            <ContenedorDetalles contenedor={contenedorModal.contenedor} />
+          )}
+        </Modal>
       )}
 
       {/* Modal para anidar item en grupo */}
