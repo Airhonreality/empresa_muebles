@@ -1545,7 +1545,12 @@ function VarianteContenido({
   const [contextoForzado, setContextoForzado] = useState<boolean | null>(null)
   const [creandoItemLibre, setCreandoItemLibre] = useState(false)
   const [modalItemId, setModalItemId] = useState<string | null>(null)
-  const [contenedorModal, setContenedorModal] = useState<{ grupoId: string; contenedor: ContenedorDescriptivo | null; cargando: boolean } | null>(null)
+  const [contenedorModal, setContenedorModal] = useState<{
+    grupoId: string
+    contenedor: ContenedorDescriptivo | null
+    cargando: boolean
+    error: string | null
+  } | null>(null)
   const [itemLibreNombre, setItemLibreNombre] = useState('')
   const [itemLibreCantidad, setItemLibreCantidad] = useState('1')
   const [itemLibrePrecio, setItemLibrePrecio] = useState('0')
@@ -2170,10 +2175,20 @@ function VarianteContenido({
                           id: 'detalles-grupo',
                           label: 'Detalles',
                           onClick: () => {
-                            setContenedorModal({ grupoId: grupo.id, contenedor: null, cargando: true })
-                            void obtenerContenedorDescriptivoGrupoAction(grupo.id).then((c) => {
-                              setContenedorModal({ grupoId: grupo.id, contenedor: c ?? null, cargando: false })
-                            })
+                            setContenedorModal({ grupoId: grupo.id, contenedor: null, cargando: true, error: null })
+                            void obtenerContenedorDescriptivoGrupoAction(grupo.id).then(
+                              (c) => {
+                                setContenedorModal({ grupoId: grupo.id, contenedor: c ?? null, cargando: false, error: null })
+                              },
+                              (err) => {
+                                setContenedorModal({
+                                  grupoId: grupo.id,
+                                  contenedor: null,
+                                  cargando: false,
+                                  error: err instanceof Error ? err.message : 'No se pudieron cargar los detalles.',
+                                })
+                              },
+                            )
                           },
                           title: 'Ver detalles del grupo',
                         },
@@ -2584,6 +2599,10 @@ function VarianteContenido({
         >
           {contenedorModal.cargando ? (
             <p className="text-xs text-text-muted italic">Cargando detalles del grupo…</p>
+          ) : contenedorModal.error ? (
+            <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {contenedorModal.error}
+            </div>
           ) : (
             <ContenedorDetalles contenedor={contenedorModal.contenedor} />
           )}
