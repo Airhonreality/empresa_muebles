@@ -2174,21 +2174,29 @@ function VarianteContenido({
                         {
                           id: 'detalles-grupo',
                           label: 'Detalles',
-                          onClick: () => {
+                          onClick: async () => {
                             setContenedorModal({ grupoId: grupo.id, contenedor: null, cargando: true, error: null })
-                            void obtenerContenedorDescriptivoGrupoAction(grupo.id).then(
-                              (c) => {
-                                setContenedorModal({ grupoId: grupo.id, contenedor: c ?? null, cargando: false, error: null })
-                              },
-                              (err) => {
-                                setContenedorModal({
-                                  grupoId: grupo.id,
-                                  contenedor: null,
-                                  cargando: false,
-                                  error: err instanceof Error ? err.message : 'No se pudieron cargar los detalles.',
-                                })
-                              },
-                            )
+                            try {
+                              const contenedor = await Promise.race([
+                                obtenerContenedorDescriptivoGrupoAction(grupo.id),
+                                new Promise<never>((_, reject) =>
+                                  setTimeout(() => reject(new Error('La consulta tardó demasiado. Revisa tu conexión e intenta de nuevo.')), 15000),
+                                ),
+                              ])
+                              setContenedorModal({
+                                grupoId: grupo.id,
+                                contenedor: contenedor ?? null,
+                                cargando: false,
+                                error: null,
+                              })
+                            } catch (err) {
+                              setContenedorModal({
+                                grupoId: grupo.id,
+                                contenedor: null,
+                                cargando: false,
+                                error: err instanceof Error ? err.message : 'No se pudieron cargar los detalles.',
+                              })
+                            }
                           },
                           title: 'Ver detalles del grupo',
                         },
@@ -2602,6 +2610,35 @@ function VarianteContenido({
           ) : contenedorModal.error ? (
             <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {contenedorModal.error}
+              <button
+                type="button"
+                onClick={() => {
+                  setContenedorModal({ ...contenedorModal, cargando: true, error: null })
+                  void obtenerContenedorDescriptivoGrupoAction(contenedorModal.grupoId).then(
+                    (c) =>
+                      setContenedorModal({
+                        grupoId: contenedorModal.grupoId,
+                        contenedor: c ?? null,
+                        cargando: false,
+                        error: null,
+                      }),
+                    (err) =>
+                      setContenedorModal({
+                        grupoId: contenedorModal.grupoId,
+                        contenedor: null,
+                        cargando: false,
+                        error: err instanceof Error ? err.message : 'No se pudieron cargar los detalles.',
+                      }),
+                  )
+                }}
+                className="mt-2 underline text-sm text-red-600 hover:text-red-700"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : !contenedorModal.contenedor ? (
+            <div className="rounded border border-border-subtle bg-bg-paper p-4 text-sm text-text-muted">
+              Este grupo aún no tiene detalles cargados.
             </div>
           ) : (
             <ContenedorDetalles contenedor={contenedorModal.contenedor} />
