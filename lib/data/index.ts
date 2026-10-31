@@ -47,6 +47,7 @@ export type {
   CatalogoEspacioArquitectonico,
   CategoriaNotaReunion, NotaReunion,
   GrupoItem, ContenedorDescriptivo,
+  PlantillaEspacio, PlantillaGrupoHidratado, PlantillaItem,
   PropuestaVersion,
   Lead, EstadoLead, EventoConversionOffline, EstadoEnvioGoogle,
 } from './contracts'

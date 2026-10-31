@@ -173,6 +173,7 @@ export function construirEspacioOptimista(input: InputEspacioOptimista, orden: n
     fotosEspacio: [],
     fotosDisenio: [],
     fotosReferencia: [],
+    plantillaEspacioId: null,
   }
 }
 

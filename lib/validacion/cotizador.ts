@@ -156,3 +156,58 @@ export const clienteActualizarSchema = z.object({
   domicilio: textoOpcional,
 })
 export type ClienteActualizarInput = z.infer<typeof clienteActualizarSchema>
+
+// --- Plantillas de espacio (patrón prototipo: clase vs instancia) ---
+
+export const plantillaCrearSchema = z.object({
+  id: idNoVacio.optional(),
+  nombre: z.string().trim().min(1, 'no puede estar vacío'),
+  tipoEspacio: idNoVacio,
+  descripcion: textoOpcional,
+  icono: textoOpcional,
+  orden: z.number().int().nonnegative().optional(),
+  activa: z.boolean().optional(),
+  jornadasDesarrolloTecnico: numeroDecimalTexto.optional(),
+  jornadasEnsamblajeTaller: numeroDecimalTexto.optional(),
+  jornadasInstalacionObra: numeroDecimalTexto.optional(),
+})
+export type PlantillaCrearInput = z.infer<typeof plantillaCrearSchema>
+
+export const plantillaActualizarSchema = z.object({
+  nombre: z.string().trim().min(1, 'no puede estar vacío').optional(),
+  tipoEspacio: idNoVacio.optional(),
+  descripcion: textoOpcional,
+  icono: textoOpcional,
+  orden: z.number().int().nonnegative().optional(),
+  activa: z.boolean().optional(),
+  jornadasDesarrolloTecnico: numeroDecimalTexto.optional(),
+  jornadasEnsamblajeTaller: numeroDecimalTexto.optional(),
+  jornadasInstalacionObra: numeroDecimalTexto.optional(),
+})
+export type PlantillaActualizarInput = z.infer<typeof plantillaActualizarSchema>
+
+export const plantillaGrupoCrearSchema = z.object({
+  id: idNoVacio.optional(),
+  plantillaEspacioId: idNoVacio,
+  nombre: z.string().trim().min(1, 'no puede estar vacío'),
+  padreId: textoOpcional,
+  orden: z.number().int().nonnegative().optional(),
+  jornadasDesarrolloTecnico: numeroDecimalTexto.optional(),
+  jornadasEnsamblajeTaller: numeroDecimalTexto.optional(),
+  jornadasInstalacionObra: numeroDecimalTexto.optional(),
+})
+export type PlantillaGrupoCrearInput = z.infer<typeof plantillaGrupoCrearSchema>
+
+export const plantillaItemCrearSchema = z.object({
+  id: idNoVacio.optional(),
+  plantillaEspacioId: idNoVacio,
+  plantillaGrupoId: textoOpcional,
+  nombrePersonalizado: z.string().trim().min(1, 'no puede estar vacío'),
+  cantidad: numeroDecimalTexto.optional(),
+  precioUnitario: numeroDecimalTexto.optional(),
+  esReferencial: z.boolean().optional(),
+  fuenteReferencial: fuenteReferencialEnum.nullable().optional(),
+  grupoReferencial: textoOpcional,
+  orden: z.number().int().nonnegative().optional(),
+})
+export type PlantillaItemCrearInput = z.infer<typeof plantillaItemCrearSchema>

@@ -6,6 +6,7 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { EntityHeader } from '@/components/veta/entity-header'
 import { EntityActionsBar, type EntityAction } from '@/components/veta/entity-actions-bar'
+import { Package, Copy } from 'lucide-react'
 import { MoneyInput } from '@/components/veta/money-input'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
@@ -25,7 +26,7 @@ import { ParametrosFinancierosModal } from '@/components/veta/parametros-financi
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
 import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem, type ContenedorDescriptivo } from '@/lib/data'
 import { CotizadorCompatProvider, useCotizadorCompat, type CotizadorCompatStore } from '@/lib/data/queries/cotizador-compat'
-import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, actualizarGrupoItemAction, obtenerContenedorDescriptivoGrupoAction } from '@/lib/data/actions/core'
+import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, actualizarGrupoItemAction, obtenerContenedorDescriptivoGrupoAction, materializarPlantillaAction, guardarEspacioComoPlantillaAction, listarPlantillasEspacioAction } from '@/lib/data/actions/core'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -234,6 +235,9 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(false)
   const [mostrarVersionesPropuesta, setMostrarVersionesPropuesta] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
+  const [mostrarPlantillasCatalogoModal, setMostrarPlantillasCatalogoModal] = useState(false)
+  const [plantillasCatalogo, setPlantillasCatalogo] = useState<{ id: string; nombre: string; tipoEspacio: string; descripcion: string | null; icono: string | null }[]>([])
+  const [cargandoPlantillas, setCargandoPlantillas] = useState(false)
   const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
 
   // Auto-abrir modo presentación si la URL tiene ?presentar=1
@@ -281,6 +285,37 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       }
     })
   }, [guardCrearEspacio, store.espacios, store.items, proyectoId, espaciosBase.length])
+
+  const cargarPlantillasCatalogo = useCallback(async () => {
+    setCargandoPlantillas(true)
+    try {
+      const plantillas = await listarPlantillasEspacioAction()
+      setPlantillasCatalogo(plantillas.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        tipoEspacio: p.tipoEspacio,
+        descripcion: p.descripcion,
+        icono: p.icono,
+      })))
+    } catch (err) {
+      mostrarError(err instanceof Error ? err.message : 'No se pudo cargar el catálogo de plantillas.')
+    } finally {
+      setCargandoPlantillas(false)
+    }
+  }, [mostrarError])
+
+  const materializarDesdeCatalogo = useCallback(async (plantillaId: string) => {
+    setMostrarPlantillasCatalogoModal(false)
+    try {
+      await guardCrearEspacio(async () => {
+        const espacioId = await materializarPlantillaAction(plantillaId, proyectoId)
+        // El espacio nuevo llega por polling; no hace falta hacer nada más aquí.
+        return espacioId
+      })
+    } catch (err) {
+      mostrarError(err instanceof Error ? err.message : 'No se pudo insertar la plantilla en la cotización.')
+    }
+  }, [guardCrearEspacio, proyectoId, mostrarError])
 
   const crearEspacio = useCallback(() => {
     const nombreFinal = nuevoEspacioNombre.trim()
@@ -717,6 +752,16 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             >
               ✨ + Desde Plantilla
             </Button>
+            <Button
+              variant="ghost"
+              size="md"
+              className="h-10 text-sm border border-border-subtle hover:border-gold-400 hover:text-gold-600 w-full sm:w-auto"
+              onClick={() => { setMostrarPlantillasCatalogoModal(true); void cargarPlantillasCatalogo() }}
+              disabled={creandoEspacio}
+              title="Insertar una plantilla del catálogo (clase → instancia)"
+            >
+              <Copy size={14} /> + Desde Catálogo
+            </Button>
           </div>
         </div>
 
@@ -766,6 +811,58 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
                   </div>
                 ))}
               </div>
+            </div>
+          </Modal>
+        )}
+        {mostrarPlantillasCatalogoModal && (
+          <Modal
+            open={true}
+            onClose={() => setMostrarPlantillasCatalogoModal(false)}
+            title="Seleccionar Plantilla del Catálogo"
+          >
+            <div className="space-y-4">
+              <p className="text-xs text-text-muted">
+                Elige una plantilla del catálogo para materializarla como espacio de esta cotización. Cada cotización recibe su propia copia independiente.
+              </p>
+              {cargandoPlantillas ? (
+                <p className="text-xs text-text-muted">Cargando plantillas...</p>
+              ) : plantillasCatalogo.length === 0 ? (
+                <p className="text-xs text-text-muted italic">No hay plantillas activas en el catálogo.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 max-h-[65vh] overflow-y-auto p-1">
+                  {plantillasCatalogo.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex flex-col justify-between rounded border border-border-subtle bg-bg-paper p-3 hover:border-gold-400 hover:shadow-xs transition-all"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Package size={20} className="text-xl" />
+                          <h4 className="text-xs font-bold text-text-heading">{p.nombre}</h4>
+                        </div>
+                        {p.descripcion && (
+                          <p className="mt-1 text-[11px] text-text-muted leading-relaxed">{p.descripcion}</p>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <span className="rounded bg-bg-alt px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
+                            {p.tipoEspacio}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-border-subtle flex justify-end">
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={() => void materializarDesdeCatalogo(p.id)}
+                          disabled={creandoEspacio}
+                        >
+                          Materializar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Modal>
         )}
@@ -1237,6 +1334,17 @@ function EspacioGroup({
     }
   }
 
+  const guardarEspacioComoPlantilla = async () => {
+    const nombrePlantilla = window.prompt('Nombre de la plantilla:', nombreEspacio)
+    if (!nombrePlantilla || !nombrePlantilla.trim()) return
+    try {
+      await guardarEspacioComoPlantillaAction(varianteActiva.id, nombrePlantilla.trim())
+      window.alert('Plantilla creada en el catálogo.')
+    } catch (err) {
+      window.alert(`No se pudo crear la plantilla: ${err instanceof Error ? err.message : 'Motivo desconocido.'}`)
+    }
+  }
+
   return (
     <div className={`rounded-lg border ${varianteActiva.activa ? 'border-border-subtle' : 'border-border-subtle/50'} bg-bg-raised overflow-hidden`}>
       <div
@@ -1275,20 +1383,32 @@ function EspacioGroup({
                   <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5 8.5-8.5z" strokeLinejoin="round" strokeLinecap="round" />
                 </svg>
               </span>
-              <button
-                type="button"
-                disabled={eliminandoEspacio}
-                onClick={(e) => { e.stopPropagation(); void eliminarEspacioGrupo() }}
-                className="p-0.5 rounded text-text-muted hover:text-red-500 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label={`Eliminar ${nombreEspacio}`}
-                title="Eliminar espacio (todas sus variantes, ítems y artefactos)"
-              >
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
-                </svg>
-              </button>
-            </span>
+                <button
+                  type="button"
+                  disabled={eliminandoEspacio}
+                  onClick={(e) => { e.stopPropagation(); void eliminarEspacioGrupo() }}
+                  className="p-0.5 rounded text-text-muted hover:text-red-500 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label={`Eliminar ${nombreEspacio}`}
+                  title="Eliminar espacio (todas sus variantes, ítems y artefactos)"
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  disabled={eliminandoEspacio}
+                  onClick={(e) => { e.stopPropagation(); void guardarEspacioComoPlantilla() }}
+                  className="p-0.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label={`Guardar "${nombreEspacio}" como plantilla`}
+                  title="Guardar este espacio como plantilla del catálogo"
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 8.6V14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-5.4M6 6h.01M10 6h.01M6 12h8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </span>
           )}
           <select
             value={varianteActiva.tipoEspacio ?? ''}

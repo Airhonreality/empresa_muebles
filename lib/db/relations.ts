@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { proyectos, contratos, espacioVariantes, hitosPago, portfolioPublico, imagenesPortfolio, itemsVariante, productosCatalogo, cuentasFinancieras, movimientosFinancieros, obligacionesPendientes, clientes, proveedores, ordenesTrabajo, pedidosWeb, tareasProduccion, usuarios } from "./schema";
+import { proyectos, contratos, espacioVariantes, hitosPago, portfolioPublico, imagenesPortfolio, itemsVariante, productosCatalogo, cuentasFinancieras, movimientosFinancieros, obligacionesPendientes, clientes, proveedores, ordenesTrabajo, pedidosWeb, tareasProduccion, usuarios, plantillasEspacio, plantillaGrupos, plantillaItems } from "./schema";
 
 export const contratosRelations = relations(contratos, ({one, many}) => ({
 	proyecto: one(proyectos, {
@@ -29,6 +29,10 @@ export const espacioVariantesRelations = relations(espacioVariantes, ({one, many
 	proyecto: one(proyectos, {
 		fields: [espacioVariantes.proyectoId],
 		references: [proyectos.id]
+	}),
+	plantillaEspacio: one(plantillasEspacio, {
+		fields: [espacioVariantes.plantillaEspacioId],
+		references: [plantillasEspacio.id]
 	}),
 	itemsVariantes: many(itemsVariante),
 }));
@@ -180,5 +184,40 @@ export const usuariosRelations = relations(usuarios, ({one, many}) => ({
 	cliente: one(clientes, {
 		fields: [usuarios.clienteId],
 		references: [clientes.id]
+	}),
+}));
+
+export const plantillasEspacioRelations = relations(plantillasEspacio, ({one, many}) => ({
+	grupos: many(plantillaGrupos),
+	items: many(plantillaItems),
+	espaciosMaterializados: many(espacioVariantes, {
+		relationName: "espacio_variantes_plantilla_espacio_id_plantillas_espacio_id_fk"
+	}),
+}));
+
+export const plantillaGruposRelations = relations(plantillaGrupos, ({one, many}) => ({
+	plantillaEspacio: one(plantillasEspacio, {
+		fields: [plantillaGrupos.plantillaEspacioId],
+		references: [plantillasEspacio.id]
+	}),
+	padre: one(plantillaGrupos, {
+		fields: [plantillaGrupos.padreId],
+		references: [plantillaGrupos.id],
+		relationName: "plantilla_grupos_padre_id_plantilla_grupos_id_fk"
+	}),
+	subgrupos: many(plantillaGrupos, {
+		relationName: "plantilla_grupos_padre_id_plantilla_grupos_id_fk"
+	}),
+	items: many(plantillaItems),
+}));
+
+export const plantillaItemsRelations = relations(plantillaItems, ({one}) => ({
+	plantillaEspacio: one(plantillasEspacio, {
+		fields: [plantillaItems.plantillaEspacioId],
+		references: [plantillasEspacio.id]
+	}),
+	grupo: one(plantillaGrupos, {
+		fields: [plantillaItems.plantillaGrupoId],
+		references: [plantillaGrupos.id]
 	}),
 }));

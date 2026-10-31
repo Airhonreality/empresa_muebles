@@ -413,6 +413,47 @@ export function createDrizzleStore(initial: StoreSnapshot): DrizzleStoreHandle {
       },
     },
 
+    // --- Plantillas de espacio (patrón prototipo: clase/blueprint sin proyecto) ---
+    plantillas: {
+      listar: () => data.plantillas.filter((p) => p.activa),
+      obtener: (id) => {
+        const p = data.plantillas.find((x) => x.id === id)
+        if (!p) return undefined
+        return { ...p, grupos: [] } as unknown as import('./contracts').PlantillaEspacioHidratado
+      },
+      crear: async (values) => {
+        const r = await core.crearPlantillaEspacioAction(values)
+        data = { ...data, plantillas: upsert(data.plantillas, r) }
+        notify()
+        return r
+      },
+      actualizar: async (id, patch) => {
+        const r = await core.actualizarPlantillaEspacioAction(id, patch)
+        if (r) { data = { ...data, plantillas: upsert(data.plantillas, r) }; notify() }
+        return r
+      },
+      eliminar: async (id) => {
+        const ok = await core.eliminarPlantillaEspacioAction(id)
+        if (ok) {
+          data = { ...data, plantillas: data.plantillas.filter((p) => p.id !== id) }
+          notify()
+        }
+        return ok
+      },
+      materializar: async (plantillaId, proyectoId) => {
+        const espacioId = await core.materializarPlantillaAction(plantillaId, proyectoId)
+        // La instancia nueva llega al siguiente ciclo de polling; no se inserta en cache aquí
+        // para evitar duplicar con el snapshot del servidor.
+        return espacioId
+      },
+      guardarComoPlantilla: async (espacioId, nombre) => {
+        const r = await core.guardarEspacioComoPlantillaAction(espacioId, nombre)
+        data = { ...data, plantillas: upsert(data.plantillas, r) }
+        notify()
+        return r
+      },
+    },
+
     artefactos: {
       porEspacio: (espacioVarianteId) => data.artefactos.filter((a) => a.espacioVarianteId === espacioVarianteId),
       crear: async (values) => {

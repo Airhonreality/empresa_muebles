@@ -259,6 +259,10 @@ export const espacioVariantes = pgTable("espacio_variantes", {
 	jornadasDesarrolloTecnico: numeric("jornadas_desarrollo_tecnico", { precision: 8, scale:  2 }).default('0'),
 	jornadasEnsamblajeTaller: numeric("jornadas_ensamblaje_taller", { precision: 8, scale:  2 }).default('0'),
 	jornadasInstalacionObra: numeric("jornadas_instalacion_obra", { precision: 8, scale:  2 }).default('0'),
+	// ⚠️ PENDIENTE CHECKPOINT Supervisor (Solución 1 — Patrón Prototipo): columna opcional de
+	// trazabilidad del prototipo. FK → plantillas_espacio.id con ON DELETE SET NULL. No se aplica
+	// la migración hasta que el Supervisor apruebe el schema (AGENTS.md).
+	plantillaEspacioId: uuid("plantilla_espacio_id"),
 	// Campos descriptivos movidos a contenedoresDescriptivos (2026-10-29):
 	// - descripcion, fotosEspacio, fotosDisenio, fotosReferencia, artefactos
 	// Relación 1:1 vía FK en contenedoresDescriptivos.espacioVarianteId
@@ -270,6 +274,84 @@ export const espacioVariantes = pgTable("espacio_variantes", {
 			columns: [table.proyectoId],
 			foreignColumns: [proyectos.id],
 			name: "espacio_variantes_proyecto_id_proyectos_id_fk"
+		}),
+		// ⚠️ PENDIENTE CHECKPOINT Supervisor: FK opcional de trazabilidad al prototipo.
+		espacioVariantesPlantillaEspacioIdFk: foreignKey({
+			columns: [table.plantillaEspacioId],
+			foreignColumns: [plantillasEspacio.id],
+			name: "espacio_variantes_plantilla_espacio_id_plantillas_espacio_id_fk"
+		}),
+	}
+});
+
+// ⚠️ PENDIENTE CHECKPOINT Supervisor (Solución 1 — Patrón Prototipo): tablas nuevas de catálogo
+// de plantillas. No se aplica la migración hasta que el Supervisor apruebe el schema (AGENTS.md).
+
+export const plantillasEspacio = pgTable("plantillas_espacio", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	nombre: text("nombre").notNull(),
+	tipoEspacio: text("tipo_espacio").notNull(),
+	descripcion: text(),
+	icono: text(),
+	orden: integer().default(0),
+	activa: boolean().default(true).notNull(),
+	jornadasDesarrolloTecnico: numeric("jornadas_desarrollo_tecnico", { precision: 8, scale: 2 }).default('0').notNull(),
+	jornadasEnsamblajeTaller: numeric("jornadas_ensamblaje_taller", { precision: 8, scale: 2 }).default('0').notNull(),
+	jornadasInstalacionObra: numeric("jornadas_instalacion_obra", { precision: 8, scale: 2 }).default('0').notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+});
+
+export const plantillaGrupos = pgTable("plantilla_grupos", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	plantillaEspacioId: uuid("plantilla_espacio_id").notNull(),
+	nombre: text().notNull(),
+	padreId: uuid("padre_id"),
+	orden: integer().default(0).notNull(),
+	jornadasDesarrolloTecnico: numeric("jornadas_desarrollo_tecnico", { precision: 8, scale: 2 }).default('0').notNull(),
+	jornadasEnsamblajeTaller: numeric("jornadas_ensamblaje_taller", { precision: 8, scale: 2 }).default('0').notNull(),
+	jornadasInstalacionObra: numeric("jornadas_instalacion_obra", { precision: 8, scale: 2 }).default('0').notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		plantillaGruposPlantillaEspacioIdFk: foreignKey({
+			columns: [table.plantillaEspacioId],
+			foreignColumns: [plantillasEspacio.id],
+			name: "plantilla_grupos_plantilla_espacio_id_plantillas_espacio_id_fk"
+		}),
+		plantillaGruposPadreIdFk: foreignKey({
+			columns: [table.padreId],
+			foreignColumns: [table.id],
+			name: "plantilla_grupos_padre_id_plantilla_grupos_id_fk"
+		}),
+	}
+});
+
+export const plantillaItems = pgTable("plantilla_items", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	plantillaEspacioId: uuid("plantilla_espacio_id").notNull(),
+	plantillaGrupoId: uuid("plantilla_grupo_id"),
+	nombrePersonalizado: text("nombre_personalizado").notNull(),
+	cantidad: numeric({ precision: 10, scale: 2 }).default('1').notNull(),
+	precioUnitario: numeric("precio_unitario", { precision: 14, scale: 2 }).default('0').notNull(),
+	esReferencial: boolean("es_referencial").default(false).notNull(),
+	fuenteReferencial: fuenteReferencial("fuente_referencial"),
+	grupoReferencial: text("grupo_referencial"),
+	orden: integer().default(0).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		plantillaItemsPlantillaEspacioIdFk: foreignKey({
+			columns: [table.plantillaEspacioId],
+			foreignColumns: [plantillasEspacio.id],
+			name: "plantilla_items_plantilla_espacio_id_plantillas_espacio_id_fk"
+		}),
+		plantillaItemsPlantillaGrupoIdFk: foreignKey({
+			columns: [table.plantillaGrupoId],
+			foreignColumns: [plantillaGrupos.id],
+			name: "plantilla_items_plantilla_grupo_id_plantilla_grupos_id_fk"
 		}),
 	}
 });

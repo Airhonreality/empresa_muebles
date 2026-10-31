@@ -11,6 +11,7 @@ import type {
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto, GrupoItem, EspacioVarianteAcabado,
+  PlantillaEspacio,
 } from './contracts'
 
 export interface StoreSnapshot {
@@ -79,6 +80,9 @@ export interface StoreSnapshot {
   gruposItem: GrupoItem[]
   /** t-172 (2026-09-30): acabados asociados a un espacio de cotización, con texto libre de destino. */
   espacioVarianteAcabados: EspacioVarianteAcabado[]
+  /** Plantillas de espacio (clase/blueprint del patrón prototipo). Hidratado desde el servidor;
+   *  separado del snapshot de instancias porque no pertenece a ningún proyecto. */
+  plantillas: PlantillaEspacio[]
 }
 
 export function emptySnapshot(): StoreSnapshot {
@@ -100,5 +104,6 @@ export function emptySnapshot(): StoreSnapshot {
     portafolio: [], rendersConceptuales: [], atributosTecnicos: [], catalogosEspaciosArquitectonicos: [], modulosArtefactos: [], bitacoraArticulos: [], testimonios: [],
     itemsOrdenCompra: [], recepcionesMaterial: [], herramientas: [], documentosProyecto: [],
     gruposItem: [], espacioVarianteAcabados: [],
+    plantillas: [],
   }
 }

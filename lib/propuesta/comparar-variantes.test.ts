@@ -21,6 +21,7 @@ function espacio(over: Partial<EspacioVariante> & { id: string }): EspacioVarian
     fotosEspacio: [],
     fotosDisenio: [],
     fotosReferencia: [],
+    plantillaEspacioId: null,
     ...over,
   }
 }

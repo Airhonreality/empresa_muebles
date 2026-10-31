@@ -109,6 +109,9 @@ export interface EspacioVariante {
   nombreVariante: string
   /** Tipo canónico del espacio (lib/catalogos/tipos-espacio.ts) — Portafolio lo hereda vía espacioVarianteId. */
   tipoEspacio: string | null
+  /** Trazabilidad al prototipo de catálogo (clase) de la que se materializó este espacio (instancia).
+   *  Nullable: espacios creados a mano no tienen plantilla origen. ON DELETE SET NULL en DB. */
+  plantillaEspacioId: string | null
   /** Variante activa (la que se cotiza y factura). Se controla desde el header/tab del espacio, no desde formulario. */
   activa: boolean
   /** Visible en la propuesta pública (PDF + pantalla de propuesta al cliente). */
@@ -243,6 +246,64 @@ export interface GrupoItem {
    *  (`grupoItemId`) y se proyecta al leer, igual que los campos descriptivos del espacio.
    *  No es columna de `grupos_item`: opcional y solo presente cuando el consumidor la carga. */
   descripcion?: string | null
+}
+
+/** Plantilla de espacio (CLASE / blueprint): vive en el catálogo, sin proyecto.
+ *  Ej. "Cocina Integral Estándar", "Escritorio Ejecutivo". */
+export interface PlantillaEspacio {
+  id: string
+  nombre: string
+  tipoEspacio: string
+  descripcion: string | null
+  icono: string | null
+  orden: number
+  activa: boolean
+  jornadasDesarrolloTecnico: string
+  jornadasEnsamblajeTaller: string
+  jornadasInstalacionObra: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Grupo de ítems dentro de una plantilla de espacio. Árbol recursivo vía padreId. */
+export interface PlantillaGrupo {
+  id: string
+  plantillaEspacioId: string
+  nombre: string
+  padreId: string | null
+  orden: number
+  jornadasDesarrolloTecnico: string
+  jornadasEnsamblajeTaller: string
+  jornadasInstalacionObra: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Ítem dentro de una plantilla de espacio (opcionalmente asignado a un grupo). */
+export interface PlantillaItem {
+  id: string
+  plantillaEspacioId: string
+  plantillaGrupoId: string | null
+  nombrePersonalizado: string
+  cantidad: string
+  precioUnitario: string
+  esReferencial: boolean
+  fuenteReferencial: 'electrodomestico' | 'obra_civil' | 'servicio_tercero' | 'otro' | null
+  grupoReferencial: string | null
+  orden: number
+  createdAt: string
+  updatedAt: string
+}
+
+/** PlantillaEspacio con grupos e ítems anidados (árbol completo), para edición en UI. */
+export interface PlantillaEspacioHidratado extends PlantillaEspacio {
+  grupos: PlantillaGrupoHidratado[]
+}
+
+/** Grupo de plantilla con subgrupos e ítems anidados. */
+export interface PlantillaGrupoHidratado extends PlantillaGrupo {
+  subgrupos: PlantillaGrupoHidratado[]
+  items: PlantillaItem[]
 }
 
 export interface CampoPersonalizadoProducto {
@@ -1361,6 +1422,16 @@ export interface DataStore {
      * si la guardia falla; retorna false si la variante no existe.
      */
     eliminar(id: string): Promise<boolean>
+  }
+  // --- Plantillas de espacio (clase/blueprint, sin proyecto) ---
+  plantillas: {
+    listar(): PlantillaEspacio[]
+    obtener(id: string): PlantillaEspacioHidratado | undefined
+    crear(data: Partial<PlantillaEspacio> & { nombre: string }): Promise<PlantillaEspacio>
+    actualizar(id: string, patch: Partial<PlantillaEspacio>): Promise<PlantillaEspacio | null>
+    eliminar(id: string): Promise<boolean>
+    materializar(plantillaId: string, proyectoId: string): Promise<string>
+    guardarComoPlantilla(espacioId: string, nombrePlantilla: string): Promise<PlantillaEspacio>
   }
   items: {
     porVariante(varianteId: string): ItemVariante[]

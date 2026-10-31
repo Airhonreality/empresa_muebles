@@ -89,6 +89,7 @@ function espacio(id: string, overrides: Partial<EspacioVariante> = {}): EspacioV
     fotosEspacio: [],
     fotosDisenio: [],
     fotosReferencia: [],
+    plantillaEspacioId: null,
     ...overrides,
   }
 }

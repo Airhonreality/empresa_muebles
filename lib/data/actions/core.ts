@@ -2,7 +2,7 @@
 // Server Actions del cluster núcleo: proyectos, clientes, espacios, items, artefactos,
 // catálogo, parámetros, contratos. Porta 1:1 la lógica de lib/data/mock-store.ts (73/73
 // tests) a Drizzle/Postgres real. Ver plan_f10_migracion.md §3.1d.
-import { eq, and, ne, inArray, or, like, isNull } from 'drizzle-orm'
+import { eq, and, inArray, or, like, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
@@ -15,11 +15,13 @@ import { validarEntrada } from '@/lib/validacion/validar'
 import {
   itemCrearSchema, itemActualizarSchema, espacioCrearSchema, espacioActualizarSchema,
   jornadasSchema, parametrosFinancierosSchema, clienteCrearSchema, clienteActualizarSchema,
+  plantillaCrearSchema, plantillaActualizarSchema, plantillaItemCrearSchema,
 } from '@/lib/validacion/cotizador'
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
   ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial, GrupoItem, HitoPagoInput,
   EspacioVarianteAcabado, ContenedorDescriptivo,
+  PlantillaEspacio, PlantillaGrupo, PlantillaItem, PlantillaEspacioHidratado,
 } from '../contracts'
 // VarianteNoEliminableError vive en errors.ts (no en 'use server':
 // Next.js prohíbe exportar clases desde archivos 'use server').
@@ -1192,5 +1194,292 @@ export async function actualizarContenedorDescriptivoGrupoAction(
       .returning()
 
     return actualizado as unknown as import('@/lib/data/contracts').ContenedorDescriptivo
+  })
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// Solución 1 — Patrón Prototipo: Server Actions de Plantillas de Espacio
+// ════════════════════════════════════════════════════════════════════════════════
+
+/** CRUD de plantillas de espacio (clase/blueprint del catálogo). */
+export async function crearPlantillaEspacioAction(data: Partial<PlantillaEspacio> & { nombre: string }): Promise<PlantillaEspacio> {
+  const validado = validarEntrada(plantillaCrearSchema, data)
+  const [nuevo] = await db.insert(s.plantillasEspacio).values({
+    id: validado.id,
+    nombre: validado.nombre,
+    tipoEspacio: validado.tipoEspacio,
+    descripcion: validado.descripcion ?? null,
+    icono: validado.icono ?? null,
+    orden: validado.orden ?? 0,
+    activa: validado.activa ?? true,
+    jornadasDesarrolloTecnico: validado.jornadasDesarrolloTecnico ?? '0',
+    jornadasEnsamblajeTaller: validado.jornadasEnsamblajeTaller ?? '0',
+    jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
+  }).returning()
+  return nuevo as unknown as PlantillaEspacio
+}
+
+export async function actualizarPlantillaEspacioAction(id: string, patch: Partial<PlantillaEspacio>): Promise<PlantillaEspacio | null> {
+  const validado = validarEntrada(plantillaActualizarSchema, patch)
+  const [actualizado] = await db.update(s.plantillasEspacio)
+    .set({ ...validado, updatedAt: new Date().toISOString() })
+    .where(eq(s.plantillasEspacio.id, id))
+    .returning()
+  return (actualizado as unknown as PlantillaEspacio) ?? null
+}
+
+export async function eliminarPlantillaEspacioAction(id: string): Promise<boolean> {
+  const eliminados = await db.delete(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, id)).returning({ id: s.plantillasEspacio.id })
+  return eliminados.length > 0
+}
+
+export async function listarPlantillasEspacioAction(): Promise<PlantillaEspacio[]> {
+  const rows = await db.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.activa, true))
+  return rows as unknown as PlantillaEspacio[]
+}
+
+export async function obtenerPlantillaEspacioAction(id: string): Promise<PlantillaEspacioHidratado | null> {
+  const [plantilla] = await db.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, id))
+  if (!plantilla) return null
+  const grupos = await db.select().from(s.plantillaGrupos).where(eq(s.plantillaGrupos.plantillaEspacioId, id))
+  const items = await db.select().from(s.plantillaItems).where(eq(s.plantillaItems.plantillaEspacioId, id))
+  const mapaGrupos = new Map<string, PlantillaGrupo & { subgrupos: PlantillaGrupo[]; items: PlantillaItem[] }>()
+  for (const g of grupos) {
+    mapaGrupos.set(g.id, { ...g, subgrupos: [], items: [] })
+  }
+  const raices: PlantillaGrupo[] = []
+  for (const g of grupos) {
+    const hydratado = mapaGrupos.get(g.id)!
+    if (g.padreId && mapaGrupos.has(g.padreId)) {
+      mapaGrupos.get(g.padreId)!.subgrupos.push(hydratado)
+    } else {
+      raices.push(hydratado)
+    }
+  }
+  for (const it of items) {
+    const g = it.plantillaGrupoId ? mapaGrupos.get(it.plantillaGrupoId) : null
+    if (g) g.items.push(it)
+  }
+  return {
+    ...plantilla,
+    grupos: raices as unknown as PlantillaGrupo[],
+  } as unknown as PlantillaEspacioHidratado
+}
+
+export async function crearPlantillaGrupoAction(plantillaEspacioId: string, nombre: string, padreId: string | null = null): Promise<PlantillaGrupo> {
+  return db.transaction(async (tx) => {
+    const hermanos = await tx.select().from(s.plantillaGrupos).where(
+      padreId
+        ? and(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId), eq(s.plantillaGrupos.padreId, padreId))
+        : and(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId), isNull(s.plantillaGrupos.padreId))
+    )
+    const [nuevo] = await tx.insert(s.plantillaGrupos).values({
+      plantillaEspacioId,
+      nombre,
+      padreId,
+      orden: hermanos.length,
+    }).returning()
+    return nuevo as unknown as PlantillaGrupo
+  })
+}
+
+export async function crearPlantillaItemAction(
+  plantillaEspacioId: string,
+  plantillaGrupoId: string | null,
+  data: { nombrePersonalizado: string; cantidad?: string; precioUnitario?: string; esReferencial?: boolean; fuenteReferencial?: 'electrodomestico' | 'obra_civil' | 'servicio_tercero' | 'otro' | null; grupoReferencial?: string | null; orden?: number }
+): Promise<PlantillaItem> {
+  return db.transaction(async (tx) => {
+    const validado = validarEntrada(plantillaItemCrearSchema, {
+      plantillaEspacioId,
+      plantillaGrupoId,
+      nombrePersonalizado: data.nombrePersonalizado,
+      cantidad: data.cantidad ?? '1',
+      precioUnitario: data.precioUnitario ?? '0',
+      esReferencial: data.esReferencial ?? false,
+      fuenteReferencial: data.fuenteReferencial ?? null,
+      grupoReferencial: data.grupoReferencial ?? null,
+      orden: data.orden,
+    })
+    const [nuevo] = await tx.insert(s.plantillaItems).values({
+      id: undefined,
+      plantillaEspacioId: validado.plantillaEspacioId,
+      plantillaGrupoId: validado.plantillaGrupoId ?? null,
+      nombrePersonalizado: validado.nombrePersonalizado,
+      cantidad: validado.cantidad,
+      precioUnitario: validado.precioUnitario,
+      esReferencial: validado.esReferencial,
+      fuenteReferencial: validado.fuenteReferencial,
+      grupoReferencial: validado.grupoReferencial,
+      orden: validado.orden ?? 0,
+    }).returning()
+    return nuevo as unknown as PlantillaItem
+  })
+}
+
+export async function materializarPlantillaAction(plantillaEspacioId: string, proyectoId: string): Promise<string> {
+  return db.transaction(async (tx) => {
+    const [plantilla] = await tx.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, plantillaEspacioId))
+    if (!plantilla) throw new Error(`Plantilla no encontrada: ${plantillaEspacioId}`)
+
+    const grupos = await tx.select().from(s.plantillaGrupos).where(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId))
+    const items = await tx.select().from(s.plantillaItems).where(eq(s.plantillaItems.plantillaEspacioId, plantillaEspacioId))
+
+    const hermanos = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyectoId))
+    const [nuevoEspacio] = await tx.insert(s.espacioVariantes).values({
+      proyectoId,
+      nombreEspacio: plantilla.nombre,
+      nombreVariante: 'Inicial',
+      tipoEspacio: plantilla.tipoEspacio,
+      activa: true,
+      visibleEnPropuestaPublica: true,
+      orden: hermanos.length,
+      jornadasDesarrolloTecnico: plantilla.jornadasDesarrolloTecnico,
+      jornadasEnsamblajeTaller: plantilla.jornadasEnsamblajeTaller,
+      jornadasInstalacionObra: plantilla.jornadasInstalacionObra,
+      plantillaEspacioId,
+    }).returning()
+    if (!nuevoEspacio) throw new Error('No se pudo crear el espacio de destino')
+
+    const espacioId = nuevoEspacio.id
+
+    const mapaGruposOld2New = new Map<string, string>()
+    const gruposOrdenados = [...grupos].sort((a, b) => {
+      const depth = (g: typeof grupos[0], visited = new Set<string>()): number => {
+        if (!g.padreId || visited.has(g.id)) return 0
+        visited.add(g.id)
+        const padre = grupos.find((x) => x.id === g.padreId)
+        return padre ? 1 + depth(padre, visited) : 0
+      }
+      return depth(a) - depth(b)
+    })
+    for (const grupo of gruposOrdenados) {
+      const nuevoPadreId = grupo.padreId ? mapaGruposOld2New.get(grupo.padreId) ?? null : null
+      const [grupoNuevo] = await tx.insert(s.gruposItem).values({
+        espacioVarianteId: espacioId,
+        nombre: grupo.nombre,
+        padreId: nuevoPadreId,
+        orden: grupo.orden,
+        jornadasDesarrolloTecnico: grupo.jornadasDesarrolloTecnico,
+        jornadasEnsamblajeTaller: grupo.jornadasEnsamblajeTaller,
+        jornadasInstalacionObra: grupo.jornadasInstalacionObra,
+        estado: 'temporal',
+        productoCatalogoId: null,
+      }).returning()
+      if (grupoNuevo) mapaGruposOld2New.set(grupo.id, grupoNuevo.id)
+    }
+
+    if (items.length > 0) {
+      await tx.insert(s.itemsVariante).values(items.map((it) => ({
+        id: undefined,
+        varianteId: espacioId,
+        catalogoId: null,
+        nombrePersonalizado: it.nombrePersonalizado,
+        cantidad: it.cantidad,
+        precioUnitario: it.precioUnitario,
+        totalLinea: null,
+        anulado: false,
+        esReferencial: it.esReferencial,
+        fuenteReferencial: it.fuenteReferencial,
+        grupoReferencial: it.grupoReferencial,
+        comentario: null,
+        grupoItemId: it.plantillaGrupoId ? mapaGruposOld2New.get(it.plantillaGrupoId) ?? null : null,
+        fotoUrl: null,
+        marca: null,
+        referencia: null,
+        color: null,
+        dimensiones: null,
+        acabado: null,
+        espesor: null,
+        camposPersonalizados: [],
+        jornadasDesarrolloTecnico: '0',
+        jornadasEnsamblajeTaller: '0',
+        jornadasInstalacionObra: '0',
+      })))
+    }
+
+    return espacioId
+  })
+}
+
+export async function guardarEspacioComoPlantillaAction(espacioId: string, nombre: string): Promise<PlantillaEspacio> {
+  const [origen] = await db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, espacioId))
+  if (!origen) throw new Error(`Espacio no encontrado: ${espacioId}`)
+
+  const [plantilla] = await db.insert(s.plantillasEspacio).values({
+    nombre: nombre,
+    tipoEspacio: origen.tipoEspacio ?? '',
+    orden: 0,
+    activa: true,
+    jornadasDesarrolloTecnico: origen.jornadasDesarrolloTecnico ?? '0',
+    jornadasEnsamblajeTaller: origen.jornadasEnsamblajeTaller ?? '0',
+    jornadasInstalacionObra: origen.jornadasInstalacionObra ?? '0',
+  }).returning()
+  if (!plantilla) throw new Error('No se pudo crear la plantilla')
+
+  return db.transaction(async (tx) => {
+    const grupos = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.espacioVarianteId, espacioId))
+    const items = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.varianteId, espacioId))
+
+    const mapaGruposOld2New = new Map<string, string>()
+    const gruposOrdenados = [...grupos].sort((a, b) => {
+      const depth = (g: typeof grupos[0], visited = new Set<string>()): number => {
+        if (!g.padreId || visited.has(g.id)) return 0
+        visited.add(g.id)
+        const padre = grupos.find((x) => x.id === g.padreId)
+        return padre ? 1 + depth(padre, visited) : 0
+      }
+      return depth(a) - depth(b)
+    })
+    for (const grupo of gruposOrdenados) {
+      const nuevoPadreId = grupo.padreId ? mapaGruposOld2New.get(grupo.padreId) ?? null : null
+      const [grupoNuevo] = await tx.insert(s.plantillaGrupos).values({
+        plantillaEspacioId: plantilla.id,
+        nombre: grupo.nombre,
+        padreId: nuevoPadreId,
+        orden: grupo.orden,
+        jornadasDesarrolloTecnico: grupo.jornadasDesarrolloTecnico,
+        jornadasEnsamblajeTaller: grupo.jornadasEnsamblajeTaller,
+        jornadasInstalacionObra: grupo.jornadasInstalacionObra,
+      }).returning()
+      if (grupoNuevo) mapaGruposOld2New.set(grupo.id, grupoNuevo.id)
+    }
+
+    if (items.length > 0) {
+      await tx.insert(s.plantillaItems).values(items.map((it) => ({
+        id: undefined,
+        plantillaEspacioId: plantilla.id,
+        plantillaGrupoId: it.grupoItemId ? mapaGruposOld2New.get(it.grupoItemId) ?? null : null,
+        nombrePersonalizado: it.nombrePersonalizado ?? '',
+        cantidad: it.cantidad,
+        precioUnitario: it.precioUnitario,
+        esReferencial: it.esReferencial,
+        fuenteReferencial: it.fuenteReferencial,
+        grupoReferencial: it.grupoReferencial,
+      })))
+    }
+
+    return plantilla as unknown as PlantillaEspacio
+  })
+}
+
+export async function eliminarPlantillaGrupoAction(id: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [grupo] = await tx.select().from(s.plantillaGrupos).where(eq(s.plantillaGrupos.id, id))
+    if (!grupo) return false
+
+    const [subgrupo] = await tx.select({ id: s.plantillaGrupos.id }).from(s.plantillaGrupos).where(eq(s.plantillaGrupos.padreId, id)).limit(1)
+    if (subgrupo) return false
+
+    await tx.update(s.plantillaItems).set({ plantillaGrupoId: null }).where(eq(s.plantillaItems.plantillaGrupoId, id))
+
+    const [eliminado] = await tx.delete(s.plantillaGrupos).where(eq(s.plantillaGrupos.id, id)).returning({ id: s.plantillaGrupos.id })
+    return Boolean(eliminado)
+  })
+}
+
+export async function resetearContenidoPlantillaAction(plantillaEspacioId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.delete(s.plantillaItems).where(eq(s.plantillaItems.plantillaEspacioId, plantillaEspacioId))
+    await tx.delete(s.plantillaGrupos).where(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId))
   })
 }

@@ -7,8 +7,11 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ProductoFormModal } from '@/components/veta/producto-form-modal'
-import { type ProductoCatalogo } from '@/lib/data'
+import { Package } from 'lucide-react'
+import { type ProductoCatalogo, type PlantillaEspacio } from '@/lib/data'
 import { useCatalogoCompat } from '@/lib/data/queries/catalogo-compat'
+import { crearPlantillaEspacioAction, eliminarPlantillaEspacioAction, listarPlantillasEspacioAction } from '@/lib/data/actions/core'
+import { PlantillaEditorModal } from '@/components/veta/PlantillaEditorModal'
 import { formatRelativeDate } from '@/lib/utils/format'
 
 function formatCOP(amount: number): string {
@@ -51,6 +54,9 @@ function CatalogoPageContent() {
   const [editando, setEditando] = useState<ProductoCatalogo | null>(null)
   const [proyectoOrigenId, setProyectoOrigenId] = useState<string | null>(null)
   const [yaAbiertoDesdeLaURL, setYaAbiertoDesdeLaURL] = useState(false)
+  const [plantillas, setPlantillas] = useState<PlantillaEspacio[]>([])
+  const [plantillaEditorAbierto, setPlantillaEditorAbierto] = useState(false)
+  const [plantillaEditandoId, setPlantillaEditandoId] = useState<string | undefined>(undefined)
 
   const productosVisibles = (filtroId ? productos.filter((p) => p.id === filtroId) : productos)
     .filter((p) => !soloTienda || catalogoIdsEnTienda.has(p.id))
@@ -87,6 +93,40 @@ function CatalogoPageContent() {
     setEditando(null)
     setProyectoOrigenId(null)
   }, [])
+
+  const cargarPlantillas = useCallback(async () => {
+    try {
+      const ps = await listarPlantillasEspacioAction()
+      setPlantillas(ps)
+    } catch (err) {
+      console.error('No se pudo cargar plantillas:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    void cargarPlantillas()
+  }, [cargarPlantillas])
+
+  const abrirEditorPlantilla = (id?: string) => {
+    setPlantillaEditandoId(id)
+    setPlantillaEditorAbierto(true)
+  }
+
+  const guardarPlantillaEditor = async () => {
+    void cargarPlantillas()
+    setPlantillaEditorAbierto(false)
+    setPlantillaEditandoId(undefined)
+  }
+
+  const eliminarPlantilla = async (id: string) => {
+    if (!window.confirm('¿Eliminar esta plantilla del catálogo? Las instancias ya creadas conservan sus datos.')) return
+    try {
+      await eliminarPlantillaEspacioAction(id)
+      void cargarPlantillas()
+    } catch (err) {
+      console.error('No se pudo eliminar plantilla:', err)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
@@ -192,6 +232,60 @@ function CatalogoPageContent() {
         )}
       </section>
 
+      {/* Plantillas de espacio (clase/blueprint del patrón prototipo) */}
+      <section className="mt-8">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-semibold text-text-heading">Plantillas de espacio</h2>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => abrirEditorPlantilla()}
+          >
+            + Plantilla
+          </Button>
+        </div>
+        {plantillas.length === 0 ? (
+          <p className="text-xs text-text-muted italic">No hay plantillas en el catálogo. Crea la primera con Plantilla.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {plantillas.map((p) => (
+              <div
+                key={p.id}
+                className="rounded border border-border-subtle bg-bg-paper p-3 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Package size={20} className="text-lg" />
+                    <h4 className="text-sm font-bold text-text-heading">{p.nombre}</h4>
+                    <Badge tone={p.activa ? 'neutral' : 'info'}>{p.activa ? 'Activa' : 'Inactiva'}</Badge>
+                  </div>
+                  {p.descripcion && <p className="mt-1 text-[11px] text-text-muted">{p.descripcion}</p>}
+                  <p className="mt-1 text-[10px] text-text-muted font-mono">{p.tipoEspacio}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => abrirEditorPlantilla(p.id)}
+                    className="text-text-muted hover:text-gold-600"
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void eliminarPlantilla(p.id)}
+                    className="text-text-muted hover:text-red-500"
+                  >
+                    Eliminar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Form completo de producto (t-139/t-165): el mismo modal se reutiliza desde el
           cotizador — crear y editar son exactamente el mismo formulario. */}
       {modalAbierto && (
@@ -208,6 +302,13 @@ function CatalogoPageContent() {
           onClose={cerrarModal}
         />
       )}
+
+      <PlantillaEditorModal
+        open={plantillaEditorAbierto}
+        onClose={() => setPlantillaEditorAbierto(false)}
+        plantillaId={plantillaEditandoId}
+        onSave={guardarPlantillaEditor}
+      />
     </div>
   )
 }
