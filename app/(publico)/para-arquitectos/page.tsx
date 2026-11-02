@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton'
 
 export const metadata: Metadata = {
   title: 'Para arquitectos y diseñadores — fabricación a medida en Bogotá',
@@ -104,9 +105,9 @@ export default function ParaArquitectosPage() {
           <p className="text-lg text-text-primary mb-10">
             Adjunte sus planos en PDF, DWG o SketchUp directo a nuestro WhatsApp corporativo y nuestro equipo revisará la viabilidad técnica para enviarle un presupuesto en 1 día hábil.
           </p>
-          <a href="https://wa.me/573025922101?text=Hola,%20soy%20arquitecto/diseñador%20y%20me%20gustaría%20cotizar%20un%20proyecto" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-8 py-4 bg-gold-600 hover:bg-gold-700 text-white font-medium rounded-sm transition-colors shadow-sm">
+          <AsesoriaBoton className="inline-flex items-center gap-2 px-8 py-4 bg-gold-600 hover:bg-gold-700 text-white font-medium rounded-sm transition-colors shadow-sm">
             Enviar planos por WhatsApp
-          </a>
+          </AsesoriaBoton>
         </div>
       </section>
     </>

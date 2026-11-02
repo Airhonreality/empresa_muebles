@@ -10,6 +10,7 @@ import type {
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento,
   BitacoraArticulo, Testimonio, RenderConceptual, AtributoTecnico, CatalogoEspacioArquitectonico,
   NotaReunion, PropuestaVersion, GrupoItem, DatosContratoNuevo, DatosContratoEdicion, EspacioVarianteAcabado,
+  PlantillaEspacio, PlantillaEspacioHidratado,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 import { coincide } from '../search/normalizar'
@@ -50,6 +51,7 @@ export function createMockStore(): DataStore {
   const proyectos: Proyecto[] = deepClone(PROYECTOS)
   const clientes: Cliente[] = deepClone(CLIENTES)
   const espacios: EspacioVariante[] = deepClone(ESPACIOS)
+  const plantillasArr: PlantillaEspacio[] = []
   const items: ItemVariante[] = deepClone(ITEMS)
   const artefactos: EspacioArtefacto[] = deepClone(ARTEFACTOS)
   const catalogo: ProductoCatalogo[] = deepClone(CATALOGO)
@@ -451,6 +453,7 @@ export function createMockStore(): DataStore {
           fotosEspacio: data.fotosEspacio ?? [],
           fotosDisenio: data.fotosDisenio ?? [],
           fotosReferencia: data.fotosReferencia ?? [],
+          plantillaEspacioId: null,
         }
         espacios.push(nuevo)
         notify()
@@ -504,6 +507,7 @@ export function createMockStore(): DataStore {
               fotosEspacio: [],
               fotosDisenio: [],
               fotosReferencia: [],
+              plantillaEspacioId: null,
             }
           : {
               ...deepClone(origen),
@@ -601,6 +605,10 @@ export function createMockStore(): DataStore {
           acabado: data.acabado ?? null,
           espesor: data.espesor ?? null,
           camposPersonalizados: data.camposPersonalizados ?? [],
+          // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+          jornadasDesarrolloTecnico: data.jornadasDesarrolloTecnico ?? '0',
+          jornadasEnsamblajeTaller: data.jornadasEnsamblajeTaller ?? '0',
+          jornadasInstalacionObra: data.jornadasInstalacionObra ?? '0',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
@@ -2989,6 +2997,11 @@ export function createMockStore(): DataStore {
           nombre,
           padreId,
           orden: hermanos.length,
+          jornadasDesarrolloTecnico: '0',
+          jornadasEnsamblajeTaller: '0',
+          jornadasInstalacionObra: '0',
+          estado: 'temporal',
+          productoCatalogoId: null,
         }
         gruposItemArr.push(nuevo)
         notify()
@@ -3014,6 +3027,57 @@ export function createMockStore(): DataStore {
         gruposItemArr.splice(idx, 1)
         notify()
         return true
+      },
+    },
+
+    // Plantillas de espacio (patrón prototipo: clase/blueprint sin proyecto)
+    plantillas: {
+      listar(): PlantillaEspacio[] {
+        return plantillasArr.filter(p => p.activa)
+      },
+      obtener(id: string): PlantillaEspacioHidratado | undefined {
+        const p = plantillasArr.find(p => p.id === id)
+        if (!p) return undefined
+        return { ...p, grupos: [] }
+      },
+      async crear(data: Partial<PlantillaEspacio> & { nombre: string }): Promise<PlantillaEspacio> {
+        const nuevo: PlantillaEspacio = {
+          id: generateId('tpl'),
+          nombre: data.nombre,
+          tipoEspacio: data.tipoEspacio ?? '',
+          descripcion: data.descripcion ?? null,
+          icono: data.icono ?? null,
+          orden: data.orden ?? 0,
+          activa: data.activa ?? true,
+          jornadasDesarrolloTecnico: data.jornadasDesarrolloTecnico ?? '0',
+          jornadasEnsamblajeTaller: data.jornadasEnsamblajeTaller ?? '0',
+          jornadasInstalacionObra: data.jornadasInstalacionObra ?? '0',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+        plantillasArr.push(nuevo)
+        notify()
+        return nuevo
+      },
+      async actualizar(id: string, patch: Partial<PlantillaEspacio>): Promise<PlantillaEspacio | null> {
+        const idx = plantillasArr.findIndex(p => p.id === id)
+        if (idx === -1) return null
+        plantillasArr[idx] = { ...plantillasArr[idx], ...patch, updatedAt: new Date().toISOString() }
+        notify()
+        return plantillasArr[idx]
+      },
+      async eliminar(id: string): Promise<boolean> {
+        const idx = plantillasArr.findIndex(p => p.id === id)
+        if (idx === -1) return false
+        plantillasArr.splice(idx, 1)
+        notify()
+        return true
+      },
+      async materializar(_plantillaId: string, _proyectoId: string): Promise<string> {
+        throw new Error('materializar no implementado en mock-store — usar server action')
+      },
+      async guardarComoPlantilla(_espacioId: string, _nombre: string): Promise<PlantillaEspacio> {
+        throw new Error('guardarComoPlantilla no implementado en mock-store — usar server action')
       },
     },
 

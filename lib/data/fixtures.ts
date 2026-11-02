@@ -7,7 +7,7 @@ import type {
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
   Portafolio, ModuloArtefacto, CatalogoEspacioArquitectonico,
   ItemOrdenCompra, RecepcionMaterial, Herramienta, DocumentoProyecto,
-  BitacoraArticulo, Testimonio,
+  BitacoraArticulo, Testimonio, GrupoItem, ContenedorDescriptivo,
 } from './contracts'
 import { SHOP_CATEGORIAS } from './contracts'
 
@@ -71,6 +71,29 @@ export const PARAMETROS: Parametro[] = [
   { id: UUID('par23'), clave: 'sla_novedad_critica_min_horas', grupo: 'cronograma', tipo: 'numerico', valorNumeric: '5', valorTexto: null, valorBooleano: null, unidad: 'horas', descripcion: 'Ventana mínima SLA de novedad crítica' },
   { id: UUID('par24'), clave: 'sla_novedad_critica_max_horas', grupo: 'cronograma', tipo: 'numerico', valorNumeric: '24', valorTexto: null, valorBooleano: null, unidad: 'horas', descripcion: 'Ventana máxima SLA de novedad crítica' },
   { id: UUID('par25'), clave: 'precio_asesoria_3d', grupo: 'comercial', tipo: 'numerico', valorNumeric: '130000', valorTexto: null, valorBooleano: null, unidad: 'COP', descripcion: 'Precio base de la asesoría con diseño 3D' },
+  // ── comercial/leads: embudo y detección de riesgo ──
+  // Nacen del incidente del 2026-09-30 (Cocina Integral Chía, $73.078.700 COP perdidos): un
+  // lead en `cotizado` quedó 24 h sin respuesta y el cliente cerró con otro proveedor. Antes
+  // de estos parámetros el riesgo era invisible porque `leads.etapa` nunca se movía.
+  { id: UUID('par26'), clave: 'transiciones_lead', grupo: 'comercial', tipo: 'texto', valorNumeric: null, valorTexto: JSON.stringify({
+    nuevo_lead: ['contactado', 'descartado'],
+    contactado: ['asesoria_agendada', 'cotizado', 'descartado'],
+    asesoria_agendada: ['cotizado', 'descartado'],
+    cotizado: ['contrato_firmado', 'descartado'],
+    contrato_firmado: [],
+    descartado: [],
+  }), valorBooleano: null, unidad: null, descripcion: 'Matriz de transiciones de leads. Espejo del enum estado_lead; override por parámetro de TRANSICIONES_LEAD en lib/modules/comercial/leads.ts' },
+  { id: UUID('par27'), clave: 'lead_cotizado_silencio_horas', grupo: 'comercial', tipo: 'numerico', valorNumeric: '48', valorTexto: null, valorBooleano: null, unidad: 'horas', descripcion: 'Lead cotizado sin avanzar la etapa durante este tiempo = crítico. Corrección post-incidente: el umbral de 24 h del caso real seelvió porque el detector necesita margen para que el comercial responda primero' },
+  { id: UUID('par28'), clave: 'lead_nuevo_sin_contacto_horas', grupo: 'comercial', tipo: 'numerico', valorNumeric: '24', valorTexto: null, valorBooleano: null, unidad: 'horas', descripcion: 'Lead nuevo sin ningún contacto en este tiempo = atención' },
+  { id: UUID('par29'), clave: 'lead_ventana_abierta_horas', grupo: 'comercial', tipo: 'numerico', valorNumeric: '72', valorTexto: null, valorBooleano: null, unidad: 'horas', descripcion: 'Antigüedad máxima de un lead para seguir apareciendo en la bandeja de seguimiento comercial' },
+  // ── comercial/respuesta_cliente: la regla de oro del incidente del 30/09 ──
+  // Los tres valores nacen de la cuenta que se hizo ese día: "acuse de recibo en menos de 5
+  // minutos con hora exacta de entrega". autonomía arranca en 0 (= la IA solo detecta y avisa;
+  // no escribe a ningún cliente) hasta que exista la bandeja de WhatsApp que la revise.
+  { id: UUID('par30'), clave: 'regla_ack_minutos', grupo: 'comercial', tipo: 'numerico', valorNumeric: '5', valorTexto: null, valorBooleano: null, unidad: 'minutos', descripcion: 'Regla de oro: todo requerimiento del cliente se confirma en menos de este tiempo con acuse de recibo y hora exacta de entrega' },
+  { id: UUID('par31'), clave: 'alerta_comercial_horas', grupo: 'comercial', tipo: 'numerico', valorNumeric: '2', valorTexto: null, valorBooleano: null, unidad: 'horas', descripcion: 'Sin respuesta del comercial tras este tiempo, el caso escala a alerta de urgencia' },
+  { id: UUID('par32'), clave: 'autonomia_ia', grupo: 'comercial', tipo: 'numerico', valorNumeric: '0', valorTexto: null, valorBooleano: null, unidad: 'nivel 0-3', descripcion: 'Escalera de autonomía de la IA sobre mensajes de clientes: 0=detecta y avisa, 1=redacta borrador para aprobación, 2=envía solo acuses de lista blanca, 3=envía cualquier borrador. Arranca en 0 a propósito' },
+  { id: UUID('par33'), clave: 'tope_mensajes_ia_dia', grupo: 'comercial', tipo: 'numerico', valorNumeric: '3', valorTexto: null, valorBooleano: null, unidad: 'mensajes/día', descripcion: 'Tope duro de mensajes automáticos por conversación por día. Sin tope, un bucle de "sigo trabajando" se convierte en spam a un cliente que ya se fue' },
 ]
 
 const estaciones: Proyecto[] = [
@@ -92,26 +115,26 @@ const estaciones: Proyecto[] = [
 export const PROYECTOS = estaciones
 
 export const ESPACIOS: EspacioVariante[] = [
-  { id: UUID('esp01'), proyectoId: UUID('proj01'), nombreEspacio: 'Cocina principal', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Muebles bajos + altos + isla central', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '3.00', jornadasEnsamblajeTaller: '5.00', jornadasInstalacionObra: '4.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
-  { id: UUID('esp02'), proyectoId: UUID('proj01'), nombreEspacio: 'Isla central', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Isla con cubierta en granito', activa: false, visibleEnPropuestaPublica: true, orden: 1, jornadasDesarrolloTecnico: '2.00', jornadasEnsamblajeTaller: '3.00', jornadasInstalacionObra: '2.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
-  { id: UUID('esp03'), proyectoId: UUID('proj01'), nombreEspacio: 'Despensa', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Estantería de despensa en roble', activa: true, visibleEnPropuestaPublica: true, orden: 2, jornadasDesarrolloTecnico: '1.00', jornadasEnsamblajeTaller: '2.00', jornadasInstalacionObra: '1.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
-  { id: UUID('esp04'), proyectoId: UUID('proj02'), nombreEspacio: 'Closet principal', nombreVariante: 'Inicial', tipoEspacio: 'closet', descripcion: 'Closet vestier completo', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '2.00', jornadasEnsamblajeTaller: '4.00', jornadasInstalacionObra: '3.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
-  { id: UUID('esp05'), proyectoId: UUID('proj03'), nombreEspacio: 'Escritorio 1', nombreVariante: 'Inicial', tipoEspacio: 'estudio_home_office', descripcion: 'Escritorio ejecutivo 1.60m', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '1.00', jornadasEnsamblajeTaller: '2.00', jornadasInstalacionObra: '1.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [] },
+  { id: UUID('esp01'), proyectoId: UUID('proj01'), nombreEspacio: 'Cocina principal', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Muebles bajos + altos + isla central', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '3.00', jornadasEnsamblajeTaller: '5.00', jornadasInstalacionObra: '4.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [], plantillaEspacioId: null },
+  { id: UUID('esp02'), proyectoId: UUID('proj01'), nombreEspacio: 'Isla central', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Isla con cubierta en granito', activa: false, visibleEnPropuestaPublica: true, orden: 1, jornadasDesarrolloTecnico: '2.00', jornadasEnsamblajeTaller: '3.00', jornadasInstalacionObra: '2.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [], plantillaEspacioId: null },
+  { id: UUID('esp03'), proyectoId: UUID('proj01'), nombreEspacio: 'Despensa', nombreVariante: 'Inicial', tipoEspacio: 'cocina', descripcion: 'Estantería de despensa en roble', activa: true, visibleEnPropuestaPublica: true, orden: 2, jornadasDesarrolloTecnico: '1.00', jornadasEnsamblajeTaller: '2.00', jornadasInstalacionObra: '1.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [], plantillaEspacioId: null },
+  { id: UUID('esp04'), proyectoId: UUID('proj02'), nombreEspacio: 'Closet principal', nombreVariante: 'Inicial', tipoEspacio: 'closet', descripcion: 'Closet vestier completo', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '2.00', jornadasEnsamblajeTaller: '4.00', jornadasInstalacionObra: '3.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [], plantillaEspacioId: null },
+  { id: UUID('esp05'), proyectoId: UUID('proj03'), nombreEspacio: 'Escritorio 1', nombreVariante: 'Inicial', tipoEspacio: 'estudio_home_office', descripcion: 'Escritorio ejecutivo 1.60m', activa: true, visibleEnPropuestaPublica: true, orden: 0, jornadasDesarrolloTecnico: '1.00', jornadasEnsamblajeTaller: '2.00', jornadasInstalacionObra: '1.00', fotosEspacio: [], fotosDisenio: [], fotosReferencia: [], plantillaEspacioId: null },
 ]
 
 export const ITEMS: ItemVariante[] = [
-  { id: UUID('it01'), varianteId: UUID('esp01'), catalogoId: UUID('p01'), nombrePersonalizado: null, cantidad: '4.50', precioUnitario: '110000', totalLinea: '495000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it02'), varianteId: UUID('esp01'), catalogoId: UUID('p03'), nombrePersonalizado: null, cantidad: '12', precioUnitario: '6500', totalLinea: '78000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it03'), varianteId: UUID('esp01'), catalogoId: UUID('p04'), nombrePersonalizado: null, cantidad: '3', precioUnitario: '28000', totalLinea: '84000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it04'), varianteId: UUID('esp01'), catalogoId: UUID('p05'), nombrePersonalizado: null, cantidad: '6', precioUnitario: '14500', totalLinea: '87000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it05'), varianteId: UUID('esp02'), catalogoId: UUID('p01'), nombrePersonalizado: null, cantidad: '2.00', precioUnitario: '110000', totalLinea: '220000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it06'), varianteId: UUID('esp02'), catalogoId: UUID('p03'), nombrePersonalizado: null, cantidad: '6', precioUnitario: '6500', totalLinea: '39000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it07'), varianteId: UUID('esp03'), catalogoId: UUID('p01'), nombrePersonalizado: null, cantidad: '3.00', precioUnitario: '110000', totalLinea: '330000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it08'), varianteId: UUID('esp04'), catalogoId: UUID('p02'), nombrePersonalizado: null, cantidad: '5.00', precioUnitario: '102000', totalLinea: '510000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it09'), varianteId: UUID('esp04'), catalogoId: UUID('p04'), nombrePersonalizado: null, cantidad: '4', precioUnitario: '28000', totalLinea: '112000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
-  { id: UUID('it10'), varianteId: UUID('esp05'), catalogoId: UUID('p02'), nombrePersonalizado: null, cantidad: '2.00', precioUnitario: '102000', totalLinea: '204000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it01'), varianteId: UUID('esp01'), catalogoId: UUID('p01'), nombrePersonalizado: null, cantidad: '4.50', precioUnitario: '110000', totalLinea: '495000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it02'), varianteId: UUID('esp01'), catalogoId: UUID('p03'), nombrePersonalizado: null, cantidad: '12', precioUnitario: '6500', totalLinea: '78000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it03'), varianteId: UUID('esp01'), catalogoId: UUID('p04'), nombrePersonalizado: null, cantidad: '3', precioUnitario: '28000', totalLinea: '84000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it04'), varianteId: UUID('esp01'), catalogoId: UUID('p05'), nombrePersonalizado: null, cantidad: '6', precioUnitario: '14500', totalLinea: '87000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it05'), varianteId: UUID('esp02'), catalogoId: UUID('p01'), nombrePersonalizado: null, cantidad: '2.00', precioUnitario: '110000', totalLinea: '220000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it06'), varianteId: UUID('esp02'), catalogoId: UUID('p03'), nombrePersonalizado: null, cantidad: '6', precioUnitario: '6500', totalLinea: '39000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it07'), varianteId: UUID('esp03'), catalogoId: UUID('p01'), nombrePersonalizado: null, cantidad: '3.00', precioUnitario: '110000', totalLinea: '330000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it08'), varianteId: UUID('esp04'), catalogoId: UUID('p02'), nombrePersonalizado: null, cantidad: '5.00', precioUnitario: '102000', totalLinea: '510000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it09'), varianteId: UUID('esp04'), catalogoId: UUID('p04'), nombrePersonalizado: null, cantidad: '4', precioUnitario: '28000', totalLinea: '112000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it10'), varianteId: UUID('esp05'), catalogoId: UUID('p02'), nombrePersonalizado: null, cantidad: '2.00', precioUnitario: '102000', totalLinea: '204000', anulado: false, esReferencial: false, fuenteReferencial: null, grupoReferencial: null, comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
   // Demo de "Presupuesto Adicional (Referenciales)" — obra civil estimada para el cliente, NO objeto de contrato (disenio_p04_cotizador.md Collapse 11).
-  { id: UUID('it11'), varianteId: UUID('esp01'), catalogoId: null, nombrePersonalizado: 'Ventanas PVC 3m', cantidad: '3', precioUnitario: '450000', totalLinea: '1350000', anulado: false, esReferencial: true, fuenteReferencial: 'obra_civil', grupoReferencial: 'Obra Civil / Ventanas', comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
+  { id: UUID('it11'), varianteId: UUID('esp01'), catalogoId: null, nombrePersonalizado: 'Ventanas PVC 3m', cantidad: '3', precioUnitario: '450000', totalLinea: '1350000', anulado: false, esReferencial: true, fuenteReferencial: 'obra_civil', grupoReferencial: 'Obra Civil / Ventanas', comentario: null, grupoItemId: null, fotoUrl: null, marca: null, referencia: null, color: null, dimensiones: null, acabado: null, espesor: null, camposPersonalizados: [], jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0', createdAt: '2026-06-15T08:00:00Z', updatedAt: '2026-06-15T08:00:00Z' },
 ]
 
 export const ARTEFACTOS: EspacioArtefacto[] = [
@@ -562,5 +585,82 @@ export const HERRAMIENTAS: Herramienta[] = [
 export const DOCUMENTOS_PROYECTO: DocumentoProyecto[] = [
   { id: UUID('doc01'), proyectoId: UUID('proj10'), etapa: 'produccion', alojador: 'r2', url: 'https://r2.mock/proyectos/proj10-avance1.jpg', nombre: 'Avance de armado — cocina', createdAt: '2026-08-06T09:00:00Z' },
   { id: UUID('doc02'), proyectoId: UUID('proj10'), etapa: 'cotizacion', alojador: 'drive_veta_erp', url: 'https://drive.google.com/mock/proj10-diseno-skp', nombre: 'Modelo SketchUp — versión 2', createdAt: '2026-08-02T09:00:00Z' },
+]
+
+// --- Fase 3.1: Grupos de Items y Contenedores Descriptivos (2026-10-29) ---
+
+export const GRUPOS_ITEM: GrupoItem[] = [
+  { id: UUID('grupo-isla'), espacioVarianteId: UUID('esp02'), nombre: 'Isla Central', padreId: null, orden: 0, jornadasDesarrolloTecnico: '2.0', jornadasEnsamblajeTaller: '3.0', jornadasInstalacionObra: '2.0', estado: 'temporal', productoCatalogoId: null },
+  { id: UUID('grupo-altos'), espacioVarianteId: UUID('esp01'), nombre: 'Muebles Altos', padreId: null, orden: 0, jornadasDesarrolloTecnico: '1.5', jornadasEnsamblajeTaller: '2.0', jornadasInstalacionObra: '1.5', estado: 'temporal', productoCatalogoId: null },
+  { id: UUID('grupo-bajos'), espacioVarianteId: UUID('esp01'), nombre: 'Muebles Bajos', padreId: null, orden: 1, jornadasDesarrolloTecnico: '2.0', jornadasEnsamblajeTaller: '3.0', jornadasInstalacionObra: '2.0', estado: 'temporal', productoCatalogoId: null },
+  { id: UUID('grupo-despensa'), espacioVarianteId: UUID('esp03'), nombre: 'Despensa', padreId: null, orden: 0, jornadasDesarrolloTecnico: '1.0', jornadasEnsamblajeTaller: '2.0', jornadasInstalacionObra: '1.0', estado: 'temporal', productoCatalogoId: null },
+]
+
+export const CONTENEDORES_DESCRIPTIVOS: ContenedorDescriptivo[] = [
+  // Grupo "Isla Central" del espacio "Isla central"
+  {
+    id: UUID('cond-isla-central'),
+    espacioVarianteId: null,
+    grupoItemId: UUID('grupo-isla'),
+    descripcion: 'Isla central con cubierta en granito negro, gavetas con frentes en blanco brillante',
+    fotosEspacio: [],
+    fotosDisenio: [
+      'https://r2.mock/proyectos/cotizacion/isla-frente.jpg',
+      'https://r2.mock/proyectos/cotizacion/isla-arriba.jpg',
+    ],
+    fotosReferencia: [
+      'https://r2.mock/catalogos/referencias/isla-granito-1.jpg',
+    ],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
+  // Grupo "Muebles Altos"
+  {
+    id: UUID('cond-muebles-altos'),
+    espacioVarianteId: null,
+    grupoItemId: UUID('grupo-altos'),
+    descripcion: 'Muebles altos con vidrio templado en puertas',
+    fotosEspacio: [],
+    fotosDisenio: [],
+    fotosReferencia: [],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
+  // Grupo "Muebles Bajos"
+  {
+    id: UUID('cond-muebles-bajos'),
+    espacioVarianteId: null,
+    grupoItemId: UUID('grupo-bajos'),
+    descripcion: 'Muebles bajos con cubierta en roble',
+    fotosEspacio: [],
+    fotosDisenio: [],
+    fotosReferencia: [],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
+  // Grupo "Despensa"
+  {
+    id: UUID('cond-despensa'),
+    espacioVarianteId: null,
+    grupoItemId: UUID('grupo-despensa'),
+    descripcion: 'Estantería de despensa en roble con 6 baldas',
+    fotosEspacio: [],
+    fotosDisenio: [],
+    fotosReferencia: [],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
+  // Contenedor para espacio "Cocina principal"
+  {
+    id: UUID('cond-esp-cocina'),
+    espacioVarianteId: UUID('esp01'),
+    grupoItemId: null,
+    descripcion: 'Muebles bajos + altos + isla central',
+    fotosEspacio: [],
+    fotosDisenio: [],
+    fotosReferencia: [],
+    createdAt: '2026-10-29T00:00:00Z',
+    updatedAt: '2026-10-29T00:00:00Z',
+  },
 ]
 

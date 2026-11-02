@@ -9,6 +9,7 @@
 import { eq, and, or, inArray, desc, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
+import { aplicarContenedoresAEspacios, aplicarContenedoresAGrupos, normalizarDescripcion } from '@/lib/data/contenedores'
 import type {
   Portafolio, ProductoTienda, CatalogoAcabado, AcabadoMuestra,
   Proyecto, EspacioVariante, ItemVariante, Contrato, HitoPago,
@@ -318,14 +319,48 @@ export async function hidratarClientePropuesta(
 ): Promise<PropuestaPublicaData | null> {
   if (!data) return null
 
+  const espacioIds = data.espacios.map((e) => e.id)
+  const gruposItem = data.gruposItem ?? []
+  const grupoIds = gruposItem.map((g) => g.id)
+
+  // 2026-10-29: reparar descripción/fotos de snapshots ya publicados. Al mover esos campos a
+  // contenedores_descriptivos, las versiones congeladas quedaron con `espacios` sin descripción
+  // ni fotos, y la propuesta salía vacía aunque el cotizador sí las mostrara. Igual que `cliente`
+  // y `acabados`, se rehidrata al leer para cubrir publicada / preview / ?version=N sin obligar
+  // a republicar. Los grupos usan la misma tabla, indexados por `grupoItemId`.
+  let base: PropuestaPublicaData = { ...data, gruposItem }
+  if (DATA_IMPL() === 'drizzle') {
+    const [contenedoresEspacios, contenedoresGrupos] = await Promise.all([
+      espacioIds.length
+        ? db.select().from(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.espacioVarianteId, espacioIds))
+        : Promise.resolve([]),
+      grupoIds.length
+        ? db.select().from(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.grupoItemId, grupoIds))
+        : Promise.resolve([]),
+    ])
+    base = {
+      ...base,
+      espacios: aplicarContenedoresAEspacios(base.espacios, contenedoresEspacios) as unknown as EspacioVariante[],
+      gruposItem: aplicarContenedoresAGrupos(base.gruposItem, contenedoresGrupos),
+    }
+  }
+
   // Snapshot congelados anteriores a t-172 no traen acabadosPorEspacio: solo el builder nuevo la
   // escribe, así que una propuesta publicada antes de la migración no pintaría ningún acabado
   // (45 versiones publicadas en producción estaban en ese caso). Misma razón que `cliente`, que
   // tampoco se congela en el snapshot: se repara en el leer, cubriendo publicada / preview /
   // ?version=N de una sola vez.
-  const base: PropuestaPublicaData = data.acabadosPorEspacio
-    ? data
-    : { ...data, acabadosPorEspacio: await cargarAcabadosPorEspacio(data.espacios.map((e) => e.id)) }
+  if (!base.acabadosPorEspacio) {
+    base = { ...base, acabadosPorEspacio: await cargarAcabadosPorEspacio(espacioIds) }
+  }
+
+  // Markdown: se conserva una línea en blanco (separación de bloques) y se colapsan 3+.
+  // Se normaliza SOLO para la propuesta (pantalla y PDF); el dato y el editor no se tocan.
+  base = {
+    ...base,
+    espacios: base.espacios.map((e) => ({ ...e, descripcion: normalizarDescripcion(e.descripcion) })),
+    gruposItem: base.gruposItem.map((g) => ({ ...g, descripcion: normalizarDescripcion(g.descripcion) })),
+  }
 
   if (base.cliente) return base
   const clienteId = base.proyecto.clienteId
@@ -382,13 +417,12 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
     const [proyecto] = proyectoResult
     if (!proyecto) return null
 
-    const espacios = espaciosResult
-    const varianteIds = espacios.map((e) => e.id)
+    const varianteIds = espaciosResult.map((e) => e.id)
     const [contratoRow] = contratoRowResult
     const parametrosRows = parametrosRowsResult
 
     // Ronda 2: queries que dependen de Ronda 1
-    const [itemsResult, gruposItemResult, hitosResult] = await Promise.all([
+    const [itemsResult, gruposItemResult, hitosResult, contenedoresResult] = await Promise.all([
       varianteIds.length
         ? db.select().from(s.itemsVariante).where(and(inArray(s.itemsVariante.varianteId, varianteIds), eq(s.itemsVariante.anulado, false)))
         : Promise.resolve([]),
@@ -398,11 +432,30 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
       contratoRow
         ? db.select().from(s.hitosPago).where(eq(s.hitosPago.contratoId, contratoRow.id))
         : Promise.resolve([]),
+      // 2026-10-29: descripción/fotos viven en contenedores_descriptivos. Sin esta proyección,
+      // la propuesta pública (y sus snapshots publicados) sale sin descripción ni fotos.
+      varianteIds.length
+        ? db.select().from(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.espacioVarianteId, varianteIds))
+        : Promise.resolve([]),
     ])
 
     const items = itemsResult
-    const gruposItem = gruposItemResult
     const hitos = hitosResult
+    const espacios = aplicarContenedoresAEspacios(espaciosResult, contenedoresResult).map((e) => ({
+      ...e,
+      descripcion: normalizarDescripcion(e.descripcion),
+    })) as unknown as EspacioVariante[]
+
+    // Descripción de grupos: comparten contenedores_descriptivos con los espacios, indexados
+    // por grupoItemId. Sin esto, un grupo con descripción salía sin texto en la propuesta.
+    const grupoIds = gruposItemResult.map((g) => g.id)
+    const gruposContenedores = grupoIds.length
+      ? await db.select().from(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.grupoItemId, grupoIds))
+      : []
+    const gruposItem = aplicarContenedoresAGrupos(gruposItemResult, gruposContenedores).map((g) => ({
+      ...g,
+      descripcion: normalizarDescripcion(g.descripcion),
+    })) as unknown as GrupoItem[]
 
     // Ronda 3: query de catálogo (depende de items de Ronda 2)
     const catalogoIds = [...new Set(items.map((it) => it.catalogoId).filter((id): id is string => Boolean(id)))]

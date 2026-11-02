@@ -26,6 +26,10 @@ export interface OpcionesMutationOpt<TVars, TSnapshot> {
    * 2026-09-30 tras un corte de red). Sin `revertirOptimista`, el fallback es invalidar (pedir
    * la verdad al servidor) en vez de sobreescribir con un snapshot potencialmente viejo. */
   revertirOptimista?: (actual: TSnapshot, vars: TVars, previo: TSnapshot) => TSnapshot
+  /** Serializa en el servidor-cliente las mutaciones que comparten id (v5 `scope`): evita que
+   *  dos autoguardados del mismo formulario se pisen y garantiza "última escritura gana" en
+   *  orden de llamada. Usado por el autoguardado de "Detalles del espacio". */
+  scopeId?: string
 }
 
 /** Mutación optimista genérica: aplica `aplicarOptimista` al cache de `queryKey` antes de que el
@@ -41,6 +45,7 @@ export function useMutationOptGenerico<TSnapshot, TVars, TResult>(
   return useMutation<TResult, Error, TVars, ContextoMutacionOpt<TSnapshot>>({
     mutationKey: queryKey,
     mutationFn,
+    scope: opciones?.scopeId ? { id: opciones.scopeId } : undefined,
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey })
       const previous = qc.getQueryData<TSnapshot>(queryKey)

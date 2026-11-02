@@ -51,6 +51,57 @@ export interface Cliente {
   createdAt?: string
 }
 
+// t-188: etapa del lead según el enum `estado_lead` del schema (misma lista, sin Drizzle).
+export type EstadoLead =
+  | 'nuevo_lead' | 'contactado' | 'asesoria_agendada' | 'cotizado' | 'contrato_firmado' | 'descartado'
+
+/** t-188: lead captado por el sitio (formulario de asesoría), con su atribución de Google Ads. */
+export interface Lead {
+  id: string
+  nombre: string
+  telefonoWhatsapp: string | null
+  email: string | null
+  gclid: string | null
+  wbraid: string | null
+  gbraid: string | null
+  utmSource: string | null
+  utmMedium: string | null
+  utmCampaign: string | null
+  utmTerm: string | null
+  utmContent: string | null
+  hashedPhone: string | null
+  hashedEmail: string | null
+  tipoProyecto: string | null
+  ubicacion: string | null
+  scoreConversion: number | null
+  etapa: EstadoLead
+  proyectoId: string | null
+  clienteId: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type EstadoEnvioGoogle = 'pendiente' | 'procesando' | 'enviado_exitoso' | 'error_matching'
+
+/**
+ * t-188: cola de conversiones offline. Se escribe al firmar contrato y queda en `pendiente`
+ * hasta que exista la integración con la API de Google Ads (t-110, bloqueada por credenciales).
+ */
+export interface EventoConversionOffline {
+  id: string
+  leadId: string
+  contratoId: string | null
+  nombreEventoGoogle: string
+  valorConversion: string
+  gclidUsado: string | null
+  hashedPhoneUsado: string | null
+  estadoEnvio: EstadoEnvioGoogle
+  respuestaGoogleApi: unknown
+  reintentos: number | null
+  createdAt: string
+  enviadoEn: string | null
+}
+
 export interface EspacioVariante {
   id: string
   proyectoId: string
@@ -58,7 +109,9 @@ export interface EspacioVariante {
   nombreVariante: string
   /** Tipo canónico del espacio (lib/catalogos/tipos-espacio.ts) — Portafolio lo hereda vía espacioVarianteId. */
   tipoEspacio: string | null
-  descripcion: string | null
+  /** Trazabilidad al prototipo de catálogo (clase) de la que se materializó este espacio (instancia).
+   *  Nullable: espacios creados a mano no tienen plantilla origen. ON DELETE SET NULL en DB. */
+  plantillaEspacioId: string | null
   /** Variante activa (la que se cotiza y factura). Se controla desde el header/tab del espacio, no desde formulario. */
   activa: boolean
   /** Visible en la propuesta pública (PDF + pantalla de propuesta al cliente). */
@@ -67,9 +120,61 @@ export interface EspacioVariante {
   jornadasDesarrolloTecnico: string
   jornadasEnsamblajeTaller: string
   jornadasInstalacionObra: string
+  // Campos descriptivos (2026-10-29): movidos a ContenedorDescriptivo, cargados opcionalmente
+  descripcion?: string | null
+  fotosEspacio?: string[]
+  fotosDisenio?: string[]
+  fotosReferencia?: string[]
+}
+
+/** NUEVA (2026-10-29): Schema descriptivo compartido — espacios y grupos usan la misma tabla para
+ * descripción, fotos y artefactos. Relación polimorfa: uno u otro FK es NOT NULL, nunca ambos. */
+export interface ContenedorDescriptivo {
+  id: string
+  espacioVarianteId: string | null
+  grupoItemId: string | null
+  descripcion: string | null
   fotosEspacio: string[]
   fotosDisenio: string[]
   fotosReferencia: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+/** Helper: EspacioVariante + ContenedorDescriptivo cargado.
+ * Usado por queries y componentes que necesitan los datos descriptivos.
+ * El contenedor puede ser null si no existe fila en contenedores_descriptivos (caso legacy). */
+export interface EspacioVarianteHidratado extends EspacioVariante {
+  contenedor: ContenedorDescriptivo | null
+}
+
+/** Acceso de conveniencia: si contenedor existe, sus fotos; si no, arrays vacíos. */
+export function obtenerFotosEspacio(e: EspacioVarianteHidratado): string[] {
+  return e.contenedor?.fotosEspacio ?? []
+}
+export function obtenerFotosDisenio(e: EspacioVarianteHidratado): string[] {
+  return e.contenedor?.fotosDisenio ?? []
+}
+export function obtenerFotosReferencia(e: EspacioVarianteHidratado): string[] {
+  return e.contenedor?.fotosReferencia ?? []
+}
+export function obtenerDescripcion(e: EspacioVarianteHidratado): string | null {
+  return e.contenedor?.descripcion ?? null
+}
+
+/** GrupoItem + ContenedorDescriptivo + ítems cargados. Objeto completo para UI. */
+export interface GrupoItemHidratado extends GrupoItem {
+  contenedor: ContenedorDescriptivo | null
+  items: ItemVariante[]  // Ítems que pertenecen a este grupo
+  subgrupos: GrupoItemHidratado[]  // Subgrupos anidados
+}
+
+/** Cálculo de precio público de grupo: suma de ítems + valor mano de obra */
+export interface GrupoItemCalculado extends GrupoItemHidratado {
+  sumaItemsNeto: string
+  sumaItemsConIVA: string
+  valorManoObraEstimada: string
+  precioPublicoGrupo: string  // sumaItemsConIVA + valorManoObraEstimada
 }
 
 export interface ItemVariante {
@@ -108,6 +213,10 @@ export interface ItemVariante {
    * que ProductoCatalogo.camposPersonalizados (clave/valor libres). jsonb `[{clave, valor}]`,
    * default [] NOT NULL. */
   camposPersonalizados: CampoPersonalizadoProducto[]
+  /** 🆕 Jornadas propias del item (Fase 3.2, 2026-10-29): horas de trabajo por fase */
+  jornadasDesarrolloTecnico: string
+  jornadasEnsamblajeTaller: string
+  jornadasInstalacionObra: string
   createdAt: string
   updatedAt: string
 }
@@ -118,6 +227,9 @@ export interface ItemVariante {
  * pero un concepto NUEVO y SEPARADO de `Modulo`: `Modulo` es de PRODUCCIÓN (taller/calidad/
  * garantía, post-contrato); `GrupoItem` es de COTIZACIÓN (pre-contrato, vive en
  * `app/erp/cotizador/`). Cero relación entre los dos — ver arnes/tareas/t-157.json.
+ *
+ * 2026-10-29: extendido para ser entidad completa con jornadas propias + ciclo de vida
+ * (temporal → permanente al convertirse en ProductoCatalogo).
  */
 export interface GrupoItem {
   id: string
@@ -125,6 +237,73 @@ export interface GrupoItem {
   nombre: string
   padreId: string | null
   orden: number
+  jornadasDesarrolloTecnico: string
+  jornadasEnsamblajeTaller: string
+  jornadasInstalacionObra: string
+  estado: 'temporal' | 'permanente'
+  productoCatalogoId: string | null
+  /** 2026-10-29: descripción markdown del grupo. Vive en `contenedores_descriptivos`
+   *  (`grupoItemId`) y se proyecta al leer, igual que los campos descriptivos del espacio.
+   *  No es columna de `grupos_item`: opcional y solo presente cuando el consumidor la carga. */
+  descripcion?: string | null
+}
+
+/** Plantilla de espacio (CLASE / blueprint): vive en el catálogo, sin proyecto.
+ *  Ej. "Cocina Integral Estándar", "Escritorio Ejecutivo". */
+export interface PlantillaEspacio {
+  id: string
+  nombre: string
+  tipoEspacio: string
+  descripcion: string | null
+  icono: string | null
+  orden: number
+  activa: boolean
+  jornadasDesarrolloTecnico: string
+  jornadasEnsamblajeTaller: string
+  jornadasInstalacionObra: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Grupo de ítems dentro de una plantilla de espacio. Árbol recursivo vía padreId. */
+export interface PlantillaGrupo {
+  id: string
+  plantillaEspacioId: string
+  nombre: string
+  padreId: string | null
+  orden: number
+  jornadasDesarrolloTecnico: string
+  jornadasEnsamblajeTaller: string
+  jornadasInstalacionObra: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Ítem dentro de una plantilla de espacio (opcionalmente asignado a un grupo). */
+export interface PlantillaItem {
+  id: string
+  plantillaEspacioId: string
+  plantillaGrupoId: string | null
+  nombrePersonalizado: string
+  cantidad: string
+  precioUnitario: string
+  esReferencial: boolean
+  fuenteReferencial: 'electrodomestico' | 'obra_civil' | 'servicio_tercero' | 'otro' | null
+  grupoReferencial: string | null
+  orden: number
+  createdAt: string
+  updatedAt: string
+}
+
+/** PlantillaEspacio con grupos e ítems anidados (árbol completo), para edición en UI. */
+export interface PlantillaEspacioHidratado extends PlantillaEspacio {
+  grupos: PlantillaGrupoHidratado[]
+}
+
+/** Grupo de plantilla con subgrupos e ítems anidados. */
+export interface PlantillaGrupoHidratado extends PlantillaGrupo {
+  subgrupos: PlantillaGrupoHidratado[]
+  items: PlantillaItem[]
 }
 
 export interface CampoPersonalizadoProducto {
@@ -1243,6 +1422,16 @@ export interface DataStore {
      * si la guardia falla; retorna false si la variante no existe.
      */
     eliminar(id: string): Promise<boolean>
+  }
+  // --- Plantillas de espacio (clase/blueprint, sin proyecto) ---
+  plantillas: {
+    listar(): PlantillaEspacio[]
+    obtener(id: string): PlantillaEspacioHidratado | undefined
+    crear(data: Partial<PlantillaEspacio> & { nombre: string }): Promise<PlantillaEspacio>
+    actualizar(id: string, patch: Partial<PlantillaEspacio>): Promise<PlantillaEspacio | null>
+    eliminar(id: string): Promise<boolean>
+    materializar(plantillaId: string, proyectoId: string): Promise<string>
+    guardarComoPlantilla(espacioId: string, nombrePlantilla: string): Promise<PlantillaEspacio>
   }
   items: {
     porVariante(varianteId: string): ItemVariante[]

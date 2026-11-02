@@ -9,6 +9,7 @@ import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { num, numOrNull } from './mappers'
 import { emptySnapshot, type StoreSnapshot } from '../snapshot'
+import { aplicarContenedoresAEspacios } from '../contenedores'
 import {
   TABLAS_CONOCIDAS,
   campoDeTabla,
@@ -117,6 +118,7 @@ const CARGADORES: Record<SnapshotTable, () => Promise<unknown[]>> = {
   documentos_proyecto: async () => db.select().from(s.documentosProyecto),
   grupos_item: async () => db.select().from(s.gruposItem),
   espacio_variante_acabados: async () => db.select().from(s.espacioVarianteAcabados),
+  plantillas_espacio: async () => db.select().from(s.plantillasEspacio),
 }
 
 export async function fetchSnapshotTablesAction(tablas: string[]): Promise<SnapshotTablesResponse> {
@@ -167,7 +169,7 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     catalogoAcabados, catalogoProductoAcabados, acabadosMuestras,
     portafolio, rendersConceptuales, atributosTecnicos, catalogosEspaciosArquitectonicos, modulosArtefactos, bitacoraArticulos, testimonios,
     itemsOrdenCompra, recepcionesMaterial, herramientas, documentosProyecto,
-    gruposItem, espacioVarianteAcabados,
+    gruposItem, espacioVarianteAcabados, contenedoresDescriptivos, plantillas,
   ] = await Promise.all([
     db.select().from(s.proyectos),
     db.select().from(s.clientes),
@@ -230,6 +232,8 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     db.select().from(s.documentosProyecto),
     db.select().from(s.gruposItem),
     db.select().from(s.espacioVarianteAcabados),
+    db.select().from(s.contenedoresDescriptivos),
+    db.select().from(s.plantillasEspacio),
   ])
 
   const base = emptySnapshot()
@@ -249,7 +253,7 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     version,
     proyectos: proyectos as StoreSnapshot['proyectos'],
     clientes: clientes as StoreSnapshot['clientes'],
-    espacios: espacios as StoreSnapshot['espacios'],
+    espacios: aplicarContenedoresAEspacios(espacios, contenedoresDescriptivos) as StoreSnapshot['espacios'],
     items: items as StoreSnapshot['items'],
     artefactos: artefactos as StoreSnapshot['artefactos'],
     catalogo: catalogo as StoreSnapshot['catalogo'],
@@ -313,5 +317,6 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     documentosProyecto: documentosProyecto as StoreSnapshot['documentosProyecto'],
     gruposItem: gruposItem as StoreSnapshot['gruposItem'],
     espacioVarianteAcabados: espacioVarianteAcabados as StoreSnapshot['espacioVarianteAcabados'],
+    plantillas: plantillas as StoreSnapshot['plantillas'],
   }
 }

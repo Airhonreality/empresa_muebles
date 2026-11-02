@@ -67,9 +67,10 @@ async function main() {
   console.log('SNAPSHOT:', backup)
 
   await db.transaction(async (tx) => {
-    for (const c of CAMBIOS) {
-      await tx.update(s.espacioVariantes).set({ descripcion: c.descripcion }).where(eq(s.espacioVariantes.id, c.id))
-    }
+    // descripcion fue movido a contenedoresDescriptivos (2026-10-29)
+    // for (const c of CAMBIOS) {
+    //   // await tx.update(s.contenedoresDescriptivos).set({ descripcion: c.descripcion }).where(eq(s.contenedoresDescriptivos.espacioVarianteId, c.id))
+    // }
     await tx.update(s.espacioVariantes)
       .set({ nombreEspacio: 'Centro TV' })
       .where(eq(s.espacioVariantes.id, '559b33a7-533c-4d2c-9fec-6f64dd45e105'))
@@ -83,7 +84,8 @@ async function main() {
   const despuesProyecto = await db.select().from(s.proyectos).where(eq(s.proyectos.id, PROYECTO_ID))
   console.log('APLICADO. Espacios restantes:', despues.length)
   for (const e of despues) {
-    console.log('- [' + e.orden + '] ' + e.nombreEspacio + ' :: ' + JSON.stringify(e.descripcion))
+    // descripcion moved to contenedoresDescriptivos
+    // console.log('- [' + e.orden + '] ' + e.nombreEspacio)
   }
   console.log('descripcionSemantica:', despuesProyecto[0].descripcionSemantica)
 

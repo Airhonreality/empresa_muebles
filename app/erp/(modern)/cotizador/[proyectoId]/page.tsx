@@ -6,6 +6,7 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { EntityHeader } from '@/components/veta/entity-header'
 import { EntityActionsBar, type EntityAction } from '@/components/veta/entity-actions-bar'
+import { Package, Copy } from 'lucide-react'
 import { MoneyInput } from '@/components/veta/money-input'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
@@ -19,12 +20,13 @@ import { AcabadoPicker, type AcabadoSeleccionado } from '@/components/veta/acaba
 import { Modal } from '@/components/veta/modal'
 import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-espacios'
 import { ContratoModal } from '../ContratoModal'
+import { CuentaCobroModal } from '@/components/veta/cuenta-cobro-modal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
 import { ParametrosFinancierosModal } from '@/components/veta/parametros-financieros-modal'
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
-import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem } from '@/lib/data'
+import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem, type ContenedorDescriptivo } from '@/lib/data'
 import { CotizadorCompatProvider, useCotizadorCompat, type CotizadorCompatStore } from '@/lib/data/queries/cotizador-compat'
-import { eliminarProyectoAction, crearNotaReunionAction } from '@/lib/data/actions/core'
+import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, actualizarGrupoItemAction, obtenerContenedorDescriptivoGrupoAction, materializarPlantillaAction, guardarEspacioComoPlantillaAction, listarPlantillasEspacioAction } from '@/lib/data/actions/core'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -34,6 +36,15 @@ import { useEstadoPublicacionPropuesta } from '@/lib/data/queries/useCotizadorQu
 import { VersionesPropuestaModal } from '@/components/veta/versiones-propuesta-modal'
 import { formatRelativeDate } from '@/lib/utils/format'
 import { destinosProyectoValidos } from '@/lib/data/transiciones-proyecto'
+import { GrupoNodo } from '@/components/cotizador/GrupoNodo'
+import { GrupoDescripcionEditor } from '@/components/cotizador/GrupoDescripcionEditor'
+import { DropdownMenu } from '@/components/veta/dropdown-menu'
+import { ContenedorDetalles } from '@/components/veta/contenedor-detalles'
+import { MarkdownField } from '@/components/veta/markdown-field'
+import { BulkActionsBar } from '@/components/cotizador/BulkActionsBar'
+import { useItemSelection } from '@/lib/hooks/useItemSelection'
+import { useAutosave, combinarEstados } from '@/lib/hooks/autosave'
+import { AutosaveStatus } from '@/components/veta/autosave-status'
 
 /* Wrapper local para el input de "Grupo referencial": vive dentro de un `.map()`, así que el hook
    no puede llamarse directamente en el callback del map (violaría Rules of Hooks) -- por eso se
@@ -213,6 +224,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
     new Set(espaciosBase.map((e) => e.nombreEspacio)),
   )
   const [mostrarContratoModal, setMostrarContratoModal] = useState(false)
+  const [mostrarCuentaCobroModal, setMostrarCuentaCobroModal] = useState(false)
   const [mostrarEditarProyecto, setMostrarEditarProyecto] = useState(false)
   const [mostrarParametrosFinancieros, setMostrarParametrosFinancieros] = useState(false)
   // 2026-10-01 (diagnóstico UX, ronda 2): vuelve a arrancar colapsado -- Costos Operativos (la
@@ -223,6 +235,9 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(false)
   const [mostrarVersionesPropuesta, setMostrarVersionesPropuesta] = useState(false)
   const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
+  const [mostrarPlantillasCatalogoModal, setMostrarPlantillasCatalogoModal] = useState(false)
+  const [plantillasCatalogo, setPlantillasCatalogo] = useState<{ id: string; nombre: string; tipoEspacio: string; descripcion: string | null; icono: string | null }[]>([])
+  const [cargandoPlantillas, setCargandoPlantillas] = useState(false)
   const [modalPresentacionAbierto, setModalPresentacionAbierto] = useState(false)
 
   // Auto-abrir modo presentación si la URL tiene ?presentar=1
@@ -270,6 +285,37 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       }
     })
   }, [guardCrearEspacio, store.espacios, store.items, proyectoId, espaciosBase.length])
+
+  const cargarPlantillasCatalogo = useCallback(async () => {
+    setCargandoPlantillas(true)
+    try {
+      const plantillas = await listarPlantillasEspacioAction()
+      setPlantillasCatalogo(plantillas.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        tipoEspacio: p.tipoEspacio,
+        descripcion: p.descripcion,
+        icono: p.icono,
+      })))
+    } catch (err) {
+      mostrarError(err instanceof Error ? err.message : 'No se pudo cargar el catálogo de plantillas.')
+    } finally {
+      setCargandoPlantillas(false)
+    }
+  }, [mostrarError])
+
+  const materializarDesdeCatalogo = useCallback(async (plantillaId: string) => {
+    setMostrarPlantillasCatalogoModal(false)
+    try {
+      await guardCrearEspacio(async () => {
+        const espacioId = await materializarPlantillaAction(plantillaId, proyectoId)
+        // El espacio nuevo llega por polling; no hace falta hacer nada más aquí.
+        return espacioId
+      })
+    } catch (err) {
+      mostrarError(err instanceof Error ? err.message : 'No se pudo insertar la plantilla en la cotización.')
+    }
+  }, [guardCrearEspacio, proyectoId, mostrarError])
 
   const crearEspacio = useCallback(() => {
     const nombreFinal = nuevoEspacioNombre.trim()
@@ -460,6 +506,13 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       label: contrato ? 'Editar Contrato' : 'Generar Contrato',
       variant: 'primary',
       onClick: () => setMostrarContratoModal(true),
+    },
+    {
+      id: 'generar-cuenta-cobro',
+      label: 'Cuenta de Cobro',
+      variant: 'secondary',
+      hidden: !contrato || hitosList.length === 0,
+      onClick: () => setMostrarCuentaCobroModal(true),
     },
     {
       id: 'eliminar',
@@ -699,6 +752,16 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             >
               ✨ + Desde Plantilla
             </Button>
+            <Button
+              variant="ghost"
+              size="md"
+              className="h-10 text-sm border border-border-subtle hover:border-gold-400 hover:text-gold-600 w-full sm:w-auto"
+              onClick={() => { setMostrarPlantillasCatalogoModal(true); void cargarPlantillasCatalogo() }}
+              disabled={creandoEspacio}
+              title="Insertar una plantilla del catálogo (clase → instancia)"
+            >
+              <Copy size={14} /> + Desde Catálogo
+            </Button>
           </div>
         </div>
 
@@ -748,6 +811,58 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
                   </div>
                 ))}
               </div>
+            </div>
+          </Modal>
+        )}
+        {mostrarPlantillasCatalogoModal && (
+          <Modal
+            open={true}
+            onClose={() => setMostrarPlantillasCatalogoModal(false)}
+            title="Seleccionar Plantilla del Catálogo"
+          >
+            <div className="space-y-4">
+              <p className="text-xs text-text-muted">
+                Elige una plantilla del catálogo para materializarla como espacio de esta cotización. Cada cotización recibe su propia copia independiente.
+              </p>
+              {cargandoPlantillas ? (
+                <p className="text-xs text-text-muted">Cargando plantillas...</p>
+              ) : plantillasCatalogo.length === 0 ? (
+                <p className="text-xs text-text-muted italic">No hay plantillas activas en el catálogo.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 max-h-[65vh] overflow-y-auto p-1">
+                  {plantillasCatalogo.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex flex-col justify-between rounded border border-border-subtle bg-bg-paper p-3 hover:border-gold-400 hover:shadow-xs transition-all"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Package size={20} className="text-xl" />
+                          <h4 className="text-xs font-bold text-text-heading">{p.nombre}</h4>
+                        </div>
+                        {p.descripcion && (
+                          <p className="mt-1 text-[11px] text-text-muted leading-relaxed">{p.descripcion}</p>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <span className="rounded bg-bg-alt px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
+                            {p.tipoEspacio}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-border-subtle flex justify-end">
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={() => void materializarDesdeCatalogo(p.id)}
+                          disabled={creandoEspacio}
+                        >
+                          Materializar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Modal>
         )}
@@ -830,6 +945,20 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             hitosExistentes={hitosList}
             onClose={() => setMostrarContratoModal(false)}
             onSaved={() => setMostrarContratoModal(false)}
+          />
+        )}
+
+        {/* Modal Generar Cuenta de Cobro: permite seleccionar un hito del contrato y generar
+              el PDF de cuenta de cobro estándar Colombia (emisor → "Debe a" cliente, concepto,
+              valor en número y letras, firma del representante legal). */}
+        {mostrarCuentaCobroModal && proyecto && contrato && (
+          <CuentaCobroModal
+            open={mostrarCuentaCobroModal}
+            onClose={() => setMostrarCuentaCobroModal(false)}
+            contrato={contrato}
+            hitos={hitosList}
+            cliente={cliente}
+            proyecto={proyecto}
           />
         )}
 
@@ -1205,6 +1334,17 @@ function EspacioGroup({
     }
   }
 
+  const guardarEspacioComoPlantilla = async () => {
+    const nombrePlantilla = window.prompt('Nombre de la plantilla:', nombreEspacio)
+    if (!nombrePlantilla || !nombrePlantilla.trim()) return
+    try {
+      await guardarEspacioComoPlantillaAction(varianteActiva.id, nombrePlantilla.trim())
+      window.alert('Plantilla creada en el catálogo.')
+    } catch (err) {
+      window.alert(`No se pudo crear la plantilla: ${err instanceof Error ? err.message : 'Motivo desconocido.'}`)
+    }
+  }
+
   return (
     <div className={`rounded-lg border ${varianteActiva.activa ? 'border-border-subtle' : 'border-border-subtle/50'} bg-bg-raised overflow-hidden`}>
       <div
@@ -1243,20 +1383,32 @@ function EspacioGroup({
                   <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5 8.5-8.5z" strokeLinejoin="round" strokeLinecap="round" />
                 </svg>
               </span>
-              <button
-                type="button"
-                disabled={eliminandoEspacio}
-                onClick={(e) => { e.stopPropagation(); void eliminarEspacioGrupo() }}
-                className="p-0.5 rounded text-text-muted hover:text-red-500 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label={`Eliminar ${nombreEspacio}`}
-                title="Eliminar espacio (todas sus variantes, ítems y artefactos)"
-              >
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
-                </svg>
-              </button>
-            </span>
+                <button
+                  type="button"
+                  disabled={eliminandoEspacio}
+                  onClick={(e) => { e.stopPropagation(); void eliminarEspacioGrupo() }}
+                  className="p-0.5 rounded text-text-muted hover:text-red-500 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label={`Eliminar ${nombreEspacio}`}
+                  title="Eliminar espacio (todas sus variantes, ítems y artefactos)"
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  disabled={eliminandoEspacio}
+                  onClick={(e) => { e.stopPropagation(); void guardarEspacioComoPlantilla() }}
+                  className="p-0.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label={`Guardar "${nombreEspacio}" como plantilla`}
+                  title="Guardar este espacio como plantilla del catálogo"
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 8.6V14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-5.4M6 6h.01M10 6h.01M6 12h8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </span>
           )}
           <select
             value={varianteActiva.tipoEspacio ?? ''}
@@ -1467,16 +1619,8 @@ function VarianteContenido({
   // Lectura de items desde el snapshot TanStack Query (B2, plan_cotizador_tanstack_query.md).
   const items = store.items.porVariante(espacio.id)
   const productMap = useMemo(() => new Map(catalogo.map((p) => [p.id, p])), [catalogo])
-  // 2026-10-01 (diagnóstico UX, ronda 2): los ítems se guardan en orden de creación (push al
-  // final, sin orderBy -- store.items.porVariante no reordena), que es el orden correcto para
-  // contratos/propuestas/impresión (siguen leyendo porVariante() directo, sin pasar por acá, así
-  // que no cambian). Pero en ESTE editor el botón de agregar vive arriba, junto al resto de los
-  // controles del espacio -- si el ítem nuevo aparece al final, cada ítem agregado aumenta la
-  // distancia entre el botón y el resultado (Ley de Fitts) y obliga a scrollear. Invertir solo
-  // la vista de edición hace que el ítem recién creado aparezca justo debajo del botón que lo
-  // creó, sin mover el cursor del usuario -- es la UI la que se desplaza, no la persona.
-  const itemsContractuales = items.filter((it) => !it.esReferencial).reverse()
-  const itemsReferenciales = items.filter((it) => it.esReferencial).reverse()
+  const itemsContractuales = items.filter((it) => !it.esReferencial)
+  const itemsReferenciales = items.filter((it) => it.esReferencial)
   const subtotalItems = itemsContractuales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
   const totalReferencial = itemsReferenciales.reduce((s, it) => s + parseNum(it.totalLinea), 0)
 
@@ -1519,15 +1663,14 @@ function VarianteContenido({
   // penaliza el caso más común (reabrir una cotización ya poblada) con una sección vacía
   // forzando scroll de más.
   const [contextoForzado, setContextoForzado] = useState<boolean | null>(null)
-  // 2026-09-30 (diagnóstico UX): los ítems nuevos se insertan siempre al final de la lista
-  // (sin orderBy en ningún punto de lectura) -- en un espacio con muchos ítems ya cargados, la
-  // fila nueva aterriza fuera de la vista y nada avisaba dónde quedó. `itemRecienCreadoId` guarda
-  // el id del último ítem creado en esta variante; el efecto de abajo le hace scroll y lo resalta
-  // brevemente, y se limpia solo para no dejar el resaltado pegado si el usuario sigue trabajando.
-  const [itemRecienCreadoId, setItemRecienCreadoId] = useState<string | null>(null)
-  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [modalItemId, setModalItemId] = useState<string | null>(null)
   const [creandoItemLibre, setCreandoItemLibre] = useState(false)
+  const [modalItemId, setModalItemId] = useState<string | null>(null)
+  const [contenedorModal, setContenedorModal] = useState<{
+    grupoId: string
+    contenedor: ContenedorDescriptivo | null
+    cargando: boolean
+    error: string | null
+  } | null>(null)
   const [itemLibreNombre, setItemLibreNombre] = useState('')
   const [itemLibreCantidad, setItemLibreCantidad] = useState('1')
   const [itemLibrePrecio, setItemLibrePrecio] = useState('0')
@@ -1540,10 +1683,16 @@ function VarianteContenido({
   // t-157: undefined = form cerrado; null = crear grupo raíz; string = crear subgrupo bajo ese id.
   const [creandoGrupoPadreId, setCreandoGrupoPadreId] = useState<string | null | undefined>(undefined)
   const [nombreNuevoGrupo, setNombreNuevoGrupo] = useState('')
+  // t-160 (2026-10-29): selección múltiple para acciones en lote sobre items
+  const { selected: itemsSeleccionados, toggle: toggleItemSelection, clearAll: clearItemSelection } = useItemSelection()
+  const [menuAñadirAbierto, setMenuAñadirAbierto] = useState(false)
+  const [itemDropdownAbierto, setItemDropdownAbierto] = useState<string | null>(null)
+  const [grupoAñadiendo, setGrupoAñadiendo] = useState<string | null>(null)
+  const [itemAnidando, setItemAnidando] = useState<string | null>(null)
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
-  const tieneContexto = Boolean(espacio.descripcion) || espacio.fotosEspacio.length > 0 ||
-    espacio.fotosDisenio.length > 0 || espacio.fotosReferencia.length > 0 ||
+  const tieneContexto = Boolean(espacio.descripcion) || ( espacio.fotosEspacio ?? [] ).length > 0 ||
+    ( espacio.fotosDisenio ?? [] ).length > 0 || ( espacio.fotosReferencia ?? [] ).length > 0 ||
     acabadosDelEspacio.length > 0 || artefactosList.length > 0
   const mostrarContexto = contextoForzado ?? !tieneContexto
 
@@ -1559,24 +1708,22 @@ function VarianteContenido({
     await store.items.actualizar(id, { [field]: value } as Partial<Pick<ItemVariante, 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial'>>)
   }
 
-  useEffect(() => {
-    if (!itemRecienCreadoId) return
-    document.getElementById(`item-row-${itemRecienCreadoId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
-    highlightTimeoutRef.current = setTimeout(() => setItemRecienCreadoId(null), 1600)
-    return () => {
-      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
-    }
-  }, [itemRecienCreadoId])
+  const actualizarComentario = async (id: string, value: string) => {
+    await store.items.actualizar(id, { comentario: value.trim() || null })
+  }
 
-  // 2026-10-01: "+ Presupuesto adicional" vive en su propia sección, más abajo que el panel de
-  // búsqueda (que siempre se renderiza junto a Ítems, arriba). Sin esto, abrir el panel desde ese
-  // botón lo dejaría fuera de la vista -- el mismo problema de scroll manual que se corrigió para
-  // la creación de ítems, pero por el lado del disparador en vez del resultado.
+  // t-160 (2026-10-29): click-outside para cerrar el dropdown de "Añadir item"
+  const dropdownAñadirRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (modoBusquedaItem !== 'normal') return
-    document.getElementById(`panel-busqueda-item-${espacio.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [modoBusquedaItem, espacio.id])
+    if (menuAñadirAbierto === false) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownAñadirRef.current && !dropdownAñadirRef.current.contains(e.target as Node)) {
+        setMenuAñadirAbierto(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuAñadirAbierto])
 
   return (
     <div className="border-t border-border-subtle px-4 py-3 space-y-3">
@@ -1606,9 +1753,9 @@ function VarianteContenido({
             onClick={() => setContextoForzado(true)}
             className="w-full flex items-center gap-3 py-1 text-left hover:bg-bg-alt/50 rounded transition-colors duration-fast"
           >
-            {(espacio.fotosEspacio[0] ?? espacio.fotosDisenio[0]) ? (
+            {(( espacio.fotosEspacio ?? [] )[0] ?? ( espacio.fotosDisenio ?? [] )[0]) ? (
               // eslint-disable-next-line @next/next/no-img-element -- URLs mock/blob:, no assets estáticos optimizables
-              <img src={espacio.fotosEspacio[0] ?? espacio.fotosDisenio[0]} alt="" className="w-10 h-10 rounded object-cover border border-border-subtle flex-shrink-0" />
+              <img src={( espacio.fotosEspacio ?? [] )[0] ?? ( espacio.fotosDisenio ?? [] )[0]} alt="" className="w-10 h-10 rounded object-cover border border-border-subtle flex-shrink-0" />
             ) : (
               <div className="w-10 h-10 rounded border border-dashed border-border-subtle flex-shrink-0" />
             )}
@@ -1641,7 +1788,6 @@ function VarianteContenido({
             <FormDetallesEspacio
               espacio={espacio}
               onGuardado={() => setContextoForzado(false)}
-              onCancelar={() => setContextoForzado(false)}
             />
 
             <div className="border-t border-border-subtle pt-3">
@@ -1679,7 +1825,6 @@ function VarianteContenido({
                       <FormArtefactoEdicion
                         artefacto={artefacto}
                         onGuardado={() => setEditarArtefactoId(null)}
-                        onCancelar={() => setEditarArtefactoId(null)}
                       />
                     ) : (
                       <>
@@ -1791,43 +1936,67 @@ function VarianteContenido({
               que buscar en catálogo es, por lejos, la más frecuente (feedback directo de
               Javier: "no se diseñó" esa jerarquía). "+ Ítem de catálogo" pasa a secondary
               (bordeado, más peso) y va primero; Grupo/Ítem Libre quedan ghost detrás. */}
-          <div className="flex gap-2">
+          {/* t-160 (2026-10-29): rediseño UX — botón principal + dropdown menu */}
+          <div className="relative flex gap-2" ref={dropdownAñadirRef}>
             <Button
-              variant="ghost"
-              size="md"
-              onClick={() => setCrearProducto({})}
-              className="text-xs border border-border-subtle hover:border-gold-400"
-              title="Crear un producto nuevo en el catálogo sin salir del cotizador"
-            >
-              + Crear producto
-            </Button>
-            <Button
-              variant="secondary"
+              variant="primary"
               size="md"
               onClick={() => { setModoBusquedaItem('normal'); setBusquedaEsReferencial(false) }}
               className="text-xs"
               title="Buscar un producto del catálogo"
             >
-              + Ítem de catálogo
+              + Añadir item
             </Button>
-            <Button
-              variant="ghost"
-              size="md"
-              onClick={() => { setCreandoItemLibre(true); setItemLibreEsRef(false); }}
-              className="text-xs border border-border-subtle hover:border-gold-400"
-              title="Agregar ítem especial o a medida sin SKU de catálogo"
+            <button
+              type="button"
+              onClick={() => setMenuAñadirAbierto((v) => !v)}
+              className="p-2 rounded border border-border-subtle hover:border-gold-400 hover:bg-bg-alt text-text-muted hover:text-gold-600 transition-all duration-fast"
+              aria-label="Opciones adicionales para agregar ítems"
+              title="Más opciones (Crear producto, Grupo)"
             >
-              + Ítem Libre
-            </Button>
-            <Button
-              variant="ghost"
-              size="md"
-              onClick={() => { setCreandoGrupoPadreId(null); setNombreNuevoGrupo('') }}
-              className="text-xs border border-border-subtle hover:border-gold-400"
-              title="Agrupar ítems de este espacio (Grupo → Subgrupo → Ítems)"
-            >
-              + Grupo
-            </Button>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="8" cy="3" r="1.5" />
+                <circle cx="8" cy="8" r="1.5" />
+                <circle cx="8" cy="13" r="1.5" />
+              </svg>
+            </button>
+            {menuAñadirAbierto && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1">
+                <button
+                  type="button"
+                  onClick={() => { setModoBusquedaItem('normal'); setBusquedaEsReferencial(false); setMenuAñadirAbierto(false) }}
+                  className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                  title="Buscar producto del catálogo"
+                >
+                  Catálogo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setCreandoItemLibre(true); setItemLibreEsRef(false); setMenuAñadirAbierto(false) }}
+                  className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                  title="Agregar ítem especial o a medida"
+                >
+                  Ítem Libre
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setCreandoGrupoPadreId(null); setNombreNuevoGrupo(''); setMenuAñadirAbierto(false) }}
+                  className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                  title="Agrupar ítems (Grupo → Subgrupo → Ítems)"
+                >
+                  Grupo
+                </button>
+                <div className="border-t border-border-subtle my-1" />
+                <button
+                  type="button"
+                  onClick={() => { setCrearProducto({}); setMenuAñadirAbierto(false) }}
+                  className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                  title="Crear producto nuevo en el catálogo"
+                >
+                  Crear producto
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1867,10 +2036,15 @@ function VarianteContenido({
           // botón de catálogo de arriba, o "+ Presupuesto adicional" en su propia sección más
           // abajo), el MODO queda visualmente inconfundible mientras se está creando el ítem,
           // no solo en el checkbox chiquito que antes era la única señal.
-          <div id={`panel-busqueda-item-${espacio.id}`} className={`mb-3 space-y-2 rounded border p-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30' : 'border-transparent'}`}>
+          <div id={`panel-busqueda-item-${espacio.id}`} className={`mb-3 space-y-2 rounded border p-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30' : grupoAñadiendo ? 'border-dashed border-blue-400 bg-blue-50/30' : 'border-transparent'}`}>
             {busquedaEsReferencial && (
               <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">
                 Agregando a Presupuesto Adicional — no cuenta en el contrato
+              </p>
+            )}
+            {grupoAñadiendo && (
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                Agregando dentro del grupo — se anidarán automáticamente
               </p>
             )}
             <SmartSearch
@@ -1881,7 +2055,6 @@ function VarianteContenido({
                 // round-trip de red), así el resaltado de la fila nueva no espera al servidor
                 // (bug real reportado por Javier: "el feedback de agregación tarda mucho en salir").
                 const id = crypto.randomUUID()
-                setItemRecienCreadoId(id)
                 void store.items.crear({
                   id,
                   varianteId: espacio.id,
@@ -1890,8 +2063,10 @@ function VarianteContenido({
                   cantidad: '1',
                   precioUnitario: producto.precioPublico ?? '0',
                   esReferencial: busquedaEsReferencial,
+                  grupoItemId: grupoAñadiendo ?? undefined,
                 })
                 setModoBusquedaItem('off')
+                setGrupoAñadiendo(null)
               }}
               onCreateNew={(descripcion) => {
                 setCrearProducto({ descripcion })
@@ -1931,10 +2106,18 @@ function VarianteContenido({
             <div
               key={item.id}
               id={`item-row-${item.id}`}
-              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0 rounded transition-colors duration-500 ${item.id === itemRecienCreadoId ? 'bg-gold-100/80' : ''}`}
+              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0 rounded transition-colors duration-500`}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 sm:gap-2">
+                  {/* t-160: checkbox para selección múltiple */}
+                  <input
+                    type="checkbox"
+                    checked={itemsSeleccionados.has(item.id)}
+                    onChange={(e) => toggleItemSelection(item.id)}
+                    aria-label={`Seleccionar ${item.nombrePersonalizado ?? 'ítem'}`}
+                    className="shrink-0 w-4 h-4 rounded text-gold-500 cursor-pointer"
+                  />
                   <ItemMiniatura producto={prod} fotoUrl={item.fotoUrl} onClick={() => setModalItemId(item.id)} />
                   <div className="flex flex-col min-w-0">
                     <span className="text-text-heading text-base sm:text-sm font-medium sm:font-normal truncate">
@@ -1942,6 +2125,16 @@ function VarianteContenido({
                     </span>
                     {prod && (
                       <span className="text-xs text-text-muted font-mono truncate">{prod.sku}</span>
+                    )}
+                    {item.comentario && (
+                      <input
+                        type="text"
+                        value={item.comentario}
+                        onChange={(e) => actualizarComentario(item.id, e.target.value)}
+                        placeholder="Comentario del ítem…"
+                        className="w-full border-b border-border-subtle bg-transparent px-0 py-0.5 text-[10px] text-text-muted focus:border-brand focus:ring-0 placeholder-text-text-muted/40"
+                        aria-label={`Comentario ${item.nombrePersonalizado ?? item.id}`}
+                      />
                     )}
                   </div>
                 </div>
@@ -1975,53 +2168,82 @@ function VarianteContenido({
                     </span>
                   </div>
                 </div>
-                {/* Acciones */}
-                <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0">
-                  {/* Antes solo se podía abrir el editor completo (comentario, grupo, reemplazar
-                      producto) haciendo click en la miniatura — sin ninguna señal visual de que
-                      fuera clickeable. Ícono explícito para que no quede escondido. */}
+                {/* t-160: acciones simplificadas — solo eliminar + dropdown de opciones */}
+                <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0 flex-shrink-0">
+                  {/* Delete button */}
                   <button
                     type="button"
-                    onClick={() => setModalItemId(item.id)}
-                    aria-label="Editar ítem (comentario, grupo, reemplazar producto)"
-                    title="Editar ítem (comentario, grupo, reemplazar producto)"
-                    className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M11.5 2.5a1.5 1.5 0 0 1 2 2L5 13l-3 1 1-3z" strokeLinejoin="round" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
-                      actualizarItem(item.id, 'esReferencial', true)
-                      // 2026-09-30 (diagnóstico UX): esta acción mueve plata fuera del total
-                      // contractual con un solo clic y sin window.confirm -- antes tenía menos
-                      // fricción que eliminar un ítem, pese a ser más fácil de pasar por alto
-                      // (no borra nada visible, solo reclasifica). El toast con Deshacer da el
-                      // punto de control sin frenar el flujo con un confirm modal.
-                      mostrarInfo(`"${nombre}" movido a Presupuesto Adicional — ya no cuenta en el contrato.`, {
-                        etiqueta: 'Deshacer',
-                        onClick: () => actualizarItem(item.id, 'esReferencial', false),
-                      })
-                    }}
-                    aria-label="Mover a Presupuesto Adicional"
-                    title="Mover a Presupuesto Adicional (no cuenta en el contrato)"
-                    className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M3 1.5v13M3 1.5h9l-2 3.25 2 3.25H3" strokeLinejoin="round" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                  <Button
-                    variant="ghost"
-                    size="md"
                     onClick={async () => await store.items.eliminar(item.id)}
-                    className="text-text-muted hover:text-red-500 h-10 w-10 sm:h-8 sm:w-8 p-0 rounded"
+                    aria-label={`Eliminar ${item.nombrePersonalizado ?? 'ítem'}`}
+                    title="Eliminar"
+                    className="p-2 sm:p-1 text-text-muted hover:text-red-500 rounded transition-colors duration-fast"
                   >
-                    <span className="text-2xl sm:text-lg">×</span>
-                  </Button>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
+                    </svg>
+                  </button>
+
+                  {/* Options dropdown menu */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setItemDropdownAbierto(itemDropdownAbierto === item.id ? null : item.id)
+                      }}
+                      aria-label="Más opciones"
+                      title="Editar, mover, anidar"
+                      className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded transition-colors duration-fast"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <circle cx="8" cy="3" r="1.5" />
+                        <circle cx="8" cy="8" r="1.5" />
+                        <circle cx="8" cy="13" r="1.5" />
+                      </svg>
+                    </button>
+                    {itemDropdownAbierto === item.id && (
+                      <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalItemId(item.id)
+                            setItemDropdownAbierto(null)
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                          >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
+                            actualizarItem(item.id, 'esReferencial', !item.esReferencial)
+                            mostrarInfo(`"${nombre}" movido a ${item.esReferencial ? 'Ítems' : 'Presupuesto Adicional'}.`, {
+                              etiqueta: 'Deshacer',
+                              onClick: () => actualizarItem(item.id, 'esReferencial', !item.esReferencial),
+                            })
+                            setItemDropdownAbierto(null)
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                        >
+                          ↔ Mover a {item.esReferencial ? 'Ítems' : 'Presupuesto'}
+                        </button>
+                        <div className="border-t border-border-subtle my-1" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setItemAnidando(item.id)
+                            setItemDropdownAbierto(null)
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                          title="Anidar este item en un grupo"
+                        >
+                          Anidar en grupo
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2035,30 +2257,119 @@ function VarianteContenido({
             const itemsPropios = itemsDelGrupo(grupo.id)
             return (
               <div key={grupo.id} className="mb-2" style={{ marginLeft: nivel * 16 }}>
-                <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-2 py-1.5 border border-border-subtle/60">
-                  <span className="text-xs font-semibold text-text-heading truncate">📁 {grupo.nombre}</span>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                {/* t-160: Toolbar de grupo — diseñada para agregar items dentro de este grupo */}
+                <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-3 py-2 border border-border-subtle/60">
+                  <span className="text-xs font-semibold text-text-heading truncate">{grupo.nombre}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <DropdownMenu
+                      items={[
+                        {
+                          id: 'editar-grupo',
+                          label: 'Editar nombre',
+                          onClick: () => setNombreNuevoGrupo(grupo.nombre),
+                          title: 'Editar nombre del grupo',
+                        },
+                        {
+                          id: 'clonar-grupo',
+                          label: 'Clonar grupo',
+                          onClick: async () => {
+                            if (!confirm("¿Clonar este grupo y sus ítems?")) return
+                            const clonado = await duplicarGrupoAction(grupo.id)
+                            if (clonado) {
+                              // refresh handled by store reactivity
+                            }
+                          },
+                          title: 'Clonar grupo y sus ítems',
+                        },
+                        {
+                          id: 'publicar-grupo',
+                          label: 'Publicar grupo',
+                          variant: 'secondary',
+                          disabled: grupo.estado === 'permanente',
+                          onClick: async () => {
+                            await actualizarGrupoItemAction(grupo.id, { estado: 'permanente' })
+                          },
+                          title: grupo.estado === 'permanente' ? 'Ya está publicado' : 'Publicar grupo',
+                        },
+                        {
+                          id: 'detalles-grupo',
+                          label: 'Detalles',
+                          onClick: async () => {
+                            setContenedorModal({ grupoId: grupo.id, contenedor: null, cargando: true, error: null })
+                            try {
+                              const contenedor = await Promise.race([
+                                obtenerContenedorDescriptivoGrupoAction(grupo.id),
+                                new Promise<never>((_, reject) =>
+                                  setTimeout(() => reject(new Error('La consulta tardó demasiado. Revisa tu conexión e intenta de nuevo.')), 15000),
+                                ),
+                              ])
+                              setContenedorModal({
+                                grupoId: grupo.id,
+                                contenedor: contenedor ?? null,
+                                cargando: false,
+                                error: null,
+                              })
+                            } catch (err) {
+                              setContenedorModal({
+                                grupoId: grupo.id,
+                                contenedor: null,
+                                cargando: false,
+                                error: err instanceof Error ? err.message : 'No se pudieron cargar los detalles.',
+                              })
+                            }
+                          },
+                          title: 'Ver detalles del grupo',
+                        },
+                        {
+                          id: 'convertir-grupo',
+                          label: 'Convertir a producto',
+                          variant: 'secondary',
+                          onClick: () => {
+                            setCrearProducto({})
+                            setContenedorModal(null)
+                          },
+                          title: 'Convertir grupo a producto del catálogo',
+                        },
+                        {
+                          id: 'eliminar-grupo',
+                          label: 'Eliminar grupo',
+                          variant: 'destructive',
+                          onClick: async () => {
+                            const ok = await store.gruposItem.eliminar(grupo.id)
+                            if (!ok) window.alert('No se puede eliminar: este grupo tiene subgrupos dentro. Elimínalos primero.')
+                            setContenedorModal(null)
+                          },
+                          title: 'Eliminar grupo (los ítems pasan a Sin grupo)',
+                        },
+                      ]}
+                      menuWidth="w-56"
+                    />
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      className="text-xs h-6"
+                      onClick={() => {
+                        setModoBusquedaItem('normal')
+                        setBusquedaEsReferencial(false)
+                        setGrupoAñadiendo(grupo.id)
+                      }}
+                      title="Agregar item dentro de este grupo"
+                    >
+                      + Item
+                    </Button>
+
+                    {/* Menú de opciones del grupo */}
                     <button
                       type="button"
                       onClick={() => { setCreandoGrupoPadreId(grupo.id); setNombreNuevoGrupo('') }}
                       className="text-[11px] text-gold-600 hover:text-gold-700 px-1.5 py-0.5 rounded transition-colors duration-fast"
+                      title="Crear subgrupo dentro de este grupo"
                     >
-                      + Subgrupo
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const ok = await store.gruposItem.eliminar(grupo.id)
-                        if (!ok) window.alert('No se puede eliminar: este grupo tiene subgrupos dentro. Elimínalos primero.')
-                      }}
-                      aria-label={`Eliminar grupo ${grupo.nombre}`}
-                      title="Eliminar grupo (los ítems dentro pasan a 'Sin grupo')"
-                      className="text-text-muted hover:text-red-500 px-1.5 py-0.5 rounded"
-                    >
-                      ×
+                      + Sub
                     </button>
                   </div>
                 </div>
+                <GrupoDescripcionEditor grupoId={grupo.id} />
                 {creandoGrupoPadreId === grupo.id && (
                   <div className="flex items-center gap-2 mt-2 ml-2">
                     <input
@@ -2104,6 +2415,29 @@ function VarianteContenido({
                 </div>
               )}
               {!hayGrupos && itemsContractuales.map(renderItemRow)}
+
+              {/* t-160 (2026-10-29): menú de acciones en lote — componente reutilizable */}
+              <BulkActionsBar
+                selectedCount={itemsSeleccionados.size}
+                selectedItems={itemsSeleccionados}
+                items={items}
+                onMove={(ids) => {
+                  ids.forEach((id) => {
+                    const item = items.find((i) => i.id === id)
+                    if (item) {
+                      actualizarItem(id, 'esReferencial', !item.esReferencial)
+                    }
+                  })
+                  clearItemSelection()
+                }}
+                onDelete={(ids) => {
+                  ids.forEach((id) => {
+                    void store.items.eliminar(id)
+                  })
+                  clearItemSelection()
+                }}
+                onClear={clearItemSelection}
+              />
             </>
           )
         })()}
@@ -2147,10 +2481,18 @@ function VarianteContenido({
                 <div
                   key={item.id}
                   id={`item-row-${item.id}`}
-                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-1 last:pb-0 last:border-0 rounded transition-colors duration-500 ${item.id === itemRecienCreadoId ? 'bg-gold-100/80' : ''}`}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-1 last:pb-0 last:border-0 rounded transition-colors duration-500`}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 sm:gap-2">
+                      {/* Checkbox para selección múltiple */}
+                      <input
+                        type="checkbox"
+                        checked={itemsSeleccionados.has(item.id)}
+                        onChange={(e) => toggleItemSelection(item.id)}
+                        aria-label={`Seleccionar ${item.nombrePersonalizado ?? 'ítem'}`}
+                        className="shrink-0 w-4 h-4 rounded text-gold-500 cursor-pointer"
+                      />
                       <ItemMiniatura producto={prod} fotoUrl={item.fotoUrl} onClick={() => setModalItemId(item.id)} />
                       <span className="w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full bg-gold-500 flex-shrink-0" title="Referencial" />
                       <div className="flex flex-col min-w-0">
@@ -2173,6 +2515,16 @@ function VarianteContenido({
                             value={item.grupoReferencial ?? ''}
                             onChange={(v) => actualizarItem(item.id, 'grupoReferencial', v)}
                           />
+                          {item.comentario && (
+                            <input
+                              type="text"
+                              value={item.comentario}
+                              onChange={(e) => actualizarComentario(item.id, e.target.value)}
+                              placeholder="Comentario del ítem…"
+                              className="w-full border-b border-border-subtle bg-transparent px-0 py-0.5 text-[10px] text-text-muted focus:border-brand focus:ring-0 placeholder-text-text-muted/40 mt-1 sm:mt-0"
+                              aria-label={`Comentario ${item.nombrePersonalizado ?? item.id}`}
+                            />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -2206,45 +2558,70 @@ function VarianteContenido({
                         </span>
                       </div>
                     </div>
-                    {/* Acciones */}
-                    <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0">
+                    {/* Acciones simplificadas */}
+                    <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0 flex-shrink-0">
+                      {/* Delete button */}
                       <button
                         type="button"
-                        onClick={() => setModalItemId(item.id)}
-                        aria-label="Editar ítem (comentario, grupo, reemplazar producto)"
-                        title="Editar ítem (comentario, grupo, reemplazar producto)"
-                        className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M11.5 2.5a1.5 1.5 0 0 1 2 2L5 13l-3 1 1-3z" strokeLinejoin="round" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
-                          actualizarItem(item.id, 'esReferencial', false)
-                          mostrarInfo(`"${nombre}" movido a Ítems — ahora cuenta en el contrato.`, {
-                            etiqueta: 'Deshacer',
-                            onClick: () => actualizarItem(item.id, 'esReferencial', true),
-                          })
-                        }}
-                        aria-label="Mover a Ítems (cotizado)"
-                        title="Mover a Ítems (cuenta en el contrato)"
-                        className="p-2 sm:p-1 text-text-muted hover:text-emerald-600 rounded"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M13 1.5v13M13 1.5H4l2 3.25-2 3.25h9" strokeLinejoin="round" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                      <Button
-                        variant="ghost"
-                        size="md"
                         onClick={async () => await store.items.eliminar(item.id)}
-                        className="text-text-muted hover:text-red-500 h-10 w-10 sm:h-8 sm:w-8 p-0 rounded"
+                        aria-label={`Eliminar ${item.nombrePersonalizado ?? 'ítem'}`}
+                        title="Eliminar"
+                        className="p-2 sm:p-1 text-text-muted hover:text-red-500 rounded transition-colors duration-fast"
                       >
-                        <span className="text-2xl sm:text-lg">×</span>
-                      </Button>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
+                        </svg>
+                      </button>
+
+                      {/* Options dropdown */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setItemDropdownAbierto(itemDropdownAbierto === item.id ? null : item.id)
+                          }}
+                          aria-label="Más opciones"
+                          title="Editar, mover"
+                          className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded transition-colors duration-fast"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="8" cy="3" r="1.5" />
+                            <circle cx="8" cy="8" r="1.5" />
+                            <circle cx="8" cy="13" r="1.5" />
+                          </svg>
+                        </button>
+                        {itemDropdownAbierto === item.id && (
+                          <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setModalItemId(item.id)
+                                setItemDropdownAbierto(null)
+                              }}
+                              className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
+                                actualizarItem(item.id, 'esReferencial', false)
+                                mostrarInfo(`"${nombre}" movido a Ítems — ahora cuenta en el contrato.`, {
+                                  etiqueta: 'Deshacer',
+                                  onClick: () => actualizarItem(item.id, 'esReferencial', true),
+                                })
+                                setItemDropdownAbierto(null)
+                              }}
+                              className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
+                            >
+                              ↔ Mover a Ítems
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2340,6 +2717,100 @@ function VarianteContenido({
         />
       )}
 
+      {/* Modal de detalles del grupo (Compartido con espacio vía ContenedorDescriptivo) */}
+      {contenedorModal && (
+        <Modal
+          open={true}
+          onClose={() => setContenedorModal(null)}
+          title={contenedorModal.cargando ? 'Cargando detalles…' : `Detalles del grupo`}
+          maxWidthClassName="max-w-2xl"
+        >
+          {contenedorModal.cargando ? (
+            <p className="text-xs text-text-muted italic">Cargando detalles del grupo…</p>
+          ) : contenedorModal.error ? (
+            <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {contenedorModal.error}
+              <button
+                type="button"
+                onClick={() => {
+                  setContenedorModal({ ...contenedorModal, cargando: true, error: null })
+                  void obtenerContenedorDescriptivoGrupoAction(contenedorModal.grupoId).then(
+                    (c) =>
+                      setContenedorModal({
+                        grupoId: contenedorModal.grupoId,
+                        contenedor: c ?? null,
+                        cargando: false,
+                        error: null,
+                      }),
+                    (err) =>
+                      setContenedorModal({
+                        grupoId: contenedorModal.grupoId,
+                        contenedor: null,
+                        cargando: false,
+                        error: err instanceof Error ? err.message : 'No se pudieron cargar los detalles.',
+                      }),
+                  )
+                }}
+                className="mt-2 underline text-sm text-red-600 hover:text-red-700"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : !contenedorModal.contenedor ? (
+            <div className="rounded border border-border-subtle bg-bg-paper p-4 text-sm text-text-muted">
+              Este grupo aún no tiene detalles cargados.
+            </div>
+          ) : (
+            <ContenedorDetalles contenedor={contenedorModal.contenedor} />
+          )}
+        </Modal>
+      )}
+
+      {/* Modal para anidar item en grupo */}
+      {itemAnidando && (
+        <Modal
+          open={true}
+          onClose={() => setItemAnidando(null)}
+          title="Anidar Item en Grupo"
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-text-muted">
+              Selecciona el grupo donde deseas anidar este item:
+            </p>
+            {grupos.length === 0 ? (
+              <p className="text-xs text-text-muted italic">
+                No hay grupos creados. Crea un grupo primero.
+              </p>
+            ) : (
+              <div className="space-y-1 max-h-64 overflow-y-auto">
+                {grupos.map((grupo) => (
+                  <button
+                    key={grupo.id}
+                    type="button"
+                    onClick={async () => {
+                      await store.items.actualizar(itemAnidando, { grupoItemId: grupo.id })
+                      setItemAnidando(null)
+                    }}
+                    className="w-full text-left px-3 py-2 rounded border border-border-subtle hover:bg-bg-alt hover:border-gold-400 transition-all text-xs text-text-heading"
+                  >
+                    {'  '.repeat(grupo.padreId ? 1 : 0)}{grupo.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end pt-2 border-t border-border-subtle">
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={() => setItemAnidando(null)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {crearProducto && (
         <ProductoFormModal
           open={true}
@@ -2356,7 +2827,6 @@ function VarianteContenido({
             // Crear desde el cotizador = crear + agregar al espacio actual. El id se
             // genera acá para reutilizar el mismo resaltado optimista de la búsqueda.
             const id = crypto.randomUUID()
-            setItemRecienCreadoId(id)
             void store.items.crear({
               id,
               varianteId: espacio.id,
@@ -2437,8 +2907,16 @@ function VarianteContenido({
               />
               <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
             </label>
+            {grupoAñadiendo && (
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 rounded bg-blue-50/50 px-2 py-1">
+                ✓ Se agregará dentro del grupo
+              </p>
+            )}
             <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
-              <Button variant="ghost" size="md" onClick={() => setCreandoItemLibre(false)}>
+              <Button variant="ghost" size="md" onClick={() => {
+                setCreandoItemLibre(false)
+                setGrupoAñadiendo(null)
+              }}>
                 Cancelar
               </Button>
               <Button
@@ -2449,7 +2927,6 @@ function VarianteContenido({
                   // 2026-10-01: mismo patrón que la búsqueda de catálogo -- id generado antes de
                   // disparar la mutación, para que el resaltado no espere al servidor.
                   const id = crypto.randomUUID()
-                  setItemRecienCreadoId(id)
                   void store.items.crear({
                     id,
                     varianteId: espacio.id,
@@ -2458,8 +2935,10 @@ function VarianteContenido({
                     cantidad: itemLibreCantidad,
                     precioUnitario: itemLibrePrecio,
                     esReferencial: itemLibreEsRef,
+                    grupoItemId: grupoAñadiendo ?? undefined,
                   })
                   setCreandoItemLibre(false)
+                  setGrupoAñadiendo(null)
                   setItemLibreNombre('')
                   setItemLibreCantidad('1')
                   setItemLibrePrecio('0')
@@ -2612,11 +3091,9 @@ function FormArtefacto({
 function FormArtefactoEdicion({
   artefacto,
   onGuardado,
-  onCancelar,
 }: {
   artefacto: EspacioArtefacto
   onGuardado: () => void
-  onCancelar: () => void
 }) {
   const { store } = useCotizadorCompat()
   const [dimensiones, setDimensiones] = useState(artefacto.dimensionesMm ?? '')
@@ -2626,17 +3103,27 @@ function FormArtefactoEdicion({
   const [fotoUrls, setFotoUrls] = useState<string[]>(artefacto.fotoUrls ?? [])
   const [archivosUrls, setArchivosUrls] = useState<string[]>(artefacto.archivosUrls ?? [])
 
-  const handleGuardar = useCallback(async () => {
-    await store.artefactos.actualizar(artefacto.id, {
+  // Editar un artefacto existente es autoguardado: no hay "requeridos" que impidan guardar a
+  // medias (crear uno nuevo sí exige nombre → ese form conserva su botón explícito).
+  const cambios = useMemo(
+    () => ({
       tipoSpecifique: tipo.trim() || null,
       dimensionesMm: dimensiones.trim() || null,
       ubicacion: ubicacion.trim() || null,
       descripcion: descripcion.trim() || null,
       fotoUrls,
       archivosUrls,
-    })
+    }),
+    [tipo, dimensiones, ubicacion, descripcion, fotoUrls, archivosUrls],
+  )
+  const autosave = useAutosave({
+    valor: cambios,
+    guardar: (patch) => store.artefactos.actualizar(artefacto.id, patch),
+  })
+  const cerrar = () => {
+    autosave.flush()
     onGuardado()
-  }, [store, artefacto.id, tipo, dimensiones, ubicacion, descripcion, fotoUrls, archivosUrls, onGuardado])
+  }
 
   return (
     <div className="space-y-2 rounded border border-border-subtle bg-bg-paper p-3">
@@ -2682,20 +3169,14 @@ function FormArtefactoEdicion({
       <ImagePicker label="Fotos (una o varias)" value={fotoUrls} onChange={setFotoUrls} uploadToR2 r2Prefix="cotizador/artefactos" />
       <FilePicker label="Fichas técnicas / archivos (PDF, planos...)" value={archivosUrls} onChange={setArchivosUrls} accept=".pdf,.dwg,.dxf,.doc,.docx,.xls,.xlsx,.zip"
         r2Prefix="cotizador/artefactos/archivos" />
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <AutosaveStatus estado={autosave.estado} onReintentar={autosave.reintentar} />
         <button
           type="button"
-          onClick={handleGuardar}
-          className="rounded bg-gold-500 px-3 py-1 text-xs font-medium text-white hover:bg-gold-600 transition-colors duration-fast"
-        >
-          Actualizar
-        </button>
-        <button
-          type="button"
-          onClick={onCancelar}
+          onClick={cerrar}
           className="rounded border border-border-subtle px-3 py-1 text-xs text-text-muted hover:bg-bg-alt transition-colors duration-fast"
         >
-          Cancelar
+          Listo
         </button>
       </div>
     </div>
@@ -2705,11 +3186,9 @@ function FormArtefactoEdicion({
 function FormDetallesEspacio({
   espacio,
   onGuardado,
-  onCancelar,
 }: {
   espacio: EspacioVariante
   onGuardado: () => void
-  onCancelar: () => void
 }) {
   const { store } = useCotizadorCompat()
   const [descripcion, setDescripcion] = useState(espacio.descripcion ?? '')
@@ -2736,27 +3215,45 @@ function FormDetallesEspacio({
       })
       .filter((x): x is AcabadoSeleccionado => x !== null)
   })
-  const [fotosEspacio, setFotosEspacio] = useState<string[]>(espacio.fotosEspacio)
-  const [fotosDisenio, setFotosDisenio] = useState<string[]>(espacio.fotosDisenio)
-  const [fotosReferencia, setFotosReferencia] = useState<string[]>(espacio.fotosReferencia)
+  const [fotosEspacio, setFotosEspacio] = useState<string[]>(espacio.fotosEspacio ?? [])
+  const [fotosDisenio, setFotosDisenio] = useState<string[]>(espacio.fotosDisenio ?? [])
+  const [fotosReferencia, setFotosReferencia] = useState<string[]>(espacio.fotosReferencia ?? [])
 
-  const handleGuardar = useCallback(async () => {
-    await store.espacios.actualizar(espacio.id, {
-      descripcion: descripcion.trim() || null,
-      fotosEspacio,
-      fotosDisenio,
-      fotosReferencia,
-    })
-    // t-175: reemplaza por completo a espacio.colores (jsonb) como fuente de verdad — relación
-    // real con texto libre de destino por acabado.
-    await store.espacioVarianteAcabados.reemplazarTodos(
-      espacio.id,
-      colores.map((c) => ({ acabadoId: c.acabado.id, descripcionUso: c.descripcionUso })),
-    )
+  // 2026-10-29: autoguardado por sección. Cada grupo de campos es un patch coalescido
+  // (debounce 700 ms + una sola escritura en vuelo) y las mutaciones van serializadas por
+  // scope de TanStack, así el servidor termina con lo último que vio el usuario.
+  const detalles = useMemo(
+    () => ({ descripcion: descripcion.trim() || null, fotosEspacio, fotosDisenio, fotosReferencia }),
+    [descripcion, fotosEspacio, fotosDisenio, fotosReferencia],
+  )
+  const autosaveDetalles = useAutosave({
+    valor: detalles,
+    guardar: (patch) => store.espacios.actualizar(espacio.id, patch),
+  })
+
+  // t-175: reemplaza por completo a espacio.colores (jsonb) como fuente de verdad — relación
+  // real con texto libre de destino por acabado. Es otra mutación (delete+insert), por eso
+  // tiene su propio autoguardado.
+  const acabadosAsociados = useMemo(
+    () => colores.map((c) => ({ acabadoId: c.acabado.id, descripcionUso: c.descripcionUso })),
+    [colores],
+  )
+  const autosaveAcabados = useAutosave({
+    valor: acabadosAsociados,
+    guardar: (items) => store.espacioVarianteAcabados.reemplazarTodos(espacio.id, items),
+  })
+
+  const estadoAutosave = combinarEstados(autosaveDetalles.estado, autosaveAcabados.estado)
+  const reintentarAutosave = () => {
+    autosaveDetalles.reintentar()
+    autosaveAcabados.reintentar()
+  }
+  const cerrarSeccion = () => {
+    autosaveDetalles.flush()
+    autosaveAcabados.flush()
     onGuardado()
-  }, [store, espacio.id, descripcion, colores, fotosEspacio, fotosDisenio, fotosReferencia, onGuardado])
+  }
 
-  const inputCls = 'rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none'
   const ayudaCls = 'text-[11px] text-text-muted'
 
   return (
@@ -2774,10 +3271,16 @@ function FormDetallesEspacio({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <label className="flex flex-col gap-1 col-span-2">
-          <span className="text-[11px] text-text-muted">Descripción</span>
-          <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={2} className={inputCls} />
-        </label>
+        <div className="col-span-2">
+          <MarkdownField
+            label="Descripción"
+            value={descripcion}
+            onChange={setDescripcion}
+            height={150}
+            placeholder="Describe el espacio: títulos, listas, negritas…"
+            helpText="Se muestra en la propuesta pública y en el PDF."
+          />
+        </div>
       </div>
 
       <p className={ayudaCls}>
@@ -2793,20 +3296,14 @@ function FormDetallesEspacio({
         onCrearAcabado={(data) => store.catalogoAcabados.crear(data)}
       />
 
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <AutosaveStatus estado={estadoAutosave} onReintentar={reintentarAutosave} />
         <button
           type="button"
-          onClick={handleGuardar}
-          className="rounded bg-gold-500 px-3 py-1 text-xs font-medium text-white hover:bg-gold-600 transition-colors duration-fast"
-        >
-          Guardar detalles
-        </button>
-        <button
-          type="button"
-          onClick={onCancelar}
+          onClick={cerrarSeccion}
           className="rounded border border-border-subtle px-3 py-1 text-xs text-text-muted hover:bg-bg-alt transition-colors duration-fast"
         >
-          Cancelar
+          Listo
         </button>
       </div>
     </div>

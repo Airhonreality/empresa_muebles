@@ -1,5 +1,5 @@
 {
-  "id": "t-188",
+  "id": "t-189",
   "titulo": "Landing pública de restauración y mantenimiento de pisos de madera (indexable, Google Ads, contacto directo)",
   "intencion_negocio": "Lanzar el servicio de restauración/mantenimiento de pisos de madera como landing de conversión para Google Ads, pública e indexable, con contacto directo al experto (Jair Daza, 3227008706) por llamada o WhatsApp para cuadrar visita.",
   "diagnostico": "Existía /espacios/pisos-de-madera pero noindex, sin enlazar, sin fotos reales, con número de WhatsApp general hardcodeado y sin seguimiento de conversión propio para Ads.",
@@ -17,7 +17,7 @@
   "zona": "app/(publico)/espacios/pisos-de-madera/page.tsx + components/veta/contacto-pisos-{modal,boton}.tsx + components/veta/cta-movil-pisos.tsx + lib/contacto.ts + lib/analytics/ads-conversion.ts + components/veta/app-shell.tsx",
   "tipo": "sitio_publico_conversion",
   "riesgo": "medio",
-  "plan_ref": "arnes/planes/plan_t-188.md",
+  "plan_ref": "arnes/planes/plan_t-189.md",
   "depende_de": [],
   "criterios_aceptacion": [
     "tsc --noEmit en verde",

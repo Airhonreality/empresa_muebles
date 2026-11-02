@@ -2,11 +2,12 @@
 // Server Actions del cluster núcleo: proyectos, clientes, espacios, items, artefactos,
 // catálogo, parámetros, contratos. Porta 1:1 la lógica de lib/data/mock-store.ts (73/73
 // tests) a Drizzle/Postgres real. Ver plan_f10_migracion.md §3.1d.
-import { eq, and, ne, inArray, or, like, isNull } from 'drizzle-orm'
+import { eq, and, inArray, or, like, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
 import { num, sanitizarCamposPersonalizados } from './mappers'
+import { registrarConversionOfflineDeContrato } from '../conversion-offline'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
 import { generarSkuUnico } from '../skus'
 import { destinosProyectoValidos } from '../transiciones-proyecto'
@@ -14,11 +15,13 @@ import { validarEntrada } from '@/lib/validacion/validar'
 import {
   itemCrearSchema, itemActualizarSchema, espacioCrearSchema, espacioActualizarSchema,
   jornadasSchema, parametrosFinancierosSchema, clienteCrearSchema, clienteActualizarSchema,
+  plantillaCrearSchema, plantillaActualizarSchema, plantillaItemCrearSchema,
 } from '@/lib/validacion/cotizador'
 import type {
   Proyecto, EstadoProyecto, Cliente, EspacioVariante, ItemVariante, EspacioArtefacto,
   ProductoCatalogo, Parametro, Contrato, ProyectosEstadosHistorial, GrupoItem, HitoPagoInput,
-  EspacioVarianteAcabado,
+  EspacioVarianteAcabado, ContenedorDescriptivo,
+  PlantillaEspacio, PlantillaGrupo, PlantillaItem, PlantillaEspacioHidratado,
 } from '../contracts'
 // VarianteNoEliminableError vive en errors.ts (no en 'use server':
 // Next.js prohíbe exportar clases desde archivos 'use server').
@@ -293,16 +296,12 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
       nombreEspacio: validado.nombreEspacio,
       nombreVariante: validado.nombreVariante ?? 'Inicial',
       tipoEspacio: validado.tipoEspacio ?? null,
-      descripcion: validado.descripcion ?? null,
       activa: validado.activa ?? true,
       visibleEnPropuestaPublica: validado.visibleEnPropuestaPublica ?? true,
       orden,
       jornadasDesarrolloTecnico: validado.jornadasDesarrolloTecnico ?? '0',
       jornadasEnsamblajeTaller: validado.jornadasEnsamblajeTaller ?? '0',
       jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
-      fotosEspacio: sanitizarUrlsFotos(validado.fotosEspacio) ?? [],
-      fotosDisenio: sanitizarUrlsFotos(validado.fotosDisenio) ?? [],
-      fotosReferencia: sanitizarUrlsFotos(validado.fotosReferencia) ?? [],
     }).onConflictDoNothing({ target: s.espacioVariantes.id }).returning()
 
     if (nuevo) return nuevo as unknown as EspacioVariante
@@ -326,12 +325,70 @@ export async function actualizarEspacioAction(
   id: string,
   partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
 ): Promise<EspacioVariante | null> {
-  const sanitized = { ...validarEntrada(espacioActualizarSchema, partial) };
-  if (sanitized.fotosEspacio) sanitized.fotosEspacio = sanitizarUrlsFotos(sanitized.fotosEspacio) ?? [];
-  if (sanitized.fotosDisenio) sanitized.fotosDisenio = sanitizarUrlsFotos(sanitized.fotosDisenio) ?? [];
-  if (sanitized.fotosReferencia) sanitized.fotosReferencia = sanitizarUrlsFotos(sanitized.fotosReferencia) ?? [];
-  const [actualizado] = await db.update(s.espacioVariantes).set(sanitized).where(eq(s.espacioVariantes.id, id)).returning()
-  return (actualizado as unknown as EspacioVariante) ?? null
+  return db.transaction(async (tx) => {
+    const sanitized = { ...validarEntrada(espacioActualizarSchema, partial) };
+
+    // Separar campos de metadata de campos descriptivos
+    const { descripcion, fotosEspacio, fotosDisenio, fotosReferencia, ...metadataFields } = sanitized;
+
+    // 2026-10-29 (bug real "Guardar detalles no guarda nada"): "Detalles del espacio"
+    // manda SOLO campos descriptivos, así que `metadataFields` viene vacío y Drizzle lanza
+    // "No values to set" con `.set({})` — eso revertía la transacción COMPLETA y ni siquiera
+    // se escribía el contenedor. Solo se actualiza la fila cuando hay algo que actualizar;
+    // si no, se lee tal cual para poder devolver el espacio (hidratado) al cliente.
+    let base: typeof s.espacioVariantes.$inferSelect;
+    if (Object.keys(metadataFields).length > 0) {
+      const [actualizado] = await tx.update(s.espacioVariantes).set(metadataFields).where(eq(s.espacioVariantes.id, id)).returning();
+      if (!actualizado) return null;
+      base = actualizado;
+    } else {
+      const [existente] = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, id));
+      if (!existente) return null;
+      base = existente;
+    }
+
+    // Actualizar/crear contenedor descriptivo
+    let contenedor: typeof s.contenedoresDescriptivos.$inferSelect | null = null;
+    if (descripcion !== undefined || fotosEspacio !== undefined || fotosDisenio !== undefined || fotosReferencia !== undefined) {
+      const patch: Partial<typeof s.contenedoresDescriptivos.$inferInsert> = { updatedAt: new Date().toISOString() };
+      if (descripcion !== undefined) patch.descripcion = descripcion;
+      if (fotosEspacio !== undefined) patch.fotosEspacio = sanitizarUrlsFotos(fotosEspacio) ?? [];
+      if (fotosDisenio !== undefined) patch.fotosDisenio = sanitizarUrlsFotos(fotosDisenio) ?? [];
+      if (fotosReferencia !== undefined) patch.fotosReferencia = sanitizarUrlsFotos(fotosReferencia) ?? [];
+
+      const [existente] = await tx.select().from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.espacioVarianteId, id));
+
+      if (existente) {
+        const [actualizado] = await tx.update(s.contenedoresDescriptivos).set(patch).where(eq(s.contenedoresDescriptivos.id, existente.id)).returning();
+        contenedor = actualizado ?? existente;
+      } else {
+        const [insertado] = await tx.insert(s.contenedoresDescriptivos).values({
+          espacioVarianteId: id,
+          grupoItemId: null,
+          descripcion: descripcion ?? null,
+          fotosEspacio: sanitizarUrlsFotos(fotosEspacio) ?? [],
+          fotosDisenio: sanitizarUrlsFotos(fotosDisenio) ?? [],
+          fotosReferencia: sanitizarUrlsFotos(fotosReferencia) ?? [],
+        }).returning();
+        contenedor = insertado ?? null;
+      }
+    }
+
+    // Devuelve el espacio con los campos descriptivos proyectados: la UI los lee de acá
+    // (EspacioVariante.descripcion/fotos* son "cargados opcionalmente") y `upsertEspacio`
+    // reemplaza la fila completa en el cache al reconciliar la mutación optimista.
+    return {
+      ...(base as unknown as EspacioVariante),
+      ...(contenedor
+        ? {
+            descripcion: contenedor.descripcion,
+            fotosEspacio: contenedor.fotosEspacio,
+            fotosDisenio: contenedor.fotosDisenio,
+            fotosReferencia: contenedor.fotosReferencia,
+          }
+        : {}),
+    };
+  });
 }
 
 export async function duplicarEspacioAction(id: string, opciones: { vacio: boolean; nuevoNombreEspacio?: string }): Promise<EspacioVariante | null> {
@@ -345,28 +402,54 @@ export async function duplicarEspacioAction(id: string, opciones: { vacio: boole
     const hermanos = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, origen.proyectoId))
     const nuevoOrden = hermanos.length
 
-    const base = opciones.vacio
-      ? {
-          proyectoId: origen.proyectoId, nombreEspacio, nombreVariante, tipoEspacio: origen.tipoEspacio, descripcion: null,
-          activa: esGrupoNuevo, visibleEnPropuestaPublica: true, orden: nuevoOrden,
-          jornadasDesarrolloTecnico: '0', jornadasEnsamblajeTaller: '0', jornadasInstalacionObra: '0',
-          fotosEspacio: [], fotosDisenio: [], fotosReferencia: [],
-        }
-      : {
-          ...origen, id: undefined, nombreEspacio, nombreVariante, activa: esGrupoNuevo, orden: nuevoOrden,
-        }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _omit, ...values } = base as typeof base & { id?: string }
-    const [nuevo] = await tx.insert(s.espacioVariantes).values(values).returning()
+    const [nuevo] = await tx.insert(s.espacioVariantes).values({
+      proyectoId: origen.proyectoId, nombreEspacio, nombreVariante, tipoEspacio: origen.tipoEspacio,
+      activa: esGrupoNuevo, visibleEnPropuestaPublica: true, orden: nuevoOrden,
+      jornadasDesarrolloTecnico: opciones.vacio ? '0' : origen.jornadasDesarrolloTecnico,
+      jornadasEnsamblajeTaller: opciones.vacio ? '0' : origen.jornadasEnsamblajeTaller,
+      jornadasInstalacionObra: opciones.vacio ? '0' : origen.jornadasInstalacionObra,
+    }).returning()
 
     if (!opciones.vacio) {
+      // Copiar contenedor descriptivo
+      const [contenedorOrigen] = await tx.select().from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.espacioVarianteId, id))
+      if (contenedorOrigen) {
+        await tx.insert(s.contenedoresDescriptivos).values({
+          espacioVarianteId: nuevo.id,
+          grupoItemId: null,
+          descripcion: contenedorOrigen.descripcion,
+          fotosEspacio: contenedorOrigen.fotosEspacio,
+          fotosDisenio: contenedorOrigen.fotosDisenio,
+          fotosReferencia: contenedorOrigen.fotosReferencia,
+        })
+      }
+
+      // Copiar items
       const itemsOrigen = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.varianteId, id))
       if (itemsOrigen.length > 0) {
         await tx.insert(s.itemsVariante).values(itemsOrigen.map(i => ({ ...i, id: undefined, varianteId: nuevo.id })))
       }
-      const artefactosOrigen = await tx.select().from(s.espaciosArtefactos).where(eq(s.espaciosArtefactos.espacioVarianteId, id))
-      if (artefactosOrigen.length > 0) {
-        await tx.insert(s.espaciosArtefactos).values(artefactosOrigen.map(a => ({ ...a, id: undefined, espacioVarianteId: nuevo.id })))
+
+      // Copiar grupos (sin artefactos legacy, que pasan a contenedoresArtefactos)
+      const gruposOrigen = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.espacioVarianteId, id))
+      const mapaGruposOld2New = new Map<string, string>()
+      for (const grupo of gruposOrigen) {
+        const [grupoNuevo] = await tx.insert(s.gruposItem).values({
+          espacioVarianteId: nuevo.id,
+          nombre: grupo.nombre,
+          padreId: null, // Se actualiza después
+          orden: grupo.orden,
+        }).returning()
+        mapaGruposOld2New.set(grupo.id, grupoNuevo.id)
+      }
+      // Actualizar padreId de subgrupos
+      for (const grupo of gruposOrigen) {
+        if (grupo.padreId && mapaGruposOld2New.has(grupo.padreId)) {
+          const nuevoGrupoId = mapaGruposOld2New.get(grupo.id)
+          if (nuevoGrupoId) {
+            await tx.update(s.gruposItem).set({ padreId: mapaGruposOld2New.get(grupo.padreId) }).where(eq(s.gruposItem.id, nuevoGrupoId))
+          }
+        }
       }
     }
 
@@ -422,6 +505,10 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
     acabado: validado.acabado ?? null,
     espesor: validado.espesor ?? null,
     camposPersonalizados: sanitizarCamposPersonalizados(validado.camposPersonalizados),
+    // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+    jornadasDesarrolloTecnico: validado.jornadasDesarrolloTecnico ?? '0',
+    jornadasEnsamblajeTaller: validado.jornadasEnsamblajeTaller ?? '0',
+    jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
   }).onConflictDoNothing({ target: s.itemsVariante.id }).returning()
 
   if (!nuevo) {
@@ -435,7 +522,7 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
 
 export async function actualizarItemAction(
   id: string,
-  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados'>>
+  partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados' | 'jornadasDesarrolloTecnico' | 'jornadasEnsamblajeTaller' | 'jornadasInstalacionObra'>>
 ): Promise<ItemVariante | null> {
   const validado = validarEntrada(itemActualizarSchema, partial)
   return db.transaction(async (tx) => {
@@ -527,10 +614,15 @@ export async function crearGrupoItemAction(espacioVarianteId: string, nombre: st
 
 export async function actualizarGrupoItemAction(
   id: string,
-  cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden'>>
+  cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden' | 'jornadasDesarrolloTecnico' | 'jornadasEnsamblajeTaller' | 'jornadasInstalacionObra' | 'estado'>>
 ): Promise<GrupoItem | null> {
-  const [actualizado] = await db.update(s.gruposItem).set(cambios).where(eq(s.gruposItem.id, id)).returning()
-  return (actualizado as unknown as GrupoItem) ?? null
+  return db.transaction(async (tx) => {
+    const [actualizado] = await tx.update(s.gruposItem).set({
+      ...cambios,
+      updatedAt: new Date().toISOString(),
+    }).where(eq(s.gruposItem.id, id)).returning()
+    return (actualizado as unknown as GrupoItem) ?? null
+  })
 }
 
 /**
@@ -548,8 +640,125 @@ export async function eliminarGrupoItemAction(id: string): Promise<boolean> {
     if (subgrupo) return false
 
     await tx.update(s.itemsVariante).set({ grupoItemId: null, updatedAt: new Date().toISOString() }).where(eq(s.itemsVariante.grupoItemId, id))
+
+    // 2026-10-29: el contenedor descriptivo del grupo tiene FK sin cascade — hay que
+    // borrar sus artefactos y el contenedor antes del grupo, o el DELETE falla.
+    const contenedores = await tx.select({ id: s.contenedoresDescriptivos.id }).from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.grupoItemId, id))
+    if (contenedores.length > 0) {
+      const ids = contenedores.map((c) => c.id)
+      await tx.delete(s.contenedoresArtefactos).where(inArray(s.contenedoresArtefactos.contenedorDescriptivoId, ids))
+      await tx.delete(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.id, ids))
+    }
+
     const [eliminado] = await tx.delete(s.gruposItem).where(eq(s.gruposItem.id, id)).returning({ id: s.gruposItem.id })
     return Boolean(eliminado)
+  })
+}
+
+/** 2026-10-29: Convertir grupo a producto compuesto de catálogo.
+ * Crea un ProductoCatalogo con el grupo como "producto compuesto" que referencia sus ítems.
+ * Marca el grupo como "permanente" y vincula `productoCatalogoId`. */
+export async function convertirGrupoAProductoAction(
+  grupoId: string,
+  datosProducto: {
+    nombreProducto: string
+    descripcion?: string
+    imagenUrl?: string
+    galeriaImagenesUrl?: string[]
+    precioPublico: string
+    categoria?: string
+  }
+): Promise<ProductoCatalogo | null> {
+  return db.transaction(async (tx) => {
+    const [grupo] = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.id, grupoId))
+    if (!grupo) return null
+
+    // Crear producto catálogo como "compuesto"
+    const sku = `GRUPO-${grupoId.substring(0, 8).toUpperCase()}`
+    const [producto] = await tx.insert(s.productosCatalogo).values({
+      sku,
+      descripcion: datosProducto.nombreProducto,
+      tipo: 'compuesto', // Tipo especial para productos multi-item
+      imagenUrl: datosProducto.imagenUrl ?? null,
+      galeriaImagenesUrl: datosProducto.galeriaImagenesUrl ?? [],
+      precioPublico: datosProducto.precioPublico,
+      categoriaComercial: datosProducto.categoria ?? null,
+      publicadoWeb: false,
+      proyectoOrigenId: null,
+    }).returning()
+
+    if (!producto) return null
+
+    // Marcar grupo como permanente
+    await tx.update(s.gruposItem).set({
+      estado: 'permanente',
+      productoCatalogoId: producto.id,
+      updatedAt: new Date().toISOString(),
+    }).where(eq(s.gruposItem.id, grupoId))
+
+    return producto as unknown as ProductoCatalogo
+  })
+}
+
+/**
+ * Duplicar un grupo completo (copia nombre, jornadas, contenedor descriptivo e items).
+ * El grupo se inserta con orden = max(orden) + 1 y siempre en estado 'temporal'.
+ * Los items copiados reciben nuevos ids automáticos.
+ */
+export async function duplicarGrupoAction(grupoId: string): Promise<GrupoItem | null> {
+  return db.transaction(async (tx) => {
+    const [grupoOrigen] = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.id, grupoId))
+    if (!grupoOrigen) return null
+
+    // Obtener hermanos para calcular nuevo orden
+    const hermanos = await tx.select().from(s.gruposItem).where(
+      grupoOrigen.padreId
+        ? and(eq(s.gruposItem.espacioVarianteId, grupoOrigen.espacioVarianteId), eq(s.gruposItem.padreId, grupoOrigen.padreId))
+        : and(eq(s.gruposItem.espacioVarianteId, grupoOrigen.espacioVarianteId), isNull(s.gruposItem.padreId))
+    )
+
+    // Crear el grupo duplicado
+    const [grupoNuevo] = await tx.insert(s.gruposItem).values({
+      espacioVarianteId: grupoOrigen.espacioVarianteId,
+      nombre: `${grupoOrigen.nombre} (copia)`,
+      padreId: grupoOrigen.padreId,
+      orden: hermanos.length,
+      jornadasDesarrolloTecnico: grupoOrigen.jornadasDesarrolloTecnico,
+      jornadasEnsamblajeTaller: grupoOrigen.jornadasEnsamblajeTaller,
+      jornadasInstalacionObra: grupoOrigen.jornadasInstalacionObra,
+      estado: 'temporal',
+      productoCatalogoId: null,
+    }).returning()
+
+    if (!grupoNuevo) return null
+
+    // Copiar contenedor descriptivo si existe
+    const [contenedorOrigen] = await tx.select().from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.grupoItemId, grupoId))
+    if (contenedorOrigen) {
+      await tx.insert(s.contenedoresDescriptivos).values({
+        espacioVarianteId: null,
+        grupoItemId: grupoNuevo.id,
+        descripcion: contenedorOrigen.descripcion,
+        fotosEspacio: contenedorOrigen.fotosEspacio,
+        fotosDisenio: contenedorOrigen.fotosDisenio,
+        fotosReferencia: contenedorOrigen.fotosReferencia,
+      })
+    }
+
+    // Copiar items del grupo (id nuevo: el de la fila origen no se reutiliza)
+    const itemsOrigen = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.grupoItemId, grupoId))
+    if (itemsOrigen.length > 0) {
+      const copias: (typeof s.itemsVariante.$inferInsert)[] = itemsOrigen.map((item) => ({
+        ...item,
+        id: undefined,
+        grupoItemId: grupoNuevo.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }))
+      await tx.insert(s.itemsVariante).values(copias)
+    }
+
+    return grupoNuevo as unknown as GrupoItem
   })
 }
 
@@ -626,6 +835,26 @@ export async function eliminarEspacioAction(id: string): Promise<boolean> {
     await tx.delete(s.espacioVarianteAcabados).where(eq(s.espacioVarianteAcabados.espacioVarianteId, id))
     await tx.delete(s.espaciosArtefactos).where(eq(s.espaciosArtefactos.espacioVarianteId, id))
     await tx.delete(s.itemsVariante).where(eq(s.itemsVariante.varianteId, id))
+
+    // 2026-10-29 (Fase 2/3): grupos_item y contenedores_descriptivos tienen FK SIN cascade
+    // hacia espacio_variantes/grupos_item, así que sin esta limpieza el DELETE del espacio
+    // revienta con violación de FK (y deja el espacio imposible de borrar). Se borran primero
+    // los hijos de los contenedores (contenedores_artefactos) y luego los contenedores.
+    const grupos = await tx.select({ id: s.gruposItem.id }).from(s.gruposItem).where(eq(s.gruposItem.espacioVarianteId, id))
+    const idsGrupos = grupos.map((g) => g.id)
+    const contenedoresEspacio = await tx.select({ id: s.contenedoresDescriptivos.id }).from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.espacioVarianteId, id))
+    const contenedoresGrupo = idsGrupos.length > 0
+      ? await tx.select({ id: s.contenedoresDescriptivos.id }).from(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.grupoItemId, idsGrupos))
+      : []
+    const idsContenedores = [...contenedoresEspacio, ...contenedoresGrupo].map((c) => c.id)
+    if (idsContenedores.length > 0) {
+      await tx.delete(s.contenedoresArtefactos).where(inArray(s.contenedoresArtefactos.contenedorDescriptivoId, idsContenedores))
+      await tx.delete(s.contenedoresDescriptivos).where(inArray(s.contenedoresDescriptivos.id, idsContenedores))
+    }
+    if (idsGrupos.length > 0) {
+      await tx.delete(s.gruposItem).where(inArray(s.gruposItem.id, idsGrupos))
+    }
+
     const [eliminado] = await tx.delete(s.espacioVariantes).where(eq(s.espacioVariantes.id, id)).returning({ id: s.espacioVariantes.id })
     return Boolean(eliminado)
   })
@@ -821,17 +1050,20 @@ function filasHitos(contratoId: string, hitos: HitoPagoInput[]) {
 }
 
 export async function crearContratoAction(data: import('@/lib/data/contracts').DatosContratoNuevo): Promise<Contrato> {
-  return db.transaction(async (tx) => {
-    const [nuevo] = await tx
+  const nuevo = await db.transaction(async (tx) => {
+    const [creado] = await tx
       .insert(s.contratos)
       .values({ proyectoId: data.proyectoId, codigoContrato: data.codigoContrato, ...columnasContrato(data) })
       .returning()
     const hitos = data.hitos ?? []
     if (hitos.length > 0) {
-      await tx.insert(s.hitosPago).values(filasHitos(nuevo.id, hitos))
+      await tx.insert(s.hitosPago).values(filasHitos(creado.id, hitos))
     }
-    return nuevo as unknown as Contrato
+    return creado as unknown as Contrato
   })
+
+  await registrarConversionOfflineDeContrato(nuevo)
+  return nuevo
 }
 
 /**
@@ -848,13 +1080,13 @@ export async function actualizarContratoAction(
   id: string,
   data: import('@/lib/data/contracts').DatosContratoEdicion,
 ): Promise<Contrato | null> {
-  return db.transaction(async (tx) => {
-    const [actualizado] = await tx
+  const actualizado = await db.transaction(async (tx) => {
+    const [fila] = await tx
       .update(s.contratos)
       .set({ ...columnasContrato(data), updatedAt: new Date().toISOString() })
       .where(eq(s.contratos.id, id))
       .returning()
-    if (!actualizado) return null
+    if (!fila) return null
 
     if (data.hitos !== undefined) {
       // Reemplazo completo del plan de pagos: se borra el anterior y se reinserta el nuevo
@@ -864,8 +1096,12 @@ export async function actualizarContratoAction(
         await tx.insert(s.hitosPago).values(filasHitos(id, data.hitos))
       }
     }
-    return actualizado as unknown as Contrato
+    return fila as unknown as Contrato
   })
+
+  // t-188: la cola es idempotente, así que re-editar el contrato no duplica el evento.
+  if (actualizado) await registrarConversionOfflineDeContrato(actualizado)
+  return actualizado
 }
 
 // ── F-08-ext · Modo Presentación Comercial — Server Action (ZN-004) ──────
@@ -891,4 +1127,359 @@ export async function crearNotaReunionAction(data: {
     })
     .returning()
   return nota as unknown as import('@/lib/data/contracts').NotaReunion
+}
+
+// ── Fase 3.2 (2026-10-29) · Contenedores descriptivos con fotos ────────────
+/**
+ * Actualiza un contenedor descriptivo asociado a un grupo de items.
+ * Sanitiza URLs de fotos automáticamente (R2 whitelist).
+ */
+/** Lee el contenedor descriptivo de un grupo (descripción + fotos). Devuelve null si el
+ *  grupo todavía no tiene contenedor — el editor de descripción lo trata como texto vacío. */
+export async function obtenerContenedorDescriptivoGrupoAction(
+  grupoItemId: string
+): Promise<ContenedorDescriptivo | null> {
+  const [contenedor] = await db
+    .select()
+    .from(s.contenedoresDescriptivos)
+    .where(eq(s.contenedoresDescriptivos.grupoItemId, grupoItemId))
+    .limit(1)
+  return (contenedor as unknown as ContenedorDescriptivo) ?? null
+}
+
+export async function actualizarContenedorDescriptivoGrupoAction(
+  grupoItemId: string,
+  cambios: Partial<Pick<import('@/lib/data/contracts').ContenedorDescriptivo, 'descripcion' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
+): Promise<import('@/lib/data/contracts').ContenedorDescriptivo | null> {
+  return db.transaction(async (tx) => {
+    // Sanitizar URLs de fotos
+    const sanitized = {
+      descripcion: cambios.descripcion,
+      fotosEspacio: cambios.fotosEspacio ? (sanitizarUrlsFotos(cambios.fotosEspacio) ?? []) : undefined,
+      fotosDisenio: cambios.fotosDisenio ? (sanitizarUrlsFotos(cambios.fotosDisenio) ?? []) : undefined,
+      fotosReferencia: cambios.fotosReferencia ? (sanitizarUrlsFotos(cambios.fotosReferencia) ?? []) : undefined,
+    }
+
+    // Buscar contenedor existente
+    const [contenedor] = await tx
+      .select()
+      .from(s.contenedoresDescriptivos)
+      .where(eq(s.contenedoresDescriptivos.grupoItemId, grupoItemId))
+
+    if (!contenedor) {
+      // Crear contenedor nuevo si no existe
+      const [nuevo] = await tx
+        .insert(s.contenedoresDescriptivos)
+        .values({
+          grupoItemId,
+          espacioVarianteId: null,
+          ...Object.fromEntries(
+            Object.entries(sanitized).filter(([_, v]) => v !== undefined)
+          ),
+        })
+        .returning()
+      return nuevo as unknown as import('@/lib/data/contracts').ContenedorDescriptivo
+    }
+
+    // Actualizar existente
+    const [actualizado] = await tx
+      .update(s.contenedoresDescriptivos)
+      .set({
+        ...Object.fromEntries(
+          Object.entries(sanitized).filter(([_, v]) => v !== undefined)
+        ),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(s.contenedoresDescriptivos.id, contenedor.id))
+      .returning()
+
+    return actualizado as unknown as import('@/lib/data/contracts').ContenedorDescriptivo
+  })
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// Solución 1 — Patrón Prototipo: Server Actions de Plantillas de Espacio
+// ════════════════════════════════════════════════════════════════════════════════
+
+/** CRUD de plantillas de espacio (clase/blueprint del catálogo). */
+export async function crearPlantillaEspacioAction(data: Partial<PlantillaEspacio> & { nombre: string }): Promise<PlantillaEspacio> {
+  const validado = validarEntrada(plantillaCrearSchema, data)
+  const [nuevo] = await db.insert(s.plantillasEspacio).values({
+    id: validado.id,
+    nombre: validado.nombre,
+    tipoEspacio: validado.tipoEspacio,
+    descripcion: validado.descripcion ?? null,
+    icono: validado.icono ?? null,
+    orden: validado.orden ?? 0,
+    activa: validado.activa ?? true,
+    jornadasDesarrolloTecnico: validado.jornadasDesarrolloTecnico ?? '0',
+    jornadasEnsamblajeTaller: validado.jornadasEnsamblajeTaller ?? '0',
+    jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
+  }).returning()
+  return nuevo as unknown as PlantillaEspacio
+}
+
+export async function actualizarPlantillaEspacioAction(id: string, patch: Partial<PlantillaEspacio>): Promise<PlantillaEspacio | null> {
+  const validado = validarEntrada(plantillaActualizarSchema, patch)
+  const [actualizado] = await db.update(s.plantillasEspacio)
+    .set({ ...validado, updatedAt: new Date().toISOString() })
+    .where(eq(s.plantillasEspacio.id, id))
+    .returning()
+  return (actualizado as unknown as PlantillaEspacio) ?? null
+}
+
+export async function eliminarPlantillaEspacioAction(id: string): Promise<boolean> {
+  const eliminados = await db.delete(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, id)).returning({ id: s.plantillasEspacio.id })
+  return eliminados.length > 0
+}
+
+export async function listarPlantillasEspacioAction(): Promise<PlantillaEspacio[]> {
+  const rows = await db.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.activa, true))
+  return rows as unknown as PlantillaEspacio[]
+}
+
+export async function obtenerPlantillaEspacioAction(id: string): Promise<PlantillaEspacioHidratado | null> {
+  const [plantilla] = await db.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, id))
+  if (!plantilla) return null
+  const grupos = await db.select().from(s.plantillaGrupos).where(eq(s.plantillaGrupos.plantillaEspacioId, id))
+  const items = await db.select().from(s.plantillaItems).where(eq(s.plantillaItems.plantillaEspacioId, id))
+  const mapaGrupos = new Map<string, PlantillaGrupo & { subgrupos: PlantillaGrupo[]; items: PlantillaItem[] }>()
+  for (const g of grupos) {
+    mapaGrupos.set(g.id, { ...g, subgrupos: [], items: [] })
+  }
+  const raices: PlantillaGrupo[] = []
+  for (const g of grupos) {
+    const hydratado = mapaGrupos.get(g.id)!
+    if (g.padreId && mapaGrupos.has(g.padreId)) {
+      mapaGrupos.get(g.padreId)!.subgrupos.push(hydratado)
+    } else {
+      raices.push(hydratado)
+    }
+  }
+  for (const it of items) {
+    const g = it.plantillaGrupoId ? mapaGrupos.get(it.plantillaGrupoId) : null
+    if (g) g.items.push(it)
+  }
+  return {
+    ...plantilla,
+    grupos: raices as unknown as PlantillaGrupo[],
+  } as unknown as PlantillaEspacioHidratado
+}
+
+export async function crearPlantillaGrupoAction(plantillaEspacioId: string, nombre: string, padreId: string | null = null): Promise<PlantillaGrupo> {
+  return db.transaction(async (tx) => {
+    const hermanos = await tx.select().from(s.plantillaGrupos).where(
+      padreId
+        ? and(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId), eq(s.plantillaGrupos.padreId, padreId))
+        : and(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId), isNull(s.plantillaGrupos.padreId))
+    )
+    const [nuevo] = await tx.insert(s.plantillaGrupos).values({
+      plantillaEspacioId,
+      nombre,
+      padreId,
+      orden: hermanos.length,
+    }).returning()
+    return nuevo as unknown as PlantillaGrupo
+  })
+}
+
+export async function crearPlantillaItemAction(
+  plantillaEspacioId: string,
+  plantillaGrupoId: string | null,
+  data: { nombrePersonalizado: string; cantidad?: string; precioUnitario?: string; esReferencial?: boolean; fuenteReferencial?: 'electrodomestico' | 'obra_civil' | 'servicio_tercero' | 'otro' | null; grupoReferencial?: string | null; orden?: number }
+): Promise<PlantillaItem> {
+  return db.transaction(async (tx) => {
+    const validado = validarEntrada(plantillaItemCrearSchema, {
+      plantillaEspacioId,
+      plantillaGrupoId,
+      nombrePersonalizado: data.nombrePersonalizado,
+      cantidad: data.cantidad ?? '1',
+      precioUnitario: data.precioUnitario ?? '0',
+      esReferencial: data.esReferencial ?? false,
+      fuenteReferencial: data.fuenteReferencial ?? null,
+      grupoReferencial: data.grupoReferencial ?? null,
+      orden: data.orden,
+    })
+    const [nuevo] = await tx.insert(s.plantillaItems).values({
+      id: undefined,
+      plantillaEspacioId: validado.plantillaEspacioId,
+      plantillaGrupoId: validado.plantillaGrupoId ?? null,
+      nombrePersonalizado: validado.nombrePersonalizado,
+      cantidad: validado.cantidad,
+      precioUnitario: validado.precioUnitario,
+      esReferencial: validado.esReferencial,
+      fuenteReferencial: validado.fuenteReferencial,
+      grupoReferencial: validado.grupoReferencial,
+      orden: validado.orden ?? 0,
+    }).returning()
+    return nuevo as unknown as PlantillaItem
+  })
+}
+
+export async function materializarPlantillaAction(plantillaEspacioId: string, proyectoId: string): Promise<string> {
+  return db.transaction(async (tx) => {
+    const [plantilla] = await tx.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, plantillaEspacioId))
+    if (!plantilla) throw new Error(`Plantilla no encontrada: ${plantillaEspacioId}`)
+
+    const grupos = await tx.select().from(s.plantillaGrupos).where(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId))
+    const items = await tx.select().from(s.plantillaItems).where(eq(s.plantillaItems.plantillaEspacioId, plantillaEspacioId))
+
+    const hermanos = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.proyectoId, proyectoId))
+    const [nuevoEspacio] = await tx.insert(s.espacioVariantes).values({
+      proyectoId,
+      nombreEspacio: plantilla.nombre,
+      nombreVariante: 'Inicial',
+      tipoEspacio: plantilla.tipoEspacio,
+      activa: true,
+      visibleEnPropuestaPublica: true,
+      orden: hermanos.length,
+      jornadasDesarrolloTecnico: plantilla.jornadasDesarrolloTecnico,
+      jornadasEnsamblajeTaller: plantilla.jornadasEnsamblajeTaller,
+      jornadasInstalacionObra: plantilla.jornadasInstalacionObra,
+      plantillaEspacioId,
+    }).returning()
+    if (!nuevoEspacio) throw new Error('No se pudo crear el espacio de destino')
+
+    const espacioId = nuevoEspacio.id
+
+    const mapaGruposOld2New = new Map<string, string>()
+    const gruposOrdenados = [...grupos].sort((a, b) => {
+      const depth = (g: typeof grupos[0], visited = new Set<string>()): number => {
+        if (!g.padreId || visited.has(g.id)) return 0
+        visited.add(g.id)
+        const padre = grupos.find((x) => x.id === g.padreId)
+        return padre ? 1 + depth(padre, visited) : 0
+      }
+      return depth(a) - depth(b)
+    })
+    for (const grupo of gruposOrdenados) {
+      const nuevoPadreId = grupo.padreId ? mapaGruposOld2New.get(grupo.padreId) ?? null : null
+      const [grupoNuevo] = await tx.insert(s.gruposItem).values({
+        espacioVarianteId: espacioId,
+        nombre: grupo.nombre,
+        padreId: nuevoPadreId,
+        orden: grupo.orden,
+        jornadasDesarrolloTecnico: grupo.jornadasDesarrolloTecnico,
+        jornadasEnsamblajeTaller: grupo.jornadasEnsamblajeTaller,
+        jornadasInstalacionObra: grupo.jornadasInstalacionObra,
+        estado: 'temporal',
+        productoCatalogoId: null,
+      }).returning()
+      if (grupoNuevo) mapaGruposOld2New.set(grupo.id, grupoNuevo.id)
+    }
+
+    if (items.length > 0) {
+      await tx.insert(s.itemsVariante).values(items.map((it) => ({
+        id: undefined,
+        varianteId: espacioId,
+        catalogoId: null,
+        nombrePersonalizado: it.nombrePersonalizado,
+        cantidad: it.cantidad,
+        precioUnitario: it.precioUnitario,
+        totalLinea: null,
+        anulado: false,
+        esReferencial: it.esReferencial,
+        fuenteReferencial: it.fuenteReferencial,
+        grupoReferencial: it.grupoReferencial,
+        comentario: null,
+        grupoItemId: it.plantillaGrupoId ? mapaGruposOld2New.get(it.plantillaGrupoId) ?? null : null,
+        fotoUrl: null,
+        marca: null,
+        referencia: null,
+        color: null,
+        dimensiones: null,
+        acabado: null,
+        espesor: null,
+        camposPersonalizados: [],
+        jornadasDesarrolloTecnico: '0',
+        jornadasEnsamblajeTaller: '0',
+        jornadasInstalacionObra: '0',
+      })))
+    }
+
+    return espacioId
+  })
+}
+
+export async function guardarEspacioComoPlantillaAction(espacioId: string, nombre: string): Promise<PlantillaEspacio> {
+  const [origen] = await db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, espacioId))
+  if (!origen) throw new Error(`Espacio no encontrado: ${espacioId}`)
+
+  const [plantilla] = await db.insert(s.plantillasEspacio).values({
+    nombre: nombre,
+    tipoEspacio: origen.tipoEspacio ?? '',
+    orden: 0,
+    activa: true,
+    jornadasDesarrolloTecnico: origen.jornadasDesarrolloTecnico ?? '0',
+    jornadasEnsamblajeTaller: origen.jornadasEnsamblajeTaller ?? '0',
+    jornadasInstalacionObra: origen.jornadasInstalacionObra ?? '0',
+  }).returning()
+  if (!plantilla) throw new Error('No se pudo crear la plantilla')
+
+  return db.transaction(async (tx) => {
+    const grupos = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.espacioVarianteId, espacioId))
+    const items = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.varianteId, espacioId))
+
+    const mapaGruposOld2New = new Map<string, string>()
+    const gruposOrdenados = [...grupos].sort((a, b) => {
+      const depth = (g: typeof grupos[0], visited = new Set<string>()): number => {
+        if (!g.padreId || visited.has(g.id)) return 0
+        visited.add(g.id)
+        const padre = grupos.find((x) => x.id === g.padreId)
+        return padre ? 1 + depth(padre, visited) : 0
+      }
+      return depth(a) - depth(b)
+    })
+    for (const grupo of gruposOrdenados) {
+      const nuevoPadreId = grupo.padreId ? mapaGruposOld2New.get(grupo.padreId) ?? null : null
+      const [grupoNuevo] = await tx.insert(s.plantillaGrupos).values({
+        plantillaEspacioId: plantilla.id,
+        nombre: grupo.nombre,
+        padreId: nuevoPadreId,
+        orden: grupo.orden,
+        jornadasDesarrolloTecnico: grupo.jornadasDesarrolloTecnico,
+        jornadasEnsamblajeTaller: grupo.jornadasEnsamblajeTaller,
+        jornadasInstalacionObra: grupo.jornadasInstalacionObra,
+      }).returning()
+      if (grupoNuevo) mapaGruposOld2New.set(grupo.id, grupoNuevo.id)
+    }
+
+    if (items.length > 0) {
+      await tx.insert(s.plantillaItems).values(items.map((it) => ({
+        id: undefined,
+        plantillaEspacioId: plantilla.id,
+        plantillaGrupoId: it.grupoItemId ? mapaGruposOld2New.get(it.grupoItemId) ?? null : null,
+        nombrePersonalizado: it.nombrePersonalizado ?? '',
+        cantidad: it.cantidad,
+        precioUnitario: it.precioUnitario,
+        esReferencial: it.esReferencial,
+        fuenteReferencial: it.fuenteReferencial,
+        grupoReferencial: it.grupoReferencial,
+      })))
+    }
+
+    return plantilla as unknown as PlantillaEspacio
+  })
+}
+
+export async function eliminarPlantillaGrupoAction(id: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [grupo] = await tx.select().from(s.plantillaGrupos).where(eq(s.plantillaGrupos.id, id))
+    if (!grupo) return false
+
+    const [subgrupo] = await tx.select({ id: s.plantillaGrupos.id }).from(s.plantillaGrupos).where(eq(s.plantillaGrupos.padreId, id)).limit(1)
+    if (subgrupo) return false
+
+    await tx.update(s.plantillaItems).set({ plantillaGrupoId: null }).where(eq(s.plantillaItems.plantillaGrupoId, id))
+
+    const [eliminado] = await tx.delete(s.plantillaGrupos).where(eq(s.plantillaGrupos.id, id)).returning({ id: s.plantillaGrupos.id })
+    return Boolean(eliminado)
+  })
+}
+
+export async function resetearContenidoPlantillaAction(plantillaEspacioId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.delete(s.plantillaItems).where(eq(s.plantillaItems.plantillaEspacioId, plantillaEspacioId))
+    await tx.delete(s.plantillaGrupos).where(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId))
+  })
 }

@@ -1,0 +1,46 @@
+{
+  "id": "t-188",
+  "titulo": "Conversiones y atribución fusionadas en Clientes + cierre de fugas de atribución",
+  "intencion_negocio": "Javier (2026-10-26): ver en una tabla las conversiones de Google Ads y todo lo que captó el pixel, entender qué clic corresponde a qué persona, y dejar de perder clics que hoy no dejan lead ni atribución.",
+  "diagnostico": "leads y eventos_conversion_offline existen en el schema pero ninguna pantalla los lee. 7 CTA de WhatsApp abren wa.me directo sin lead/gclid. AsesoriaModal corta a 1.5 s y navega con mensaje genérico. Nombre opcional se persiste como 'Cliente Web'. gtag dispara la conversión sin user_data. eventos_conversion_offline no tiene escritor.",
+  "decisiones_supervisor": {
+    "ubicacion": "Fusionar con /erp/clientes (vista 'Conversiones'), no crear pantalla de Marketing nueva.",
+    "datos_google_ads": "No se inventan ni simulan métricas de Ads: costo/clics/impresiones requieren la API (t-110, SOLO_HUMANO).",
+    "cta_whatsapp": "Todos los CTA pasan por el formulario; el teléfono es la llave de enlace con la conversación.",
+    "schema": "Sin cambios de schema ni migraciones en esta tarea."
+  },
+  "zona": "components/veta/{asesoria-modal,asesoria-boton}.tsx + app/(publico)/** + lib/leads/** + app/actions/lead-actions.ts + lib/data/actions/{lecturas-clientes,leads,core}.ts + lib/data/queries/{clientes-*,conversiones,ClientesSnapBridge} + app/erp/(modern)/clientes/**",
+  "tipo": "producto_marketing_atribucion",
+  "riesgo": "medio",
+  "plan_ref": "arnes/planes/plan_t-188.md",
+  "criterios_aceptacion": [
+    "Los 7 CTA de WhatsApp abren el formulario; ninguno navega directo a wa.me.",
+    "Todo lead guardado lleva referencia VD-XXXXXX en el mensaje de WhatsApp y en la pantalla.",
+    "El formulario ya no pierde el nombre en el fallback ni corta a 1.5 s.",
+    "La conversión de gtag incluye user_data hasheado cuando hay teléfono/email.",
+    "/erp/clientes permite alternar Clientes/Conversiones con KPIs, filtros y tabla ordenable.",
+    "Se puede asociar un lead a un cliente existente o convertir el lead en cliente.",
+    "La cola de eventos_conversion_offline se escribe al firmar contrato y se ve en pantalla.",
+    "tsc 0 errores, eslint 0 errores, tests nuevos en verde, next build sin errores ajenos a conexión."
+  ],
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado (2026-10-26): alcance, ubicación fusionada, sin API de Ads y CTA por formulario confirmados por Javier",
+    "fecha": "2026-10-26"
+  },
+  "verificacion_ejecutor": {
+    "fecha": "2026-10-26",
+    "tsc": "0 errores en el proyecto. Único fallo: scripts/clear-bronce-nombre.ts (untracked, ajeno a t-188, 4 errores de tipos preexistentes).",
+    "eslint": "0 errores y 0 warnings en los archivos tocados (queda 1 warning preexistente: 'ne' sin uso en lib/data/actions/core.ts).",
+    "tests": "lib/leads/ref.test.ts OK; lib/data/queries/conversiones.test.ts OK; lib/data/snapshot-tables.test.ts OK; coverage.test.ts 4/4 (54/168 actions con hook).",
+    "build": "npx next build exit 0 con DATABASE_URL/SESSION_SECRET placeholder (el script ajeno se movió temporalmente y se restauró).",
+    "nota_manifest": "Se quitaron 2 entradas obsoletas del manifest (avanzarLeadEtapaAction, listarLeadsEnRiesgoAction) que no existen como acciones reales; rompían el gate desde t-183.",
+    "preexistente": "lib/data/mock-store.test.ts falla en f3-portafolio (línea ~1199, porSlug undefined) desde antes de t-188; no se tocó mock-store."
+  },
+  "estado": "completada_pendiente_qa",
+  "creada_en": "2026-10-26T00:00:00Z",
+  "commit": null
+}

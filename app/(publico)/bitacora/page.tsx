@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { SITE_URL } from '@/lib/seo/jsonld'
 import { socialMeta } from '@/lib/seo/social'
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton'
 
 // force-dynamic (bug real en Vercel, 2026-08-16, mismo motivo que app/sitemap.ts): sin esto,
 // Next prerenderiza esta página en build time con el DATA_IMPL del entorno de build — en Vercel
@@ -22,7 +23,6 @@ export const metadata = {
 
 export default async function BitacoraIndexPage() {
   const articulos = await listarBitacoraAction()
-  const WHATSAPP_URL = 'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20sus%20espacios%20de%20dise%C3%B1o%20a%20la%20medida.';
 
   return (
     <div className="bg-bg-paper min-h-screen">
@@ -38,14 +38,9 @@ export default async function BitacoraIndexPage() {
                 El cuaderno de obra de Veta Dorada: proyectos reales, materiales y decisiones de diseño. Historias de espacios que se fabricaron, no imágenes de catálogo.
               </p>
               <div className="flex flex-wrap items-center gap-4">
-                <a 
-                  href={WHATSAPP_URL} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center justify-center rounded-sm bg-charcoal-900 px-8 py-4 text-sm font-medium text-white transition-colors hover:bg-charcoal-800"
-                >
+                <AsesoriaBoton className="inline-flex items-center justify-center rounded-sm bg-charcoal-900 px-8 py-4 text-sm font-medium text-white transition-colors hover:bg-charcoal-800">
                   Agendar asesoría de diseño
-                </a>
+                </AsesoriaBoton>
                 
               </div>
             </div>

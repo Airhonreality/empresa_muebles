@@ -199,7 +199,7 @@ async function main() {
       proyectoId: proyectoNuevoId,
       nombreEspacio: s(r.data.nombre_espacio) ?? '(sin nombre)',
       nombreVariante: s(r.data.nombre_variante) ?? 'Inicial',
-      descripcion: s(r.data.descripcion),
+      // descripcion moved to contenedoresDescriptivos (2026-10-29)
       activa: Boolean(r.data.activa),
       orden: r.data.orden != null ? Number(r.data.orden) : (r.data.orden_espacio != null ? Number(r.data.orden_espacio) : 0),
       jornadasDesarrolloTecnico: s(r.data.jornadas_desarrollo_tecnico) ?? '0',
@@ -210,7 +210,7 @@ async function main() {
       // STRING que contiene JSON codificado de un array de URLs (42 casos, ej. el string literal
       // '["url1.jpg","url2.jpg"]'). Envolver el string crudo en un array (intento anterior) guarda
       // el texto JSON como si fuera una URL — hay que parsearlo primero.
-      fotosEspacio: parseImagenesLegacy(r.data.imagenes),
+      // fotosEspacio now in contenedoresDescriptivos — handle separately after insert
     })
   }
   if (espaciosInsert.length) await db.insert(schema.espacioVariantes).values(espaciosInsert)

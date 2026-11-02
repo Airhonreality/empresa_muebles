@@ -1,4 +1,5 @@
 import { obtenerBitacoraPorSlugAction } from '@/lib/data/actions/portafolio'
+import { AsesoriaBoton } from '@/components/veta/asesoria-boton'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -180,9 +181,9 @@ export default async function BitacoraArticlePage({ params }: RouteParams) {
           {/* B6 (auditoría 2026-08-15): apuntaba a /asesoria, ruta inexistente (F-12 sin
               construir, diferida en TAREAS_DIFERIDAS.md) — ambos CTA a WhatsApp mientras F-12
               no exista, mismo criterio que el resto del sitio. */}
-          <a href="https://wa.me/573025922101" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors">
+          <AsesoriaBoton className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors">
             Agendar asesoría de diseño
-          </a>
+          </AsesoriaBoton>
           
         </div>
       </div>

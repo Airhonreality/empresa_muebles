@@ -12,6 +12,9 @@ const TABLAS_CLIENTES = new Set<string>([
   'obligaciones_pendientes',
   'contratos',
   'hitos_pago',
+  // t-188: conversiones y su cola offline también alimentan /erp/clientes.
+  'leads',
+  'eventos_conversion_offline',
 ])
 
 export function ClientesSnapBridge() {

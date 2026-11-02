@@ -8,6 +8,7 @@ import {
   type EstadoCuentaCobro,
   type EstadoOrdenCompra,
   type MovimientoFinanciero,
+  type CuentaFinanciera,
 } from "@/lib/data";
 import { useFinanzasCompat } from "@/lib/data/queries/finanzas-compat";
 import { Badge } from "@/components/veta/badge";
@@ -79,6 +80,10 @@ export default function FinanzasPage() {
 
   const cuentas = store.cuentasFinancieras.listar();
   const movimientos = store.movimientosFinancieros.listar();
+  const ordenesCompra = store.ordenesCompra.listar();
+  const proveedores = store.proveedores.listar();
+  const proyectos = store.proyectos.listar();
+
   const saldoDisponible = store.cuentasFinancieras.disponible();
 
   const mes = mesActual();
@@ -110,7 +115,6 @@ export default function FinanzasPage() {
     0
   );
 
-  const ordenesCompra = store.ordenesCompra.listar();
   const ordenesEnCurso = ordenesCompra.filter(
     (o) => o.estado === "en_pago" || o.estado === "aprobada"
   );
@@ -119,8 +123,34 @@ export default function FinanzasPage() {
     0
   );
 
-  const proyectoMap = new Map(store.proyectos.listar().map((p) => [p.id, p]));
-  const proveedorMap = new Map(store.proveedores.listar().map((p) => [p.id, p]));
+  const proveedorMap = new Map<string, { nombre: string }>();
+  proveedores.forEach((p) => proveedorMap.set(p.id, p));
+
+  const proyectoMap = new Map<string, { nombreProyecto: string }>();
+  proyectos.forEach((p) => proyectoMap.set(p.id, p));
+
+  // --- Libro mayor filters ---
+  const [filtroTipo, setFiltroTipo] = useState<'todos' | 'debito' | 'credito'>('todos');
+  const [filtroCuenta, setFiltroCuenta] = useState<string>('todos');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'asentado' | 'anulado'>('todos');
+  const [filtroMes, setFiltroMes] = useState<string>('');
+  const [busqueda, setBusqueda] = useState<string>('');
+
+  let movimientosFiltrados = movimientos;
+  if (filtroTipo !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === filtroTipo);
+  if (filtroCuenta !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.cuentaOrigenId === filtroCuenta || m.cuentaDestinoId === filtroCuenta);
+  if (filtroEstado !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.estado === filtroEstado);
+  if (filtroMes) movimientosFiltrados = movimientosFiltrados.filter(m => m.fecha.startsWith(filtroMes));
+  if (busqueda.trim()) {
+    const q = busqueda.trim().toLowerCase();
+    movimientosFiltrados = movimientosFiltrados.filter(m => {
+      const proyecto = m.proyectoId ? proyectoMap.get(m.proyectoId) : null;
+      const proveedor = m.proveedorId ? proveedorMap.get(m.proveedorId) : null;
+      return m.descripcion.toLowerCase().includes(q)
+        || (proyecto?.nombreProyecto.toLowerCase().includes(q) ?? false)
+        || (proveedor?.nombre.toLowerCase().includes(q) ?? false);
+    });
+  }
 
   const handleAnular = async (mov: MovimientoFinanciero) => {
     if (!window.confirm(`¿Anular el movimiento "${mov.descripcion}"? Se revertirá el saldo y quedará en el libro como anulado.`)) return;
@@ -149,7 +179,7 @@ export default function FinanzasPage() {
       key: "descripcion",
       header: "Descripción",
       sortValue: (mov) => mov.descripcion,
-      render: (mov) => <span className="text-text-heading">{mov.descripcion}</span>,
+      render: (mov) => <span className="text-sm text-text-heading">{mov.descripcion}</span>,
     },
     {
       key: "proyecto",
@@ -174,11 +204,14 @@ export default function FinanzasPage() {
       key: "tipo",
       header: "Tipo",
       align: "center",
-      sortValue: (mov) => (mov.tipo === "debito" ? "Salida" : "Entrada"),
+      sortValue: (mov) => (mov.tipo === "debito" ? "Egreso" : "Ingreso"),
       render: (mov) => (
-        <Badge tone={mov.tipo === "debito" ? "danger" : "info"} dot>
-          {mov.tipo === "debito" ? "Salida" : "Entrada"}
-        </Badge>
+        <div className="flex flex-col items-center gap-1">
+          <Badge tone={mov.tipo === "debito" ? "danger" : "info"} dot>
+            {mov.tipo === "debito" ? "Egreso" : "Ingreso"}
+          </Badge>
+          {mov.estado === "anulado" && <Badge tone="neutral" dot>Anulado</Badge>}
+        </div>
       ),
     },
     {
@@ -187,10 +220,24 @@ export default function FinanzasPage() {
       align: "right",
       sortValue: (mov) => numDe(mov.monto),
       render: (mov) => (
-        <span className={`font-mono ${mov.tipo === "debito" ? "text-red-600" : "text-emerald-600"}`}>
+        <span className={`font-mono ${mov.tipo === "debito" ? "text-red-600" : "text-emerald-600"} ${mov.estado === "anulado" ? "line-through" : ""}`}>
           {mov.tipo === "debito" ? "−" : "+"}{formatCurrency(numDe(mov.monto), 0)}
         </span>
       ),
+    },
+    {
+      key: "cuenta",
+      header: "Cuenta",
+      align: "center",
+      sortValue: (mov) => {
+        const cuentaId = mov.cuentaDestinoId ?? mov.cuentaOrigenId;
+        return cuentas.find((c) => c.id === cuentaId)?.nombre ?? "";
+      },
+      render: (mov) => {
+        const cuentaId = mov.cuentaDestinoId ?? mov.cuentaOrigenId;
+        const cuenta = cuentas.find((c) => c.id === cuentaId);
+        return <span className="text-xs text-text-muted">{cuenta?.nombre ?? "—"}</span>;
+      },
     },
     {
       key: "comprobante",
@@ -213,7 +260,9 @@ export default function FinanzasPage() {
       key: "acciones",
       header: "Acciones",
       align: "center",
-      render: (mov) => (
+      render: (mov) => mov.estado === "anulado" ? (
+        <span className="text-xs text-text-muted">—</span>
+      ) : (
         <div className="flex items-center justify-center gap-1">
           <Button variant="ghost" size="sm" onClick={() => setMovimientoEditando(mov)}>
             Editar
@@ -314,28 +363,94 @@ export default function FinanzasPage() {
         </div>
       </section>
 
+      {/* --- Libro mayor --- */}
       <section className="mb-8 rounded-lg border border-border-subtle bg-bg-raised overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
           <div>
-            <h2 className="font-semibold text-text-heading">Libro resumen</h2>
+            <h2 className="font-semibold text-text-heading">Libro mayor</h2>
             <p className="text-xs text-text-muted">
-              Hacé clic en el encabezado de una columna para ordenar ascendente o descendente.
+              Filtra por búsqueda, mes, tipo, estado y cuenta. Hacé clic en el encabezado de una columna para ordenar.
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => router.push("/erp/finanzas/caja")}>
-            Ver libro completo
-          </Button>
         </div>
-        <DataTable
-          rows={movimientosActivos}
-          columns={columnasLibro}
-          rowKey={(mov) => mov.id}
-          initialSort={{ key: "fecha", direction: "desc" }}
-          density="comfortable"
-          maxHeightClassName="max-h-[28rem]"
-          caption="Libro resumen de movimientos financieros"
-          empty={<span>Sin movimientos registrados. Usa “Registrar entrada” o “Registrar salida”.</span>}
-        />
+
+        <div className="border-t border-border-subtle px-4 py-4 space-y-3">
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <label className="flex items-center gap-1">
+              <span className="text-xs text-text-muted">Buscar:</span>
+              <input
+                type="text"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Descripción, proyecto o proveedor"
+                className="min-h-[32px] w-56 rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+              />
+            </label>
+            <label className="flex items-center gap-1">
+              <span className="text-xs text-text-muted">Mes:</span>
+              <input
+                type="month"
+                value={filtroMes}
+                onChange={(e) => setFiltroMes(e.target.value)}
+                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+              />
+            </label>
+            <label className="flex items-center gap-1">
+              <span className="text-xs text-text-muted">Tipo:</span>
+              <select
+                value={filtroTipo}
+                onChange={(e) => setFiltroTipo(e.target.value as typeof filtroTipo)}
+                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+              >
+                <option value="todos">Todos</option>
+                <option value="debito">Egresos</option>
+                <option value="credito">Ingresos</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-1">
+              <span className="text-xs text-text-muted">Estado:</span>
+              <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value as typeof filtroEstado)}
+                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+              >
+                <option value="todos">Todos</option>
+                <option value="asentado">Asentados</option>
+                <option value="anulado">Anulados</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-1">
+              <span className="text-xs text-text-muted">Cuenta:</span>
+              <select
+                value={filtroCuenta}
+                onChange={(e) => setFiltroCuenta(e.target.value)}
+                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
+              >
+                <option value="todos">Todas</option>
+                {cuentas.map((c: CuentaFinanciera) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <p className="text-xs text-text-muted">
+            Hacé clic en el encabezado de una columna para ordenar ascendente o descendente.
+          </p>
+
+          <DataTable
+            rows={movimientosFiltrados}
+            columns={columnasLibro}
+            rowKey={(mov) => mov.id}
+            initialSort={{ key: "fecha", direction: "desc" }}
+            density="compact"
+            maxHeightClassName="max-h-[36rem]"
+            caption="Libro mayor de movimientos financieros"
+            rowClassName={(mov) => mov.estado === 'anulado' ? 'opacity-60' : ''}
+            empty="Sin movimientos registrados."
+          />
+        </div>
       </section>
 
       <section className="mb-8">
@@ -455,11 +570,6 @@ export default function FinanzasPage() {
         <h2 className="text-lg font-semibold text-text-heading mb-4">Accesos</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            {
-              titulo: "Caja",
-              descripcion: "Libro mayor, cola de pagos y bloqueos de caja.",
-              href: "/erp/finanzas/caja",
-            },
             {
               titulo: "Obligaciones",
               descripcion: "Cobros, pagos, comisiones y nómina pendientes.",

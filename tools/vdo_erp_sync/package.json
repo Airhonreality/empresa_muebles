@@ -1,0 +1,28 @@
+{
+  "name": "vdo-erp-sync",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Capa de sincronización tipada MCP entre VDO (FreeCAD) y el ERP productos_catalogo (Neon PostgreSQL).",
+  "main": "src/index.ts",
+  "scripts": {
+    "pull": "tsx src/sync_pull_catalog.ts",
+    "push:params": "tsx src/sync_push_cad_params.ts",
+    "create:product": "tsx src/sync_create_product.ts",
+    "typecheck": "tsc --noEmit",
+    "install:deps": "npm install postgres zod dotenv tsx typescript @types/node --save"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "postgres": "^3.4.9",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.23.1",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

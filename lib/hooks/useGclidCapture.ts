@@ -26,6 +26,32 @@ export type TrackingData = {
 };
 
 /**
+ * Lee la atribución ya persistida (sessionStorage primero, cookie de 90 días después).
+ * t-188: el formulario puede abrirse en una pestaña nueva, donde sessionStorage está vacío
+ * pero la cookie sigue viva — sin este fallback el lead se guardaba sin gclid/UTM.
+ */
+export function leerAtribucion(): TrackingData {
+  if (typeof window === "undefined") return {};
+
+  const data: TrackingData = {};
+  const cookies = document.cookie ? document.cookie.split("; ") : [];
+
+  TRACKING_KEYS.forEach((key) => {
+    const desdeSession = sessionStorage.getItem(`veta_${key}`);
+    const desdeCookie = cookies
+      .find((c) => c.startsWith(`veta_${key}=`))
+      ?.slice(`veta_${key}=`.length);
+
+    const valor = desdeSession || (desdeCookie ? decodeURIComponent(desdeCookie) : null);
+    if (valor) {
+      data[key as keyof TrackingData] = valor;
+    }
+  });
+
+  return data;
+}
+
+/**
  * Hook para capturar identificadores de Google Ads (gclid, wbraid, gbraid) y UTMs
  * desde los parámetros de la URL y almacenarlos en sessionStorage + cookie First-Party.
  */

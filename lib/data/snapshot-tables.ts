@@ -66,6 +66,7 @@ export const CAMPOS_SNAPSHOT = {
   documentos_proyecto: 'documentosProyecto',
   grupos_item: 'gruposItem',
   espacio_variante_acabados: 'espacioVarianteAcabados',
+  plantillas_espacio: 'plantillas',
 } as const satisfies Record<string, SnapshotArrayKey>
 
 export type SnapshotTable = keyof typeof CAMPOS_SNAPSHOT

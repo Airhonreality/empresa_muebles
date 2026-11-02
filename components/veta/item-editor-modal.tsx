@@ -118,8 +118,6 @@ export function ItemEditorModal({
     item.fuenteReferencial ?? null
   )
   const [grupoReferencial, setGrupoReferencial] = useState(item.grupoReferencial ?? '')
-  // Requerimiento Supervisor 2026-09-10: comentario libre por ítem, visible en la propuesta pública.
-  const [comentario, setComentario] = useState(item.comentario ?? '')
   // t-157 (2026-09-10): grupo/subgrupo al que pertenece este ítem dentro de su espacio.
   const [grupoItemId, setGrupoItemId] = useState(item.grupoItemId ?? '')
   // Reinicio modal 2026-09-18: foto propia del ítem (precedencia sobre imagen de catálogo).
@@ -134,6 +132,10 @@ export function ItemEditorModal({
   const [camposPersonalizados, setCamposPersonalizados] = useState<CampoPersonalizadoProducto[]>(
     item.camposPersonalizados ?? []
   )
+  // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+  const [jornadasDesarrolloTecnico, setJornadasDesarrolloTecnico] = useState(item.jornadasDesarrolloTecnico ?? '0')
+  const [jornadasEnsamblajeTaller, setJornadasEnsamblajeTaller] = useState(item.jornadasEnsamblajeTaller ?? '0')
+  const [jornadasInstalacionObra, setJornadasInstalacionObra] = useState(item.jornadasInstalacionObra ?? '0')
   const gruposPorId = new Map(grupos.map((g) => [g.id, g]))
 
   const fichaTecnicaValues: FichaTecnicaValues = { marca, referencia, color, dimensiones, acabado, espesor }
@@ -180,7 +182,6 @@ export function ItemEditorModal({
       esReferencial,
       fuenteReferencial: esReferencial ? (fuenteReferencial || null) : null,
       grupoReferencial: esReferencial ? (grupoReferencial.trim() || null) : null,
-      comentario: comentario.trim() || null,
       grupoItemId: grupoItemId || null,
       fotoUrl: fotoUrl.trim() || null,
       marca: marca.trim() || null,
@@ -192,6 +193,10 @@ export function ItemEditorModal({
       camposPersonalizados: camposPersonalizados
         .map((c) => ({ clave: c.clave.trim(), valor: c.valor.trim() }))
         .filter((c) => c.clave || c.valor),
+      // 🆕 Jornadas por item (Fase 3.2, 2026-10-29)
+      jornadasDesarrolloTecnico,
+      jornadasEnsamblajeTaller,
+      jornadasInstalacionObra,
     }).catch((err) => {
       mostrarError(err instanceof Error ? err.message : 'No se pudo guardar el ítem. Revisa tu conexión e intenta de nuevo.')
     })
@@ -412,19 +417,6 @@ export function ItemEditorModal({
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">
-                  Comentario (visible para el cliente en la propuesta)
-                </label>
-                <textarea
-                  value={comentario}
-                  onChange={(e) => setComentario(e.target.value)}
-                  rows={2}
-                  className="w-full resize-none rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 text-xs text-text-heading focus:border-brand focus:outline-none"
-                  placeholder="Ej: Incluye herrajes de cierre suave"
-                />
-              </div>
-
               {grupos.length > 0 && (
                 <div>
                   <label className="block text-xs font-medium text-text-muted mb-1">
@@ -494,6 +486,56 @@ export function ItemEditorModal({
                 </button>
               </div>
             ))}
+          </div>
+
+          {/* 🆕 Jornadas por item (Fase 3.2, 2026-10-29): horas de trabajo por fase */}
+          <div className="space-y-2 rounded-sm border border-border-subtle bg-bg-alt/30 px-3 py-2">
+            <span className="block text-xs font-semibold text-text-heading">Jornadas de trabajo</span>
+            <p className="text-[11px] text-text-muted mb-2">Horas estimadas de trabajo requeridas por este ítem:</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">
+                  Desarrollo Técnico
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={jornadasDesarrolloTecnico}
+                  onChange={(e) => setJornadasDesarrolloTecnico(e.target.value)}
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 font-mono text-xs text-text-heading focus:border-brand focus:outline-none"
+                  title="Horas de desarrollo técnico"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">
+                  Ensamblaje Taller
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={jornadasEnsamblajeTaller}
+                  onChange={(e) => setJornadasEnsamblajeTaller(e.target.value)}
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 font-mono text-xs text-text-heading focus:border-brand focus:outline-none"
+                  title="Horas de ensamblaje en taller"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">
+                  Instalación en Obra
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={jornadasInstalacionObra}
+                  onChange={(e) => setJornadasInstalacionObra(e.target.value)}
+                  className="w-full rounded-sm border border-border-subtle bg-bg-paper px-2.5 py-1.5 font-mono text-xs text-text-heading focus:border-brand focus:outline-none"
+                  title="Horas de instalación en obra"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Footer de Acciones */}

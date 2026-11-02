@@ -36,6 +36,13 @@ Contratos de los 5 roles (orquestador, iniciador, código, QA, supervisor). Se l
 ### 5. arnes/lineas/demanda/ — captación, conversión, marca del sitio público (sin código, sin tocar todavía en esta pasada de limpieza)
 No auditada en la purga del 2026-09-30 (el pedido explícito fue "olas 6 y 7"). Sigue siendo la línea de trabajo del sitio público/SEO/marketing; candidata a la misma revisión más adelante si se decide.
 
+### 6. arnes/lineas/respuesta_cliente/ — bandeja de WhatsApp + monitor IA de respuesta (abierta 2026-09-30)
+Nace del incidente de la Cocina Integral Chía (2026-09-30): el cliente mandó observaciones al contrato, nadie respondió en 24 h, y cerró con otro proveedor. **Reabre `comercial` + `compras` + `produccion`** por pedido explícito del Supervisor, así que su alcance excede el foco congelado de arriba.
+
+**Empieza por `INDEX.md` de la línea.** La Capa −1 ya está construida y verificada (`leads.etapa` transicionable + `eventos_conversion_offline` con escritura real); el resto del plan está bloqueado por decisiones que no son de código: token de Meta, proveedor de IA y scheduler.
+
+🔴 **Leé `riesgo_seed_allowlist_produccion.md` antes de correr cualquier seed:** la allowlist de "desarrollo" de `scripts/seed-dev.ts` incluía el host de producción (ya corregido).
+
 ### 7. arnes/lineas/auditoria_cascadas/ — modelo de cascadas e integridad referencial (abierta 2026-10-15)
 Nace del bug de producción al eliminar un espacio del cotizador (ver `hallazgo_2026-10-15_cascada_espacios.md`). Diagnostica el borrado/cascadas de **todo** el schema (119 FK, 115 `NO ACTION`, cascada manual en código), propone un método repetible y una red de seguridad (test de cobertura), aplicable más allá de este caso. **Bloqueada por la decisión A/B/C del Supervisor.** Empieza por `estado_auditoria_cascadas.md`.
 

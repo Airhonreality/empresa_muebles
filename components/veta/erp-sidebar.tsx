@@ -13,7 +13,6 @@ import {
   ShoppingCart,
   Hammer,
   BarChart3,
-  Wallet,
   ClipboardList,
   Receipt,
   Package,
@@ -73,7 +72,6 @@ const ERP_NAV_SECTIONS: NavSection[] = [
     title: 'Finanzas',
     items: [
       { href: '/erp/finanzas', label: 'Finanzas', icon: <BarChart3 className="h-4 w-4" /> },
-      { href: '/erp/finanzas/caja', label: 'Caja', icon: <Wallet className="h-4 w-4" /> },
       { href: '/erp/finanzas/obligaciones', label: 'Obligaciones', icon: <ClipboardList className="h-4 w-4" /> },
       { href: '/erp/finanzas/cuentas-cobro', label: 'Cuentas de cobro', icon: <Receipt className="h-4 w-4" /> },
     ],

@@ -37,7 +37,10 @@ export function MoneyInput({ value, onChange, label, error, className = "", ...p
     if (valor !== null) onChangeLocal(valor);
   };
 
-  const handleFocus = () => setFocused(true);
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setFocused(true);
+    e.target.select();
+  };
 
   const handleBlur = () => {
     setFocused(false);

@@ -21,6 +21,7 @@ import { useDataStore, useStoreChange } from '@/lib/data'
 import { cotizadorKeys } from './queryKeys'
 import { esCambioDelCotizador, hayMutacionPropiaReciente, type MutacionObservada } from './cotizador-reactividad'
 import type { CotizadorSnapshot } from './types'
+import { conservarCamposDescriptivos } from '../contenedores'
 import type { DataStore } from '../contracts'
 
 /** Mapea el slice del cotizador desde el DataStore hacia el CotizadorSnapshot de la
@@ -60,7 +61,15 @@ export function CotizadorSnapBridge({ proyectoId }: { proyectoId: string }) {
   // Seed del primer montaje: la cache parte del snapshot SSR del DataStore (cero flash).
   useEffect(() => {
     const seed = mapSnapshotCotizadorDesdeStore(store, proyectoId)
-    if (seed) qc.setQueryData<CotizadorSnapshot>(queryKey, seed)
+    if (!seed) return
+    // El DataStore no guarda contenedores descriptivos (la fuente es el snapshot SSR), y la
+    // fila de espacio_variantes viene "seca". Se conservan los ya proyectados para no borrar
+    // descripción/fotos de la pantalla en este seed.
+    const previo = qc.getQueryData<CotizadorSnapshot>(queryKey)
+    qc.setQueryData<CotizadorSnapshot>(
+      queryKey,
+      previo ? { ...seed, espacios: conservarCamposDescriptivos(seed.espacios, previo.espacios) } : seed,
+    )
   }, [qc, queryKey, store, proyectoId])
 
   // F1 (invalidación escopada por tabla): cada señal del bus global agenda UNA invalidación
