@@ -10,7 +10,7 @@
 // el orden con `sortValue`, expone `aria-sort` y se puede reutilizar en cualquier listado.
 // Las columnas sin `sortValue` quedan como encabezados no interactivos (acciones, enlaces).
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 export type SortDirection = 'asc' | 'desc'
 
@@ -37,6 +37,8 @@ export interface DataTableProps<T> {
   /** Ej. 'max-h-[28rem]' para que la tabla scrollee sin empujar el resto de la página. */
   maxHeightClassName?: string
   caption?: string
+  /** Muestra un degradado de "hay más a la derecha" cuando hay overflow horizontal. Opt-in. */
+  scrollHint?: boolean
 }
 
 function comparar(a: string | number | null | undefined, b: string | number | null | undefined): number {
@@ -63,8 +65,32 @@ export function DataTable<T>({
   density = 'comfortable',
   maxHeightClassName = '',
   caption,
+  scrollHint = false,
 }: DataTableProps<T>) {
   const [sort, setSort] = useState<{ key: string; direction: SortDirection } | null>(initialSort ?? null)
+  const tableRef = useRef<HTMLDivElement>(null)
+  const [showGradient, setShowGradient] = useState(false)
+
+  const checkOverflow = useCallback(() => {
+    const el = tableRef.current
+    if (!el) return
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1
+    const hasOverflow = el.scrollWidth > el.clientWidth
+    setShowGradient(hasOverflow && !atEnd)
+  }, [])
+
+  useEffect(() => {
+    const el = tableRef.current
+    if (!el) return
+    checkOverflow()
+    el.addEventListener('scroll', checkOverflow, { passive: true })
+    const ro = new ResizeObserver(checkOverflow)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', checkOverflow)
+      ro.disconnect()
+    }
+  }, [checkOverflow])
 
   const filasOrdenadas = useMemo(() => {
     if (!sort) return rows
@@ -87,7 +113,14 @@ export function DataTable<T>({
   const padding = density === 'compact' ? 'px-2 py-2' : density === 'spacious' ? 'px-4 py-3' : 'px-3 py-2'
 
   return (
-    <div className={`overflow-auto ${maxHeightClassName}`}>
+    <div
+      ref={tableRef}
+      className={`relative overflow-auto ${maxHeightClassName}`}
+      tabIndex={0}
+      role="region"
+      aria-label={caption ?? undefined}
+      onScroll={checkOverflow}
+    >
       <table className="w-full border-collapse text-sm">
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
@@ -152,6 +185,9 @@ export function DataTable<T>({
           )}
         </tbody>
       </table>
+      {scrollHint && showGradient && (
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg-raised to-transparent" />
+      )}
     </div>
   )
 }

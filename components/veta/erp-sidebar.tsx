@@ -5,34 +5,8 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { LinkButton, Button } from '@/components/veta/button'
 import { logoutEmpleadoAction } from '@/lib/auth/actions'
-import {
-  Briefcase,
-  Contact,
-  Calculator,
-  Wrench,
-  ShoppingCart,
-  Hammer,
-  BarChart3,
-  ClipboardList,
-  Receipt,
-  Package,
-  Globe,
-  Images,
-  Users,
-  Shield,
-  MessageSquare,
-  Layers,
-  Palette,
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
-
-interface NavItem {
-  href: string
-  label: string
-  icon: React.ReactNode
-}
+import { ERP_NAV_SECTIONS } from '@/components/veta/erp-nav'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 // Mismas etiquetas que app/erp/equipo/page.tsx (ROLES_ETIQUETAS) -- acá el footer mostraba
 // usuario.rol crudo ("admin") en vez de la etiqueta humana ("Administrador") que el resto del
@@ -46,56 +20,6 @@ const ROLES_ETIQUETAS: Record<string, string> = {
   finanzas: 'Finanzas',
   supervisora_qa: 'Supervisora QA',
 }
-
-interface NavSection {
-  title?: string
-  items: NavItem[]
-}
-
-const ERP_NAV_SECTIONS: NavSection[] = [
-  {
-    items: [
-      { href: '/erp/comercial', label: 'Comercial', icon: <Briefcase className="h-4 w-4" /> },
-      { href: '/erp/clientes', label: 'Clientes', icon: <Contact className="h-4 w-4" /> },
-    ],
-  },
-  {
-    title: 'Producción',
-    items: [
-      { href: '/erp/cotizador', label: 'Cotizador', icon: <Calculator className="h-4 w-4" /> },
-      { href: '/erp/taller', label: 'Taller', icon: <Wrench className="h-4 w-4" /> },
-      { href: '/erp/compras', label: 'Compras', icon: <ShoppingCart className="h-4 w-4" /> },
-      { href: '/erp/herramientas', label: 'Herramientas', icon: <Hammer className="h-4 w-4" /> },
-    ],
-  },
-  {
-    title: 'Finanzas',
-    items: [
-      { href: '/erp/finanzas', label: 'Finanzas', icon: <BarChart3 className="h-4 w-4" /> },
-      { href: '/erp/finanzas/obligaciones', label: 'Obligaciones', icon: <ClipboardList className="h-4 w-4" /> },
-      { href: '/erp/finanzas/cuentas-cobro', label: 'Cuentas de cobro', icon: <Receipt className="h-4 w-4" /> },
-    ],
-  },
-  {
-    title: 'Catálogo y tienda',
-    items: [
-      { href: '/erp/catalogo', label: 'Catálogo', icon: <Package className="h-4 w-4" /> },
-      { href: '/erp/catalogo/acabados', label: 'Acabados', icon: <Palette className="h-4 w-4" /> },
-      { href: '/erp/proveedores', label: 'Proveedores', icon: <Building2 className="h-4 w-4" /> },
-      { href: '/erp/pedidos-web', label: 'Pedidos web', icon: <Globe className="h-4 w-4" /> },
-      { href: '/erp/portafolio', label: 'Portafolio', icon: <Images className="h-4 w-4" /> },
-      { href: '/erp/portafolio/testimonios', label: 'Testimonios', icon: <MessageSquare className="h-4 w-4" /> },
-      { href: '/erp/catalogos/espacios-arquitectonicos', label: 'Espacios arquitectónicos', icon: <Layers className="h-4 w-4" /> },
-    ],
-  },
-  {
-    title: 'Equipo',
-    items: [
-      { href: '/erp/equipo', label: 'Equipo', icon: <Users className="h-4 w-4" /> },
-      { href: '/erp/garantia', label: 'Garantía', icon: <Shield className="h-4 w-4" /> },
-    ],
-  },
-]
 
 export function ErpSidebar({ usuario }: { usuario: { nombre: string; rol: string } | null }) {
   const pathname = usePathname()

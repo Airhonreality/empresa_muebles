@@ -2,20 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MoreHorizontal } from "lucide-react";
 import {
   type OrigenObligacion,
   type EstadoObligacion,
   type EstadoCuentaCobro,
   type EstadoOrdenCompra,
   type MovimientoFinanciero,
-  type CuentaFinanciera,
 } from "@/lib/data";
 import { useFinanzasCompat } from "@/lib/data/queries/finanzas-compat";
-import { Badge } from "@/components/veta/badge";
 import { Button } from "@/components/veta/button";
 import { StatCard } from "@/components/veta/stat-card";
 import { CuentaFinancieraModal } from "@/components/veta/cuenta-financiera-modal";
 import { DataTable, type DataTableColumn } from "@/components/veta/data-table";
+import { FiltrosLibro } from "@/components/veta/finanzas/filtros-libro";
+import { MovimientoLibroCard } from "@/components/veta/finanzas/movimiento-libro-card";
+import { SkeletonKPI, SkeletonRow } from "@/components/veta/skeleton";
+import { BarraFiltros } from "@/components/veta/filtros";
 import { useToast } from "@/components/veta/toast-provider";
 import {
   MovimientoFinancieroModal,
@@ -72,11 +75,16 @@ function mesActual(): string {
 
 export default function FinanzasPage() {
   const router = useRouter();
-  const { store } = useFinanzasCompat();
+  const { store, cargando } = useFinanzasCompat();
   const { mostrarError, mostrarInfo } = useToast();
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoManual | null>(null);
   const [movimientoEditando, setMovimientoEditando] = useState<MovimientoFinanciero | null>(null);
   const [mostrarCuenta, setMostrarCuenta] = useState(false);
+  const [masAccionesAbierto, setMasAccionesAbierto] = useState(false);
+  const [openCuentas, setOpenCuentas] = useState(false);
+  const [openObligaciones, setOpenObligaciones] = useState(false);
+  const [openCuentasCobro, setOpenCuentasCobro] = useState(false);
+  const [openOrdenes, setOpenOrdenes] = useState(false);
 
   const cuentas = store.cuentasFinancieras.listar();
   const movimientos = store.movimientosFinancieros.listar();
@@ -135,6 +143,7 @@ export default function FinanzasPage() {
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'asentado' | 'anulado'>('todos');
   const [filtroMes, setFiltroMes] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
   let movimientosFiltrados = movimientos;
   if (filtroTipo !== 'todos') movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === filtroTipo);
@@ -152,6 +161,21 @@ export default function FinanzasPage() {
     });
   }
 
+  const filtrosActivos =
+    (filtroTipo !== 'todos' ? 1 : 0) +
+    (filtroCuenta !== 'todos' ? 1 : 0) +
+    (filtroEstado !== 'todos' ? 1 : 0) +
+    (filtroMes ? 1 : 0) +
+    (busqueda.trim() ? 1 : 0);
+
+  const limpiarFiltros = () => {
+    setFiltroTipo('todos');
+    setFiltroCuenta('todos');
+    setFiltroEstado('todos');
+    setFiltroMes('');
+    setBusqueda('');
+  };
+
   const handleAnular = async (mov: MovimientoFinanciero) => {
     if (!window.confirm(`¿Anular el movimiento "${mov.descripcion}"? Se revertirá el saldo y quedará en el libro como anulado.`)) return;
     try {
@@ -164,6 +188,23 @@ export default function FinanzasPage() {
 
   const columnasLibro: DataTableColumn<MovimientoFinanciero>[] = [
     {
+      key: "descripcion",
+      header: "Descripción",
+      sortValue: (mov) => mov.descripcion,
+      render: (mov) => <span className="text-sm text-text-heading max-w-xs truncate">{mov.descripcion}</span>,
+    },
+    {
+      key: "monto",
+      header: "Monto",
+      align: "right",
+      sortValue: (mov) => numDe(mov.monto),
+      render: (mov) => (
+        <span className={`font-mono ${mov.tipo === "debito" ? "text-red-600" : "text-emerald-600"} ${mov.estado === "anulado" ? "line-through" : ""}`}>
+          {mov.tipo === "debito" ? "−" : "+"}{formatCurrency(numDe(mov.monto), 0)}
+        </span>
+      ),
+    },
+    {
       key: "fecha",
       header: "Fecha mov.",
       sortValue: (mov) => mov.fecha,
@@ -173,13 +214,9 @@ export default function FinanzasPage() {
       key: "registro",
       header: "Registro",
       sortValue: (mov) => mov.createdAt,
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
       render: (mov) => <span className="font-mono text-xs text-text-muted">{formatDate(mov.createdAt)}</span>,
-    },
-    {
-      key: "descripcion",
-      header: "Descripción",
-      sortValue: (mov) => mov.descripcion,
-      render: (mov) => <span className="text-sm text-text-heading">{mov.descripcion}</span>,
     },
     {
       key: "proyecto",
@@ -201,31 +238,6 @@ export default function FinanzasPage() {
       },
     },
     {
-      key: "tipo",
-      header: "Tipo",
-      align: "center",
-      sortValue: (mov) => (mov.tipo === "debito" ? "Egreso" : "Ingreso"),
-      render: (mov) => (
-        <div className="flex flex-col items-center gap-1">
-          <Badge tone={mov.tipo === "debito" ? "danger" : "info"} dot>
-            {mov.tipo === "debito" ? "Egreso" : "Ingreso"}
-          </Badge>
-          {mov.estado === "anulado" && <Badge tone="neutral" dot>Anulado</Badge>}
-        </div>
-      ),
-    },
-    {
-      key: "monto",
-      header: "Monto",
-      align: "right",
-      sortValue: (mov) => numDe(mov.monto),
-      render: (mov) => (
-        <span className={`font-mono ${mov.tipo === "debito" ? "text-red-600" : "text-emerald-600"} ${mov.estado === "anulado" ? "line-through" : ""}`}>
-          {mov.tipo === "debito" ? "−" : "+"}{formatCurrency(numDe(mov.monto), 0)}
-        </span>
-      ),
-    },
-    {
       key: "cuenta",
       header: "Cuenta",
       align: "center",
@@ -243,6 +255,8 @@ export default function FinanzasPage() {
       key: "comprobante",
       header: "Comprobante",
       align: "center",
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
       render: (mov) => mov.comprobanteUrl ? (
         <a
           href={mov.comprobanteUrl}
@@ -276,30 +290,94 @@ export default function FinanzasPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-6">
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-text-heading">
-            Módulo de Finanzas
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            Libro de entradas y salidas, caja y resumen de situación financiera
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="md" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("entrada"); }}>
-            Registrar entrada
-          </Button>
-          <Button variant="primary" size="md" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("salida"); }}>
-            Registrar salida
-          </Button>
-          <Button variant="outline" size="md" onClick={() => setMostrarCuenta(true)}>
-            Nueva cuenta
-          </Button>
-        </div>
-      </header>
+    <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
+      {/* Encabezado sticky en móvil, estático en desktop */}
+      <div className="sticky top-0 z-10 bg-surface-100/95 backdrop-blur border-b border-border-subtle -mx-4 px-4 sm:static sm:m-0 sm:border-0 sm:bg-transparent">
+        <header className="relative mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-text-heading">
+              Módulo de Finanzas
+            </h1>
+            <p className="text-sm text-text-muted mt-1">
+              Libro de entradas y salidas, caja y resumen de situación financiera
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {/* Desktop (≥640px): los 3 botones como hoy */}
+            <div className="hidden sm:flex flex-wrap gap-2">
+              <Button variant="secondary" size="md" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("entrada"); }}>
+                Registrar entrada
+              </Button>
+              <Button variant="primary" size="md" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("salida"); }}>
+                Registrar salida
+              </Button>
+              <Button variant="outline" size="md" onClick={() => setMostrarCuenta(true)}>
+                Nueva cuenta
+              </Button>
+            </div>
+            {/* Móvil: primaria + icono "Más acciones" con popover */}
+            <div className="relative flex sm:hidden gap-2 w-full">
+              <Button variant="primary" size="md" className="flex-1" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("salida"); setMasAccionesAbierto(false); }}>
+                Registrar salida
+              </Button>
+              <Button
+                variant="icon"
+                size="md"
+                onClick={() => setMasAccionesAbierto((v) => !v)}
+                aria-label="Más acciones"
+                aria-expanded={masAccionesAbierto}
+              >
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+              {masAccionesAbierto && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 flex flex-col gap-1 p-1 rounded-md border border-border-subtle bg-bg-raised shadow-lg">
+                  <Button variant="primary" size="md" className="w-full" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("entrada"); setMasAccionesAbierto(false); }}>
+                    Registrar entrada
+                  </Button>
+                  <Button variant="outline" size="md" className="w-full" onClick={() => { setMostrarCuenta(true); setMasAccionesAbierto(false); }}>
+                    Nueva cuenta
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+      </div>
 
-      {cuentas.length === 0 && (
+      {cargando && (
+        <>
+          <p role="status" className="sr-only">Cargando finanzas…</p>
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold text-text-heading mb-4">Resumen del mes</h2>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => <SkeletonKPI key={i} />)}
+            </div>
+          </section>
+          <section className="mb-8 rounded-lg border border-border-subtle bg-bg-raised overflow-hidden">
+            <div className="border-t border-border-subtle px-4 py-4 space-y-3">
+              <div className="md:hidden space-y-2">
+                {[1, 2, 3, 4, 5, 6].map((i) => <SkeletonRow key={i} />)}
+              </div>
+              <div className="hidden md:block">
+                <table className="w-full border-collapse text-sm">
+                  <tbody>
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <tr key={i}>
+                        <td colSpan={8} className="p-3">
+                          <SkeletonRow />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+      {!cargando && (
+        <>
+          {cuentas.length === 0 && (
         <section className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
           <div>
             <p className="text-sm font-medium text-amber-900">Todavía no hay una caja.</p>
@@ -315,16 +393,13 @@ export default function FinanzasPage() {
 
       <section className="mb-8">
         <h2 className="text-lg font-semibold text-text-heading mb-4">Resumen del mes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <StatCard
-              label="Saldo disponible"
-              value={formatCurrency(saldoDisponible, 0)}
-              tone="brand"
-            />
-            <details className="mt-2 text-sm cursor-pointer">
-              <summary className="text-text-muted hover:text-text-heading transition-colors">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="col-span-2 sm:col-span-1">
+            <StatCard className="p-3 sm:p-4" label="Saldo disponible" value={formatCurrency(saldoDisponible, 0)} tone="brand" />
+            <details open={openCuentas} onToggle={(e) => setOpenCuentas((e.target as HTMLDetailsElement).open)} className="mt-2 text-sm cursor-pointer">
+              <summary className="group flex min-h-[44px] items-center gap-1 py-1 text-sm text-text-muted hover:text-text-heading">
                 Ver cuentas ({cuentas.length})
+                <span className={`ml-auto text-xs transition-transform duration-200 ${openCuentas ? 'rotate-180' : ''}`}>▾</span>
               </summary>
               <div className="mt-2 p-3 bg-bg-raised rounded border border-border-subtle">
                 {cuentas.length === 0 ? (
@@ -345,21 +420,9 @@ export default function FinanzasPage() {
             </details>
           </div>
 
-          <StatCard
-            label="Entradas del mes"
-            value={formatCurrency(entradasMes, 0)}
-            tone="brand"
-          />
-          <StatCard
-            label="Salidas del mes"
-            value={formatCurrency(salidasMes, 0)}
-            tone={salidasMes > 0 ? "danger" : "neutral"}
-          />
-          <StatCard
-            label="Resultado del mes"
-            value={formatCurrency(resultadoMes, 0)}
-            tone={resultadoMes < 0 ? "danger" : "brand"}
-          />
+          <StatCard className="p-3 sm:p-4" label="Entradas del mes" value={formatCurrency(entradasMes, 0)} tone="brand" />
+          <StatCard className="p-3 sm:p-4" label="Salidas del mes" value={formatCurrency(salidasMes, 0)} tone={salidasMes > 0 ? "danger" : "neutral"} />
+          <StatCard className="p-3 sm:p-4" label="Resultado del mes" value={formatCurrency(resultadoMes, 0)} tone={resultadoMes < 0 ? "danger" : "brand"} />
         </div>
       </section>
 
@@ -375,81 +438,91 @@ export default function FinanzasPage() {
         </div>
 
         <div className="border-t border-border-subtle px-4 py-4 space-y-3">
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <label className="flex items-center gap-1">
-              <span className="text-xs text-text-muted">Buscar:</span>
-              <input
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Descripción, proyecto o proveedor"
-                className="min-h-[32px] w-56 rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              />
-            </label>
-            <label className="flex items-center gap-1">
-              <span className="text-xs text-text-muted">Mes:</span>
-              <input
-                type="month"
-                value={filtroMes}
-                onChange={(e) => setFiltroMes(e.target.value)}
-                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              />
-            </label>
-            <label className="flex items-center gap-1">
-              <span className="text-xs text-text-muted">Tipo:</span>
-              <select
-                value={filtroTipo}
-                onChange={(e) => setFiltroTipo(e.target.value as typeof filtroTipo)}
-                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              >
-                <option value="todos">Todos</option>
-                <option value="debito">Egresos</option>
-                <option value="credito">Ingresos</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-1">
-              <span className="text-xs text-text-muted">Estado:</span>
-              <select
-                value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value as typeof filtroEstado)}
-                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              >
-                <option value="todos">Todos</option>
-                <option value="asentado">Asentados</option>
-                <option value="anulado">Anulados</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-1">
-              <span className="text-xs text-text-muted">Cuenta:</span>
-              <select
-                value={filtroCuenta}
-                onChange={(e) => setFiltroCuenta(e.target.value)}
-                className="rounded border border-border-subtle bg-bg-paper px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-              >
-                <option value="todos">Todas</option>
-                {cuentas.map((c: CuentaFinanciera) => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                ))}
-              </select>
-            </label>
+          {/* Encabezado de filtros colapsable en móvil */}
+          <div className="flex items-center justify-between md:hidden">
+            <h3 className="font-semibold text-text-heading">Filtros</h3>
+            <button
+              type="button"
+              onClick={() => setFiltrosAbiertos((v) => !v)}
+              aria-expanded={filtrosAbiertos}
+              aria-controls="filtros-libro-panel"
+              className="text-sm text-text-heading flex items-center gap-1"
+            >
+              Filtros ({filtrosActivos}) {filtrosAbiertos ? '▲' : '▼'}
+            </button>
           </div>
+
+          {/* Panel de filtros */}
+          <div
+            id="filtros-libro-panel"
+            className={`${filtrosAbiertos ? 'block' : 'hidden'} md:block px-4 py-4 space-y-3`}
+          >
+            <FiltrosLibro
+              cuentas={cuentas}
+              busqueda={busqueda}
+              setBusqueda={setBusqueda}
+              filtroMes={filtroMes}
+              setFiltroMes={setFiltroMes}
+              filtroTipo={filtroTipo}
+              setFiltroTipo={setFiltroTipo}
+              filtroEstado={filtroEstado}
+              setFiltroEstado={setFiltroEstado}
+              filtroCuenta={filtroCuenta}
+              setFiltroCuenta={setFiltroCuenta}
+            />
+          </div>
+
+          {/* Barra de filtros activos + limpiar */}
+          {filtrosActivos > 0 && (
+            <BarraFiltros
+              etiqueta="Filtros del libro mayor"
+              activos={filtrosActivos}
+              onLimpiar={limpiarFiltros}
+            >
+              <span className="text-sm text-text-muted">
+                Mostrando {movimientosFiltrados.length} de {movimientos.length} movimientos
+              </span>
+            </BarraFiltros>
+          )}
 
           <p className="text-xs text-text-muted">
             Hacé clic en el encabezado de una columna para ordenar ascendente o descendente.
           </p>
 
-          <DataTable
-            rows={movimientosFiltrados}
-            columns={columnasLibro}
-            rowKey={(mov) => mov.id}
-            initialSort={{ key: "fecha", direction: "desc" }}
-            density="compact"
-            maxHeightClassName="max-h-[36rem]"
-            caption="Libro mayor de movimientos financieros"
-            rowClassName={(mov) => mov.estado === 'anulado' ? 'opacity-60' : ''}
-            empty="Sin movimientos registrados."
-          />
+          {/* Vista tarjetas en móvil (<768px) */}
+          <div className="md:hidden space-y-2">
+            {movimientosFiltrados.length === 0 ? (
+              <p className="text-sm text-text-muted text-center">Sin movimientos registrados.</p>
+            ) : (
+              movimientosFiltrados.map((mov) => (
+                <MovimientoLibroCard
+                  key={mov.id}
+                  mov={mov}
+                  cuentas={cuentas}
+                  proyectoMap={proyectoMap}
+                  proveedorMap={proveedorMap}
+                  onEditar={setMovimientoEditando}
+                  onAnular={handleAnular}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Tabla en desktop/tablet (≥768px) */}
+          <div className="hidden md:block">
+            <DataTable
+              rows={movimientosFiltrados}
+              columns={columnasLibro}
+              rowKey={(mov) => mov.id}
+              initialSort={{ key: "fecha", direction: "desc" }}
+              density="compact"
+              maxHeightClassName="max-h-[36rem]"
+              caption="Libro mayor de movimientos financieros"
+              rowClassName={(mov) => mov.estado === 'anulado' ? 'opacity-60' : ''}
+              empty="Sin movimientos registrados."
+              scrollHint
+            />
+          </div>
         </div>
       </section>
 
@@ -462,9 +535,10 @@ export default function FinanzasPage() {
               value={formatCurrency(totalObligacionesPendientes, 0)}
               tone={totalObligacionesPendientes > 0 ? "danger" : "neutral"}
             />
-            <details className="mt-2 text-sm cursor-pointer">
-              <summary className="text-text-muted hover:text-text-heading transition-colors">
+            <details open={openObligaciones} onToggle={(e) => setOpenObligaciones((e.target as HTMLDetailsElement).open)} className="mt-2 text-sm cursor-pointer">
+              <summary className="group flex min-h-[44px] items-center gap-1 py-1 text-sm text-text-muted hover:text-text-heading">
                 Ver detalle ({obligacionesActivas.length})
+                <span className={`ml-auto text-xs transition-transform duration-200 ${openObligaciones ? 'rotate-180' : ''}`}>▾</span>
               </summary>
               <div className="mt-2 p-3 bg-bg-raised rounded border border-border-subtle max-h-64 overflow-y-auto">
                 {obligacionesActivas.length === 0 ? (
@@ -498,9 +572,10 @@ export default function FinanzasPage() {
               value={formatCurrency(totalCuentasPendientes, 0)}
               tone={totalCuentasPendientes > 0 ? "danger" : "neutral"}
             />
-            <details className="mt-2 text-sm cursor-pointer">
-              <summary className="text-text-muted hover:text-text-heading transition-colors">
+            <details open={openCuentasCobro} onToggle={(e) => setOpenCuentasCobro((e.target as HTMLDetailsElement).open)} className="mt-2 text-sm cursor-pointer">
+              <summary className="group flex min-h-[44px] items-center gap-1 py-1 text-sm text-text-muted hover:text-text-heading">
                 Ver detalle ({cuentasPendientes.length})
+                <span className={`ml-auto text-xs transition-transform duration-200 ${openCuentasCobro ? 'rotate-180' : ''}`}>▾</span>
               </summary>
               <div className="mt-2 p-3 bg-bg-raised rounded border border-border-subtle max-h-64 overflow-y-auto">
                 {cuentasPendientes.length === 0 ? (
@@ -534,9 +609,10 @@ export default function FinanzasPage() {
               value={formatCurrency(totalOrdenesEnCurso, 0)}
               tone="neutral"
             />
-            <details className="mt-2 text-sm cursor-pointer">
-              <summary className="text-text-muted hover:text-text-heading transition-colors">
+            <details open={openOrdenes} onToggle={(e) => setOpenOrdenes((e.target as HTMLDetailsElement).open)} className="mt-2 text-sm cursor-pointer">
+              <summary className="group flex min-h-[44px] items-center gap-1 py-1 text-sm text-text-muted hover:text-text-heading">
                 Ver detalle ({ordenesEnCurso.length})
+                <span className={`ml-auto text-xs transition-transform duration-200 ${openOrdenes ? 'rotate-180' : ''}`}>▾</span>
               </summary>
               <div className="mt-2 p-3 bg-bg-raised rounded border border-border-subtle max-h-64 overflow-y-auto">
                 {ordenesEnCurso.length === 0 ? (
@@ -598,6 +674,9 @@ export default function FinanzasPage() {
           ))}
         </div>
       </section>
+
+        </>
+      )}
 
       <MovimientoFinancieroModal
         open={tipoMovimiento !== null || movimientoEditando !== null}

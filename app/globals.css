@@ -205,6 +205,11 @@ html:focus-within {
   @apply bg-bg-surface text-text-primary;
 }
 
+/* Safe-area inferior para móvil (evita que el bottom-nav tape contenido en iPhone) */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* ---- Motion: animación real consumiendo los tokens --dur-base / --ease-out (d4_a5:90-105) -
    compositor-only (opacity + transform). reduce-motion la anula vía :root :global (0.01ms). */
 @keyframes slideIn {
