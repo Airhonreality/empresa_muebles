@@ -2,11 +2,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/seo/jsonld'
 import { socialMeta } from '@/lib/seo/social'
-import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public'
 import { obtenerCanal } from '@/lib/contacto'
 import { CtaConversionPisos } from '@/components/veta/cta-conversion-pisos'
 
-const TIPO_ESPACIO_CODIGO = 'pisos_madera'
 const canal = obtenerCanal('pisos')
 
 const TITLE_SEO = 'Restauración de Pisos de Madera en Bogotá | Diagnóstico Gratuito'
@@ -26,7 +24,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/home/pisos-madera-restauracion-bogota-1.webp',
+        url: '/images/pisos-madera/piso-macarena.jpeg',
         width: 1200,
         height: 630,
         alt: 'Restauración de piso de madera en Bogotá',
@@ -37,14 +35,14 @@ export const metadata = {
     card: 'summary_large_image',
     title: TITLE_SEO,
     description: META_DESC,
-    images: ['/images/home/pisos-madera-restauracion-bogota-1.webp'],
+    images: ['/images/pisos-madera/piso-macarena.jpeg'],
   },
 }
 
 // Renderizado dinámico en cada petición: sin caché ISR, siempre muestra el código actual.
 export const dynamic = 'force-dynamic'
 
-const HERO_IMG = '/images/home/pisos-madera-restauracion-bogota-1.webp'
+const HERO_IMG = '/images/pisos-madera/piso-macarena.jpeg'
 
 const espacios = [
   {
@@ -143,13 +141,6 @@ const faqs = [
 ]
 
 export default async function PisosDeMaderaLanding() {
-  let galeria: { url: string; alt: string }[] = []
-  try {
-    galeria = (await obtenerGaleriaEspacioAction(TIPO_ESPACIO_CODIGO)) || []
-  } catch {
-    galeria = []
-  }
-
   const waHref = `https://wa.me/${canal.whatsapp}?text=${encodeURIComponent(
     'Hola, vengo desde su página de pisos de madera y quiero consultar por el diagnóstico de mi piso.'
   )}`
@@ -267,37 +258,120 @@ export default async function PisosDeMaderaLanding() {
         </div>
       </section>
 
-      {/* 4. Galería antes y después */}
-      {galeria.length > 0 && (
-        <section className="py-20 bg-[var(--color-bg-linen-100)] border-y border-[var(--color-border-default)]">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-serif text-[var(--color-brand)] mb-4">
-                Antes y después
-              </h2>
-              <p className="text-[var(--color-text-muted)] text-lg">
-                Fotos reales de trabajos de restauración de pisos de madera, organizadas por tipo de espacio y problema.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {galeria.map((foto, i) => (
-                <div
-                  key={`${foto.url}-${i}`}
-                  className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]"
-                >
-                  <Image
-                    src={foto.url}
-                    alt={foto.alt || 'Restauración de piso de madera'}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 33vw"
-                  />
-                </div>
-              ))}
+      {/* 4. Galería antes y después — fotos reales de trabajos */}
+      <section className="py-20 bg-[var(--color-bg-linen-100)] border-y border-[var(--color-border-default)]">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-serif text-[var(--color-brand)] mb-4">
+              Antes y después
+            </h2>
+            <p className="text-[var(--color-text-muted)] text-lg">
+              Fotos reales de restauraciones de pisos de madera en Bogotá. Cada imagen es un trabajo
+              real, no una foto de stock.
+            </p>
+          </div>
+
+          {/* Antes / después destacado */}
+          <div className="relative aspect-[4/3] mx-auto max-w-2xl mb-12 rounded-xl overflow-hidden border border-[var(--color-border-default)] shadow-lg">
+            <Image
+              src="/images/pisos-madera/comparativa-pisos.jpeg"
+              alt="Antes y después de restauración de piso de madera en Bogotá"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
+            <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/30">
+              <span className="text-white font-serif font-bold text-xl bg-black/60 px-3 py-1 rounded">
+                Antes
+              </span>
+              <span className="text-[var(--color-gold-600)] text-2xl">→</span>
+              <span className="text-white font-serif font-bold text-xl bg-black/60 px-3 py-1 rounded">
+                Después
+              </span>
             </div>
           </div>
-        </section>
-      )}
+
+          <p className="text-center text-[var(--color-text-muted)] mb-10 text-lg font-light">
+            Detalle de reparación de piezas y acabado final por tipo de espacio.
+          </p>
+
+          {/* Galería por espacio y problema */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+              <Image
+                src="/images/pisos-madera/detalle-piso-1.jpeg"
+                alt="Detalle de reparación de piezas sueltas de piso de madera"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                <p className="text-white text-sm font-light">Detalle: reparación de piezas</p>
+              </div>
+            </div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+              <Image
+                src="/images/pisos-madera/piso-chapinero.jpeg"
+                alt="Pisos de madera restaurados en Chapinero, Bogotá"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                <p className="text-white text-sm font-light">Chapinero — acabado final</p>
+              </div>
+            </div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+              <Image
+                src="/images/pisos-madera/piso-chapinero-2.jpeg"
+                alt="Piso de madera restaurado en Chapinero, segundo proyecto"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                <p className="text-white text-sm font-light">Chapinero — antes y después</p>
+              </div>
+            </div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+              <Image
+                src="/images/pisos-madera/piso-macarena.jpeg"
+                alt="Restauración de piso de madera en La Macarena, Bogotá"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                <p className="text-white text-sm font-light">La Macarena — vivienda</p>
+              </div>
+            </div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+              <Image
+                src="/images/pisos-madera/piso-rosales.jpeg"
+                alt="Piso de madera restaurado en Rosales, Bogotá"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                <p className="text-white text-sm font-light">Rosales — oficina o local</p>
+              </div>
+            </div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+              <Image
+                src="/images/pisos-madera/piso-teusaquillo.jpeg"
+                alt="Pisos de madera restaurados en Teusaquillo, Bogotá"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                <p className="text-white text-sm font-light">Teusaquillo — vivienda</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 5. Proceso paso a paso (confianza y transparencia) */}
       <section className="py-24 container mx-auto px-4 max-w-6xl">
