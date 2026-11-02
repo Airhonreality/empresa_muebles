@@ -1,0 +1,3 @@
+Observaciones pendientes
+
+- Colocar un campo de texto al campo "ajuste" de la cotizaicon de proyecto, dando como reusltado Ajuste: (nombre: "Descuento reembolso x", Moneda: "2.900.00)
