@@ -244,7 +244,7 @@ export default async function PisosDeMaderaLanding() {
             </h2>
             <p className="text-[var(--color-text-primary)] mb-8 leading-relaxed font-light">
               Ofrecemos restauración y mantenimiento según el estado del piso. No prometemos una
-              "restauración integral" cuando no aplica; evaluamos primero y le decimos qué conviene.
+              'restauración integral' cuando no aplica; evaluamos primero y le decimos qué conviene.
             </p>
             <ul className="space-y-3">
               {servicios.map((s, i) => (
