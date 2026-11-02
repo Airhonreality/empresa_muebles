@@ -2,9 +2,7 @@ import Image from 'next/image'
 import { SITE_URL } from '@/lib/seo/jsonld'
 import { socialMeta } from '@/lib/seo/social'
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public'
-import { ContactoPisosBoton } from '@/components/veta/contacto-pisos-boton'
-import { CtaMovilPisos } from '@/components/veta/cta-movil-pisos'
-import { obtenerCanal, waUrl } from '@/lib/contacto'
+import { obtenerCanal, telUrl, waUrl } from '@/lib/contacto'
 
 const TIPO_ESPACIO_CODIGO = 'pisos_madera'
 const canal = obtenerCanal('pisos')
@@ -24,8 +22,7 @@ export const metadata = {
   }),
 }
 
-// Renderizado dinámico en cada petición: evita caché estática atrapada
-// en ISR y garantiza que la landing de Google Ads siempre muestre el código actual.
+// Renderizado dinámico en cada petición: sin caché ISR, siempre muestra el código actual.
 export const dynamic = 'force-dynamic'
 
 const HERO_IMG = '/images/home/pisos-madera-restauracion-bogota-1.webp'
@@ -38,6 +35,7 @@ export default async function PisosDeMaderaLanding() {
     galeria = []
   }
 
+  const tel = telUrl(canal.telefono)
   const wa = waUrl(
     canal.whatsapp,
     `Hola, me interesa asesoría para restaurar o mantener el piso de madera natural de mi casa. Quiero cuadrar una visita para ver el piso. (Bogotá)`
@@ -91,11 +89,9 @@ export default async function PisosDeMaderaLanding() {
             Restauración y mantenimiento de pisos de madera originales: pulido, reparación de piezas sueltas, sellado con acabado natural y cuidado periódico.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-            <ContactoPisosBoton
-              className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl"
-            >
+            <a href={wa} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl">
               Hablar con el experto en pisos
-            </ContactoPisosBoton>
+            </a>
           </div>
         </div>
       </section>
@@ -218,22 +214,18 @@ export default async function PisosDeMaderaLanding() {
             Contáctanos para un diagnóstico gratuito. Evaluamos el estado de tu piso y te decimos con honestidad qué necesita.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-            <ContactoPisosBoton
-              className="px-8 py-4 bg-[var(--color-primary)] text-white text-lg font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-md hover:shadow-lg"
-            >
+            <a href={wa} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white text-lg font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-md hover:shadow-xl">
               Hablar con el experto en pisos
-            </ContactoPisosBoton>
+            </a>
           </div>
           <div className="mt-8">
-            <a href={wa} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] font-medium hover:underline inline-flex items-center gap-2">
-              O escríbenos por WhatsApp
+            <a href={tel} className="text-[var(--color-accent)] font-medium hover:underline inline-flex items-center gap-2">
+              Llamar al experto {canal.telefono.replace('+57 ', '')}
               <span>→</span>
             </a>
           </div>
         </div>
       </section>
-
-      <CtaMovilPisos telefono={canal.telefono} whatsapp={canal.whatsapp} />
 
       <script
         type="application/ld+json"
