@@ -10,6 +10,10 @@ export function fireAdsConversion(canal: CanalConversion): void {
       ? process.env.NEXT_PUBLIC_GTAG_SEND_TO_PISOS
       : process.env.NEXT_PUBLIC_GTAG_SEND_TO;
 
-  const target = sendTo || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
+  const target =
+    sendTo ||
+    (canal === 'pisos'
+      ? 'AW-18552570599/cLS5CJ7b-rAdEOeFx45F'
+      : 'AW-10970379192/55ciCNWI4ZQZELjniu8o');
   gtagFn('event', 'conversion', { send_to: target });
 }
