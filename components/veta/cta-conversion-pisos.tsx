@@ -47,7 +47,7 @@ export function CtaConversionPisos({
         'primary',
         size,
         className
-      )} ${isWhatsapp ? 'text-white' : 'text-gold-500 hover:text-gold-700'}`}
+      )} ${isWhatsapp ? 'text-white' : 'text-white hover:text-gold-100'}`}
       rel="noopener noreferrer"
     >
       {loading ? (
@@ -62,12 +62,20 @@ export function CtaConversionPisos({
         <>
           {isWhatsapp ? (
             <>
-              <span className="text-white/90">💬</span>
+              <span className="text-white/90">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>
               <span>Hablar con el experto en pisos</span>
             </>
           ) : (
             <>
-              <span className="text-gold-600">📞</span>
+              <span className="text-gold-400">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 011 1.714l-.382 1.146A11 11 0 0111 12.756a1 1 0 01-1.714 1l-.382-1.146A1 1 0 019 14.286V16a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                </svg>
+              </span>
               <span>Llamar al {canal.telefono.replace('+57 ', '')}</span>
             </>
           )}

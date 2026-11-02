@@ -183,7 +183,11 @@ export default async function PisosDeMaderaLanding() {
         target="_blank"
         aria-label="Consultar por WhatsApp"
       >
-        <span>💬</span>
+        <span>
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </span>
         <span className="font-medium">WhatsApp</span>
       </a>
 
@@ -284,7 +288,11 @@ export default async function PisosDeMaderaLanding() {
               <span className="text-white font-serif font-bold text-xl bg-black/60 px-3 py-1 rounded">
                 Antes
               </span>
-              <span className="text-[var(--color-gold-600)] text-2xl">→</span>
+              <span className="text-[var(--color-gold-600)] text-2xl">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
               <span className="text-white font-serif font-bold text-xl bg-black/60 px-3 py-1 rounded">
                 Después
               </span>
@@ -296,8 +304,8 @@ export default async function PisosDeMaderaLanding() {
           </p>
 
           {/* Galería por espacio y problema */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
               <Image
                 src="/images/pisos-madera/detalle-piso-1.jpeg"
                 alt="Detalle de reparación de piezas sueltas de piso de madera"
@@ -305,11 +313,8 @@ export default async function PisosDeMaderaLanding() {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-                <p className="text-white text-sm font-light">Detalle: reparación de piezas</p>
-              </div>
             </div>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
               <Image
                 src="/images/pisos-madera/piso-chapinero.jpeg"
                 alt="Pisos de madera restaurados en Chapinero, Bogotá"
@@ -317,11 +322,8 @@ export default async function PisosDeMaderaLanding() {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-                <p className="text-white text-sm font-light">Chapinero — acabado final</p>
-              </div>
             </div>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
               <Image
                 src="/images/pisos-madera/piso-chapinero-2.jpeg"
                 alt="Piso de madera restaurado en Chapinero, segundo proyecto"
@@ -329,23 +331,8 @@ export default async function PisosDeMaderaLanding() {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-                <p className="text-white text-sm font-light">Chapinero — antes y después</p>
-              </div>
             </div>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
-              <Image
-                src="/images/pisos-madera/piso-macarena.jpeg"
-                alt="Restauración de piso de madera en La Macarena, Bogotá"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-                <p className="text-white text-sm font-light">La Macarena — vivienda</p>
-              </div>
-            </div>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
               <Image
                 src="/images/pisos-madera/piso-rosales.jpeg"
                 alt="Piso de madera restaurado en Rosales, Bogotá"
@@ -353,11 +340,8 @@ export default async function PisosDeMaderaLanding() {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-                <p className="text-white text-sm font-light">Rosales — oficina o local</p>
-              </div>
             </div>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
               <Image
                 src="/images/pisos-madera/piso-teusaquillo.jpeg"
                 alt="Pisos de madera restaurados en Teusaquillo, Bogotá"
@@ -365,9 +349,6 @@ export default async function PisosDeMaderaLanding() {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-                <p className="text-white text-sm font-light">Teusaquillo — vivienda</p>
-              </div>
             </div>
           </div>
         </div>
