@@ -79,7 +79,7 @@ export function DropdownMenu({
         <div
           ref={menuRef}
           role="menu"
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-1 ${menuWidth} rounded border border-border-subtle bg-bg-raised shadow-md py-1 z-50`}
+          className={`absolute left-0 right-0 md:left-auto md:right-0 top-full mt-1 w-full ${menuWidth === 'w-56' ? 'md:w-56' : menuWidth} rounded border border-border-subtle bg-bg-raised shadow-md py-1 z-50`}
         >
           {visibleItems.map((item) => (
             <button

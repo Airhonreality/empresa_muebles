@@ -86,7 +86,7 @@ export function ItemRow({
               step={0.1}
               min={0}
               label=""
-              className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+              className="w-full text-right font-mono text-sm"
               aria-label={`Cantidad ${producto?.descripcion ?? item.id}`}
             />
           </div>
@@ -96,7 +96,7 @@ export function ItemRow({
               value={item.precioUnitario}
               onChange={(v) => onUpdateField(item.id, 'precioUnitario', v)}
               label=""
-              className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+              className="w-full text-right font-mono text-sm"
               aria-label={`Precio ${producto?.descripcion ?? item.id}`}
             />
           </div>
@@ -111,26 +111,26 @@ export function ItemRow({
             onClick={() => onDelete(item.id)}
             aria-label={`Eliminar ${item.nombrePersonalizado ?? 'ítem'}`}
             title="Eliminar"
-            className="p-2 sm:p-1 text-text-muted hover:text-red-500 rounded transition-colors duration-fast"
+            className="p-2 rounded text-text-muted hover:text-red-500 transition-colors duration-fast"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
             </svg>
           </button>
 
           <div className="relative">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setDropdownOpen(!dropdownOpen)
-              }}
-              aria-label="Más opciones"
-              title="Editar, mover, anidar"
-              className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded transition-colors duration-fast"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDropdownOpen(!dropdownOpen)
+                }}
+                aria-label="Más opciones"
+                title="Editar, mover, anidar"
+                className="p-2 rounded text-text-muted hover:text-gold-600 transition-colors duration-fast"
+              >
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
                 <circle cx="8" cy="3" r="1.5" />
                 <circle cx="8" cy="8" r="1.5" />
                 <circle cx="8" cy="13" r="1.5" />
@@ -138,7 +138,7 @@ export function ItemRow({
             </button>
             {dropdownOpen && (
               <div
-                className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1"
+                className="absolute top-full mt-1 w-full md:w-44 md:left-auto md:right-0 border border-border-subtle rounded shadow-md z-20 py-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button

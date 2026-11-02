@@ -45,7 +45,7 @@ export function BulkActionsBar({
         <button
           type="button"
           onClick={onClear}
-          className="ml-2 text-xs text-text-muted hover:text-text-heading transition-colors"
+          className="ml-2 px-3 py-2 text-xs text-text-muted hover:text-text-heading transition-colors rounded"
         >
           Cancelar
         </button>

@@ -105,7 +105,7 @@ export function EntityActionsBar({ actions, className = '' }: EntityActionsBarPr
           {menuAbierto && (
             <div
               role="menu"
-              className="absolute right-0 top-full mt-1 w-56 rounded border border-border-subtle bg-bg-raised shadow-md py-1 z-50"
+              className="left-0 right-0 md:left-auto md:right-0 mt-1 w-full md:w-56 rounded border border-border-subtle bg-bg-raised shadow-md py-1 z-50"
             >
               {colapsables.map((a) => (
                 <button

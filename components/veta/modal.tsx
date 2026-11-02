@@ -19,7 +19,7 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = 'max
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-modal bg-overlay-backdrop data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content
-          className={`fixed left-[50%] top-[50%] z-modal grid w-full ${maxWidthClassName} max-h-[92vh] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto border border-border-subtle bg-bg-raised p-6 shadow-xl duration-200 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-2`}
+          className={`fixed left-[50%] top-[50%] z-modal grid w-full ${maxWidthClassName} max-h-[calc(100vh-env(safe-area-inset-bottom)-3.5rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto border border-border-subtle bg-bg-raised p-6 pb-safe shadow-xl duration-200 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-2`}
         >
           <Dialog.Title className="font-display text-xl font-semibold text-text-heading">
             {title}

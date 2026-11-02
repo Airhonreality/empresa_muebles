@@ -58,7 +58,7 @@ function GrupoReferencialInput({ value, onChange }: { value: string; onChange: (
       onChange={(e) => onChangeLocal(e.target.value)}
       onBlur={onBlurLocal}
       placeholder="Grupo (ej. Ventanas)"
-      className="rounded border border-border-subtle bg-bg-paper px-1.5 py-0.5 text-xs text-text-heading focus:border-gold-400 focus:outline-none w-36"
+      className="rounded border border-border-subtle bg-bg-paper px-1.5 py-0.5 text-xs text-text-heading focus:border-gold-400 focus:outline-none w-full sm:w-48"
       aria-label="Grupo referencial"
     />
   )
@@ -542,7 +542,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         ni de un modal) y un desglose opcional que se abre hacia abajo sin ser una barra sticky
         aparte. Nada queda fijo al fondo de la pantalla.
       */}
-      <div className="sticky top-0 z-10 bg-bg-raised shadow-sm">
+      <div className="sm:sticky top-0 z-10 bg-bg-raised shadow-sm">
         <EntityHeader
           codigo={proyecto.codigo}
           titulo={proyecto.nombreProyecto}
@@ -588,32 +588,36 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         {/* Resumen financiero — Costos Operativos siempre visible (pedido explícito de Javier);
             el resto del desglose (materiales, MO por categoría, imprevistos, descuento, ajuste,
             IVA) se abre con el toggle, sin bloquear permanentemente espacio de pantalla. */}
-        <div className="flex items-center gap-3 overflow-x-auto border-t border-border-subtle px-4 py-1.5 sm:px-6">
-          <span className="shrink-0 text-sm">
-            <span className="text-text-muted">Total</span>{' '}
-            <span className="font-mono font-semibold text-brand">{formatCOP(total)}</span>
-          </span>
-          <span className="hidden shrink-0 text-xs text-text-muted sm:inline">
-            Subtotal <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
-          </span>
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
-            <span className="text-xs text-text-muted whitespace-nowrap">Costos Op.</span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 border-t border-border-subtle px-4 py-1.5 sm:px-6 gap-y-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="shrink-0 text-sm">
+              <span className="text-text-muted">Total</span>{' '}
+              <span className="font-mono font-semibold text-brand">{formatCOP(total)}</span>
+            </span>
+            <span className="hidden shrink-0 text-xs text-text-muted sm:inline">
+              Subtotal <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
+            </span>
+          </div>
+          <div className="ml-auto flex flex-col sm:flex-row sm:items-center gap-1.5 w-full sm:w-auto">
+            <span className="text-xs text-text-muted">Costos Op.</span>
             <MoneyInput
               value={aDigitos(proyecto.costosOperativos)}
               onChange={(v) => store.proyectos.actualizarParametrosFinancieros(proyecto.id, { costosOperativos: v || '0' })}
-              className="w-28"
+              className="w-full sm:w-40"
               aria-label="Costos operativos"
             />
           </div>
-          <button
-            type="button"
-            onClick={() => setMostrarDesgloseFooter((v) => !v)}
-            className="flex shrink-0 items-center gap-1 text-xs text-text-muted hover:text-text-heading transition-colors duration-fast"
-            aria-expanded={mostrarDesgloseFooter}
-            aria-label="Ver desglose de la cotización"
-          >
-            {mostrarDesgloseFooter ? '▲' : '▼'} Desglose
-          </button>
+          <div className="w-full sm:w-auto flex justify-end sm:justify-start">
+            <button
+              type="button"
+              onClick={() => setMostrarDesgloseFooter((v) => !v)}
+              className="flex shrink-0 items-center gap-1 text-xs text-text-muted hover:text-text-heading transition-colors duration-fast"
+              aria-expanded={mostrarDesgloseFooter}
+              aria-label="Ver desglose de la cotización"
+            >
+              {mostrarDesgloseFooter ? '▲' : '▼'} Desglose
+            </button>
+          </div>
         </div>
 
         {mostrarDesgloseFooter && (
@@ -682,9 +686,9 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
                   <span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span>
                   <span className="font-mono text-text-heading">{formatCOP(iva)}</span>
                 </div>
-              )}
-            </div>
-          </div>
+          )}
+        </div>
+        </div>
         )}
       </div>
 
@@ -1347,9 +1351,8 @@ function EspacioGroup({
 
   return (
     <div className={`rounded-lg border ${varianteActiva.activa ? 'border-border-subtle' : 'border-border-subtle/50'} bg-bg-raised overflow-hidden`}>
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         onClick={() => onToggle(nombreEspacio)}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(nombreEspacio) } }}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-alt transition-colors duration-fast cursor-pointer"
@@ -1373,38 +1376,38 @@ function EspacioGroup({
           ) : (
             <span className="font-medium text-text-heading flex items-center gap-1.5">
               {nombreEspacio}
-              <span
-                onClick={(e) => { e.stopPropagation(); setNombreTemp(nombreEspacio); setEditandoNombre(true) }}
-                className="p-0.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast cursor-pointer"
-                aria-label={`Renombrar ${nombreEspacio}`}
-                title="Renombrar espacio (aplica a todas sus variantes)"
-              >
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <span
+                  onClick={(e) => { e.stopPropagation(); setNombreTemp(nombreEspacio); setEditandoNombre(true) }}
+                  className="p-1.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast cursor-pointer"
+                  aria-label={`Renombrar ${nombreEspacio}`}
+                  title="Renombrar espacio (aplica a todas sus variantes)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5 8.5-8.5z" strokeLinejoin="round" strokeLinecap="round" />
                 </svg>
               </span>
-                <button
-                  type="button"
-                  disabled={eliminandoEspacio}
-                  onClick={(e) => { e.stopPropagation(); void eliminarEspacioGrupo() }}
-                  className="p-0.5 rounded text-text-muted hover:text-red-500 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
-                  aria-label={`Eliminar ${nombreEspacio}`}
-                  title="Eliminar espacio (todas sus variantes, ítems y artefactos)"
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <button
+                    type="button"
+                    disabled={eliminandoEspacio}
+                    onClick={(e) => { e.stopPropagation(); void eliminarEspacioGrupo() }}
+                    className="p-1.5 rounded text-text-muted hover:text-red-500 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label={`Eliminar ${nombreEspacio}`}
+                    title="Eliminar espacio (todas sus variantes, ítems y artefactos)"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
                   </svg>
                 </button>
-                <button
-                  type="button"
-                  disabled={eliminandoEspacio}
-                  onClick={(e) => { e.stopPropagation(); void guardarEspacioComoPlantilla() }}
-                  className="p-0.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
-                  aria-label={`Guardar "${nombreEspacio}" como plantilla`}
-                  title="Guardar este espacio como plantilla del catálogo"
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <button
+                    type="button"
+                    disabled={eliminandoEspacio}
+                    onClick={(e) => { e.stopPropagation(); void guardarEspacioComoPlantilla() }}
+                    className="p-1.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label={`Guardar "${nombreEspacio}" como plantilla`}
+                    title="Guardar este espacio como plantilla del catálogo"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M2 8.6V14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-5.4M6 6h.01M10 6h.01M6 12h8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
@@ -1429,17 +1432,17 @@ function EspacioGroup({
           <button
             type="button"
             onClick={async (e) => { e.stopPropagation(); await store.espacios.actualizar(variante.id, { visibleEnPropuestaPublica: !variante.visibleEnPropuestaPublica }) }}
-            className="p-0.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast"
+            className="p-1.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast"
             aria-label={variante.visibleEnPropuestaPublica ? 'Ocultar de la propuesta pública' : 'Mostrar en la propuesta pública'}
             title={variante.visibleEnPropuestaPublica ? 'Visible en la propuesta pública (PDF + pantalla pública) — clic para ocultar' : 'Oculto de la propuesta pública — clic para mostrar'}
           >
             {variante.visibleEnPropuestaPublica ? (
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3">
                 <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" strokeLinejoin="round" />
                 <circle cx="8" cy="8" r="2" />
               </svg>
             ) : (
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3">
                 <path d="M2 2l12 12M6.5 6.7A2 2 0 0 0 8 10a2 2 0 0 0 1.4-.6M4 4.2C2.4 5.3 1 8 1 8s2.5 5 7 5c1.3 0 2.4-.4 3.4-1M13 11.8C14.2 10.7 15 8 15 8s-.9-1.9-2.5-3.3" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
@@ -1448,11 +1451,11 @@ function EspacioGroup({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setMostrarMenuDuplicar((v) => !v) }}
-              className="p-0.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast"
+              className="p-1.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast"
               aria-label={`Duplicar ${variante.nombreVariante}`}
               title="Duplicar variante"
             >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <rect x="5" y="5" width="9" height="9" rx="1" />
                 <path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2" />
               </svg>
@@ -1487,17 +1490,17 @@ function EspacioGroup({
               </div>
             )}
           </div>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-sm text-text-heading">{formatCOP(totalGrupo)}</span>
+            <span className={`text-sm transition-transform duration-fast ${expandido ? 'rotate-180' : ''}`}>&#9660;</span>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-sm text-text-heading">{formatCOP(totalGrupo)}</span>
-          <span className={`text-sm transition-transform duration-fast ${expandido ? 'rotate-180' : ''}`}>&#9660;</span>
-        </div>
-      </div>
+      </button>
 
       {expandido && (
         <>
           {variantes.length > 1 && (
-            <div className="flex items-center gap-1 border-t border-border-subtle bg-bg-alt/40 px-4 pt-2 overflow-x-auto">
+            <div className="flex items-center gap-1 border-t border-border-subtle bg-bg-alt/40 px-4 pt-2 overflow-x-auto shadow-[inset_20px_0_15px_-10px_rgba(0,0,0,0.06)]">
               {variantes.map((v) => (
                 <div
                   key={v.id}
@@ -2148,7 +2151,7 @@ function VarianteContenido({
                       step={0.1}
                       min={0}
                       label=""
-                      className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+                      className="w-full text-right font-mono text-sm"
                       aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
                     />
                   </div>
@@ -2158,7 +2161,7 @@ function VarianteContenido({
                       value={item.precioUnitario}
                       onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
                       label=""
-                      className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+                      className="w-full text-right font-mono text-sm"
                       aria-label={`Precio ${prod?.descripcion ?? item.id}`}
                     />
                   </div>
@@ -2538,7 +2541,7 @@ function VarianteContenido({
                           step={0.1}
                           min={0}
                           label=""
-                          className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+                          className="w-full text-right font-mono text-sm"
                           aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
                         />
                       </div>
@@ -2548,7 +2551,7 @@ function VarianteContenido({
                           value={item.precioUnitario}
                           onChange={(v) => actualizarItem(item.id, 'precioUnitario', v)}
                           label=""
-                          className="w-full h-10 sm:h-8 text-right font-mono text-sm"
+                          className="w-full text-right font-mono text-sm"
                           aria-label={`Precio ${prod?.descripcion ?? item.id}`}
                         />
                       </div>
@@ -2593,7 +2596,7 @@ function VarianteContenido({
                           </svg>
                         </button>
                         {itemDropdownAbierto === item.id && (
-                          <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="absolute top-full mt-1 w-full md:w-44 md:left-auto md:right-0 border border-border-subtle bg-bg-raised rounded shadow-md z-20 py-1" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={() => {
