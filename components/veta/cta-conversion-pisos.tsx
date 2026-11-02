@@ -30,7 +30,7 @@ export function CtaConversionPisos({
     await new Promise((r) => setTimeout(r, 350));
     window.location.href =
       tipo === 'whatsapp'
-        ? waUrl(canal.whatsapp, `Hola, me interesa asesoría para restaurar o mantener el piso de madera natural de mi casa. Quiero cuadrar una visita para ver el piso. (Bogotá)`)
+        ? waUrl(canal.whatsapp, `Hola, vengo desde su página de pisos de madera y quiero consultar por el diagnóstico de mi piso.`)
         : telUrl(canal.telefono);
   };
 
@@ -39,7 +39,7 @@ export function CtaConversionPisos({
     <Link
       href={
         tipo === 'whatsapp'
-          ? waUrl(canal.whatsapp, `Hola, me interesa asesoría para restaurar o mantener el piso de madera natural de mi casa. Quiero cuadrar una visita para ver el piso. (Bogotá)`)
+          ? waUrl(canal.whatsapp, `Hola, vengo desde su página de pisos de madera y quiero consultar por el diagnóstico de mi piso.`)
           : telUrl(canal.telefono)
       }
       onClick={handleClick}
