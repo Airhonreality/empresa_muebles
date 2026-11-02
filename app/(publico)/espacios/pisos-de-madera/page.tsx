@@ -2,37 +2,43 @@ import Image from 'next/image'
 import { SITE_URL } from '@/lib/seo/jsonld'
 import { socialMeta } from '@/lib/seo/social'
 import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public'
+import { ContactoPisosBoton } from '@/components/veta/contacto-pisos-boton'
+import { CtaMovilPisos } from '@/components/veta/cta-movil-pisos'
+import { obtenerCanal, waUrl } from '@/lib/contacto'
 
 const TIPO_ESPACIO_CODIGO = 'pisos_madera'
+const canal = obtenerCanal('pisos')
 
 export const metadata = {
-  robots: { index: false, follow: false },
-  title: 'Restauración de pisos de madera en Bogotá — Veta Dorada',
-  description: 'Restauramos pisos de madera originales de casonas en Bogotá: pulido, reparación de piezas sueltas y sellado con acabado natural. Solicita tu diagnóstico gratuito.',
+  robots: { index: true, follow: true },
+  title: 'Restauración y mantenimiento de pisos de madera en Bogotá — Veta Dorada',
+  description:
+    'Restauramos y mantenemos pisos de madera originales de casonas en Bogotá: pulido, reparación de piezas sueltas, sellado con acabado natural y cuidado periódico. Diagnóstico y visita sin costo con el experto en pisos.',
   alternates: { canonical: `${SITE_URL}/espacios/pisos-de-madera` },
   ...socialMeta({
-    title: 'Restauración de pisos de madera en Bogotá — Veta Dorada',
-    description: 'Restauramos pisos de madera originales de casonas en Bogotá: pulido, reparación de piezas sueltas y sellado con acabado natural. Solicita tu diagnóstico gratuito.',
+    title: 'Restauración y mantenimiento de pisos de madera en Bogotá — Veta Dorada',
+    description:
+      'Restauramos y mantenemos pisos de madera originales de casonas en Bogotá: pulido, reparación de piezas sueltas, sellado con acabado natural y cuidado periódico. Diagnóstico y visita sin costo con el experto en pisos.',
     path: '/espacios/pisos-de-madera',
+    image: '/images/home/pisos-madera-restauracion-bogota-1.webp',
   }),
 }
 
-// Lee galería real/renders vía Server Action (obtenerGaleriaEspacioAction) — mismo criterio
-// que el resto del sitio público con datos vivos (ver app/(publico)/page.tsx).
-export const dynamic = 'force-dynamic'
-
-const WHATSAPP_URL =
-  'https://wa.me/573025922101?text=Hola%2C%20vengo%20del%20sitio%20web%20de%20Veta%20Dorada%20y%20quiero%20un%20diagn%C3%B3stico%20gratuito%20para%20restaurar%20mi%20piso%20de%20madera.'
+// ISR en vez de force-dynamic: la landing de Google Ads debe pintar rápido.
+// La galería no cambia a cada minuto, 5 minutos de caché es aceptable.
+export const revalidate = 300
 
 export default async function PisosDeMaderaLanding() {
   const galeria = await obtenerGaleriaEspacioAction(TIPO_ESPACIO_CODIGO)
+  const wa = waUrl(
+    canal.whatsapp,
+    `Hola, me interesa asesoría para restaurar o mantener el piso de madera natural de mi casa. Quiero cuadrar una visita para ver el piso. (Bogotá)`
+  )
+
   return (
     <div className="bg-white">
       {/* 1. Hero Landing */}
       <section className="relative w-full min-h-[85vh] flex items-center justify-center overflow-hidden">
-        {/* Auditoría 2026-08-15 (B5): hero apuntaba a /images/portafolio/reales/hero_piso_madera_*.png,
-            que no existe en public/ — fotos reales pendientes de recuperar del sitio legacy (I-016).
-            Se usa temporalmente la foto real de pisos ya disponible en public/images/home/. */}
         <Image
           src="/images/home/pisos-madera-restauracion-bogota-1.webp"
           alt="Piso de madera restaurado en Bogotá"
@@ -40,28 +46,24 @@ export default async function PisosDeMaderaLanding() {
           priority
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-black/40" /> {/* Overlay para contraste de texto */}
+        <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 container mx-auto px-4 max-w-4xl text-center">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif text-white mb-6 tracking-tight leading-tight drop-shadow-lg">
             El piso de madera de su casona merece volver a vivir
           </h1>
           <p className="text-lg md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto font-light drop-shadow">
-            Restauramos pisos de madera originales: pulido, reparación de piezas sueltas y sellado con acabado natural. Sin perder el carácter del piso que guarda la historia de tu casa.
+            Restauración y mantenimiento de pisos de madera originales: pulido, reparación de piezas sueltas, sellado con acabado natural y cuidado periódico.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-            {/* B6 (auditoría 2026-08-15): apuntaba a /asesoria, ruta inexistente (F-12 sin
-                construir, diferida en TAREAS_DIFERIDAS.md) — mismo criterio que el resto del
-                sitio, CTA a WhatsApp mientras F-12 no exista. */}
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl">
-              Solicitar diagnóstico gratuito
-            </a>
-            
+            <ContactoPisosBoton className="px-8 py-4 bg-[var(--color-primary)] text-white font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg hover:shadow-xl">
+              Hablar con el experto en pisos
+            </ContactoPisosBoton>
           </div>
         </div>
       </section>
 
-      {/* Respuesta Atómica */}
+      {/* Respuesta Atómica: seguridad del pulido */}
       <section className="py-12 bg-[var(--color-bg-linen)]">
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <h2 className="text-2xl md:text-3xl font-serif text-[var(--color-primary)] mb-4">
@@ -73,13 +75,25 @@ export default async function PisosDeMaderaLanding() {
         </div>
       </section>
 
+      {/* Respuesta Atómica: frecuencia de mantenimiento */}
+      <section className="py-12 bg-white border-y border-[var(--color-border)]">
+        <div className="container mx-auto px-4 max-w-4xl text-center">
+          <h2 className="text-2xl md:text-3xl font-serif text-[var(--color-primary)] mb-4">
+            ¿Cada cuánto se debe hacer mantenimiento a un piso de madera en Bogotá?
+          </h2>
+          <p className="text-lg text-[var(--color-text)] max-w-3xl mx-auto leading-relaxed">
+            Cada 5 a 7 años, según el tráfico y la humedad de la ciudad. El mantenimiento periódico (lija ligera, re-sellado y revisión de piezas sueltas) alarga décadas la vida del piso y evita una restauración mayor. Un piso bien cuidado no se reemplaza; se conserva.
+          </p>
+        </div>
+      </section>
+
       {/* 2. Proceso de Restauración (Feature Grid 4 steps) */}
       <section className="py-24 container mx-auto px-4 max-w-6xl">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-serif text-[var(--color-primary)] mb-4">El proceso de restauración maestro</h2>
           <p className="text-[var(--color-text-muted)] text-lg">Un método paso a paso diseñado para cuidar el patrimonio de su hogar.</p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             { step: '01', title: 'Diagnóstico', desc: 'Visitamos tu casona, evaluamos el estado del piso y te entregamos un diagnóstico con el alcance del trabajo y el costo.' },
@@ -98,9 +112,7 @@ export default async function PisosDeMaderaLanding() {
         </div>
       </section>
 
-      {/* 3. Galería de pisos (F09, 2026-08-17) — reemplaza el placeholder de antes/después
-          (auditoría 2026-08-15, B5) por fotos publicadas de Portafolio + imágenes cargadas en
-          /erp/portafolio/renders, sin distinción visible entre ellas. */}
+      {/* 3. Galería de pisos */}
       {galeria.length > 0 && (
         <section className="py-20 bg-[var(--color-bg-linen)] border-y border-[var(--color-border)]">
           <div className="container mx-auto px-4 max-w-6xl">
@@ -124,7 +136,42 @@ export default async function PisosDeMaderaLanding() {
         </p>
       </section>
 
-      {/* 5. CTA Final */}
+      {/* 5. Preguntas frecuentes */}
+      <section className="py-20 container mx-auto px-4 max-w-4xl">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-serif text-[var(--color-primary)] mb-6">Preguntas frecuentes</h2>
+        </div>
+        <div className="space-y-3">
+          {[
+            {
+              q: '¿Cada cuánto debo darle mantenimiento a mi piso de madera?',
+              a: 'Cada 5 a 7 años, según el tráfico y la humedad de Bogotá. Un mantenimiento periódico (lija ligera, re-sellado y revisión de piezas sueltas) alarga décadas la vida del piso y evita una restauración mayor.',
+            },
+            {
+              q: '¿Es seguro pulir un piso de madera original de casona?',
+              a: 'Sí. Se retira solo la capa del acabado dañado, se reparan las piezas sueltas y se sella con barniz al agua o poliuretano bajo VOC. El piso conserva su carácter y gana solidez y brillo.',
+            },
+            {
+              q: '¿Incluye visita y diagnóstico?',
+              a: 'Sí. La visita para ver el piso y el diagnóstico son sin costo. El experto en pisos te dirá con honestidad qué necesita tu piso antes de presupuestar.',
+            },
+            {
+              q: '¿Qué acabados usan?',
+              a: 'Barnices al agua y poliuretano de bajo VOC. Protegen la madera, devuelven el brillo natural y cuidan el aire que respira tu familia.',
+            },
+          ].map(({ q, a }, i) => (
+            <details key={i} className="border border-[var(--color-border)] rounded-xl p-4 group">
+              <summary className="flex items-center justify-between font-serif font-medium text-[var(--color-primary)] cursor-pointer list-none">
+                {q}
+                <span className="text-gold-600">+</span>
+              </summary>
+              <p className="mt-3 text-[var(--color-text)] leading-relaxed font-light">{a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* 6. CTA Final */}
       <section className="py-24 bg-[var(--color-bg-linen)] border-t border-[var(--color-border)] text-center">
         <div className="container mx-auto px-4 max-w-3xl">
           <h2 className="text-3xl md:text-5xl font-serif text-[var(--color-primary)] mb-6">¿Tu piso necesita una segunda vida?</h2>
@@ -132,18 +179,100 @@ export default async function PisosDeMaderaLanding() {
             Contáctanos para un diagnóstico gratuito. Evaluamos el estado de tu piso y te decimos con honestidad qué necesita.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-[var(--color-primary)] text-white text-lg font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-md hover:shadow-lg">
-              Solicitar diagnóstico gratuito
-            </a>
+            <ContactoPisosBoton className="px-8 py-4 bg-[var(--color-primary)] text-white text-lg font-medium rounded hover:bg-[var(--color-primary-hover)] transition-colors shadow-md hover:shadow-lg">
+              Hablar con el experto en pisos
+            </ContactoPisosBoton>
           </div>
           <div className="mt-8">
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] font-medium hover:underline inline-flex items-center gap-2">
+            <a href={wa} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] font-medium hover:underline inline-flex items-center gap-2">
               O escríbenos por WhatsApp
               <span>→</span>
             </a>
           </div>
         </div>
       </section>
+
+      <CtaMovilPisos telefono={canal.telefono} whatsapp={canal.whatsapp} />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'Service',
+                serviceType: 'Restauración y mantenimiento de pisos de madera',
+                provider: {
+                  '@type': 'Organization',
+                  name: 'Veta Dorada',
+                  url: SITE_URL,
+                  telephone: canal.telefono,
+                  address: {
+                    '@type': 'PostalAddress',
+                    streetAddress: 'Cra 72a #71a-57',
+                    addressLocality: 'Bogotá',
+                    addressRegion: 'Bogotá',
+                    addressCountry: 'CO',
+                  },
+                },
+                areaServed: {
+                  '@type': 'City',
+                  name: 'Bogotá',
+                },
+                description:
+                  'Restauración y mantenimiento de pisos de madera originales: pulido, reparación de piezas sueltas, sellado con acabado natural y cuidado periódico.',
+                url: `${SITE_URL}/espacios/pisos-de-madera`,
+              },
+              {
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                  { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${SITE_URL}/` },
+                  { '@type': 'ListItem', position: 2, name: 'Espacios', item: `${SITE_URL}/espacios` },
+                  { '@type': 'ListItem', position: 3, name: 'Pisos de Madera', item: `${SITE_URL}/espacios/pisos-de-madera` },
+                ],
+              },
+              {
+                '@type': 'FAQPage',
+                mainEntity: [
+                  {
+                    '@type': 'Question',
+                    name: '¿Cada cuánto debo darle mantenimiento a mi piso de madera?',
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: 'Cada 5 a 7 años, según el tráfico y la humedad de Bogotá. Un mantenimiento periódico (lija ligera, re-sellado y revisión de piezas sueltas) alarga décadas la vida del piso y evita una restauración mayor.',
+                    },
+                  },
+                  {
+                    '@type': 'Question',
+                    name: '¿Es seguro pulir un piso de madera original de casona?',
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: 'Sí. Se retira solo la capa del acabado dañado, se reparan las piezas sueltas y se sella con barniz al agua o poliuretano bajo VOC. El piso conserva su carácter y gana solidez y brillo.',
+                    },
+                  },
+                  {
+                    '@type': 'Question',
+                    name: '¿Incluye visita y diagnóstico?',
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: 'Sí. La visita para ver el piso y el diagnóstico son sin costo. El experto en pisos te dirá con honestidad qué necesita tu piso antes de presupuestar.',
+                    },
+                  },
+                  {
+                    '@type': 'Question',
+                    name: '¿Qué acabados usan?',
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: 'Barnices al agua y poliuretano de bajo VOC. Protegen la madera, devuelven el brillo natural y cuidan el aire que respira tu familia.',
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
     </div>
   )
 }

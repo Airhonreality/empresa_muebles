@@ -1,0 +1,47 @@
+{
+  "id": "t-188",
+  "titulo": "Landing pública de restauración y mantenimiento de pisos de madera (indexable, Google Ads, contacto directo)",
+  "intencion_negocio": "Lanzar el servicio de restauración/mantenimiento de pisos de madera como landing de conversión para Google Ads, pública e indexable, con contacto directo al experto (Jair Daza, 3227008706) por llamada o WhatsApp para cuadrar visita.",
+  "diagnostico": "Existía /espacios/pisos-de-madera pero noindex, sin enlazar, sin fotos reales, con número de WhatsApp general hardcodeado y sin seguimiento de conversión propio para Ads.",
+  "decisiones_supervisor": {
+    "ruta": "Mantener /espacios/pisos-de-madera (no crear /servicios).",
+    "oferta": "Mismo servicio, copy que cubre restauración y mantenimiento periódico (cada 5-7 años).",
+    "whatsapp": "Otro celular del mismo negocio (Jair Daza, +57 3227008706) para este servicio.",
+    "exposicion": "Soft launch: footer, home y blog. Sin nav principal.",
+    "indexacion": "Quitar noindex; mantener en sitemap; agregar JSON-LD Service + Breadcrumb.",
+    "modal": "Modal especializado de contacto directo (llamar / WhatsApp), sin formulario ni opción 3D.",
+    "conversion": "Evento Ads propio por canal (pisos) con NEXT_PUBLIC_GTAG_SEND_TO_PISOS (label por crear en Google Ads).",
+    "rendimiento": "Cambiar force-dynamic a revalidate (ISR 300s) para landing rápida de pauta.",
+    "feed_alto": "No lanzar módulo 'Del taller' todavía (falta cadencia de contenido)."
+  },
+  "zona": "app/(publico)/espacios/pisos-de-madera/page.tsx + components/veta/contacto-pisos-{modal,boton}.tsx + components/veta/cta-movil-pisos.tsx + lib/contacto.ts + lib/analytics/ads-conversion.ts + components/veta/app-shell.tsx",
+  "tipo": "sitio_publico_conversion",
+  "riesgo": "medio",
+  "plan_ref": "arnes/planes/plan_t-188.md",
+  "depende_de": [],
+  "criterios_aceptacion": [
+    "tsc --noEmit en verde",
+    "eslint (archivos tocados) 0 errores",
+    "Página indexable (robots index:true) y consistente con sitemap",
+    "Modal de pisos abre, llama al +57 3227008706 y abre WhatsApp al mismo número",
+    "Evento de conversión Ads 'pisos' se dispara en llamada y WhatsApp",
+    "Barra CTA fija en móvil (llamar / WhatsApp)",
+    "Footer y home enlazan a la página",
+    "JSON-LD Service y BreadcrumbList presentes"
+  ],
+  "verificacion_ejecutor": {
+    "tsc --noEmit": "exit 0",
+    "eslint (archivos tocados)": "0 errores",
+    "next build": "pendiente (fallará localmente sin DATABASE_URL real; en Vercel con DATABASE_URL de producción debe pasar — comportamiento esperado segun AGENTS.md)"
+  },
+  "executor": "opencode (sesión interactiva)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "fecha": null
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "nota_ejecucion": "Implementado en una sesión. Pendiente: que el Supervisor cree la conversión 'Contacto Pisos' en Google Ads y entregue el label para NEXT_PUBLIC_GTAG_SEND_TO_PISOS, y verifique manualmente en navegador (llamada, WhatsApp, Tag Assistant, LCP)."
+}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { submitLeadAction } from '@/app/actions/lead-actions';
+import { fireAdsConversion } from '@/lib/analytics/ads-conversion';
 
 interface AsesoriaModalProps {
   isOpen: boolean;
@@ -70,15 +71,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
   const executeRedirect = (url: string) => {
     setFormStatus('redirecting');
     
-    const gtagFn = typeof window !== 'undefined' ? (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag : undefined;
-    if (gtagFn) {
-      try {
-        const sendTo = process.env.NEXT_PUBLIC_GTAG_SEND_TO || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
-        gtagFn('event', 'conversion', { send_to: sendTo });
-      } catch {
-        // Ignorar
-      }
-    }
+    fireAdsConversion('general');
 
     // Abordaje Axiomático: Navegación directa en la misma pestaña para evadir Popup Blockers y forzar Deep Linking en móviles
     window.location.href = url;

@@ -174,3 +174,17 @@ Las tareas del ledger que trazan estos pendientes: t-110, t-111, t-112 (creadas 
 
 **Próxima acción:** Aprobar alcance de captación (`plan_demanda.md` §5) o continuar con el Bloque B4 (FAQs y Contacto) en la línea técnica.
 
+---
+
+## Actualización t-188 — Pisos de madera pasa a pública e indexable (2026-10-26)
+
+La landing `/espacios/pisos-de-madera` (F-14) deja de estar pendiente de desbloqueo y pasa a **pública e indexable**:
+
+- `robots: { index: true, follow: true }` (ya no noindex); canonical mantenido en sitemap.
+- JSON-LD `Service` + `BreadcrumbList` + `FAQPage` presentes.
+- Enlace en footer (`Servicios & Alianzas`), tarjeta del Home ("Restauración y mantenimiento") y artículo seed de bitácora (categoría `mantenimiento`) con CTA puente.
+- Contacto directo al experto en pisos (Jair Daza, +57 3227008706) por llamada/WhatsApp, con evento de conversión Ads propio (`fireAdsConversion('pisos')`) y barra CTA fija en móvil.
+- ISR `revalidate = 300` para velocidad de tráfico pagado.
+
+Pendiente del Supervisor: label de conversión "Contacto Pisos" en Google Ads para `NEXT_PUBLIC_GTAG_SEND_TO_PISOS`.
+

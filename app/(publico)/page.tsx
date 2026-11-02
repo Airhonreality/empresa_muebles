@@ -100,7 +100,7 @@ const ESPACIOS = [
   { nombre: 'Estudios y Home Office', imageKey: 'espaciosEstudios', href: '/espacios/estudios-home-office' },
   { nombre: 'Cavas y Bares', imageKey: 'espaciosCavas', href: '/espacios/cavas-y-bares' },
   { nombre: 'Consolas y Recibidores', imageKey: 'espaciosConsolas', href: '/espacios/consolas-recibidores' },
-  { nombre: 'Pisos de Madera', imageKey: 'espaciosPisos', href: '/espacios/pisos-de-madera' },
+  { nombre: 'Restauración y mantenimiento', imageKey: 'espaciosPisos', href: '/espacios/pisos-de-madera' },
 ];
 
 const PASOS = [
