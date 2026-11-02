@@ -176,7 +176,7 @@ Las tareas del ledger que trazan estos pendientes: t-110, t-111, t-112 (creadas 
 
 ---
 
-## Actualización t-188 — Pisos de madera pasa a pública e indexable (2026-10-26)
+## Actualización t-189 — Pisos de madera pasa a pública e indexable (2026-10-26)
 
 La landing `/espacios/pisos-de-madera` (F-14) deja de estar pendiente de desbloqueo y pasa a **pública e indexable**:
 

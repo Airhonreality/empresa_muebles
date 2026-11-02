@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { submitLeadAction } from '@/app/actions/lead-actions';
+import { fireAdsConversion } from '@/lib/analytics/ads-conversion';
 import { leerAtribucion } from '@/lib/hooks/useGclidCapture';
 import { construirUserDataGtag } from '@/lib/leads/enhanced-conversions';
 import { construirMensajeWhatsApp, construirUrlWhatsApp } from '@/lib/leads/ref';
@@ -74,6 +75,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
 
   const executeRedirect = (url: string) => {
     setFormStatus('redirecting');
+    fireAdsConversion('general');
 
     // Abordaje Axiomático: Navegación directa en la misma pestaña para evadir Popup Blockers y forzar Deep Linking en móviles
     window.location.href = url;
