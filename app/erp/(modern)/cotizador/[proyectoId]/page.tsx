@@ -18,7 +18,7 @@ import { ItemEditorModal } from '@/components/veta/item-editor-modal'
 import { ProductoFormModal } from '@/components/veta/producto-form-modal'
 import { AcabadoPicker, type AcabadoSeleccionado } from '@/components/veta/acabado-picker'
 import { Modal } from '@/components/veta/modal'
-import { PRESETS_ESPACIOS, type PresetEspacio } from '@/lib/catalogos/presets-espacios'
+
 import { ContratoModal } from '../ContratoModal'
 import { CuentaCobroModal } from '@/components/veta/cuenta-cobro-modal'
 import { EditarProyectoModal } from '@/components/veta/editar-proyecto-modal'
@@ -26,7 +26,7 @@ import { ParametrosFinancierosModal } from '@/components/veta/parametros-financi
 import { ModalPresentador } from '@/components/veta/ModalPresentador'
 import { generarSlides, type ProductoCatalogo, type ItemVariante, type EspacioVariante, type EspacioArtefacto, type GrupoItem, type ContenedorDescriptivo } from '@/lib/data'
 import { CotizadorCompatProvider, useCotizadorCompat, type CotizadorCompatStore } from '@/lib/data/queries/cotizador-compat'
-import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, actualizarGrupoItemAction, obtenerContenedorDescriptivoGrupoAction, materializarPlantillaAction, guardarEspacioComoPlantillaAction, listarPlantillasEspacioAction } from '@/lib/data/actions/core'
+import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, actualizarGrupoItemAction, obtenerContenedorDescriptivoGrupoAction, materializarPlantillaAction, listarPlantillasEspacioAction } from '@/lib/data/actions/core'
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
@@ -234,7 +234,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   // ajuste, IVA) sí es consulta ocasional -- mantenerlo colapsado por defecto es lo compacto.
   const [mostrarDesgloseFooter, setMostrarDesgloseFooter] = useState(false)
   const [mostrarVersionesPropuesta, setMostrarVersionesPropuesta] = useState(false)
-  const [mostrarPlantillasModal, setMostrarPlantillasModal] = useState(false)
   const [mostrarPlantillasCatalogoModal, setMostrarPlantillasCatalogoModal] = useState(false)
   const [plantillasCatalogo, setPlantillasCatalogo] = useState<{ id: string; nombre: string; tipoEspacio: string; descripcion: string | null; icono: string | null }[]>([])
   const [cargandoPlantillas, setCargandoPlantillas] = useState(false)
@@ -252,39 +251,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
   const { guard: guardCrearEspacio, isPending: creandoEspacio } = usePendingGuard()
   const { mostrarError } = useToast()
-
-  const aplicarPreset = useCallback(async (preset: PresetEspacio) => {
-    setMostrarPlantillasModal(false)
-    await guardCrearEspacio(async () => {
-      const nuevoEspacio = await store.espacios.crear({
-        proyectoId,
-        nombreEspacio: preset.nombre,
-        nombreVariante: 'Inicial',
-        tipoEspacio: preset.tipoEspacio,
-        descripcion: preset.descripcion,
-        visibleEnPropuestaPublica: true,
-        orden: espaciosBase.length + 1,
-        jornadasDesarrolloTecnico: preset.jornadas.dev,
-        jornadasEnsamblajeTaller: preset.jornadas.ens,
-        jornadasInstalacionObra: preset.jornadas.inst,
-      })
-
-      if (nuevoEspacio) {
-        await Promise.all(
-          preset.items.map((it) =>
-            store.items.crear({
-              varianteId: nuevoEspacio.id,
-              catalogoId: null,
-              nombrePersonalizado: it.nombre,
-              cantidad: it.cantidad,
-              precioUnitario: it.precioUnitario,
-              esReferencial: it.esReferencial ?? false,
-            })
-          )
-        )
-      }
-    })
-  }, [guardCrearEspacio, store.espacios, store.items, proyectoId, espaciosBase.length])
 
   const cargarPlantillasCatalogo = useCallback(async () => {
     setCargandoPlantillas(true)
@@ -750,16 +716,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
               variant="ghost"
               size="md"
               className="h-10 text-sm border border-border-subtle hover:border-gold-400 hover:text-gold-600 w-full sm:w-auto"
-              onClick={() => setMostrarPlantillasModal(true)}
-              disabled={creandoEspacio}
-              title="Precargar un espacio prediseñado con sus ítems estándar"
-            >
-              ✨ + Desde Plantilla
-            </Button>
-            <Button
-              variant="ghost"
-              size="md"
-              className="h-10 text-sm border border-border-subtle hover:border-gold-400 hover:text-gold-600 w-full sm:w-auto"
               onClick={() => { setMostrarPlantillasCatalogoModal(true); void cargarPlantillasCatalogo() }}
               disabled={creandoEspacio}
               title="Insertar una plantilla del catálogo (clase → instancia)"
@@ -769,55 +725,6 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           </div>
         </div>
 
-        {mostrarPlantillasModal && (
-          <Modal
-            open={true}
-            onClose={() => setMostrarPlantillasModal(false)}
-            title="✨ Seleccionar Plantilla de Espacio"
-          >
-            <div className="space-y-4">
-              <p className="text-xs text-text-muted">
-                Elige un espacio prediseñado para insertar en tu cotización. Se precargarán automáticamente sus módulos base, cantidades y jornadas estimadas.
-              </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 max-h-[65vh] overflow-y-auto p-1">
-                {PRESETS_ESPACIOS.map((preset) => (
-                  <div
-                    key={preset.id}
-                    className="flex flex-col justify-between rounded border border-border-subtle bg-bg-paper p-3 hover:border-gold-400 hover:shadow-xs transition-all"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{preset.icono}</span>
-                        <h4 className="text-xs font-bold text-text-heading">{preset.nombre}</h4>
-                      </div>
-                      <p className="mt-1 text-[11px] text-text-muted leading-relaxed">
-                        {preset.descripcion}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="rounded bg-bg-alt px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
-                          {preset.items.length} módulos incluidos
-                        </span>
-                        <span className="rounded bg-bg-alt px-1.5 py-0.5 text-[10px] text-text-muted">
-                          Jornadas: {preset.jornadas.dev}d dev / {preset.jornadas.ens}d ens / {preset.jornadas.inst}d inst
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-3 pt-2 border-t border-border-subtle flex justify-end">
-                      <Button
-                        variant="primary"
-                        size="md"
-                        onClick={() => void aplicarPreset(preset)}
-                        disabled={creandoEspacio}
-                      >
-                        Insertar Espacio
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Modal>
-        )}
         {mostrarPlantillasCatalogoModal && (
           <Modal
             open={true}
@@ -1338,17 +1245,6 @@ function EspacioGroup({
     }
   }
 
-  const guardarEspacioComoPlantilla = async () => {
-    const nombrePlantilla = window.prompt('Nombre de la plantilla:', nombreEspacio)
-    if (!nombrePlantilla || !nombrePlantilla.trim()) return
-    try {
-      await guardarEspacioComoPlantillaAction(varianteActiva.id, nombrePlantilla.trim())
-      window.alert('Plantilla creada en el catálogo.')
-    } catch (err) {
-      window.alert(`No se pudo crear la plantilla: ${err instanceof Error ? err.message : 'Motivo desconocido.'}`)
-    }
-  }
-
   return (
     <div className={`rounded-lg border ${varianteActiva.activa ? 'border-border-subtle' : 'border-border-subtle/50'} bg-bg-raised overflow-hidden`}>
       <button
@@ -1399,19 +1295,7 @@ function EspacioGroup({
                     <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
                   </svg>
                 </button>
-                  <button
-                    type="button"
-                    disabled={eliminandoEspacio}
-                    onClick={(e) => { e.stopPropagation(); void guardarEspacioComoPlantilla() }}
-                    className="p-1.5 rounded text-text-muted hover:text-gold-600 hover:bg-bg-alt transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
-                    aria-label={`Guardar "${nombreEspacio}" como plantilla`}
-                    title="Guardar este espacio como plantilla del catálogo"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M2 8.6V14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-5.4M6 6h.01M10 6h.01M6 12h8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </span>
+                </span>
           )}
           <select
             value={varianteActiva.tipoEspacio ?? ''}
