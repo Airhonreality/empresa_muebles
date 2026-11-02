@@ -24,8 +24,9 @@ export const metadata = {
   }),
 }
 
-// ISR para que la landing de Google Ads cargue rápido sin consultar la DB en cada visita.
-export const revalidate = 300
+// Renderizado dinámico en cada petición: evita caché estática atrapada
+// en ISR y garantiza que la landing de Google Ads siempre muestre el código actual.
+export const dynamic = 'force-dynamic'
 
 const HERO_IMG = '/images/home/pisos-madera-restauracion-bogota-1.webp'
 
