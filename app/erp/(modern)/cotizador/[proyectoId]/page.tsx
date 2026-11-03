@@ -1576,6 +1576,8 @@ function VarianteContenido({
   const [itemDropdownAbierto, setItemDropdownAbierto] = useState<string | null>(null)
   const [grupoAñadiendo, setGrupoAñadiendo] = useState<string | null>(null)
   const [itemAnidando, setItemAnidando] = useState<string | null>(null)
+  // Fase V: swipe-to-reveal en filas de ítem (qué ítem está swiped)
+  const [swipedItemId, setSwipedItemId] = useState<string | null>(null)
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
   const tieneContexto = Boolean(espacio.descripcion) || ( espacio.fotosEspacio ?? [] ).length > 0 ||
@@ -2019,12 +2021,52 @@ function VarianteContenido({
           const cantidadNum = parseNum(item.cantidad)
           const precioNum = parseNum(item.precioUnitario)
           const total = cantidadNum * precioNum
+          const isSwiped = swipedItemId === item.id
           return (
             <div
               key={item.id}
               id={`item-row-${item.id}`}
-              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-l-3 border-gold-300 bg-surface-50 px-3 py-2 mb-2 transition-colors duration-500`}
+              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-l-3 border-gold-300 bg-surface-50 px-3 py-2 mb-2 relative overflow-hidden transition-transform duration-300`}
+              style={{ transform: `translateX(${isSwiped ? -70 : 0}px)` }}
+              onTouchEnd={() => { setSwipedItemId(null) }}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest('button, input, select, [role="option"]')) return
+                setSwipedItemId(swipedItemId === item.id ? null : item.id)
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSwipedItemId(swipedItemId === item.id ? null : item.id) } }}
+              aria-label={`Ítem ${item.nombrePersonalizado ?? prod?.descripcion ?? 'sin nombre'} — desliza a la izquierda para editar o eliminar`}
             >
+              {/* Fondo de acciones revelado por swipe (solo Editar + Eliminar) */}
+              <div className="absolute inset-0 flex items-end pl-6 pr-3 bg-red-50/40 border-l-3 border-red-500">
+                <div className="flex gap-2 pb-4">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setModalItemId(item.id)
+                      setSwipedItemId(null)
+                    }}
+                    className="p-2 text-xs text-gold-700 hover:bg-gold-100 rounded border border-gold-200"
+                    title="Editar ítem"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void store.items.eliminar(item.id)
+                      setSwipedItemId(null)
+                    }}
+                    className="p-2 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200"
+                    title="Eliminar ítem"
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </div>
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 sm:gap-2">
                   {/* t-160: checkbox para selección múltiple */}
@@ -2108,14 +2150,14 @@ function VarianteContenido({
                     </span>
                   </div>
                 </div>
-                {/* t-160: acciones simplificadas — solo dropdown de opciones (delete incluido) */}
+                {/* Fase V: ⋮ abre Action Sheet flotante inferior en móvil en lugar de dropdown estático */}
                 <div className="flex items-center justify-end gap-1 flex-shrink-0">
-                  {/* Options dropdown menu */}
                   <div className="relative">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
+                        setSwipedItemId(null)
                         setItemDropdownAbierto(itemDropdownAbierto === item.id ? null : item.id)
                       }}
                       aria-label="Más opciones"
@@ -2128,58 +2170,84 @@ function VarianteContenido({
                         <circle cx="8" cy="13" r="1.5" />
                       </svg>
                     </button>
+                    {/* Fase V: Action Sheet flotante inferior (móvil) en lugar de dropdown estático */}
                     {itemDropdownAbierto === item.id && (
-                      <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1" onClick={(e) => e.stopPropagation()}>
+                      <>
                         <button
                           type="button"
-                          onClick={() => {
-                            setModalItemId(item.id)
-                            setItemDropdownAbierto(null)
-                          }}
-                          className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-                          >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
-                            actualizarItem(item.id, 'esReferencial', !item.esReferencial)
-                            mostrarInfo(`"${nombre}" movido a ${item.esReferencial ? 'Ítems' : 'Presupuesto Adicional'}.`, {
-                              etiqueta: 'Deshacer',
-                              onClick: () => actualizarItem(item.id, 'esReferencial', !item.esReferencial),
-                            })
-                            setItemDropdownAbierto(null)
-                          }}
-                          className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-                        >
-                          ↔ Mover a {item.esReferencial ? 'Ítems' : 'Presupuesto'}
-                        </button>
-                        <div className="border-t border-border-subtle my-1" />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setItemAnidando(item.id)
-                            setItemDropdownAbierto(null)
-                          }}
-                          className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
-                          title="Anidar este item en un grupo"
-                        >
-                          Anidar en grupo
-                        </button>
-                        <div className="border-t border-border-subtle my-1" />
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await store.items.eliminar(item.id)
-                            setItemDropdownAbierto(null)
-                          }}
-                          className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast text-red-500"
-                          title="Eliminar ítem"
-                        >
-                          Eliminar ítem
-                        </button>
-                      </div>
+                          onClick={() => setItemDropdownAbierto(null)}
+                          className="absolute inset-0 z-30 bg-black/20 backdrop-blur-sm"
+                          aria-label="Cerrar menú"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 z-40 h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                          <div className="p-3 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
+                            <span className="font-semibold text-text-heading">Opciones del ítem</span>
+                            <button
+                              type="button"
+                              onClick={() => setItemDropdownAbierto(null)}
+                              className="p-1.5 text-text-muted hover:text-gold-600 rounded hover:bg-bg-alt"
+                              aria-label="Cerrar menú"
+                            >
+                              <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path d="M6 6L10 10M10 6L6 10" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setModalItemId(item.id)
+                                setItemDropdownAbierto(null)
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
+                              title="Editar ítem"
+                            >
+                              Editar ítem
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
+                                actualizarItem(item.id, 'esReferencial', !item.esReferencial)
+                                mostrarInfo(`"${nombre}" movido a ${item.esReferencial ? 'Ítems' : 'Presupuesto Adicional'}.`, {
+                                  etiqueta: 'Deshacer',
+                                  onClick: () => actualizarItem(item.id, 'esReferencial', !item.esReferencial),
+                                })
+                                setItemDropdownAbierto(null)
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
+                              title="Mover a ítems o presupuesto"
+                            >
+                              ↔ Mover a {item.esReferencial ? 'Ítems' : 'Presupuesto'}
+                            </button>
+                            <div className="border-t border-border-subtle my-2" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setItemAnidando(item.id)
+                                setItemDropdownAbierto(null)
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
+                              title="Anidar este item en un grupo"
+                            >
+                              Anidar en grupo
+                            </button>
+                            <div className="border-t border-border-subtle my-2" />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await store.items.eliminar(item.id)
+                                setItemDropdownAbierto(null)
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0 text-red-600 font-medium"
+                              title="Eliminar ítem"
+                            >
+                              🗑️ Eliminar ítem
+                            </button>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
