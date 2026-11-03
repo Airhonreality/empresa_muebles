@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal } from "lucide-react";
 import {
   type OrigenObligacion,
   type EstadoObligacion,
@@ -80,7 +79,6 @@ export default function FinanzasPage() {
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoManual | null>(null);
   const [movimientoEditando, setMovimientoEditando] = useState<MovimientoFinanciero | null>(null);
   const [mostrarCuenta, setMostrarCuenta] = useState(false);
-  const [masAccionesAbierto, setMasAccionesAbierto] = useState(false);
   const [openCuentas, setOpenCuentas] = useState(false);
   const [openObligaciones, setOpenObligaciones] = useState(false);
   const [openCuentasCobro, setOpenCuentasCobro] = useState(false);
@@ -315,33 +313,30 @@ export default function FinanzasPage() {
                 Nueva cuenta
               </Button>
             </div>
-            {/* Móvil: primaria + icono "Más acciones" con popover */}
-            <div className="relative flex sm:hidden gap-2 w-full">
-              <Button variant="primary" size="md" className="flex-1" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("salida"); setMasAccionesAbierto(false); }}>
-                Registrar salida
-              </Button>
-              <Button
-                variant="icon"
-                size="md"
-                onClick={() => setMasAccionesAbierto((v) => !v)}
-                aria-label="Más acciones"
-                aria-expanded={masAccionesAbierto}
-              >
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
-              {masAccionesAbierto && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-20 flex flex-col gap-1 p-1 rounded-md border border-border-subtle bg-bg-raised shadow-lg">
-                  <Button variant="primary" size="md" className="w-full" onClick={() => { setMovimientoEditando(null); setTipoMovimiento("entrada"); setMasAccionesAbierto(false); }}>
-                    Registrar entrada
-                  </Button>
-                  <Button variant="outline" size="md" className="w-full" onClick={() => { setMostrarCuenta(true); setMasAccionesAbierto(false); }}>
-                    Nueva cuenta
-                  </Button>
-                </div>
-              )}
-            </div>
           </div>
         </header>
+      </div>
+
+      {/* Barra inferior sticky de mandos al nivel del pulgar (solo móvil) */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm shadow-lg px-4 py-3">
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            className="flex-1 h-12 min-w-[44px]"
+            onClick={() => { setMovimientoEditando(null); setTipoMovimiento("entrada"); }}
+          >
+            Entrada
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            className="flex-1 h-12 min-w-[44px]"
+            onClick={() => { setMovimientoEditando(null); setTipoMovimiento("salida"); }}
+          >
+            Salida
+          </Button>
+        </div>
       </div>
 
       {cargando && (
