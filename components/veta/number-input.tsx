@@ -70,11 +70,7 @@ export function NumberInput({
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         onFocus={handleFocus}
-        className={`w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 text-base text-text-primary outline-none ${
-          error
-            ? "border-error-stroke focus:border-error-stroke"
-            : "border-border-subtle focus:border-brand"
-        } focus:shadow-ring-focus`}
+        className={`w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 font-mono ${error ? "border-error-stroke focus:border-error-stroke" : "border-border-subtle focus:border-brand"} focus:shadow-ring-focus style:font-size:[clamp(14px,4vw,16px)]`}
         aria-label={props["aria-label"] || "Cantidad"}
         {...props}
       />

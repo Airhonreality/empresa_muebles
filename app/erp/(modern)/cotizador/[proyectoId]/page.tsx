@@ -1918,71 +1918,101 @@ function VarianteContenido({
         )}
 
         {modoBusquedaItem === 'normal' && (
-          // 2026-10-01 (diagnóstico UX, ronda 2): el panel entero cambia de color/borde según
-          // `busquedaEsReferencial` -- sin importar por cuál de los dos caminos se llegó acá (el
-          // botón de catálogo de arriba, o "+ Presupuesto adicional" en su propia sección más
-          // abajo), el MODO queda visualmente inconfundible mientras se está creando el ítem,
-          // no solo en el checkbox chiquito que antes era la única señal.
-          <div id={`panel-busqueda-item-${espacio.id}`} className={`mb-3 space-y-2 rounded border p-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30' : grupoAñadiendo ? 'border-dashed border-blue-400 bg-blue-50/30' : 'border-transparent'}`}>
-            {busquedaEsReferencial && (
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">
-                Agregando a Presupuesto Adicional — no cuenta en el contrato
-              </p>
-            )}
-            {grupoAñadiendo && (
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
-                Agregando dentro del grupo — se anidarán automáticamente
-              </p>
-            )}
-            <SmartSearch
-              items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-              onSelect={(producto) => {
-                // 2026-10-01: id generado ANTES de disparar la mutación -- se engancha al mismo
-                // id que usa la actualización optimista de caché (síncrona, antes de cualquier
-                // round-trip de red), así el resaltado de la fila nueva no espera al servidor
-                // (bug real reportado por Javier: "el feedback de agregación tarda mucho en salir").
-                const id = crypto.randomUUID()
-                void store.items.crear({
-                  id,
-                  varianteId: espacio.id,
-                  catalogoId: producto.id,
-                  nombrePersonalizado: null,
-                  cantidad: '1',
-                  precioUnitario: producto.precioPublico ?? '0',
-                  esReferencial: busquedaEsReferencial,
-                  grupoItemId: grupoAñadiendo ?? undefined,
-                })
-                setModoBusquedaItem('off')
-                setGrupoAñadiendo(null)
-              }}
-              onCreateNew={(descripcion) => {
-                setCrearProducto({ descripcion })
-                setModoBusquedaItem('off')
-              }}
-              createActionLabel={(q) => `+ Crear producto "${q}"`}
-              placeholder="Buscar en catálogo..."
-              label="Producto"
-              allowCreate
-              contexto="cotizador-items"
+          // Bottom Sheet de búsqueda de catálogo (móvil-first): aísla al usuario del ruido
+          // visual del resto de la cotización mientras selecciona un insumo, con foco de teclado.
+          <div className="fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm">
+            {/* Overlay para cerrar al hacer clic fuera */}
+            <button
+              type="button"
+              onClick={() => setModoBusquedaItem('off')}
+              className="absolute inset-0 z-10"
+              aria-label="Cerrar búsqueda de catálogo"
             />
-            {/* 2026-09-30 (diagnóstico UX): checkbox explícito para el caso de entrar por
-                "+ Ítem de catálogo" y decidir ahí mismo que es referencial -- complementa, no
-                reemplaza, el camino directo de "+ Presupuesto adicional" (ver sección de abajo). */}
-            <label className="flex items-center gap-2 text-xs text-gold-700 cursor-pointer w-fit rounded border border-dashed border-gold-300 bg-gold-50/40 px-2 py-1.5">
-              <input
-                type="checkbox"
-                checked={busquedaEsReferencial}
-                onChange={(e) => setBusquedaEsReferencial(e.target.checked)}
-                className="rounded text-gold-500 focus:ring-gold-400"
-              />
-              <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
-            </label>
-            <Button variant="ghost" size="md" onClick={() => setModoBusquedaItem('off')}>
-              Cancelar
-            </Button>
+            {/* Panel del bottom sheet */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 h-full sm:h-auto sm:max-h-[60vh] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 bg-bg-raised rounded-t-2xl sm:rounded-2xl border-t border-t-border-subtle sm:border shadow-2xl flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
+                <span className="font-semibold text-text-heading">Buscar en catálogo</span>
+                <button
+                  type="button"
+                  onClick={() => setModoBusquedaItem('off')}
+                  className="p-1.5 text-text-muted hover:text-gold-600 rounded hover:bg-bg-alt"
+                  aria-label="Cerrar búsqueda"
+                >
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M6 6L10 10M10 6L6 10" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div id={`panel-busqueda-item-${espacio.id}`} className={`space-y-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30 p-2 rounded' : grupoAñadiendo ? 'border-dashed border-blue-400 bg-blue-50/30 p-2 rounded' : ''}`}>
+                  {busquedaEsReferencial && (
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">
+                      Agregando a Presupuesto Adicional — no cuenta en el contrato
+                    </p>
+                  )}
+                  {grupoAñadiendo && (
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                      Agregando dentro del grupo — se anidarán automáticamente
+                    </p>
+                  )}
+                  <SmartSearch
+                    items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
+                    onSelect={(producto) => {
+                      // 2026-10-01: id generado ANTES de disparar la mutación -- se engancha al mismo
+                      // id que usa la actualización optimista de caché (síncrona, antes de cualquier
+                      // round-trip de red), así el resaltado de la fila nueva no espera al servidor
+                      // (bug real reportado por Javier: "el feedback de agregación tarda mucho en salir").
+                      const id = crypto.randomUUID()
+                      void store.items.crear({
+                        id,
+                        varianteId: espacio.id,
+                        catalogoId: producto.id,
+                        nombrePersonalizado: null,
+                        cantidad: '1',
+                        precioUnitario: producto.precioPublico ?? '0',
+                        esReferencial: busquedaEsReferencial,
+                        grupoItemId: grupoAñadiendo ?? undefined,
+                      })
+                      setModoBusquedaItem('off')
+                      setGrupoAñadiendo(null)
+                    }}
+                    onCreateNew={(descripcion) => {
+                      setCrearProducto({ descripcion })
+                      setModoBusquedaItem('off')
+                    }}
+                    createActionLabel={(q) => `+ Crear producto "${q}"`}
+                    placeholder="Buscar en catálogo..."
+                    label="Producto"
+                    allowCreate
+                    contexto="cotizador-items"
+                  />
+                  {/* 2026-09-30 (diagnóstico UX): checkbox explícito para el caso de entrar por
+                      "+ Ítem de catálogo" y decidir ahí mismo que es referencial -- complementa, no
+                      reemplaza, el camino directo de "+ Presupuesto adicional" (ver sección de abajo). */}
+                  <label className="flex items-center gap-2 text-xs text-gold-700 cursor-pointer w-fit rounded border border-dashed border-gold-300 bg-gold-50/40 px-2 py-1.5">
+                    <input
+                      type="checkbox"
+                      checked={busquedaEsReferencial}
+                      onChange={(e) => setBusquedaEsReferencial(e.target.checked)}
+                      className="rounded text-gold-500 focus:ring-gold-400"
+                    />
+                    <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
+                  </label>
+                </div>
+              </div>
+              <div className="p-4 border-t border-border-subtle bg-bg-paper">
+                <button
+                  type="button"
+                  onClick={() => setModoBusquedaItem('off')}
+                  className="w-full py-3 rounded bg-gold-600 text-white font-medium hover:bg-gold-700 transition-colors"
+                >
+                  Listo
+                </button>
+              </div>
+            </div>
           </div>
         )}
-
+        
         {(() => {
           const renderItemRow = (item: ItemVariante) => {
           const prod = item.catalogoId ? productMap.get(item.catalogoId) : undefined
@@ -2028,16 +2058,39 @@ function VarianteContenido({
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 w-full sm:w-auto mt-3 sm:mt-0 bg-surface-100 sm:bg-transparent p-3 sm:p-0 rounded border border-border-subtle/50 sm:border-0">
                 <div className="grid grid-cols-12 sm:flex items-center gap-2 w-full sm:w-auto">
-                  <div className="col-span-3 sm:w-20">
-                    <NumberInput
-                      value={item.cantidad}
-                      onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
-                      step={0.1}
-                      min={0}
-                      label=""
-                      className="w-full text-right font-mono text-sm"
-                      aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
-                    />
+                  <div className="col-span-3 sm:w-28">
+                    {/* Stepper de cantidad móvil: incrementar/decrementar sin abrir teclado */}
+                    <div className="flex items-center justify-between gap-1 w-full border rounded border-border-subtle bg-bg-paper">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const n = Math.max(0, parseNum(item.cantidad) - 1)
+                          void actualizarItem(item.id, 'cantidad', String(n))
+                        }}
+                        disabled={parseNum(item.cantidad) <= 0}
+                        aria-label={`Disminuir cantidad de ${prod?.descripcion ?? item.id}`}
+                        className="p-1.5 text-sm text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-l disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        −
+                      </button>
+                      <span
+                        className="font-mono text-sm text-text-primary w-12 text-center select-none"
+                        aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
+                      >
+                        {item.cantidad}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const n = parseNum(item.cantidad) + 1
+                          void actualizarItem(item.id, 'cantidad', String(n))
+                        }}
+                        aria-label={`Aumentar cantidad de ${prod?.descripcion ?? item.id}`}
+                        className="p-1.5 text-sm text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-r"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                   <div className="col-span-1 text-center text-text-muted text-xs">×</div>
                   <div className="col-span-4 sm:w-28">
