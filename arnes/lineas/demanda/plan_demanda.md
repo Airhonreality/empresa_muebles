@@ -138,7 +138,7 @@ Las 16 piezas de la tabla de Notion ya están mapeadas al embudo (Descubrimiento
 
 **Fase 1: Configuración y lectura de datos base**
 - **Dependencia dura:** Bloque A cerrado, sin excepción. Sin verdad de terreno (`gclid` y conversiones reales capturadas), un agente automatizando campañas amplifica el error más rápido que un humano.
-- **Acción manual inicial (`t-110`):** El humano gestiona el Developer Token y el flujo OAuth2 para habilitar las credenciales de la API de Google Ads. (La facturación sigue siendo manual).
+- **Acción manual inicial (`t-110`):** ✅ **RESUELTA 2026-11-02.** Credenciales de Google Ads ya en Infisical (proyecto `d99dea9e-...`): `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_LOGIN_CUSTOMER_ID`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_AUTH_CLIENT_ID`, `GOOGLE_AUTH_CLIENT_SECRET`. Copiadas del proyecto `Agentic_Toolbox`. La facturación sigue siendo manual.
 - **La pregunta de transición:** Al duplicar el presupuesto base, ¿el CPA se mantuvo o subió? Si se mantuvo → volver a duplicar. Si subió → arranca la optimización estructural (Fase 2).
 
 **Fase 2: Agencialidad total (Cero pasos manuales en el día a día)**

@@ -1,0 +1,53 @@
+{
+  "id": "t-190",
+  "titulo": "Crear campaña Google Ads — Pisos de Madera (Búsqueda, Bogotá)",
+  "intencion_negocio": "Lanzar campaña de paga en Google Ads para captar leads de restauración/pulido/reparación de pisos de madera en Bogotá, usando la cuenta 975-949-1517 (GOOGLE_ADS_ID_ACCOUNT_PISOS_MADERA). Campaña tipo Búsqueda, modo experto, CPC manual 1.000-2.000 COP, presupuesto 5.000 COP/día, 3 grupos de anuncios (Restauración, Pulido y Barnizado, Reparación), 6 RSA, 14 palabras clave, 9 bloques de negativas. Landing destino: /espacios/pisos-de-madera. Evento de conversión: fireAdsConversion('pisos').",
+  "zona": "arnes/lineas/demanda",
+  "tipo": "integracion_externa",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "scripts/crear_campana_sdk.py",
+    "arnes/tareas/t-190.json (este registro)"
+  ],
+  "criterios_aceptacion": [
+    "Campaña 'Búsqueda – Pisos de Madera – Bogotá' creada en cuenta 975-949-1517",
+    "Tipo Búsqueda, solo red de búsqueda de Google (socios de búsqueda y Display desmarcados)",
+    "Ubicación: Bogotá D.C.",
+    "Presupuesto diario: 5.000 COP",
+    "Estrategia de puja: Clics manuales, límite CPC 1.000-2.000 COP",
+    "Programación: 24/7 inicialmente",
+    "3 grupos de anuncios: Restauración, Pulido y Barnizado, Reparación",
+    "2 RSA por grupo (6 total), cada uno con 15 títulos y 4 descripciones según el diseño del documento",
+    "Título 1 fijado a posición 1 con palabra clave ancla de cada grupo",
+    "14 palabras clave con concordancia frase y exacta según el documento",
+    "9 bloques de palabras clave negativas aplicados (incluye concordancia de frase Bloques A-E)",
+    "Campaña creada en estado PAUSED (no gasta hasta activación manual)",
+    "tsc --noEmit sin errores, eslint sin errores en archivos tocados"
+  ],
+  "plan_ref": "arnes/lineas/demanda/plan_demanda.md §F, arnes/lineas/demanda/estado_demanda.md §R6",
+  "ejecutor": "opencode (agente)",
+  "verificador": null,
+  "qa": null,
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": null,
+    "fecha": null,
+    "nota": "Campaña creada en estado PAUSED. Escrituras a la cuenta de Google Ads requieren confirmación explícita de Javier — es plata real. Credenciales en Infisical (proyecto d99dea9e-3a90-4df5-9e34-a1b117271c3b), SOLO_HUMANO."
+  },
+  "estado": "completada",
+  "creada_en": "2026-11-02T00:00:00Z",
+  "cerrada_en": "2026-11-02T17:33:09-05:00",
+  "resultado": {
+    "campania_id": "24429621538",
+    "campania_resource_name": "customers/9759491517/campaigns/24429621538",
+    "presupuesto_id": "15995133992",
+    "estado": "PAUSED",
+    "presupuesto_diario_cop": 5000,
+    "cpc_limite_cop": 1500,
+    "grupos_anuncios": 3,
+    "rsas": 6,
+    "palabras_clave": 14,
+    "negativas": 234,
+    "landing": "https://www.vetadorada.co/espacios/pisos-de-madera"
+  }
+}

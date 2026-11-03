@@ -21,11 +21,11 @@
   "qa": null,
   "checkpoint": {
     "requerido": true,
-    "veredicto_humano": "pendiente",
-    "fecha": null,
-    "nota": "[SOLO_HUMANO] — esta tarea la ejecuta Javier personalmente, no un agente. Las credenciales de solo lectura de Ads/GA4/Search Console desbloquean el Bloque A (medición) y el Bloque F (ad manager agentivo). Sin ellas el diagnóstico de embudo no puede arrancar."
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-11-02",
+    "nota": "[SOLO_HUMANO] — credenciales de Google Ads ahora en Infisical (proyecto d99dea9e-...): GOOGLE_ADS_DEVELOPER_TOKEN, GOOGLE_ADS_LOGIN_CUSTOMER_ID, GOOGLE_ADS_REFRESH_TOKEN, GOOGLE_AUTH_CLIENT_ID, GOOGLE_AUTH_CLIENT_SECRET. Copiadas del proyecto Agentic_Toolbox. Desbloquea Bloque A (medición) y Bloque F (ad manager agentivo). Escrituras a la cuenta de Ads (pujas, presupuestos, pausar) siguen requiriendo confirmación explícita de Javier."
   },
-  "estado": "esperando_humano",
+  "estado": "completada",
   "creada_en": "2026-08-08T00:00:00Z",
-  "cerrada_en": null
+  "cerrada_en": "2026-11-02"
 }
