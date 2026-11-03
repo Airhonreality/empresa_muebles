@@ -2188,9 +2188,6 @@ function VarianteContenido({
                     <span className="text-text-heading text-base sm:text-sm font-medium sm:font-normal truncate">
                       {item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem sin catálogo'}
                     </span>
-                    {prod && (
-                      <span className="text-xs text-text-muted font-mono truncate">{prod.sku}</span>
-                    )}
                     {item.comentario && (
                       <input
                         type="text"
