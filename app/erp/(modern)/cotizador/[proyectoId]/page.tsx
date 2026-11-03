@@ -1246,7 +1246,7 @@ function EspacioGroup({
   }
 
   return (
-    <div className={`rounded-lg border ${varianteActiva.activa ? 'border-border-subtle' : 'border-border-subtle/50'} bg-bg-raised overflow-hidden`}>
+    <div className={`border-l-4 ${varianteActiva.activa ? 'border-gold-500' : 'border-border-subtle/30'} bg-bg-raised/40 overflow-hidden mb-3`}>
       <button
         type="button"
         onClick={() => onToggle(nombreEspacio)}
@@ -1993,7 +1993,7 @@ function VarianteContenido({
             <div
               key={item.id}
               id={`item-row-${item.id}`}
-              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-b border-border-subtle/50 pb-4 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0 rounded transition-colors duration-500`}
+              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-l-3 border-gold-300 bg-surface-50 px-3 py-2 mb-2 transition-colors duration-500`}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 sm:gap-2">
@@ -2055,22 +2055,8 @@ function VarianteContenido({
                     </span>
                   </div>
                 </div>
-                {/* t-160: acciones simplificadas — solo eliminar + dropdown de opciones */}
-                <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border-subtle/50 sm:mt-0 sm:pt-0 sm:border-0 flex-shrink-0">
-                  {/* Delete button */}
-                  <button
-                    type="button"
-                    onClick={async () => await store.items.eliminar(item.id)}
-                    aria-label={`Eliminar ${item.nombrePersonalizado ?? 'ítem'}`}
-                    title="Eliminar"
-                    className="p-2 sm:p-1 text-text-muted hover:text-red-500 rounded transition-colors duration-fast"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M2.5 4h11M6.2 4V2.6h3.6V4M3.8 4l.65 9.3h7.1L12.2 4" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M6.6 7v4M9.4 7v4" strokeLinecap="round" />
-                    </svg>
-                  </button>
-
+                {/* t-160: acciones simplificadas — solo dropdown de opciones (delete incluido) */}
+                <div className="flex items-center justify-end gap-1 flex-shrink-0">
                   {/* Options dropdown menu */}
                   <div className="relative">
                     <button
@@ -2080,10 +2066,10 @@ function VarianteContenido({
                         setItemDropdownAbierto(itemDropdownAbierto === item.id ? null : item.id)
                       }}
                       aria-label="Más opciones"
-                      title="Editar, mover, anidar"
-                      className="p-2 sm:p-1 text-text-muted hover:text-gold-600 rounded transition-colors duration-fast"
+                      title="Editar, mover, anidar, eliminar"
+                      className="p-3 text-text-muted hover:text-gold-600 rounded hover:bg-bg-alt transition-colors duration-fast"
                     >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
                         <circle cx="8" cy="3" r="1.5" />
                         <circle cx="8" cy="8" r="1.5" />
                         <circle cx="8" cy="13" r="1.5" />
@@ -2128,6 +2114,18 @@ function VarianteContenido({
                         >
                           Anidar en grupo
                         </button>
+                        <div className="border-t border-border-subtle my-1" />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await store.items.eliminar(item.id)
+                            setItemDropdownAbierto(null)
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast text-red-500"
+                          title="Eliminar ítem"
+                        >
+                          Eliminar ítem
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2143,9 +2141,9 @@ function VarianteContenido({
             const hijos = hijosDe(grupo.id)
             const itemsPropios = itemsDelGrupo(grupo.id)
             return (
-              <div key={grupo.id} className="mb-2" style={{ marginLeft: nivel * 16 }}>
+              <div key={grupo.id} className="mb-2 ml-3">
                 {/* t-160: Toolbar de grupo — diseñada para agregar items dentro de este grupo */}
-                <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-3 py-2 border border-border-subtle/60">
+                <div className="flex items-center justify-between gap-2 border-l-3 border-gold-400 bg-bg-raised/30 px-3 py-2">
                   <span className="text-xs font-semibold text-text-heading truncate">{grupo.nombre}</span>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <DropdownMenu
