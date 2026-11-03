@@ -59,7 +59,8 @@ export function ItemRow({
     <div
       className={`border-b border-border-subtle/50 pb-3 pt-2 sm:pb-2 sm:pt-0 last:pb-0 last:border-0 rounded transition-colors sm:hover:bg-bg-alt/30 ${
         isNew ? 'bg-gold-100/80' : ''
-      }`}
+      } ${dropdownOpen ? 'z-50' : ''} ${isMobile ? 'sm:z-50' : ''}`}
+      style={{ position: dropdownOpen ? 'relative' : undefined }}
     >
       {/* Fila superior: miniatura + nombre + subtotal a la derecha */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-3">
@@ -156,7 +157,7 @@ export function ItemRow({
               <MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
             {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1" onClick={(e) => e.stopPropagation()}>
+              <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-50 py-1" onClick={(e) => e.stopPropagation()}>
                 <button
                   type="button"
                   onClick={() => { onEdit(item.id); setDropdownOpen(false) }}

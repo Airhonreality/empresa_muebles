@@ -660,7 +660,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       </div>
 
       {/* Contenido scrolleable */}
-      <div className="px-6 py-6 pb-[calc(120px+env(safe-area-inset-bottom))] sm:pb-0">
+      <div className="px-3 sm:px-6 py-6 pb-[calc(120px+env(safe-area-inset-bottom))] sm:pb-0">
         {(proyecto.direccionObra || proyecto.descripcionSemantica) && (
           <div className="mb-4 space-y-1">
             {proyecto.direccionObra && <p className="text-xs text-text-muted">{proyecto.direccionObra}</p>}
@@ -2118,7 +2118,7 @@ function VarianteContenido({
               key={item.id}
               id={`item-row-${item.id}`}
               className={`
-                flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm relative overflow-hidden
+                flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm relative ${itemDropdownAbierto === item.id ? 'z-50' : ''}
                 ${isMobile
                   ? 'border-l-3 border-gold-300 bg-surface-50 px-3 py-2 mb-2 transition-transform duration-300'
                   : 'sm:border-b sm:border-border-subtle/50 sm:border-l-0 sm:bg-transparent sm:pb-4 sm:pt-2 sm:pb-2 sm:pt-0 sm:last:pb-0 sm:last:border-0 sm:rounded sm:transition-colors sm:duration-500'}
@@ -2364,7 +2364,7 @@ function VarianteContenido({
                             </div>
                           </>
                         ) : (
-                          <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1" onClick={(e) => e.stopPropagation()}>
+                          <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-50 py-1" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={() => {
