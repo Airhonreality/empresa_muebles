@@ -4,6 +4,7 @@ import { useState, type ReactElement } from 'react'
 import { type GrupoItem, type ItemVariante, type ProductoCatalogo } from '@/lib/data'
 import { Button } from '@/components/veta/button'
 import { ItemRow } from './ItemRow'
+import { useIsMobile } from '@/lib/hooks/useMediaQuery'
 
 export interface GrupoNodoProps {
   grupo: GrupoItem
@@ -54,6 +55,7 @@ export function GrupoNodo({
 }: GrupoNodoProps): ReactElement {
   const [editandoNombre, setEditandoNombre] = useState(false)
   const [nombreTemp, setNombreTemp] = useState(grupo.nombre)
+  const isMobile = useIsMobile()
   const hijos = gruposHijos(grupo.id)
   const itemsPropios = itemsDelGrupo(grupo.id)
 
@@ -65,8 +67,8 @@ export function GrupoNodo({
   }
 
   return (
-    <div className="mb-2" style={{ marginLeft: nivel * 16 }}>
-      <div className="flex items-center justify-between gap-2 bg-bg-alt/40 rounded px-3 py-2 border border-border-subtle/60">
+    <div className="mb-3 sm:mb-2" style={{ marginLeft: isMobile ? 12 : nivel * 16 }}>
+      <div className={`flex items-center justify-between gap-2 px-3 py-3 ${isMobile ? 'border-l-4 border-border-subtle/30 bg-bg-raised/40' : 'rounded-lg border border-border-subtle bg-bg-raised'}`}>
         {editandoNombre ? (
           <input
             type="text"

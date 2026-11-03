@@ -6,7 +6,7 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { EntityHeader } from '@/components/veta/entity-header'
 import { EntityActionsBar, type EntityAction } from '@/components/veta/entity-actions-bar'
-import { Package, Copy } from 'lucide-react'
+import { Package, Copy, Edit, Trash2, Check } from 'lucide-react'
 import { MoneyInput } from '@/components/veta/money-input'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
@@ -30,6 +30,7 @@ import { eliminarProyectoAction, crearNotaReunionAction, duplicarGrupoAction, ac
 import { PARAMETROS_DEFAULT, type ParametrosJornadas } from '@/lib/modules/finanzas'
 import { TIPOS_ESPACIO } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { useIsMobile } from '@/lib/hooks/useMediaQuery'
 import { useToast } from '@/components/veta/toast-provider'
 import { useDebouncedInput } from '@/lib/hooks/useDebouncedInput'
 import { useEstadoPublicacionPropuesta } from '@/lib/data/queries/useCotizadorQueries'
@@ -659,7 +660,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       </div>
 
       {/* Contenido scrolleable */}
-      <div className="px-6 py-6">
+      <div className="px-6 py-6 pb-[calc(120px+env(safe-area-inset-bottom))] sm:pb-0">
         {(proyecto.direccionObra || proyecto.descripcionSemantica) && (
           <div className="mb-4 space-y-1">
             {proyecto.direccionObra && <p className="text-xs text-text-muted">{proyecto.direccionObra}</p>}
@@ -926,6 +927,29 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             onCerrar={() => setModalPresentacionAbierto(false)}
           />
         )}
+      </div>
+
+      {/* Barra inferior sticky de totales + CTA (solo móvil, justo encima del bottom-nav del shell) */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm px-4 py-3 shadow-lg">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-text-muted">Total acumulado del proyecto</span>
+            <span className="font-mono font-semibold text-text-heading text-clamp-money">
+              {formatCOP(total)}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (contrato) setMostrarContratoModal(true)
+              else crearEspacio()
+            }}
+            aria-label={contrato ? 'Generar Contrato' : 'Añadir espacio'}
+            className="flex items-center justify-center gap-2 min-w-[48px] h-12 rounded-md bg-brand text-white text-sm font-medium px-4 hover:bg-gold-700 transition-colors"
+          >
+            {contrato ? 'Generar Contrato' : '+ Añadir Espacio'}
+          </button>
+        </div>
       </div>
 
     </div>
@@ -1503,6 +1527,7 @@ function VarianteContenido({
   proyectoId: string
 }) {
   const { store } = useCotizadorCompat()
+  const isMobile = useIsMobile()
   // Lectura de items desde el snapshot TanStack Query (B2, plan_cotizador_tanstack_query.md).
   const items = store.items.porVariante(espacio.id)
   const productMap = useMemo(() => new Map(catalogo.map((p) => [p.id, p])), [catalogo])
@@ -1920,100 +1945,166 @@ function VarianteContenido({
         )}
 
         {modoBusquedaItem === 'normal' && (
-          // Bottom Sheet de búsqueda de catálogo (móvil-first): aísla al usuario del ruido
-          // visual del resto de la cotización mientras selecciona un insumo, con foco de teclado.
-          <div className="fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm">
-            {/* Overlay para cerrar al hacer clic fuera */}
-            <button
-              type="button"
-              onClick={() => setModoBusquedaItem('off')}
-              className="absolute inset-0 z-10"
-              aria-label="Cerrar búsqueda de catálogo"
-            />
-            {/* Panel del bottom sheet */}
-            <div className="absolute bottom-0 left-0 right-0 z-20 h-full sm:h-auto sm:max-h-[60vh] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 bg-bg-raised rounded-t-2xl sm:rounded-2xl border-t border-t-border-subtle sm:border shadow-2xl flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
+          <>
+            {isMobile ? (
+            // Bottom Sheet de búsqueda de catálogo (móvil): foco de teclado, overlay flotante inferior.
+            <div className="fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm">
+              {/* Overlay para cerrar al hacer clic fuera */}
+              <button
+                type="button"
+                onClick={() => setModoBusquedaItem('off')}
+                className="absolute inset-0 z-10"
+                aria-label="Cerrar búsqueda de catálogo"
+              />
+              {/* Panel del bottom sheet */}
+              <div className="absolute bottom-0 left-0 right-0 z-20 h-full sm:h-auto sm:max-h-[60vh] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 bg-bg-raised rounded-t-2xl sm:rounded-2xl border-t border-t-border-subtle sm:border shadow-2xl flex flex-col overflow-hidden">
+                <div className="p-4 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
+                  <span className="font-semibold text-text-heading">Buscar en catálogo</span>
+                  <button
+                    type="button"
+                    onClick={() => setModoBusquedaItem('off')}
+                    className="p-1.5 text-text-muted hover:text-gold-600 rounded hover:bg-bg-alt"
+                    aria-label="Cerrar búsqueda"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M6 6L10 10M10 6L6 10" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  <div id={`panel-busqueda-item-${espacio.id}`} className={`space-y-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30 p-2 rounded' : grupoAñadiendo ? 'border-dashed border-blue-400 bg-blue-50/30 p-2 rounded' : ''}`}>
+                    {busquedaEsReferencial && (
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">
+                        Agregando a Presupuesto Adicional — no cuenta en el contrato
+                      </p>
+                    )}
+                    {grupoAñadiendo && (
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                        Agregando dentro del grupo — se anidarán automáticamente
+                      </p>
+                    )}
+                    <SmartSearch
+                      items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
+                      onSelect={(producto) => {
+                        // 2026-10-01: id generado ANTES de disparar la mutación -- se engancha al mismo
+                        // id que usa la actualización optimista de caché (síncrona, antes de cualquier
+                        // round-trip de red), así el resaltado de la fila nueva no espera al servidor
+                        // (bug real reportado por Javier: "el feedback de agregación tarda mucho en salir").
+                        const id = crypto.randomUUID()
+                        void store.items.crear({
+                          id,
+                          varianteId: espacio.id,
+                          catalogoId: producto.id,
+                          nombrePersonalizado: null,
+                          cantidad: '1',
+                          precioUnitario: producto.precioPublico ?? '0',
+                          esReferencial: busquedaEsReferencial,
+                          grupoItemId: grupoAñadiendo ?? undefined,
+                        })
+                        setModoBusquedaItem('off')
+                        setGrupoAñadiendo(null)
+                      }}
+                      onCreateNew={(descripcion) => {
+                        setCrearProducto({ descripcion })
+                        setModoBusquedaItem('off')
+                      }}
+                      createActionLabel={(q) => `+ Crear producto "${q}"`}
+                      placeholder="Buscar en catálogo..."
+                      label="Producto"
+                      allowCreate
+                      contexto="cotizador-items"
+                    />
+                    {/* 2026-09-30 (diagnóstico UX): checkbox explícito para el caso de entrar por
+                        "+ Ítem de catálogo" y decidir ahí mismo que es referencial -- complementa, no
+                        reemplaza, el camino directo de "+ Presupuesto adicional" (ver sección de abajo). */}
+                    <label className="flex items-center gap-2 text-xs text-gold-700 cursor-pointer w-fit rounded border border-dashed border-gold-300 bg-gold-50/40 px-2 py-1.5">
+                      <input
+                        type="checkbox"
+                        checked={busquedaEsReferencial}
+                        onChange={(e) => setBusquedaEsReferencial(e.target.checked)}
+                        className="rounded text-gold-500 focus:ring-gold-400"
+                      />
+                      <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="p-4 border-t border-border-subtle bg-bg-paper">
+                  <button
+                    type="button"
+                    onClick={() => setModoBusquedaItem('off')}
+                    className="w-full py-3 rounded bg-gold-600 text-white font-medium hover:bg-gold-700 transition-colors"
+                  >
+                    Listo
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Escritorio: panel inline sin overlay (HEAD~3).
+            <div className="mb-3 space-y-2 rounded border border-border-subtle p-2 bg-bg-raised">
+              <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-text-heading">Buscar en catálogo</span>
                 <button
                   type="button"
                   onClick={() => setModoBusquedaItem('off')}
-                  className="p-1.5 text-text-muted hover:text-gold-600 rounded hover:bg-bg-alt"
-                  aria-label="Cerrar búsqueda"
+                  className="text-xs text-text-muted underline underline-offset-4 hover:text-gold-600"
+                  aria-label="Cerrar búsqueda de catálogo"
                 >
-                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M6 6L10 10M10 6L6 10" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  Cerrar
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                <div id={`panel-busqueda-item-${espacio.id}`} className={`space-y-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30 p-2 rounded' : grupoAñadiendo ? 'border-dashed border-blue-400 bg-blue-50/30 p-2 rounded' : ''}`}>
-                  {busquedaEsReferencial && (
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">
-                      Agregando a Presupuesto Adicional — no cuenta en el contrato
-                    </p>
-                  )}
-                  {grupoAñadiendo && (
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
-                      Agregando dentro del grupo — se anidarán automáticamente
-                    </p>
-                  )}
-                  <SmartSearch
-                    items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
-                    onSelect={(producto) => {
-                      // 2026-10-01: id generado ANTES de disparar la mutación -- se engancha al mismo
-                      // id que usa la actualización optimista de caché (síncrona, antes de cualquier
-                      // round-trip de red), así el resaltado de la fila nueva no espera al servidor
-                      // (bug real reportado por Javier: "el feedback de agregación tarda mucho en salir").
-                      const id = crypto.randomUUID()
-                      void store.items.crear({
-                        id,
-                        varianteId: espacio.id,
-                        catalogoId: producto.id,
-                        nombrePersonalizado: null,
-                        cantidad: '1',
-                        precioUnitario: producto.precioPublico ?? '0',
-                        esReferencial: busquedaEsReferencial,
-                        grupoItemId: grupoAñadiendo ?? undefined,
-                      })
-                      setModoBusquedaItem('off')
-                      setGrupoAñadiendo(null)
-                    }}
-                    onCreateNew={(descripcion) => {
-                      setCrearProducto({ descripcion })
-                      setModoBusquedaItem('off')
-                    }}
-                    createActionLabel={(q) => `+ Crear producto "${q}"`}
-                    placeholder="Buscar en catálogo..."
-                    label="Producto"
-                    allowCreate
-                    contexto="cotizador-items"
+              <div id={`panel-busqueda-item-${espacio.id}`} className={`space-y-2 ${busquedaEsReferencial ? 'border-dashed border-gold-400 bg-gold-50/30 p-2 rounded' : grupoAñadiendo ? 'border-dashed border-blue-400 bg-blue-50/30 p-2 rounded' : ''}`}>
+                {busquedaEsReferencial && (
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">
+                    Agregando a Presupuesto Adicional — no cuenta en el contrato
+                  </p>
+                )}
+                {grupoAñadiendo && (
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                    Agregando dentro del grupo — se anidarán automáticamente
+                  </p>
+                )}
+                <SmartSearch
+                  items={catalogo.map(p => ({ id: p.id, sku: p.sku, descripcion: p.descripcion, tipo: p.tipo, precioPublico: p.precioPublico, precioDirecto: p.precioDirecto, categoriaComercial: p.categoriaComercial }))}
+                  onSelect={(producto) => {
+                    const id = crypto.randomUUID()
+                    void store.items.crear({
+                      id,
+                      varianteId: espacio.id,
+                      catalogoId: producto.id,
+                      nombrePersonalizado: null,
+                      cantidad: '1',
+                      precioUnitario: producto.precioPublico ?? '0',
+                      esReferencial: busquedaEsReferencial,
+                      grupoItemId: grupoAñadiendo ?? undefined,
+                    })
+                    setModoBusquedaItem('off')
+                    setGrupoAñadiendo(null)
+                  }}
+                  onCreateNew={(descripcion) => {
+                    setCrearProducto({ descripcion })
+                    setModoBusquedaItem('off')
+                  }}
+                  createActionLabel={(q) => `+ Crear producto "${q}"`}
+                  placeholder="Buscar en catálogo..."
+                  label="Producto"
+                  allowCreate
+                  contexto="cotizador-items"
+                />
+                <label className="flex items-center gap-2 text-xs text-gold-700 cursor-pointer w-fit rounded border border-dashed border-gold-300 bg-gold-50/40 px-2 py-1.5">
+                  <input
+                    type="checkbox"
+                    checked={busquedaEsReferencial}
+                    onChange={(e) => setBusquedaEsReferencial(e.target.checked)}
+                    className="rounded text-gold-500 focus:ring-gold-400"
                   />
-                  {/* 2026-09-30 (diagnóstico UX): checkbox explícito para el caso de entrar por
-                      "+ Ítem de catálogo" y decidir ahí mismo que es referencial -- complementa, no
-                      reemplaza, el camino directo de "+ Presupuesto adicional" (ver sección de abajo). */}
-                  <label className="flex items-center gap-2 text-xs text-gold-700 cursor-pointer w-fit rounded border border-dashed border-gold-300 bg-gold-50/40 px-2 py-1.5">
-                    <input
-                      type="checkbox"
-                      checked={busquedaEsReferencial}
-                      onChange={(e) => setBusquedaEsReferencial(e.target.checked)}
-                      className="rounded text-gold-500 focus:ring-gold-400"
-                    />
-                    <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
-                  </label>
-                </div>
-              </div>
-              <div className="p-4 border-t border-border-subtle bg-bg-paper">
-                <button
-                  type="button"
-                  onClick={() => setModoBusquedaItem('off')}
-                  className="w-full py-3 rounded bg-gold-600 text-white font-medium hover:bg-gold-700 transition-colors"
-                >
-                  Listo
-                </button>
+                  <span>Es referencial (presupuesto adicional, no cuenta en el contrato)</span>
+                </label>
               </div>
             </div>
-          </div>
-        )}
+          )}
+          </>
+          )}
         
         {(() => {
           const renderItemRow = (item: ItemVariante) => {
@@ -2026,20 +2117,33 @@ function VarianteContenido({
             <div
               key={item.id}
               id={`item-row-${item.id}`}
-              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm border-l-3 border-gold-300 bg-surface-50 px-3 py-2 mb-2 relative overflow-hidden transition-transform duration-300`}
-              style={{ transform: `translateX(${isSwiped ? -70 : 0}px)` }}
-              onTouchEnd={() => { setSwipedItemId(null) }}
-              onClick={(e) => {
-                if ((e.target as HTMLElement).closest('button, input, select, [role="option"]')) return
-                setSwipedItemId(swipedItemId === item.id ? null : item.id)
+              className={`
+                flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm relative overflow-hidden
+                ${isMobile
+                  ? 'border-l-3 border-gold-300 bg-surface-50 px-3 py-2 mb-2 transition-transform duration-300'
+                  : 'sm:border-b sm:border-border-subtle/50 sm:border-l-0 sm:bg-transparent sm:pb-4 sm:pt-2 sm:pb-2 sm:pt-0 sm:last:pb-0 sm:last:border-0 sm:rounded sm:transition-colors sm:duration-500'}
+              `}
+              style={{
+                transform: isMobile ? `translateX(${isSwiped ? -70 : 0}px)` : undefined,
               }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSwipedItemId(swipedItemId === item.id ? null : item.id) } }}
-              aria-label={`Ítem ${item.nombrePersonalizado ?? prod?.descripcion ?? 'sin nombre'} — desliza a la izquierda para editar o eliminar`}
+              onTouchEnd={isMobile ? () => { setSwipedItemId(null) } : undefined}
+              onClick={isMobile
+                ? (e) => {
+                    if ((e.target as HTMLElement).closest('button, input, select, [role="option"]')) return
+                    setSwipedItemId(swipedItemId === item.id ? null : item.id)
+                  }
+                : undefined}
+              role={isMobile ? 'button' : undefined}
+              tabIndex={isMobile ? 0 : undefined}
+              onKeyDown={isMobile
+                ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSwipedItemId(swipedItemId === item.id ? null : item.id) } }
+                : undefined}
+              aria-label={`Ítem ${item.nombrePersonalizado ?? prod?.descripcion ?? 'sin nombre'} — ${isMobile ? 'desliza a la izquierda para editar o eliminar' : ''}`}
             >
-              {/* Fondo de acciones revelado por swipe (solo Editar + Eliminar) */}
-              <div className="absolute inset-0 flex items-end pl-6 pr-3 bg-red-50/40 border-l-3 border-red-500">
+              {isMobile && (
+                <>
+                  {/* Fondo de acciones revelado por swipe (solo Editar + Eliminar) */}
+                  <div className="absolute inset-0 flex items-end pl-6 pr-3 bg-red-50/40 border-l-3 border-red-500">
                 <div className="flex gap-2 pb-4">
                   <button
                     type="button"
@@ -2050,9 +2154,9 @@ function VarianteContenido({
                     }}
                     className="p-2 text-xs text-gold-700 hover:bg-gold-100 rounded border border-gold-200"
                     title="Editar ítem"
-                  >
-                    ✏️ Editar
-                  </button>
+                    >
+                      <Edit className="w-4 h-4" /> Editar
+                    </button>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -2062,11 +2166,13 @@ function VarianteContenido({
                     }}
                     className="p-2 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200"
                     title="Eliminar ítem"
-                  >
-                    🗑️ Eliminar
-                  </button>
+                    >
+                      <Trash2 className="w-4 h-4" /> Eliminar
+                    </button>
                 </div>
-              </div>
+                  </div>
+                  </>
+                )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 sm:gap-2">
                   {/* t-160: checkbox para selección múltiple */}
@@ -2101,38 +2207,49 @@ function VarianteContenido({
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 w-full sm:w-auto mt-3 sm:mt-0 bg-surface-100 sm:bg-transparent p-3 sm:p-0 rounded border border-border-subtle/50 sm:border-0">
                 <div className="grid grid-cols-12 sm:flex items-center gap-2 w-full sm:w-auto">
                   <div className="col-span-3 sm:w-28">
-                    {/* Stepper de cantidad móvil: incrementar/decrementar sin abrir teclado */}
-                    <div className="flex items-center justify-between gap-1 w-full border rounded border-border-subtle bg-bg-paper">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const n = Math.max(0, parseNum(item.cantidad) - 1)
-                          void actualizarItem(item.id, 'cantidad', String(n))
-                        }}
-                        disabled={parseNum(item.cantidad) <= 0}
-                        aria-label={`Disminuir cantidad de ${prod?.descripcion ?? item.id}`}
-                        className="p-1.5 text-sm text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-l disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        −
-                      </button>
-                      <span
-                        className="font-mono text-sm text-text-primary w-12 text-center select-none"
+                    {isMobile ? (
+                      <div className="flex items-center justify-between gap-1 w-full border rounded border-border-subtle bg-bg-paper">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const n = Math.max(0, parseNum(item.cantidad) - 1)
+                            void actualizarItem(item.id, 'cantidad', String(n))
+                          }}
+                          disabled={parseNum(item.cantidad) <= 0}
+                          aria-label={`Disminuir cantidad de ${prod?.descripcion ?? item.id}`}
+                          className="p-1.5 text-sm text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-l disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          −
+                        </button>
+                        <span
+                          className="font-mono text-sm text-text-primary w-12 text-center select-none"
+                          aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
+                        >
+                          {item.cantidad}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const n = parseNum(item.cantidad) + 1
+                            void actualizarItem(item.id, 'cantidad', String(n))
+                          }}
+                          aria-label={`Aumentar cantidad de ${prod?.descripcion ?? item.id}`}
+                          className="p-1.5 text-sm text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-r"
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <NumberInput
+                        value={item.cantidad}
+                        onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
+                        step={0.1}
+                        min={0}
+                        label=""
+                        className="w-full text-right font-mono text-sm"
                         aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
-                      >
-                        {item.cantidad}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const n = parseNum(item.cantidad) + 1
-                          void actualizarItem(item.id, 'cantidad', String(n))
-                        }}
-                        aria-label={`Aumentar cantidad de ${prod?.descripcion ?? item.id}`}
-                        className="p-1.5 text-sm text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-r"
-                      >
-                        +
-                      </button>
-                    </div>
+                      />
+                    )}
                   </div>
                   <div className="col-span-1 text-center text-text-muted text-xs">×</div>
                   <div className="col-span-4 sm:w-28">
@@ -2170,40 +2287,96 @@ function VarianteContenido({
                         <circle cx="8" cy="13" r="1.5" />
                       </svg>
                     </button>
-                    {/* Fase V: Action Sheet flotante inferior (móvil) en lugar de dropdown estático */}
                     {itemDropdownAbierto === item.id && (
                       <>
-                        <button
-                          type="button"
-                          onClick={() => setItemDropdownAbierto(null)}
-                          className="absolute inset-0 z-30 bg-black/20 backdrop-blur-sm"
-                          aria-label="Cerrar menú"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 z-40 h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                          <div className="p-3 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
-                            <span className="font-semibold text-text-heading">Opciones del ítem</span>
+                        {isMobile ? (
+                          <>
                             <button
                               type="button"
                               onClick={() => setItemDropdownAbierto(null)}
-                              className="p-1.5 text-text-muted hover:text-gold-600 rounded hover:bg-bg-alt"
+                              className="absolute inset-0 z-30 bg-black/20 backdrop-blur-sm"
                               aria-label="Cerrar menú"
-                            >
-                              <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <path d="M6 6L10 10M10 6L6 10" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </button>
-                          </div>
-                          <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                            />
+                            <div className="absolute bottom-0 left-0 right-0 z-40 h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                              <div className="p-3 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
+                                <span className="font-semibold text-text-heading">Opciones del ítem</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setItemDropdownAbierto(null)}
+                                  className="p-1.5 text-text-muted hover:text-gold-600 rounded hover:bg-bg-alt"
+                                  aria-label="Cerrar menú"
+                                >
+                                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <path d="M6 6L10 10M10 6L6 10" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setModalItemId(item.id)
+                                    setItemDropdownAbierto(null)
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
+                                  title="Editar ítem"
+                                >
+                                  Editar ítem
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nombre = item.nombrePersonalizado ?? prod?.descripcion ?? 'Ítem'
+                                    actualizarItem(item.id, 'esReferencial', !item.esReferencial)
+                                    mostrarInfo(`"${nombre}" movido a ${item.esReferencial ? 'Ítems' : 'Presupuesto Adicional'}.`, {
+                                      etiqueta: 'Deshacer',
+                                      onClick: () => actualizarItem(item.id, 'esReferencial', !item.esReferencial),
+                                    })
+                                    setItemDropdownAbierto(null)
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
+                                  title="Mover a ítems o presupuesto"
+                                >
+                                  ↔ Mover a {item.esReferencial ? 'Ítems' : 'Presupuesto'}
+                                </button>
+                                <div className="border-t border-border-subtle my-2" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setItemAnidando(item.id)
+                                    setItemDropdownAbierto(null)
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
+                                  title="Anidar este item en un grupo"
+                                >
+                                  Anidar en grupo
+                                </button>
+                                <div className="border-t border-border-subtle my-2" />
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    await store.items.eliminar(item.id)
+                                    setItemDropdownAbierto(null)
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0 text-red-600 font-medium"
+                                  title="Eliminar ítem"
+                                >
+                                  <Trash2 className="w-4 h-4" /> Eliminar ítem
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-20 py-1" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={() => {
                                 setModalItemId(item.id)
                                 setItemDropdownAbierto(null)
                               }}
-                              className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
-                              title="Editar ítem"
+                              className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                             >
-                              Editar ítem
+                              Editar
                             </button>
                             <button
                               type="button"
@@ -2216,37 +2389,36 @@ function VarianteContenido({
                                 })
                                 setItemDropdownAbierto(null)
                               }}
-                              className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
-                              title="Mover a ítems o presupuesto"
+                              className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                             >
                               ↔ Mover a {item.esReferencial ? 'Ítems' : 'Presupuesto'}
                             </button>
-                            <div className="border-t border-border-subtle my-2" />
+                            <div className="border-t border-border-subtle my-1" />
                             <button
                               type="button"
                               onClick={() => {
                                 setItemAnidando(item.id)
                                 setItemDropdownAbierto(null)
                               }}
-                              className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0"
+                              className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast"
                               title="Anidar este item en un grupo"
                             >
                               Anidar en grupo
                             </button>
-                            <div className="border-t border-border-subtle my-2" />
+                            <div className="border-t border-border-subtle my-1" />
                             <button
                               type="button"
                               onClick={async () => {
                                 await store.items.eliminar(item.id)
                                 setItemDropdownAbierto(null)
                               }}
-                              className="w-full text-left px-4 py-3 text-sm text-text-heading hover:bg-bg-alt border-b border-border-subtle/50 last:border-0 text-red-600 font-medium"
+                              className="w-full text-left px-4 py-2 text-xs text-text-heading hover:bg-bg-alt transition-colors duration-fast text-red-600 font-medium"
                               title="Eliminar ítem"
                             >
-                              🗑️ Eliminar ítem
+                              <Trash2 className="w-3 h-3" /> Eliminar ítem
                             </button>
                           </div>
-                        </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -2915,7 +3087,7 @@ function VarianteContenido({
             </label>
             {grupoAñadiendo && (
               <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 rounded bg-blue-50/50 px-2 py-1">
-                ✓ Se agregará dentro del grupo
+                <Check className="w-3 h-3 shrink-0" /> Se agregará dentro del grupo
               </p>
             )}
             <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">

@@ -210,6 +210,12 @@ html:focus-within {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Tipografía auto-escalada para campos monetarios/numéricos en filas de ítem.
+   Nunca corta decimales ni ceros en pantallas compactas (Fase 2.1 del plan cotizador). */
+@utility text-clamp-money {
+  font-size: clamp(12px, 4vw, 16px);
+}
+
 /* ---- Motion: animación real consumiendo los tokens --dur-base / --ease-out (d4_a5:90-105) -
    compositor-only (opacity + transform). reduce-motion la anula vía :root :global (0.01ms). */
 @keyframes slideIn {
