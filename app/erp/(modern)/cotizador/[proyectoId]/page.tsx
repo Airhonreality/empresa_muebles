@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback, useEffect, useRef, memo, type ReactElement } from 'react'
-import { createPortal } from 'react-dom'
+import { MobileDock, MobileActionSheet } from '@/components/veta/mobile-dock'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
@@ -661,7 +661,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       </div>
 
       {/* Contenido scrolleable */}
-      <div className="px-3 sm:px-6 py-6 pb-[calc(9rem+env(safe-area-inset-bottom))] sm:pb-0">
+      <div className="px-3 sm:px-6 py-6">
         {(proyecto.direccionObra || proyecto.descripcionSemantica) && (
           <div className="mb-4 space-y-1">
             {proyecto.direccionObra && <p className="text-xs text-text-muted">{proyecto.direccionObra}</p>}
@@ -930,28 +930,27 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
         )}
       </div>
 
-      {/* Barra inferior sticky de totales + CTA (solo móvil, justo encima del bottom-nav del shell) */}
-      <div className="fixed bottom-14 left-0 right-0 z-10 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm px-4 py-3 shadow-lg">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col">
+      {/* Dock móvil: total acumulado + CTA. Se dibuja en la pila inferior del shell (mobile-dock.tsx). */}
+      <MobileDock
+        info={
+          <>
             <span className="text-[10px] text-text-muted">Total acumulado del proyecto</span>
             <span className="font-mono font-semibold text-text-heading text-clamp-money">
               {formatCOP(total)}
             </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (contrato) setMostrarContratoModal(true)
-              else crearEspacio()
-            }}
-            aria-label={contrato ? 'Generar Contrato' : 'Añadir espacio'}
-            className="flex items-center justify-center gap-2 min-w-[48px] h-12 rounded-md bg-brand text-white text-sm font-medium px-4 hover:bg-gold-700 transition-colors"
-          >
-            {contrato ? 'Generar Contrato' : '+ Añadir Espacio'}
-          </button>
-        </div>
-      </div>
+          </>
+        }
+        primary={[{
+          key: 'cta',
+          label: contrato ? 'Generar Contrato' : '+ Añadir Espacio',
+          ariaLabel: contrato ? 'Generar Contrato' : 'Añadir espacio',
+          variant: 'primary',
+          onSelect: () => {
+            if (contrato) setMostrarContratoModal(true)
+            else crearEspacio()
+          },
+        }]}
+      />
 
     </div>
   )
@@ -1949,7 +1948,7 @@ function VarianteContenido({
           <>
             {isMobile ? (
             // Bottom Sheet de búsqueda de catálogo (móvil): foco de teclado, overlay flotante inferior.
-            <div className="fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[70] flex flex-col bg-black/40 backdrop-blur-sm">
               {/* Overlay para cerrar al hacer clic fuera */}
               <button
                 type="button"
@@ -2287,31 +2286,9 @@ function VarianteContenido({
                     </button>
                     {itemDropdownAbierto === item.id && (
                       <>
-                        {isMobile ? createPortal(
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setItemDropdownAbierto(null)}
-                              className="fixed inset-0 z-[70] bg-black/20 backdrop-blur-sm"
-                              aria-label="Cerrar menú"
-                            />
-                            <div
-                              onClick={(e) => e.stopPropagation()}
-                              className="fixed bottom-0 left-0 right-0 z-[71] h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                              <div className="p-3 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
-                                <span className="font-semibold text-text-heading">Opciones del ítem</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setItemDropdownAbierto(null)}
-                                  className="p-1.5 text-text-muted hover:text-gold-600 rounded hover:bg-bg-alt"
-                                  aria-label="Cerrar menú"
-                                >
-                                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                    <path d="M6 6L10 10M10 6L6 10" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                </button>
-                              </div>
-                              <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                        {isMobile ? (
+                          <MobileActionSheet open onClose={() => setItemDropdownAbierto(null)} title="Opciones del ítem">
+                            <div className="space-y-1">
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -2364,9 +2341,7 @@ function VarianteContenido({
                                   <Trash2 className="w-4 h-4" /> Eliminar ítem
                                 </button>
                               </div>
-                            </div>
-                          </>,
-                          document.body,
+                          </MobileActionSheet>
                         ) : (
                           <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-50 py-1" onClick={(e) => e.stopPropagation()}>
                             <button
