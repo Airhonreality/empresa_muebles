@@ -318,7 +318,7 @@ export default function FinanzasPage() {
       </div>
 
       {/* Barra inferior sticky de mandos al nivel del pulgar (solo móvil) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm shadow-lg px-4 py-3">
+      <div className="fixed bottom-0 left-0 right-0 z-10 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm shadow-lg px-4 py-3">
         <div className="flex gap-2">
           <Button
             variant="secondary"

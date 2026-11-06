@@ -930,7 +930,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       </div>
 
       {/* Barra inferior sticky de totales + CTA (solo móvil, justo encima del bottom-nav del shell) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm px-4 py-3 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-10 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm px-4 py-3 shadow-lg">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col">
             <span className="text-[10px] text-text-muted">Total acumulado del proyecto</span>
@@ -2291,7 +2291,7 @@ function VarianteContenido({
                             <button
                               type="button"
                               onClick={() => setItemDropdownAbierto(null)}
-                              className="absolute inset-0 z-30 bg-black/20 backdrop-blur-sm"
+                              className="absolute inset-0 z-40 bg-black/20 backdrop-blur-sm"
                               aria-label="Cerrar menú"
                             />
                             <div className="absolute bottom-0 left-0 right-0 z-[60] h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
