@@ -2294,7 +2294,7 @@ function VarianteContenido({
                               className="absolute inset-0 z-30 bg-black/20 backdrop-blur-sm"
                               aria-label="Cerrar menú"
                             />
-                            <div className="absolute bottom-0 left-0 right-0 z-40 h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                            <div className="absolute bottom-0 left-0 right-0 z-[60] h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
                               <div className="p-3 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
                                 <span className="font-semibold text-text-heading">Opciones del ítem</span>
                                 <button
