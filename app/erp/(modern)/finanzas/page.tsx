@@ -288,7 +288,7 @@ export default function FinanzasPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
+    <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6 pb-[calc(120px+env(safe-area-inset-bottom))] sm:pb-0">
       {/* Encabezado sticky en móvil, estático en desktop */}
       <div className="sticky top-0 z-10 bg-surface-100/95 backdrop-blur border-b border-border-subtle -mx-4 px-4 sm:static sm:m-0 sm:border-0 sm:bg-transparent">
         <header className="relative mb-8 flex flex-wrap items-start justify-between gap-4">
