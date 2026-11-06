@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback, useEffect, useRef, memo, type ReactElement } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
@@ -660,7 +661,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       </div>
 
       {/* Contenido scrolleable */}
-      <div className="px-3 sm:px-6 py-6 pb-[calc(120px+env(safe-area-inset-bottom))] sm:pb-0">
+      <div className="px-3 sm:px-6 py-6 pb-[calc(9rem+env(safe-area-inset-bottom))] sm:pb-0">
         {(proyecto.direccionObra || proyecto.descripcionSemantica) && (
           <div className="mb-4 space-y-1">
             {proyecto.direccionObra && <p className="text-xs text-text-muted">{proyecto.direccionObra}</p>}
@@ -930,7 +931,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       </div>
 
       {/* Barra inferior sticky de totales + CTA (solo móvil, justo encima del bottom-nav del shell) */}
-      <div className="fixed bottom-0 left-0 right-0 z-10 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm px-4 py-3 shadow-lg">
+      <div className="fixed bottom-14 left-0 right-0 z-10 sm:hidden border-t border-border-subtle bg-bg-raised/95 backdrop-blur-sm px-4 py-3 shadow-lg">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col">
             <span className="text-[10px] text-text-muted">Total acumulado del proyecto</span>
@@ -2286,15 +2287,17 @@ function VarianteContenido({
                     </button>
                     {itemDropdownAbierto === item.id && (
                       <>
-                        {isMobile ? (
+                        {isMobile ? createPortal(
                           <>
                             <button
                               type="button"
                               onClick={() => setItemDropdownAbierto(null)}
-                              className="absolute inset-0 z-40 bg-black/20 backdrop-blur-sm"
+                              className="fixed inset-0 z-[70] bg-black/20 backdrop-blur-sm"
                               aria-label="Cerrar menú"
                             />
-                            <div className="absolute bottom-0 left-0 right-0 z-[60] h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="fixed bottom-0 left-0 right-0 z-[71] h-auto sm:hidden bg-bg-raised border-t border-border-subtle shadow-2xl rounded-t-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
                               <div className="p-3 border-b border-border-subtle bg-bg-paper flex items-center justify-between">
                                 <span className="font-semibold text-text-heading">Opciones del ítem</span>
                                 <button
@@ -2362,7 +2365,8 @@ function VarianteContenido({
                                 </button>
                               </div>
                             </div>
-                          </>
+                          </>,
+                          document.body,
                         ) : (
                           <div className="absolute right-0 top-full mt-1 w-44 bg-bg-raised border border-border-subtle rounded shadow-md z-50 py-1" onClick={(e) => e.stopPropagation()}>
                             <button
