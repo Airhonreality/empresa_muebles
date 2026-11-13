@@ -79,21 +79,44 @@ function gruposDeFotos(v: EspacioVariante): GrupoFotos[] {
     .filter((g) => g.fotos.length > 0)
 }
 
+/** Imagen de la propuesta para impresión. Detecta la orientación real de la
+ *  foto para decidir si ocupa el ancho completo (cuadrada/horizontal) o se
+ *  empareja de dos en dos (vertical), sin recortar ni dejar cajas vacías. */
+function ImgPrint({ url, alt }: { url: string; alt: string }): ReactElement {
+  const [orient, setOrient] = useState<'h' | 'v'>('h')
+  const span = orient === 'h' ? 'span 2' : 'span 1'
+  const ratio = orient === 'h' ? '3 / 2' : '2 / 3'
+  return (
+    <figure key={url} className="pp-img pp-avoid" style={{ gridColumn: span }}>
+      <div className="pp-img-frame" style={{ aspectRatio: ratio }}>
+        <Image
+          src={url}
+          alt={alt}
+          fill
+          unoptimized
+          className="pp-img-el"
+          onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+            if (naturalWidth && naturalHeight) {
+              setOrient(naturalWidth >= naturalHeight ? 'h' : 'v')
+            }
+          }}
+        />
+      </div>
+    </figure>
+  )
+}
+
 function BloqueFotos({ v }: { v: EspacioVariante }): ReactElement | null {
   const grupos = gruposDeFotos(v)
   if (grupos.length === 0) return null
   return (
     <>
       {grupos.map((g) => (
-        <div key={g.etiqueta} className="pp-avoid pp-fotobloque">
-          <p className="pp-mini">{g.etiqueta}</p>
+        <div key={g.etiqueta} className="pp-fotobloque">
+          <p className="pp-mini pp-avoid">{g.etiqueta}</p>
           <div className="pp-imgs">
             {g.fotos.map((url, i) => (
-              <figure key={`${url}-${i}`} className="pp-img pp-avoid">
-                <div className="pp-img-frame">
-                  <Image src={url} alt={`${v.nombreEspacio} — ${g.etiqueta} ${i + 1}`} fill unoptimized className="pp-img-el" />
-                </div>
-              </figure>
+              <ImgPrint key={`${url}-${i}`} url={url} alt={`${v.nombreEspacio} — ${g.etiqueta} ${i + 1}`} />
             ))}
           </div>
         </div>
@@ -944,6 +967,8 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
           letter-spacing: 0.14em;
           color: #5F5D57;
           margin: 0 0 2mm;
+          break-after: avoid;
+          page-break-after: avoid;
         }
         .pp-preparada {
           border: 0.3mm solid #E6E1D8;
@@ -1087,7 +1112,7 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
         }
         .pp-imgs {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
+          grid-template-columns: 1fr 1fr;
           gap: 3mm;
         }
         .pp-img {
@@ -1099,10 +1124,11 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
         }
         .pp-img-frame {
           position: relative;
-          aspect-ratio: 3 / 2;
         }
         .pp-img-el {
           object-fit: contain;
+          width: 100%;
+          height: 100%;
         }
         /* ── Bloques y tablas ── */
         .pp-bloque {
