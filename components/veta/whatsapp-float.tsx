@@ -1,12 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { AsesoriaModal } from './asesoria-modal';
+import { AsesoriaModalPisos } from './asesoria-modal-pisos';
 
 /* F-00 shell global (§3.2, contenido_F00_shell.md): botón flotante transversal, visible en toda
    página pública. Rediseñado a la mitad de tamaño con estética de marca Veta Dorada (Oro & Carbón).
    Hitbox estrictamente acotado a los 40px del círculo para no bloquear clics ni hovers traseros. */
 export function WhatsappFloat() {
+  const pathname = usePathname();
+  const esPaginaPisos = pathname === '/espacios/pisos-de-madera';
   const [tooltipVisible, setTooltipVisible] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -50,11 +54,18 @@ export function WhatsappFloat() {
         </button>
       </div>
 
-      <AsesoriaModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        precio3dFormatted="$250.000 COP"
-      />
+      {esPaginaPisos ? (
+        <AsesoriaModalPisos
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      ) : (
+        <AsesoriaModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          precio3dFormatted="$250.000 COP"
+        />
+      )}
     </>
   );
 }
