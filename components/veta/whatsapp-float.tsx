@@ -25,8 +25,8 @@ export function WhatsappFloat() {
             tooltipVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
           }`}
         >
-          <div className="text-[11px] font-medium text-gold-200 leading-tight">¿Hablamos por WhatsApp?</div>
-          <div className="text-[9.5px] font-light text-gold-200/60 leading-tight tracking-widest mt-0.5">+57 302 5922101</div>
+          <div className="text-[11px] font-medium text-gold-200 leading-tight">Hablar con Jair Daza</div>
+          <div className="text-[9.5px] font-light text-gold-200/60 leading-tight tracking-widest mt-0.5">+57 322 7008706</div>
         </span>
 
         {/* Botón Compacto Estilo Veta Dorada (Hitbox estricto de 40px x 40px) */}
@@ -38,7 +38,7 @@ export function WhatsappFloat() {
           onFocus={() => setTooltipVisible(true)}
           onBlur={() => setTooltipVisible(false)}
           className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-charcoal-950/90 border border-gold-500/40 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-gold-500 hover:bg-gold-600 cursor-pointer p-0"
-          aria-label="¿Hablamos por WhatsApp?"
+          aria-label="Hablar con Jair Daza, experto en pisos de madera"
         >
           <svg
             viewBox="0 0 24 24"

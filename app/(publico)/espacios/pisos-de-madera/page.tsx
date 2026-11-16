@@ -188,7 +188,7 @@ export default async function PisosDeMaderaLanding() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </span>
-        <span className="font-medium">WhatsApp</span>
+        <span className="font-medium">Jair Daza, pisos de madera</span>
       </a>
 
       {/* 2. ¿Qué espacios atendemos? */}
@@ -305,15 +305,6 @@ export default async function PisosDeMaderaLanding() {
 
           {/* Galería por espacio y problema */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
-              <Image
-                src="/images/pisos-madera/detalle-piso-1.jpeg"
-                alt="Detalle de reparación de piezas sueltas de piso de madera"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
-            </div>
             <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[var(--color-bg-surface-0)]">
               <Image
                 src="/images/pisos-madera/piso-chapinero.jpeg"

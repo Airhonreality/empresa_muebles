@@ -67,7 +67,7 @@ export function CtaConversionPisos({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </span>
-              <span>Hablar con el experto en pisos</span>
+              <span>Hablar con Jair Daza, experto en pisos de madera</span>
             </>
           ) : (
             <>

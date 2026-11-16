@@ -71,7 +71,7 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
 
   if (!isOpen || !mounted) return null;
 
-  const WHATSAPP_NUMBER = '573025922101';
+  const WHATSAPP_NUMBER = '573227008706';
 
   const executeRedirect = (url: string) => {
     setFormStatus('redirecting');
