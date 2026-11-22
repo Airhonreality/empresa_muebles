@@ -5,6 +5,7 @@
 'use client'
 
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query'
+import { esperaReintento, reintentarSoloRed } from './reintento'
 
 export interface ContextoMutacionOpt<TSnapshot> {
   previous?: TSnapshot
@@ -45,6 +46,11 @@ export function useMutationOptGenerico<TSnapshot, TVars, TResult>(
   return useMutation<TResult, Error, TVars, ContextoMutacionOpt<TSnapshot>>({
     mutationKey: queryKey,
     mutationFn,
+    // Reintento silencioso ante fallos de red (ver reintento.ts). Sin conexión la mutación
+    // queda pausada y se reanuda sola; el usuario no ve botones ni estados de error por red.
+    networkMode: 'online',
+    retry: reintentarSoloRed,
+    retryDelay: esperaReintento,
     scope: opciones?.scopeId ? { id: opciones.scopeId } : undefined,
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey })
