@@ -10,11 +10,11 @@ const numeroDecimalTexto = z
     message: 'debe ser un número no negativo',
   })
 
+// t-195: montos en pesos enteros (sin decimales reales), mayores que cero, máx. 12 dígitos.
 const montoPositivoTexto = z
   .string()
-  .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, {
-    message: 'debe ser un número mayor que cero',
-  })
+  .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, { message: 'debe ser un número mayor que cero' })
+  .regex(/^\d{1,12}(\.0{1,2})?$/, { message: 'debe ser un monto en pesos enteros, máximo 12 dígitos' })
 
 const idNoVacio = z.string().trim().min(1, 'no puede estar vacío')
 const idOpcional = z.uuid().optional()

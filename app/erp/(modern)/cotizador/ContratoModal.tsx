@@ -27,6 +27,7 @@ import type {
   HitoPago, DatosContratoEdicion,
 } from "@/lib/data";
 import { usePendingGuard } from "@/lib/hooks/usePendingGuard";
+import { repartirHitos, redondearPesos } from "@/lib/dinero/calculo";
 
 export interface ContratoModalProps {
   proyecto: Proyecto;
@@ -482,6 +483,16 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
   // ahí. No hay forma de que un useMemo se queje por una dependencia que le falte. `requisitosPendientes`
   // es una función pura y barata sobre un objeto chico: calcularla en cada render cuesta nada y
   // elimina la clase entera de bug, que es mantener de a mano la lista de lo que hay que mirar.
+  // t-195: diferencia en pesos entre el valor total y el reparto de hitos (misma regla que contrato/PDF).
+  const diferenciaMontosHitosCOP = useMemo(() => {
+    const total = parseFloat(form.valorTotal) || 0;
+    const montos = repartirHitos(
+      total,
+      hitos.map((h) => ({ tipo: h.tipo === 'percentage' ? 'percentage' : 'fixed', valor: parseFloat(h.montoOPorcentaje) || 0 })),
+    );
+    return redondearPesos(total) - montos.reduce((s, m) => s + m, 0);
+  }, [form.valorTotal, hitos]);
+
   const pendientes = requisitosPendientes({
     tieneCliente: Boolean(clienteSeleccionado),
     nombreCliente: clienteForm.nombre,
@@ -489,6 +500,7 @@ export function ContratoModal({ proyecto, cliente, clientes, espacios, itemsPorE
     cantidadHitos: hitos.length,
     todosPorcentaje,
     sumaHitos,
+    diferenciaMontosHitosCOP,
     plazoSemanas: form.plazoSemanas,
     fechaEntregaMaxima: form.fechaEntregaMaxima,
     anexoPropuestaIdentificacion: form.anexoPropuestaIdentificacion,

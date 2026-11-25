@@ -179,11 +179,19 @@ export async function crearObligacionAction(data: Partial<ObligacionPendiente> &
 }
 
 export async function registrarPagoObligacionAction(id: string, data: { monto: string; cuentaId: string; medioPago?: string }): Promise<ObligacionPendiente | null> {
+  // t-195: monto en pesos enteros positivos; un pago que supera el saldo se rechaza con motivo
+  // explícito (antes devolvía null en silencio y el usuario no sabía por qué no se registró).
+  if (!/^\d{1,12}(\.0{1,2})?$/.test(data.monto) || Number(data.monto) <= 0) {
+    throw new Error('El monto del pago tiene que ser un número entero de pesos mayor que cero.')
+  }
   return db.transaction(async (tx) => {
     const [obligacion] = await tx.select().from(s.obligacionesPendientes).where(eq(s.obligacionesPendientes.id, id))
     if (!obligacion) return null
     const nuevoPagado = num(obligacion.montoPagado) + num(data.monto)
-    if (nuevoPagado > num(obligacion.montoTotal)) return null
+    if (nuevoPagado > num(obligacion.montoTotal)) {
+      const saldo = num(obligacion.montoTotal) - num(obligacion.montoPagado)
+      throw new Error(`El pago supera el saldo pendiente de la obligación ($${saldo.toLocaleString('es-CO')} COP).`)
+    }
     const [cuenta] = await tx.select().from(s.cuentasFinancieras).where(eq(s.cuentasFinancieras.id, data.cuentaId))
     if (!cuenta) return null
     await tx.insert(s.movimientosFinancieros).values({

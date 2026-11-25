@@ -41,6 +41,9 @@ export type EntradaValidacionContrato = {
   todosPorcentaje: boolean
   /** Suma de los hitos, en porcentaje. */
   sumaHitos: number
+  /** t-195: valor total − suma de montos de hitos en pesos (reparto de lib/dinero/calculo).
+   *  0 = cuadra. Si no se pasa, la regla en pesos no se evalúa (compatibilidad). */
+  diferenciaMontosHitosCOP?: number
   /** Plazo en semanas hábiles, como texto. */
   plazoSemanas: string
   /** t-173: fecha de entrega del contrato, 'AAAA-MM-DD'. Es lo que sostiene la mora del 5 %. */
@@ -90,6 +93,20 @@ export function requisitosPendientes(e: EntradaValidacionContrato): RequisitoPen
     pendientes.push({
       campo: 'hitos',
       mensaje: `La suma de los hitos por porcentaje es ${e.sumaHitos.toFixed(2)}% y tiene que ser 100%.`,
+    })
+  }
+
+  // t-195: con montos fijos mezclados, la suma en pesos tiene que cuadrar con el valor total.
+  if (
+    e.diferenciaMontosHitosCOP !== undefined &&
+    !e.todosPorcentaje &&
+    e.cantidadHitos > 0 &&
+    e.diferenciaMontosHitosCOP !== 0
+  ) {
+    const monto = Math.abs(e.diferenciaMontosHitosCOP).toLocaleString('es-CO')
+    pendientes.push({
+      campo: 'hitos',
+      mensaje: `La suma de los hitos no coincide con el valor total: ${e.diferenciaMontosHitosCOP > 0 ? 'faltan' : 'sobran'} $${monto} COP.`,
     })
   }
 
