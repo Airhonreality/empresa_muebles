@@ -1,0 +1,45 @@
+{
+  "id": "t-196",
+  "titulo": "Verificación de salud de montos: propuesta pública y PDF con cálculo único, formateadores con parte entera, herramientas y pedidos-web",
+  "intencion_negocio": "Javier (Supervisor) pidió verificar que ningún input ni cálculo siga usando los patrones contaminados (×100, redondeo suelto), y ejecutar lo encontrado. Se excluyó el bloqueo por salto ×10 por sobreingeniería.",
+  "zona": "cotizador",
+  "tipo": "bugfix",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "app/(publico)/propuesta/[proyectoId]/PropuestaPublicaClient.tsx",
+    "app/(publico)/propuesta/[proyectoId]/PropuestaPrintDocument.tsx",
+    "lib/utils/format.ts",
+    "lib/utils/format.test.ts",
+    "app/erp/(datastore)/herramientas/page.tsx",
+    "app/erp/(datastore)/pedidos-web/page.tsx"
+  ],
+  "criterios_aceptacion": [
+    "formatCurrency('250000.00') muestra $ 250.000",
+    "Propuesta pública y PDF usan calcularTotalesCotizacion y repartirHitos",
+    "tsc 0; eslint 0 errores; tests tocados en verde; next build compila"
+  ],
+  "plan_ref": "arnes/planes/plan_t-196.md",
+  "ejecutor": "Claude Code (agente de código)",
+  "verificador": "Javier (Supervisor)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsx sobre 10 archivos de prueba (0 fallos)",
+      "npx tsc --noEmit (0 errores)",
+      "npx eslint sobre archivos tocados (0 errores, 1 warning)",
+      "npx next build (compiled successfully)"
+    ],
+    "salida_cruda": "tests 0 fallos; tsc 0; eslint 0 errores; build OK",
+    "veredicto": "verificacion_mecanica_ok; QA manual pendiente (comparar propuesta web contra ERP con un proyecto real)"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-11-25",
+    "nota": "Aprobado por el Supervisor: ejecutar todo en secuencia, excepto bloqueo ×10."
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-11-25T00:00:00Z",
+  "cerrada_en": null,
+  "nota": "Sin bloqueo ×10 (excluido por el Supervisor). Pendiente QA manual de la propuesta pública."
+}

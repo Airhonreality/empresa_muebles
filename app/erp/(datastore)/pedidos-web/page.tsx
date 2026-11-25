@@ -10,6 +10,7 @@ import { SmartSearch } from '@/components/veta/smart-search'
 import { useDataStore, type PedidoWeb, type Proyecto } from '@/lib/data'
 import { coincide } from '@/lib/search/normalizar'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { parteEnteraDb } from '@/lib/utils/dinero'
 
 const ESTADOS_PEDIDO = ['nuevo', 'enganchado', 'cancelado'] as const
 type EstadoPedido = typeof ESTADOS_PEDIDO[number]
@@ -27,7 +28,7 @@ const BADGE_TONE: Record<EstadoPedido, 'warning' | 'info' | 'neutral'> = {
 }
 
 function formatMoney(value: string): string {
-  const num = parseInt(value.replace(/[^\d]/g, ''), 10)
+  const num = parseInt(parteEnteraDb(value), 10)
   return isNaN(num) ? '$0' : `$${num.toLocaleString('es-CO')}`
 }
 
@@ -145,7 +146,7 @@ export default function PedidosWebPage() {
       key: 'total',
       header: 'Total',
       align: 'right',
-      sortValue: (p) => parseInt(p.totalPedido.replace(/[^\d]/g, ''), 10) || 0,
+      sortValue: (p) => parseInt(parteEnteraDb(p.totalPedido), 10) || 0,
       render: (p) => <span className="font-mono text-text-heading">{formatMoney(p.totalPedido)}</span>,
     },
     {

@@ -16,6 +16,7 @@ import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 import { PropuestaPrintDocument } from './PropuestaPrintDocument'
 import { EspacioPropuestaSeccion } from './EspacioPropuestaSeccion'
+import { calcularTotalesCotizacion } from '@/lib/dinero/calculo'
 
 // F-08 Propuesta pública (disenio_F08_propuesta_publica.md). Ruta simplificada
 // a /propuesta/[proyectoId] en vez de /propuesta/{slug}.
@@ -188,8 +189,17 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
     const mAjuste = parseNum(proyecto.ajusteArbitrario)
 
     const moT = vDev + vEns + vInst
-    const sTotal = mTotal + moT + mOperativos + mImprevistos - mDescuento + mAjuste
-    const mIva = proyecto.aplicaIva ? Math.round(sTotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
+    // t-196: mismo cálculo que el ERP y el PDF (lib/dinero/calculo). Antes sumaba aquí por su cuenta.
+    const { subtotal: sTotal, iva: mIva, total: tTotal } = calcularTotalesCotizacion({
+      materiales: mTotal,
+      manoObra: moT,
+      costosOperativos: mOperativos,
+      imprevistos: mImprevistos,
+      descuento: mDescuento,
+      ajuste: mAjuste,
+      aplicaIva: proyecto.aplicaIva,
+      porcentajeIva: parseNum(proyecto.porcentajeIva),
+    })
 
     return {
       materialesTotal: mTotal,
@@ -203,7 +213,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
       ajuste: mAjuste,
       subtotal: sTotal,
       iva: mIva,
-      total: sTotal + mIva,
+      total: tTotal,
     }
   }, [espaciosProyectados, itemsPorVariante, tarifaDev, tarifaAssembly, tarifaInstall, proyecto])
 

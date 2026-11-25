@@ -10,9 +10,10 @@ import { ImagePicker } from '@/components/veta/image-picker'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type Herramienta, type EstadoOperativoHerramienta, type OrdenCompra } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { parteEnteraDb } from '@/lib/utils/dinero'
 
 function formatCOP(amount: string | number): string {
-  const n = typeof amount === 'string' ? parseInt(amount.replace(/[^\d]/g, ''), 10) : amount
+  const n = typeof amount === 'string' ? parseInt(parteEnteraDb(amount), 10) : amount
   if (Number.isNaN(n)) return '—'
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -161,7 +162,7 @@ export default function HerramientasPage() {
   const validarForm = (): string | null => {
     if (!form.nombre.trim()) return 'El nombre es obligatorio'
     if (!form.valor.trim()) return 'El valor es obligatorio'
-    const valorNum = parseInt(form.valor.replace(/[^\d]/g, ''), 10)
+    const valorNum = parseInt(parteEnteraDb(form.valor), 10)
     if (Number.isNaN(valorNum) || valorNum < 0) return 'El valor debe ser un número positivo'
     return null
   }
@@ -176,7 +177,7 @@ export default function HerramientasPage() {
     }
     const payload = {
       nombre: form.nombre.trim(),
-      valor: form.valor.replace(/[^\d]/g, ''),
+      valor: parteEnteraDb(form.valor),
       fotoUrl: form.fotoUrl[0] ?? null,
       proveedorId: form.proveedorId || null,
     }

@@ -1,11 +1,13 @@
 import { normalizarNumeroTexto } from './numero'
+import { parteEnteraDb } from './dinero'
 
 /**
  * Formato de moneda COP (Pesos Colombianos).
  * Convierte número o string a formato con símbolo de moneda.
  */
 export function formatCurrency(amount: string | number, fractionDigits: number = 0): string {
-  const n = typeof amount === 'string' ? parseInt(amount.replace(/[^\d]/g, ''), 10) : amount;
+  // t-196: parte entera, no quitar todo lo que no sea dígito ("250000.00" se volvía ×100).
+  const n = typeof amount === 'string' ? parseInt(parteEnteraDb(amount), 10) : amount;
   if (Number.isNaN(n)) return '—';
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',

@@ -7,6 +7,7 @@ import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import { MarkdownContent } from '@/components/veta/markdown-content'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 import { compararVariantes, type DiffEspacio, type ItemComparado } from '@/lib/propuesta/comparar-variantes'
+import { calcularTotalesCotizacion, repartirHitos } from '@/lib/dinero/calculo'
 
 // Documento de impresión de la propuesta (rediseño 2026-10-14).
 //
@@ -557,11 +558,24 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
   const imprevistos = parseNum(proyecto.imprevistosInstalacion)
   const descuento = parseNum(proyecto.descuentoComercial)
   const ajuste = parseNum(proyecto.ajusteArbitrario)
-  const subtotal = materialesTotal + moTotal + costosOperativos + imprevistos - descuento + ajuste
-  const iva = proyecto.aplicaIva ? Math.round(subtotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
-  const total = subtotal + iva
+  // t-196: mismo cálculo que el ERP y la propuesta web (lib/dinero/calculo).
+  const { subtotal, iva, total } = calcularTotalesCotizacion({
+    materiales: materialesTotal,
+    manoObra: moTotal,
+    costosOperativos,
+    imprevistos,
+    descuento,
+    ajuste,
+    aplicaIva: proyecto.aplicaIva,
+    porcentajeIva: parseNum(proyecto.porcentajeIva),
+  })
 
   const hitosOrdenados = (hitos ?? []).slice().sort((a, b) => a.orden - b.orden)
+  // t-196: montos por hito con suma exacta = valor del contrato (mismo reparto que el ERP).
+  const montosHitosPrint = repartirHitos(
+    contrato ? parseNum(contrato.valorTotal) : 0,
+    hitosOrdenados.map((h) => ({ tipo: h.tipo === 'percentage' ? 'percentage' : 'fixed', valor: parseNum(h.montoOPorcentaje) })),
+  )
 
   // Anexo "Cuadro de otros presupuestos": referenciales con terceros. Queda
   // completamente fuera de los totales oficiales de la propuesta.
@@ -802,9 +816,9 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
                 </tr>
               </thead>
               <tbody>
-                {hitosOrdenados.map((h) => {
+                {hitosOrdenados.map((h, i) => {
                   const esPct = h.tipo === 'percentage'
-                  const monto = esPct ? Math.round((parseNum(contrato.valorTotal) * parseNum(h.montoOPorcentaje)) / 100) : parseNum(h.montoOPorcentaje)
+                  const monto = montosHitosPrint[i] ?? 0
                   return (
                     <tr key={h.id}>
                       <td>
