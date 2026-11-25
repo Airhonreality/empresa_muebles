@@ -1,0 +1,47 @@
+{
+  "id": "t-194",
+  "titulo": "Fase A — Formato y edición de montos: decimales de Postgres (×100), selección al enfocar, guarda sistémica en MoneyInput",
+  "intencion_negocio": "Javier (Supervisor) reportó que los campos monetarios del cotizador muestran valores ×100 (250mil como 25mil, 300mil como 3000000) y que el cursor cae sobre decimales al editar. Aprobó Fase B y el enfoque de dinero tipo contable; Fase A es el paso de bajo riesgo que corrige la presentación sin tocar totales ni schema.",
+  "zona": "cotizador",
+  "tipo": "bugfix",
+  "riesgo": "medio",
+  "archivos_afectados": [
+    "lib/utils/dinero.ts",
+    "lib/utils/dinero.test.ts",
+    "components/veta/money-input.tsx",
+    "components/veta/number-input.tsx",
+    "components/veta/parametros-financieros-modal.tsx",
+    "app/erp/(modern)/cotizador/[proyectoId]/page.tsx"
+  ],
+  "criterios_aceptacion": [
+    "parteEnteraDb('250000.00') === '250000'; null y vacío -> ''",
+    "MoneyInput no dispara onChange ni muestra ×100 al enfocar/desenfocar sin editar",
+    "Primer clic en MoneyInput/NumberInput enfocado deja el texto completamente seleccionado",
+    "tsc --noEmit: 0 errores nuevos en archivos tocados",
+    "eslint: 0 errores nuevos en archivos tocados",
+    "npx tsx lib/utils/dinero.test.ts pasa"
+  ],
+  "plan_ref": "arnes/planes/plan_t-194.md",
+  "ejecutor": "Claude Code (agente de código)",
+  "verificador": "Javier (Supervisor)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsx lib/utils/dinero.test.ts (3/3 pass)",
+      "npx tsc --noEmit (sin salida = 0 errores)",
+      "npx eslint sobre archivos tocados (0 errores; 4 warnings preexistentes en page.tsx)"
+    ],
+    "salida_cruda": "tests 3 pass 0 fail; tsc sin errores; eslint 0 errores",
+    "veredicto": "verificacion_mecanica_ok; falta QA manual en npm run dev"
+  },
+  "checkpoint": {
+    "requerido": false,
+    "veredicto_humano": null,
+    "fecha": null,
+    "nota": "Fase A no cambia schema ni escrituras de totales. Fase B sí requiere checkpoint."
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-11-25T00:00:00Z",
+  "cerrada_en": null,
+  "nota": "Código listo en working tree, sin commit. Pendiente: revisar git diff, QA manual en npm run dev (campos de costos/imprevistos/descuento/ajuste y precio unitario), y checkpoint del Supervisor para cerrar."
+}

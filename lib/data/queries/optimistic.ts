@@ -4,11 +4,13 @@
 // completo (onError -> setQueryData(previous)). Las reglas replican el contrato del mock/server:
 // totalLinea siempre se re-deriva de cantidad x precio; eliminar ítem es soft-delete (anulado).
 import type { CotizadorSnapshot } from './types'
+import { calcularTotalLinea as calcularTotalLineaPesos } from '../../dinero/calculo'
 import type { Cliente, Contrato, HitoPagoInput, ItemVariante, EspacioVariante, EspacioArtefacto, Proyecto } from '../contracts'
 
+// t-195: la política de redondeo vive en lib/dinero/calculo (una sola fuente). Aquí solo se
+// devuelve como string para mantener el contrato de las filas de BD.
 export function calcularTotalLinea(cantidad: string, precioUnitario: string): string {
-  const n = Number(cantidad) * Number(precioUnitario)
-  return String(Number.isFinite(n) ? n : 0)
+  return String(calcularTotalLineaPesos(cantidad, precioUnitario))
 }
 
 // --- Items ---

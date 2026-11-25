@@ -1,0 +1,40 @@
+{
+  "id": "t-191",
+  "titulo": "Fase 1 — Aplanar UI del cotizador móvil (eliminar marcos anidados, acento lateral, menú ⋮ 44x44pt, ocultar UUIDs)",
+  "intencion_negocio": "Javier (Supervisor) aprobó en chat el Plan de Mejora Estructurado en 3 Fases para llevar el cotizador móvil al estado de la arte en ergonomía cognitiva y usabilidad móvil. Fase 1: eliminar ruido extrínseco por anidamiento excesivo de tarjetas, recuperar ancho de pantalla en móvil, agrupar acciones secundarias en menú contextual con área de toque >= 44x44pt, y ocultar códigos UUID/seriales complejos por defecto mostrando solo nombre comercial y SKU abreviado.",
+  "zona": "cotizador",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "app/erp/(modern)/cotizador/[proyectoId]/page.tsx"
+  ],
+  "criterios_aceptacion": [
+    "Espacios, grupos e ítems se renderizan con diseño plano (borde izquierdo de acento 3-4px) en lugar de marcos anidados con bordes grises",
+    "Acciones secundarias (editar, eliminar, duplicar) ocultas bajo un menú contextual ⋮ con área de toque mínima 44x44pt",
+    "Códigos UUID/seriales complejos ocultados por defecto en vista móvil; solo se muestra nombre comercial del insumo y SKU/referencia corta",
+    "tsc --noEmit: 0 errores nuevos en archivos tocados",
+    "eslint: 0 errores nuevos en archivos tocados"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode (agente de código)",
+  "verificador": "Javier (Supervisor)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit (filtrado a cotizador/page.tsx: 0 errores)",
+      "npx eslint app/erp/(modern)/cotizador/[proyectoId]/page.tsx (0 errores, 4 warnings preexistentes)"
+    ],
+    "salida_cruda": "tsc: 0 errores en archivos tocados · eslint: 0 errores, 4 warnings preexistentes (GrupoNodo, HORAS_POR_JORNADA, 'e' no usados — todos previos al cambio)",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-11-02T00:00:00Z",
+    "nota": "Aprobación explícita del Supervisor (Javier) en chat: 'que siiii' + modo build activado. Plan de 3 fases presentado y autorizado en la misma conversación."
+  },
+  "estado": "cerrada",
+  "creada_en": "2026-11-02T00:00:00Z",
+  "cerrada_en": "2026-11-02T00:00:00Z",
+  "nota": "Fase 1 completada y pusheada a dev (commit 5269301). Los UUIDs en SmartSearch (componente compartido) quedan para Fase 2 o tarea separada para no romper otras pantallas."
+}

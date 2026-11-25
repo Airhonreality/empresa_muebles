@@ -1,0 +1,42 @@
+{
+  "id": "t-192",
+  "titulo": "Fase 2 — Ingeniería de datos financieros y entradas de texto del cotizador móvil",
+  "intencion_negocio": "Javier (Supervisor) aprobó el Plan de Mejora Estructurado en 3 Fases. Fase 2: evitar inseguridad del operador ante valores truncados (auto-escalado tipográfico con clamp), agilizar inserción de cantidades (stepper +/-), y aislar búsquedas de catálogo en Bottom Sheet para reducir carga atencional en móvil.",
+  "zona": "cotizador",
+  "tipo": "ui",
+  "riesgo": "bajo",
+  "archivos_afectados": [
+    "components/veta/number-input.tsx",
+    "components/veta/money-input.tsx",
+    "app/erp/(modern)/cotizador/[proyectoId]/page.tsx"
+  ],
+  "criterios_aceptacion": [
+    "NumberInput y MoneyInput usan font-size con clamp() para auto-escalar y nunca cortar dígitos en móvil",
+    "Ítems del cotizador usan control stepper (-/+) para cantidad en lugar de input plano numérico",
+    "Búsqueda de catálogo (+ Añadir ítem) se abre en Bottom Sheet (overlay a pantalla completa) en móvil con foco de teclado",
+    "tsc --noEmit: 0 errores nuevos en archivos tocados",
+    "eslint: 0 errores nuevos en archivos tocados"
+  ],
+  "plan_ref": null,
+  "ejecutor": "opencode (agente de código)",
+  "verificador": "Javier (Supervisor)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsc --noEmit (filtrado a archivos tocados: 0 errores)",
+      "npx eslint components/veta/number-input.tsx components/veta/money-input.tsx app/erp/(modern)/cotizador/[proyectoId]/page.tsx (0 errores, 4 warnings preexistentes)"
+    ],
+    "salida_cruda": "tsc: 0 errores en archivos tocados · eslint: 0 errores, 4 warnings preexistentes (GrupoNodo, HORAS_POR_JORNADA, 'e' no usados — todos previos al cambio)",
+    "veredicto": "aprobado"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-11-02T00:00:00Z",
+    "nota": "Aprobación implícita del Supervisor (Javier) en chat: 'si' para continuar con Fase 2."
+  },
+  "estado": "cerrada",
+  "creada_en": "2026-11-02T00:00:00Z",
+  "cerrada_en": "2026-11-02T00:00:00Z",
+  "nota": "Fase 2 completada y pusheada a dev (commit f89699d)."
+}

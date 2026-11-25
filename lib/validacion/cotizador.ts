@@ -19,6 +19,12 @@ const numeroDecimalTexto = z
     message: 'debe ser un número no negativo',
   })
 
+/* t-195: monto en pesos enteros, no negativo, dentro de numeric(14,2) (máx. 12 dígitos enteros).
+   Acepta "250000" o "250000.00" (lo que devuelve Postgres); rechaza decimales reales. */
+const montoCopTexto = z
+  .string()
+  .regex(/^\d{1,12}(\.0{1,2})?$/, { message: 'debe ser un monto en pesos enteros (sin decimales), máximo 12 dígitos' })
+
 const idNoVacio = z.string().trim().min(1, 'no puede estar vacío')
 const textoOpcional = z.string().nullable().optional()
 
@@ -33,7 +39,7 @@ export const itemCrearSchema = z.object({
   varianteId: idNoVacio,
   catalogoId: idNoVacio.nullable(),
   cantidad: numeroDecimalTexto,
-  precioUnitario: numeroDecimalTexto.optional(),
+  precioUnitario: montoCopTexto.optional(),
   nombrePersonalizado: textoOpcional,
   anulado: z.boolean().optional(),
   esReferencial: z.boolean().optional(),
@@ -59,7 +65,7 @@ export type ItemCrearInput = z.infer<typeof itemCrearSchema>
 export const itemActualizarSchema = z.object({
   catalogoId: idNoVacio.nullable().optional(),
   cantidad: numeroDecimalTexto.optional(),
-  precioUnitario: numeroDecimalTexto.optional(),
+  precioUnitario: montoCopTexto.optional(),
   nombrePersonalizado: textoOpcional,
   anulado: z.boolean().optional(),
   esReferencial: z.boolean().optional(),
@@ -129,10 +135,10 @@ export const parametrosFinancierosSchema = z.object({
   aplicaIva: z.boolean().optional(),
   porcentajeIva: numeroDecimalTexto.optional(),
   garantiaAnios: z.number().int().nonnegative().optional(),
-  costosOperativos: numeroDecimalTexto.optional(),
-  imprevistosInstalacion: numeroDecimalTexto.optional(),
-  descuentoComercial: numeroDecimalTexto.optional(),
-  ajusteArbitrario: numeroDecimalTexto.optional(),
+  costosOperativos: montoCopTexto.optional(),
+  imprevistosInstalacion: montoCopTexto.optional(),
+  descuentoComercial: montoCopTexto.optional(),
+  ajusteArbitrario: montoCopTexto.optional(),
 })
 export type ParametrosFinancierosInput = z.infer<typeof parametrosFinancierosSchema>
 
@@ -204,7 +210,7 @@ export const plantillaItemCrearSchema = z.object({
   plantillaGrupoId: textoOpcional,
   nombrePersonalizado: z.string().trim().min(1, 'no puede estar vacío'),
   cantidad: numeroDecimalTexto.optional(),
-  precioUnitario: numeroDecimalTexto.optional(),
+  precioUnitario: montoCopTexto.optional(),
   esReferencial: z.boolean().optional(),
   fuenteReferencial: fuenteReferencialEnum.nullable().optional(),
   grupoReferencial: textoOpcional,

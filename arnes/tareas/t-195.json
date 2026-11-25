@@ -1,0 +1,61 @@
+{
+  "id": "t-195",
+  "titulo": "Fase B — Cálculo único de montos (redondeo half-up), validación en el borde, auditoría de montos, confirmación explícita en MoneyInput, invariante de hitos en pesos, validación de pagos",
+  "intencion_negocio": "Javier (Supervisor) aprobó la Fase B y la política de redondeo propuesta (2026-11-25) y pidió ejecutarla en secuencia hasta el final. Objetivo: que la pantalla, el contrato, la cuenta de cobro y el PDF muestren el mismo monto, y que cada cambio de monto quede auditado.",
+  "zona": "cotizador",
+  "tipo": "bugfix",
+  "riesgo": "alto",
+  "archivos_afectados": [
+    "lib/dinero/calculo.ts",
+    "lib/dinero/calculo.test.ts",
+    "lib/validacion/cotizador.ts",
+    "lib/validacion/finanzas.ts",
+    "lib/validacion/montos.test.ts",
+    "lib/data/queries/optimistic.ts",
+    "lib/data/actions/core.ts",
+    "lib/data/actions/f6.ts",
+    "lib/data/contrato-validacion.ts",
+    "lib/data/contrato-hitos-montos.test.ts",
+    "lib/hooks/useDebouncedInput.ts",
+    "components/veta/money-input.tsx",
+    "app/erp/(modern)/cotizador/[proyectoId]/page.tsx",
+    "app/erp/(modern)/cotizador/[proyectoId]/contrato/page.tsx",
+    "app/erp/(modern)/cotizador/[proyectoId]/cuenta-cobro/page.tsx",
+    "app/erp/(modern)/cotizador/ContratoModal.tsx"
+  ],
+  "criterios_aceptacion": [
+    "calcularTotalesCotizacion y repartirHitos cubiertos por pruebas (incluye regresión 250mil)",
+    "Ninguna pantalla de cotizador usa Math.round para montos (grep limpio en contrato, cuenta de cobro y cotizador)",
+    "Montos con decimales reales se rechazan en el borde; '250000.00' se acepta",
+    "Cada cambio de monto de proyecto queda en audit_logs en la misma transacción",
+    "MoneyInput no escribe por pausa; Enter confirma; Escape revierte",
+    "Contrato con hitos fijos mezclados bloquea si la suma en pesos no cuadra",
+    "tsc 0 errores; eslint 0 errores en archivos tocados; next build compila",
+    "Sin cambios de schema; sin escrituras de corrección a producción"
+  ],
+  "plan_ref": "arnes/planes/plan_t-195.md",
+  "ejecutor": "Claude Code (agente de código)",
+  "verificador": "Javier (Supervisor)",
+  "qa": {
+    "intentos": 1,
+    "comandos": [
+      "npx tsx sobre 9 archivos de prueba tocados (todas en verde)",
+      "npx tsc --noEmit (0 errores)",
+      "npx eslint sobre archivos tocados (0 errores)",
+      "npx next build (compiled successfully)",
+      "Auditoría READ ONLY sobre DATABASE_URL_V3_PREVIEW (producción): 176 proyectos, 1046 ítems; hallazgos en plan_t-195.md"
+    ],
+    "salida_cruda": "tests verdes; tsc 0; eslint 0 errores; build OK",
+    "veredicto": "verificacion_mecanica_ok; QA manual pendiente"
+  },
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "aprobado",
+    "fecha": "2026-11-25",
+    "nota": "Aprobación explícita del Supervisor: 'perfecto aprobado' + política de redondeo propuesta + orden de ejecutar hasta el final con push a dev. Correcciones de datos de producción NO aprobadas: pendientes fila por fila."
+  },
+  "estado": "ejecutada_pendiente_qa",
+  "creada_en": "2026-11-25T00:00:00Z",
+  "cerrada_en": null,
+  "nota": "Commits en dev; QA manual pendiente; correcciones de datos pendientes de decisión del Supervisor."
+}

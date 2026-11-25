@@ -8,6 +8,7 @@ import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import { ordinalesClausulas, type ClaveClausula } from '@/lib/data/contrato-clausulas'
 import { lineaObjetoItem } from '@/lib/data/contrato-items'
 import type { EspacioVariante } from '@/lib/data/contracts'
+import { repartirHitos } from '@/lib/dinero/calculo'
 
 // Plantilla del contrato de fabricación e instalación (t-163, 2026-09-14).
 // Adaptada de la plantilla del sistema legacy (`legacy-agnostic-backup:
@@ -171,12 +172,19 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
 
   // Tabla de pagos: cada hito persistido con su % o monto fijo; el monto COP se deriva
   // del valorTotal absorbido de la cotización (t-162) — nunca se suma material por acá.
-  const filas = hitosList
-    .slice()
-    .sort((a, b) => a.orden - b.orden)
-    .map((h) => {
+  // t-195: montos por hito con repartirHitos (suma exacta = valorTotal, sin redondeos sueltos).
+  const hitosOrdenados = hitosList.slice().sort((a, b) => a.orden - b.orden)
+  const montosHitos = repartirHitos(
+    totalNeto,
+    hitosOrdenados.map((h) => ({
+      tipo: h.tipo === 'percentage' ? 'percentage' : 'fixed',
+      valor: parseNum(h.montoOPorcentaje),
+    })),
+  )
+  const filas = hitosOrdenados
+    .map((h, i) => {
       const pct = h.tipo === 'percentage' ? parseNum(h.montoOPorcentaje) : null
-      const monto = h.tipo === 'percentage' ? Math.round((totalNeto * (pct ?? 0)) / 100) : parseNum(h.montoOPorcentaje)
+      const monto = montosHitos[i] ?? 0
       return {
         etiqueta: h.razon || (h.tipo === 'percentage' ? `${pct}%` : 'Pago'),
         etiquetaCorta: '',
@@ -185,27 +193,33 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         montoCop: fmtCOP(monto),
       }
     })
+  // t-195: plan base 50/25/25 con el mismo reparto (suma exacta = total).
+  const montosPlanBase = repartirHitos(totalNeto, [
+    { tipo: 'percentage', valor: 50 },
+    { tipo: 'percentage', valor: 25 },
+    { tipo: 'percentage', valor: 25 },
+  ])
   if (filas.length === 0) {
     filas.push({
       etiqueta: 'Primer Anticipo (Firma y Planificación)',
       etiquetaCorta: '',
       descripcion: 'Indispensable para realizar compra de tableros e iniciar fabricación en taller.',
       porcentaje: '50%',
-      montoCop: fmtCOP(Math.round(totalNeto * 0.5)),
+      montoCop: fmtCOP(montosPlanBase[0] ?? 0),
     })
     filas.push({
       etiqueta: 'Segundo Pago (Ingreso y Montaje)',
       etiquetaCorta: '',
       descripcion: 'Al momento del ingreso del mobiliario al domicilio de obra e inicio de instalación en sitio.',
       porcentaje: '25%',
-      montoCop: fmtCOP(Math.round(totalNeto * 0.25)),
+      montoCop: fmtCOP(montosPlanBase[1] ?? 0),
     })
     filas.push({
       etiqueta: 'Pago Final (Finalización de Obra)',
       etiquetaCorta: '',
       descripcion: 'Al concluir la instalación principal del mobiliario dejándolo en condiciones operativas y funcionales.',
       porcentaje: '25%',
-      montoCop: fmtCOP(totalNeto - Math.round(totalNeto * 0.5) - Math.round(totalNeto * 0.25)),
+      montoCop: fmtCOP(montosPlanBase[2] ?? 0),
     })
   }
 

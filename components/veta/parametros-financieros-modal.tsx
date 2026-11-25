@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/veta/button";
 import { NumberInput } from "@/components/veta/number-input";
+import { parteEnteraDb } from "@/lib/utils/dinero";
 import type { Proyecto } from "@/lib/data";
 import { useToast } from "@/components/veta/toast-provider";
 
@@ -30,8 +31,9 @@ export interface ParametrosFinancierosModalProps {
   onSaved: () => void;
 }
 
+// t-194: "19.00" -> "19" (antes "1900", ×100). Ver lib/utils/dinero.ts.
 function aDigitos(val: string | null | undefined): string {
-  return (val ?? '').replace(/[^\d]/g, '')
+  return parteEnteraDb(val)
 }
 
 /**

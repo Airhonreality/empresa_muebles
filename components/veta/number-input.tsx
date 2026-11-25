@@ -1,6 +1,6 @@
 "use client";
 
-import { type InputHTMLAttributes, useId } from "react";
+import { type InputHTMLAttributes, useId, useRef } from "react";
 import { useDebouncedInput } from "@/lib/hooks/useDebouncedInput";
 import { normalizarNumeroTexto } from "@/lib/utils/numero";
 import { useUndoHistorial, detectarAtajoDeshacer } from "@/lib/hooks/useUndoHistorial";
@@ -50,8 +50,18 @@ export function NumberInput({
     onBlurLocal();
   };
 
+  // t-194: el primer clic tras enfocar deshace la selección; se bloquea una vez.
+  const seleccionPendiente = useRef(false);
+
   const handleFocus: React.FocusEventHandler<HTMLInputElement> = (e) => {
+    seleccionPendiente.current = true;
     e.target.select();
+  };
+
+  const handleMouseUp: React.MouseEventHandler<HTMLInputElement> = (e) => {
+    if (!seleccionPendiente.current) return;
+    seleccionPendiente.current = false;
+    e.preventDefault();
   };
 
   return (
@@ -70,6 +80,7 @@ export function NumberInput({
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         onFocus={handleFocus}
+        onMouseUp={handleMouseUp}
         className={`w-full min-h-[44px] rounded-sm border bg-bg-paper px-3 font-mono ${error ? "border-error-stroke focus:border-error-stroke" : "border-border-subtle focus:border-brand"} focus:shadow-ring-focus style:font-size:[clamp(14px,4vw,16px)]`}
         aria-label={props["aria-label"] || "Cantidad"}
         {...props}

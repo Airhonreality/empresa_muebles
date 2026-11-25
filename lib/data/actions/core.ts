@@ -12,6 +12,7 @@ import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizaci
 import { generarSkuUnico } from '../skus'
 import { destinosProyectoValidos } from '../transiciones-proyecto'
 import { validarEntrada } from '@/lib/validacion/validar'
+import { parteEnteraDb } from '@/lib/utils/dinero'
 import {
   itemCrearSchema, itemActualizarSchema, espacioCrearSchema, espacioActualizarSchema,
   jornadasSchema, parametrosFinancierosSchema, clienteCrearSchema, clienteActualizarSchema,
@@ -164,9 +165,42 @@ export async function actualizarParametrosFinancierosAction(
     const n = Math.min(Math.max(Number(datos.porcentajeIva) || 0, 0), 100)
     datos.porcentajeIva = String(n)
   }
-  const [actualizado] = await db.update(s.proyectos).set({ ...datos, updatedAt: new Date().toISOString() }).where(eq(s.proyectos.id, id)).returning()
-  return (actualizado as unknown as Proyecto) ?? null
+  // t-195: cada cambio de monto queda en audit_logs (antes/después, usuario, fecha) en la MISMA
+  // transacción que el UPDATE: no puede quedar un monto cambiado sin rastro.
+  const [previo] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, id)).limit(1)
+  if (!previo) return null
+  const cambios: Record<string, { antes: string | null; despues: string }> = {}
+  for (const campo of CAMPOS_MONTO_PROYECTO) {
+    const nuevo = datos[campo]
+    if (nuevo === undefined) continue
+    const antes = previo[campo] === null || previo[campo] === undefined ? null : String(previo[campo])
+    if (antes === null || parteEnteraDb(antes) !== String(nuevo)) {
+      cambios[campo] = { antes, despues: String(nuevo) }
+    }
+  }
+  // Import dinámico: el módulo de sesión exige SESSION_SECRET al cargarse, y no debe bloquear
+  // la carga de este módulo en tests ni en contextos sin sesión.
+  const sesion = await import('@/lib/auth/session')
+    .then((m) => m.getErpSession())
+    .catch(() => null)
+  return db.transaction(async (tx) => {
+    const [actualizado] = await tx.update(s.proyectos).set({ ...datos, updatedAt: new Date().toISOString() }).where(eq(s.proyectos.id, id)).returning()
+    if (Object.keys(cambios).length > 0) {
+      await tx.insert(s.auditLogs).values({
+        accion: 'actualizar_montos_proyecto',
+        entidadTipo: 'proyecto',
+        entidadId: id,
+        actorId: sesion?.usuarioId ?? null,
+        actorRol: sesion?.rol ?? null,
+        cambiosJson: cambios,
+      })
+    }
+    return (actualizado as unknown as Proyecto) ?? null
+  })
 }
+
+/** Campos monetarios de proyecto que se auditan al cambiar (t-195). */
+const CAMPOS_MONTO_PROYECTO = ['costosOperativos', 'imprevistosInstalacion', 'descuentoComercial', 'ajusteArbitrario'] as const
 
 export async function actualizarVerificadorAction(id: string, verificadorId: string): Promise<Proyecto | null> {
   const [actualizado] = await db.update(s.proyectos)

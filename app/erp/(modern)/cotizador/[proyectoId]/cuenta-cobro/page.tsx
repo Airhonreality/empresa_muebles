@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { CotizadorCompatProvider, useCotizadorCompat } from '@/lib/data/queries/cotizador-compat'
 import { Button } from '@/components/veta/button'
 import { numeroALetrasPesos } from '@/lib/utils/numero-a-letras'
+import { repartirHitos } from '@/lib/dinero/calculo'
 
 // Cuenta de cobro estándar Colombia (t-163 / t-178), mismo pipeline que el contrato:
 // página imprimible + window.print(), NO PDF binario. Se eliminó el generador
@@ -72,11 +73,18 @@ function CuentaCobroPrintInner({ proyectoId }: { proyectoId: string }) {
   const hito = hitosList.find((h) => h.id === hitoId) ?? null
 
   const totalNeto = contrato ? parseNum(contrato.valorTotal) : 0
-  const valorHito = hito
-    ? hito.tipo === 'percentage'
-      ? Math.round((totalNeto * parseNum(hito.montoOPorcentaje)) / 100)
-      : parseNum(hito.montoOPorcentaje)
-    : 0
+  // t-195: mismo reparto que el contrato (repartirHitos), para que la cuenta de cobro y el
+  // contrato muestren el mismo monto por hito.
+  const hitosOrdenados = hitosList.slice().sort((a, b) => a.orden - b.orden)
+  const montosHitos = repartirHitos(
+    totalNeto,
+    hitosOrdenados.map((h) => ({
+      tipo: h.tipo === 'percentage' ? 'percentage' : 'fixed',
+      valor: parseNum(h.montoOPorcentaje),
+    })),
+  )
+  const indiceHito = hito ? hitosOrdenados.findIndex((h) => h.id === hito.id) : -1
+  const valorHito = indiceHito >= 0 ? (montosHitos[indiceHito] ?? 0) : 0
 
   const valorLetras = numeroALetrasPesos(String(valorHito)).toUpperCase()
   const fechaEmision = fechaTexto(null)

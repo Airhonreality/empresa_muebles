@@ -9,6 +9,8 @@ import { EntityHeader } from '@/components/veta/entity-header'
 import { EntityActionsBar, type EntityAction } from '@/components/veta/entity-actions-bar'
 import { Package, Copy, Edit, Trash2, Check } from 'lucide-react'
 import { MoneyInput } from '@/components/veta/money-input'
+import { parteEnteraDb } from '@/lib/utils/dinero'
+import { calcularTotalesCotizacion } from '@/lib/dinero/calculo'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
@@ -88,8 +90,10 @@ function parseNum(s: string | null | undefined): number {
 
 /** Mismo helper que parametros-financieros-modal.tsx: deja solo dígitos, para alimentar
  *  MoneyInput (que espera un string de dígitos crudos, no un numeric string con decimales). */
+// t-194: antes quitaba todo lo que no fuera dígito, así que "250000.00" (numeric de Postgres)
+// se volvía "25000000" (×100). Ahora toma solo la parte entera.
 function aDigitos(s: string | null | undefined): string {
-  return (s ?? '').replace(/[^\d]/g, '')
+  return parteEnteraDb(s)
 }
 
 interface TarifasMO {
@@ -382,9 +386,17 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   const imprevistos = parseNum(proyecto.imprevistosInstalacion)
   const descuento = parseNum(proyecto.descuentoComercial)
   const ajuste = parseNum(proyecto.ajusteArbitrario)
-  const subtotal = materialesTotal + moTotal + costosOperativos + imprevistos - descuento + ajuste
-  const iva = proyecto.aplicaIva ? Math.round(subtotal * (parseNum(proyecto.porcentajeIva) / 100)) : 0
-  const total = subtotal + iva
+  // t-195: un solo cálculo (lib/dinero/calculo). Mismas reglas que el servidor y el PDF.
+  const { subtotal, iva, total } = calcularTotalesCotizacion({
+    materiales: materialesTotal,
+    manoObra: moTotal,
+    costosOperativos,
+    imprevistos,
+    descuento,
+    ajuste,
+    aplicaIva: proyecto.aplicaIva,
+    porcentajeIva: parseNum(proyecto.porcentajeIva),
+  })
 
   if (readonly) {
     return (

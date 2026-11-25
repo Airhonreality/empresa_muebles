@@ -49,12 +49,24 @@ export function useDebouncedInput(
     editingRef.current = true
     setLocal(v)
     if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => flush(v), delayMs)
+    // t-195: delayMs <= 0 desactiva el commit por pausa; el valor se confirma solo al
+    // salir del campo o con Enter (flush), así no hay escrituras a medio tipear.
+    if (delayMs > 0) timerRef.current = setTimeout(() => flush(v), delayMs)
   }
 
   function onBlurLocal(): void {
     flush(local)
   }
 
-  return { local, onChangeLocal, onBlurLocal }
+  /** Descarta el borrador y vuelve al último valor confirmado (Escape). No escribe nada. */
+  function revertir(): void {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    editingRef.current = false
+    setLocal(lastSentRef.current)
+  }
+
+  return { local, onChangeLocal, onBlurLocal, revertir }
 }
