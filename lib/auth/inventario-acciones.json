@@ -1517,9 +1517,10 @@
     "nombre": "listarVersionesPropuestaAction",
     "escribe": false,
     "requiere_sesion_hoy": false,
-    "clasificacion": "pendiente_decision",
+    "clasificacion": "protegida",
     "ambigua": true,
-    "nota": "Usada por el portal cliente (sin sesión empleado) y por el cotizador ERP. Envolverla con cotizador:leer rompe /cuenta/proyectos/[id]. Decidir protocolo."
+    "nota": "Usada por el portal cliente (sin sesión empleado) y por el cotizador ERP. Envolverla con cotizador:leer rompe /cuenta/proyectos/[id]. Decidir protocolo.",
+    "permiso": "cotizador:leer"
   },
   {
     "archivo": "lib/data/actions/public.ts",
@@ -1553,9 +1554,10 @@
     "nombre": "obtenerGarantiasClienteAction",
     "escribe": false,
     "requiere_sesion_hoy": false,
-    "clasificacion": "pendiente_decision",
+    "clasificacion": "protegida",
     "ambigua": true,
-    "nota": "Portal cliente: recibe clienteId del caller (IDOR). Requiere protocolo de cliente."
+    "nota": "Portal cliente: recibe clienteId del caller (IDOR). Requiere protocolo de cliente.",
+    "permiso": "cliente (sesión de cliente)"
   },
   {
     "archivo": "lib/data/actions/public.ts",
@@ -1598,18 +1600,20 @@
     "nombre": "obtenerProyectoClienteAction",
     "escribe": false,
     "requiere_sesion_hoy": false,
-    "clasificacion": "pendiente_decision",
+    "clasificacion": "protegida",
     "ambigua": true,
-    "nota": "Portal cliente: recibe clienteId del caller (IDOR). Requiere protocolo de cliente."
+    "nota": "Portal cliente: recibe clienteId del caller (IDOR). Requiere protocolo de cliente.",
+    "permiso": "cliente (sesión de cliente)"
   },
   {
     "archivo": "lib/data/actions/public.ts",
     "nombre": "obtenerProyectosClienteAction",
     "escribe": false,
     "requiere_sesion_hoy": false,
-    "clasificacion": "pendiente_decision",
+    "clasificacion": "protegida",
     "ambigua": true,
-    "nota": "Portal cliente: recibe clienteId del caller. IDOR: cualquier invocación directa lista proyectos de otro cliente. Requiere protocolo de cliente (sesión cliente + ownership), no empleado."
+    "nota": "Portal cliente: recibe clienteId del caller. IDOR: cualquier invocación directa lista proyectos de otro cliente. Requiere protocolo de cliente (sesión cliente + ownership), no empleado.",
+    "permiso": "cliente (sesión de cliente)"
   },
   {
     "archivo": "lib/data/actions/public.ts",

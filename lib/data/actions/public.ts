@@ -564,8 +564,9 @@ async function obtenerUltimaVersionPropuesta(proyectoId: string): Promise<Propue
   return getDataStore().propuestasVersiones.obtenerUltima(proyectoId)
 }
 
-// Portal cliente (punto 7 del encargo): histórico completo, orden ascendente (v1, v2, v3...).
-export async function listarVersionesPropuestaAction(proyectoId: string): Promise<PropuestaVersion[]> {
+// Histórico completo de versiones de un proyecto, orden ascendente (v1, v2, v3...). Lectura interna
+// sin comprobación de acceso: solo la llaman acciones que ya la decidieron (ver abajo).
+async function leerVersionesPropuesta(proyectoId: string): Promise<PropuestaVersion[]> {
   if (DATA_IMPL() === 'drizzle') {
     const rows = await db.select().from(s.propuestasVersiones).where(eq(s.propuestasVersiones.proyectoId, proyectoId))
     return (rows as unknown as PropuestaVersion[]).slice().sort((a, b) => a.version - b.version)
@@ -574,11 +575,17 @@ export async function listarVersionesPropuestaAction(proyectoId: string): Promis
   return getDataStore().propuestasVersiones.listarPorProyecto(proyectoId)
 }
 
+// Uso interno del cotizador (empleados). El portal cliente NO la llama: recibe sus versiones dentro de
+// obtenerProyectoClienteAction, que ya verificó que el proyecto es del cliente de la sesión.
+export const listarVersionesPropuestaAction = protegerAccion({ permiso: "cotizador:leer" }, async function listarVersionesPropuestaAction(proyectoId: string): Promise<PropuestaVersion[]> {
+  return leerVersionesPropuesta(proyectoId)
+});
+
 // "Ver" una versión puntual del histórico (2026-09-11, control de versiones) — a diferencia de
 // obtenerPropuestaPublicaAction (siempre la última), esto sirve cualquier versión pasada por su
 // número, para que el empleado pueda revisar/comparar antes de decidir si la elimina.
 export const obtenerVersionPropuestaPorNumeroAction = protegerAccion({ publica: true, motivo: "Link público de propuesta, versión por número (?version=N)." }, async function obtenerVersionPropuestaPorNumeroAction(proyectoId: string, version: number): Promise<PropuestaVersion | null> {
-  const todas = await listarVersionesPropuestaAction(proyectoId)
+  const todas = await leerVersionesPropuesta(proyectoId)
   return todas.find((v) => v.version === version) ?? null
 });
 
@@ -685,7 +692,8 @@ export interface ProyectosClienteData {
   proyectos: ProyectoClienteResumen[]
 }
 
-export async function obtenerProyectosClienteAction(clienteId: string): Promise<ProyectosClienteData> {
+// Portal cliente: clienteId llega siempre de la sesión de cliente (regla { cliente: true }), nunca del llamador.
+export const obtenerProyectosClienteAction = protegerAccion({ cliente: true }, async function obtenerProyectosClienteAction(clienteId: string): Promise<ProyectosClienteData> {
   if (DATA_IMPL() === 'drizzle') {
     const [cliente] = await db.select().from(s.clientes).where(eq(s.clientes.id, clienteId)).limit(1)
     const proyectosRows = await db.select().from(s.proyectos).where(eq(s.proyectos.clienteId, clienteId))
@@ -716,7 +724,7 @@ export async function obtenerProyectosClienteAction(clienteId: string): Promise<
       obligaciones: store.obligacionesPendientes.porProyecto(proyecto.id),
     }))
   return { cliente, proyectos }
-}
+});
 
 export interface ProyectoClienteDetalle {
   proyecto: Proyecto
@@ -729,11 +737,13 @@ export interface ProyectoClienteDetalle {
   actaEntrega: ActaEntrega | null
   casosGarantia: CasoGarantia[]
   modulos: Modulo[]
+  /** Histórico de propuesta del proyecto (solo llega si el proyecto es del cliente de la sesión). */
+  versionesPropuesta: PropuestaVersion[]
 }
 
-// Verifica ownership de nuevo server-side (defensa en profundidad — el caller ya validó
-// requireSesionCliente() + proyecto.clienteId === clienteId antes de llamar, ver page.tsx).
-export async function obtenerProyectoClienteAction(proyectoId: string, clienteId: string): Promise<ProyectoClienteDetalle | null> {
+// Portal cliente: clienteId viene de la sesión (regla { cliente: true }). El ownership se verifica aquí
+// dentro: si el proyecto no es de ese cliente devuelve null, y las versiones de propuesta solo se leen después.
+export const obtenerProyectoClienteAction = protegerAccion({ cliente: true }, async function obtenerProyectoClienteAction(clienteId: string, proyectoId: string): Promise<ProyectoClienteDetalle | null> {
   if (DATA_IMPL() === 'drizzle') {
     const [proyecto] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId)).limit(1)
     if (!proyecto || proyecto.clienteId !== clienteId) return null
@@ -761,6 +771,7 @@ export async function obtenerProyectoClienteAction(proyectoId: string, clienteId
       actaEntrega: (actaEntregaRows[0] as unknown as ActaEntrega) ?? null,
       casosGarantia: casosGarantiaRows as unknown as CasoGarantia[],
       modulos: modulosRows as unknown as Modulo[],
+      versionesPropuesta: await leerVersionesPropuesta(proyectoId),
     }
   }
 
@@ -780,15 +791,16 @@ export async function obtenerProyectoClienteAction(proyectoId: string, clienteId
     actaEntrega: store.actasEntrega.porProyecto(proyectoId) ?? null,
     casosGarantia: store.casosGarantia.porProyecto(proyectoId),
     modulos: store.modulos.porProyecto(proyectoId),
+    versionesPropuesta: await leerVersionesPropuesta(proyectoId),
   }
-}
+});
 
 export interface GarantiasClienteData {
   casos: CasoGarantia[]
   proyectos: Proyecto[]
 }
 
-export async function obtenerGarantiasClienteAction(clienteId: string): Promise<GarantiasClienteData> {
+export const obtenerGarantiasClienteAction = protegerAccion({ cliente: true }, async function obtenerGarantiasClienteAction(clienteId: string): Promise<GarantiasClienteData> {
   if (DATA_IMPL() === 'drizzle') {
     const [casos, proyectos] = await Promise.all([
       db.select().from(s.casosGarantia).where(eq(s.casosGarantia.clienteId, clienteId)),
@@ -803,7 +815,7 @@ export async function obtenerGarantiasClienteAction(clienteId: string): Promise<
     casos: store.casosGarantia.porCliente(clienteId),
     proyectos: store.proyectos.listar().filter((p) => p.clienteId === clienteId),
   }
-}
+});
 
 // --- Precios Parametrizados (Fase 1 - Plan B3) ---
 

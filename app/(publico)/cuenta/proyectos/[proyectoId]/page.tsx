@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { requireSesionCliente } from '@/lib/auth/session'
-import { obtenerProyectoClienteAction, listarVersionesPropuestaAction } from '@/lib/data/actions/public'
+import { obtenerProyectoClienteAction } from '@/lib/data/actions/public'
 import { ProyectoDetalleCliente } from './proyecto-detalle-cliente'
 
 // F-07 Portal Cliente — Detalle de proyecto.
@@ -19,10 +19,9 @@ export default async function ProyectoDetallePage({ params }: PageProps) {
   if (!clienteId) redirect('/cuenta/login')
 
   const { proyectoId } = await params
-  const [data, versionesPropuesta] = await Promise.all([
-    obtenerProyectoClienteAction(proyectoId, clienteId),
-    listarVersionesPropuestaAction(proyectoId),
-  ])
+  // La acción toma el clienteId de la sesión y devuelve también las versiones de propuesta,
+  // solo si el proyecto es de ese cliente.
+  const data = await obtenerProyectoClienteAction(proyectoId)
 
   if (!data) {
     notFound()
@@ -33,7 +32,7 @@ export default async function ProyectoDetallePage({ params }: PageProps) {
       proyectoId={proyectoId}
       clienteId={clienteId}
       data={data}
-      versionesPropuesta={versionesPropuesta}
+      versionesPropuesta={data.versionesPropuesta}
     />
   )
 }
