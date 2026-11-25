@@ -8,6 +8,7 @@ import { fireAdsConversion } from '@/lib/analytics/ads-conversion';
 import { leerAtribucion } from '@/lib/hooks/useGclidCapture';
 import { construirUserDataGtag } from '@/lib/leads/enhanced-conversions';
 import { construirMensajeWhatsApp, construirUrlWhatsApp } from '@/lib/leads/ref';
+import { obtenerCanal } from '@/lib/contacto';
 
 interface AsesoriaModalProps {
   isOpen: boolean;
@@ -71,7 +72,8 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
 
   if (!isOpen || !mounted) return null;
 
-  const WHATSAPP_NUMBER = '573227008706';
+  // Canal general (cocinas, closets, etc.). El número de Jair Daza (pisos) vive solo en AsesoriaModalPisos.
+  const WHATSAPP_NUMBER = obtenerCanal('general').whatsapp;
 
   const executeRedirect = (url: string) => {
     setFormStatus('redirecting');
