@@ -1,0 +1,52 @@
+# ==============================================================================
+# NEGATIVAS PROPUESTAS — VETA CARP — 2026-11-25
+# Fuente: AUDITORIA_CAIDA_LEADS_2026-11-25.md (términos del 22-ago al 25-nov)
+# Uso: pegar en Google Ads > Palabras clave negativas (nivel campaña), coincidencia amplia.
+# Esta lista COMPLEMENTA a LISTA_PALABRAS_NEGATIVAS_ROBUSTA_AGOSTO_2026.txt (no repetir).
+# ==============================================================================
+
+# --- APLICAR YA: mesones / piedra (marmolero, fuera de alcance según logica_de_negocio §Calificación 3)
+mesón
+mesones
+mesos
+cuarzo
+dekton
+neolith
+granito
+mármol
+marmol
+marmolero
+marmolería
+encimera
+sinterizada
+quarztone
+
+# --- APLICAR YA: oficio de carpintero (no es cliente de proyecto)
+empleo carpintero
+carpinteros
+
+# --- APLICAR YA: remodelación puntual / reparación
+reparación
+arreglar
+cambiar mesón
+
+# --- APLICAR YA: bricolaje
+como construir
+diseñar cocina online
+
+# --- APLICAR YA: marcas de competencia (complementan la lista de agosto)
+madecentro
+cjr
+bayco
+marco polo
+
+# ==============================================================================
+# DECIDIR JAVIER antes de aplicar (pueden ser clientes reales)
+# ==============================================================================
+# carpintero        <- singular; "carpinteria bogota" y "carpintero bogota" tienen clics sin conversión
+# carpintería bogota <- ambiguo: puede ser búsqueda de cliente
+# pequeña / pequeñas <- pueden ser apartamentos pequeños (cliente válido)
+# 1.5 metros / 2 metros <- medidas de cocina pequeña
+# alquiler          <- muy probable que no sea cliente de proyecto
+# modelos / oferta  <- informacional o de precio, poco intención de compra
+# remodelacion de cocina <- la lógica de negocio excluye "cambiar un mesón", no toda remodelación

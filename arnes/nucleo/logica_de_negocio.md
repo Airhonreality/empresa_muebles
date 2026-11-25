@@ -140,7 +140,7 @@ Cada pregunta apunta a un hallazgo concreto de la revisión crítica (§3, "Defi
 Tres filtros reales, en palabras de Javier:
 1. **Calidad de la comunicación**: si el lead no es claro con lo que necesita, responde monosílabos, no demuestra interés genuino en su propio proyecto → no calificado.
 2. **Ubicación geográfica**: estratos bajos o zona sur no se cubren.
-3. **Tipo de proyecto**: quien busca cambiar un mesón o una refacción puntual (no diseñar algo nuevo) se descarta y se redirige directo al marmolero — el negocio busca clientes que quieran **diseñar y fabricar**, no reparar. "El cliente que requiere chicharroncitos chiquitos" queda descartado.
+3. **Tipo de proyecto**: quien busca cambiar un mesón o una refacción puntual (no diseñar algo nuevo) se descarta. **La página web y los anuncios no remiten a ningún marmolero ni a otro proveedor.** En atención directa, a veces se pasa el contacto a otro proveedor solo como cortesía para no dejar al cliente sin respuesta, pero es una **pérdida directa** para la empresa: no es un servicio que se ofrezca ni se cotice (corrección de Javier, 2026-11-25). El negocio busca clientes que quieran **diseñar y fabricar**, no reparar. El mesón se vende solo dentro de una cocina integral completa. "El cliente que requiere chicharroncitos chiquitos" queda descartado.
 
 **Nota de Javier, preservada:** esta información (junto con la de agenda, punto 2) es exactamente la que hace falta si algún día se entrena un LLM para responder el WhatsApp de los primeros leads — conecta directo con la decisión de mensajería/Chatwoot ya documentada arriba. El arnés ya está quedando armado para eso sin que fuera el objetivo original de este documento.
 
