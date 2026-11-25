@@ -10,6 +10,7 @@ import {
   construirUrlWhatsApp,
   generarRefLead,
 } from "@/lib/leads/ref";
+import { protegerAccion } from "@/lib/auth/accion";
 
 export interface SubmitLeadInput {
   /** UUID generado en el navegador: permite que la referencia del mensaje exista aunque la DB tarde. */
@@ -71,7 +72,10 @@ const WHATSAPP_NUMBER = "573025922101";
  * hace por teléfono y el seguimiento va por el píxel (gtag con user_data: nombre + teléfono
  * hasheado).
  */
-export async function submitLeadAction(input: SubmitLeadInput): Promise<SubmitLeadResponse> {
+// Acción pública: la llama el formulario de contacto del sitio sin sesión (protegerAccion la marca como pública).
+export const submitLeadAction = protegerAccion(
+  { publica: true, motivo: "formulario de contacto público" },
+  async function submitLeadAction(input: SubmitLeadInput): Promise<SubmitLeadResponse> {
   const parsed = submitLeadSchema.safeParse(input);
   if (!parsed.success) {
     const primero = parsed.error.issues[0];
@@ -155,4 +159,5 @@ export async function submitLeadAction(input: SubmitLeadInput): Promise<SubmitLe
       error: "Error interno al guardar la información. Por favor reintente.",
     };
   }
-}
+  },
+);
