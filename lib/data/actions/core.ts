@@ -152,7 +152,7 @@ export const eliminarProyectoAction = protegerAccion({ permiso: "proyectos:escri
   })
 });
 
-export const actualizarParametrosFinancierosAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarParametrosFinancierosAction(
+export const actualizarParametrosFinancierosAction = protegerAccion({ permiso: "finanzas:escribir" }, async function actualizarParametrosFinancierosAction(
   id: string,
   partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
 ): Promise<Proyecto | null> {

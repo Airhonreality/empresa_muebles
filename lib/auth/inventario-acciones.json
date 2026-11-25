@@ -158,7 +158,7 @@
     "escribe": true,
     "requiere_sesion_hoy": true,
     "clasificacion": "protegida",
-    "permiso": "proyectos:escribir",
+    "permiso": "finanzas:escribir",
     "ambigua": false
   },
   {
