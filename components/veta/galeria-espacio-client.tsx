@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { FotoGaleriaEspacio } from '@/lib/data/actions/public';
 
-const SCROLL_PX_POR_FRAME = 0.18;
+const SCROLL_PX_POR_FRAME = 0.5;
 
 interface GaleriaEspacioScrollProps {
   fotos: FotoGaleriaEspacio[];
