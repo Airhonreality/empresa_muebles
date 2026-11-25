@@ -1513,8 +1513,8 @@ export interface DataStore {
     porProyecto(proyectoId: string): DesfaseCronograma[]
     /** Aplica E-33: crea el desfase, valida P33, y recalcula SOLO la línea interna del cronograma (I-034). */
     aplicar(proyectoId: string, data: { causa: CausaDesfase; composicionCausal: { origen: string; aporteDias: number }[]; motivo: string; diasDesfase: number }): Promise<DesfaseCronograma | null>
-    /** E-33/D4: decisión manual, solo gerente, justificación obligatoria. */
-    decisionManual(desfaseId: string, data: { decisionManual: string; autorizadoPor: string }): Promise<DesfaseCronograma | null>
+    /** E-33/D4: decisión manual, solo gerente, justificación obligatoria. La autoría la pone el servidor desde la sesión. */
+    decisionManual(desfaseId: string, data: { decisionManual: string }): Promise<DesfaseCronograma | null>
   }
   checks: {
     porProyecto(proyectoId: string): CheckProduccion[]

@@ -987,11 +987,11 @@ export function createMockStore(): DataStore {
         notify()
         return nuevo
       },
-      async decisionManual(desfaseId: string, data: { decisionManual: string; autorizadoPor: string }): Promise<DesfaseCronograma | null> {
+      async decisionManual(desfaseId: string, data: { decisionManual: string }): Promise<DesfaseCronograma | null> {
         const idx = desfases.findIndex(d => d.id === desfaseId)
         if (idx === -1) return null
         if (data.decisionManual.trim().length === 0) return null
-        desfases[idx] = { ...desfases[idx], decisionManual: data.decisionManual, autorizadoPor: data.autorizadoPor }
+        desfases[idx] = { ...desfases[idx], decisionManual: data.decisionManual }
         notify()
         return desfases[idx]
       },

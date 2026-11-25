@@ -6,6 +6,7 @@ import { eq, and, inArray, or, like, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
+import { exigirVerificadorValido } from '@/lib/auth/verificadores'
 import { num, sanitizarCamposPersonalizados } from './mappers'
 import { registrarConversionOfflineDeContrato } from '../conversion-offline'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
@@ -204,6 +205,8 @@ export const actualizarParametrosFinancierosAction = protegerAccion({ permiso: "
 const CAMPOS_MONTO_PROYECTO = ['costosOperativos', 'imprevistosInstalacion', 'descuentoComercial', 'ajusteArbitrario'] as const
 
 export const actualizarVerificadorAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarVerificadorAction(id: string, verificadorId: string): Promise<Proyecto | null> {
+  // El verificador debe ser un empleado activo con rol de verificador (D3/I-035). Si no, lanza.
+  await exigirVerificadorValido(verificadorId)
   const [actualizado] = await db.update(s.proyectos)
     .set({ verificadorId, comercialVendedorId: verificadorId, updatedAt: new Date().toISOString() })
     .where(eq(s.proyectos.id, id)).returning()

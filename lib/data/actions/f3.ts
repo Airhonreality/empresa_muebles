@@ -16,6 +16,9 @@ import type {
   Retoma, CambioContrato, Persona, PersonaRol, RolCanonico, Modulo, EstadoProyecto,
 } from '../contracts'
 import { protegerAccion } from '@/lib/auth/accion'
+import { requireSesionEmpleado } from '@/lib/auth/session'
+import { autorDeDecision } from '@/lib/auth/autoria'
+import { exigirVerificadorValido } from '@/lib/auth/verificadores'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Tx = PgTransaction<any, any, any>
@@ -72,10 +75,13 @@ export const aplicarDesfaseAction = protegerAccion({ permiso: "produccion:escrib
   })
 });
 
-export const decisionManualDesfaseAction = protegerAccion({ permiso: "produccion:escribir" }, async function decisionManualDesfaseAction(desfaseId: string, data: { decisionManual: string; autorizadoPor: string }): Promise<DesfaseCronograma | null> {
+// La autoría sale de la sesión, nunca del input. autorizadoPor es FK a personas.id, así que se guarda
+// la persona de la sesión (no el usuarioId de la cuenta).
+export const decisionManualDesfaseAction = protegerAccion({ permiso: "produccion:escribir" }, async function decisionManualDesfaseAction(desfaseId: string, data: { decisionManual: string }): Promise<DesfaseCronograma | null> {
   if (data.decisionManual.trim().length === 0) return null
+  const autorId = autorDeDecision(await requireSesionEmpleado())
   const [actualizado] = await db.update(s.desfasesCronograma).set({
-    decisionManual: data.decisionManual, autorizadoPor: data.autorizadoPor,
+    decisionManual: data.decisionManual, autorizadoPor: autorId,
   }).where(eq(s.desfasesCronograma.id, desfaseId)).returning()
   return (actualizado as unknown as DesfaseCronograma) ?? null
 });
@@ -172,6 +178,8 @@ export const crearBomAction = protegerAccion({ permiso: "produccion:escribir" },
 });
 
 export const emitirVeredictoAction = protegerAccion({ permiso: "produccion:escribir" }, async function emitirVeredictoAction(data: { proyectoId: string; tipoGate: TipoGate; veredicto: VeredictoGate; verificadorId: string }): Promise<Verificacion | null> {
+  // El verificador debe ser un empleado activo con rol de verificador (D3/I-035). Si no, lanza.
+  await exigirVerificadorValido(data.verificadorId)
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.select().from(s.proyectos).where(eq(s.proyectos.id, data.proyectoId))
     if (!proyecto) return null
