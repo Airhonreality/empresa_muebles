@@ -1,0 +1,920 @@
+ad_group_ad.ad.id,ad_group_ad.ad.responsive_search_ad.headlines,ad_group_ad.ad.responsive_search_ad.descriptions,ad_group_ad.status,ad_group_ad.policy_summary.approval_status,campaign.id,ad_group.id,ad_group.name,metrics.impressions,metrics.clicks,metrics.cost_micros,metrics.ctr,metrics.average_cpc,metrics.conversions,metrics.cost_per_conversion
+680503654980,,,REMOVED,DISAPPROVED,20773460137,155127003346,Cocinas integrales,0,0,0,0.0,0.0,0.0,0.0
+680505409911,"text: ""diseño y fabricación cocinas""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Diseño de alta Gama""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cocinas modernas bogotá""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Diseño de lujo H.G""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cocinas a la medida bogotá""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Servicio diseño y fabricación""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cocinas integrales modernas""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""25 años renovando cocinas""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Diseño innovador de cocinas""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Espacios funcionales""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Transforma tu hogar""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Elegancia en cada cocina""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cocinas versátiles""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Calidad insuperable""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Tu cocina, tu obra maestra""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+","text: ""Descubra las cocinas H.G de alta gama contáctenos para remodelar su cocina.""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Diseñe la cocina ideal para su casa o apartamento. Obtenga su cotización ahora.""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Haga realidad el proyecto de remodelar su cocina con el mas alto diseño e innovación.""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""diseñamos fabricamos e instalamos su cocina ideal, visite las cocinas de lujo H.G""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+",REMOVED,DISAPPROVED,20773460137,155127003346,Cocinas integrales,0,0,0,0.0,0.0,0.0,0.0
+680598216611,"text: ""{Keyword:Cocinas Integrales}""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Diseño adecuado a tu espacio""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Renovar Cocina Integral""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Instalación total""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Asesoría total en Cocinas""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Fabricantes de Cocinas Bogotá""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Remodelación integral cocinas""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Te asesoramos de inicio a fin""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Nos adecuamos a tu presupuesto""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cotizar Cocina Inegral""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Remodelar mi Cocina""
+asset_performance_label: LEARNING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Nos encargamos de tu proyecto""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Modelado 3D de tu proyecto""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+","text: ""Somos fabricantes directos, agenda una visita técnica y recibe tu cotización sin costo""
+asset_performance_label: BEST
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Renovación integral de cocinas: Diseño personalizado, fabricación e Instalación confiable""
+asset_performance_label: GOOD
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Recibe asesoría completa en el diseño y fabricación de tus muebles""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Te asesoramos en tu proyecto de cocina desde el diseño hasta la instalación""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+",PAUSED,APPROVED,20773460137,155127003346,Cocinas integrales,0,0,0,0.0,0.0,0.0,0.0
+680601367895,,,REMOVED,DISAPPROVED,20773460137,155127003346,Cocinas integrales,0,0,0,0.0,0.0,0.0,0.0
+705572373728,"text: ""Cocinas Integrales en Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""{Keyword:Cocinas Integrales}""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""cotiza tu cocina integral""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""precios de fabrica""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""asesoria total""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""diseño personalizado""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""materiales de alta gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Remodelación integral cocinas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""quiero remodelar mi cocina""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""cocina nueva""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""cotización personalizada""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""proyecto con la mejor asesoría""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""especialistas en cocinas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""carpinteria de especializada""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""acabados especiales""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+","text: ""Agenda una visita técnica gratuita, te asesoramos de inicio a fin""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Recibe tu cotización hoy mismo o agenda una visita técnica gratuita""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Asesoría personalizada en tu proyecto de remodelación de cocina""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Ajustamos el diseño para hasta adecuarnos a tu presupuesto.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+",ENABLED,APPROVED,20773460137,155127003346,Cocinas integrales,3482,223,237315713098,0.06404365307294659,1064196022.8609866,20.0,11865785654.9
+739563673147,,,PAUSED,APPROVED,20773460137,155127003346,Cocinas integrales,6,0,0,0.0,0.0,0.0,0.0
+802277594616,"text: ""Cocinas Integrales Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""{Keyword:Cocinas Integrales}""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Directo de Fábrica en Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cocinas de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Carpintería de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Herrajes de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Garantía Real de Carpintería""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visita técnica sin costo""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Remodelación Integral Cocina""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Crea la cocina de tus sueños""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Veta de Oro: Cocinas Modernas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Muebles de Cocina a Medida""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Punto de Fábrica Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visita Técnica sin Costo""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Instalación Total Incluida""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+","text: ""Punto de fábrica en Bogotá. Diseñamos en 3D e instalamos sin intermediarios. ¡Cotice hoy!""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Expertos en cocinas de alta gama con cuarzo y sinterizado. Garantía real y acabado premium""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Carpintería técnica para su cocina. Materiales resistentes y herrajes de cierre suave.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visualiza tu proyecto antes de que empiece, asegurando una ejecución sin sorpresas.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+",ENABLED,APPROVED,20773460137,155127003346,Cocinas integrales,2816,239,243509643800,0.08487215909090909,1018868802.5104603,8.0,30438705475.0
+829408481178,"text: ""Cocinas Integrales Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""{Keyword:Cocinas Integrales}""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Directo de Fábrica en Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cocinas de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Carpintería de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Herrajes de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Garantía Real de Carpintería""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visita técnica sin costo""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Remodelación Integral Cocina""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Crea la cocina de tus sueños""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Veta de Oro: Cocinas Modernas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Muebles de Cocina a Medida""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Punto de Fábrica Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visita Técnica sin Costo""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Instalación Total Incluida""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+","text: ""Punto de fábrica en Bogotá. Diseñamos en 3D e instalamos sin intermediarios. ¡Cotice hoy!""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Expertos en cocinas de alta gama con cuarzo y sinterizado. Garantía real y acabado premium""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Carpintería técnica para su cocina. Materiales resistentes y herrajes de cierre suave.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visualiza tu proyecto antes de que empiece, asegurando una ejecución sin sorpresas.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+",PAUSED,APPROVED,20773460137,155127003346,Cocinas integrales,0,0,0,0.0,0.0,0.0,0.0
+680160855570,,,ENABLED,DISAPPROVED,20737743016,155881645656,Driwall y sistemas de iluminación,0,0,0,0.0,0.0,0.0,0.0
+679052701437,,,PAUSED,APPROVED,20737743016,155988901158,Grupo de anuncios 1,0,0,0,0.0,0.0,0.0,0.0
+680248041746,,,ENABLED,DISAPPROVED,20737743016,156024941512,COCINAS,0,0,0,0.0,0.0,0.0,0.0
+669986330368,,,ENABLED,DISAPPROVED,20464225432,156169472367,Smart Campaign Managed AdGroup,0,0,0,0.0,0.0,0.0,0.0
+680204285959,,,ENABLED,DISAPPROVED,20737743016,157935919320,CARPINTERIA,0,0,0,0.0,0.0,0.0,0.0
+680253337388,,,ENABLED,APPROVED,20737743016,158360592431,BAÑOS,0,0,0,0.0,0.0,0.0,0.0
+680246616863,,,ENABLED,DISAPPROVED,20737743016,164026608388,RE CASA Y APTO,0,0,0,0.0,0.0,0.0,0.0
+718830007832,,,ENABLED,APPROVED,21850205173,170285063518,Grupo de anuncios 1,0,0,0,0.0,0.0,0.0,0.0
+802395113975,"text: ""Amoblamiento Integral Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Carpintería a Medida Premium""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Closets, Cocinas y Estudios""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Muebles personalizados""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Diseño Unificado Toda su Casa""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Diseño de Muebles a Medida""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Directo de Fábrica Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Garantía Real de Fábrica""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Closets a Medida Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Diseño 3D de Todo su Hogar""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Sin Intermediarios ni Costos""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Centros de TV y Bibliotecas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cotice su Proyecto Integral""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Presupuestos de Cocinas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Carpintería a Medida Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+","text: ""¿Apartamento nuevo? Diseñamos y fabricamos todos sus muebles Directo de fábrica a su hogar""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Especialistas en proyectos de carpintería integral: Cocinas, Closets y Centros de TV""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Un solo proveedor para toda su casa. Diseño unificado con materiales y herrajes premium""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Agenda su visita técnica gratuita y vea su mobiliario en 3D antes de fabricar.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+",PAUSED,APPROVED,20773460137,194275497306,Anuncios de Amoblamiento Integral,0,0,0,0.0,0.0,0.0,0.0
+829536942887,"text: ""Cocinas Integrales Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""{Keyword:Cocinas Integrales}""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Directo de Fábrica en Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Cocinas de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Carpintería de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Herrajes de Alta Gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Garantía Real de Carpintería""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visita técnica sin costo""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Remodelación Integral Cocina""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Crea la cocina de tus sueños""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Veta de Oro: Cocinas Modernas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Muebles de Cocina a Medida""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Punto de Fábrica Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visita Técnica sin Costo""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Instalación Total Incluida""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+","text: ""Punto de fábrica en Bogotá. Diseñamos en 3D e instalamos sin intermediarios. ¡Cotice hoy!""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Expertos en cocinas de alta gama con cuarzo y sinterizado. Garantía real y acabado premium""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Carpintería técnica para su cocina. Materiales resistentes y herrajes de cierre suave.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Visualiza tu proyecto antes de que empiece, asegurando una ejecución sin sorpresas.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+",ENABLED,APPROVED,20773460137,203012639882,Grupo de anuncios 3 (copia legacy de cocinas),216,14,16247165027,0.06481481481481481,1160511787.642857,1.0,16247165027.0
+829536948845,"text: ""Cocinas Integrales en Bogotá""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""{Keyword:Cocinas Integrales}""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""cotiza tu cocina integral""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""precios de fabrica""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""asesoria total""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""diseño personalizado""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""materiales de alta gama""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Remodelación integral cocinas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""quiero remodelar mi cocina""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""cocina nueva""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""cotización personalizada""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""proyecto con la mejor asesoría""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""especialistas en cocinas""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""carpinteria de especializada""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""acabados especiales""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+","text: ""Agenda una visita técnica gratuita, te asesoramos de inicio a fin""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Recibe tu cotización hoy mismo o agenda una visita técnica gratuita""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Asesoría personalizada en tu proyecto de remodelación de cocina""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+, text: ""Ajustamos el diseño para hasta adecuarnos a tu presupuesto.""
+asset_performance_label: PENDING
+policy_summary_info {
+  review_status: REVIEWED
+  approval_status: APPROVED
+}
+",ENABLED,APPROVED,20773460137,203012639882,Grupo de anuncios 3 (copia legacy de cocinas),168,7,9414000000,0.041666666666666664,1344857142.857143,1.0,9414000000.0

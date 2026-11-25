@@ -1,0 +1,187 @@
+ad_group_criterion.criterion_id,ad_group_criterion.keyword.text,ad_group_criterion.keyword.match_type,ad_group_criterion.status,campaign.id,ad_group.name
+298474280058,quiero remodelar mi cocina,BROAD,ENABLED,20737743016,Grupo de anuncios 4
+316833012156,quiero remodelar mi baño,BROAD,ENABLED,20737743016,Grupo de anuncios 4
+369845389126,remodelación de baños en bogotá,BROAD,ENABLED,20737743016,Grupo de anuncios 4
+2244615352002,empresas que remodelen baños,BROAD,ENABLED,20737743016,Grupo de anuncios 4
+2244615352042,empresas que remodelen cocinas,BROAD,ENABLED,20737743016,Grupo de anuncios 4
+2244615352202,remodelación de cocinas en bogotá,BROAD,ENABLED,20737743016,Grupo de anuncios 4
+2201353474306,Empresas de instalación de drywall,BROAD,ENABLED,20737743016,Driwall y sistemas de iluminación
+2246079147735,Instaladores de drywall en Bogotá,BROAD,ENABLED,20737743016,Driwall y sistemas de iluminación
+2246079147775,Necesito instalar drywall en muros,BROAD,ENABLED,20737743016,Driwall y sistemas de iluminación
+2246079147815,Necesito instalar drywall en techos,BROAD,ENABLED,20737743016,Driwall y sistemas de iluminación
+17939983,diseño interiores,BROAD,PAUSED,20737743016,Grupo de anuncios 1
+250700714,cocinas modernas,BROAD,PAUSED,20737743016,Grupo de anuncios 1
+4503813868,cocinas integrales modernas,BROAD,PAUSED,20737743016,Grupo de anuncios 1
+296263082109,diseño muebles cocina,BROAD,PAUSED,20737743016,Grupo de anuncios 1
+297640652067,remodelacion de cocinas bogota,BROAD,PAUSED,20737743016,Grupo de anuncios 1
+298423052388,remodelar mi cocina,BROAD,PAUSED,20737743016,Grupo de anuncios 1
+299089166768,remodelaciones bogota,BROAD,PAUSED,20737743016,Grupo de anuncios 1
+440012688879,servicio remodelación,BROAD,PAUSED,20737743016,Grupo de anuncios 1
+297921540436,cocinas integrales bogota,BROAD,ENABLED,20737743016,COCINAS
+298863746795,fabrica de cocinas integrales,EXACT,ENABLED,20737743016,COCINAS
+299968397441,fabricación de muebles de cocina,BROAD,PAUSED,20737743016,COCINAS
+445826442893,fabrica de cocinas bogota,EXACT,ENABLED,20737743016,COCINAS
+2244610836126,fabricantes directos de cocinas integrales en bogotá,EXACT,ENABLED,20737743016,COCINAS
+2246068696745,proyectos de cocina integral en bogotá,EXACT,ENABLED,20737743016,COCINAS
+2246510494245,diseño muebles cocina en bogota,EXACT,ENABLED,20737743016,COCINAS
+2246667973858,diseño de cocina integral en bogota,EXACT,ENABLED,20737743016,COCINAS
+2246900618068,diseñadores de cocinas en bogotá,EXACT,ENABLED,20737743016,COCINAS
+2247632754718,quién diseña mi cocina en bogotá,EXACT,ENABLED,20737743016,COCINAS
+1941620792067,Fabrica de muebles en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013156546,Centros de entretenimiento en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013156586,Diseñadores de muebles en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013156626,Fabricantes de bibliotecas en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013156786,Fabricantes de closets en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013156826,Fabricantes de cocinas en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013156866,Fabricantes de muebles en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013157026,Fabricantes de muebles en madecor en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013157066,Fabricantes directos de muebles en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+2245013157106,Muebles a la medida en Bogotá,BROAD,ENABLED,20737743016,CARPINTERIA
+298474280058,quiero remodelar mi cocina,BROAD,ENABLED,20737743016,BAÑOS
+316833012156,quiero remodelar mi baño,BROAD,ENABLED,20737743016,BAÑOS
+369845389126,remodelación de baños en bogotá,BROAD,ENABLED,20737743016,BAÑOS
+2244615352002,empresas que remodelen baños,BROAD,ENABLED,20737743016,BAÑOS
+2244615352042,empresas que remodelen cocinas,BROAD,ENABLED,20737743016,BAÑOS
+2244615352202,remodelación de cocinas en bogotá,BROAD,ENABLED,20737743016,BAÑOS
+298474280058,quiero remodelar mi cocina,BROAD,ENABLED,20737743016,BAÑOS
+316833012156,quiero remodelar mi baño,BROAD,ENABLED,20737743016,BAÑOS
+369845389126,remodelación de baños en bogotá,BROAD,ENABLED,20737743016,BAÑOS
+2244615352002,empresas que remodelen baños,BROAD,ENABLED,20737743016,BAÑOS
+2244615352042,empresas que remodelen cocinas,BROAD,ENABLED,20737743016,BAÑOS
+2244615352202,remodelación de cocinas en bogotá,BROAD,ENABLED,20737743016,BAÑOS
+13541982,Diseño,BROAD,ENABLED,20737743016,RE CASA Y APTO
+21647351,Closets,BROAD,ENABLED,20737743016,RE CASA Y APTO
+55380860,Baños,BROAD,ENABLED,20737743016,RE CASA Y APTO
+104982243,Cocinas,BROAD,ENABLED,20737743016,RE CASA Y APTO
+1446224439,Porcelanato,BROAD,ENABLED,20737743016,RE CASA Y APTO
+1614223560,Iluminación,BROAD,ENABLED,20737743016,RE CASA Y APTO
+45111302295,necesito remodelar mi casa,EXACT,ENABLED,20737743016,RE CASA Y APTO
+296595620586,Cocinas integrales,BROAD,ENABLED,20737743016,RE CASA Y APTO
+297921505578,Sanitarios,BROAD,ENABLED,20737743016,RE CASA Y APTO
+297998719851,Bibliotecas,BROAD,ENABLED,20737743016,RE CASA Y APTO
+299112264170,Construcción de casas,BROAD,ENABLED,20737743016,RE CASA Y APTO
+299217599734,Pisos,BROAD,ENABLED,20737743016,RE CASA Y APTO
+300072078166,Homecenter,BROAD,ENABLED,20737743016,RE CASA Y APTO
+300543237298,Duchas,BROAD,ENABLED,20737743016,RE CASA Y APTO
+302313004977,Muebles de baño,BROAD,ENABLED,20737743016,RE CASA Y APTO
+302758746894,Ferreterias,BROAD,ENABLED,20737743016,RE CASA Y APTO
+306634128216,Diseñadores,BROAD,ENABLED,20737743016,RE CASA Y APTO
+312480311279,remodelacion de apartamentos pequeños bogota,EXACT,ENABLED,20737743016,RE CASA Y APTO
+352362544702,Compra de porcelanato,BROAD,ENABLED,20737743016,RE CASA Y APTO
+374733884380,Locativas,BROAD,ENABLED,20737743016,RE CASA Y APTO
+374935904551,Divisiones para baño,BROAD,ENABLED,20737743016,RE CASA Y APTO
+387295068190,remodelaciones Bogotá,BROAD,ENABLED,20737743016,RE CASA Y APTO
+404219479642,Venta de materiales de construcción,BROAD,ENABLED,20737743016,RE CASA Y APTO
+511739367792,remodelacion de casas en bogota,EXACT,ENABLED,20737743016,RE CASA Y APTO
+537865952087,Compra de pisos,BROAD,ENABLED,20737743016,RE CASA Y APTO
+1933299261826,remodelación de apartamentos bogotá,EXACT,ENABLED,20737743016,RE CASA Y APTO
+2244065430422,Compra de enchapes,BROAD,ENABLED,20737743016,RE CASA Y APTO
+2244065430462,Imágenes de cocinas integrales,BROAD,ENABLED,20737743016,RE CASA Y APTO
+2244065430622,Venta Enchape,BROAD,ENABLED,20737743016,RE CASA Y APTO
+2245131406933,remodelación de apartamentos Bogotá,BROAD,ENABLED,20737743016,RE CASA Y APTO
+2245131406973,remodelación de apartamentos pequeños Bogotá,BROAD,ENABLED,20737743016,RE CASA Y APTO
+2245500287439,proyecto de remodelación de casa en Bogotá,EXACT,PAUSED,20737743016,RE CASA Y APTO
+2246522284685,quien remodela mi casa en bogotá,EXACT,PAUSED,20737743016,RE CASA Y APTO
+2248237688137,empresas de remodelación de casas en bogotá,EXACT,PAUSED,20737743016,RE CASA Y APTO
+2248238936377,necesito remodelar mi apartamento,EXACT,ENABLED,20737743016,RE CASA Y APTO
+2268944342154,proyecto de remodelación de apartamento en Bogotá,EXACT,ENABLED,20737743016,RE CASA Y APTO
+2311365108877,empresas de remodelación de apartamentos en bogotá,EXACT,ENABLED,20737743016,RE CASA Y APTO
+11816181,oferta,BROAD,ENABLED,20773460137,Cocinas integrales
+12719546,modelos,BROAD,ENABLED,20773460137,Cocinas integrales
+12771696,alquiler,BROAD,ENABLED,20773460137,Cocinas integrales
+17010262,popayan,BROAD,ENABLED,20773460137,Cocinas integrales
+88423759,ibague,BROAD,ENABLED,20773460137,Cocinas integrales
+127432104,pequeña,BROAD,ENABLED,20773460137,Cocinas integrales
+597082803,cocina integral,BROAD,REMOVED,20773460137,Cocinas integrales
+772783107,diseño cocinas integrales,BROAD,PAUSED,20773460137,Cocinas integrales
+1228679457,venta de cocinas integrales,PHRASE,ENABLED,20773460137,Cocinas integrales
+2705214003,cocina integral,PHRASE,ENABLED,20773460137,Cocinas integrales
+4503813868,cocinas integrales modernas,BROAD,REMOVED,20773460137,Cocinas integrales
+5272425318,cocinas integrales pequeñas,BROAD,REMOVED,20773460137,Cocinas integrales
+6041670592,remodelacion de cocina,PHRASE,ENABLED,20773460137,Cocinas integrales
+29367913544,remodelar mi cocina,PHRASE,ENABLED,20773460137,Cocinas integrales
+294914895987,venta de cocinas integrales,BROAD,REMOVED,20773460137,Cocinas integrales
+295407871576,cocinas integrales precios,BROAD,PAUSED,20773460137,Cocinas integrales
+295407874016,fabricantes cocinas integrales,BROAD,REMOVED,20773460137,Cocinas integrales
+297253739968,cocinas integrales diseños modernos,BROAD,PAUSED,20773460137,Cocinas integrales
+297464712450,remodelacion de cocina,BROAD,REMOVED,20773460137,Cocinas integrales
+297712732480,diseñar cocina online,EXACT,ENABLED,20773460137,Cocinas integrales
+297812187101,cocina integral moderna,BROAD,REMOVED,20773460137,Cocinas integrales
+297812188941,cocinas integrales espacios pequeños,BROAD,REMOVED,20773460137,Cocinas integrales
+297921540436,cocinas integrales bogota,BROAD,REMOVED,20773460137,Cocinas integrales
+298028857836,diseño cocina integral,BROAD,PAUSED,20773460137,Cocinas integrales
+298423052388,remodelar mi cocina,BROAD,REMOVED,20773460137,Cocinas integrales
+299508689278,precio de cocinas integrales,BROAD,PAUSED,20773460137,Cocinas integrales
+316025646845,cocinas integrales para,BROAD,REMOVED,20773460137,Cocinas integrales
+318297575249,cocinas semi integrales pequeñas,EXACT,ENABLED,20773460137,Cocinas integrales
+318297588609,estilos de cocinas integrales modernas,EXACT,ENABLED,20773460137,Cocinas integrales
+318981478451,fabricantes cocinas integrales,PHRASE,ENABLED,20773460137,Cocinas integrales
+336643814801,cocinas enchapadas,EXACT,ENABLED,20773460137,Cocinas integrales
+353014145039,cotizar cocina integral,BROAD,REMOVED,20773460137,Cocinas integrales
+354560643510,diseñador de cocinas integrales,BROAD,REMOVED,20773460137,Cocinas integrales
+356788364396,cocinas integrales cocinas integrales,BROAD,PAUSED,20773460137,Cocinas integrales
+358396572367,cocinas integrales bogota,PHRASE,ENABLED,20773460137,Cocinas integrales
+359930036075,cotizar cocina integral,PHRASE,ENABLED,20773460137,Cocinas integrales
+367955482951,diseñador de cocinas integrales,PHRASE,ENABLED,20773460137,Cocinas integrales
+373239926607,cocinas integrales en l pequeñas,EXACT,ENABLED,20773460137,Cocinas integrales
+386724697366,cocina integral metalica,EXACT,ENABLED,20773460137,Cocinas integrales
+457107179437,cocinas integrales precios de fabrica,BROAD,REMOVED,20773460137,Cocinas integrales
+569938577725,como construir cocinas integrales,EXACT,ENABLED,20773460137,Cocinas integrales
+824763807506,cocinas integrales en forma de l,BROAD,REMOVED,20773460137,Cocinas integrales
+825479431402,neolith bogota,EXACT,ENABLED,20773460137,Cocinas integrales
+898446855482,para cocinas integrales,BROAD,PAUSED,20773460137,Cocinas integrales
+931800418491,cjr cocinas,EXACT,ENABLED,20773460137,Cocinas integrales
+1108112746472,madecentro cocinas,EXACT,ENABLED,20773460137,Cocinas integrales
+1148501940608,cocinas integrales precios de fabrica,PHRASE,ENABLED,20773460137,Cocinas integrales
+1428506587397,cocina 1.5 metros,EXACT,ENABLED,20773460137,Cocinas integrales
+1457382116080,precio de metro lineal de cocina integral colombia,EXACT,ENABLED,20773460137,Cocinas integrales
+2229634761791,mueble superior cocina 2 metros,EXACT,ENABLED,20773460137,Cocinas integrales
+2244392387420,Cocinas blum,BROAD,REMOVED,20773460137,Cocinas integrales
+2244392387500,Cocinas hafele,BROAD,REMOVED,20773460137,Cocinas integrales
+2244392387660,Cocinas hettich,BROAD,REMOVED,20773460137,Cocinas integrales
+2324132388924,bayco cocinas,EXACT,ENABLED,20773460137,Cocinas integrales
+2324132389084,cocinas marco polo,EXACT,ENABLED,20773460137,Cocinas integrales
+2327258529356,cocinas integrales gama alta,BROAD,REMOVED,20773460137,Cocinas integrales
+2476088237899,cocinas integrales gama alta,PHRASE,ENABLED,20773460137,Cocinas integrales
+323180345514,diseño de muebles a medida,PHRASE,ENABLED,20773460137,Anuncios de Amoblamiento Integral
+344165698541,bibliotecas de madera a medida,PHRASE,ENABLED,20773460137,Anuncios de Amoblamiento Integral
+359716535950,closets a medida bogotá,PHRASE,ENABLED,20773460137,Anuncios de Amoblamiento Integral
+2476167955836,carpintería a medida bogotá,PHRASE,ENABLED,20773460137,Anuncios de Amoblamiento Integral
+2476167955876,mobiliario a medida para apartamentos,PHRASE,ENABLED,20773460137,Anuncios de Amoblamiento Integral
+2476167955916,amoblamiento integral de interiores,PHRASE,ENABLED,20773460137,Anuncios de Amoblamiento Integral
+2476167956076,centros de tv a medida modernos,PHRASE,ENABLED,20773460137,Anuncios de Amoblamiento Integral
+2476167956116,muebles para estudio a medida,PHRASE,ENABLED,20773460137,Anuncios de Amoblamiento Integral
+1228679457,venta de cocinas integrales,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+2705214003,cocina integral,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+6041670592,remodelacion de cocina,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+29367913544,remodelar mi cocina,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+318981478451,fabricantes cocinas integrales,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+358396572367,cocinas integrales bogota,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+359930036075,cotizar cocina integral,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+367955482951,diseñador de cocinas integrales,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+1148501940608,cocinas integrales precios de fabrica,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+2476088237899,cocinas integrales gama alta,PHRASE,ENABLED,20773460137,Grupo de anuncios 3 (copia legacy de cocinas)
+17939953,diseño de cocinas,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+22202040,muebles de cocina,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+23725810,diseño cocinas,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+155729256,reformas cocinas,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+250699844,precios de cocinas,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+539576728,muebles para cocina,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+5272424868,diseño de cocinas integrales,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+6613936334,cajones de cocina,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+10732306577,diseño cocina 3d,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+295760147486,presupuesto de cocina,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+296102671571,presupuesto muebles cocina,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+296128305534,cocina muebles,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+296434390786,módulos de cocina,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+296664608091,reformas de cocinas,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+297065416938,fabricantes de cocinas integrales,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+297404997338,cocinas a medida,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+297503978621,presupuesto cocina,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+298398037353,fabricantes de cocinas,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+298649411438,cocinas a la medida,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+299139563657,cocina completa,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+299721940956,cocinas precios,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+301475605572,remodelación de cocina,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+507686319752,cocinas integrales a la medida,BROAD,ENABLED,21850205173,Grupo de anuncios 1
+1571844015065,diseño y fabricación de cocinas integrales,BROAD,ENABLED,21850205173,Grupo de anuncios 1
