@@ -28,7 +28,8 @@ function todasLasActionsReales(): string[] {
   const nombres: string[] = []
   for (const archivo of archivos) {
     const contenido = readFileSync(join(dir, archivo), 'utf-8')
-    const matches = contenido.matchAll(/export async function ([a-zA-Z0-9]+Action)\b/g)
+    // Acepta la forma original (export async function) y la envuelta por protegerAccion (export const).
+    const matches = contenido.matchAll(/export (?:async function|const) ([a-zA-Z0-9]+Action)\b/g)
     for (const m of matches) nombres.push(m[1])
   }
   return nombres

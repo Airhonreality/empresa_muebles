@@ -2,13 +2,10 @@
 
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
-import { requireSesionEmpleado } from '@/lib/auth/session'
 import type { CatalogoSnapshot } from '../queries/catalogo-types'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function obtenerSnapshotCatalogoAction(): Promise<CatalogoSnapshot> {
-  const sesion = await requireSesionEmpleado()
-  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
-
+export const obtenerSnapshotCatalogoAction = protegerAccion({ permiso: "catalogo:leer" }, async function obtenerSnapshotCatalogoAction(): Promise<CatalogoSnapshot> {
   const [catalogo, productosTienda, productosTiendaComponentes, proveedores] = await Promise.all([
     db.select().from(s.productosCatalogo),
     db.select().from(s.productosTienda),
@@ -22,4 +19,4 @@ export async function obtenerSnapshotCatalogoAction(): Promise<CatalogoSnapshot>
     productosTiendaComponentes: productosTiendaComponentes as unknown as CatalogoSnapshot['productosTiendaComponentes'],
     proveedores: proveedores as unknown as CatalogoSnapshot['proveedores'],
   }
-}
+});

@@ -9,19 +9,20 @@ import type {
   DocumentoProyecto, MacroFaseProyecto, AlojadorDocumento, CuentaCobroProveedor,
   Categoria, ProductoTienda, ProductoTiendaComponente, CatalogoAcabado, CatalogoProductoAcabado, AcabadoMuestra,
 } from '../contracts'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function crearDocumentoProyectoAction(data: { proyectoId: string; etapa: MacroFaseProyecto; alojador: AlojadorDocumento; url: string; nombre: string }): Promise<DocumentoProyecto | null> {
+export const crearDocumentoProyectoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function crearDocumentoProyectoAction(data: { proyectoId: string; etapa: MacroFaseProyecto; alojador: AlojadorDocumento; url: string; nombre: string }): Promise<DocumentoProyecto | null> {
   if (!data.url || data.url.trim().length === 0) return null
   const [nuevo] = await db.insert(s.documentosProyecto).values(data).returning()
   return nuevo as unknown as DocumentoProyecto
-}
+});
 
-export async function eliminarDocumentoProyectoAction(id: string): Promise<boolean> {
+export const eliminarDocumentoProyectoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function eliminarDocumentoProyectoAction(id: string): Promise<boolean> {
   const [borrado] = await db.delete(s.documentosProyecto).where(eq(s.documentosProyecto.id, id)).returning()
   return Boolean(borrado)
-}
+});
 
-export async function crearCuentaCobroProveedorAction(data: { proveedorId: string; concepto: string; valor: string; firmaDigital: string; fechaEmision: string; fechaVencimiento?: string | null }): Promise<CuentaCobroProveedor | null> {
+export const crearCuentaCobroProveedorAction = protegerAccion({ permiso: "finanzas:escribir" }, async function crearCuentaCobroProveedorAction(data: { proveedorId: string; concepto: string; valor: string; firmaDigital: string; fechaEmision: string; fechaVencimiento?: string | null }): Promise<CuentaCobroProveedor | null> {
   if (!data.firmaDigital || data.firmaDigital.trim().length === 0) return null
   return db.transaction(async (tx) => {
     const [obligacion] = await tx.insert(s.obligacionesPendientes).values({
@@ -36,9 +37,9 @@ export async function crearCuentaCobroProveedorAction(data: { proveedorId: strin
     }).returning()
     return nuevo as unknown as CuentaCobroProveedor
   })
-}
+});
 
-export async function vincularOcCuentaCobroAction(id: string, ordenCompraId: string): Promise<CuentaCobroProveedor | null> {
+export const vincularOcCuentaCobroAction = protegerAccion({ permiso: "finanzas:escribir" }, async function vincularOcCuentaCobroAction(id: string, ordenCompraId: string): Promise<CuentaCobroProveedor | null> {
   return db.transaction(async (tx) => {
     const [cuenta] = await tx.select().from(s.cuentasCobroProveedor).where(eq(s.cuentasCobroProveedor.id, id))
     if (!cuenta) return null
@@ -47,14 +48,14 @@ export async function vincularOcCuentaCobroAction(id: string, ordenCompraId: str
     const [actualizado] = await tx.update(s.cuentasCobroProveedor).set({ ordenCompraId, estado: 'vinculada' }).where(eq(s.cuentasCobroProveedor.id, id)).returning()
     return actualizado as unknown as CuentaCobroProveedor
   })
-}
+});
 
-export async function adjuntarFacturaCuentaCobroAction(id: string, urlDocumento: string): Promise<CuentaCobroProveedor | null> {
+export const adjuntarFacturaCuentaCobroAction = protegerAccion({ permiso: "finanzas:escribir" }, async function adjuntarFacturaCuentaCobroAction(id: string, urlDocumento: string): Promise<CuentaCobroProveedor | null> {
   const [actualizado] = await db.update(s.cuentasCobroProveedor).set({ urlDocumento }).where(eq(s.cuentasCobroProveedor.id, id)).returning()
   return (actualizado as unknown as CuentaCobroProveedor) ?? null
-}
+});
 
-export async function marcarPagadaCuentaCobroAction(id: string): Promise<CuentaCobroProveedor | null> {
+export const marcarPagadaCuentaCobroAction = protegerAccion({ permiso: "finanzas:escribir" }, async function marcarPagadaCuentaCobroAction(id: string): Promise<CuentaCobroProveedor | null> {
   return db.transaction(async (tx) => {
     const [cuenta] = await tx.select().from(s.cuentasCobroProveedor).where(eq(s.cuentasCobroProveedor.id, id))
     if (!cuenta || !cuenta.obligacionId) return null
@@ -63,66 +64,66 @@ export async function marcarPagadaCuentaCobroAction(id: string): Promise<CuentaC
     const [actualizado] = await tx.update(s.cuentasCobroProveedor).set({ estado: 'pagada' }).where(eq(s.cuentasCobroProveedor.id, id)).returning()
     return actualizado as unknown as CuentaCobroProveedor
   })
-}
+});
 
-export async function anularCuentaCobroAction(id: string): Promise<CuentaCobroProveedor | null> {
+export const anularCuentaCobroAction = protegerAccion({ permiso: "finanzas:escribir" }, async function anularCuentaCobroAction(id: string): Promise<CuentaCobroProveedor | null> {
   const [actualizado] = await db.update(s.cuentasCobroProveedor).set({ estado: 'anulada' }).where(eq(s.cuentasCobroProveedor.id, id)).returning()
   return (actualizado as unknown as CuentaCobroProveedor) ?? null
-}
+});
 
-export async function crearCategoriaAction(data: { nombre: string; tipo: string; padreId?: string | null }): Promise<Categoria> {
+export const crearCategoriaAction = protegerAccion({ permiso: "tienda:escribir" }, async function crearCategoriaAction(data: { nombre: string; tipo: string; padreId?: string | null }): Promise<Categoria> {
   const [nuevo] = await db.insert(s.categorias).values({ nombre: data.nombre, tipo: data.tipo, padreId: data.padreId ?? null, activo: true }).returning()
   return nuevo as unknown as Categoria
-}
+});
 
-export async function crearProductoTiendaAction(data: Partial<ProductoTienda> & { catalogoId: string; valorTienda: string }): Promise<ProductoTienda> {
+export const crearProductoTiendaAction = protegerAccion({ permiso: "tienda:escribir" }, async function crearProductoTiendaAction(data: Partial<ProductoTienda> & { catalogoId: string; valorTienda: string }): Promise<ProductoTienda> {
   const [nuevo] = await db.insert(s.productosTienda).values({
     catalogoId: data.catalogoId, descripcionDiseno: data.descripcionDiseno ?? null, imagenPrincipalUrl: data.imagenPrincipalUrl ? sanitizarUrlIndividual(data.imagenPrincipalUrl) : null,
     categoria: data.categoria ?? 'Cocinas', visibleEnTienda: data.visibleEnTienda ?? false, valorTienda: data.valorTienda,
     inventarioDisponible: data.inventarioDisponible ?? 0, calificacionPromedio: data.calificacionPromedio != null ? String(data.calificacionPromedio) : null,
   }).returning()
   return { ...nuevo, calificacionPromedio: nuevo.calificacionPromedio ? Number(nuevo.calificacionPromedio) : null } as unknown as ProductoTienda
-}
+});
 
-export async function actualizarProductoTiendaAction(id: string, partial: Partial<Pick<ProductoTienda, 'descripcionDiseno' | 'imagenPrincipalUrl' | 'categoria' | 'visibleEnTienda' | 'valorTienda' | 'inventarioDisponible'>>): Promise<ProductoTienda | null> {
+export const actualizarProductoTiendaAction = protegerAccion({ permiso: "tienda:escribir" }, async function actualizarProductoTiendaAction(id: string, partial: Partial<Pick<ProductoTienda, 'descripcionDiseno' | 'imagenPrincipalUrl' | 'categoria' | 'visibleEnTienda' | 'valorTienda' | 'inventarioDisponible'>>): Promise<ProductoTienda | null> {
   const seguro = { ...partial };
   if (seguro.imagenPrincipalUrl !== undefined) seguro.imagenPrincipalUrl = sanitizarUrlIndividual(seguro.imagenPrincipalUrl);
   const [actualizado] = await db.update(s.productosTienda).set({ ...seguro, updatedAt: new Date().toISOString() }).where(eq(s.productosTienda.id, id)).returning()
   if (!actualizado) return null
   return { ...actualizado, calificacionPromedio: actualizado.calificacionPromedio ? Number(actualizado.calificacionPromedio) : null } as unknown as ProductoTienda
-}
+});
 
-export async function crearProductoTiendaComponenteAction(data: { productoTiendaId: string; catalogoId: string; cantidad: string }): Promise<ProductoTiendaComponente> {
+export const crearProductoTiendaComponenteAction = protegerAccion({ permiso: "tienda:escribir" }, async function crearProductoTiendaComponenteAction(data: { productoTiendaId: string; catalogoId: string; cantidad: string }): Promise<ProductoTiendaComponente> {
   const [nuevo] = await db.insert(s.productosTiendaComponentes).values(data).returning()
   return nuevo as unknown as ProductoTiendaComponente
-}
+});
 
-export async function eliminarProductoTiendaComponenteAction(id: string): Promise<void> {
+export const eliminarProductoTiendaComponenteAction = protegerAccion({ permiso: "tienda:escribir" }, async function eliminarProductoTiendaComponenteAction(id: string): Promise<void> {
   await db.delete(s.productosTiendaComponentes).where(eq(s.productosTiendaComponentes.id, id))
-}
+});
 
-export async function crearCatalogoAcabadoAction(data: Partial<CatalogoAcabado> & { nombre: string }): Promise<CatalogoAcabado> {
+export const crearCatalogoAcabadoAction = protegerAccion({ permiso: "tienda:escribir" }, async function crearCatalogoAcabadoAction(data: Partial<CatalogoAcabado> & { nombre: string }): Promise<CatalogoAcabado> {
   const [nuevo] = await db.insert(s.catalogoAcabados).values({
     nombre: data.nombre, familia: data.familia ?? null, color: data.color ?? null, colorHex: data.colorHex ?? null,
     textura: data.textura ?? null, precioDiferencial: data.precioDiferencial ?? null, imagenTexturaUrl: data.imagenTexturaUrl ? sanitizarUrlIndividual(data.imagenTexturaUrl) : null,
     marca: data.marca ?? null,
   }).returning()
   return nuevo as unknown as CatalogoAcabado
-}
+});
 
 // t-172/t-173 (2026-09-30): edición desde la pantalla de administración de acabados.
-export async function actualizarCatalogoAcabadoAction(id: string, partial: Partial<Omit<CatalogoAcabado, 'id'>>): Promise<CatalogoAcabado | null> {
+export const actualizarCatalogoAcabadoAction = protegerAccion({ permiso: "tienda:escribir" }, async function actualizarCatalogoAcabadoAction(id: string, partial: Partial<Omit<CatalogoAcabado, 'id'>>): Promise<CatalogoAcabado | null> {
   const cambios = { ...partial }
   if (cambios.imagenTexturaUrl) cambios.imagenTexturaUrl = sanitizarUrlIndividual(cambios.imagenTexturaUrl)
   const [actualizado] = await db.update(s.catalogoAcabados).set(cambios).where(eq(s.catalogoAcabados.id, id)).returning()
   return (actualizado as unknown as CatalogoAcabado) ?? null
-}
+});
 
 /** t-174 (2026-09-30): borrado desde la pantalla de administración. Las FK hacia
  *  catalogo_acabados NO tienen ON DELETE CASCADE a propósito — si el acabado está en uso
  *  (catalogo_producto_acabados, acabados_muestras, espacio_variante_acabados), Postgres
  *  rechaza el DELETE con 23503 y esta función devuelve false sin reventar. */
-export async function eliminarCatalogoAcabadoAction(id: string): Promise<boolean> {
+export const eliminarCatalogoAcabadoAction = protegerAccion({ permiso: "tienda:escribir" }, async function eliminarCatalogoAcabadoAction(id: string): Promise<boolean> {
   try {
     const [eliminado] = await db.delete(s.catalogoAcabados).where(eq(s.catalogoAcabados.id, id)).returning({ id: s.catalogoAcabados.id })
     return Boolean(eliminado)
@@ -130,18 +131,18 @@ export async function eliminarCatalogoAcabadoAction(id: string): Promise<boolean
     if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === '23503') return false
     throw err
   }
-}
+});
 
-export async function crearCatalogoProductoAcabadoAction(data: { productoCatalogoId: string; acabadoId: string; esDefault?: boolean }): Promise<CatalogoProductoAcabado> {
+export const crearCatalogoProductoAcabadoAction = protegerAccion({ permiso: "tienda:escribir" }, async function crearCatalogoProductoAcabadoAction(data: { productoCatalogoId: string; acabadoId: string; esDefault?: boolean }): Promise<CatalogoProductoAcabado> {
   const [nuevo] = await db.insert(s.catalogoProductoAcabados).values({
     productoCatalogoId: data.productoCatalogoId, acabadoId: data.acabadoId, esDefault: data.esDefault ?? false,
   }).returning()
   return nuevo as unknown as CatalogoProductoAcabado
-}
+});
 
-export async function crearAcabadoMuestraAction(data: { acabadoId: string; imagenMuestraUrl?: string | null; disponibleWeb?: boolean }): Promise<AcabadoMuestra> {
+export const crearAcabadoMuestraAction = protegerAccion({ permiso: "tienda:escribir" }, async function crearAcabadoMuestraAction(data: { acabadoId: string; imagenMuestraUrl?: string | null; disponibleWeb?: boolean }): Promise<AcabadoMuestra> {
   const [nuevo] = await db.insert(s.acabadosMuestras).values({
     acabadoId: data.acabadoId, imagenMuestraUrl: data.imagenMuestraUrl ? sanitizarUrlIndividual(data.imagenMuestraUrl) : null, disponibleWeb: data.disponibleWeb ?? true,
   }).returning()
   return nuevo as unknown as AcabadoMuestra
-}
+});

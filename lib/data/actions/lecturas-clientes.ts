@@ -2,13 +2,10 @@
 
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
-import { requireSesionEmpleado } from '@/lib/auth/session'
 import type { ClientesSnapshot } from '../queries/clientes-types'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function obtenerSnapshotClientesAction(): Promise<ClientesSnapshot> {
-  const sesion = await requireSesionEmpleado()
-  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
-
+export const obtenerSnapshotClientesAction = protegerAccion({ permiso: "clientes:leer" }, async function obtenerSnapshotClientesAction(): Promise<ClientesSnapshot> {
   const [clientes, proyectos, pedidos, obligaciones, contratos, leads, eventosConversion] =
     await Promise.all([
       db.select().from(s.clientes),
@@ -29,4 +26,4 @@ export async function obtenerSnapshotClientesAction(): Promise<ClientesSnapshot>
     leads: leads as unknown as ClientesSnapshot['leads'],
     eventosConversion: eventosConversion as unknown as ClientesSnapshot['eventosConversion'],
   }
-}
+});

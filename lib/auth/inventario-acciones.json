@@ -1,0 +1,1677 @@
+[
+  {
+    "archivo": "lib/data/actions/atributos-tecnicos.ts",
+    "nombre": "actualizarAtributoTecnicoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/atributos-tecnicos.ts",
+    "nombre": "crearAtributoTecnicoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/atributos-tecnicos.ts",
+    "nombre": "eliminarAtributoTecnicoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/catalogo-espacios.ts",
+    "nombre": "actualizarCatalogoEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/catalogo-espacios.ts",
+    "nombre": "crearCatalogoEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/catalogo-espacios.ts",
+    "nombre": "eliminarCatalogoEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/catalogo-espacios.ts",
+    "nombre": "listarCatalogoEspaciosAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarArtefactoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarClienteAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "clientes:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarContenedorDescriptivoGrupoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarContratoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "contratos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarEstadoProyectoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarGrupoItemAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarItemAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarJornadasAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarParametroAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "sistema:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarParametrosFinancierosAction",
+    "escribe": true,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarPlantillaEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarProductoCatalogoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarProyectoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "actualizarVerificadorAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "convertirGrupoAProductoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearArtefactoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearClienteAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "clientes:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearContratoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "contratos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearGrupoItemAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearItemAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearNotaReunionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearPlantillaEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearPlantillaGrupoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearPlantillaItemAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearProductoCatalogoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "crearProyectoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "duplicarEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "duplicarGrupoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "eliminarEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "eliminarGrupoItemAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "eliminarItemAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "eliminarPlantillaEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "eliminarPlantillaGrupoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "eliminarProductoCatalogoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "eliminarProyectoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "guardarEspacioComoPlantillaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "historialEstadoAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "listarPlantillasEspacioAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "marcarActivaEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "materializarPlantillaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "obtenerContenedorDescriptivoGrupoAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "obtenerPlantillaEspacioAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "reemplazarAcabadosEspacioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/core.ts",
+    "nombre": "resetearContenidoPlantillaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "actualizarEstadoModuloAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "actualizarEstadoNovedadAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "actualizarEstadoSchemaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "actualizarPersonaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "equipo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "aplicarDesfaseAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "asignarRolAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "equipo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "confirmarCheckAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearBomAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearCambioContratoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "contratos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearCheckAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearComunicacionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearCronogramaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearCronogramaEtapaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearNovedadAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearPersonaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "equipo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "crearSchemaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "decisionManualDesfaseAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "desactivarPersonaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "equipo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "desasignarRolAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "equipo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "emitirVeredictoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "guardarRetomaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f3.ts",
+    "nombre": "reactivarPersonaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "equipo:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f4.ts",
+    "nombre": "actualizarChecksRecepcionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f4.ts",
+    "nombre": "actualizarEstadoHerramientaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "taller:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f4.ts",
+    "nombre": "crearHerramientaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "taller:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f4.ts",
+    "nombre": "crearItemOrdenCompraAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f4.ts",
+    "nombre": "crearItemsOrdenCompraDesdeSugeridosAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f4.ts",
+    "nombre": "crearRecepcionMaterialAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f4.ts",
+    "nombre": "reponerHerramientaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "taller:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "actualizarEstadoPedidoWebAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "comercial:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "agendarCitaGarantiaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "garantia:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "cerrarCasoGarantiaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "garantia:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "crearCitacionCalidadAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "crearOrdenReparacionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "garantia:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "crearOrdenTrabajoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "taller:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "crearPedidoWebAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "comercial:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "crearReprocesoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "diagnosticarCasoGarantiaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "garantia:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "dispararReprocesoGarantiaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "garantia:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "engancharPedidoWebAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "comercial:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "enviarActaEntregaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "firmarActaEntregaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "generarActaEntregaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "iniciarInstalacionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "marcarFallidaInstalacionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "marcarInstaladaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "programarInstalacionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "produccion:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "reportarCasoGarantiaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "garantia:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f5.ts",
+    "nombre": "resolverCasoGarantiaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "garantia:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "actualizarEstadoOrdenCompraAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "actualizarMovimientoManualAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "actualizarProveedorAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "actualizarProveedorCuentaBancariaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "anularMovimientoManualAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "autorizarPagoCajaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "crearBancoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "crearCuentaFinancieraAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "crearMovimientoManualAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "crearObligacionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "crearOrdenCompraAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "crearProveedorAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "crearProveedorCuentaBancariaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "eliminarProveedorCuentaBancariaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "compras:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f6.ts",
+    "nombre": "registrarPagoObligacionAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "actualizarCatalogoAcabadoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "actualizarProductoTiendaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "adjuntarFacturaCuentaCobroAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "anularCuentaCobroAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "crearAcabadoMuestraAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "crearCatalogoAcabadoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "crearCatalogoProductoAcabadoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "crearCategoriaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "crearCuentaCobroProveedorAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "crearDocumentoProyectoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "crearProductoTiendaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "crearProductoTiendaComponenteAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "eliminarCatalogoAcabadoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "eliminarDocumentoProyectoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "eliminarProductoTiendaComponenteAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "tienda:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "marcarPagadaCuentaCobroAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/f7-tienda.ts",
+    "nombre": "vincularOcCuentaCobroAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/hydrate.ts",
+    "nombre": "fetchSnapshotAction",
+    "escribe": false,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "erp:acceso",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/hydrate.ts",
+    "nombre": "fetchSnapshotTablesAction",
+    "escribe": false,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "erp:acceso",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/hydrate.ts",
+    "nombre": "fetchVersionTokenAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "erp:acceso",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/leads.ts",
+    "nombre": "asociarLeadAClienteAction",
+    "escribe": true,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "comercial:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/leads.ts",
+    "nombre": "convertirLeadEnClienteAction",
+    "escribe": true,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "comercial:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/lecturas-catalogo.ts",
+    "nombre": "obtenerSnapshotCatalogoAction",
+    "escribe": false,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "catalogo:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/lecturas-clientes.ts",
+    "nombre": "obtenerSnapshotClientesAction",
+    "escribe": false,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "clientes:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/lecturas-cotizador-lista.ts",
+    "nombre": "obtenerSnapshotCotizadorListaAction",
+    "escribe": false,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/lecturas-cotizador.ts",
+    "nombre": "obtenerGrupoItemHidratado",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/lecturas-cotizador.ts",
+    "nombre": "obtenerGruposItemRootDelEspacio",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/lecturas-cotizador.ts",
+    "nombre": "obtenerSnapshotCotizadorAction",
+    "escribe": false,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/lecturas-finanzas.ts",
+    "nombre": "obtenerSnapshotFinanzasAction",
+    "escribe": false,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "finanzas:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/lecturas-proyecto.ts",
+    "nombre": "obtenerSnapshotProyectoAction",
+    "escribe": false,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "proyectos:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/longpoll.ts",
+    "nombre": "longPollVersionAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "erp:acceso",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "actualizarPortafolioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "actualizarTestimonioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "crearBitacoraArticuloAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "crearModuloArtefactoAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "crearPortafolioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "crearTestimonioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "despublicarPortafolioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "despublicarTestimonioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "eliminarPortafolioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "listarBitacoraAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Sitemap/llms/bitacora públicos. NOTA: no filtra publicado=true (hallazgo).",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "listarTestimoniosAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "obtenerBitacoraPorSlugAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Página pública /bitacora/[slug]. NOTA: no filtra publicado=true (hallazgo).",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "obtenerPortafolioPorSlugAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Página pública /portafolio/[slug] (generateMetadata). NOTA: no filtra publicado=true (hallazgo).",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "publicarPortafolioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/portafolio.ts",
+    "nombre": "publicarTestimonioAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "eliminarVersionPropuestaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "hidratarClientePropuesta",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Rehidrata datos ya recibidos del caller para la propuesta pública; lee acabados del store. Revisar si debe ser solo interna.",
+    "ambigua": true,
+    "nota": "Clasificación de publica tomada por uso en página pública; confirmar."
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "listarPortafolioPublicadosAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Sitio público: portafolio publicado (sin PII).",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "listarProductosTiendaVisiblesAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Tienda pública: productos visibles.",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "listarTestimoniosPublicadosAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Sitio público: testimonios publicados.",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "listarVersionesPropuestaAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "pendiente_decision",
+    "ambigua": true,
+    "nota": "Usada por el portal cliente (sin sesión empleado) y por el cotizador ERP. Envolverla con cotizador:leer rompe /cuenta/proyectos/[id]. Decidir protocolo."
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerAtributosTecnicosAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Landings públicas: atributos técnicos visibles.",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerEstadoPublicacionPropuestaAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerGaleriaEspacioAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Landings públicas de tipo de espacio (fotos publicadas).",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerGarantiasClienteAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "pendiente_decision",
+    "ambigua": true,
+    "nota": "Portal cliente: recibe clienteId del caller (IDOR). Requiere protocolo de cliente."
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerHeroCarouselImagesAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Hero público del sitio.",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerPrecioAsesoria3dAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Precio público de asesoría 3D.",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerProductoTiendaConDetalleAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Página pública /colecciones/[id].",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerPropuestaPublicaAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Link público de propuesta por proyectoId (el UUID es el secreto compartido con el cliente).",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerProyectoClienteAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "pendiente_decision",
+    "ambigua": true,
+    "nota": "Portal cliente: recibe clienteId del caller (IDOR). Requiere protocolo de cliente."
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerProyectosClienteAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "pendiente_decision",
+    "ambigua": true,
+    "nota": "Portal cliente: recibe clienteId del caller. IDOR: cualquier invocación directa lista proyectos de otro cliente. Requiere protocolo de cliente (sesión cliente + ownership), no empleado."
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "obtenerVersionPropuestaPorNumeroAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "publica",
+    "motivo": "Link público de propuesta, versión por número (?version=N).",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "previsualizarPropuestaPublicaAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:leer",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/public.ts",
+    "nombre": "publicarPropuestaAction",
+    "escribe": true,
+    "requiere_sesion_hoy": true,
+    "clasificacion": "protegida",
+    "permiso": "cotizador:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/renders.ts",
+    "nombre": "actualizarRenderConceptualAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/renders.ts",
+    "nombre": "crearRenderConceptualAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/renders.ts",
+    "nombre": "eliminarRenderConceptualAction",
+    "escribe": true,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:escribir",
+    "ambigua": false
+  },
+  {
+    "archivo": "lib/data/actions/renders.ts",
+    "nombre": "listarRendersConceptualesAction",
+    "escribe": false,
+    "requiere_sesion_hoy": false,
+    "clasificacion": "protegida",
+    "permiso": "marketing:leer",
+    "ambigua": false
+  }
+]

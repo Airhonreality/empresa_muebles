@@ -6,17 +6,14 @@
 import { eq, inArray, isNull, and, asc } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
-import { requireSesionEmpleado } from '@/lib/auth/session'
 import type { CotizadorSnapshot } from '../queries/types'
 import type { GrupoItemHidratado, ItemVariante } from '@/lib/data/contracts'
 import { aplicarContenedoresAEspacios } from '@/lib/data/contenedores'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promise<CotizadorSnapshot> {
+export const obtenerSnapshotCotizadorAction = protegerAccion({ permiso: "cotizador:leer" }, async function obtenerSnapshotCotizadorAction(proyectoId: string): Promise<CotizadorSnapshot> {
   // Defensa en profundidad: middleware.ts ya bloquea /erp/** sin sesión, pero esta
   // action lee datos de negocio reales — no cede a visitantes sin cookie de empleado.
-  const sesion = await requireSesionEmpleado()
-  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
-
   const [proyecto] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId))
   if (!proyecto) {
     return {
@@ -78,11 +75,11 @@ export async function obtenerSnapshotCotizadorAction(proyectoId: string): Promis
     gruposItem: gruposItem as unknown as CotizadorSnapshot['gruposItem'],
     espacioVarianteAcabados: espacioVarianteAcabados as unknown as CotizadorSnapshot['espacioVarianteAcabados'],
   }
-}
+});
 
 /** Cargar grupo con ítems, subgrupos y contenedor descriptivo.
  * Resultado: árbol completo para UI (colapsable). */
-export async function obtenerGrupoItemHidratado(
+export const obtenerGrupoItemHidratado = protegerAccion({ permiso: "cotizador:leer" }, async function obtenerGrupoItemHidratado(
   grupoId: string,
 ): Promise<GrupoItemHidratado | null> {
   return db.transaction(async (tx) => {
@@ -122,11 +119,11 @@ export async function obtenerGrupoItemHidratado(
       subgrupos,
     } as GrupoItemHidratado
   })
-}
+});
 
 /** Cargar todos los grupos de un espacio (solo root, sin subgrupos anidados en resultado).
  * Para cotizador: muestra grupos "hermanos" dentro del espacio. */
-export async function obtenerGruposItemRootDelEspacio(
+export const obtenerGruposItemRootDelEspacio = protegerAccion({ permiso: "cotizador:leer" }, async function obtenerGruposItemRootDelEspacio(
   espacioVarianteId: string,
 ): Promise<GrupoItemHidratado[]> {
   const gruposRoot = await db
@@ -146,4 +143,4 @@ export async function obtenerGruposItemRootDelEspacio(
     if (hidratado) resultado.push(hidratado)
   }
   return resultado
-}
+});

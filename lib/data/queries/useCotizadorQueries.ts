@@ -464,7 +464,7 @@ export function usePublicarPropuestaMutation(proyectoId: string) {
   const qc = useQueryClient()
   return useMutationOptGenerico<PropuestaVersion[], string | undefined, PropuestaVersion>(
     queryKey,
-    (nombre) => encolarCotizador('publicarPropuestaAction', proyectoId, proyectoId, undefined, nombre ?? null),
+    (nombre) => encolarCotizador('publicarPropuestaAction', proyectoId, proyectoId, nombre ?? null),
     (lista, nombre) => {
       const maxVersion = lista.reduce((max, v) => Math.max(max, v.version), 0)
       const optimista: PropuestaVersion = {

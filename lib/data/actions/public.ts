@@ -17,6 +17,7 @@ import type {
   Instalacion, ActaEntrega, CasoGarantia, Modulo, Cliente,
   Testimonio, AtributoTecnico, PropuestaVersion, GrupoItem,
 } from '../contracts'
+import { protegerAccion } from '@/lib/auth/accion'
 
 export interface FotoGaleriaEspacio {
   url: string
@@ -28,7 +29,7 @@ const DATA_IMPL = () => process.env.DATA_IMPL ?? 'mock'
 
 // --- Marketing (sin PII, sin datos financieros) ---
 
-export async function listarPortafolioPublicadosAction(): Promise<Portafolio[]> {
+export const listarPortafolioPublicadosAction = protegerAccion({ publica: true, motivo: "Sitio público: portafolio publicado (sin PII)." }, async function listarPortafolioPublicadosAction(): Promise<Portafolio[]> {
   if (DATA_IMPL() === 'drizzle') {
     const rows = await db.select().from(s.portafolio).where(eq(s.portafolio.publicado, true))
     return (rows as unknown as Portafolio[])
@@ -37,23 +38,23 @@ export async function listarPortafolioPublicadosAction(): Promise<Portafolio[]> 
   }
   const { getDataStore } = await import('@/lib/data/store')
   return getDataStore().portafolio.publicados()
-}
+});
 
 // Testimonios publicados (Home, D-01-9). Escopado y sin PII financiera: solo los campos que ya
 // expone el sitio (contenido, nombreAutor, barrio, tipoProyecto, rating, fuente, urlFuente).
-export async function listarTestimoniosPublicadosAction(): Promise<Testimonio[]> {
+export const listarTestimoniosPublicadosAction = protegerAccion({ publica: true, motivo: "Sitio público: testimonios publicados." }, async function listarTestimoniosPublicadosAction(): Promise<Testimonio[]> {
   if (DATA_IMPL() === 'drizzle') {
     const rows = await db.select().from(s.testimonios).where(eq(s.testimonios.publicado, true))
     return (rows as unknown as Testimonio[])
   }
   const { getDataStore } = await import('@/lib/data/store')
   return getDataStore().testimonios.publicados()
-}
+});
 
 // F-09 (2026-08-17): galería por tipo de espacio para las landings públicas — junta las fotos
 // publicadas de Portafolio con ese tipo y las imágenes cargadas en /erp/portafolio/renders,
 // sin distinción visible entre unas y otras (Javier las administra libremente desde el ERP).
-export async function obtenerGaleriaEspacioAction(tipoEspacio: string): Promise<FotoGaleriaEspacio[]> {
+export const obtenerGaleriaEspacioAction = protegerAccion({ publica: true, motivo: "Landings públicas de tipo de espacio (fotos publicadas)." }, async function obtenerGaleriaEspacioAction(tipoEspacio: string): Promise<FotoGaleriaEspacio[]> {
   const fotos: FotoGaleriaEspacio[] = []
 
   if (DATA_IMPL() === 'drizzle') {
@@ -114,12 +115,12 @@ export async function obtenerGaleriaEspacioAction(tipoEspacio: string): Promise<
   store.renderesConceptuales.porTipoEspacio(tipoEspacio)
     .forEach((r) => fotos.push({ url: r.imagenUrl, alt: r.titulo ?? '', esRender: true }))
   return fotos
-}
+});
 
 // Tarjetas del slider "Validación Técnica" de la landing de un tipo de espacio (2026-08-25,
 // reemplaza el objeto estático ATRIBUTOS_ESPACIOS que vivía en lib/data/espacios-atributos.ts).
 // Solo visible=true, ordenadas por `orden` — el componente las agrupa de a 4 por folio.
-export async function obtenerAtributosTecnicosAction(tipoEspacio: string): Promise<AtributoTecnico[]> {
+export const obtenerAtributosTecnicosAction = protegerAccion({ publica: true, motivo: "Landings públicas: atributos técnicos visibles." }, async function obtenerAtributosTecnicosAction(tipoEspacio: string): Promise<AtributoTecnico[]> {
   if (DATA_IMPL() === 'drizzle') {
     const rows = await db.select().from(s.atributosTecnicos)
       .where(and(eq(s.atributosTecnicos.tipoEspacio, tipoEspacio), eq(s.atributosTecnicos.visible, true)))
@@ -127,16 +128,16 @@ export async function obtenerAtributosTecnicosAction(tipoEspacio: string): Promi
   }
   const { getDataStore } = await import('@/lib/data/store')
   return getDataStore().atributosTecnicos.porTipoEspacio(tipoEspacio)
-}
+});
 
-export async function listarProductosTiendaVisiblesAction(): Promise<ProductoTienda[]> {
+export const listarProductosTiendaVisiblesAction = protegerAccion({ publica: true, motivo: "Tienda pública: productos visibles." }, async function listarProductosTiendaVisiblesAction(): Promise<ProductoTienda[]> {
   if (DATA_IMPL() === 'drizzle') {
     const rows = await db.select().from(s.productosTienda).where(eq(s.productosTienda.visibleEnTienda, true))
     return rows as unknown as ProductoTienda[]
   }
   const { getDataStore } = await import('@/lib/data/store')
   return getDataStore().productosTienda.visibles()
-}
+});
 
 export interface CatalogoPublico {
   sku: string
@@ -156,7 +157,7 @@ export interface ProductoTiendaDetalle {
 }
 
 // R3 (colecciones/[id]): proyección segura del catálogo — sin precioDirecto/stockActual/proveedorId.
-export async function obtenerProductoTiendaConDetalleAction(id: string): Promise<ProductoTiendaDetalle | null> {
+export const obtenerProductoTiendaConDetalleAction = protegerAccion({ publica: true, motivo: "Página pública /colecciones/[id]." }, async function obtenerProductoTiendaConDetalleAction(id: string): Promise<ProductoTiendaDetalle | null> {
   if (DATA_IMPL() === 'drizzle') {
     const [producto] = await db.select().from(s.productosTienda).where(eq(s.productosTienda.id, id)).limit(1)
     if (!producto || !producto.visibleEnTienda) return null
@@ -202,7 +203,7 @@ export async function obtenerProductoTiendaConDetalleAction(id: string): Promise
       : null,
     acabados,
   }
-}
+});
 
 // --- Propuesta pública (F-08, /propuesta/[proyectoId]) ---
 // R2 (disenio_F08_propuesta_publica.md §4): snapshot proyecta solo campos públicos — sin id
@@ -314,7 +315,7 @@ async function cargarAcabadosPorEspacio(
   return acabadosPorEspacio
 }
 
-export async function hidratarClientePropuesta(
+export const hidratarClientePropuesta = protegerAccion({ publica: true, motivo: "Rehidrata datos ya recibidos del caller para la propuesta pública; lee acabados del store. Revisar si debe ser solo interna." }, async function hidratarClientePropuesta(
   data: PropuestaPublicaData | null,
 ): Promise<PropuestaPublicaData | null> {
   if (!data) return null
@@ -389,7 +390,7 @@ export async function hidratarClientePropuesta(
       ? { nombre: c.nombre, documento: c.documento ?? null, telefono: c.telefono ?? null, email: c.email ?? null, domicilio: c.domicilio ?? null }
       : null,
   }
-}
+});
 
 
 // Arma los datos de la propuesta pública — extraído de obtenerPropuestaPublicaAction (decisión
@@ -400,9 +401,9 @@ export async function hidratarClientePropuesta(
 // mismo cálculo que "Publicar" construiría, pero SIN insertar ninguna fila en
 // propuestas_versiones — para que el empleado vea cómo quedaría antes de decidir si vale la
 // pena crear una versión nueva (y evita ensuciar el histórico con versiones de prueba).
-export async function previsualizarPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
+export const previsualizarPropuestaPublicaAction = protegerAccion({ permiso: "cotizador:leer" }, async function previsualizarPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
   return construirSnapshotPropuestaPublica(proyectoId)
-}
+});
 
 async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<PropuestaPublicaData | null> {
   if (DATA_IMPL() === 'drizzle') {
@@ -576,23 +577,23 @@ export async function listarVersionesPropuestaAction(proyectoId: string): Promis
 // "Ver" una versión puntual del histórico (2026-09-11, control de versiones) — a diferencia de
 // obtenerPropuestaPublicaAction (siempre la última), esto sirve cualquier versión pasada por su
 // número, para que el empleado pueda revisar/comparar antes de decidir si la elimina.
-export async function obtenerVersionPropuestaPorNumeroAction(proyectoId: string, version: number): Promise<PropuestaVersion | null> {
+export const obtenerVersionPropuestaPorNumeroAction = protegerAccion({ publica: true, motivo: "Link público de propuesta, versión por número (?version=N)." }, async function obtenerVersionPropuestaPorNumeroAction(proyectoId: string, version: number): Promise<PropuestaVersion | null> {
   const todas = await listarVersionesPropuestaAction(proyectoId)
   return todas.find((v) => v.version === version) ?? null
-}
+});
 
 // Elimina una versión puntual (2026-09-11, control de versiones amigable): las versiones de
 // prueba pueden contaminar el histórico que ve el cliente final — se permite retirarlas. No
 // reescribe ninguna otra fila (insert-only sigue intacto para las que quedan); "la vigente"
 // vuelve a ser MAX(version) de lo que sobreviva (DP6), o el fallback en vivo si se borran todas.
-export async function eliminarVersionPropuestaAction(id: string): Promise<boolean> {
+export const eliminarVersionPropuestaAction = protegerAccion({ permiso: "cotizador:escribir" }, async function eliminarVersionPropuestaAction(id: string): Promise<boolean> {
   if (DATA_IMPL() === 'drizzle') {
     const eliminadas = await db.delete(s.propuestasVersiones).where(eq(s.propuestasVersiones.id, id)).returning()
     return eliminadas.length > 0
   }
   const { getDataStore } = await import('@/lib/data/store')
   return getDataStore().propuestasVersiones.eliminar(id)
-}
+});
 
 export interface EstadoPublicacionPropuesta {
   /** false si nunca se publicó bajo este mecanismo — el botón del cotizador debe decir "Publicar". */
@@ -606,7 +607,7 @@ export interface EstadoPublicacionPropuesta {
 
 // Estado para el botón dinámico del cotizador (punto 8 del encargo): label "Publicar" vs.
 // "Crear nueva versión" + timestamp humano de la última publicación.
-export async function obtenerEstadoPublicacionPropuestaAction(proyectoId: string): Promise<EstadoPublicacionPropuesta> {
+export const obtenerEstadoPublicacionPropuestaAction = protegerAccion({ permiso: "cotizador:leer" }, async function obtenerEstadoPublicacionPropuestaAction(proyectoId: string): Promise<EstadoPublicacionPropuesta> {
   const ultima = await obtenerUltimaVersionPropuesta(proyectoId)
   return {
     tieneVersionPublicada: ultima !== null,
@@ -614,24 +615,21 @@ export async function obtenerEstadoPublicacionPropuestaAction(proyectoId: string
     publicadaEn: ultima?.publicadaEn ?? null,
     ultimoNombre: ultima?.nombre ?? null,
   }
-}
+});
 
 // Congela un snapshot nuevo (botón "Publicar"/"Crear nueva versión" del cotizador). Reusa
 // construirSnapshotPropuestaPublica — el MISMO cálculo que la vista en vivo — y calcula
 // version = MAX(version)+1 (o 1 si es la primera), igual al patrón ya usado en
 // lib/data/actions/f3.ts (crearSchemaAction) para otras tablas versionadas del repo.
-// publicadaPorId se resuelve server-side de la cookie de sesión (mismo patrón que
-// lib/data/actions/lecturas-cotizador.ts) — no se confía en un id mandado por el cliente; el
-// parámetro queda como escape hatch explícito para tests/scripts.
-export async function publicarPropuestaAction(proyectoId: string, publicadaPorId?: string | null, nombre?: string | null): Promise<PropuestaVersion> {
+// publicadaPorId se resuelve SIEMPRE de la sesión de empleado (no del cliente): el parámetro fue
+// retirado a propósito (auditoría de seguridad). Un id mandado por el cliente permitía atribuir
+// una publicación a cualquier usuario.
+export const publicarPropuestaAction = protegerAccion({ permiso: "cotizador:escribir" }, async function publicarPropuestaAction(proyectoId: string, nombre?: string | null): Promise<PropuestaVersion> {
   const snapshot = await construirSnapshotPropuestaPublica(proyectoId)
   if (!snapshot) throw new Error(`No se pudo publicar: el proyecto ${proyectoId} no existe`)
 
-  if (publicadaPorId === undefined) {
-    const { requireSesionEmpleado } = await import('@/lib/auth/session')
-    const sesion = await requireSesionEmpleado()
-    publicadaPorId = sesion?.usuarioId ?? null
-  }
+  const { requireSesionEmpleado } = await import('@/lib/auth/session')
+  const publicadaPorId = (await requireSesionEmpleado())?.usuarioId ?? null
 
   const nombreLimpio = nombre?.trim() || null
 
@@ -655,7 +653,7 @@ export async function publicarPropuestaAction(proyectoId: string, publicadaPorId
 
   const { getDataStore } = await import('@/lib/data/store')
   return getDataStore().propuestasVersiones.crear(proyectoId, snapshot, publicadaPorId ?? null, nombreLimpio)
-}
+});
 
 // Reescrita (decisión axiomática 2026-09-10, Decisión 2): antes consultaba el proyecto EN VIVO
 // en cada request. Ahora sirve siempre el último snapshot publicado.
@@ -667,11 +665,11 @@ export async function publicarPropuestaAction(proyectoId: string, publicadaPorId
 // patrón de riesgo que el incidente de atributos_tecnicos sin datos, 2026-08-28). Una vez que
 // exista al menos una versión publicada para un proyecto, se sirve siempre esa última versión
 // — nunca más en vivo para ese proyecto.
-export async function obtenerPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
+export const obtenerPropuestaPublicaAction = protegerAccion({ publica: true, motivo: "Link público de propuesta por proyectoId (el UUID es el secreto compartido con el cliente)." }, async function obtenerPropuestaPublicaAction(proyectoId: string): Promise<PropuestaPublicaData | null> {
   const ultima = await obtenerUltimaVersionPropuesta(proyectoId)
   if (ultima) return ultima.snapshotJson as PropuestaPublicaData
   return construirSnapshotPropuestaPublica(proyectoId)
-}
+});
 
 // --- Portal cliente (F-07, /cuenta/**) — escopado por clienteId/proyectoId, no el snapshot global ---
 
@@ -809,7 +807,7 @@ export async function obtenerGarantiasClienteAction(clienteId: string): Promise<
 
 // --- Precios Parametrizados (Fase 1 - Plan B3) ---
 
-export async function obtenerPrecioAsesoria3dAction(): Promise<number | null> {
+export const obtenerPrecioAsesoria3dAction = protegerAccion({ publica: true, motivo: "Precio público de asesoría 3D." }, async function obtenerPrecioAsesoria3dAction(): Promise<number | null> {
   if (DATA_IMPL() === 'drizzle') {
     const [param] = await db.select().from(s.parametros).where(eq(s.parametros.clave, 'precio_asesoria_3d')).limit(1)
     if (!param || !param.valorNumeric) return null
@@ -822,9 +820,9 @@ export async function obtenerPrecioAsesoria3dAction(): Promise<number | null> {
   if (!param || !param.valorNumeric) return null
   const valor = Number(param.valorNumeric)
   return Number.isNaN(valor) ? null : valor
-}
+});
 
-export async function obtenerHeroCarouselImagesAction(categoriaEspacio?: string): Promise<{src: string, alt: string}[]> {
+export const obtenerHeroCarouselImagesAction = protegerAccion({ publica: true, motivo: "Hero público del sitio." }, async function obtenerHeroCarouselImagesAction(categoriaEspacio?: string): Promise<{src: string, alt: string}[]> {
   const limit = 5;
   const fotos: {src: string, alt: string}[] = [];
 
@@ -866,4 +864,4 @@ export async function obtenerHeroCarouselImagesAction(categoriaEspacio?: string)
   }
 
   return fotos;
-}
+});

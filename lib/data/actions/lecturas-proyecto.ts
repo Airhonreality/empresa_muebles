@@ -3,13 +3,10 @@
 import { eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
-import { requireSesionEmpleado } from '@/lib/auth/session'
 import { PROYECTO_VACIO, type ProyectoSnapshot } from '../queries/proyecto-types'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function obtenerSnapshotProyectoAction(proyectoId: string): Promise<ProyectoSnapshot> {
-  const sesion = await requireSesionEmpleado()
-  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
-
+export const obtenerSnapshotProyectoAction = protegerAccion({ permiso: "proyectos:leer" }, async function obtenerSnapshotProyectoAction(proyectoId: string): Promise<ProyectoSnapshot> {
   const [proyecto] = await db.select().from(s.proyectos).where(eq(s.proyectos.id, proyectoId))
   if (!proyecto) return PROYECTO_VACIO
 
@@ -93,4 +90,4 @@ export async function obtenerSnapshotProyectoAction(proyectoId: string): Promise
     catalogo: catalogo as unknown as ProyectoSnapshot['catalogo'],
     cuentas: cuentas as unknown as ProyectoSnapshot['cuentas'],
   }
-}
+});

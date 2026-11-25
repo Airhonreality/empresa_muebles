@@ -9,12 +9,13 @@ import type {
 } from '../contracts'
 import { generarSlugPortafolioBase } from '@/lib/utils/portafolio-slug'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
+import { protegerAccion } from '@/lib/auth/accion'
 
 // Lectura server-side para páginas públicas (SSR/generateMetadata) que corren fuera de
 // <DataStoreProvider> (no hay React ni useDataStore() disponible ahí). Réplica del patrón
 // dual DATA_IMPL de lib/auth/session.ts: drizzle consulta directo, mock usa el singleton
 // getDataStore() (server-only, no el hook de React) — t-133/t-134.
-export async function obtenerPortafolioPorSlugAction(slug: string): Promise<Portafolio | null> {
+export const obtenerPortafolioPorSlugAction = protegerAccion({ publica: true, motivo: "Página pública /portafolio/[slug] (generateMetadata). NOTA: no filtra publicado=true (hallazgo)." }, async function obtenerPortafolioPorSlugAction(slug: string): Promise<Portafolio | null> {
   if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
     const [row] = await db.select().from(s.portafolio).where(eq(s.portafolio.slug, slug)).limit(1)
     return (row as unknown as Portafolio) ?? null
@@ -22,7 +23,7 @@ export async function obtenerPortafolioPorSlugAction(slug: string): Promise<Port
   const { getDataStore } = await import('@/lib/data/store')
   const store = getDataStore()
   return store.portafolio.listar().find((p) => p.slug === slug) ?? null
-}
+});
 
 // El slug ya NO lo escribe el humano (hallazgo 2026-08-21: un slug tipeado a mano rompió la
 // URL pública de un proyecto real) — se genera siempre server-side desde categoriaEspacio +
@@ -30,7 +31,7 @@ export async function obtenerPortafolioPorSlugAction(slug: string): Promise<Port
 // romper una URL ya compartida/indexada si alguien cambia el barrio más tarde).
 // t-146 (2026-08-31): proyectoId ahora es opcional — es NULL para entradas de portafolio libres
 // (independientes del proyecto pero relacionables).
-export async function crearPortafolioAction(data: Partial<Portafolio> & { titulo: string; categoriaEspacio: string }): Promise<Portafolio> {
+export const crearPortafolioAction = protegerAccion({ permiso: "marketing:escribir" }, async function crearPortafolioAction(data: Partial<Portafolio> & { titulo: string; categoriaEspacio: string }): Promise<Portafolio> {
   return db.transaction(async (tx) => {
     let orden = data.orden
     if (orden === undefined) {
@@ -53,9 +54,9 @@ export async function crearPortafolioAction(data: Partial<Portafolio> & { titulo
     }).returning()
     return nuevo as unknown as Portafolio
   })
-}
+});
 
-export async function actualizarPortafolioAction(
+export const actualizarPortafolioAction = protegerAccion({ permiso: "marketing:escribir" }, async function actualizarPortafolioAction(
   id: string,
   partial: Partial<Pick<Portafolio, 'titulo' | 'descripcionComercial' | 'categoriaEspacio' | 'espacioVarianteId' | 'materialesDestacados' | 'precioReferencial' | 'imagenPortafolioUrl' | 'galeriaPortafolioUrl' | 'barrio' | 'tipoProyecto' | 'destacado' | 'orden'>>
 ): Promise<Portafolio | null> {
@@ -67,34 +68,34 @@ export async function actualizarPortafolioAction(
   if (seguro.galeriaPortafolioUrl !== undefined) seguro.galeriaPortafolioUrl = sanitizarUrlsFotos(seguro.galeriaPortafolioUrl) ?? []
   const [actualizado] = await db.update(s.portafolio).set({ ...seguro, updatedAt: new Date().toISOString() }).where(eq(s.portafolio.id, id)).returning()
   return (actualizado as unknown as Portafolio) ?? null
-}
+});
 
-export async function publicarPortafolioAction(id: string): Promise<Portafolio | null> {
+export const publicarPortafolioAction = protegerAccion({ permiso: "marketing:escribir" }, async function publicarPortafolioAction(id: string): Promise<Portafolio | null> {
   const [actualizado] = await db.update(s.portafolio).set({ publicado: true, updatedAt: new Date().toISOString() }).where(eq(s.portafolio.id, id)).returning()
   return (actualizado as unknown as Portafolio) ?? null
-}
+});
 
-export async function despublicarPortafolioAction(id: string): Promise<Portafolio | null> {
+export const despublicarPortafolioAction = protegerAccion({ permiso: "marketing:escribir" }, async function despublicarPortafolioAction(id: string): Promise<Portafolio | null> {
   const [actualizado] = await db.update(s.portafolio).set({ publicado: false, updatedAt: new Date().toISOString() }).where(eq(s.portafolio.id, id)).returning()
   return (actualizado as unknown as Portafolio) ?? null
-}
+});
 
 // Elimina UNA entrada de portafolio. No toca el proyecto padre, los cotizados (espacioVariante)
 // ni los otros espacios del mismo proyecto — son independientes pero relacionables.
-export async function eliminarPortafolioAction(id: string): Promise<boolean> {
+export const eliminarPortafolioAction = protegerAccion({ permiso: "marketing:escribir" }, async function eliminarPortafolioAction(id: string): Promise<boolean> {
   await db.delete(s.portafolio).where(eq(s.portafolio.id, id))
   return true
-}
+});
 
 // Lectura completa para el admin de testimonios (migración TanStack Query, Fase 2): a diferencia
 // de listarTestimoniosPublicadosAction (solo publicados, para el sitio público), esta trae TODOS
 // — publicados y sin publicar — porque la pantalla de gestión necesita verlos todos para curarlos.
-export async function listarTestimoniosAction(): Promise<Testimonio[]> {
+export const listarTestimoniosAction = protegerAccion({ permiso: "marketing:leer" }, async function listarTestimoniosAction(): Promise<Testimonio[]> {
   const rows = await db.select().from(s.testimonios).orderBy(desc(s.testimonios.createdAt))
   return rows as unknown as Testimonio[]
-}
+});
 
-export async function crearTestimonioAction(data: Partial<Testimonio> & { contenido: string }): Promise<Testimonio> {
+export const crearTestimonioAction = protegerAccion({ permiso: "marketing:escribir" }, async function crearTestimonioAction(data: Partial<Testimonio> & { contenido: string }): Promise<Testimonio> {
   const [nuevo] = await db.insert(s.testimonios).values({
     contenido: data.contenido, nombreAutor: data.nombreAutor ?? null, rating: data.rating ?? null, curado: data.curado ?? false, aprobado: data.aprobado ?? false,
     publicado: data.publicado ?? false, fuente: data.fuente ?? 'GBP', barrio: data.barrio ?? null,
@@ -102,31 +103,31 @@ export async function crearTestimonioAction(data: Partial<Testimonio> & { conten
     clienteId: data.clienteId ?? null, proyectoId: data.proyectoId ?? null,
   }).returning()
   return nuevo as unknown as Testimonio
-}
+});
 
-export async function actualizarTestimonioAction(id: string, partial: Partial<Testimonio>): Promise<Testimonio | null> {
+export const actualizarTestimonioAction = protegerAccion({ permiso: "marketing:escribir" }, async function actualizarTestimonioAction(id: string, partial: Partial<Testimonio>): Promise<Testimonio | null> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id: _omit, createdAt: _c, ...rest } = partial as Partial<Testimonio> & { id?: string; createdAt?: string }
   const [actualizado] = await db.update(s.testimonios).set({ ...rest, updatedAt: new Date().toISOString() }).where(eq(s.testimonios.id, id)).returning()
   return (actualizado as unknown as Testimonio) ?? null
-}
+});
 
-export async function publicarTestimonioAction(id: string): Promise<Testimonio | null> {
+export const publicarTestimonioAction = protegerAccion({ permiso: "marketing:escribir" }, async function publicarTestimonioAction(id: string): Promise<Testimonio | null> {
   const [actualizado] = await db.update(s.testimonios).set({ publicado: true, aprobado: true, curado: true, updatedAt: new Date().toISOString() }).where(eq(s.testimonios.id, id)).returning()
   return (actualizado as unknown as Testimonio) ?? null
-}
+});
 
-export async function despublicarTestimonioAction(id: string): Promise<Testimonio | null> {
+export const despublicarTestimonioAction = protegerAccion({ permiso: "marketing:escribir" }, async function despublicarTestimonioAction(id: string): Promise<Testimonio | null> {
   const [actualizado] = await db.update(s.testimonios).set({ publicado: false, updatedAt: new Date().toISOString() }).where(eq(s.testimonios.id, id)).returning()
   return (actualizado as unknown as Testimonio) ?? null
-}
+});
 
-export async function crearModuloArtefactoAction(data: { moduloId: string; tipo: TipoModuloArtefacto; fuente: FuenteModuloArtefacto; url: string }): Promise<ModuloArtefacto> {
+export const crearModuloArtefactoAction = protegerAccion({ permiso: "marketing:escribir" }, async function crearModuloArtefactoAction(data: { moduloId: string; tipo: TipoModuloArtefacto; fuente: FuenteModuloArtefacto; url: string }): Promise<ModuloArtefacto> {
   const [nuevo] = await db.insert(s.modulosArtefactos).values(data).returning()
   return nuevo as unknown as ModuloArtefacto
-}
+});
 
-export async function crearBitacoraArticuloAction(data: Partial<BitacoraArticulo> & { slug: string; titulo: string; contenidoLargo: string }): Promise<BitacoraArticulo> {
+export const crearBitacoraArticuloAction = protegerAccion({ permiso: "marketing:escribir" }, async function crearBitacoraArticuloAction(data: Partial<BitacoraArticulo> & { slug: string; titulo: string; contenidoLargo: string }): Promise<BitacoraArticulo> {
   const now = new Date().toISOString()
   const [nuevo] = await db.insert(s.bitacoraArticulos).values({
     slug: data.slug, titulo: data.titulo, extracto: data.extracto ?? '', contenidoLargo: data.contenidoLargo,
@@ -135,9 +136,9 @@ export async function crearBitacoraArticuloAction(data: Partial<BitacoraArticulo
     proyectoRelacionadoId: data.proyectoRelacionadoId ?? null, publicado: data.publicado ?? false,
   }).returning()
   return nuevo as unknown as BitacoraArticulo
-}
+});
 
-export async function obtenerBitacoraPorSlugAction(slug: string): Promise<BitacoraArticulo | null> {
+export const obtenerBitacoraPorSlugAction = protegerAccion({ publica: true, motivo: "Página pública /bitacora/[slug]. NOTA: no filtra publicado=true (hallazgo)." }, async function obtenerBitacoraPorSlugAction(slug: string): Promise<BitacoraArticulo | null> {
   if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
     const [row] = await db.select().from(s.bitacoraArticulos).where(eq(s.bitacoraArticulos.slug, slug)).limit(1)
     return (row as unknown as BitacoraArticulo) ?? null
@@ -147,9 +148,9 @@ export async function obtenerBitacoraPorSlugAction(slug: string): Promise<Bitaco
   // Asumiendo que el store tiene la colección de bitacora (si no, fallará de forma limpia)
   if (!store.bitacoraArticulos) return null
   return store.bitacoraArticulos.listar().find((p) => p.slug === slug) ?? null
-}
+});
 
-export async function listarBitacoraAction(): Promise<BitacoraArticulo[]> {
+export const listarBitacoraAction = protegerAccion({ publica: true, motivo: "Sitemap/llms/bitacora públicos. NOTA: no filtra publicado=true (hallazgo)." }, async function listarBitacoraAction(): Promise<BitacoraArticulo[]> {
   if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
     const rows = await db.select().from(s.bitacoraArticulos).orderBy(s.bitacoraArticulos.fechaPublicacion)
     return rows as unknown as BitacoraArticulo[]
@@ -158,5 +159,5 @@ export async function listarBitacoraAction(): Promise<BitacoraArticulo[]> {
   const store = getDataStore()
   if (!store.bitacoraArticulos) return []
   return store.bitacoraArticulos.listar()
-}
+});
 

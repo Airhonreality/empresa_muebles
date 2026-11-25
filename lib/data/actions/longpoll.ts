@@ -6,6 +6,7 @@
 // expira el tiempo máximo — lo que ocurra primero.
 import { client } from '@/lib/db/client'
 import { fetchVersionTokenAction } from './hydrate'
+import { protegerAccion } from '@/lib/auth/accion'
 
 // Acotado con margen bajo cualquier límite de duración de función de Vercel (Hobby/Pro).
 // El límite real de la función se declara con `export const maxDuration` en app/layout.tsx
@@ -39,7 +40,7 @@ export interface LongPollResult {
  * `tablas` (emitidas por el trigger en el payload, ej. "items_variante:UPDATE") permite al
  * llamador invalidar con precisión el server-state que realmente tocó el cambio.
  */
-export async function longPollVersionAction(clientVersion: string): Promise<LongPollResult> {
+export const longPollVersionAction = protegerAccion({ permiso: "erp:acceso" }, async function longPollVersionAction(clientVersion: string): Promise<LongPollResult> {
   return new Promise((resolve, reject) => {
     let settled = false
     let unlistenFn: (() => void) | undefined
@@ -103,4 +104,4 @@ export async function longPollVersionAction(clientVersion: string): Promise<Long
         }
       })
   })
-}
+});

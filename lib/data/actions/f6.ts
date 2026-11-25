@@ -13,8 +13,9 @@ import type {
   OrdenCompra, EstadoOrdenCompra, MovimientoFinanciero, MovimientoManualInput, MovimientoManualEdicionInput,
   Proveedor, ProveedorCuentaBancaria, Banco,
 } from '../contracts'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function crearCuentaFinancieraAction(
+export const crearCuentaFinancieraAction = protegerAccion({ permiso: "finanzas:escribir" }, async function crearCuentaFinancieraAction(
   data: { id?: string; nombre: string; tipo: string; saldoInicial?: string; saldoActual?: string },
 ): Promise<CuentaFinanciera> {
   const validado = validarEntrada(cuentaFinancieraCrearSchema, data)
@@ -34,12 +35,12 @@ export async function crearCuentaFinancieraAction(
     .where(eq(s.cuentasFinancieras.id, validado.id))
   if (!existente) throw new Error('No se pudo crear la cuenta financiera.')
   return existente as unknown as CuentaFinanciera
-}
+});
 
 /** t-181: entrada (credito a la cuenta) o salida (debito de la cuenta) manual.
  *  El saldo se actualiza con aritmética SQL atómica dentro de la misma transacción.
  *  Se permite saldo negativo a propósito (decisión de Supervisor 2026-10-17). */
-export async function crearMovimientoManualAction(data: MovimientoManualInput): Promise<MovimientoFinanciero> {
+export const crearMovimientoManualAction = protegerAccion({ permiso: "finanzas:escribir" }, async function crearMovimientoManualAction(data: MovimientoManualInput): Promise<MovimientoFinanciero> {
   const validado = validarEntrada(movimientoManualSchema, data)
   const esEntrada = validado.tipo === 'entrada'
 
@@ -91,11 +92,11 @@ export async function crearMovimientoManualAction(data: MovimientoManualInput): 
 
     return movimiento as unknown as MovimientoFinanciero
   })
-}
+});
 
 /** t-181: completa/corrige un movimiento ya registrado. No cambia tipo ni cuenta; si el
  *  monto cambia, ajusta el saldo de la cuenta por la diferencia en la dirección original. */
-export async function actualizarMovimientoManualAction(
+export const actualizarMovimientoManualAction = protegerAccion({ permiso: "finanzas:escribir" }, async function actualizarMovimientoManualAction(
   id: string,
   data: MovimientoManualEdicionInput,
 ): Promise<MovimientoFinanciero | null> {
@@ -136,11 +137,11 @@ export async function actualizarMovimientoManualAction(
 
     return actualizado as unknown as MovimientoFinanciero
   })
-}
+});
 
 /** t-181: anulación (soft delete) con reverso del saldo. No borra la fila: el libro
  *  conserva el rastro y el movimiento queda marcado como anulado. */
-export async function anularMovimientoManualAction(id: string): Promise<MovimientoFinanciero | null> {
+export const anularMovimientoManualAction = protegerAccion({ permiso: "finanzas:escribir" }, async function anularMovimientoManualAction(id: string): Promise<MovimientoFinanciero | null> {
   return db.transaction(async (tx) => {
     const [existente] = await tx
       .select()
@@ -163,9 +164,9 @@ export async function anularMovimientoManualAction(id: string): Promise<Movimien
       .returning()
     return anulado as unknown as MovimientoFinanciero
   })
-}
+});
 
-export async function crearObligacionAction(data: Partial<ObligacionPendiente> & { descripcion: string; origen: OrigenObligacion; montoTotal: string; fechaVencimiento: string }): Promise<ObligacionPendiente> {
+export const crearObligacionAction = protegerAccion({ permiso: "finanzas:escribir" }, async function crearObligacionAction(data: Partial<ObligacionPendiente> & { descripcion: string; origen: OrigenObligacion; montoTotal: string; fechaVencimiento: string }): Promise<ObligacionPendiente> {
   const [nuevo] = await db.insert(s.obligacionesPendientes).values({
     descripcion: data.descripcion, origen: data.origen, montoTotal: data.montoTotal,
     montoPagado: data.montoPagado ?? '0', fechaVencimiento: data.fechaVencimiento, estado: data.estado ?? 'pendiente',
@@ -176,9 +177,9 @@ export async function crearObligacionAction(data: Partial<ObligacionPendiente> &
     periodicidad: data.periodicidad ?? null, deduccionDiseno3d: data.deduccionDiseno3d ?? false,
   }).returning()
   return nuevo as unknown as ObligacionPendiente
-}
+});
 
-export async function registrarPagoObligacionAction(id: string, data: { monto: string; cuentaId: string; medioPago?: string }): Promise<ObligacionPendiente | null> {
+export const registrarPagoObligacionAction = protegerAccion({ permiso: "finanzas:escribir" }, async function registrarPagoObligacionAction(id: string, data: { monto: string; cuentaId: string; medioPago?: string }): Promise<ObligacionPendiente | null> {
   // t-195: monto en pesos enteros positivos; un pago que supera el saldo se rechaza con motivo
   // explícito (antes devolvía null en silencio y el usuario no sabía por qué no se registró).
   if (!/^\d{1,12}(\.0{1,2})?$/.test(data.monto) || Number(data.monto) <= 0) {
@@ -205,9 +206,9 @@ export async function registrarPagoObligacionAction(id: string, data: { monto: s
     const [actualizado] = await tx.update(s.obligacionesPendientes).set({ montoPagado: String(nuevoPagado), estado }).where(eq(s.obligacionesPendientes.id, id)).returning()
     return actualizado as unknown as ObligacionPendiente
   })
-}
+});
 
-export async function crearOrdenCompraAction(data: Partial<OrdenCompra> & { proveedorId: string; montoTotal: string }): Promise<OrdenCompra> {
+export const crearOrdenCompraAction = protegerAccion({ permiso: "compras:escribir" }, async function crearOrdenCompraAction(data: Partial<OrdenCompra> & { proveedorId: string; montoTotal: string }): Promise<OrdenCompra> {
   return db.transaction(async (tx) => {
     const codigoOrden = data.codigoOrden ?? `OC-${Date.now()}`
     const [nuevo] = await tx.insert(s.ordenesCompra).values({
@@ -225,14 +226,14 @@ export async function crearOrdenCompraAction(data: Partial<OrdenCompra> & { prov
     })
     return nuevo as unknown as OrdenCompra
   })
-}
+});
 
-export async function actualizarEstadoOrdenCompraAction(id: string, estado: EstadoOrdenCompra): Promise<OrdenCompra | null> {
+export const actualizarEstadoOrdenCompraAction = protegerAccion({ permiso: "compras:escribir" }, async function actualizarEstadoOrdenCompraAction(id: string, estado: EstadoOrdenCompra): Promise<OrdenCompra | null> {
   const [actualizado] = await db.update(s.ordenesCompra).set({ estado, updatedAt: new Date().toISOString() }).where(eq(s.ordenesCompra.id, id)).returning()
   return (actualizado as unknown as OrdenCompra) ?? null
-}
+});
 
-export async function autorizarPagoCajaAction(data: { ordenCompraId: string; cuentaId: string; medioPago?: string }): Promise<MovimientoFinanciero | null> {
+export const autorizarPagoCajaAction = protegerAccion({ permiso: "finanzas:escribir" }, async function autorizarPagoCajaAction(data: { ordenCompraId: string; cuentaId: string; medioPago?: string }): Promise<MovimientoFinanciero | null> {
   return db.transaction(async (tx) => {
     const [oc] = await tx.select().from(s.ordenesCompra).where(eq(s.ordenesCompra.id, data.ordenCompraId))
     if (!oc || oc.estado !== 'en_pago') return null
@@ -271,9 +272,9 @@ export async function autorizarPagoCajaAction(data: { ordenCompraId: string; cue
 
     return movimiento as unknown as MovimientoFinanciero
   })
-}
+});
 
-export async function crearProveedorAction(data: Partial<Proveedor> & { nombre: string }): Promise<Proveedor> {
+export const crearProveedorAction = protegerAccion({ permiso: "compras:escribir" }, async function crearProveedorAction(data: Partial<Proveedor> & { nombre: string }): Promise<Proveedor> {
   const [nuevo] = await db.insert(s.proveedores).values({
     nombre: data.nombre, nit: data.nit ?? null, categoria: data.categoria ?? null,
     descripcion: data.descripcion ?? null,
@@ -285,9 +286,9 @@ export async function crearProveedorAction(data: Partial<Proveedor> & { nombre: 
     tarifaFlete: data.tarifaFlete ?? null,
   }).returning()
   return nuevo as unknown as Proveedor
-}
+});
 
-export async function actualizarProveedorAction(
+export const actualizarProveedorAction = protegerAccion({ permiso: "compras:escribir" }, async function actualizarProveedorAction(
   id: string,
   data: Partial<Omit<Proveedor, 'id' | 'createdAt'>>,
 ): Promise<Proveedor | null> {
@@ -310,19 +311,19 @@ export async function actualizarProveedorAction(
     tarifaFlete: data.tarifaFlete,
   }).where(eq(s.proveedores.id, id)).returning()
   return (actualizado as unknown as Proveedor) ?? null
-}
+});
 
 
-export async function crearBancoAction(data: Partial<Banco> & { nombre: string }): Promise<Banco> {
+export const crearBancoAction = protegerAccion({ permiso: "finanzas:escribir" }, async function crearBancoAction(data: Partial<Banco> & { nombre: string }): Promise<Banco> {
   const [nuevo] = await db.insert(s.bancos).values({
     nombre: data.nombre,
     codigo: data.codigo ?? null,
     activo: data.activo ?? true,
   }).returning()
   return nuevo as unknown as Banco
-}
+});
 
-export async function crearProveedorCuentaBancariaAction(
+export const crearProveedorCuentaBancariaAction = protegerAccion({ permiso: "compras:escribir" }, async function crearProveedorCuentaBancariaAction(
   data: Partial<ProveedorCuentaBancaria> & { proveedorId: string; tipo: ProveedorCuentaBancaria['tipo'] },
 ): Promise<ProveedorCuentaBancaria> {
   return db.transaction(async (tx) => {
@@ -350,9 +351,9 @@ export async function crearProveedorCuentaBancariaAction(
     }).returning()
     return nueva as unknown as ProveedorCuentaBancaria
   })
-}
+});
 
-export async function actualizarProveedorCuentaBancariaAction(
+export const actualizarProveedorCuentaBancariaAction = protegerAccion({ permiso: "compras:escribir" }, async function actualizarProveedorCuentaBancariaAction(
   id: string,
   data: Partial<Omit<ProveedorCuentaBancaria, 'id' | 'proveedorId' | 'createdAt' | 'updatedAt'>>,
 ): Promise<ProveedorCuentaBancaria | null> {
@@ -382,11 +383,11 @@ export async function actualizarProveedorCuentaBancariaAction(
     }).where(eq(s.proveedorCuentasBancarias.id, id)).returning()
     return (actualizada as unknown as ProveedorCuentaBancaria) ?? null
   })
-}
+});
 
-export async function eliminarProveedorCuentaBancariaAction(id: string): Promise<boolean> {
+export const eliminarProveedorCuentaBancariaAction = protegerAccion({ permiso: "compras:escribir" }, async function eliminarProveedorCuentaBancariaAction(id: string): Promise<boolean> {
   const [eliminada] = await db.delete(s.proveedorCuentasBancarias)
     .where(eq(s.proveedorCuentasBancarias.id, id))
     .returning({ id: s.proveedorCuentasBancarias.id })
   return Boolean(eliminada)
-}
+});

@@ -15,6 +15,7 @@ import type {
   SchemaProyecto, EstadoSchema, BomMaterial, OrigenBom, Verificacion, TipoGate, VeredictoGate,
   Retoma, CambioContrato, Persona, PersonaRol, RolCanonico, Modulo, EstadoProyecto,
 } from '../contracts'
+import { protegerAccion } from '@/lib/auth/accion'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Tx = PgTransaction<any, any, any>
@@ -32,7 +33,7 @@ async function parametroNumero(tx: Tx, clave: string, fallback: number): Promise
   return Number.isFinite(n) ? n : fallback
 }
 
-export async function crearCronogramaAction(data: { proyectoId: string }): Promise<Cronograma> {
+export const crearCronogramaAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearCronogramaAction(data: { proyectoId: string }): Promise<Cronograma> {
   return db.transaction(async (tx) => {
     const baseSemanas = await parametroNumero(tx, 'base_semanas_cronograma', 4)
     const holgura = await parametroNumero(tx, 'holgura_maxima_dias', 12)
@@ -43,14 +44,14 @@ export async function crearCronogramaAction(data: { proyectoId: string }): Promi
     }).returning()
     return nuevo as unknown as Cronograma
   })
-}
+});
 
-export async function crearCronogramaEtapaAction(data: { cronogramaId: string; linea: LineaCronograma; etapa: EtapaCronograma; fechaIdeal: string; fechaReal: string; estado: string }): Promise<CronogramaEtapa> {
+export const crearCronogramaEtapaAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearCronogramaEtapaAction(data: { cronogramaId: string; linea: LineaCronograma; etapa: EtapaCronograma; fechaIdeal: string; fechaReal: string; estado: string }): Promise<CronogramaEtapa> {
   const [nuevo] = await db.insert(s.cronogramaEtapas).values(data).returning()
   return nuevo as unknown as CronogramaEtapa
-}
+});
 
-export async function aplicarDesfaseAction(proyectoId: string, data: { causa: CausaDesfase; composicionCausal: { origen: string; aporteDias: number }[]; motivo: string; diasDesfase: number }): Promise<DesfaseCronograma | null> {
+export const aplicarDesfaseAction = protegerAccion({ permiso: "produccion:escribir" }, async function aplicarDesfaseAction(proyectoId: string, data: { causa: CausaDesfase; composicionCausal: { origen: string; aporteDias: number }[]; motivo: string; diasDesfase: number }): Promise<DesfaseCronograma | null> {
   if (!P33({ causa: data.causa, motivo: data.motivo, composicionCausal: data.composicionCausal })) return null
   return db.transaction(async (tx) => {
     const [nuevo] = await tx.insert(s.desfasesCronograma).values({
@@ -69,17 +70,17 @@ export async function aplicarDesfaseAction(proyectoId: string, data: { causa: Ca
     }
     return nuevo as unknown as DesfaseCronograma
   })
-}
+});
 
-export async function decisionManualDesfaseAction(desfaseId: string, data: { decisionManual: string; autorizadoPor: string }): Promise<DesfaseCronograma | null> {
+export const decisionManualDesfaseAction = protegerAccion({ permiso: "produccion:escribir" }, async function decisionManualDesfaseAction(desfaseId: string, data: { decisionManual: string; autorizadoPor: string }): Promise<DesfaseCronograma | null> {
   if (data.decisionManual.trim().length === 0) return null
   const [actualizado] = await db.update(s.desfasesCronograma).set({
     decisionManual: data.decisionManual, autorizadoPor: data.autorizadoPor,
   }).where(eq(s.desfasesCronograma.id, desfaseId)).returning()
   return (actualizado as unknown as DesfaseCronograma) ?? null
-}
+});
 
-export async function crearCheckAction(proyectoId: string, data: { ratioInsumos: number; ratioPagos: number; ratioProduccion: number }): Promise<CheckProduccion> {
+export const crearCheckAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearCheckAction(proyectoId: string, data: { ratioInsumos: number; ratioPagos: number; ratioProduccion: number }): Promise<CheckProduccion> {
   return db.transaction(async (tx) => {
     const umbralTodoBien = await parametroNumero(tx, 'umbral_todo_bien_pct', 0.95)
     const umbralExtremo = await parametroNumero(tx, 'umbral_extremo_pct', 0.70)
@@ -92,9 +93,9 @@ export async function crearCheckAction(proyectoId: string, data: { ratioInsumos:
     }).returning()
     return { ...nuevo, ratioInsumos: data.ratioInsumos, ratioPagos: data.ratioPagos, ratioProduccion: data.ratioProduccion, comisionesReducidasPct: null } as unknown as CheckProduccion
   })
-}
+});
 
-export async function confirmarCheckAction(checkId: string, data: { desenlaceFinal: DesenlaceCheck; overrideJustificacion?: string }): Promise<CheckProduccion | null> {
+export const confirmarCheckAction = protegerAccion({ permiso: "produccion:escribir" }, async function confirmarCheckAction(checkId: string, data: { desenlaceFinal: DesenlaceCheck; overrideJustificacion?: string }): Promise<CheckProduccion | null> {
   return db.transaction(async (tx) => {
     const [check] = await tx.select().from(s.checksProduccion).where(eq(s.checksProduccion.id, checkId))
     if (!check) return null
@@ -112,16 +113,16 @@ export async function confirmarCheckAction(checkId: string, data: { desenlaceFin
       comisionesReducidasPct: comisiones,
     } as unknown as CheckProduccion
   })
-}
+});
 
-export async function crearNovedadAction(proyectoId: string, data: { descripcion: string; fase: string; ventanaSlaHoras: number }): Promise<NovedadCritica> {
+export const crearNovedadAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearNovedadAction(proyectoId: string, data: { descripcion: string; fase: string; ventanaSlaHoras: number }): Promise<NovedadCritica> {
   const [nuevo] = await db.insert(s.novedadesCriticas).values({
     proyectoId, descripcion: data.descripcion, fase: data.fase, ventanaSlaHoras: data.ventanaSlaHoras, estado: 'abierta',
   }).returning()
   return nuevo as unknown as NovedadCritica
-}
+});
 
-export async function actualizarEstadoNovedadAction(id: string, estado: EstadoNovedadCritica, escaladoA?: string): Promise<NovedadCritica | null> {
+export const actualizarEstadoNovedadAction = protegerAccion({ permiso: "produccion:escribir" }, async function actualizarEstadoNovedadAction(id: string, estado: EstadoNovedadCritica, escaladoA?: string): Promise<NovedadCritica | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.novedadesCriticas).where(eq(s.novedadesCriticas.id, id))
     if (!actual) return null
@@ -130,9 +131,9 @@ export async function actualizarEstadoNovedadAction(id: string, estado: EstadoNo
     }).where(eq(s.novedadesCriticas.id, id)).returning()
     return actualizado as unknown as NovedadCritica
   })
-}
+});
 
-export async function crearComunicacionAction(proyectoId: string, data: { contenido: string; visibleAlCliente?: boolean }): Promise<ComunicacionProgreso | null> {
+export const crearComunicacionAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearComunicacionAction(proyectoId: string, data: { contenido: string; visibleAlCliente?: boolean }): Promise<ComunicacionProgreso | null> {
   return db.transaction(async (tx) => {
     const [checkBueno] = await tx.select().from(s.checksProduccion).where(and(
       eq(s.checksProduccion.proyectoId, proyectoId), eq(s.checksProduccion.desenlaceFinal, 'todo_bien'),
@@ -143,18 +144,18 @@ export async function crearComunicacionAction(proyectoId: string, data: { conten
     }).returning()
     return nuevo as unknown as ComunicacionProgreso
   })
-}
+});
 
-export async function crearSchemaAction(proyectoId: string): Promise<SchemaProyecto> {
+export const crearSchemaAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearSchemaAction(proyectoId: string): Promise<SchemaProyecto> {
   return db.transaction(async (tx) => {
     const existentes = await tx.select().from(s.schemasProyecto).where(eq(s.schemasProyecto.proyectoId, proyectoId))
     const version = existentes.length > 0 ? Math.max(...existentes.map(e => e.version)) + 1 : 1
     const [nuevo] = await tx.insert(s.schemasProyecto).values({ proyectoId, version, estado: 'borrador' }).returning()
     return nuevo as unknown as SchemaProyecto
   })
-}
+});
 
-export async function actualizarEstadoSchemaAction(id: string, estado: EstadoSchema): Promise<SchemaProyecto | null> {
+export const actualizarEstadoSchemaAction = protegerAccion({ permiso: "produccion:escribir" }, async function actualizarEstadoSchemaAction(id: string, estado: EstadoSchema): Promise<SchemaProyecto | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.schemasProyecto).where(eq(s.schemasProyecto.id, id))
     if (!actual) return null
@@ -163,14 +164,14 @@ export async function actualizarEstadoSchemaAction(id: string, estado: EstadoSch
     }).where(eq(s.schemasProyecto.id, id)).returning()
     return actualizado as unknown as SchemaProyecto
   })
-}
+});
 
-export async function crearBomAction(data: { schemaId: string; productoId: string | null; cantidad: string; unidad: string; origen: OrigenBom; homologable: boolean; itemVarianteId?: string | null }): Promise<BomMaterial> {
+export const crearBomAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearBomAction(data: { schemaId: string; productoId: string | null; cantidad: string; unidad: string; origen: OrigenBom; homologable: boolean; itemVarianteId?: string | null }): Promise<BomMaterial> {
   const [nuevo] = await db.insert(s.bomMaterial).values({ ...data, itemVarianteId: data.itemVarianteId ?? null }).returning()
   return nuevo as unknown as BomMaterial
-}
+});
 
-export async function emitirVeredictoAction(data: { proyectoId: string; tipoGate: TipoGate; veredicto: VeredictoGate; verificadorId: string }): Promise<Verificacion | null> {
+export const emitirVeredictoAction = protegerAccion({ permiso: "produccion:escribir" }, async function emitirVeredictoAction(data: { proyectoId: string; tipoGate: TipoGate; veredicto: VeredictoGate; verificadorId: string }): Promise<Verificacion | null> {
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.select().from(s.proyectos).where(eq(s.proyectos.id, data.proyectoId))
     if (!proyecto) return null
@@ -208,9 +209,9 @@ export async function emitirVeredictoAction(data: { proyectoId: string; tipoGate
 
     return nuevo as unknown as Verificacion
   })
-}
+});
 
-export async function guardarRetomaAction(proyectoId: string, data: { medidas?: Record<string, unknown>; fotos?: string[]; anomaliaDetectada?: boolean }): Promise<Retoma> {
+export const guardarRetomaAction = protegerAccion({ permiso: "produccion:escribir" }, async function guardarRetomaAction(proyectoId: string, data: { medidas?: Record<string, unknown>; fotos?: string[]; anomaliaDetectada?: boolean }): Promise<Retoma> {
   return db.transaction(async (tx) => {
     const [existente] = await tx.select().from(s.retomas).where(eq(s.retomas.proyectoId, proyectoId))
     const anomalia = data.anomaliaDetectada ?? existente?.anomaliaDetectada ?? false
@@ -238,12 +239,12 @@ export async function guardarRetomaAction(proyectoId: string, data: { medidas?: 
     }
     return retoma as unknown as Retoma
   })
-}
+});
 
-export async function crearCambioContratoAction(data: { proyectoId: string; tipoCambio: CambioContrato['tipoCambio']; descripcion: string; disparaDesfase: boolean }): Promise<CambioContrato> {
+export const crearCambioContratoAction = protegerAccion({ permiso: "contratos:escribir" }, async function crearCambioContratoAction(data: { proyectoId: string; tipoCambio: CambioContrato['tipoCambio']; descripcion: string; disparaDesfase: boolean }): Promise<CambioContrato> {
   const [nuevo] = await db.insert(s.cambiosContrato).values(data).returning()
   return nuevo as unknown as CambioContrato
-}
+});
 
 /** Postgres (postgres.js) reporta `unique_violation` como code '23505' con el nombre del constraint en `constraint_name`. */
 function esViolacionDocumentoDuplicado(err: unknown): boolean {
@@ -251,7 +252,7 @@ function esViolacionDocumentoDuplicado(err: unknown): boolean {
   return e?.code === '23505' && e?.constraint_name === 'personas_documento_unique'
 }
 
-export async function crearPersonaAction(data: Partial<Pick<Persona, 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>> & { nombre: string }): Promise<Persona> {
+export const crearPersonaAction = protegerAccion({ permiso: "equipo:escribir" }, async function crearPersonaAction(data: Partial<Pick<Persona, 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>> & { nombre: string }): Promise<Persona> {
   let nuevo
   try {
     ;[nuevo] = await db.insert(s.personas).values({
@@ -271,9 +272,9 @@ export async function crearPersonaAction(data: Partial<Pick<Persona, 'documento'
   }
   await registrarAuditLog({ accion: 'persona.crear', entidadTipo: 'persona', entidadId: nuevo.id, cambios: { nombre: nuevo.nombre } })
   return nuevo as unknown as Persona
-}
+});
 
-export async function actualizarPersonaAction(id: string, data: Partial<Pick<Persona, 'nombre' | 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>>): Promise<Persona | null> {
+export const actualizarPersonaAction = protegerAccion({ permiso: "equipo:escribir" }, async function actualizarPersonaAction(id: string, data: Partial<Pick<Persona, 'nombre' | 'documento' | 'telefono' | 'fotoUrl' | 'email' | 'direccion' | 'referencia1Nombre' | 'referencia1Relacion' | 'referencia1Telefono' | 'referencia2Nombre' | 'referencia2Relacion' | 'referencia2Telefono'>>): Promise<Persona | null> {
   let actualizado
   try {
     ;[actualizado] = await db.update(s.personas).set(data).where(eq(s.personas.id, id)).returning()
@@ -282,11 +283,11 @@ export async function actualizarPersonaAction(id: string, data: Partial<Pick<Per
     throw err
   }
   return (actualizado as unknown as Persona) ?? null
-}
+});
 
 /** F10 (2026-08-17): soft-delete — desactiva la persona y en cascada (a nivel app, no FK) todos sus roles activos,
  * para que deje de aparecer en selectores de rol (verificador, comercial, etc.) sin perder su historial. */
-export async function desactivarPersonaAction(id: string): Promise<Persona | null> {
+export const desactivarPersonaAction = protegerAccion({ permiso: "equipo:escribir" }, async function desactivarPersonaAction(id: string): Promise<Persona | null> {
   const actualizado = await db.transaction(async (tx) => {
     const [p] = await tx.update(s.personas).set({ activo: false }).where(eq(s.personas.id, id)).returning()
     if (!p) return null
@@ -295,15 +296,15 @@ export async function desactivarPersonaAction(id: string): Promise<Persona | nul
   })
   if (actualizado) await registrarAuditLog({ accion: 'persona.desactivar', entidadTipo: 'persona', entidadId: id })
   return (actualizado as unknown as Persona) ?? null
-}
+});
 
-export async function reactivarPersonaAction(id: string): Promise<Persona | null> {
+export const reactivarPersonaAction = protegerAccion({ permiso: "equipo:escribir" }, async function reactivarPersonaAction(id: string): Promise<Persona | null> {
   const [actualizado] = await db.update(s.personas).set({ activo: true }).where(eq(s.personas.id, id)).returning()
   if (actualizado) await registrarAuditLog({ accion: 'persona.reactivar', entidadTipo: 'persona', entidadId: id })
   return (actualizado as unknown as Persona) ?? null
-}
+});
 
-export async function asignarRolAction(personaId: string, rolId: RolCanonico): Promise<PersonaRol> {
+export const asignarRolAction = protegerAccion({ permiso: "equipo:escribir" }, async function asignarRolAction(personaId: string, rolId: RolCanonico): Promise<PersonaRol> {
   const resultado = await db.transaction(async (tx) => {
     const [yaExiste] = await tx.select().from(s.personasRoles).where(and(eq(s.personasRoles.personaId, personaId), eq(s.personasRoles.rolId, rolId)))
     if (yaExiste) {
@@ -318,18 +319,18 @@ export async function asignarRolAction(personaId: string, rolId: RolCanonico): P
   })
   await registrarAuditLog({ accion: 'rol.asignar', entidadTipo: 'persona', entidadId: personaId, cambios: { rolId } })
   return resultado
-}
+});
 
 /** F10 (2026-08-17): revoca un rol específico (activo=false) sin tocar los demás roles de la persona. */
-export async function desasignarRolAction(personaId: string, rolId: RolCanonico): Promise<PersonaRol | null> {
+export const desasignarRolAction = protegerAccion({ permiso: "equipo:escribir" }, async function desasignarRolAction(personaId: string, rolId: RolCanonico): Promise<PersonaRol | null> {
   const [actualizado] = await db.update(s.personasRoles).set({ activo: false })
     .where(and(eq(s.personasRoles.personaId, personaId), eq(s.personasRoles.rolId, rolId)))
     .returning()
   if (actualizado) await registrarAuditLog({ accion: 'rol.desasignar', entidadTipo: 'persona', entidadId: personaId, cambios: { rolId } })
   return (actualizado as unknown as PersonaRol) ?? null
-}
+});
 
-export async function actualizarEstadoModuloAction(id: string, estado: string): Promise<Modulo | null> {
+export const actualizarEstadoModuloAction = protegerAccion({ permiso: "produccion:escribir" }, async function actualizarEstadoModuloAction(id: string, estado: string): Promise<Modulo | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.modulos).where(eq(s.modulos.id, id))
     if (!actual) return null
@@ -337,4 +338,4 @@ export async function actualizarEstadoModuloAction(id: string, estado: string): 
     const [actualizado] = await tx.update(s.modulos).set({ estado }).where(eq(s.modulos.id, id)).returning()
     return actualizado as unknown as Modulo
   })
-}
+});
