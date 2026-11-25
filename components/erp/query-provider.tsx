@@ -15,7 +15,8 @@
 // prefijo de queryKey a propósito: el resto del ERP (taller, finanzas, catálogo...) no necesita
 // este respaldo y persistir todo el caché arriesgaría llenar el límite de localStorage sin
 // ningún beneficio real.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { iniciarOutboxCotizador } from '@/lib/data/queries/outbox-cotizador'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { crearPersisterIdb } from '@/lib/data/queries/persister-idb'
@@ -39,6 +40,11 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   // `window` no existe en el primer render server-side de este componente 'use client' -- el
   // persister solo se crea en el cliente, donde `localStorage` sí está disponible.
   const [persister] = useState(() => (typeof window === 'undefined' ? null : crearPersisterIdb()))
+
+  // Cola de escrituras del cotizador: restaura lo pendiente de una recarga y lo reenvía.
+  useEffect(() => {
+    iniciarOutboxCotizador(client)
+  }, [client])
 
   if (!persister) {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>

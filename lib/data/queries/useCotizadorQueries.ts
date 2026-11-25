@@ -10,44 +10,20 @@
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useMutationOptGenerico, upsertPorId, eliminarPorId } from './factory'
 import {
-  crearItemAction,
-  actualizarItemAction,
-  eliminarItemAction,
-  crearEspacioAction,
-  actualizarEspacioAction,
-  marcarActivaEspacioAction,
-  eliminarEspacioAction,
-  actualizarJornadasAction,
-  actualizarParametrosFinancierosAction,
-  actualizarEstadoProyectoAction,
-  crearArtefactoAction,
-  actualizarArtefactoAction,
-  duplicarEspacioAction,
-  crearGrupoItemAction,
-  actualizarGrupoItemAction,
-  eliminarGrupoItemAction,
-  reemplazarAcabadosEspacioAction,
-  actualizarClienteAction,
-  crearClienteAction,
-  actualizarProyectoAction,
-  crearContratoAction,
-  actualizarContratoAction,
   crearProductoCatalogoAction,
   actualizarProductoCatalogoAction,
-  eliminarProductoCatalogoAction,
+  actualizarProyectoAction,
 } from '@/lib/data/actions/core'
-import { crearCatalogoAcabadoAction } from '@/lib/data/actions/f7-tienda'
 import { crearProveedorAction } from '@/lib/data/actions/f6'
 import { obtenerSnapshotCotizadorAction } from '@/lib/data/actions/lecturas-cotizador'
 import {
   obtenerEstadoPublicacionPropuestaAction,
-  publicarPropuestaAction,
   listarVersionesPropuestaAction,
-  eliminarVersionPropuestaAction,
   type EstadoPublicacionPropuesta,
 } from '@/lib/data/actions/public'
 import type { PropuestaVersion } from '@/lib/data'
 import { cotizadorKeys, propuestaVersionKeys } from './queryKeys'
+import { encolarCotizador } from './outbox-cotizador'
 import {
   agregarArtefacto,
   agregarEspacio,
@@ -110,7 +86,7 @@ export function useCrearItemMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, InputItemOptimista, ItemVariante>(
     cotizadorKeys.detalle(proyectoId),
     (input) =>
-      crearItemAction({
+      encolarCotizador('crearItemAction', proyectoId, {
         id: input.id,
         varianteId: input.varianteId,
         catalogoId: input.catalogoId,
@@ -148,7 +124,7 @@ export function useActualizarItemMutation(proyectoId: string) {
     ItemVariante | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, patch }) => actualizarItemAction(id, patch),
+    ({ id, patch }) => encolarCotizador('actualizarItemAction', proyectoId, id, patch),
     (snap, { id, patch }) => actualizarItem(snap, id, patch),
     (snap, r) => (r ? upsertItem(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirItem(actual, id, previo) },
@@ -158,7 +134,7 @@ export function useActualizarItemMutation(proyectoId: string) {
 export function useEliminarItemMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { id: string }, boolean>(
     cotizadorKeys.detalle(proyectoId),
-    ({ id }) => eliminarItemAction(id),
+    ({ id }) => encolarCotizador('eliminarItemAction', proyectoId, id),
     (snap, { id }) => eliminarItem(snap, id),
     undefined,
     {
@@ -174,7 +150,7 @@ export function useCrearEspacioMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, InputEspacioOptimista, EspacioVariante>(
     cotizadorKeys.detalle(proyectoId),
     (input) =>
-      crearEspacioAction({
+      encolarCotizador('crearEspacioAction', proyectoId, {
         id: input.id,
         proyectoId,
         nombreEspacio: input.nombreEspacio,
@@ -200,7 +176,7 @@ export function useActualizarEspacioMutation(proyectoId: string) {
     EspacioVariante | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, patch }) => actualizarEspacioAction(id, patch),
+    ({ id, patch }) => encolarCotizador('actualizarEspacioAction', proyectoId, id, patch),
     (snap, { id, patch }) => actualizarEspacio(snap, id, patch),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
     // Autoguardado de "Detalles del espacio": serializa todas las escrituras de espacios para
@@ -212,7 +188,7 @@ export function useActualizarEspacioMutation(proyectoId: string) {
 export function useMarcarEspacioActivaMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { id: string }, EspacioVariante | null>(
     cotizadorKeys.detalle(proyectoId),
-    ({ id }) => marcarActivaEspacioAction(id),
+    ({ id }) => encolarCotizador('marcarActivaEspacioAction', proyectoId, id),
     (snap, { id }) => marcarEspacioActiva(snap, id),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirEspacio(actual, id, previo) },
@@ -222,7 +198,7 @@ export function useMarcarEspacioActivaMutation(proyectoId: string) {
 export function useEliminarEspacioMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { id: string }, boolean>(
     cotizadorKeys.detalle(proyectoId),
-    ({ id }) => eliminarEspacioAction(id),
+    ({ id }) => encolarCotizador('eliminarEspacioAction', proyectoId, id),
     (snap, { id }) => eliminarEspacio(snap, id),
     undefined,
     { invalidarSiempre: true },
@@ -236,7 +212,7 @@ export function useActualizarJornadasMutation(proyectoId: string) {
     EspacioVariante | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, jornadas }) => actualizarJornadasAction(id, jornadas),
+    ({ id, jornadas }) => encolarCotizador('actualizarJornadasAction', proyectoId, id, jornadas),
     (snap, { id, jornadas }) => actualizarJornadas(snap, id, jornadas),
     (snap, r) => (r ? upsertEspacio(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirEspacio(actual, id, previo) },
@@ -247,7 +223,7 @@ export function useDuplicarEspacioMutation(proyectoId: string) {
   // Duplicar no es trivialmente optimizable (ids clonados nuevos); refetch selectivo.
   return useMutationOptGenerico<CotizadorSnapshot, { id: string; opciones: { vacio: boolean; nuevoNombreEspacio?: string } }, EspacioVariante | null>(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, opciones }) => duplicarEspacioAction(id, opciones),
+    ({ id, opciones }) => encolarCotizador('duplicarEspacioAction', proyectoId, id, opciones),
     (snap) => snap,
     undefined,
     { invalidarSiempre: true },
@@ -263,7 +239,7 @@ export function useActualizarParametrosFinancierosMutation(proyectoId: string) {
     Proyecto | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, partial }) => actualizarParametrosFinancierosAction(id, partial),
+    ({ id, partial }) => encolarCotizador('actualizarParametrosFinancierosAction', proyectoId, id, partial),
     (snap, { id, partial }) => actualizarProyecto(snap, id, partial),
     (snap, r) => (r ? upsertProyecto(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
@@ -273,7 +249,7 @@ export function useActualizarParametrosFinancierosMutation(proyectoId: string) {
 export function useActualizarEstadoProyectoMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { id: string; estado: string }, Proyecto | null>(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, estado }) => actualizarEstadoProyectoAction(id, estado),
+    ({ id, estado }) => encolarCotizador('actualizarEstadoProyectoAction', proyectoId, id, estado),
     (snap, { id, estado }) => actualizarProyecto(snap, id, { estado: estado as Proyecto['estado'] }),
     (snap, r) => (r ? upsertProyecto(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
@@ -286,7 +262,7 @@ export function useCrearArtefactoMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, InputArtefactoOptimista, EspacioArtefacto>(
     cotizadorKeys.detalle(proyectoId),
     (input) =>
-      crearArtefactoAction({
+      encolarCotizador('crearArtefactoAction', proyectoId, {
         id: input.id,
         espacioVarianteId: input.espacioVarianteId,
         categoria: input.categoria,
@@ -311,7 +287,7 @@ export function useActualizarArtefactoMutation(proyectoId: string) {
     EspacioArtefacto | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, patch }) => actualizarArtefactoAction(id, patch),
+    ({ id, patch }) => encolarCotizador('actualizarArtefactoAction', proyectoId, id, patch),
     (snap, { id, patch }) => actualizarArtefacto(snap, id, patch),
     (snap, r) => (r ? upsertArtefacto(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirArtefacto(actual, id, previo) },
@@ -327,7 +303,7 @@ export function useActualizarArtefactoMutation(proyectoId: string) {
 export function useCrearGrupoItemMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { espacioVarianteId: string; nombre: string; padreId: string | null }, GrupoItem>(
     cotizadorKeys.detalle(proyectoId),
-    ({ espacioVarianteId, nombre, padreId }) => crearGrupoItemAction(espacioVarianteId, nombre, padreId),
+    ({ espacioVarianteId, nombre, padreId }) => encolarCotizador('crearGrupoItemAction', proyectoId, espacioVarianteId, nombre, padreId),
     (snap) => snap,
     undefined,
     { invalidarSiempre: true },
@@ -341,7 +317,7 @@ export function useActualizarGrupoItemMutation(proyectoId: string) {
     GrupoItem | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, cambios }) => actualizarGrupoItemAction(id, cambios),
+    ({ id, cambios }) => encolarCotizador('actualizarGrupoItemAction', proyectoId, id, cambios),
     (snap) => snap,
     undefined,
     { invalidarSiempre: true },
@@ -351,7 +327,7 @@ export function useActualizarGrupoItemMutation(proyectoId: string) {
 export function useEliminarGrupoItemMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { id: string }, boolean>(
     cotizadorKeys.detalle(proyectoId),
-    ({ id }) => eliminarGrupoItemAction(id),
+    ({ id }) => encolarCotizador('eliminarGrupoItemAction', proyectoId, id),
     (snap) => snap,
     undefined,
     { invalidarSiempre: true },
@@ -369,7 +345,7 @@ export function useReemplazarAcabadosEspacioMutation(proyectoId: string) {
     import('../contracts').EspacioVarianteAcabado[]
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ espacioVarianteId, items }) => reemplazarAcabadosEspacioAction(espacioVarianteId, items),
+    ({ espacioVarianteId, items }) => encolarCotizador('reemplazarAcabadosEspacioAction', proyectoId, espacioVarianteId, items),
     (snap) => snap,
     undefined,
     // Reemplaza todos los acabados del espacio (delete+insert): serializado para que dos
@@ -382,7 +358,7 @@ export function useReemplazarAcabadosEspacioMutation(proyectoId: string) {
 export function useCrearAcabadoCatalogoMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, Partial<CatalogoAcabado> & { nombre: string }, CatalogoAcabado>(
     cotizadorKeys.detalle(proyectoId),
-    (values) => crearCatalogoAcabadoAction(values),
+    (values) => encolarCotizador('crearCatalogoAcabadoAction', proyectoId, values),
     (snap) => snap,
     undefined,
     { invalidarSiempre: true },
@@ -405,7 +381,7 @@ export function useActualizarClienteMutation(proyectoId: string) {
     Cliente | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, partial }) => actualizarClienteAction(id, partial),
+    ({ id, partial }) => encolarCotizador('actualizarClienteAction', proyectoId, id, partial),
     (snap, { id, partial }) => actualizarCliente(snap, id, partial),
     (snap, r) => (r ? upsertCliente(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirCliente(actual, id, previo) },
@@ -423,7 +399,7 @@ export function useCrearClienteMutation(proyectoId: string) {
     Cliente
   >(
     cotizadorKeys.detalle(proyectoId),
-    (data) => crearClienteAction(data),
+    (data) => encolarCotizador('crearClienteAction', proyectoId, data),
     (snap) => snap,
     (snap, r) => upsertCliente(snap, r),
   )
@@ -434,7 +410,7 @@ export function useCrearClienteMutation(proyectoId: string) {
 export function useVincularClienteProyectoMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { id: string; clienteId: string }, Proyecto | null>(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, clienteId }) => actualizarProyectoAction(id, { clienteId }),
+    ({ id, clienteId }) => encolarCotizador('actualizarProyectoAction', proyectoId, id, { clienteId }),
     (snap, { id, clienteId }) => actualizarProyecto(snap, id, { clienteId }),
     (snap, r) => (r ? upsertProyecto(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
@@ -446,7 +422,7 @@ export function useVincularClienteProyectoMutation(proyectoId: string) {
 export function useCrearContratoMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, DatosContratoNuevo, Contrato>(
     cotizadorKeys.detalle(proyectoId),
-    (data) => crearContratoAction(data),
+    (data) => encolarCotizador('crearContratoAction', proyectoId, data),
     (snap) => snap,
     (snap, r) => upsertContrato(snap, r),
   )
@@ -458,7 +434,7 @@ export function useCrearContratoMutation(proyectoId: string) {
 export function useActualizarContratoMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, { id: string; data: DatosContratoEdicion }, Contrato | null>(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, data }) => actualizarContratoAction(id, data),
+    ({ id, data }) => encolarCotizador('actualizarContratoAction', proyectoId, id, data),
     (snap, { id, data }) => actualizarContrato(snap, id, data as Partial<Contrato>, data.hitos),
     (snap, r) => (r ? upsertContrato(snap, r) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirContrato(actual, id, previo) },
@@ -488,7 +464,7 @@ export function usePublicarPropuestaMutation(proyectoId: string) {
   const qc = useQueryClient()
   return useMutationOptGenerico<PropuestaVersion[], string | undefined, PropuestaVersion>(
     queryKey,
-    (nombre) => publicarPropuestaAction(proyectoId, undefined, nombre ?? null),
+    (nombre) => encolarCotizador('publicarPropuestaAction', proyectoId, proyectoId, undefined, nombre ?? null),
     (lista, nombre) => {
       const maxVersion = lista.reduce((max, v) => Math.max(max, v.version), 0)
       const optimista: PropuestaVersion = {
@@ -529,7 +505,7 @@ export function useEliminarVersionPropuestaMutation(proyectoId: string) {
   const qc = useQueryClient()
   return useMutationOptGenerico<PropuestaVersion[], string, boolean>(
     queryKey,
-    (id) => eliminarVersionPropuestaAction(id),
+    (id) => encolarCotizador('eliminarVersionPropuestaAction', proyectoId, id),
     (lista, id) => eliminarPorId(lista, id),
     undefined,
     {
@@ -548,7 +524,7 @@ export function useCrearProductoCatalogoMutation(proyectoId: string) {
     ProductoCatalogo | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    (data) => crearProductoCatalogoAction(data),
+    (data) => encolarCotizador('crearProductoCatalogoAction', proyectoId, data),
     (snap) => snap,
     (snap, row) => (row ? { ...snap, catalogo: upsertPorId(snap.catalogo, row) } : snap),
   )
@@ -561,7 +537,7 @@ export function useActualizarProductoCatalogoMutation(proyectoId: string) {
     ProductoCatalogo | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, patch }) => actualizarProductoCatalogoAction(id, patch),
+    ({ id, patch }) => encolarCotizador('actualizarProductoCatalogoAction', proyectoId, id, patch),
     (snap, { id, patch }) => ({
       ...snap,
       catalogo: snap.catalogo.map((p) => (p.id === id ? { ...p, ...patch } : p)),
@@ -581,7 +557,7 @@ export function useActualizarProductoCatalogoMutation(proyectoId: string) {
 export function useEliminarProductoCatalogoMutation(proyectoId: string) {
   return useMutationOptGenerico<CotizadorSnapshot, string, boolean>(
     cotizadorKeys.detalle(proyectoId),
-    (id) => eliminarProductoCatalogoAction(id),
+    (id) => encolarCotizador('eliminarProductoCatalogoAction', proyectoId, id),
     (snap, id) => ({ ...snap, catalogo: snap.catalogo.filter((p) => p.id !== id) }),
     undefined,
     {
@@ -603,7 +579,7 @@ export function useCrearProveedorCotizadorMutation(proyectoId: string) {
     Proveedor
   >(
     cotizadorKeys.detalle(proyectoId),
-    (data) => crearProveedorAction(data),
+    (data) => encolarCotizador('crearProveedorAction', proyectoId, data),
     (snap) => snap,
     (snap, row) => ({ ...snap, proveedores: upsertPorId(snap.proveedores, row) }),
   )
@@ -616,7 +592,7 @@ export function useActualizarProyectoMutation(proyectoId: string) {
     Proyecto | null
   >(
     cotizadorKeys.detalle(proyectoId),
-    ({ id, partial }) => actualizarProyectoAction(id, partial),
+    ({ id, partial }) => encolarCotizador('actualizarProyectoAction', proyectoId, id, partial),
     (snap, { id, partial }) => actualizarProyecto(snap, id, partial),
     (snap, row) => (row ? upsertProyecto(snap, row) : snap),
     { revertirOptimista: (actual, { id }, previo) => revertirProyecto(actual, id, previo) },
