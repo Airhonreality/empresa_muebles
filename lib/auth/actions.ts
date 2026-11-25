@@ -14,6 +14,10 @@ import {
   type EstadoCuentaEmpleado,
 } from './session'
 import { registrarAuditLog } from './audit'
+import { protegerAccion } from './accion'
+import { requireSesionEmpleado } from './session'
+import { NoAutenticadoError } from './errors'
+import { exigirPuedeAsignarRol } from './invitaciones'
 import type { RolCanonico } from '@/lib/data/contracts'
 
 export async function logoutAction(): Promise<void> {
@@ -38,26 +42,36 @@ export async function logoutEmpleadoAction(): Promise<void> {
 // Tampoco es Server Action, mismo motivo que el login: ver
 // app/api/erp/activar/route.ts y components/veta/activar-cuenta-form.tsx.
 
-/** Llamado imperativamente desde app/erp/equipo/page.tsx (client component). */
-export async function crearInvitacionEmpleadoAction(input: {
-  personaId: string
-  email: string
-  rol: RolCanonico
-  nombre: string
-}): Promise<InvitacionResult> {
-  const resultado = await crearInvitacionEmpleado(input)
-  if (resultado.ok) {
-    await registrarAuditLog({
-      accion: 'acceso.generar_o_editar',
-      entidadTipo: 'persona',
-      entidadId: input.personaId,
-      cambios: { email: input.email },
-    })
-  }
-  return resultado
-}
+/** Llamado imperativamente desde app/erp/equipo/page.tsx (client component). Permiso: equipo:escribir (solo admin). */
+export const crearInvitacionEmpleadoAction = protegerAccion(
+  { permiso: 'equipo:escribir' },
+  async function crearInvitacionEmpleadoAction(input: {
+    personaId: string
+    email: string
+    rol: RolCanonico
+    nombre: string
+  }): Promise<InvitacionResult> {
+    const sesion = await requireSesionEmpleado()
+    if (!sesion) throw new NoAutenticadoError()
+    exigirPuedeAsignarRol(sesion.rol, input.rol)
 
-/** Llamado imperativamente desde app/erp/equipo/page.tsx (client component). */
-export async function listarEstadoCuentasAction(): Promise<EstadoCuentaEmpleado[]> {
-  return listarEstadoCuentasEmpleado()
-}
+    const resultado = await crearInvitacionEmpleado(input)
+    if (resultado.ok) {
+      await registrarAuditLog({
+        accion: 'acceso.generar_o_editar',
+        entidadTipo: 'persona',
+        entidadId: input.personaId,
+        cambios: { email: input.email },
+      })
+    }
+    return resultado
+  },
+)
+
+/** Llamado imperativamente desde app/erp/equipo/page.tsx (client component). Solo lectura: equipo:leer. */
+export const listarEstadoCuentasAction = protegerAccion(
+  { permiso: 'equipo:leer' },
+  async function listarEstadoCuentasAction(): Promise<EstadoCuentaEmpleado[]> {
+    return listarEstadoCuentasEmpleado()
+  },
+)
