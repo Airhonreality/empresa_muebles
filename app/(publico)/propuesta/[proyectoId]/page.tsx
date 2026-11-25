@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import {
   obtenerPropuestaPublicaAction,
-  previsualizarPropuestaPublicaAction,
   obtenerVersionPropuestaPorNumeroAction,
   hidratarClientePropuesta,
   type PropuestaPublicaData,
@@ -37,17 +36,14 @@ export default async function PropuestaPublicaPage({ params, searchParams }: Pag
   // ensuciar el histórico (preview, nunca se guarda) o revisar una versión pasada puntual
   // (version=N) antes de decidir si la elimina — sin esto, la única vista posible era siempre
   // "la última publicada", que no alcanza para el flujo de control de calidad pedido.
+  // La vista previa sin publicar NO vive aquí: el parámetro ?preview ya no se atiende en la ruta pública
+  // (cambio de comportamiento, 2026-11-25). Ahora es /erp/vista-previa-propuesta/[proyectoId], con sesión.
   let data: PropuestaPublicaData | null
-  let banner: 'preview' | { version: number } | null = null
 
-  if (sp.preview === '1' || sp.preview === 'true') {
-    data = await previsualizarPropuestaPublicaAction(proyectoId)
-    banner = 'preview'
-  } else if (sp.version) {
+  if (sp.version) {
     const version = Number(sp.version)
     const fila = Number.isFinite(version) ? await obtenerVersionPropuestaPorNumeroAction(proyectoId, version) : null
     data = fila ? (fila.snapshotJson as PropuestaPublicaData) : null
-    if (fila) banner = { version: fila.version }
   } else {
     data = await obtenerPropuestaPublicaAction(proyectoId)
   }
@@ -65,11 +61,5 @@ export default async function PropuestaPublicaPage({ params, searchParams }: Pag
     )
   }
 
-  const bannerNode = banner === 'preview' ? (
-    <div className="bg-gold-500/90 px-4 py-2 text-center text-xs font-semibold text-white print:hidden">
-      🔍 Vista previa — cambios sin publicar. El cliente NO ve esto todavía.
-    </div>
-  ) : undefined
-
-  return <PropuestaPublicaClient data={data} banner={bannerNode} />
+  return <PropuestaPublicaClient data={data} />
 }

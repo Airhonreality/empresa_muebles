@@ -74,7 +74,7 @@ export function VersionesPropuestaModal({ proyectoId, onClose }: VersionesPropue
           variant="secondary"
           size="md"
           className="mb-4 w-full justify-center"
-          onClick={() => window.open(`/propuesta/${proyectoId}?preview=1`, '_blank')}
+          onClick={() => window.open(`/erp/vista-previa-propuesta/${proyectoId}`, '_blank')}
         >
           👁 Preview sin guardar
         </Button>
