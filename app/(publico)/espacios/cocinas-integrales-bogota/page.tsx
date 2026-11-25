@@ -2,20 +2,26 @@ import type { Metadata } from 'next';
 import { EspacioLanding, type EspacioLandingConfig } from '@/components/veta/espacio-landing';
 import { SITE_URL } from '@/lib/seo/jsonld';
 import { socialMeta } from '@/lib/seo/social';
-import { obtenerGaleriaEspacioAction } from '@/lib/data/actions/public';
+import { obtenerGaleriaEspacioAction, listarTestimoniosPublicadosAction } from '@/lib/data/actions/public';
 
 const TIPO_ESPACIO_CODIGO = 'cocina';
 
-export const dynamic = 'force-dynamic';
+// Caché de una hora: la página no es de sesión, y así no consulta la base en cada visita.
+export const revalidate = 3600;
 
 const CONFIG: EspacioLandingConfig = {
   slug: 'cocinas-integrales-bogota',
   nombreCategoria: 'Cocinas Integrales',
-  h1: 'Tus espacios a medida. Sin intermediarios.',
-  subtitulo: 'Nuestros clientes estrenan cocina y tranquilidad.',
+  h1: 'Cocinas integrales a medida en Bogotá',
+  subtitulo: 'Diseño y fabricación directa: interiores en Madecor RH, herrajes europeos y acabados a tu medida.',
   parrafoDescriptor:
-    'Cocinas integrales a medida en Bogotá. Materiales de primera, Madecor RH y acabados personalizados.',
+    'Fabricantes directos en Bogotá. Sin intermediarios: diseñamos, fabricamos e instalamos tu cocina integral.',
   imageKey: 'espaciosCocinas',
+  ctaTexto: 'Agenda tu asesoría sin costo',
+  direccion: 'Cra. 72a #71A 57, Bogotá',
+  cobertura: 'Bogotá, Chía, Cota y Cajicá',
+  ocultarPrecio3d: true,
+  barraMovil: true,
   materiales: [
     {
       titulo: 'Fachadas y Estructura',
@@ -27,12 +33,12 @@ const CONFIG: EspacioLandingConfig = {
       titulo: 'Funciones y Herrajes',
       cuerpo:
         'La calidad se siente al tacto. Integramos Herrajes Europeos (Blum, Hettich o Ducasse) con cierre lento, brazos neumáticos y rieles de carga pesada. Además, diseñamos la perfilería oculta con iluminación LED y sensores de movimiento integrados.',
-      imageSrc: '/images/home/IMG_20260418_142949279_HDR_AE.jpg',
+      imageSrc: '/images/home/cocina-herrajes-1600.webp',
     },
     {
-      titulo: 'Mesones',
+      titulo: 'Mesón incluido en tu cocina',
       cuerpo:
-        'Asesoramos la elección de la superficie ideal según el uso que le des a tu cocina. Trabajamos con Quarztone para resistencia al impacto, Granito natural para durabilidad clásica, y Piedra Sinterizada (Neolith/Dekton) para resistencia total al calor y rayones.',
+        'El mesón se diseña y se instala como parte de tu cocina integral. Te asesoramos la superficie según el uso: Quarztone para resistencia al impacto, granito natural para durabilidad clásica o piedra sinterizada para resistencia al calor y a los rayones.',
       imageSrc: '/images/home/mesones.jpg',
     },
   ],
@@ -44,6 +50,10 @@ const CONFIG: EspacioLandingConfig = {
     {
       pregunta: '¿Qué materiales usan para las cocinas integrales?',
       respuesta: 'Usamos interiores exclusivamente en Madecor RH (Resistente a la humedad) para garantizar la durabilidad a largo plazo. Para las fachadas, ofrecemos desde melaminas texturizadas hasta pintura en poliuretano o chapillas de madera maciza. Los mesones los trabajamos en Granito natural, Quarztone, o Piedra Sinterizada según la resistencia requerida.'
+    },
+    {
+      pregunta: '¿Hacen solo el mesón?',
+      respuesta: 'No. Trabajamos el mesón únicamente como parte de una cocina integral completa.'
     }
   ]
 };
@@ -62,6 +72,26 @@ export const metadata: Metadata = {
 };
 
 export default async function CocinasIntegralesPage() {
-  const galeria = await obtenerGaleriaEspacioAction(TIPO_ESPACIO_CODIGO);
-  return <EspacioLanding config={CONFIG} galeria={galeria} tipoEspacio={TIPO_ESPACIO_CODIGO} />;
+  const [galeria, todos] = await Promise.all([
+    obtenerGaleriaEspacioAction(TIPO_ESPACIO_CODIGO),
+    listarTestimoniosPublicadosAction().catch(() => []),
+  ]);
+
+  // Prioriza testimonios de cocinas; si hay menos de tres, completa con los generales.
+  const conTexto = todos.filter((t) => t.contenido && t.contenido.trim().length > 0);
+  const deCocina = conTexto.filter((t) => (t.tipoProyecto ?? '').toLowerCase().includes('cocina'));
+  const resto = conTexto.filter((t) => !deCocina.includes(t));
+  const testimonios = [...deCocina, ...resto].slice(0, 3).map((t) => ({
+    contenido: t.contenido,
+    nombreAutor: t.nombreAutor,
+    barrio: t.barrio,
+  }));
+
+  return (
+    <EspacioLanding
+      config={{ ...CONFIG, testimonios }}
+      galeria={galeria}
+      tipoEspacio={TIPO_ESPACIO_CODIGO}
+    />
+  );
 }

@@ -63,6 +63,17 @@ export interface EspacioLandingConfig {
   imageKey: keyof typeof HOME_IMAGES_SEO;
   materiales?: { titulo: string; cuerpo: string; imageSrc?: string; imageAlt?: string }[];
   faqs?: { pregunta: string; respuesta: string }[];
+  /** Texto del CTA principal del hero. Por defecto: "Agenda tu asesoría gratuita". */
+  ctaTexto?: string;
+  /** Dirección del taller y zona de cobertura, visibles junto al hero (transparencia). */
+  direccion?: string;
+  cobertura?: string;
+  /** Testimonios publicados a mostrar antes de las preguntas frecuentes. */
+  testimonios?: { contenido: string; nombreAutor: string | null; barrio: string | null }[];
+  /** Oculta el precio del diseño 3D en el cierre (el valor sigue dentro del modal). */
+  ocultarPrecio3d?: boolean;
+  /** Barra fija de contacto en móvil. */
+  barraMovil?: boolean;
 }
 
 const CTA_CLASS =
@@ -139,8 +150,15 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
               {parrafoDescriptor}
             </p>
 
+            {(config.direccion || config.cobertura) && (
+              <p className="mt-6 text-gold-100/60 text-xs lg:text-sm font-light leading-relaxed">
+                {config.direccion && <span className="block">Taller: {config.direccion}</span>}
+                {config.cobertura && <span className="block">Cobertura: {config.cobertura}</span>}
+              </p>
+            )}
+
             <div className="mt-12 flex items-center gap-6">
-              <AsesoriaBoton className={CTA_CLASS}>Agenda tu asesoría gratuita</AsesoriaBoton>
+              <AsesoriaBoton className={CTA_CLASS}>{config.ctaTexto ?? 'Agenda tu asesoría gratuita'}</AsesoriaBoton>
             </div>
           </div>
         </div>
@@ -358,6 +376,28 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
         </section>
       )}
 
+      {/* 5b. Testimonios publicados (prueba social) */}
+      {config.testimonios && config.testimonios.length > 0 && (
+        <section className="bg-bg-alt py-20 border-b border-border-subtle">
+          <div className="mx-auto max-w-6xl px-6">
+            <h2 className="font-display text-3xl md:text-4xl font-medium text-text-heading tracking-tight mb-12 text-center">
+              Lo que dicen <span className="font-serif italic text-gold-700 font-light">nuestros clientes</span>
+            </h2>
+            <div className="grid gap-8 md:grid-cols-3">
+              {config.testimonios.map((t, i) => (
+                <figure key={i} className="flex flex-col border-t border-border-subtle pt-6">
+                  <blockquote className="text-text-primary font-light leading-relaxed mb-6">“{t.contenido}”</blockquote>
+                  <figcaption className="mt-auto text-sm text-text-heading font-medium">
+                    {t.nombreAutor ?? 'Cliente'}
+                    {t.barrio && <span className="block text-xs text-text-muted font-light">{t.barrio}</span>}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 6. Preguntas Frecuentes */}
       {config.faqs && config.faqs.length > 0 && (
         <section className="bg-bg-paper py-24 border-b border-border-subtle">
@@ -385,7 +425,9 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
           </h2>
           <p className="mt-8 text-gold-100/70 text-xl max-w-2xl mx-auto font-light leading-relaxed">
             Visita, asesoría técnica y cotización sin costo.<br />
-            <span className="text-white/60 text-base mt-2 block">Diseño 3D opcional por {formattedPrice} (deducible del contrato).</span>
+            {!config.ocultarPrecio3d && (
+              <span className="text-white/60 text-base mt-2 block">Diseño 3D opcional por {formattedPrice} (deducible del contrato).</span>
+            )}
           </p>
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
             <AsesoriaBoton precio3dFormatted={formattedPrice}>
@@ -394,6 +436,15 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
           </div>
         </div>
       </section>
+
+      {config.barraMovil && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-gold-500/30 bg-charcoal-950/95 px-4 py-3 backdrop-blur-md md:hidden">
+          <span className="text-xs text-gold-100/80 font-light">Asesoría sin costo</span>
+          <AsesoriaBoton className="inline-flex items-center justify-center rounded-sm bg-gold-600 px-5 py-2.5 text-sm font-bold text-white">
+            Agendar
+          </AsesoriaBoton>
+        </div>
+      )}
 
       <script
         type="application/ld+json"

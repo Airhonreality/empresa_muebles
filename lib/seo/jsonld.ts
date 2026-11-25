@@ -63,7 +63,7 @@ export function getHomeJsonLd(testimonios: TestimonioJsonLd[]) {
           addressLocality: 'Bogotá',
         },
         sameAs: SAME_AS,
-        areaServed: 'Bogotá',
+        areaServed: ['Bogotá', 'Chía', 'Cota', 'Cajicá'],
         priceRange: 'Consultar',
         knowsLanguage: 'es-CO',
         review: testimonios.map((t) => ({
