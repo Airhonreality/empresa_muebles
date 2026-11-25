@@ -1,7 +1,7 @@
 'use server'
 // Server Actions del cluster F-03 (portafolio de proyectos) + testimonios + módulos-artefactos + F-15 (bitácora).
 // Porta 1:1 la lógica de lib/data/mock-store.ts. Ver plan_f10_migracion.md §3.1d.
-import { eq, count, desc } from 'drizzle-orm'
+import { and, eq, count, desc } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import type {
@@ -15,14 +15,15 @@ import { protegerAccion } from '@/lib/auth/accion'
 // <DataStoreProvider> (no hay React ni useDataStore() disponible ahí). Réplica del patrón
 // dual DATA_IMPL de lib/auth/session.ts: drizzle consulta directo, mock usa el singleton
 // getDataStore() (server-only, no el hook de React) — t-133/t-134.
-export const obtenerPortafolioPorSlugAction = protegerAccion({ publica: true, motivo: "Página pública /portafolio/[slug] (generateMetadata). NOTA: no filtra publicado=true (hallazgo)." }, async function obtenerPortafolioPorSlugAction(slug: string): Promise<Portafolio | null> {
+// Solo devuelve entradas publicado = true: un slug de borrador no se sirve en la página pública.
+export const obtenerPortafolioPorSlugAction = protegerAccion({ publica: true, motivo: "Página pública /portafolio/[slug] (generateMetadata). Solo publicado=true." }, async function obtenerPortafolioPorSlugAction(slug: string): Promise<Portafolio | null> {
   if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
-    const [row] = await db.select().from(s.portafolio).where(eq(s.portafolio.slug, slug)).limit(1)
+    const [row] = await db.select().from(s.portafolio).where(and(eq(s.portafolio.slug, slug), eq(s.portafolio.publicado, true))).limit(1)
     return (row as unknown as Portafolio) ?? null
   }
   const { getDataStore } = await import('@/lib/data/store')
   const store = getDataStore()
-  return store.portafolio.listar().find((p) => p.slug === slug) ?? null
+  return store.portafolio.listar().find((p) => p.slug === slug && p.publicado === true) ?? null
 });
 
 // El slug ya NO lo escribe el humano (hallazgo 2026-08-21: un slug tipeado a mano rompió la
@@ -138,26 +139,27 @@ export const crearBitacoraArticuloAction = protegerAccion({ permiso: "marketing:
   return nuevo as unknown as BitacoraArticulo
 });
 
-export const obtenerBitacoraPorSlugAction = protegerAccion({ publica: true, motivo: "Página pública /bitacora/[slug]. NOTA: no filtra publicado=true (hallazgo)." }, async function obtenerBitacoraPorSlugAction(slug: string): Promise<BitacoraArticulo | null> {
+// Solo artículos publicado = true (mismo criterio en la página, el sitemap y llms.txt).
+export const obtenerBitacoraPorSlugAction = protegerAccion({ publica: true, motivo: "Página pública /bitacora/[slug]. Solo publicado=true." }, async function obtenerBitacoraPorSlugAction(slug: string): Promise<BitacoraArticulo | null> {
   if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
-    const [row] = await db.select().from(s.bitacoraArticulos).where(eq(s.bitacoraArticulos.slug, slug)).limit(1)
+    const [row] = await db.select().from(s.bitacoraArticulos).where(and(eq(s.bitacoraArticulos.slug, slug), eq(s.bitacoraArticulos.publicado, true))).limit(1)
     return (row as unknown as BitacoraArticulo) ?? null
   }
   const { getDataStore } = await import('@/lib/data/store')
   const store = getDataStore()
   // Asumiendo que el store tiene la colección de bitacora (si no, fallará de forma limpia)
   if (!store.bitacoraArticulos) return null
-  return store.bitacoraArticulos.listar().find((p) => p.slug === slug) ?? null
+  return store.bitacoraArticulos.listar().find((p) => p.slug === slug && p.publicado === true) ?? null
 });
 
-export const listarBitacoraAction = protegerAccion({ publica: true, motivo: "Sitemap/llms/bitacora públicos. NOTA: no filtra publicado=true (hallazgo)." }, async function listarBitacoraAction(): Promise<BitacoraArticulo[]> {
+export const listarBitacoraAction = protegerAccion({ publica: true, motivo: "Sitemap/llms/bitacora públicos. Solo publicado=true." }, async function listarBitacoraAction(): Promise<BitacoraArticulo[]> {
   if ((process.env.DATA_IMPL ?? 'mock') === 'drizzle') {
-    const rows = await db.select().from(s.bitacoraArticulos).orderBy(s.bitacoraArticulos.fechaPublicacion)
+    const rows = await db.select().from(s.bitacoraArticulos).where(eq(s.bitacoraArticulos.publicado, true)).orderBy(s.bitacoraArticulos.fechaPublicacion)
     return rows as unknown as BitacoraArticulo[]
   }
   const { getDataStore } = await import('@/lib/data/store')
   const store = getDataStore()
   if (!store.bitacoraArticulos) return []
-  return store.bitacoraArticulos.listar()
+  return store.bitacoraArticulos.listar().filter((a) => a.publicado === true)
 });
 
