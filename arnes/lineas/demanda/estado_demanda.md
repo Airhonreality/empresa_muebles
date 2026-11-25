@@ -205,7 +205,7 @@ Hecho hoy:
 2. **Mapear manualmente el resto de conversiones:** asignar a cada lead con clic de Google (27) su proyecto del ERP, y aplicar la escala de 0 a 10 según el monto cotizado. Herramienta interactiva pendiente de construir.
 
 **Decisiones del Supervisor pendientes:**
-- Aprobar la escala de puntaje (70 M+ = 10; 40–70 M = 8; 20–40 M = 7; 10–20 M = 6; 5–10 M = 5; <5 M = 4; lead sin monto = 2; sin contacto útil = 0).
+- ~~Aprobar la escala de puntaje~~ **Aprobada por Javier (2026-11-25)**: 70 M+ = 10; 40–70 M = 8; 20–40 M = 7; 10–20 M = 6; 5–10 M = 5; <5 M = 4; lead sin monto = 2; sin contacto útil = 0. Revisar cuando haya más contratos enlazados.
 - Campaña de prueba de audiencias de mercado inmobiliario (Chía, Cota, Cajicá) según `PLAN_SEGMENTACION_ALTO_VALOR`.
 - Cambio en ERP: enlaces con token por propuesta enviada (registra teléfono, proyecto y fecha) para que el mapeo de leads nuevos sea automático. Requiere checkpoint.
 - Reautorizar la cuenta de Google Ads para la Data Manager API y automatizar la subida (la API de carga anterior está restringida a usuarios existentes).
