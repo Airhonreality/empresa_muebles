@@ -188,3 +188,26 @@ La landing `/espacios/pisos-de-madera` (F-14) deja de estar pendiente de desbloq
 
 Pendiente del Supervisor: label de conversión "Contacto Pisos" en Google Ads para `NEXT_PUBLIC_GTAG_SEND_TO_PISOS`.
 
+
+## Actualización 2026-11-25 — Caída de leads, cruce de conversiones y pendientes
+
+Documentos: `01_analisis_campanas/2026-08-22_a_2026-11-25_Veta_Carp/` (`AUDITORIA_CAIDA_LEADS`, `DIAGNOSTICO_PAGINA_COCINAS`, `CRUCE_LEADS_CONVERSIONES`, `PLAN_SEGMENTACION_ALTO_VALOR`).
+
+Hecho hoy:
+- Negativas de mesón, marcas, DIY y carpintero aplicadas en la campaña activa; exclusiones geográficas (95 municipios, Chía/Cota/Cajicá fuera de la exclusión); tCPA quitado; aplicación automática de recomendaciones desactivada.
+- Número de WhatsApp del modal corregido (canal general en espacios; Jair Daza solo en pisos).
+- Landing de cocinas con los cambios aprobados (H1, mesón sin remisiones, testimonios, dirección y cobertura, CTA, caché).
+- Política de mesón corregida en `nucleo/logica_de_negocio.md` §Calificación 3: cambios de mesón suelto se descartan; la web y los anuncios no remiten a ningún proveedor.
+- Acción de conversión offline creada en Google Ads: "Lead alto valor (offline, puntaje 0-10)".
+
+**Pendiente (ejecución manual):**
+1. **Subir el CSV de conversiones** `carga_conversiones_alto_valor.csv` en Google Ads (Herramientas → Conversiones → Cargas). Son 3 filas: Iván Pérez (10), Santiago Salgado (5), Martha Nazate (2). Vence el 7-dic-2026 (90 días desde el clic del 8-sep).
+2. **Mapear manualmente el resto de conversiones:** asignar a cada lead con clic de Google (27) su proyecto del ERP, y aplicar la escala de 0 a 10 según el monto cotizado. Herramienta interactiva pendiente de construir.
+
+**Decisiones del Supervisor pendientes:**
+- Aprobar la escala de puntaje (70 M+ = 10; 40–70 M = 8; 20–40 M = 7; 10–20 M = 6; 5–10 M = 5; <5 M = 4; lead sin monto = 2; sin contacto útil = 0).
+- Campaña de prueba de audiencias de mercado inmobiliario (Chía, Cota, Cajicá) según `PLAN_SEGMENTACION_ALTO_VALOR`.
+- Cambio en ERP: enlaces con token por propuesta enviada (registra teléfono, proyecto y fecha) para que el mapeo de leads nuevos sea automático. Requiere checkpoint.
+- Reautorizar la cuenta de Google Ads para la Data Manager API y automatizar la subida (la API de carga anterior está restringida a usuarios existentes).
+
+**Restricción de tratamiento:** el mapeo de conversiones con los chats de WhatsApp se hace manualmente o con exportaciones que entrega el titular. No se automatiza la lectura de mensajes de terceros.
