@@ -42,6 +42,14 @@ export class ErrorTopesNoConfigurados extends Error {
   }
 }
 
+/** Falta un valor obligatorio de configuracion_asistente (precios). Mensaje apto para el usuario. */
+export class ErrorConfiguracionIncompleta extends Error {
+  constructor(mensaje: string) {
+    super(mensaje)
+    this.name = 'ErrorConfiguracionIncompleta'
+  }
+}
+
 export interface LlamadaRegistro {
   usuarioId: string
   tipo: 'herramienta' | 'modelo'
