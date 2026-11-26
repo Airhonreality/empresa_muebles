@@ -5,6 +5,8 @@ import type { Mensaje, ConfiguracionTurno, DepsTurno } from './bucle'
 import { ErrorTopesNoConfigurados } from './bucle'
 import type { ClaveRegistro, RepositorioClaves } from './claves'
 import { atenderMensaje, ErrorConversacionNoEncontrada, tituloDe, type RepositorioConversaciones } from './servicio'
+import type { DefinicionAsistente } from './herramientas'
+import { z } from 'zod'
 
 const CONFIG: ConfiguracionTurno = {
   modelo: { proveedor: 'openrouter', modelo: 'modelo-prueba' },
@@ -117,6 +119,40 @@ const casos: Array<[string, () => Promise<void>]> = [
     )
     assert.equal(modelo.doGenerateCalls.length, 0)
     assert.equal(porId.size, 0)
+  }],
+  ['propuesta en el primer turno: la conversación se crea y la propuesta queda ligada a ella', async () => {
+    const modelo = new MockLanguageModelV4({
+      doGenerate: [
+        {
+          content: [{ type: 'tool-call' as const, toolCallId: 'c1', toolName: 'ejecutar', input: JSON.stringify({ dominio: 'finanzas', operacion: 'registrar', argumentos: { monto: 5 } }) }],
+          finishReason: { unified: 'tool-calls' as const, raw: undefined },
+          usage: { inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined }, outputTokens: { total: 1, text: 1, reasoning: undefined } },
+          warnings: [],
+        },
+        respuestaTexto('propuesta lista'),
+      ],
+    })
+    const { repo, porId } = repoEnMemoria()
+    const filas = new Map<string, { conversacionId: string }>()
+    const escritura: DefinicionAsistente = {
+      nombre: 'finanzas.registrar', dominio: 'finanzas', operacion: 'registrar', descripcion: 'registra (prueba)',
+      permiso: 'finanzas:escribir', esEscritura: true, esquema: z.object({ monto: z.number() }),
+      ejecutar: async () => { throw new Error('no debe ejecutarse') },
+    }
+    const base = turnoFalso(modelo)
+    const turno: DepsTurno = {
+      ...base,
+      herramientas: [escritura],
+      propuestas: {
+        insertar: async (p) => { filas.set('p-1', { conversacionId: p.conversacionId }); return 'p-1' },
+        obtener: async () => null,
+        cambiarEstado: async () => false,
+      },
+    }
+    const r = await atenderMensaje({ usuario: { ...sesionDe('u-1'), rol: 'finanzas' }, mensaje: 'registra' }, { conversaciones: repo, cargarConfiguracion: async () => CONFIG, turno })
+    assert.equal(porId.size, 1)
+    assert.equal(r.propuestas?.length, 1)
+    assert.equal(filas.get('p-1')?.conversacionId, r.conversacionId)
   }],
   ['tituloDe toma las primeras palabras y recorta a 60 caracteres', async () => {
     assert.equal(tituloDe('  cotización   de Juan Pérez para la cocina del apartamento nuevo  '), 'cotización de Juan Pérez para la cocina del')

@@ -65,7 +65,12 @@ export async function turnoHttp(sesion: SesionEmpleado | null, cuerpo: unknown, 
     const r = await atender({ usuario: sesion, conversacionId: validada.data.conversacionId, mensaje: validada.data.mensaje })
     return {
       status: 200,
-      body: { respuesta: r.respuesta, conversacionId: r.conversacionId, ...(r.alerta ? { alerta: r.alerta } : {}) },
+      body: {
+        respuesta: r.respuesta,
+        conversacionId: r.conversacionId,
+        ...(r.alerta ? { alerta: r.alerta } : {}),
+        ...(r.propuestas ? { propuestas: r.propuestas } : {}),
+      },
     }
   } catch (err) {
     return respuestaDeError(err)

@@ -14,6 +14,8 @@ import {
   type LlamadaRegistro,
 } from './bucle'
 import { crearHerramientas, type AccionesLectura } from './herramientas'
+import { operacionCotizacionCrearCompleta } from './operaciones/cotizacion-completa'
+import type { EjecutorTransaccion } from './operaciones/cotizacion-completa'
 
 const AHORA = new Date('2026-11-25T15:00:00.000Z')
 
@@ -226,6 +228,47 @@ const casos: Array<[string, () => Promise<void>]> = [
       (err: unknown) => err instanceof ErrorTopesNoConfigurados && (err as Error).message === MENSAJE_TOPES_NO_CONFIGURADOS,
     )
     assert.equal(modelo.doGenerateCalls.length, 0)
+  }],
+  ['cotización por el asistente: queda como propuesta pendiente y ninguna escritura real', async () => {
+    const CLIENTE = '22222222-2222-4222-8222-222222222222'
+    const PRODUCTO = '33333333-3333-4333-8333-333333333333'
+    const escrituras: string[] = []
+    const transaccion: EjecutorTransaccion = async () => {
+      escrituras.push('transaccion')
+      throw new Error('no debe ejecutarse durante el turno')
+    }
+    const lectura = {
+      clienteNombre: async () => 'Juan Pérez',
+      productoCatalogo: async () => ({ precioPublico: '100000.00', anulado: false }),
+    }
+    const herramientas = [...crearHerramientas(ACCIONES), operacionCotizacionCrearCompleta({ lectura, transaccion, ahora: () => AHORA })]
+    const modelo = new MockLanguageModelV4({
+      doGenerate: [
+        respuestaHerramienta('ejecutar', {
+          dominio: 'cotizacion',
+          operacion: 'crear_completa',
+          argumentos: {
+            cliente: { id: CLIENTE },
+            nombreProyecto: 'Cocina',
+            espacios: [{ nombre: 'Cocina', items: [{ catalogoId: PRODUCTO, cantidad: '2' }] }],
+          },
+        }),
+        respuestaTexto('Preparé la cotización; revísala y confírmala.'),
+      ],
+    })
+    const { deps, propuestas, llamadas } = entorno({ modelos: { a: modelo }, herramientas })
+    const r = await ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'cotiza a Juan', configuracion: CONFIG }, deps)
+    assert.equal(escrituras.length, 0)
+    assert.ok(r.propuestas && r.propuestas.length === 1)
+    const id = r.propuestas[0].id
+    assert.equal(propuestas.filas.get(id)?.estado, 'pendiente')
+    assert.equal(propuestas.filas.get(id)?.herramienta, 'cotizacion.crear_completa')
+    assert.equal(propuestas.filas.get(id)?.conversacionId, 'conv-test')
+    assert.match(r.propuestas[0].resumen, /Juan Pérez/)
+    // El modelo recibe el texto de propuesta pendiente, no un éxito.
+    const resultadoDelModelo = JSON.stringify(modelo.doGenerateCalls[1].prompt)
+    assert.ok(resultadoDelModelo.includes('pendiente de confirmación'))
+    assert.ok(llamadas.some((l) => l.herramienta === 'cotizacion.crear_completa'))
   }],
 ]
 

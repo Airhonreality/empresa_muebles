@@ -4,6 +4,7 @@
 // bucle por DepsTurno (repositorio.ts es la implementación real).
 import type { SesionEmpleado } from '../auth/session'
 import { ejecutarTurno, type ConfiguracionTurno, type DepsTurno, type Mensaje } from './bucle'
+import type { PropuestaCreada } from './operaciones'
 
 export class ErrorConversacionNoEncontrada extends Error {
   constructor() {
@@ -37,6 +38,8 @@ export interface ResultadoAtencion {
   respuesta: string
   conversacionId: string
   alerta?: string
+  /** Propuestas de escritura creadas en el turno (pendientes de confirmación). */
+  propuestas?: PropuestaCreada[]
 }
 
 /**
@@ -55,12 +58,25 @@ export async function atenderMensaje(
     historial = previo
   }
 
-  const configuracion = await deps.cargarConfiguracion()
-  const resultado = await ejecutarTurno({ usuario, historial, mensaje, configuracion }, deps.turno)
+  // La conversación nueva se crea de forma PEREZOSA: solo si el turno necesita guardar una propuesta
+  // (la propuesta pertenece a una conversación) o al final, si el turno terminó bien.
+  let conversacion = conversacionId
+  const asegurarConversacion = async (): Promise<string> => {
+    if (!conversacion) conversacion = await deps.conversaciones.crear(usuario.usuarioId)
+    return conversacion
+  }
 
-  const id = conversacionId ?? (await deps.conversaciones.crear(usuario.usuarioId))
+  const configuracion = await deps.cargarConfiguracion()
+  const resultado = await ejecutarTurno({ usuario, historial, mensaje, configuracion }, { ...deps.turno, asegurarConversacion })
+
+  const id = await asegurarConversacion()
   await deps.conversaciones.guardarMensajes(id, resultado.mensajesNuevos)
-  return { respuesta: resultado.respuesta, conversacionId: id, ...(resultado.alerta ? { alerta: resultado.alerta } : {}) }
+  return {
+    respuesta: resultado.respuesta,
+    conversacionId: id,
+    ...(resultado.alerta ? { alerta: resultado.alerta } : {}),
+    ...(resultado.propuestas ? { propuestas: resultado.propuestas } : {}),
+  }
 }
 
 /** Título de conversación: primeras 8 palabras del primer mensaje, máximo 60 caracteres. */
