@@ -8,7 +8,6 @@ import { z } from 'zod'
 import { descifrar } from './cifrado'
 import { codigoPg } from './errores'
 import type { ClaveRegistro, EventoRotacion, RepositorioClaves } from './claves'
-import { HERRAMIENTAS } from './herramientas'
 import { modeloPorDefecto, obtenerModelo, type ProveedorAsistente } from './modelo'
 import { ErrorConfiguracionIncompleta, type ConfiguracionTurno, type DepsTurno, type LlamadaRegistro, type Mensaje, type RepositorioUso } from './bucle'
 import type { DepsPropuestas, EstadoPropuesta, Propuesta, RepositorioPropuestas } from './propuestas'
@@ -156,13 +155,14 @@ export function depsPropuestasProduccion(registro: DepsPropuestas['registro']): 
 }
 
 /** Dependencias reales para ejecutarTurno. La ruta HTTP (bloque E) las usa. */
-export function depsProduccion(): DepsTurno {
+export function depsProduccion(registro: DepsTurno['herramientas']): DepsTurno {
   return {
     claves,
     uso,
     descifrar,
     construirModelo: obtenerModelo,
-    herramientas: HERRAMIENTAS,
+    herramientas: registro,
+    propuestas,
     ahora: () => new Date(),
     esperar: (ms) => new Promise((resolver) => setTimeout(resolver, ms)),
   }

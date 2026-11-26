@@ -68,6 +68,7 @@ function turnoFalso(modelo: MockLanguageModelV4): DepsTurno {
     descifrar: () => 'clave-prueba',
     construirModelo: () => modelo,
     herramientas: [],
+    propuestas: { insertar: async () => 'p-x', obtener: async () => null, cambiarEstado: async () => false },
     ahora: () => new Date('2026-11-25T15:00:00.000Z'),
     esperar: async () => {},
   }

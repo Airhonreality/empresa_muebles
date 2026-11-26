@@ -44,8 +44,9 @@ function repoMemoria() {
 function escrituraFalsa(opciones: { falla?: boolean } = {}) {
   const ejecuciones: unknown[] = []
   const def: DefinicionAsistente = {
-    nombre: 'movimiento_registrar',
+    nombre: 'finanzas.movimiento_registrar',
     dominio: 'finanzas',
+    operacion: 'movimiento_registrar',
     descripcion: 'registra un movimiento (prueba)',
     permiso: 'finanzas:escribir',
     esEscritura: true,
@@ -67,7 +68,7 @@ function entorno(ahora: { valor: Date } = { valor: AHORA }, def = escrituraFalsa
 
 async function creaPendiente(deps: DepsPropuestas, usuario: SesionEmpleado) {
   const { id } = await crearPropuesta(
-    { usuario, conversacionId: 'conv-1', herramienta: 'movimiento_registrar', entradaCruda: { monto: 500000 }, resumen: 'Ingreso $ 500.000' },
+    { usuario, conversacionId: 'conv-1', herramienta: 'finanzas.movimiento_registrar', entradaCruda: { monto: 500000 }, resumen: 'Ingreso $ 500.000' },
     deps,
   )
   return id
@@ -77,7 +78,7 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['crear propuesta valida la entrada antes de guardarla', async () => {
     const { deps, filas } = entorno()
     await assert.rejects(
-      crearPropuesta({ usuario: sesion('u1'), conversacionId: 'c', herramienta: 'movimiento_registrar', entradaCruda: { monto: -1 }, resumen: 'x' }, deps),
+      crearPropuesta({ usuario: sesion('u1'), conversacionId: 'c', herramienta: 'finanzas.movimiento_registrar', entradaCruda: { monto: -1 }, resumen: 'x' }, deps),
       (e: unknown) => e instanceof ErrorPropuesta && e.codigo === 'ENTRADA_INVALIDA',
     )
     assert.equal(filas.size, 0)

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { MockLanguageModelV4 } from 'ai/test'
 import type { SesionEmpleado } from '../auth/session'
 import type { ClaveRegistro, RepositorioClaves } from './claves'
+import type { Propuesta, RepositorioPropuestas } from './propuestas'
 import { ErrorSinClavesDisponibles } from './claves'
 import {
   ejecutarTurno,
@@ -65,6 +66,27 @@ function claveFalsa(id: string, orden: number, extra: Partial<ClaveRegistro> = {
   return { id, proveedor: 'openrouter', etiqueta: id, claveCifrada: `c-${id}`, orden, estado: 'activa', enfriadaHasta: null, ...extra }
 }
 
+/** Almacén de propuestas en memoria para los tests del bucle. */
+function propuestasMemoria(): RepositorioPropuestas & { filas: Map<string, Propuesta> } {
+  const filas = new Map<string, Propuesta>()
+  let n = 0
+  return {
+    filas,
+    insertar: async (p) => {
+      const id = `prop-${++n}`
+      filas.set(id, { ...p, id, estado: 'pendiente' })
+      return id
+    },
+    obtener: async (id) => (filas.has(id) ? { ...filas.get(id)! } : null),
+    cambiarEstado: async (id, desde, nuevo) => {
+      const f = filas.get(id)
+      if (!f || f.estado !== desde) return false
+      f.estado = nuevo
+      return true
+    },
+  }
+}
+
 function entorno(opts: {
   claves?: ClaveRegistro[]
   modelos: Record<string, MockLanguageModelV4>
@@ -81,6 +103,7 @@ function entorno(opts: {
     invalidar: async (id) => { invalidadas.push(id) },
     registrarRotacion: async (ev) => { rotaciones.push(ev) },
   }
+  const propuestas = propuestasMemoria()
   const deps: DepsTurno = {
     claves,
     uso: {
@@ -95,10 +118,12 @@ function entorno(opts: {
       return modelo
     },
     herramientas: opts.herramientas ?? crearHerramientas(ACCIONES),
+    propuestas: propuestas,
+    asegurarConversacion: async () => 'conv-test',
     ahora: () => AHORA,
     esperar: async () => {},
   }
-  return { deps, enfriadas, invalidadas, rotaciones, llamadas }
+  return { deps, enfriadas, invalidadas, rotaciones, llamadas, propuestas }
 }
 
 const casos: Array<[string, () => Promise<void>]> = [
@@ -113,17 +138,17 @@ const casos: Array<[string, () => Promise<void>]> = [
   }],
   ['una herramienta y respuesta final', async () => {
     const modelo = new MockLanguageModelV4({
-      doGenerate: [respuestaHerramienta('cotizacion_buscar', { texto: 'juan' }), respuestaTexto('Encontré una cotización de Juan.')],
+      doGenerate: [respuestaHerramienta('ejecutar', { dominio: 'cotizacion', operacion: 'buscar', argumentos: { texto: 'juan' } }), respuestaTexto('Encontré una cotización de Juan.')],
     })
     const { deps, llamadas } = entorno({ modelos: { a: modelo } })
     const r = await ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'busca a Juan', configuracion: CONFIG }, deps)
     assert.equal(r.respuesta, 'Encontré una cotización de Juan.')
     assert.equal(modelo.doGenerateCalls.length, 2)
-    assert.ok(llamadas.some((l) => l.tipo === 'herramienta' && l.herramienta === 'cotizacion_buscar'))
+    assert.ok(llamadas.some((l) => l.tipo === 'herramienta' && l.herramienta === 'cotizacion.buscar'))
   }],
   ['8 pasos sin parar devuelve un resumen, no un error', async () => {
     const modelo = new MockLanguageModelV4({
-      doGenerate: async () => respuestaHerramienta('cotizacion_buscar', { texto: 'juan' }),
+      doGenerate: async () => respuestaHerramienta('ejecutar', { dominio: 'cotizacion', operacion: 'buscar', argumentos: { texto: 'juan' } }),
     })
     const { deps } = entorno({ modelos: { a: modelo } })
     const r = await ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'bucle', configuracion: CONFIG }, deps)
@@ -135,8 +160,10 @@ const casos: Array<[string, () => Promise<void>]> = [
     const { deps } = entorno({ modelos: { a: modelo } })
     await ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'saldo', configuracion: CONFIG }, deps)
     const nombres = (modelo.doGenerateCalls[0].tools ?? []).map((t) => t.name)
-    assert.ok(!nombres.includes('caja_saldo'))
-    assert.ok(nombres.includes('cotizacion_buscar'))
+    assert.deepEqual(nombres.sort(), ['dominio_operaciones', 'ejecutar'])
+    const sistema = JSON.stringify(modelo.doGenerateCalls[0].prompt.find((m) => m.role === 'system'))
+    assert.ok(!sistema.includes('saldo_caja'))
+    assert.ok(sistema.includes('cotizacion'))
   }],
   ['instrucciones adicionales se añaden al sistema, no lo reemplazan', async () => {
     const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('ok')] })

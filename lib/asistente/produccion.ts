@@ -22,7 +22,7 @@ import type { DepsClaves, DepsConfiguracion } from './ruta'
 const TAMANO_DETALLE = 200
 
 export const atender = (p: { usuario: SesionEmpleado; conversacionId?: string; mensaje: string }) =>
-  atenderMensaje(p, { conversaciones, cargarConfiguracion, turno: depsProduccion() })
+  atenderMensaje(p, { conversaciones, cargarConfiguracion, turno: depsProduccion(HERRAMIENTAS) })
 
 export const listar = (usuarioId: string) => conversaciones.listar(usuarioId)
 

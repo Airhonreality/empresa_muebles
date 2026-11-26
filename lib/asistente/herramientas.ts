@@ -1,9 +1,11 @@
 // lib/asistente/herramientas.ts
-// Registro de herramientas del asistente (t-198, plan §2 pieza 3).
-// Regla: ninguna herramienta toca Drizzle. Cada una llama a una acción de lib/data/actions/
-// ya envuelta con protegerAccion, que vuelve a verificar la sesión y el permiso.
-// Fase 1: solo lectura. Las de escritura usan esEscritura: true y ejecutarHerramienta las rechaza
-// (la confirmación con propuestas es el bloque F).
+// Registro de operaciones del asistente (t-198 pieza 3; capa de acciones: diseno_capa_acciones §2).
+// Cada operación pertenece a un dominio y se nombra "dominio.operacion". El modelo NO las ve
+// planas: ve el mapa de dominios y pide operaciones con dominio_operaciones / ejecutar (operaciones.ts).
+// Regla: ninguna operación toca Drizzle directamente. Las de lectura llaman a acciones de
+// lib/data/actions/ (lecturas), inyectadas en AccionesLectura para poder probarlas sin base.
+// Las de escritura (esEscritura: true) nunca se ejecutan desde el bucle: ejecutarOperacion crea una
+// propuesta y solo la confirmación del empleado llama a `ejecutar`.
 import { z } from 'zod'
 import { PERMISOS_POR_ROL, type Permiso } from './permisos'
 import { NoAutorizadoError } from './permisos'
@@ -18,13 +20,18 @@ import { aNumero } from '../dinero/calculo'
 export const MAX_CARACTERES_RESULTADO = 8000
 
 export interface DefinicionHerramienta<I> {
+  /** Nombre cualificado "dominio.operacion" (ej. cotizacion.buscar). Identificador único del registro. */
   nombre: string
-  /** Dominio de negocio (cotizacion, proyecto, finanzas). Agrupa herramientas para el catálogo de dominios. */
+  /** Dominio de negocio (cotizacion, proyecto, finanzas). */
   dominio: string
+  /** Operación dentro del dominio (ej. buscar). */
+  operacion: string
   descripcion: string
   permiso: Permiso
   esEscritura: boolean
   esquema: z.ZodType<I>
+  /** Solo escrituras: resumen legible para la propuesta. Lo calcula el servidor, nunca el modelo. */
+  resumir?: (entrada: I, usuario: SesionEmpleado) => Promise<string>
   ejecutar: (entrada: I, usuario: SesionEmpleado) => Promise<unknown>
 }
 
@@ -72,8 +79,9 @@ const esquemaCotizacionBuscar = z.object({
 })
 
 const cotizacionBuscar = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaCotizacionBuscar>> => ({
-  nombre: 'cotizacion_buscar',
+  nombre: 'cotizacion.buscar',
   dominio: 'cotizacion',
+  operacion: 'buscar',
   descripcion:
     'Busca cotizaciones por código (ej. COT-2026-11-25-01), nombre del proyecto o nombre del cliente. Devuelve hasta 20 coincidencias.',
   permiso: 'cotizador:leer',
@@ -105,8 +113,9 @@ const esquemaProyectoConsultar = z.object({
 })
 
 const proyectoConsultar = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaProyectoConsultar>> => ({
-  nombre: 'proyecto_consultar',
+  nombre: 'proyecto.consultar',
   dominio: 'proyecto',
+  operacion: 'consultar',
   descripcion:
     'Consulta un proyecto por su proyectoId (obtenido con cotizacion_buscar): estado, cliente, espacios y totales básicos.',
   permiso: 'proyectos:leer',
@@ -131,8 +140,9 @@ const proyectoConsultar = (acciones: AccionesLectura): DefinicionHerramienta<z.i
 const esquemaCajaSaldo = z.object({})
 
 const cajaSaldo = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaCajaSaldo>> => ({
-  nombre: 'caja_saldo',
+  nombre: 'finanzas.saldo_caja',
   dominio: 'finanzas',
+  operacion: 'saldo_caja',
   descripcion: 'Devuelve el saldo actual de cada cuenta financiera (caja, bancos) y el total.',
   permiso: 'finanzas:leer',
   esEscritura: false,
@@ -173,8 +183,8 @@ export interface DominioCatalogo {
 }
 
 /**
- * Dominios donde la sesión tiene al menos un permiso de lectura (sufijo ":leer") sobre alguna
- * herramienta registrada. Solo nombre y descripción: nunca nombres de herramientas ni datos.
+ * Dominios donde la sesión tiene permiso para AL MENOS una operación registrada. Solo nombre y
+ * descripción: nunca nombres de operaciones ni datos.
  */
 export function catalogoDominios(
   sesion: SesionEmpleado,
@@ -183,7 +193,7 @@ export function catalogoDominios(
   const permisos = PERMISOS_POR_ROL[sesion.rol] ?? []
   const dominios = new Set<string>()
   for (const h of registro) {
-    if (h.permiso.endsWith(':leer') && permisos.includes(h.permiso)) dominios.add(h.dominio)
+    if (permisos.includes(h.permiso)) dominios.add(h.dominio)
   }
   return [...dominios].sort().map((dominio) => ({
     dominio,
@@ -192,12 +202,12 @@ export function catalogoDominios(
   }))
 }
 
-/** Registro real de la fase 1 (solo lectura). Las de escritura se agregan en el bloque F. */
+/** Registro real de lectura. Las de escritura se agregan en lib/asistente/operaciones/. */
 export const HERRAMIENTAS: readonly DefinicionAsistente[] = crearHerramientas(accionesErp)
 
 /**
- * Herramientas que la sesión puede usar. Se filtra por permiso ANTES de enviar nada al modelo.
- * `habilitadas` (opcional, de la configuración) solo puede REDUCIR la lista, nunca ampliarla.
+ * Operaciones que la sesión puede usar. Se filtra por permiso ANTES de enviar nada al modelo.
+ * `habilitadas` (opcional, de la configuración, por nombre "dominio.operacion") solo puede REDUCIR la lista.
  */
 export function herramientasPermitidas(
   sesion: SesionEmpleado,
@@ -220,10 +230,11 @@ export function truncarResultado(texto: string, max: number = MAX_CARACTERES_RES
 }
 
 /**
- * Ejecuta una herramienta con la entrada cruda del modelo:
+ * Ejecuta una operación de LECTURA con la entrada cruda del modelo:
  *  1. Verifica el permiso de la sesión (NoAutorizadoError si no lo tiene).
  *  2. Valida la entrada con Zod. Si no cumple, lanza error SIN llamar a la acción.
  *  3. Ejecuta y devuelve el resultado serializado y truncado.
+ * Las de escritura NO pasan por aquí: ejecutarOperacion crea propuestas para ellas.
  */
 export async function ejecutarHerramienta(
   def: DefinicionAsistente,
@@ -231,7 +242,7 @@ export async function ejecutarHerramienta(
   usuario: SesionEmpleado,
 ): Promise<string> {
   if (def.esEscritura) {
-    throw new Error(`La herramienta "${def.nombre}" es de escritura y se ejecuta solo con confirmación (bloque F).`)
+    throw new Error(`La operación "${def.nombre}" es de escritura: solo se ejecuta con confirmación del empleado.`)
   }
   const permisos = PERMISOS_POR_ROL[usuario.rol] ?? []
   if (!permisos.includes(def.permiso)) {

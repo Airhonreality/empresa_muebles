@@ -6,18 +6,30 @@
 // archivo se reemplaza por una importación de lib/auth/permisos.ts.
 //
 // Principio: rol más restrictivo posible. Admin tiene todo lo del chat; los demás, solo lo
-// necesario para su área.
+// necesario para su área. Los permisos de escritura y los de excepción comercial (descuento,
+// precio libre) se asignan de forma conservadora: ante la duda, no se conceden.
 import type { RolCanonico } from '@/lib/data/contracts'
 
 export type Permiso =
   | 'cotizador:leer'
+  | 'cotizador:escribir'
+  | 'cotizador:descuento'
+  | 'cotizador:precio_libre'
   | 'proyectos:leer'
   | 'finanzas:leer'
   | 'finanzas:escribir'
 
 export const PERMISOS_POR_ROL: Record<RolCanonico, readonly Permiso[]> = {
-  admin: ['cotizador:leer', 'proyectos:leer', 'finanzas:leer', 'finanzas:escribir'],
-  comercial: ['cotizador:leer', 'proyectos:leer'],
+  admin: [
+    'cotizador:leer',
+    'cotizador:escribir',
+    'cotizador:descuento',
+    'cotizador:precio_libre',
+    'proyectos:leer',
+    'finanzas:leer',
+    'finanzas:escribir',
+  ],
+  comercial: ['cotizador:leer', 'cotizador:escribir', 'proyectos:leer'],
   desarrollador: ['cotizador:leer', 'proyectos:leer'],
   compras: ['proyectos:leer'],
   taller: ['proyectos:leer'],

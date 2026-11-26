@@ -60,74 +60,74 @@ function buscar(nombre: string, acciones: AccionesLectura) {
 }
 
 const casos: Array<[string, () => Promise<void>]> = [
-  ['entrada inválida de cotizacion_buscar no llama a la acción', async () => {
+  ['entrada inválida de cotizacion.buscar no llama a la acción', async () => {
     const { acciones, llamadas } = accionesFalsas()
-    await assert.rejects(ejecutarHerramienta(buscar('cotizacion_buscar', acciones), { texto: 'a' }, sesionCon('admin')), /Entrada inválida/)
+    await assert.rejects(ejecutarHerramienta(buscar('cotizacion.buscar', acciones), { texto: 'a' }, sesionCon('admin')), /Entrada inválida/)
     assert.equal(llamadas.cotizadorLista, 0)
   }],
   ['proyectoId que no es uuid no llama a la acción', async () => {
     const { acciones, llamadas } = accionesFalsas()
-    await assert.rejects(ejecutarHerramienta(buscar('proyecto_consultar', acciones), { proyectoId: 'no-uuid' }, sesionCon('admin')), /Entrada inválida/)
+    await assert.rejects(ejecutarHerramienta(buscar('proyecto.consultar', acciones), { proyectoId: 'no-uuid' }, sesionCon('admin')), /Entrada inválida/)
     assert.equal(llamadas.proyecto, 0)
   }],
   ['entrada nula se rechaza (no se llama a la acción)', async () => {
     const { acciones, llamadas } = accionesFalsas()
-    await assert.rejects(ejecutarHerramienta(buscar('cotizacion_buscar', acciones), null, sesionCon('admin')))
+    await assert.rejects(ejecutarHerramienta(buscar('cotizacion.buscar', acciones), null, sesionCon('admin')))
     assert.equal(llamadas.cotizadorLista, 0)
   }],
-  ['cotizacion_buscar devuelve solo las coincidencias por nombre de cliente', async () => {
+  ['cotizacion.buscar devuelve solo las coincidencias por nombre de cliente', async () => {
     const { acciones, llamadas } = accionesFalsas()
-    const texto = await ejecutarHerramienta(buscar('cotizacion_buscar', acciones), { texto: 'juan' }, sesionCon('comercial'))
+    const texto = await ejecutarHerramienta(buscar('cotizacion.buscar', acciones), { texto: 'juan' }, sesionCon('comercial'))
     assert.equal(llamadas.cotizadorLista, 1)
     const datos = JSON.parse(texto)
     assert.equal(datos.total, 1)
     assert.equal(datos.resultados[0].codigo, 'COT-2026-11-25-01')
     assert.equal(datos.resultados[0].cliente, 'Juan Pérez')
   }],
-  ['caja_saldo suma los saldos de las cuentas', async () => {
+  ['finanzas.saldo_caja suma los saldos de las cuentas', async () => {
     const { acciones } = accionesFalsas()
-    const datos = JSON.parse(await ejecutarHerramienta(buscar('caja_saldo', acciones), {}, sesionCon('finanzas')))
+    const datos = JSON.parse(await ejecutarHerramienta(buscar('finanzas.saldo_caja', acciones), {}, sesionCon('finanzas')))
     assert.equal(datos.total, 1150000.5)
     assert.equal(datos.cuentas.length, 2)
   }],
-  ['usuario sin permiso no recibe caja_saldo (comercial)', async () => {
+  ['usuario sin permiso no recibe finanzas.saldo_caja (comercial)', async () => {
     const { acciones } = accionesFalsas()
     const nombres = herramientasPermitidas(sesionCon('comercial'), undefined, crearHerramientas(acciones)).map((h) => h.nombre)
-    assert.ok(!nombres.includes('caja_saldo'))
-    assert.ok(nombres.includes('cotizacion_buscar'))
+    assert.ok(!nombres.includes('finanzas.saldo_caja'))
+    assert.ok(nombres.includes('cotizacion.buscar'))
   }],
   ['usuario sin permiso que llama directo recibe NoAutorizadoError sin tocar la acción', async () => {
     const { acciones, llamadas } = accionesFalsas()
     await assert.rejects(
-      ejecutarHerramienta(buscar('caja_saldo', acciones), {}, sesionCon('comercial')),
+      ejecutarHerramienta(buscar('finanzas.saldo_caja', acciones), {}, sesionCon('comercial')),
       NoAutorizadoError,
     )
     assert.equal(llamadas.finanzas, 0)
   }],
-  ['herramienta de escritura no se ejecuta en la fase 1', async () => {
+  ['herramienta de escritura no se ejecuta por ejecutarHerramienta', async () => {
     const { acciones, llamadas } = accionesFalsas()
-    const escritura = { ...buscar('caja_saldo', acciones), esEscritura: true }
+    const escritura = { ...buscar('finanzas.saldo_caja', acciones), esEscritura: true }
     await assert.rejects(ejecutarHerramienta(escritura, {}, sesionCon('admin')), /escritura/)
     assert.equal(llamadas.finanzas, 0)
   }],
   ['la lista habilitada por configuración solo reduce', async () => {
     const { acciones } = accionesFalsas()
-    const nombres = herramientasPermitidas(sesionCon('admin'), ['caja_saldo', 'nombre_que_no_existe'], crearHerramientas(acciones)).map((h) => h.nombre)
-    assert.deepEqual(nombres, ['caja_saldo'])
+    const nombres = herramientasPermitidas(sesionCon('admin'), ['finanzas.saldo_caja', 'nombre_que_no_existe'], crearHerramientas(acciones)).map((h) => h.nombre)
+    assert.deepEqual(nombres, ['finanzas.saldo_caja'])
   }],
   ['resultado grande se trunca a 8000 caracteres con aviso', async () => {
     const enorme = 'x'.repeat(50000)
     const { acciones } = accionesFalsas({ finanzas: async () => ({ cuentas: [{ id: 'k', nombre: enorme, tipo: 'caja', saldoInicial: '0', saldoActual: '0', createdAt: '' }] }) as never })
-    const texto = await ejecutarHerramienta(buscar('caja_saldo', acciones), {}, sesionCon('finanzas'))
+    const texto = await ejecutarHerramienta(buscar('finanzas.saldo_caja', acciones), {}, sesionCon('finanzas'))
     assert.ok(texto.length <= MAX_CARACTERES_RESULTADO)
     assert.ok(texto.includes('RESULTADO TRUNCADO'))
   }],
   ['truncarResultado no toca textos cortos', async () => {
     assert.equal(truncarResultado('hola'), 'hola')
   }],
-  ['proyecto_consultar con proyecto inexistente responde encontrado false', async () => {
+  ['proyecto.consultar con proyecto inexistente responde encontrado false', async () => {
     const { acciones } = accionesFalsas()
-    const datos = JSON.parse(await ejecutarHerramienta(buscar('proyecto_consultar', acciones), { proyectoId: PROYECTO_ID }, sesionCon('admin')))
+    const datos = JSON.parse(await ejecutarHerramienta(buscar('proyecto.consultar', acciones), { proyectoId: PROYECTO_ID }, sesionCon('admin')))
     assert.deepEqual(datos, { encontrado: false })
   }],
   ['catálogo de dominios: solo los que el rol puede leer, sin nombres de herramientas', async () => {
