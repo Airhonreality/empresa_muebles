@@ -7,7 +7,7 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { EntityHeader } from '@/components/veta/entity-header'
 import { EntityActionsBar, type EntityAction } from '@/components/veta/entity-actions-bar'
-import { Package, Copy, Edit, Trash2, Check } from 'lucide-react'
+import { Package, Copy, Trash2, Check } from 'lucide-react'
 import { MoneyInput } from '@/components/veta/money-input'
 import { parteEnteraDb } from '@/lib/utils/dinero'
 import { calcularTotalesCotizacion } from '@/lib/dinero/calculo'
@@ -254,7 +254,15 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
   }, [searchParams])
 
   const [nuevoEspacioNombre, setNuevoEspacioNombre] = useState('')
+  const nuevoEspacioInputRef = useRef<HTMLInputElement>(null)
   const [nuevoEspacioTipo, setNuevoEspacioTipo] = useState('')
+  // Móvil: la creación de espacio vive en una hoja (modal) en vez de un formulario fijo arriba.
+  const isMobile = useIsMobile()
+  const [mostrarNuevoEspacioSheet, setMostrarNuevoEspacioSheet] = useState(false)
+  // Móvil: lista de espacios colapsada al entrar; solo uno expandido a la vez (acordeón).
+  useEffect(() => {
+    if (isMobile) setGruposExpandidos(new Set())
+  }, [isMobile])
   const { guard: guardCrearEspacio, isPending: creandoEspacio } = usePendingGuard()
   const { mostrarError } = useToast()
 
@@ -291,7 +299,11 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
 
   const crearEspacio = useCallback(() => {
     const nombreFinal = nuevoEspacioNombre.trim()
-    if (!nombreFinal) return
+    if (!nombreFinal) {
+      // Antes era un no-op silencioso (botón inferior móvil). Ahora lleva el foco al campo.
+      nuevoEspacioInputRef.current?.focus()
+      return
+    }
     // t-175: ya no se espera el roundtrip del servidor para limpiar el formulario -- la
     // mutación es optimista (el espacio ya aparece en la lista antes de que el servidor
     // responda). Si falla después, el ToastProvider avisa; antes el formulario se quedaba
@@ -310,19 +322,22 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
     }).catch((err) => {
       mostrarError(err instanceof Error ? err.message : 'No se pudo crear el espacio. Revisa tu conexión e intenta de nuevo.')
     })
-    setGruposExpandidos(prev => new Set(prev).add(nombreFinal))
+    // Móvil (acordeón): el espacio recién creado queda como único expandido.
+    setGruposExpandidos(prev => isMobile ? new Set([nombreFinal]) : new Set(prev).add(nombreFinal))
     setNuevoEspacioNombre('')
     setNuevoEspacioTipo('')
-  }, [nuevoEspacioNombre, nuevoEspacioTipo, proyectoId, espaciosBase.length, store, mostrarError])
+  }, [nuevoEspacioNombre, nuevoEspacioTipo, proyectoId, espaciosBase.length, store, mostrarError, isMobile])
 
   const toggleGrupo = useCallback((nombreEspacio: string) => {
     setGruposExpandidos((prev) => {
+      // Móvil: acordeón — abrir uno cierra los demás, para que la pantalla no crezca sin fin.
+      if (isMobile) return prev.has(nombreEspacio) ? new Set() : new Set([nombreEspacio])
       const next = new Set(prev)
       if (next.has(nombreEspacio)) next.delete(nombreEspacio)
       else next.add(nombreEspacio)
       return next
     })
-  }, [])
+  }, [isMobile])
 
   const actualizarJornadas = useCallback(
     (espacioId: string, campo: keyof JornadasTuple, valor: string) => {
@@ -689,8 +704,30 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Espacios</h2>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          {/* Móvil: dos botones que abren hojas. El formulario inline queda solo en escritorio. */}
+          <div className="flex sm:hidden gap-2">
+            <Button
+              variant="primary"
+              size="md"
+              className="h-11 flex-1 text-sm"
+              onClick={() => setMostrarNuevoEspacioSheet(true)}
+              disabled={creandoEspacio}
+            >
+              + Nuevo espacio
+            </Button>
+            <Button
+              variant="ghost"
+              size="md"
+              className="h-11 text-sm border border-border-subtle"
+              onClick={() => { setMostrarPlantillasCatalogoModal(true); void cargarPlantillasCatalogo() }}
+              disabled={creandoEspacio}
+            >
+              <Copy size={14} /> Catálogo
+            </Button>
+          </div>
+          <div className="hidden sm:flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <input
+              ref={nuevoEspacioInputRef}
               type="text"
               value={nuevoEspacioNombre}
               onChange={(e) => setNuevoEspacioNombre(e.target.value)}
@@ -739,6 +776,56 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           </div>
         </div>
 
+        {mostrarNuevoEspacioSheet && (
+          <Modal
+            open={true}
+            onClose={() => setMostrarNuevoEspacioSheet(false)}
+            title="Nuevo espacio"
+          >
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!nuevoEspacioNombre.trim()) return
+                crearEspacio()
+                setMostrarNuevoEspacioSheet(false)
+              }}
+            >
+              <label className="block text-sm font-medium text-text-muted">
+                Nombre del espacio
+                <input
+                  type="text"
+                  autoFocus
+                  value={nuevoEspacioNombre}
+                  onChange={(e) => setNuevoEspacioNombre(e.target.value)}
+                  placeholder="Ej: Cocina, Baño principal"
+                  className="mt-1 block w-full h-11 rounded border border-border-subtle bg-bg-paper px-3 text-base text-text-heading focus:border-gold-400 focus:outline-none"
+                />
+              </label>
+              <label className="block text-sm font-medium text-text-muted">
+                Tipo
+                <select
+                  value={nuevoEspacioTipo}
+                  onChange={(e) => setNuevoEspacioTipo(e.target.value)}
+                  className="mt-1 block w-full h-11 rounded border border-border-subtle bg-bg-paper px-3 text-base text-text-heading focus:border-gold-400 focus:outline-none"
+                >
+                  <option value="">Sin tipo</option>
+                  {TIPOS_ESPACIO.map((t) => (
+                    <option key={t.codigo} value={t.codigo}>{t.label}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" variant="primary" size="md" className="h-11 flex-1" disabled={!nuevoEspacioNombre.trim() || creandoEspacio}>
+                  Crear espacio
+                </Button>
+                <Button type="button" variant="ghost" size="md" className="h-11" onClick={() => setMostrarNuevoEspacioSheet(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </Modal>
+        )}
         {mostrarPlantillasCatalogoModal && (
           <Modal
             open={true}
@@ -959,6 +1046,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           variant: 'primary',
           onSelect: () => {
             if (contrato) setMostrarContratoModal(true)
+            else if (isMobile) setMostrarNuevoEspacioSheet(true)
             else crearEspacio()
           },
         }]}
@@ -1613,8 +1701,6 @@ function VarianteContenido({
   const [itemDropdownAbierto, setItemDropdownAbierto] = useState<string | null>(null)
   const [grupoAñadiendo, setGrupoAñadiendo] = useState<string | null>(null)
   const [itemAnidando, setItemAnidando] = useState<string | null>(null)
-  // Fase V: swipe-to-reveal en filas de ítem (qué ítem está swiped)
-  const [swipedItemId, setSwipedItemId] = useState<string | null>(null)
 
   const artefactosList = store.artefactos.porEspacio(espacio.id)
   const tieneContexto = Boolean(espacio.descripcion) || ( espacio.fotosEspacio ?? [] ).length > 0 ||
@@ -2013,8 +2099,9 @@ function VarianteContenido({
                           esReferencial: busquedaEsReferencial,
                           grupoItemId: grupoAñadiendo ?? undefined,
                         })
-                        setModoBusquedaItem('off')
+                        // Móvil: la hoja queda abierta para agregar varios ítems seguidos (se cierra con "Listo").
                         setGrupoAñadiendo(null)
+                        if (!isMobile) setModoBusquedaItem('off')
                       }}
                       onCreateNew={(descripcion) => {
                         setCrearProducto({ descripcion })
@@ -2124,7 +2211,6 @@ function VarianteContenido({
           const cantidadNum = parseNum(item.cantidad)
           const precioNum = parseNum(item.precioUnitario)
           const total = cantidadNum * precioNum
-          const isSwiped = swipedItemId === item.id
           return (
             <div
               key={item.id}
@@ -2132,59 +2218,21 @@ function VarianteContenido({
               className={`
                 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 text-sm relative ${itemDropdownAbierto === item.id ? 'z-50' : ''}
                 ${isMobile
-                  ? 'border-l-3 border-gold-300 bg-surface-50 px-3 py-2 mb-2 transition-transform duration-300'
+                  ? 'border-l-3 border-gold-300 bg-surface-50 px-3 py-2 mb-2'
                   : 'sm:border-b sm:border-border-subtle/50 sm:border-l-0 sm:bg-transparent sm:pb-4 sm:pt-2 sm:pb-2 sm:pt-0 sm:last:pb-0 sm:last:border-0 sm:rounded sm:transition-colors sm:duration-500'}
               `}
-              style={{
-                transform: isMobile ? `translateX(${isSwiped ? -70 : 0}px)` : undefined,
-              }}
-              onTouchEnd={isMobile ? () => { setSwipedItemId(null) } : undefined}
+              // Móvil: tocar el cuerpo de la fila abre la edición del ítem. Los controles
+              // (± , cantidad, precio, ⋮, checkbox) son elementos propios y no disparan esto.
+              // Se eliminó el "deslizar para editar": su panel de acciones absoluto cubría
+              // la fila entera y bloqueaba el − / + / cantidad en el celular.
               onClick={isMobile
                 ? (e) => {
-                    if ((e.target as HTMLElement).closest('button, input, select, [role="option"]')) return
-                    setSwipedItemId(swipedItemId === item.id ? null : item.id)
+                    if ((e.target as HTMLElement).closest('button, input, select, textarea, a, [role="option"]')) return
+                    setModalItemId(item.id)
                   }
                 : undefined}
-              role={isMobile ? 'button' : undefined}
-              tabIndex={isMobile ? 0 : undefined}
-              onKeyDown={isMobile
-                ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSwipedItemId(swipedItemId === item.id ? null : item.id) } }
-                : undefined}
-              aria-label={`Ítem ${item.nombrePersonalizado ?? prod?.descripcion ?? 'sin nombre'} — ${isMobile ? 'desliza a la izquierda para editar o eliminar' : ''}`}
+              aria-label={`Ítem ${item.nombrePersonalizado ?? prod?.descripcion ?? 'sin nombre'}`}
             >
-              {isMobile && (
-                <>
-                  {/* Fondo de acciones revelado por swipe (solo Editar + Eliminar) */}
-                  <div className="absolute inset-0 flex items-end pl-6 pr-3 bg-red-50/40 border-l-3 border-red-500">
-                <div className="flex gap-2 pb-4">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setModalItemId(item.id)
-                      setSwipedItemId(null)
-                    }}
-                    className="p-2 text-xs text-gold-700 hover:bg-gold-100 rounded border border-gold-200"
-                    title="Editar ítem"
-                    >
-                      <Edit className="w-4 h-4" /> Editar
-                    </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      void store.items.eliminar(item.id)
-                      setSwipedItemId(null)
-                    }}
-                    className="p-2 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200"
-                    title="Eliminar ítem"
-                    >
-                      <Trash2 className="w-4 h-4" /> Eliminar
-                    </button>
-                </div>
-                  </div>
-                  </>
-                )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 sm:gap-2">
                   {/* t-160: checkbox para selección múltiple */}
@@ -2226,16 +2274,21 @@ function VarianteContenido({
                           }}
                           disabled={parseNum(item.cantidad) <= 0}
                           aria-label={`Disminuir cantidad de ${prod?.descripcion ?? item.id}`}
-                          className="p-1.5 text-sm text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-l disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="min-h-11 min-w-11 flex items-center justify-center text-lg text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-l disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           −
                         </button>
-                        <span
-                          className="font-mono text-sm text-text-primary w-12 text-center select-none"
+                        {/* Móvil: la cantidad es editable (teclado decimal, ej. 2,5 m²). Antes era un span fijo. */}
+                        <NumberInput
+                          value={item.cantidad}
+                          onChange={(v) => actualizarItem(item.id, 'cantidad', v)}
+                          step={1}
+                          min={0}
+                          label=""
+                          inputMode="decimal"
+                          className="w-14 text-center font-mono text-sm"
                           aria-label={`Cantidad ${prod?.descripcion ?? item.id}`}
-                        >
-                          {item.cantidad}
-                        </span>
+                        />
                         <button
                           type="button"
                           onClick={() => {
@@ -2243,7 +2296,7 @@ function VarianteContenido({
                             void actualizarItem(item.id, 'cantidad', String(n))
                           }}
                           aria-label={`Aumentar cantidad de ${prod?.descripcion ?? item.id}`}
-                          className="p-1.5 text-sm text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-r"
+                          className="min-h-11 min-w-11 flex items-center justify-center text-lg text-text-muted hover:text-gold-600 hover:bg-bg-alt rounded-r"
                         >
                           +
                         </button>
@@ -2283,7 +2336,6 @@ function VarianteContenido({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setSwipedItemId(null)
                         setItemDropdownAbierto(itemDropdownAbierto === item.id ? null : item.id)
                       }}
                       aria-label="Más opciones"
