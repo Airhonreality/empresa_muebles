@@ -15,7 +15,7 @@ import { ErrorConversacionNoEncontrada, type ResultadoAtencion } from './servici
 const ADMIN: SesionEmpleado = { usuarioId: 'u-1', personaId: null, nombre: 'A', email: 'a@prueba.test', rol: 'admin' }
 const COMERCIAL: SesionEmpleado = { ...ADMIN, usuarioId: 'u-2', rol: 'comercial' }
 const UUID = '11111111-1111-4111-8111-111111111111'
-const SECRETO = 'sk-or-v1-clave-de-prueba-1234567890'
+const SECRETO = 'valor-secreto-de-prueba-9876'
 
 function atenderFalso(resultado: ResultadoAtencion | Error) {
   const llamadas: unknown[] = []
@@ -96,7 +96,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     const { fn } = atenderFalso(new Error(`fallo con ${SECRETO} y texto del prompt`))
     const r = await turnoHttp(ADMIN, { mensaje: 'hola' }, fn)
     assert.equal(r.status, 500)
-    assert.ok(!JSON.stringify(r.body).includes('sk-or'))
+    assert.ok(!JSON.stringify(r.body).includes(SECRETO))
     assert.ok(!JSON.stringify(r.body).includes('prompt'))
   }],
   ['configuración: no admin -> 403 y no lee ni guarda', async () => {
