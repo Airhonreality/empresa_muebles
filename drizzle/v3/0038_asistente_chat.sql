@@ -1,13 +1,35 @@
 -- 0038 · Asistente de chat del ERP (t-198): tablas y enums nuevos, ADITIVO.
 -- Generado con drizzle-kit desde lib/db/schema.ts. Revisado a mano: solo CREATE TYPE/TABLE/FK nuevos.
--- NO aplicado. Requiere checkpoint del Supervisor antes de aplicar en cualquier base.
+-- Re-ejecutable (idempotente): los CREATE TYPE van en bloques DO que ignoran duplicate_object;
+-- las tablas usan IF NOT EXISTS y las FK se crean dentro de bloques DO que ignoran duplicate_object.
 -- Aplicar con: npx tsx scripts/apply-sql-migration.ts drizzle/v3/0038_asistente_chat.sql --apply
+-- Verificar con: npx tsx scripts/verify-0038-asistente-chat.ts [DATABASE_URL | DATABASE_URL_V3_PREVIEW]
 
-CREATE TYPE "public"."estado_clave_asistente" AS ENUM('activa', 'enfriada', 'invalida', 'desactivada');--> statement-breakpoint
-CREATE TYPE "public"."estado_propuesta_asistente" AS ENUM('pendiente', 'ejecutada', 'fallida', 'cancelada', 'vencida');--> statement-breakpoint
-CREATE TYPE "public"."proveedor_asistente" AS ENUM('openrouter', 'anthropic', 'google');--> statement-breakpoint
-CREATE TYPE "public"."rol_mensaje_asistente" AS ENUM('usuario', 'asistente', 'herramienta');--> statement-breakpoint
-CREATE TYPE "public"."tipo_llamada_asistente" AS ENUM('herramienta', 'modelo', 'rotacion_clave');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."estado_clave_asistente" AS ENUM('activa', 'enfriada', 'invalida', 'desactivada');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."estado_propuesta_asistente" AS ENUM('pendiente', 'ejecutada', 'fallida', 'cancelada', 'vencida');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."proveedor_asistente" AS ENUM('openrouter', 'anthropic', 'google');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."rol_mensaje_asistente" AS ENUM('usuario', 'asistente', 'herramienta');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."tipo_llamada_asistente" AS ENUM('herramienta', 'modelo', 'rotacion_clave');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "adjuntos_asistente" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"mensaje_id" uuid NOT NULL,
