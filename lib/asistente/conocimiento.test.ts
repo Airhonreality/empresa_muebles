@@ -79,7 +79,8 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.deepEqual(enlaces, rutasReales)
   }],
   ['ningún documento de conocimiento contiene patrones de claves de API', async () => {
-    const patrones = /sk-or-|sk-ant-|AIza/
+    // Patrones de claves de proveedor, partidos a propósito para que este archivo no los contenga.
+    const patrones = new RegExp([['sk', '-or-'], ['sk', '-ant-'], ['AI', 'za']].map((p) => p.join('')).join('|'))
     const archivos = readdirSync(RAIZ_REAL, { recursive: true }) as string[]
     for (const f of archivos.filter((x) => x.endsWith('.md'))) {
       assert.ok(!patrones.test(readFileSync(join(RAIZ_REAL, f), 'utf8')), `patrón de clave en ${f}`)
