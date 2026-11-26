@@ -155,7 +155,7 @@ export function depsPropuestasProduccion(registro: DepsPropuestas['registro']): 
 }
 
 /** Dependencias reales para ejecutarTurno. La ruta HTTP (bloque E) las usa. */
-export function depsProduccion(registro: DepsTurno['herramientas']): DepsTurno {
+export function depsProduccion(registro: DepsTurno['herramientas'], documentos: DepsTurno['documentos']): DepsTurno {
   return {
     claves,
     uso,
@@ -163,6 +163,7 @@ export function depsProduccion(registro: DepsTurno['herramientas']): DepsTurno {
     construirModelo: obtenerModelo,
     herramientas: registro,
     propuestas,
+    documentos,
     ahora: () => new Date(),
     esperar: (ms) => new Promise((resolver) => setTimeout(resolver, ms)),
   }

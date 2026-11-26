@@ -4,6 +4,8 @@
 import { cifrar } from './cifrado'
 import { accionesErp, crearOperaciones } from './herramientas'
 import { lecturaCotizacionDb, transaccionCotizacionDb } from './operaciones/cotizacion-produccion'
+import { cargarDocumentos, type Documento } from './conocimiento'
+import { join } from 'node:path'
 import {
   agregarClaveProveedor,
   cargarConfiguracion,
@@ -22,6 +24,17 @@ import type { DepsClaves, DepsConfiguracion } from './ruta'
 
 const TAMANO_DETALLE = 200
 
+/** Base de conocimiento real (conocimiento/asistente). Si no se puede leer, el asistente sigue sin procedimientos. */
+function documentosProduccion(): Documento[] {
+  try {
+    return cargarDocumentos(join(process.cwd(), 'conocimiento', 'asistente'))
+  } catch {
+    console.error('[asistente] no se pudo leer conocimiento/asistente; el asistente responde sin procedimientos')
+    return []
+  }
+}
+const DOCUMENTOS = documentosProduccion()
+
 /** Registro real de operaciones (lectura + cotización completa). */
 export const REGISTRO_OPERACIONES = crearOperaciones(accionesErp, {
   lectura: lecturaCotizacionDb,
@@ -30,7 +43,7 @@ export const REGISTRO_OPERACIONES = crearOperaciones(accionesErp, {
 })
 
 export const atender = (p: { usuario: SesionEmpleado; conversacionId?: string; mensaje: string }) =>
-  atenderMensaje(p, { conversaciones, cargarConfiguracion, turno: depsProduccion(REGISTRO_OPERACIONES) })
+  atenderMensaje(p, { conversaciones, cargarConfiguracion, turno: depsProduccion(REGISTRO_OPERACIONES, DOCUMENTOS) })
 
 export const listar = (usuarioId: string) => conversaciones.listar(usuarioId)
 

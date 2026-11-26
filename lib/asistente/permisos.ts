@@ -19,6 +19,17 @@ export type Permiso =
   | 'finanzas:leer'
   | 'finanzas:escribir'
 
+/** Lista cerrada de permisos (usada para validar encabezados de conocimiento). */
+export const PERMISOS: readonly Permiso[] = [
+  'cotizador:leer',
+  'cotizador:escribir',
+  'cotizador:descuento',
+  'cotizador:precio_libre',
+  'proyectos:leer',
+  'finanzas:leer',
+  'finanzas:escribir',
+]
+
 export const PERMISOS_POR_ROL: Record<RolCanonico, readonly Permiso[]> = {
   admin: [
     'cotizador:leer',
