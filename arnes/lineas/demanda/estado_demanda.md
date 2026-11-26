@@ -4,6 +4,15 @@ Progreso de la línea de demanda (captación, conversión, marca). Ver `plan_dem
 
 ---
 
+## Campaña Pisos de Madera — negativas `piso`/`pisos` retiradas — 2026-11-26
+
+- La campaña activa `Búsqueda – Pisos de Madera – Bogotá 9194e667` (ID `24429621538`, cuenta `9759491517`) tenía las negativas de frase `"pisos"` y `"piso"`, que bloqueaban toda la búsqueda (0 impresiones).
+- Se eliminaron por SDK (`CampaignCriterionService.mutate`, operación remove) con autorización explícita del Supervisor. Verificado: 0 negativas `piso`/`pisos` restantes.
+- Origen corregido en `scripts/crear_campana_pisos_madera.py` y en `03_campana_pisos_madera/palabras_clave_negativas.txt`.
+- **Pendiente:** confirmar impresiones en 24–48 h (al cierre no había métricas en los últimos 7 días). Los scripts `crear_campana_sdk.py` y `crear_campana_rest.py` tienen las mismas negativas y no deben reutilizarse sin revisar.
+
+---
+
 ## Cambio de dominio `vetadeoro.co` → `vetadorada.co` — 2026-10-23
 
 **Hechos (reportados por el Supervisor, Javier):**

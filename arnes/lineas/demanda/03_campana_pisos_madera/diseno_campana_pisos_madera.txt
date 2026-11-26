@@ -1,0 +1,293 @@
+Paso 1 — Crear la campaña
+
+Objetivo	Crear una campaña sin objetivo de guía (modo experto)
+Tipo	Búsqueda (Search)
+Nombre	Búsqueda – Pisos de Madera – Bogotá
+Redes	Solo Búsqueda de Google. Desmarcar "Incluir socios de búsqueda de Google" y "Incluir Red de Display"
+Ubicación	Bogotá D.C. usar nuestra configuracion ya escrita sobre ubicaciones.
+Presupuesto diario	5mil pesos.
+Estrategia de puja	Clics manuales (CPC manual) con límite de CPC de 1000–2000 COP por clic. No uses "Maximizar conversiones" ni "Maximizar clics" todavía.
+Programación	24/7 inicialmente. Ajustar después según horario real de respuesta a WhatsApp.
+
+
+
+# Diseño detallado de los 3 grupos de anuncios
+
+## Reglas generales para los tres grupos
+
+- **2 RSA por grupo** (mínimo recomendado por Google para que el sistema aprenda).
+- **15 títulos** (máx. 30 caracteres cada uno) y **4 descripciones** (máx. 90 caracteres) por RSA.
+- **Fijación (pinning) mínima:** fija **1 título** por RSA a la posición 1 con la palabra clave principal del grupo. No fijes más de 2 títulos en total; deja que Google rote el resto.
+- **Coherencia:** el título fijado debe contener la palabra clave exacta del grupo, para que el usuario vea en el anuncio lo mismo que escribió.
+- **CTA en al menos 3 títulos** por RSA: “Solicite”, “Pida”, “Contacto por WhatsApp”, “Visita sin costo”.
+- **No repitas** el mismo título en los dos RSA del mismo grupo. Deben ser ángulos distintos (uno más de servicio, otro más de beneficio/confianza).
+
+---
+
+## Grupo 1 — Restauración
+
+**Intención del usuario:** “tengo un piso de madera en mal estado y quiero recuperarlo sin cambiarlo”.
+**Palabra clave ancla (fijada a posición 1):** `Restauración de Pisos de Madera`
+
+### RSA 1 — Enfoque servicio + oferta
+
+**Títulos (15):**
+1. Restauración de Pisos de Madera ← *fijado pos. 1*
+2. Diagnóstico Sin Costo Bogotá
+3. Conservamos su Piso Original
+4. Casas, Oficinas y Locales
+5. Acabados de Bajo VOC
+6. Solicite su Visita Técnica
+7. Sin Reemplazar su Piso
+8. Bogotá y Alrededores
+9. Restauramos su Piso de Madera
+10. Recupere su Piso Original
+11. Visita Técnica Sin Costo
+12. Expertos en Pisos de Madera
+13. Pida su Diagnóstico Gratis
+14. Pisos de Madera Como Nuevos
+15. Conserve su Piso de Madera
+
+**Descripciones (4):**
+1. Restauramos pisos de madera en cualquier espacio. Diagnóstico sin costo y sin compromiso.
+2. Pulido, reparación y sellado con acabados de bajo VOC. Conservamos la madera original.
+3. Casas, apartamentos, oficinas y locales en Bogotá. Solicite su visita técnica hoy.
+4. Devolvemos la vida a su piso de madera sin reemplazarlo. Diagnóstico gratuito en Bogotá.
+
+---
+
+### RSA 2 — Enfoque beneficio + confianza
+
+**Títulos (15):**
+1. Restauración Pisos de Madera ← *fijado pos. 1*
+2. Su Piso de Madera Como Nuevo
+3. Diagnóstico Gratuito en Bogotá
+4. No Reemplace, Restaure
+5. Acabados al Agua Bajo VOC
+6. Atendemos Todo Tipo de Espacio
+7. Solicite Visita Sin Compromiso
+8. Pisos de Madera Restaurados
+9. Conservación de Madera Original
+10. Bogotá · Diagnóstico Gratis
+11. Llame o Escriba por WhatsApp
+12. Servicio Profesional en Bogotá
+13. Recupere el Brillo Original
+14. Presupuesto Sin Compromiso
+15. Expertos en Restauración
+
+**Descripciones (4):**
+1. Restauración profesional de pisos de madera en Bogotá. Diagnóstico sin costo.
+2. Conservamos y protegemos su piso de madera. Acabados de bajo VOC y sin reemplazo.
+3. Atendemos casas, apartamentos, oficinas y locales. Solicite su visita técnica.
+4. Recupere la belleza de su piso de madera. Contacto directo por WhatsApp.
+
+---
+
+## Grupo 2 — Pulido y Barnizado
+
+**Intención del usuario:** “mi piso está opaco o rayado; quiero pulirlo y barnizarlo”.
+**Palabra clave ancla (fijada a posición 1):** `Pulido de Pisos de Madera`
+
+### RSA 1 — Enfoque servicio + oferta
+
+**Títulos (15):**
+1. Pulido de Pisos de Madera ← *fijado pos. 1*
+2. Lijado y Barnizado Profesional
+3. Recupere el Brillo Original
+4. Bogotá · Diagnóstico Gratis
+5. Acabados al Agua Bajo VOC
+6. Casas, Apartamentos y Locales
+7. Pulido Sin Reemplazar su Piso
+8. Solicite su Visita Técnica
+9. Barnizado Profesional Bogotá
+10. Pida su Diagnóstico Gratis
+11. Pisos de Madera Como Nuevos
+12. Expertos en Pulido de Madera
+13. Bogotá y Alrededores
+14. Contacto Directo por WhatsApp
+15. Presupuesto Sin Compromiso
+
+**Descripciones (4):**
+1. Pulido y barnizado profesional de pisos de madera en Bogotá. Diagnóstico sin costo.
+2. Recupere el brillo y la protección de su piso. Acabados de bajo VOC.
+3. Atendemos casas, apartamentos, oficinas y locales. Solicite su visita técnica.
+4. Lijado, pulido y sellado con productos de bajo VOC. Contacto directo por WhatsApp.
+
+---
+
+### RSA 2 — Enfoque beneficio + confianza
+
+**Títulos (15):**
+1. Pulido Pisos de Madera Bogotá ← *fijado pos. 1*
+2. Barnizado y Sellado Profesional
+3. Deje su Piso Como Nuevo
+4. Diagnóstico Sin Costo
+5. Acabados de Bajo VOC
+6. Todo Tipo de Espacios
+7. Solicite Visita Técnica
+8. Recupere su Piso de Madera
+9. Sin Reemplazar su Piso
+10. Bogotá y Alrededores
+11. Presupuesto Sin Compromiso
+12. Expertos en Madera
+13. Pida su Diagnóstico Hoy
+14. Contacto por WhatsApp
+15. Servicio Profesional
+
+**Descripciones (4):**
+1. Pulido, lijado y barnizado de pisos de madera. Diagnóstico sin costo en Bogotá.
+2. Acabados al agua y poliuretano de bajo VOC. Proteja su piso sin reemplazarlo.
+3. Casas, apartamentos, oficinas y locales. Solicite su visita técnica hoy.
+4. Recupere el brillo de su piso de madera. Contacto directo por WhatsApp.
+
+---
+
+## Grupo 3 — Reparación
+
+**Intención del usuario:** “tengo piezas sueltas, ruidos, humedad o desgaste en mi piso de madera”.
+**Palabra clave ancla (fijada a posición 1):** `Reparación de Pisos de Madera`
+
+### RSA 1 — Enfoque problema + solución
+
+**Títulos (15):**
+1. Reparación de Pisos de Madera ← *fijado pos. 1*
+2. Piezas Sueltas y Desgaste
+3. Arreglamos Sin Reemplazar
+4. Visita Técnica Sin Costo
+5. Bogotá y Alrededores
+6. Diagnóstico Gratuito en Bogotá
+7. Reparamos su Piso de Madera
+8. Piezas Sueltas o Ruidosas
+9. Humedad y Manchas
+10. Solicite su Diagnóstico
+11. Contacto Directo por WhatsApp
+12. Expertos en Reparación
+13. Presupuesto Sin Compromiso
+14. Casas, Oficinas y Locales
+15. Su Piso de Madera Como Nuevo
+
+**Descripciones (4):**
+1. Reparación de pisos de madera en Bogotá. Diagnóstico sin costo y sin compromiso.
+2. Reparamos piezas sueltas, desgaste, humedad y manchas. Sin reemplazar su piso.
+3. Atendemos casas, apartamentos, oficinas y locales. Solicite su visita técnica.
+4. Arreglamos su piso de madera sin reemplazarlo. Contacto directo por WhatsApp.
+
+---
+
+### RSA 2 — Enfoque beneficio + confianza
+
+**Títulos (15):**
+1. Reparación Pisos Madera Bogotá ← *fijado pos. 1*
+2. Piso de Madera con Problemas
+3. Reparamos Sin Reemplazar
+4. Diagnóstico Sin Costo
+5. Visita Técnica en Bogotá
+6. Piezas Sueltas y Ruidos
+7. Humedad, Manchas, Desgaste
+8. Solicite su Visita Técnica
+9. Bogotá y Alrededores
+10. Expertos en Reparación
+11. Contacto por WhatsApp
+12. Presupuesto Sin Compromiso
+13. Su Piso Como Nuevo
+14. Atención Profesional
+15. Pida su Diagnóstico Hoy
+
+**Descripciones (4):**
+1. Reparamos su piso de madera sin reemplazarlo. Diagnóstico gratis en Bogotá.
+2. Solucionamos piezas sueltas, desgaste, humedad y manchas. Visita sin costo.
+3. Casas, apartamentos, oficinas y locales. Solicite su visita técnica hoy.
+4. Reparación profesional de pisos de madera. Contacto directo por WhatsApp.
+
+---
+
+## Resumen de la lógica de diseño
+
+| Grupo | Ángulo del RSA 1 | Ángulo del RSA 2 | Título fijado (pos. 1) |
+|---|---|---|---|
+| Restauración | Servicio + oferta (diagnóstico gratis) | Beneficio + confianza (sin reemplazar) | `Restauración de Pisos de Madera` |
+| Pulido y Barnizado | Servicio + oferta | Beneficio + confianza | `Pulido de Pisos de Madera` |
+| Reparación | Problema + solución | Beneficio + confianza | `Reparación de Pisos de Madera` |
+
+**Nota importante:** si al cargar los anuncios Google marca alguno como “Calidad deficiente”, casi siempre es por **falta de diversidad entre títulos** o **repetición de la palabra clave en demasiados títulos**. En ese caso, rota 2–3 títulos por otro ángulo (precio, proceso, garantía, tipo de espacio) sin tocar el título fijado.
+**
+**
+
+
+ Lista final de palabras clave (sin Planificador)
+Grupo 1 — Restauración
+Palabra clave	Concordancia	Por qué
+"restauración de pisos de madera"	Frase	Núcleo del servicio. Captura variantes de orden y plural.
+"restauración pisos de madera bogotá"	Frase	Filtra intención local.
+"restaurar piso de madera"	Frase	Verbo en infinitivo: intención de acción, no de curiosidad.
+[restauración de pisos de madera bogotá]	Exacta	Control total sobre la búsqueda más específica.
+Grupo 2 — Pulido y Barnizado
+Palabra clave	Concordancia	Por qué
+"pulido de pisos de madera"	Frase	Término con mayor demanda esperada del grupo.
+"pulido de pisos de madera bogotá"	Frase	Variante local.
+"barnizar piso de madera"	Frase	Intención clara de acabado/protección.
+"lijado y barnizado de pisos"	Frase	Captura al usuario que ya sabe qué proceso necesita.
+[pulido de pisos de madera bogotá]	Exacta	Control sobre la búsqueda más específica.
+Grupo 3 — Reparación
+Palabra clave	Concordancia	Por qué
+"reparación de pisos de madera"	Frase	Núcleo del grupo.
+"reparación piso de madera bogotá"	Frase	Variante local.
+"reparar piso de madera"	Frase	Verbo en infinitivo: intención de acción.
+"arreglar piso de madera"	Frase	Sinónimo coloquial que muchos usuarios usan.
+[reparación de pisos de madera bogotá]	Exacta	Control sobre la búsqueda más específica.
+Total: 14 palabras clave. Es un núcleo pequeño a propósito: suficiente para que Google empiece a aprender, y lo bastante acotado para que puedas leer el Informe de términos de búsqueda sin ahogarte.
+
+Lista de reserva (para añadir en la semana 3–4, según datos)
+Estas no se cargan ahora. Se activan solo si el Informe de términos de búsqueda muestra que estás perdiendo impresiones por variantes que no estás cubriendo:
+
+"mantenimiento de pisos de madera bogotá" → si ves búsquedas de mantenimiento preventivo.
+
+"recuperar piso de madera" → si aparecen variantes con “recuperar”.
+
+"sellado de pisos de madera" → si el ángulo de protección gana tracción.
+
+"pulir piso de madera precio" → solo si detectas que “precio” es recurrente y no destructivo.
+
+Cómo sustituir el Planificador sin gastar de más
+Sin volumen previo, el riesgo es que alguna palabra clave exacta tenga cero impresiones en las primeras dos semanas. Eso no es un error: es información. Protocolo:
+
+Semana 1–2: no toques nada. Deja correr la campaña con la lista cerrada y observa.
+
+Día 14: abre el Informe de términos de búsqueda. Ordénalo por impresiones y por costo.
+
+Si una palabra clave exacta tiene 0 impresiones → pausa esa exacta y deja que la versión en frase haga el trabajo.
+
+Si aparecen búsquedas nuevas con intención clara → añádelas como positivas en el grupo correspondiente.
+
+Si aparecen búsquedas irrelevantes → van a la lista de negativas de la Fase 2.3.
+
+Día 21–28: con datos reales, decides si activas alguna de la “lista de reserva”.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

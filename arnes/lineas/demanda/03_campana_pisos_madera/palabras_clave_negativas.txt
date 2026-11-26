@@ -1,0 +1,462 @@
+Bloque 1 — Instalación y venta de pisos nuevos (OBLIGATORIO)
+Tu negocio no ofrece instalación ni venta. Sin este bloque, la campaña se llenará de clics de gente buscando comprar o instalar piso nuevo, que nunca te contactará.
+
+text
+instalación
+instalacion
+instalar
+instalador
+piso nuevo
+pisos nuevos
+venta
+vender
+comprar
+compra
+lámina
+lamina
+laminado
+laminados
+flotante
+sintético
+sintetico
+vinílico
+vinilico
+porcelanato
+cerámica
+ceramica
+deck
+exterior
+madera plástica
+madera plastica
+proveedor
+distribuidor
+fábrica
+fabrica
+mayorista
+Total: 31 negativas.
+
+Bloque 2 — Materiales y productos (no servicios)
+Búsquedas de quien quiere el producto, no el servicio.
+
+text
+barniz
+barnices
+laca
+lacas
+aceite para madera
+tinta para madera
+sellador
+selladores
+pegamento
+cola
+cera
+limpiador
+limpiadores
+producto
+productos
+Total: 16 negativas.
+
+🔶 Ojo con sellador y barniz: si en algún momento ofreces venta de productos, revisa este bloque. Hoy no los vendes, así que bloquéalos.
+
+Bloque 3 — Gratis, DIY y curiosidad
+Personas que buscan hacerlo ellos mismos o solo informarse.
+
+text
+gratis
+gratuito
+gratuita
+sin costo
+económico
+economico
+barato
+casero
+diy
+hacerlo uno mismo
+cómo
+como
+tutorial
+tutoriales
+paso a paso
+videotutorial
+curso
+cursos
+aprender
+guía
+guia
+pdf
+descargar
+Total: 24 negativas.
+
+🔶 Ojo con barato y económico: algunos clientes reales buscan “barato” y sí contratan. Si tu servicio no compite por precio, bloquéalos. Si compites por relación calidad-precio, no los niegues; solo pruébalos después con datos reales.
+
+Bloque 4 — Empleo y trabajo
+Gente buscando trabajo, no contratando servicio.
+
+text
+empleo
+empleos
+trabajo
+trabajos
+vacante
+vacantes
+contratar
+contratación
+contratacion
+hoja de vida
+curriculum
+cv
+sueldo
+salario
+Total: 14 negativas.
+
+Bloque 5 — Alquiler y bienes raíces
+Búsquedas de arriendo, compra-venta de inmuebles, no de restauración.
+
+text
+alquiler
+arriendo
+arrendar
+alquilar
+renta
+rentar
+inmobiliaria
+inmueble
+inmuebles
+apartamento en venta
+casa en venta
+finca raíz
+finca raiz
+Total: 14 negativas.
+
+🔶 Ojo con renta: en Colombia “renta” también puede referirse a renta de equipos o incluso a la declaración de renta. Es una negativa razonable, pero revísala si empiezas a notar que bloquea consultas válidas.
+
+Bloque 6 — Pisos de otro tipo (no madera)
+Búsquedas de quien tiene otro tipo de piso y no puede contratarte.
+
+text
+epóxico
+epoxico
+epoxi
+concreto
+cemento
+pulido de concreto
+pulido de cemento
+mármol
+marmol
+granito
+gres
+baldosa
+baldosas
+alfombra
+alfombras
+moqueta
+linóleo
+linoleo
+microcemento
+Total: 18 negativas.
+
+🔶 Ojo con pulido de concreto: si en algún momento amplías servicios a concreto pulido, revisa este bloque.
+
+Bloque 7 — Servicios que no ofreces
+Adyacentes a tu servicio pero fuera de tu alcance operativo.
+
+text
+muebles
+puertas
+ventanas
+closets
+cocina integral
+escaleras
+barandales
+pasamanos
+tarima
+tarimas
+repisa
+repisas
+Total: 13 negativas.
+
+🔶 Ojo con escaleras y pasamanos: si algún día restauras escaleras de madera, reabre este bloque. Hoy no las ofreces, así que bloquéalas.
+
+Bloque 8 — Geografía fuera de cobertura
+Además de la segmentación geográfica de la campaña (que debes configurar para Bogotá), añade estas negativas como red de seguridad, porque Google a veces muestra anuncios a ubicaciones fuera de la segmentación por intereses o ubicación física del usuario.
+
+text
+medellín
+medellin
+cali
+barranquilla
+cartagena
+bucaramanga
+cúcuta
+cucuta
+pereira
+manizales
+santa marta
+villavicencio
+ibagué
+ibague
+neiva
+pasto
+armenia
+montería
+monteria
+
+Bloque 9 — Pisos “no originales” o con prefijo negativo
+Búsquedas de personas que buscan lo contrario a lo que ofreces.
+
+text
+sin madera
+falso
+falsa
+imitación
+imitacion
+simil madera
+parecido a madera
+Intención de "Hágalo usted mismo" (DIY): Bloquea a quienes buscan hacerlo ellos mismos.
+
+"cómo instalar"
+
+"cómo poner"
+
+"cómo restaurar"
+
+"hacer uno mismo"
+
+"paso a paso"
+
+"tutorial para"
+
+Intención de compra de materiales: Bloquea a quienes buscan productos, no el servicio.
+
+"dónde comprar"
+
+"tienda de"
+
+"precio de lámina"
+
+"venta de piso"
+
+"comprar piso"
+
+Búsqueda de información o comparación: Bloquea a quienes están en fase de investigación.
+
+"qué es"
+
+"ventajas y desventajas"
+
+"opiniones de"
+
+"vale la pena"
+
+Intención de empleo o formación: Bloquea a quienes buscan trabajo o estudiar.
+
+"cómo ser"
+
+"curso de"
+
+"aprender a"
+
+Servicios que no ofreces: Frases que buscan servicios específicos que no cubres.
+
+"pulir concreto"
+
+"instalar deck"
+
+"reparar muebles"
+"
+"🧱 Bloque A: Pisos PVC, Vinílicos, Laminados y Sintéticos (El mayor riesgo)
+Son el "falso amigo" más común. La gente busca "piso de madera" pero en realidad quiere la apariencia de madera con materiales sintéticos. Deben ir en concordancia de frase negativa (entre comillas).
+
+"piso pvc"
+
+"piso vinílico"
+
+"piso vinilo"
+
+"piso laminado"
+
+"piso flotante"
+
+"piso sintético"
+
+"piso de goma"
+
+"piso de caucho"
+
+"piso LVT"
+
+"piso SPC"
+
+"piso WPC"
+
+"piso de bambú"
+
+"piso autoadherible"
+
+"piso adhesivo"
+
+"piso en rollo"
+
+"piso porcelanato"
+
+"piso cerámica"
+
+"piso de mármol"
+
+"piso de granito"
+
+"piso epóxico"
+
+"piso de concreto"
+
+"piso pulido de cemento"
+
+"microcemento para piso"
+
+"piso de exterior"
+
+"deck de madera"
+
+"piso para garaje"
+
+"piso para baño"
+
+"piso para cocina"
+
+"piso industrial"
+
+"piso deportivo"
+
+"piso para gimnasio"
+
+🛒 Bloque B: Intención de Compra de Material (No contratan servicio)
+Buscan el producto para instalarlo ellos o para que un tercero lo haga. Tú no vendes materiales.
+
+"comprar piso"
+
+"venta de piso"
+
+"precio de piso"
+
+"precio por metro"
+
+"lámina para piso"
+
+"tabla para piso"
+
+"rollo de piso"
+
+"caja de piso"
+
+"piso al por mayor"
+
+"distribuidor de pisos"
+
+"fábrica de pisos"
+
+"proveedor de pisos"
+
+"piso barato"
+
+"piso económico"
+
+"piso en oferta"
+
+"piso segunda mano"
+
+"piso usado"
+
+"piso de remate"
+
+"muestra de piso"
+
+"catálogo de pisos"
+
+🛠️ Bloque C: DIY, Tutoriales y Curiosidad (Tráfico que no paga)
+Quieren aprender a hacerlo o solo satisfacer curiosidad. La frase compuesta ataca la intención completa.
+
+"cómo instalar piso"
+
+"cómo poner piso"
+
+"cómo reparar piso"
+
+"cómo restaurar piso"
+
+"cómo pulir piso"
+
+"cómo lijar piso"
+
+"cómo barnizar piso"
+
+"hacer uno mismo"
+
+"paso a paso para"
+
+"tutorial de piso"
+
+"guía para instalar"
+
+"aprender a instalar"
+
+"curso de pisos"
+
+"qué es un piso"
+
+"ventajas de piso"
+
+"desventajas de piso"
+
+"opiniones de piso"
+
+"vale la pena piso"
+
+👷 Bloque D: Empleo, Formación y Servicios Ajenos
+"trabajo de instalador"
+
+"empleo para pisos"
+
+"vacante de piso"
+
+"sueldo de instalador"
+
+"cómo ser instalador"
+
+"curso de instalación"
+
+"certificación de pisos"
+
+"limpieza de pisos"
+
+"encerado de pisos"
+
+"abrillantado de pisos"
+
+"lavado de pisos"
+
+"desmanchado de pisos"
+
+"fumigación para pisos"
+
+🧩 Bloque E: Términos Amplios y Genéricos (Fuga silenciosa)
+Búsquedas de una sola palabra o muy amplias que suelen mezclar intenciones y agotan el presupuesto rápido.
+
+(Retirados "pisos" y "piso": son subcadenas de las palabras clave positivas y bloqueaban toda la campaña. Verificado por SDK 2026-11-26.)
+
+"suelos"
+
+"revestimiento"
+
+"decoración de pisos"
+
+"tendencia de pisos"
+
+"tipos de pisos"
+
+"modelos de pisos"
+
+"colores de pisos"
+
+"pisos modernos"
+
+"pisos elegantes"
