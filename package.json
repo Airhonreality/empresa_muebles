@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "db:diagnostico": "tsx scripts/diagnostico-esquema-db.ts",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",

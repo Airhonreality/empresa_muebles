@@ -30,6 +30,15 @@ function programadorManual() {
   }
 }
 
+// Si una promesa nunca resuelve, Node termina el proceso con código 0 sin error: esta guarda lo evita.
+let terminado = false
+process.on('exit', () => {
+  if (!terminado) {
+    console.error('outbox.test.ts: NO TERMINÓ (una promesa quedó pendiente)')
+    process.exitCode = 1
+  }
+})
+
 async function main() {
   // 1. Confirma en orden y vacía la cola
   {
@@ -245,6 +254,31 @@ async function main() {
     assert.equal(ob.pendientes(), 0)
   }
 
+  // 9. Fallo de red reporta cada intento (para observabilidad)
+  {
+    const prog = programadorManual()
+    const intentos: number[] = []
+    let n = 0
+    const ob = new Outbox({
+      almacen: almacenMemoria(),
+      programar: prog.programar,
+      ejecutar: async () => {
+        n += 1
+        if (n <= 2) throw redCaida()
+        return 'ok'
+      },
+      onFalloRed: (_e, _err, intento) => intentos.push(intento),
+    })
+    const promesa = ob.encolar('crearItem', { n: 1 }, 'p1')
+    await new Promise((r) => setTimeout(r, 0))
+    prog.dispararUno() // reintento 1: vuelve a fallar por red
+    await new Promise((r) => setTimeout(r, 0))
+    prog.dispararUno() // reintento 2: confirma
+    assert.equal(await promesa, 'ok')
+    assert.deepEqual(intentos, [1, 2], 'cada fallo de red se reporta con su número de intento')
+  }
+
+  terminado = true
   console.log('outbox.test.ts: OK')
 }
 

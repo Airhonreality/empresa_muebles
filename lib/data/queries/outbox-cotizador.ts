@@ -79,10 +79,21 @@ const cola = new Outbox({
   onConfirmada: (escritura, _resultado, conEspera) => {
     if (!conEspera) refrescarProyecto(escritura.proyectoId)
   },
-  onRechazada: (escritura, _error, conEspera) => {
+  onRechazada: (escritura, error, conEspera) => {
     // Rechazo definitivo: la mutación en espera revierte sola (onError). Si no hay mutación
     // esperando (venía de una recarga), la caché se refresca para quitar el cambio rechazado.
+    console.error(`[cotizador] escritura rechazada por el servidor: ${escritura.tipo}`, {
+      proyectoId: escritura.proyectoId,
+      mensaje: error.message,
+      conEspera,
+    })
     if (!conEspera) refrescarProyecto(escritura.proyectoId)
+  },
+  onFalloRed: (escritura, error, intento) => {
+    console.warn(`[cotizador] sin red, reintento ${intento}: ${escritura.tipo}`, {
+      proyectoId: escritura.proyectoId,
+      mensaje: error.message,
+    })
   },
   onErrorPersistencia: (error, contexto) => {
     // La escritura sigue en memoria y se envía igual. Lo que se pierde es la garantía de

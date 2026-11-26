@@ -44,6 +44,8 @@ export interface OpcionesOutbox {
   onRechazada?: (escritura: EscrituraPendiente, error: Error, conEspera: boolean) => void
   /** Fallo al leer o guardar la cola en el dispositivo. No cambia el resultado de ninguna escritura. */
   onErrorPersistencia?: (error: Error, contexto: ContextoPersistencia) => void
+  /** Fallo de red: la escritura sigue en cola y se reintentará. `intento` cuenta desde 1. */
+  onFalloRed?: (escritura: EscrituraPendiente, error: Error, intento: number) => void
   /** Programa un reintento. Inyectable para pruebas. */
   programar?: (fn: () => void, ms: number) => unknown
 }
@@ -128,7 +130,9 @@ export class Outbox {
           if (esErrorDeRed(error)) {
             actual.intentosRed += 1
             await this.persistir()
-            this.agendarReintento(actual.intentosRed)
+            const intento = actual.intentosRed
+            this.notificar(() => this.opciones.onFalloRed?.(actual, error, intento))
+            this.agendarReintento(intento)
             return
           }
           this.quitar(actual.id)
