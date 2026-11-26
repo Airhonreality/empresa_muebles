@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { resolverPropuestaHttp } from './ruta'
 import type { SesionEmpleado } from '../auth/session'
 import { ErrorTopesNoConfigurados, MENSAJE_TOPES_NO_CONFIGURADOS } from './bucle'
 import { ErrorSinClavesDisponibles } from './claves'
@@ -133,6 +134,14 @@ const casos: Array<[string, () => Promise<void>]> = [
     const r = await leerConfiguracionHttp(ADMIN, { leer: async () => ({ claves: [{ ultimos4: '1234' }] }), guardar: async () => {} })
     assert.equal(r.status, 200)
     assert.ok(!JSON.stringify(r.body).includes(SECRETO))
+  }],
+  ['confirmar propuesta devuelve el resultado (ids creados) solo a quien la confirma', async () => {
+    const sesion = { usuarioId: 'u-1', personaId: null, nombre: 'Prueba', email: 'p@prueba.test', rol: 'comercial' as const }
+    const r = await resolverPropuestaHttp(sesion, '11111111-1111-4111-8111-111111111111', 'confirmar', async () => ({
+      estado: 'ejecutada', sinCambios: false, resultado: { proyectoId: 'proy-1', codigo: 'COT-2026-11-25-001' },
+    }))
+    assert.equal(r.status, 200)
+    assert.deepEqual(r.body.resultado, { proyectoId: 'proy-1', codigo: 'COT-2026-11-25-001' })
   }],
 ]
 

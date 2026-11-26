@@ -120,7 +120,11 @@ export async function resolverPropuestaHttp(
   if (accion !== 'confirmar' && accion !== 'cancelar') return { status: 400, body: { error: 'Acción inválida' } }
   try {
     const r = await resolver(accion, propuestaId, sesion)
-    return { status: 200, body: { estado: r.estado, sinCambios: r.sinCambios } }
+    // `resultado` solo existe al ejecutar; para el empleado que confirmó (ids creados, totales).
+    return {
+      status: 200,
+      body: { estado: r.estado, sinCambios: r.sinCambios, ...(r.resultado !== undefined ? { resultado: r.resultado } : {}) },
+    }
   } catch (err) {
     return respuestaDeError(err)
   }
