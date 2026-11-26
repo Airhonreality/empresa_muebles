@@ -25,6 +25,7 @@ import { crearProveedorAction } from '@/lib/data/actions/f6'
 import { publicarPropuestaAction, eliminarVersionPropuestaAction } from '@/lib/data/actions/public'
 import { Outbox, type EscrituraPendiente } from './outbox'
 import { cotizadorKeys } from './queryKeys'
+import { BASE_OUTBOX_IDB } from './idb-stores'
 
 /** Todas las escrituras del cotizador. La clave es el nombre con el que se encola. */
 export const ACCIONES_COTIZADOR = {
@@ -44,7 +45,7 @@ type Acciones = typeof ACCIONES_COTIZADOR
 export type NombreAccionCotizador = keyof Acciones
 
 const CLAVE_COLA = 'cola-cotizador'
-const idbStore = typeof indexedDB === 'undefined' ? null : createStore('veta-erp', 'outbox')
+const idbStore = typeof indexedDB === 'undefined' ? null : createStore(BASE_OUTBOX_IDB.nombre, BASE_OUTBOX_IDB.almacen)
 
 const almacenIdb = {
   leer: async (): Promise<EscrituraPendiente[]> => {
@@ -83,12 +84,20 @@ const cola = new Outbox({
     // esperando (venía de una recarga), la caché se refresca para quitar el cambio rechazado.
     if (!conEspera) refrescarProyecto(escritura.proyectoId)
   },
+  onErrorPersistencia: (error, contexto) => {
+    // La escritura sigue en memoria y se envía igual. Lo que se pierde es la garantía de
+    // sobrevivir a una recarga mientras no haya IndexedDB disponible.
+    console.error(`[cotizador] no se pudo ${contexto === 'leer' ? 'leer' : 'guardar'} la cola local de escrituras; si recargas la página, lo pendiente podría perderse:`, error)
+  },
 })
 
 /** Vincula la caché de TanStack Query y arranca la cola: restaura lo pendiente y lo reenvía. */
 export function iniciarOutboxCotizador(qc: QueryClient): void {
   queryClient = qc
   if (typeof window === 'undefined') return
+  if (typeof indexedDB === 'undefined') {
+    console.warn('[cotizador] IndexedDB no está disponible: las escrituras pendientes no sobreviven a una recarga.')
+  }
   void cola.iniciar().then(() => cola.procesar())
   window.addEventListener('online', () => void cola.procesar())
 }

@@ -5,8 +5,9 @@
 
 import { createStore, get, set, del } from 'idb-keyval'
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
+import { BASE_CACHE_IDB } from './idb-stores'
 
-const store = typeof indexedDB === 'undefined' ? null : createStore('veta-erp', 'cache-query')
+const store = typeof indexedDB === 'undefined' ? null : createStore(BASE_CACHE_IDB.nombre, BASE_CACHE_IDB.almacen)
 
 const storageIdb = {
   getItem: async (key: string): Promise<string | null> => {

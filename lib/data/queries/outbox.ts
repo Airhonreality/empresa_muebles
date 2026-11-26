@@ -2,12 +2,17 @@
 //
 // Reglas:
 // - Las escrituras se ejecutan en orden (FIFO). Un ítem puede depender del anterior.
+// - MEMORIA PRIMERO: la cola en memoria es la verdad durante la sesión. El almacén persistente
+//   (IndexedDB) solo sirve para sobrevivir a una recarga. Un fallo de almacenamiento NUNCA cambia
+//   el resultado de una escritura: no la rechaza, no la reenvía dos veces y no la descarta. Solo
+//   se avisa con onErrorPersistencia (lo pendiente podría perderse si se recarga la pestaña).
 // - Fallo de RED: la escritura se queda en la cola y se reintenta sola con espera creciente.
-//   Nunca se descarta por red. La pantalla sigue mostrando el cambio como pendiente.
 // - RECHAZO del servidor (validación, regla de negocio): la escritura sale de la cola, se avisa
 //   con onRechazada y la promesa de la mutación se rechaza. Ahí la pantalla vuelve a la verdad.
-// - Cada escritura confirmada sale de la cola y se avisa con onConfirmada.
-// - La cola sobrevive a una recarga: se persiste con el almacén que se inyecta.
+// - CONFIRMACIÓN: la escritura sale de la cola ANTES de persistir y se avisa con onConfirmada.
+//   Un error al guardar después de confirmar nunca la vuelve a enviar ni la marca como rechazada.
+// - Las escrituras de la cola se guardan en orden (cadena de guardados) para que la última
+//   instantánea escrita sea siempre la más reciente.
 import { esErrorDeRed, esperaReintento } from './reintento'
 
 /** Nombre de la acción de escritura a ejecutar (ver ACCIONES_COTIZADOR). */
@@ -27,6 +32,8 @@ export interface AlmacenOutbox {
   guardar(lista: EscrituraPendiente[]): Promise<void>
 }
 
+export type ContextoPersistencia = 'leer' | 'guardar'
+
 export interface OpcionesOutbox {
   almacen: AlmacenOutbox
   /** Ejecuta la escritura contra el servidor. Lanza error si falla. */
@@ -35,6 +42,8 @@ export interface OpcionesOutbox {
    *  pantalla ya se actualiza sola). false si viene de una recarga: hay que refrescar la caché. */
   onConfirmada?: (escritura: EscrituraPendiente, resultado: unknown, conEspera: boolean) => void
   onRechazada?: (escritura: EscrituraPendiente, error: Error, conEspera: boolean) => void
+  /** Fallo al leer o guardar la cola en el dispositivo. No cambia el resultado de ninguna escritura. */
+  onErrorPersistencia?: (error: Error, contexto: ContextoPersistencia) => void
   /** Programa un reintento. Inyectable para pruebas. */
   programar?: (fn: () => void, ms: number) => unknown
 }
@@ -44,11 +53,16 @@ interface Espera {
   rechazar: (error: Error) => void
 }
 
+function aError(err: unknown): Error {
+  return err instanceof Error ? err : new Error(String(err))
+}
+
 export class Outbox {
   private cola: EscrituraPendiente[] = []
   private esperas = new Map<string, Espera>()
   private procesando = false
-  private inicio: Promise<void> | null = null
+  private cargada = false
+  private guardando: Promise<void> = Promise.resolve()
   private timer: unknown = null
   private readonly programar: (fn: () => void, ms: number) => unknown
 
@@ -56,17 +70,24 @@ export class Outbox {
     this.programar = opciones.programar ?? ((fn, ms) => setTimeout(fn, ms))
   }
 
-  /** Carga la cola persistida. Idempotente: varias llamadas concurrentes comparten una sola
-   *  lectura, para que ninguna sobrescriba escrituras ya encoladas. */
-  iniciar(): Promise<void> {
-    this.inicio ??= this.opciones.almacen.leer().then((lista) => {
-      this.cola = lista
-    })
-    return this.inicio
+  /** Carga la cola persistida y la fusiona con lo que ya está en memoria. Si la lectura falla,
+   *  avisa y deja la cola en memoria; la próxima llamada vuelve a intentar leer. Nunca rechaza. */
+  async iniciar(): Promise<void> {
+    if (this.cargada) return
+    try {
+      const lista = await this.opciones.almacen.leer()
+      if (this.cargada) return
+      const enMemoria = this.cola.filter((e) => !lista.some((l) => l.id === e.id))
+      this.cola = [...lista, ...enMemoria]
+      this.cargada = true
+    } catch (err) {
+      this.notificarPersistencia(err, 'leer')
+    }
   }
 
   /** Encola una escritura y devuelve una promesa que resuelve con el resultado del servidor, o
-   *  se rechaza si el servidor la rechaza de forma definitiva. Los fallos de red no rechazan. */
+   *  se rechaza si el servidor la rechaza de forma definitiva. Los fallos de red no rechazan, y
+   *  los fallos de almacenamiento tampoco: la escritura sigue en memoria. */
   async encolar(tipo: TipoEscritura, args: unknown, proyectoId: string): Promise<unknown> {
     await this.iniciar()
     const escritura: EscrituraPendiente = {
@@ -78,10 +99,10 @@ export class Outbox {
       intentosRed: 0,
     }
     this.cola.push(escritura)
-    await this.persistir()
     const promesa = new Promise<unknown>((resolver, rechazar) => {
       this.esperas.set(escritura.id, { resolver, rechazar })
     })
+    void this.persistir()
     void this.procesar()
     return promesa
   }
@@ -99,33 +120,55 @@ export class Outbox {
       await this.iniciar()
       while (this.cola.length > 0) {
         const actual = this.cola[0]
+        let resultado: unknown
         try {
-          const resultado = await this.opciones.ejecutar(actual.tipo, actual.args)
-          this.cola.shift()
-          await this.persistir()
-          const espera = this.esperas.get(actual.id)
-          this.opciones.onConfirmada?.(actual, resultado, espera !== undefined)
-          espera?.resolver(resultado)
-          this.esperas.delete(actual.id)
+          resultado = await this.opciones.ejecutar(actual.tipo, actual.args)
         } catch (err) {
-          const error = err instanceof Error ? err : new Error(String(err))
+          const error = aError(err)
           if (esErrorDeRed(error)) {
             actual.intentosRed += 1
             await this.persistir()
             this.agendarReintento(actual.intentosRed)
             return
           }
-          this.cola.shift()
+          this.quitar(actual.id)
           await this.persistir()
           const espera = this.esperas.get(actual.id)
-          this.opciones.onRechazada?.(actual, error, espera !== undefined)
+          this.notificar(() => this.opciones.onRechazada?.(actual, error, espera !== undefined))
           espera?.rechazar(error)
           this.esperas.delete(actual.id)
+          continue
         }
+
+        // El servidor ya aplicó la escritura. Sale de la cola antes de persistir: un fallo al
+        // guardar no puede reenviarla ni tratarla como rechazo.
+        this.quitar(actual.id)
+        await this.persistir()
+        const espera = this.esperas.get(actual.id)
+        this.notificar(() => this.opciones.onConfirmada?.(actual, resultado, espera !== undefined))
+        espera?.resolver(resultado)
+        this.esperas.delete(actual.id)
       }
     } finally {
       this.procesando = false
     }
+  }
+
+  private quitar(id: string): void {
+    this.cola = this.cola.filter((e) => e.id !== id)
+  }
+
+  /** Un callback del consumidor que lanza no debe detener la cola. */
+  private notificar(fn: () => void): void {
+    try {
+      fn()
+    } catch (err) {
+      console.error('[outbox] callback del consumidor lanzó un error:', aError(err))
+    }
+  }
+
+  private notificarPersistencia(err: unknown, contexto: ContextoPersistencia): void {
+    this.notificar(() => this.opciones.onErrorPersistencia?.(aError(err), contexto))
   }
 
   private agendarReintento(intento: number): void {
@@ -136,7 +179,13 @@ export class Outbox {
     }, esperaReintento(Math.min(intento - 1, 6)))
   }
 
-  private async persistir(): Promise<void> {
-    await this.opciones.almacen.guardar(this.cola)
+  /** Guarda una instantánea de la cola. Las llamadas se encadenan para que se apliquen en orden.
+   *  Nunca rechaza: un fallo se avisa con onErrorPersistencia y la cola en memoria sigue. */
+  private persistir(): Promise<void> {
+    const instantanea = [...this.cola]
+    this.guardando = this.guardando
+      .then(() => this.opciones.almacen.guardar(instantanea))
+      .catch((err: unknown) => this.notificarPersistencia(err, 'guardar'))
+    return this.guardando
   }
 }

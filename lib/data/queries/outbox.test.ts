@@ -151,6 +151,100 @@ async function main() {
     assert.equal(almacen.ver().length, 0)
   }
 
+  // 6. (Bug A) Guardar falla DESPUÉS de que el servidor confirmó: no reenvía ni rechaza nada,
+  //    y la escritura siguiente se ejecuta igual.
+  {
+    let fallar = false
+    const guardados: number[] = []
+    const persistencia: string[] = []
+    const almacen = {
+      leer: async () => [] as EscrituraPendiente[],
+      guardar: async (lista: EscrituraPendiente[]) => {
+        if (fallar) throw new DOMException('object store not found', 'NotFoundError')
+        guardados.push(lista.length)
+      },
+    }
+    const ejecutadas: number[] = []
+    const rechazadas: string[] = []
+    const ob = new Outbox({
+      almacen,
+      ejecutar: async (_t, args) => {
+        const n = (args as { n: number }).n
+        ejecutadas.push(n)
+        if (n === 1) fallar = true
+        return `ok-${n}`
+      },
+      onRechazada: (e) => rechazadas.push(e.tipo),
+      onErrorPersistencia: (_e, contexto) => persistencia.push(contexto),
+    })
+    const r1 = await ob.encolar('crearEspacio', { n: 1 }, 'p1')
+    const r2 = await ob.encolar('crearItem', { n: 2 }, 'p1')
+    assert.equal(r1, 'ok-1', 'la confirmada resuelve con su resultado')
+    assert.equal(r2, 'ok-2', 'la siguiente también se ejecuta')
+    assert.deepEqual(ejecutadas, [1, 2], 'ninguna escritura se pierde ni se reenvía')
+    assert.deepEqual(rechazadas, [], 'un fallo de guardado no es un rechazo del servidor')
+    assert.ok(persistencia.includes('guardar'), 'el fallo de guardado se reporta')
+    assert.equal(ob.pendientes(), 0)
+  }
+
+  // 7. (Bug B) Guardar falla al ENCOLAR: la escritura igual se ejecuta y la mutación no se
+  //    rechaza. Así la pantalla y el servidor no divergen.
+  {
+    const almacen = {
+      leer: async () => [] as EscrituraPendiente[],
+      guardar: async () => {
+        throw new DOMException('object store not found', 'NotFoundError')
+      },
+    }
+    const ejecutadas: number[] = []
+    const persistencia: string[] = []
+    const ob = new Outbox({
+      almacen,
+      ejecutar: async (_t, args) => {
+        ejecutadas.push((args as { n: number }).n)
+        return 'ok'
+      },
+      onErrorPersistencia: (_e, contexto) => persistencia.push(contexto),
+    })
+    const resultado = await ob.encolar('crearItem', { n: 1 }, 'p1')
+    assert.equal(resultado, 'ok', 'la escritura no se rechaza por un fallo de almacenamiento')
+    assert.deepEqual(ejecutadas, [1], 'se ejecuta una sola vez')
+    assert.ok(persistencia.includes('guardar'))
+    assert.equal(ob.pendientes(), 0)
+  }
+
+  // 8. (Bug C) Leer falla al arrancar: no queda muerta la cola; el siguiente intento la carga
+  //    y fusiona lo persistido con lo que ya está en memoria, en orden.
+  {
+    let lecturas = 0
+    const persistidas: EscrituraPendiente[] = [
+      { id: 'vieja', tipo: 'crearItem', args: { n: 7 }, proyectoId: 'p1', creadaEn: 1, intentosRed: 0 },
+    ]
+    const almacen = {
+      leer: async () => {
+        lecturas += 1
+        if (lecturas === 1) throw new DOMException('transaction failed', 'UnknownError')
+        return JSON.parse(JSON.stringify(persistidas)) as EscrituraPendiente[]
+      },
+      guardar: async () => {},
+    }
+    const ejecutadas: number[] = []
+    const errores: string[] = []
+    const ob = new Outbox({
+      almacen,
+      ejecutar: async (_t, args) => {
+        ejecutadas.push((args as { n: number }).n)
+        return 'ok'
+      },
+      onErrorPersistencia: (_e, contexto) => errores.push(contexto),
+    })
+    await ob.iniciar()
+    assert.deepEqual(errores, ['leer'], 'el fallo de lectura se reporta y no se lanza')
+    await ob.encolar('crearItem', { n: 1 }, 'p1')
+    assert.deepEqual(ejecutadas, [7, 1], 'lo persistido se carga y se ejecuta antes que lo nuevo')
+    assert.equal(ob.pendientes(), 0)
+  }
+
   console.log('outbox.test.ts: OK')
 }
 
