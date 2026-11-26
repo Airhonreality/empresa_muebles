@@ -45,6 +45,7 @@ function escrituraFalsa(opciones: { falla?: boolean } = {}) {
   const ejecuciones: unknown[] = []
   const def: DefinicionAsistente = {
     nombre: 'movimiento_registrar',
+    dominio: 'finanzas',
     descripcion: 'registra un movimiento (prueba)',
     permiso: 'finanzas:escribir',
     esEscritura: true,

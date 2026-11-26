@@ -19,6 +19,8 @@ export const MAX_CARACTERES_RESULTADO = 8000
 
 export interface DefinicionHerramienta<I> {
   nombre: string
+  /** Dominio de negocio (cotizacion, proyecto, finanzas). Agrupa herramientas para el catálogo de dominios. */
+  dominio: string
   descripcion: string
   permiso: Permiso
   esEscritura: boolean
@@ -71,6 +73,7 @@ const esquemaCotizacionBuscar = z.object({
 
 const cotizacionBuscar = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaCotizacionBuscar>> => ({
   nombre: 'cotizacion_buscar',
+  dominio: 'cotizacion',
   descripcion:
     'Busca cotizaciones por código (ej. COT-2026-11-25-01), nombre del proyecto o nombre del cliente. Devuelve hasta 20 coincidencias.',
   permiso: 'cotizador:leer',
@@ -103,6 +106,7 @@ const esquemaProyectoConsultar = z.object({
 
 const proyectoConsultar = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaProyectoConsultar>> => ({
   nombre: 'proyecto_consultar',
+  dominio: 'proyecto',
   descripcion:
     'Consulta un proyecto por su proyectoId (obtenido con cotizacion_buscar): estado, cliente, espacios y totales básicos.',
   permiso: 'proyectos:leer',
@@ -128,6 +132,7 @@ const esquemaCajaSaldo = z.object({})
 
 const cajaSaldo = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaCajaSaldo>> => ({
   nombre: 'caja_saldo',
+  dominio: 'finanzas',
   descripcion: 'Devuelve el saldo actual de cada cuenta financiera (caja, bancos) y el total.',
   permiso: 'finanzas:leer',
   esEscritura: false,
@@ -152,6 +157,39 @@ export type DefinicionAsistente = DefinicionHerramienta<any>
 /** Crea el registro con las acciones indicadas (los tests inyectan acciones falsas). */
 export function crearHerramientas(acciones: AccionesLectura): DefinicionAsistente[] {
   return [cotizacionBuscar(acciones), proyectoConsultar(acciones), cajaSaldo(acciones)]
+}
+
+/** Descripción de cada dominio para el catálogo que ve el modelo (nivel 1: dominios, no acciones). */
+export const DESCRIPCION_DOMINIOS: Record<string, { nombre: string; descripcion: string }> = {
+  cotizacion: { nombre: 'Cotizaciones', descripcion: 'Buscar cotizaciones por código, proyecto o cliente.' },
+  proyecto: { nombre: 'Proyectos', descripcion: 'Consultar el detalle de un proyecto: estado, cliente y espacios.' },
+  finanzas: { nombre: 'Finanzas', descripcion: 'Saldos de cuentas de caja y bancos.' },
+}
+
+export interface DominioCatalogo {
+  dominio: string
+  nombre: string
+  descripcion: string
+}
+
+/**
+ * Dominios donde la sesión tiene al menos un permiso de lectura (sufijo ":leer") sobre alguna
+ * herramienta registrada. Solo nombre y descripción: nunca nombres de herramientas ni datos.
+ */
+export function catalogoDominios(
+  sesion: SesionEmpleado,
+  registro: readonly DefinicionAsistente[] = HERRAMIENTAS,
+): DominioCatalogo[] {
+  const permisos = PERMISOS_POR_ROL[sesion.rol] ?? []
+  const dominios = new Set<string>()
+  for (const h of registro) {
+    if (h.permiso.endsWith(':leer') && permisos.includes(h.permiso)) dominios.add(h.dominio)
+  }
+  return [...dominios].sort().map((dominio) => ({
+    dominio,
+    nombre: DESCRIPCION_DOMINIOS[dominio]?.nombre ?? dominio,
+    descripcion: DESCRIPCION_DOMINIOS[dominio]?.descripcion ?? '',
+  }))
 }
 
 /** Registro real de la fase 1 (solo lectura). Las de escritura se agregan en el bloque F. */

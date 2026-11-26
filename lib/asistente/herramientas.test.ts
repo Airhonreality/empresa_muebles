@@ -4,6 +4,7 @@ import type { SesionEmpleado } from '../auth/session'
 import type { ProyectoSnapshot } from '../data/queries/proyecto-types'
 import {
   MAX_CARACTERES_RESULTADO,
+  catalogoDominios,
   crearHerramientas,
   ejecutarHerramienta,
   herramientasPermitidas,
@@ -128,6 +129,17 @@ const casos: Array<[string, () => Promise<void>]> = [
     const { acciones } = accionesFalsas()
     const datos = JSON.parse(await ejecutarHerramienta(buscar('proyecto_consultar', acciones), { proyectoId: PROYECTO_ID }, sesionCon('admin')))
     assert.deepEqual(datos, { encontrado: false })
+  }],
+  ['catálogo de dominios: solo los que el rol puede leer, sin nombres de herramientas', async () => {
+    const admin = catalogoDominios(sesionCon('admin')).map((d) => d.dominio)
+    assert.deepEqual(admin, ['cotizacion', 'finanzas', 'proyecto'])
+    const comercial = catalogoDominios(sesionCon('comercial')).map((d) => d.dominio)
+    assert.deepEqual(comercial, ['cotizacion', 'proyecto'])
+    const taller = catalogoDominios(sesionCon('taller')).map((d) => d.dominio)
+    assert.deepEqual(taller, ['proyecto'])
+    const descripcion = catalogoDominios(sesionCon('admin'))[0]
+    assert.ok(descripcion.nombre && descripcion.descripcion)
+    assert.ok(!JSON.stringify(catalogoDominios(sesionCon('admin'))).includes('_'))
   }],
 ]
 
