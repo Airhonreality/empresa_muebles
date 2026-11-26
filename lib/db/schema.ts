@@ -2024,3 +2024,96 @@ export const notasReunion = pgTable("notas_reunion", {
     }),
   }
 });
+
+// ─── Asistente de chat del ERP (t-198, plan §2 pieza 6 y diseño §9) ───
+// Ninguna tabla guarda claves en claro, prompts de sistema ni la clave maestra de cifrado.
+// Las claves de proveedor viven en proveedores_asistente.clave_cifrada (AES-256-GCM, lib/asistente/cifrado.ts).
+export const proveedorAsistente = pgEnum("proveedor_asistente", ['openrouter', 'anthropic', 'google'])
+export const estadoClaveAsistente = pgEnum("estado_clave_asistente", ['activa', 'enfriada', 'invalida', 'desactivada'])
+export const rolMensajeAsistente = pgEnum("rol_mensaje_asistente", ['usuario', 'asistente', 'herramienta'])
+export const estadoPropuestaAsistente = pgEnum("estado_propuesta_asistente", ['pendiente', 'ejecutada', 'fallida', 'cancelada', 'vencida'])
+export const tipoLlamadaAsistente = pgEnum("tipo_llamada_asistente", ['herramienta', 'modelo', 'rotacion_clave'])
+
+export const proveedoresAsistente = pgTable("proveedores_asistente", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  proveedor: proveedorAsistente().notNull(),
+  etiqueta: text().notNull(),
+  // Cifrado AES-256-GCM. Nunca texto plano.
+  claveCifrada: text("clave_cifrada").notNull(),
+  claveUltimos4: text("clave_ultimos4").notNull(),
+  orden: integer().notNull(),
+  estado: estadoClaveAsistente().default('activa').notNull(),
+  enfriadaHasta: timestamp("enfriada_hasta", { mode: 'string' }),
+  creadaEn: timestamp("creada_en", { mode: 'string' }).defaultNow().notNull(),
+  actualizadaEn: timestamp("actualizada_en", { mode: 'string' }).defaultNow().notNull(),
+})
+
+export const configuracionAsistente = pgTable("configuracion_asistente", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  clave: text().notNull(),
+  valor: jsonb().notNull(),
+  actualizadaPor: uuid("actualizada_por").references(() => usuarios.id),
+  actualizadaEn: timestamp("actualizada_en", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    configuracionAsistenteClaveUnique: unique("configuracion_asistente_clave_unique").on(table.clave),
+  }
+})
+
+export const conversacionesAsistente = pgTable("conversaciones_asistente", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  usuarioId: uuid("usuario_id").notNull().references(() => usuarios.id),
+  creadaEn: timestamp("creada_en", { mode: 'string' }).defaultNow().notNull(),
+  actualizadaEn: timestamp("actualizada_en", { mode: 'string' }).defaultNow().notNull(),
+})
+
+export const mensajesAsistente = pgTable("mensajes_asistente", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  conversacionId: uuid("conversacion_id").notNull().references(() => conversacionesAsistente.id, { onDelete: 'cascade' }),
+  rol: rolMensajeAsistente().notNull(),
+  // Contenido del negocio (se guarda). No incluye prompt de sistema.
+  contenido: jsonb().notNull(),
+  creadoEn: timestamp("creado_en", { mode: 'string' }).defaultNow().notNull(),
+})
+
+export const propuestasAsistente = pgTable("propuestas_asistente", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  conversacionId: uuid("conversacion_id").notNull().references(() => conversacionesAsistente.id, { onDelete: 'cascade' }),
+  usuarioId: uuid("usuario_id").notNull().references(() => usuarios.id),
+  herramienta: text().notNull(),
+  entrada: jsonb().notNull(),
+  resumen: text().notNull(),
+  estado: estadoPropuestaAsistente().default('pendiente').notNull(),
+  creadaEn: timestamp("creada_en", { mode: 'string' }).defaultNow().notNull(),
+  venceEn: timestamp("vence_en", { mode: 'string' }).notNull(),
+  resueltaEn: timestamp("resuelta_en", { mode: 'string' }),
+})
+
+export const llamadasHerramientaAsistente = pgTable("llamadas_herramienta_asistente", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  usuarioId: uuid("usuario_id").notNull().references(() => usuarios.id),
+  tipo: tipoLlamadaAsistente().notNull(),
+  herramienta: text(),
+  // Nunca la clave: solo el id de la fila de proveedores_asistente.
+  proveedorClaveId: uuid("proveedor_clave_id").references(() => proveedoresAsistente.id),
+  modelo: text(),
+  entradaResumen: text("entrada_resumen"),
+  resultadoResumen: text("resultado_resumen"),
+  tokensEntrada: integer("tokens_entrada"),
+  tokensSalida: integer("tokens_salida"),
+  costoEstimado: numeric("costo_estimado", { precision: 12, scale: 6 }),
+  duracionMs: integer("duracion_ms"),
+  // Motivo de un cambio de clave (p. ej. "429 cuota"). Sin datos sensibles.
+  detalle: text(),
+  creadaEn: timestamp("creada_en", { mode: 'string' }).defaultNow().notNull(),
+})
+
+export const adjuntosAsistente = pgTable("adjuntos_asistente", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  mensajeId: uuid("mensaje_id").notNull().references(() => mensajesAsistente.id, { onDelete: 'cascade' }),
+  r2Clave: text("r2_clave").notNull(),
+  nombre: text().notNull(),
+  tipoMime: text("tipo_mime").notNull(),
+  tamanoBytes: integer("tamano_bytes").notNull(),
+  creadoEn: timestamp("creado_en", { mode: 'string' }).defaultNow().notNull(),
+})
