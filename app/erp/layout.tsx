@@ -3,6 +3,7 @@ import { ErpShell } from '@/components/veta/erp-shell'
 import { QueryProvider } from '@/components/erp/query-provider'
 import { ToastProvider } from '@/components/veta/toast-provider'
 import { requireSesionEmpleado } from '@/lib/auth/session'
+import { AsistenteProvider } from '@/components/asistente/AsistenteProvider'
 
 export const metadata: Metadata = {
   title: 'ERP — Veta Dorada',
@@ -20,6 +21,7 @@ export default async function ErpLayout({ children }: { children: React.ReactNod
     <QueryProvider>
       <ToastProvider>
         <ErpShell usuario={sesion ? { nombre: sesion.nombre, rol: sesion.rol } : null}>{children}</ErpShell>
+        {sesion && <AsistenteProvider puedeConfigurar={sesion.rol === 'admin'} />}
       </ToastProvider>
     </QueryProvider>
   )

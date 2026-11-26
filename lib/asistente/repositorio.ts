@@ -170,7 +170,6 @@ export function depsProduccion(): DepsTurno {
 
 
 const TAMANO_HISTORIAL_MODELO = 40
-const TAMANO_DETALLE = 200
 
 /** Conversaciones del usuario. Toda consulta filtra por usuarioId: un id ajeno devuelve null. */
 export const conversaciones: RepositorioConversaciones = {
