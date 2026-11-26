@@ -16,6 +16,9 @@ function sesionCon(rol: SesionEmpleado['rol']): SesionEmpleado {
   return { usuarioId: 'u-1', personaId: null, nombre: 'Prueba', email: 'p@prueba.test', rol }
 }
 
+/** Registro de lectura de prueba (acciones falsas). */
+const REGISTRO_PRUEBA = () => crearHerramientas(accionesFalsas().acciones)
+
 const PROYECTO_ID = '11111111-1111-4111-8111-111111111111'
 
 /** Acciones falsas que cuentan llamadas. Ninguna toca base de datos. */
@@ -131,15 +134,15 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.deepEqual(datos, { encontrado: false })
   }],
   ['catálogo de dominios: solo los que el rol puede leer, sin nombres de herramientas', async () => {
-    const admin = catalogoDominios(sesionCon('admin')).map((d) => d.dominio)
+    const admin = catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA()).map((d) => d.dominio)
     assert.deepEqual(admin, ['cotizacion', 'finanzas', 'proyecto'])
-    const comercial = catalogoDominios(sesionCon('comercial')).map((d) => d.dominio)
+    const comercial = catalogoDominios(sesionCon('comercial'), REGISTRO_PRUEBA()).map((d) => d.dominio)
     assert.deepEqual(comercial, ['cotizacion', 'proyecto'])
-    const taller = catalogoDominios(sesionCon('taller')).map((d) => d.dominio)
+    const taller = catalogoDominios(sesionCon('taller'), REGISTRO_PRUEBA()).map((d) => d.dominio)
     assert.deepEqual(taller, ['proyecto'])
-    const descripcion = catalogoDominios(sesionCon('admin'))[0]
+    const descripcion = catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA())[0]
     assert.ok(descripcion.nombre && descripcion.descripcion)
-    assert.ok(!JSON.stringify(catalogoDominios(sesionCon('admin'))).includes('_'))
+    assert.ok(!JSON.stringify(catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA())).includes('_'))
   }],
 ]
 

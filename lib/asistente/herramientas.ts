@@ -15,6 +15,7 @@ import type { CotizadorListaSnapshot } from '../data/queries/cotizador-lista-typ
 import type { ProyectoSnapshot } from '../data/queries/proyecto-types'
 import type { FinanzasSnapshot } from '../data/queries/finanzas-types'
 import { aNumero } from '../dinero/calculo'
+import { operacionCotizacionCrearCompleta, type DepsCotizacion } from './operaciones/cotizacion-completa'
 
 /** Tamaño máximo del resultado que se envía al modelo. Constante fija, no configurable. */
 export const MAX_CARACTERES_RESULTADO = 8000
@@ -171,7 +172,7 @@ export function crearHerramientas(acciones: AccionesLectura): DefinicionAsistent
 
 /** Descripción de cada dominio para el catálogo que ve el modelo (nivel 1: dominios, no acciones). */
 export const DESCRIPCION_DOMINIOS: Record<string, { nombre: string; descripcion: string }> = {
-  cotizacion: { nombre: 'Cotizaciones', descripcion: 'Buscar cotizaciones por código, proyecto o cliente.' },
+  cotizacion: { nombre: 'Cotizaciones', descripcion: 'Buscar cotizaciones; crear una cotización completa (requiere confirmación del empleado).' },
   proyecto: { nombre: 'Proyectos', descripcion: 'Consultar el detalle de un proyecto: estado, cliente y espacios.' },
   finanzas: { nombre: 'Finanzas', descripcion: 'Saldos de cuentas de caja y bancos.' },
 }
@@ -186,10 +187,7 @@ export interface DominioCatalogo {
  * Dominios donde la sesión tiene permiso para AL MENOS una operación registrada. Solo nombre y
  * descripción: nunca nombres de operaciones ni datos.
  */
-export function catalogoDominios(
-  sesion: SesionEmpleado,
-  registro: readonly DefinicionAsistente[] = HERRAMIENTAS,
-): DominioCatalogo[] {
+export function catalogoDominios(sesion: SesionEmpleado, registro: readonly DefinicionAsistente[]): DominioCatalogo[] {
   const permisos = PERMISOS_POR_ROL[sesion.rol] ?? []
   const dominios = new Set<string>()
   for (const h of registro) {
@@ -202,8 +200,10 @@ export function catalogoDominios(
   }))
 }
 
-/** Registro real de lectura. Las de escritura se agregan en lib/asistente/operaciones/. */
-export const HERRAMIENTAS: readonly DefinicionAsistente[] = crearHerramientas(accionesErp)
+/** Registro completo: lectura + escritura. La escritura se conecta a la base en produccion.ts. */
+export function crearOperaciones(acciones: AccionesLectura, cotizacion: DepsCotizacion): DefinicionAsistente[] {
+  return [...crearHerramientas(acciones), operacionCotizacionCrearCompleta(cotizacion)]
+}
 
 /**
  * Operaciones que la sesión puede usar. Se filtra por permiso ANTES de enviar nada al modelo.
@@ -211,8 +211,8 @@ export const HERRAMIENTAS: readonly DefinicionAsistente[] = crearHerramientas(ac
  */
 export function herramientasPermitidas(
   sesion: SesionEmpleado,
-  habilitadas?: readonly string[],
-  registro: readonly DefinicionAsistente[] = HERRAMIENTAS,
+  habilitadas: readonly string[] | undefined,
+  registro: readonly DefinicionAsistente[],
 ): DefinicionAsistente[] {
   const permisos = PERMISOS_POR_ROL[sesion.rol] ?? []
   return registro.filter(

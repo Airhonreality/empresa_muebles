@@ -2,7 +2,8 @@
 // Cableado real del asistente para las rutas de app/api/asistente/**. Es el único punto que une
 // los manejadores de ruta.ts con Drizzle (repositorio.ts) y con el cifrado.
 import { cifrar } from './cifrado'
-import { HERRAMIENTAS } from './herramientas'
+import { accionesErp, crearOperaciones } from './herramientas'
+import { lecturaCotizacionDb, transaccionCotizacionDb } from './operaciones/cotizacion-produccion'
 import {
   agregarClaveProveedor,
   cargarConfiguracion,
@@ -21,8 +22,15 @@ import type { DepsClaves, DepsConfiguracion } from './ruta'
 
 const TAMANO_DETALLE = 200
 
+/** Registro real de operaciones (lectura + cotización completa). */
+export const REGISTRO_OPERACIONES = crearOperaciones(accionesErp, {
+  lectura: lecturaCotizacionDb,
+  transaccion: transaccionCotizacionDb,
+  ahora: () => new Date(),
+})
+
 export const atender = (p: { usuario: SesionEmpleado; conversacionId?: string; mensaje: string }) =>
-  atenderMensaje(p, { conversaciones, cargarConfiguracion, turno: depsProduccion(HERRAMIENTAS) })
+  atenderMensaje(p, { conversaciones, cargarConfiguracion, turno: depsProduccion(REGISTRO_OPERACIONES) })
 
 export const listar = (usuarioId: string) => conversaciones.listar(usuarioId)
 
@@ -33,7 +41,7 @@ export async function detalle(conversacionId: string, usuarioId: string) {
   return { mensajes, propuestas }
 }
 
-const depsPropuestas = depsPropuestasProduccion(HERRAMIENTAS)
+const depsPropuestas = depsPropuestasProduccion(REGISTRO_OPERACIONES)
 
 export const resolverPropuesta = (accion: 'confirmar' | 'cancelar', id: string, usuario: SesionEmpleado) =>
   accion === 'confirmar' ? confirmarPropuesta(id, usuario, depsPropuestas) : cancelarPropuesta(id, usuario, depsPropuestas)
