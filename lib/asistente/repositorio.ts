@@ -10,6 +10,7 @@ import type { ClaveRegistro, EventoRotacion, RepositorioClaves } from './claves'
 import { HERRAMIENTAS } from './herramientas'
 import { modeloPorDefecto, obtenerModelo, type ProveedorAsistente } from './modelo'
 import type { ConfiguracionTurno, DepsTurno, LlamadaRegistro, RepositorioUso } from './bucle'
+import type { DepsPropuestas, EstadoPropuesta, Propuesta, RepositorioPropuestas } from './propuestas'
 
 const claves: RepositorioClaves = {
   async listarClaves(): Promise<ClaveRegistro[]> {
@@ -100,6 +101,51 @@ export async function cargarConfiguracion(): Promise<ConfiguracionTurno> {
     ...cfg,
     modelo: cfg.modelo ?? modeloPorDefecto(),
   }
+}
+
+const propuestas: RepositorioPropuestas = {
+  async insertar(p): Promise<string> {
+    const [fila] = await db
+      .insert(s.propuestasAsistente)
+      .values({
+        conversacionId: p.conversacionId,
+        usuarioId: p.usuarioId,
+        herramienta: p.herramienta,
+        entrada: p.entrada as object,
+        resumen: p.resumen,
+        venceEn: p.venceEn.toISOString(),
+      })
+      .returning({ id: s.propuestasAsistente.id })
+    return fila.id
+  },
+  async obtener(id: string): Promise<Propuesta | null> {
+    const [f] = await db.select().from(s.propuestasAsistente).where(eq(s.propuestasAsistente.id, id))
+    if (!f) return null
+    return {
+      id: f.id,
+      conversacionId: f.conversacionId,
+      usuarioId: f.usuarioId,
+      herramienta: f.herramienta,
+      entrada: f.entrada,
+      resumen: f.resumen,
+      estado: f.estado as EstadoPropuesta,
+      venceEn: new Date(f.venceEn),
+    }
+  },
+  async cambiarEstado(id: string, desde: EstadoPropuesta, nuevo: EstadoPropuesta, resueltaEn: Date): Promise<boolean> {
+    // Condición sobre el estado actual: dos confirmaciones simultáneas no pueden ganar las dos.
+    const filas = await db
+      .update(s.propuestasAsistente)
+      .set({ estado: nuevo, resueltaEn: resueltaEn.toISOString() })
+      .where(and(eq(s.propuestasAsistente.id, id), eq(s.propuestasAsistente.estado, desde)))
+      .returning({ id: s.propuestasAsistente.id })
+    return filas.length > 0
+  },
+}
+
+/** Dependencias reales para confirmar/cancelar propuestas (bloque E las usa). */
+export function depsPropuestasProduccion(registro: DepsPropuestas['registro']): DepsPropuestas {
+  return { repo: propuestas, ahora: () => new Date(), registro }
 }
 
 /** Dependencias reales para ejecutarTurno. La ruta HTTP (bloque E) las usa. */
