@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { NoAutorizadoError } from '../auth/errors'
+import { NoAutorizadoError } from './permisos'
 import type { SesionEmpleado } from '../auth/session'
 import type { ProyectoSnapshot } from '../data/queries/proyecto-types'
 import {

@@ -5,8 +5,8 @@
 // Fase 1: solo lectura. Las de escritura usan esEscritura: true y ejecutarHerramienta las rechaza
 // (la confirmación con propuestas es el bloque F).
 import { z } from 'zod'
-import { PERMISOS_POR_ROL, type Permiso } from '../auth/permisos'
-import { NoAutorizadoError } from '../auth/errors'
+import { PERMISOS_POR_ROL, type Permiso } from './permisos'
+import { NoAutorizadoError } from './permisos'
 import type { SesionEmpleado } from '../auth/session'
 import type { Cliente, Proyecto } from '../data/contracts'
 import type { CotizadorListaSnapshot } from '../data/queries/cotizador-lista-types'
