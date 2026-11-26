@@ -1311,11 +1311,19 @@ function EspacioGroup({
     .filter((it) => !it.esReferencial)
     .reduce((s, it) => s + parseNum(it.totalLinea), 0)
 
+  // Escape cancela: el blur que dispara el desmontaje del input no debe guardar el valor descartado.
+  const cancelandoNombreRef = useRef(false)
   const guardarNombreGrupo = async () => {
+    if (cancelandoNombreRef.current) { cancelandoNombreRef.current = false; return }
     const valor = nombreTemp.trim()
+    setEditandoNombre(false)
     if (valor && valor !== nombreEspacio) {
       await Promise.all(variantes.map((v) => store.espacios.actualizar(v.id, { nombreEspacio: valor })))
     }
+  }
+  const cancelarNombreGrupo = () => {
+    cancelandoNombreRef.current = true
+    setNombreTemp(nombreEspacio)
     setEditandoNombre(false)
   }
 
@@ -1326,12 +1334,14 @@ function EspacioGroup({
     setNombreVarianteTemp(v.nombreVariante)
     setEditandoNombreVariante(true)
   }
+  const cancelandoVarianteRef = useRef(false)
   const guardarNombreVariante = async (v: EspacioVariante) => {
+    if (cancelandoVarianteRef.current) { cancelandoVarianteRef.current = false; return }
     const valor = nombreVarianteTemp.trim()
+    setEditandoNombreVariante(false)
     if (valor && valor !== v.nombreVariante) {
       await store.espacios.actualizar(v.id, { nombreVariante: valor })
     }
-    setEditandoNombreVariante(false)
   }
 
   // P3 (ZN-003): eliminación de una variante (solo se ofrece sobre variantes inactivas
@@ -1371,10 +1381,19 @@ function EspacioGroup({
 
   return (
     <div className={`border-l-4 ${varianteActiva.activa ? 'border-gold-500' : 'border-border-subtle/30'} bg-bg-raised/40 overflow-hidden mb-3`}>
-      <button
-        type="button"
+      {/* Encabezado: es un div (no un <button>) porque contiene inputs, select y
+          botones. Dentro de un <button> el teclado (Espacio/Enter) y el foco de los
+          inputs quedaban capturados por el botón contenedor. Solo el propio
+          encabezado responde a Enter/Espacio para expandir/contraer. */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expandido}
         onClick={() => onToggle(nombreEspacio)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(nombreEspacio) } }}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(nombreEspacio) }
+        }}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-alt transition-colors duration-fast cursor-pointer"
       >
         <div className="flex items-center gap-2">
@@ -1385,10 +1404,14 @@ function EspacioGroup({
               value={nombreTemp}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => setNombreTemp(e.target.value)}
+              onFocus={() => { cancelandoNombreRef.current = false }}
               onBlur={guardarNombreGrupo}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') { e.preventDefault(); guardarNombreGrupo() }
-                if (e.key === 'Escape') { setNombreTemp(nombreEspacio); setEditandoNombre(false) }
+                // Corta la propagación: el Espacio y el Enter escritos aquí no deben
+                // llegar a ningún ancestro con handlers de teclado.
+                e.stopPropagation()
+                if (e.key === 'Enter') { e.preventDefault(); void guardarNombreGrupo() }
+                if (e.key === 'Escape') cancelarNombreGrupo()
               }}
               className="rounded border border-gold-400 bg-bg-paper px-2 py-0.5 font-medium text-text-heading focus:outline-none"
               aria-label="Nombre del espacio"
@@ -1503,7 +1526,7 @@ function EspacioGroup({
             <span className={`text-sm transition-transform duration-fast ${expandido ? 'rotate-180' : ''}`}>&#9660;</span>
           </div>
         </div>
-      </button>
+      </div>
 
       {expandido && (
         <>
@@ -1524,20 +1547,28 @@ function EspacioGroup({
                       autoFocus
                       value={nombreVarianteTemp}
                       onChange={(e) => setNombreVarianteTemp(e.target.value)}
+                      onFocus={() => { cancelandoVarianteRef.current = false }}
                       onBlur={() => void guardarNombreVariante(v)}
                       onKeyDown={(e) => {
+                        e.stopPropagation()
                         if (e.key === 'Enter') { e.preventDefault(); void guardarNombreVariante(v) }
-                        if (e.key === 'Escape') setEditandoNombreVariante(false)
+                        if (e.key === 'Escape') { cancelandoVarianteRef.current = true; setEditandoNombreVariante(false) }
                       }}
                       onClick={(e) => e.stopPropagation()}
                       className="w-28 rounded border border-gold-400 bg-bg-paper px-1 py-0.5 text-xs text-text-heading focus:outline-none"
                       aria-label="Nombre de la variante"
                     />
                   ) : (
-                    <button
-                      type="button"
+                    // Div con rol de botón: contiene botones (renombrar/eliminar); un <button> anidado es HTML inválido.
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => { setTabId(v.id); if (v.id !== tabId) setEditandoNombreVariante(false) }}
-                      className="flex items-center gap-1.5 min-w-0"
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTabId(v.id); if (v.id !== tabId) setEditandoNombreVariante(false) }
+                      }}
+                      className="flex items-center gap-1.5 min-w-0 cursor-pointer"
                       title={v.nombreVariante}
                     >
                       {v.activa && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Variante activa" />}
@@ -1564,7 +1595,7 @@ function EspacioGroup({
                           &times;
                         </button>
                       )}
-                    </button>
+                    </div>
                   )}
                 </div>
               ))}
