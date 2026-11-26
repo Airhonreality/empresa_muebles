@@ -2,17 +2,17 @@ import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
 import { cifrar, descifrar } from './cifrado'
 
-const CLAVE_VALIDA = randomBytes(32).toString('base64')
-const CLAVE_ORIGINAL = process.env.ASISTENTE_CLAVE_CIFRADO
-process.env.ASISTENTE_CLAVE_CIFRADO = CLAVE_VALIDA
+const SECRETO_VALIDO = randomBytes(32).toString('hex')
+const SECRETO_ORIGINAL = process.env.SESSION_SECRET
+process.env.SESSION_SECRET = SECRETO_VALIDO
 
-function conClave(valor: string | undefined, fn: () => void): void {
-  if (valor === undefined) delete process.env.ASISTENTE_CLAVE_CIFRADO
-  else process.env.ASISTENTE_CLAVE_CIFRADO = valor
+function conSecreto(valor: string | undefined, fn: () => void): void {
+  if (valor === undefined) delete process.env.SESSION_SECRET
+  else process.env.SESSION_SECRET = valor
   try {
     fn()
   } finally {
-    process.env.ASISTENTE_CLAVE_CIFRADO = CLAVE_VALIDA
+    process.env.SESSION_SECRET = SECRETO_VALIDO
   }
 }
 
@@ -33,20 +33,20 @@ const casos: Array<[string, () => void]> = [
     datos[datos.length - 1] ^= 0x01
     assert.throws(() => descifrar(datos.toString('base64')), /No se pudo descifrar/)
   }],
-  ['sin ASISTENTE_CLAVE_CIFRADO cifrar lanza error', () => {
-    conClave(undefined, () => {
-      assert.throws(() => cifrar('x'), /ASISTENTE_CLAVE_CIFRADO no definida/)
+  ['cambiar SESSION_SECRET impide descifrar lo guardado', () => {
+    const cifrado = cifrar('dato')
+    conSecreto(randomBytes(32).toString('hex'), () => {
+      assert.throws(() => descifrar(cifrado), /No se pudo descifrar/)
     })
   }],
-  ['sin ASISTENTE_CLAVE_CIFRADO descifrar lanza error', () => {
-    const cifrado = cifrar('x')
-    conClave(undefined, () => {
-      assert.throws(() => descifrar(cifrado), /ASISTENTE_CLAVE_CIFRADO no definida/)
+  ['sin SESSION_SECRET cifrar lanza error', () => {
+    conSecreto(undefined, () => {
+      assert.throws(() => cifrar('x'), /SESSION_SECRET no definida/)
     })
   }],
-  ['clave maestra de longitud incorrecta lanza error', () => {
-    conClave(randomBytes(16).toString('base64'), () => {
-      assert.throws(() => cifrar('x'), /32 bytes/)
+  ['SESSION_SECRET demasiado corta lanza error', () => {
+    conSecreto('corta', () => {
+      assert.throws(() => cifrar('x'), /demasiado corta/)
     })
   }],
 ]
@@ -58,14 +58,10 @@ for (const [nombre, fn] of casos) {
     console.log(`ok - ${nombre}`)
   } catch (err) {
     fallos++
-    console.error(`FALLA - ${nombre}\n${(err as Error).message}`)
+    console.error(`FALLO - ${nombre}:`, err)
   }
 }
-
-if (CLAVE_ORIGINAL === undefined) delete process.env.ASISTENTE_CLAVE_CIFRADO
-else process.env.ASISTENTE_CLAVE_CIFRADO = CLAVE_ORIGINAL
-
-if (fallos > 0) {
-  console.error(`${fallos} caso(s) fallaron`)
-  process.exitCode = 1
-}
+if (SECRETO_ORIGINAL === undefined) delete process.env.SESSION_SECRET
+else process.env.SESSION_SECRET = SECRETO_ORIGINAL
+if (fallos > 0) process.exit(1)
+console.log(`${casos.length} casos ok`)
