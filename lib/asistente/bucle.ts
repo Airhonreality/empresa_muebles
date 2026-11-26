@@ -26,10 +26,20 @@ export interface ConfiguracionTurno {
   instruccionesAdicionales?: string
   /** Solo puede reducir las herramientas que el permiso ya permite. */
   herramientasHabilitadas?: string[]
-  /** Topes de gasto en USD por día. alertaFraccion: p. ej. 0.8 para avisar al 80%. */
-  topes: { usuarioDiaUsd: number; globalDiaUsd: number; alertaFraccion: number }
+  /** Topes de gasto en USD por día. alertaFraccion: p. ej. 0.8 para avisar al 80%. Opcional a propósito: si falta, el turno se rechaza (ErrorTopesNoConfigurados). */
+  topes?: { usuarioDiaUsd: number; globalDiaUsd: number; alertaFraccion: number }
   /** Precio por millón de tokens, USD. */
   precios: { entradaPorMillon: number; salidaPorMillon: number }
+}
+
+export const MENSAJE_TOPES_NO_CONFIGURADOS = 'Configura los topes de gasto en Configuración del asistente'
+
+/** Sin topes en configuracion_asistente el asistente no llama al modelo (no hay uso sin límite). */
+export class ErrorTopesNoConfigurados extends Error {
+  constructor() {
+    super(MENSAJE_TOPES_NO_CONFIGURADOS)
+    this.name = 'ErrorTopesNoConfigurados'
+  }
 }
 
 export interface LlamadaRegistro {
@@ -106,6 +116,9 @@ export async function ejecutarTurno(
     ],
     ...(alerta ? { alerta } : {}),
   })
+
+  // Sin topes no hay turno: se rechaza ANTES de tocar el uso o el modelo.
+  if (!configuracion.topes) throw new ErrorTopesNoConfigurados()
 
   // Tope de gasto: se verifica ANTES de llamar al modelo.
   const gastoUsuario = await deps.uso.gastoDelDia(usuario.usuarioId)

@@ -3,7 +3,15 @@ import { MockLanguageModelV4 } from 'ai/test'
 import type { SesionEmpleado } from '../auth/session'
 import type { ClaveRegistro, RepositorioClaves } from './claves'
 import { ErrorSinClavesDisponibles } from './claves'
-import { ejecutarTurno, PASOS_MAXIMOS, type ConfiguracionTurno, type DepsTurno, type LlamadaRegistro } from './bucle'
+import {
+  ejecutarTurno,
+  ErrorTopesNoConfigurados,
+  MENSAJE_TOPES_NO_CONFIGURADOS,
+  PASOS_MAXIMOS,
+  type ConfiguracionTurno,
+  type DepsTurno,
+  type LlamadaRegistro,
+} from './bucle'
 import { crearHerramientas, type AccionesLectura } from './herramientas'
 
 const AHORA = new Date('2026-11-25T15:00:00.000Z')
@@ -181,6 +189,16 @@ const casos: Array<[string, () => Promise<void>]> = [
     const r = await ejecutarTurno({ usuario: sesionCon('admin'), historial: [], mensaje: 'x', configuracion: CONFIG }, deps)
     assert.equal(modelo.doGenerateCalls.length, 1)
     assert.ok(r.alerta)
+  }],
+  ['sin topes en configuración -> error claro y modelo no llamado', async () => {
+    const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('no debe salir')] })
+    const { deps } = entorno({ modelos: { a: modelo }, gasto: { usuario: 0, global: 0 } })
+    const sinTopes: ConfiguracionTurno = { ...CONFIG, topes: undefined }
+    await assert.rejects(
+      ejecutarTurno({ usuario: sesionCon('admin'), historial: [], mensaje: 'x', configuracion: sinTopes }, deps),
+      (err: unknown) => err instanceof ErrorTopesNoConfigurados && (err as Error).message === MENSAJE_TOPES_NO_CONFIGURADOS,
+    )
+    assert.equal(modelo.doGenerateCalls.length, 0)
   }],
 ]
 

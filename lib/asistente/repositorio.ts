@@ -80,14 +80,17 @@ const esquemaConfiguracion = z.object({
   temperatura: z.number().min(0).max(2).optional(),
   instruccionesAdicionales: z.string().max(1000).optional(),
   herramientasHabilitadas: z.array(z.string()).optional(),
-  topes: z.object({ usuarioDiaUsd: z.number().nonnegative(), globalDiaUsd: z.number().nonnegative(), alertaFraccion: z.number().min(0).max(1) }),
+  topes: z
+    .object({ usuarioDiaUsd: z.number().nonnegative(), globalDiaUsd: z.number().nonnegative(), alertaFraccion: z.number().min(0).max(1) })
+    .optional(),
   precios: z.object({ entradaPorMillon: z.number().nonnegative(), salidaPorMillon: z.number().nonnegative() }),
 })
 
 /**
  * Lee configuracion_asistente (una fila por clave: modelo, temperatura, topes, precios, ...).
- * Sin valores por defecto ocultos: topes y precios son obligatorios; si falta `modelo`, se usa
- * ASISTENTE_MODELO_DEFECTO (que también falla explícitamente si no existe).
+ * Sin valores por defecto ocultos: precios son obligatorios; si falta `topes`, la configuración
+ * vuelve sin topes y ejecutarTurno rechaza el turno con ErrorTopesNoConfigurados. Si falta `modelo`,
+ * se usa ASISTENTE_MODELO_DEFECTO (que también falla explícitamente si no existe).
  */
 export async function cargarConfiguracion(): Promise<ConfiguracionTurno> {
   const filas = await db.select().from(s.configuracionAsistente)
