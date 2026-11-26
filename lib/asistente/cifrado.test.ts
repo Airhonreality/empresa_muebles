@@ -18,7 +18,7 @@ function conClave(valor: string | undefined, fn: () => void): void {
 
 const casos: Array<[string, () => void]> = [
   ['round-trip recupera el texto original', () => {
-    const texto = 'sk-or-v1-ejemplo-de-prueba-1234'
+    const texto = 'texto-de-prueba-no-es-clave-1234'
     assert.equal(descifrar(cifrar(texto)), texto)
   }],
   ['dos cifrados del mismo texto son distintos (IV aleatorio)', () => {
