@@ -17,6 +17,17 @@ const ADMIN: SesionEmpleado = { usuarioId: 'u-1', personaId: null, nombre: 'A', 
 const COMERCIAL: SesionEmpleado = { ...ADMIN, usuarioId: 'u-2', rol: 'comercial' }
 const UUID = '11111111-1111-4111-8111-111111111111'
 const SECRETO = 'valor-secreto-de-prueba-9876'
+const CONFIG_VALIDA = {
+  proveedor: 'openrouter',
+  modelo: 'modelo/prueba',
+  temperatura: 0.2,
+  maxTokensRespuesta: 1024,
+  pasosMaximos: 8,
+  topeDiarioUsuarioUsd: 5,
+  topeDiarioGlobalUsd: 50,
+  alertaFraccion: 0.8,
+  herramientasHabilitadas: [],
+}
 
 function atenderFalso(resultado: ResultadoAtencion | Error) {
   const llamadas: unknown[] = []
@@ -107,12 +118,12 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.equal((await guardarConfiguracionHttp(COMERCIAL, { topes: { usuarioDiaUsd: 1, globalDiaUsd: 2, alertaFraccion: 0.8 } }, deps)).status, 403)
     assert.equal(tocado, false)
   }],
-  ['configuración: admin guarda topes válidos', async () => {
+  ['configuración: admin guarda una configuración completa válida', async () => {
     const guardados: string[] = []
     const deps = { leer: async () => ({}), guardar: async (clave: string) => { guardados.push(clave) } }
-    const r = await guardarConfiguracionHttp(ADMIN, { topes: { usuarioDiaUsd: 5, globalDiaUsd: 50, alertaFraccion: 0.8 } }, deps)
+    const r = await guardarConfiguracionHttp(ADMIN, CONFIG_VALIDA, deps)
     assert.equal(r.status, 200)
-    assert.deepEqual(guardados, ['topes'])
+    assert.deepEqual(guardados, ['modelo', 'temperatura', 'maxTokensRespuesta', 'pasosMaximos', 'topes', 'herramientasHabilitadas'])
   }],
   ['clave: no admin -> 403', async () => {
     const r = await agregarClaveHttp(COMERCIAL, { proveedor: 'openrouter', etiqueta: 'x', clave: SECRETO }, DEPS_CLAVES)

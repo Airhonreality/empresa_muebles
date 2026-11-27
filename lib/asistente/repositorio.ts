@@ -76,11 +76,14 @@ const uso: RepositorioUso = {
   },
 }
 
+const CLAVES_REQUERIDAS = ['temperatura', 'maxTokensRespuesta', 'pasosMaximos', 'herramientasHabilitadas'] as const
+
 const esquemaConfiguracion = z.object({
   modelo: z.object({ proveedor: z.enum(['openrouter', 'anthropic', 'google']), modelo: z.string().min(1) }).optional(),
-  temperatura: z.number().min(0).max(2).optional(),
-  instruccionesAdicionales: z.string().max(1000).optional(),
-  herramientasHabilitadas: z.array(z.string()).optional(),
+  temperatura: z.number().min(0).max(1),
+  maxTokensRespuesta: z.number().int().positive(),
+  pasosMaximos: z.number().int().positive(),
+  herramientasHabilitadas: z.array(z.string()),
   topes: z
     .object({ usuarioDiaUsd: z.number().nonnegative(), globalDiaUsd: z.number().nonnegative(), alertaFraccion: z.number().min(0).max(1) })
     .optional(),
@@ -88,20 +91,24 @@ const esquemaConfiguracion = z.object({
 })
 
 /**
- * Lee configuracion_asistente (una fila por clave: modelo, temperatura, topes, precios, ...).
- * Sin valores por defecto ocultos: precios son obligatorios (ErrorConfiguracionIncompleta si faltan); si falta `topes`, la configuración
- * vuelve sin topes y ejecutarTurno rechaza el turno con ErrorTopesNoConfigurados. Si falta `modelo`,
- * se usa ASISTENTE_MODELO_DEFECTO (que también falla explícitamente si no existe).
+ * Lee configuracion_asistente (una fila por clave). Sin valores por defecto ocultos: si falta algún
+ * parámetro del panel (temperatura, tokens, pasos, herramientas) el turno falla con un mensaje que nombra
+ * lo que falta; precios y topes también son obligatorios. Si falta `modelo`, se usa ASISTENTE_MODELO_DEFECTO
+ * (que falla explícitamente si no existe).
  */
 export async function cargarConfiguracion(): Promise<ConfiguracionTurno> {
   const filas = await db.select().from(s.configuracionAsistente)
   const crudo: Record<string, unknown> = Object.fromEntries(filas.map((f) => [f.clave, f.valor]))
+  const faltan = CLAVES_REQUERIDAS.filter((c) => crudo[c] === undefined)
+  if (faltan.length > 0) {
+    throw new ErrorConfiguracionIncompleta(`Completa la configuración del asistente en Configuración del asistente (${faltan.join(', ')})`)
+  }
   const validada = esquemaConfiguracion.safeParse(crudo)
   if (!validada.success) {
     throw new Error(`Configuración del asistente incompleta o inválida: ${validada.error.issues.map((i) => i.path.join('.')).join(', ')}`)
   }
   const cfg = validada.data
-  if (!cfg.precios) throw new ErrorConfiguracionIncompleta('Configura los precios del modelo en Configuración del asistente')
+  if (!cfg.precios) throw new ErrorConfiguracionIncompleta('Configura el modelo para que el asistente conozca sus precios')
   return {
     ...cfg,
     precios: cfg.precios,
@@ -273,7 +280,16 @@ export async function leerConfiguracionAdmin() {
     })
     .from(s.proveedoresAsistente)
     .orderBy(asc(s.proveedoresAsistente.orden))
-  return { modelo: valores.modelo ?? null, topes: valores.topes ?? null, precios: valores.precios ?? null, claves }
+  return {
+    modelo: valores.modelo ?? null,
+    temperatura: valores.temperatura ?? null,
+    maxTokensRespuesta: valores.maxTokensRespuesta ?? null,
+    pasosMaximos: valores.pasosMaximos ?? null,
+    herramientasHabilitadas: valores.herramientasHabilitadas ?? [],
+    topes: valores.topes ?? null,
+    precios: valores.precios ?? null,
+    claves,
+  }
 }
 
 /** Guarda una fila de configuracion_asistente (clave única). Upsert. */

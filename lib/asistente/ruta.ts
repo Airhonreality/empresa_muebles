@@ -12,6 +12,7 @@ import { ErrorConversacionNoEncontrada, type ResultadoAtencion } from './servici
 import { ErrorPropuesta, type ResultadoConfirmacion } from './propuestas'
 import type { ProveedorAsistente } from './modelo'
 import { ErrorCatalogoNoDisponible, PROVEEDORES_CON_CATALOGO, type CatalogoModelos, type ProveedorConCatalogo } from './catalogo-modelos'
+import { esquemaConfiguracion, type ConfiguracionAsistenteCuerpo } from './configuracion-esquema'
 
 export interface Respuesta {
   status: number
@@ -133,23 +134,19 @@ export async function resolverPropuestaHttp(
 
 // ── Configuración (solo admin, verificado aquí y no solo en la UI) ──
 
-const esquemaConfigPut = z.object({
-  modelo: z.object({ proveedor: z.enum(PROVEEDORES), modelo: z.string().trim().min(1).max(200) }).optional(),
-  topes: z
-    .object({
-      usuarioDiaUsd: z.number().nonnegative().max(100000),
-      globalDiaUsd: z.number().nonnegative().max(1000000),
-      alertaFraccion: z.number().min(0).max(1),
-    })
-    .optional(),
-  precios: z
-    .object({ entradaPorMillon: z.number().nonnegative().max(10000), salidaPorMillon: z.number().nonnegative().max(10000) })
-    .optional(),
-})
+/** Claves de configuracion_asistente que escribe el panel. `precios` lo deriva el servidor del catálogo. */
+export type ClaveConfiguracion =
+  | 'modelo'
+  | 'precios'
+  | 'topes'
+  | 'temperatura'
+  | 'maxTokensRespuesta'
+  | 'pasosMaximos'
+  | 'herramientasHabilitadas'
 
 export interface DepsConfiguracion {
   leer: () => Promise<unknown>
-  guardar: (clave: 'modelo' | 'topes' | 'precios', valor: unknown, usuarioId: string) => Promise<void>
+  guardar: (clave: ClaveConfiguracion, valor: unknown, usuarioId: string) => Promise<void>
 }
 
 export async function leerConfiguracionHttp(sesion: SesionEmpleado | null, deps: DepsConfiguracion): Promise<Respuesta> {
@@ -162,6 +159,18 @@ export async function leerConfiguracionHttp(sesion: SesionEmpleado | null, deps:
   }
 }
 
+/** Mapea el cuerpo validado (nombres de la UI) a las claves guardadas en configuracion_asistente. */
+function valoresAGuardar(v: ConfiguracionAsistenteCuerpo): Array<[ClaveConfiguracion, unknown]> {
+  return [
+    ['modelo', { proveedor: v.proveedor, modelo: v.modelo }],
+    ['temperatura', v.temperatura],
+    ['maxTokensRespuesta', v.maxTokensRespuesta],
+    ['pasosMaximos', v.pasosMaximos],
+    ['topes', { usuarioDiaUsd: v.topeDiarioUsuarioUsd, globalDiaUsd: v.topeDiarioGlobalUsd, alertaFraccion: v.alertaFraccion }],
+    ['herramientasHabilitadas', v.herramientasHabilitadas],
+  ]
+}
+
 export async function guardarConfiguracionHttp(
   sesion: SesionEmpleado | null,
   cuerpo: unknown,
@@ -169,12 +178,11 @@ export async function guardarConfiguracionHttp(
 ): Promise<Respuesta> {
   if (!sesion) return { status: 401, body: { error: MENSAJE_SIN_SESION } }
   if (!esAdmin(sesion)) return { status: 403, body: { error: MENSAJE_SOLO_ADMIN } }
-  const validada = esquemaConfigPut.safeParse(cuerpo)
+  const validada = esquemaConfiguracion.safeParse(cuerpo)
   if (!validada.success) return { status: 400, body: { error: validada.error.issues[0]?.message ?? 'Cuerpo inválido' } }
   try {
-    for (const clave of ['modelo', 'topes', 'precios'] as const) {
-      const valor = validada.data[clave]
-      if (valor !== undefined) await deps.guardar(clave, valor, sesion.usuarioId)
+    for (const [clave, valor] of valoresAGuardar(validada.data)) {
+      await deps.guardar(clave, valor, sesion.usuarioId)
     }
     return { status: 200, body: { ok: true } }
   } catch (err) {

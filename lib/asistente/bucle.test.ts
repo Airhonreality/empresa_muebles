@@ -8,12 +8,13 @@ import {
   ejecutarTurno,
   ErrorTopesNoConfigurados,
   MENSAJE_TOPES_NO_CONFIGURADOS,
-  PASOS_MAXIMOS,
   type ConfiguracionTurno,
   type DepsTurno,
   type LlamadaRegistro,
 } from './bucle'
 import { crearHerramientas, type AccionesLectura } from './herramientas'
+
+const PASOS_MAXIMOS = 8
 import { operacionCotizacionCrearCompleta } from './operaciones/cotizacion-completa'
 import type { EjecutorTransaccion } from './operaciones/cotizacion-completa'
 
@@ -25,6 +26,10 @@ function sesionCon(rol: SesionEmpleado['rol']): SesionEmpleado {
 
 const CONFIG: ConfiguracionTurno = {
   modelo: { proveedor: 'openrouter', modelo: 'modelo-prueba' },
+  temperatura: 0.2,
+  maxTokensRespuesta: 1024,
+  pasosMaximos: PASOS_MAXIMOS,
+  herramientasHabilitadas: ['cotizacion.buscar', 'proyecto.consultar', 'finanzas.saldo_caja', 'cotizacion.crear_completa'],
   topes: { usuarioDiaUsd: 5, globalDiaUsd: 50, alertaFraccion: 0.8 },
   precios: { entradaPorMillon: 1, salidaPorMillon: 2 },
 }
@@ -167,14 +172,22 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.ok(!sistema.includes('saldo_caja'))
     assert.ok(sistema.includes('cotizacion'))
   }],
-  ['instrucciones adicionales se añaden al sistema, no lo reemplazan', async () => {
+  ['temperatura y tokens de respuesta del panel llegan al modelo; las reglas base siguen en el sistema', async () => {
     const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('ok')] })
     const { deps } = entorno({ modelos: { a: modelo } })
-    await ejecutarTurno({ usuario: sesionCon('admin'), historial: [], mensaje: 'x', configuracion: { ...CONFIG, instruccionesAdicionales: 'Responde corto.' } }, deps)
-    const sistema = modelo.doGenerateCalls[0].prompt.find((m) => m.role === 'system')
-    const texto = JSON.stringify(sistema)
-    assert.ok(texto.includes('Responde corto.'))
+    await ejecutarTurno({ usuario: sesionCon('admin'), historial: [], mensaje: 'x', configuracion: CONFIG }, deps)
+    const llamada = modelo.doGenerateCalls[0] as unknown as { temperature?: number; maxOutputTokens?: number }
+    assert.equal(llamada.temperature, 0.2)
+    assert.equal(llamada.maxOutputTokens, 1024)
+    const texto = JSON.stringify(modelo.doGenerateCalls[0].prompt.find((m) => m.role === 'system'))
     assert.ok(texto.includes('Usa las herramientas disponibles ANTES'))
+  }],
+  ['herramientas habilitadas vacías: el modelo no recibe ninguna herramienta', async () => {
+    const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('ok')] })
+    const { deps } = entorno({ modelos: { a: modelo } })
+    await ejecutarTurno({ usuario: sesionCon('admin'), historial: [], mensaje: 'x', configuracion: { ...CONFIG, herramientasHabilitadas: [] } }, deps)
+    const herramientas = (modelo.doGenerateCalls[0] as unknown as { tools?: unknown[] }).tools ?? []
+    assert.equal(herramientas.length, 0)
   }],
   ['clave con 429 pasa a la siguiente y la primera queda enfriada', async () => {
     const malo = new MockLanguageModelV4({ doGenerate: async () => { throw errorConEstado(429) } })

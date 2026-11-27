@@ -10,6 +10,10 @@ import { z } from 'zod'
 
 const CONFIG: ConfiguracionTurno = {
   modelo: { proveedor: 'openrouter', modelo: 'modelo-prueba' },
+  temperatura: 0.2,
+  maxTokensRespuesta: 1024,
+  pasosMaximos: 8,
+  herramientasHabilitadas: [],
   topes: { usuarioDiaUsd: 5, globalDiaUsd: 50, alertaFraccion: 0.8 },
   precios: { entradaPorMillon: 1, salidaPorMillon: 2 },
 }
@@ -149,7 +153,7 @@ const casos: Array<[string, () => Promise<void>]> = [
         cambiarEstado: async () => false,
       },
     }
-    const r = await atenderMensaje({ usuario: { ...sesionDe('u-1'), rol: 'finanzas' }, mensaje: 'registra' }, { conversaciones: repo, cargarConfiguracion: async () => CONFIG, turno })
+    const r = await atenderMensaje({ usuario: { ...sesionDe('u-1'), rol: 'finanzas' }, mensaje: 'registra' }, { conversaciones: repo, cargarConfiguracion: async () => ({ ...CONFIG, herramientasHabilitadas: ['finanzas.registrar'] }), turno })
     assert.equal(porId.size, 1)
     assert.equal(r.propuestas?.length, 1)
     assert.equal(filas.get('p-1')?.conversacionId, r.conversacionId)
