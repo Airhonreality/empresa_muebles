@@ -22,15 +22,7 @@ import {
   type Verificacion,
 } from '@/lib/data'
 import { useProyectoCompat } from '@/lib/data/queries/proyecto-compat'
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -284,7 +276,7 @@ function derivarNodos(args: {
         : hayObligacionesProyecto || hayOcEnPago
           ? 'text-warning-stroke'
           : 'text-stone-400',
-      detalle: `Disponible ${formatCOP(cajaDisponible)} · ${obligaciones.length} obligaciones`,
+      detalle: `Disponible ${formatCurrency(cajaDisponible)} · ${obligaciones.length} obligaciones`,
       actual: false,
       ramas: [],
     },
@@ -464,7 +456,7 @@ function EspacioDetalle({
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-text-heading">{nombreItem(item)}</span>
                     <span className="shrink-0 font-mono text-xs text-text-muted">
-                      {item.cantidad} × {formatCOP(numDe(item.precioUnitario))}
+                      {item.cantidad} × {formatCurrency(numDe(item.precioUnitario))}
                     </span>
                   </div>
                   {fichaTecnica.length > 0 && (
@@ -490,7 +482,7 @@ function EspacioDetalle({
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-text-heading">{nombreItem(item)}</span>
                   <span className="shrink-0 font-mono text-xs text-text-muted">
-                    {item.cantidad} × {formatCOP(numDe(item.precioUnitario))}
+                    {item.cantidad} × {formatCurrency(numDe(item.precioUnitario))}
                   </span>
                 </div>
                 {item.grupoReferencial && (
@@ -837,7 +829,7 @@ export default function ProyectoHubPage() {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Definición del Proyecto</h2>
           <span className="font-mono text-xs text-text-muted">
-            Materiales cotizados: {formatCOP(materialesTotal)}
+            Materiales cotizados: {formatCurrency(materialesTotal)}
           </span>
         </div>
 
@@ -857,19 +849,19 @@ export default function ProyectoHubPage() {
             </div>
             <div>
               <dt className="text-xs text-text-muted">Costos operativos</dt>
-              <dd className="mt-0.5 text-text-heading">{formatCOP(numDe(proyecto.costosOperativos))}</dd>
+              <dd className="mt-0.5 text-text-heading">{formatCurrency(numDe(proyecto.costosOperativos))}</dd>
             </div>
             <div>
               <dt className="text-xs text-text-muted">Imprevistos instalación</dt>
-              <dd className="mt-0.5 text-text-heading">{formatCOP(numDe(proyecto.imprevistosInstalacion))}</dd>
+              <dd className="mt-0.5 text-text-heading">{formatCurrency(numDe(proyecto.imprevistosInstalacion))}</dd>
             </div>
             <div>
               <dt className="text-xs text-text-muted">Descuento comercial</dt>
-              <dd className="mt-0.5 text-text-heading">{formatCOP(numDe(proyecto.descuentoComercial))}</dd>
+              <dd className="mt-0.5 text-text-heading">{formatCurrency(numDe(proyecto.descuentoComercial))}</dd>
             </div>
             <div>
               <dt className="text-xs text-text-muted">Ajuste</dt>
-              <dd className="mt-0.5 text-text-heading">{formatCOP(numDe(proyecto.ajusteArbitrario))}</dd>
+              <dd className="mt-0.5 text-text-heading">{formatCurrency(numDe(proyecto.ajusteArbitrario))}</dd>
             </div>
           </dl>
         </div>
@@ -922,7 +914,7 @@ export default function ProyectoHubPage() {
                       {esp.activa && <Badge tone="info">Activa</Badge>}
                       {esp.visibleEnPropuestaPublica && <Badge tone="neutral">Visible en propuesta</Badge>}
                     </span>
-                    <span className="shrink-0 font-mono text-xs text-text-muted">{formatCOP(subtotalEspacio)}</span>
+                    <span className="shrink-0 font-mono text-xs text-text-muted">{formatCurrency(subtotalEspacio)}</span>
                   </button>
 
                   {abierto && (
@@ -1110,7 +1102,7 @@ export default function ProyectoHubPage() {
                               {item.nombrePersonalizado ?? 'Ítem'}
                             </span>
                             <span className="shrink-0 font-mono text-xs text-text-muted">
-                              {item.cantidad} × {formatCOP(numDe(item.precioUnitario))}
+                              {item.cantidad} × {formatCurrency(numDe(item.precioUnitario))}
                             </span>
                           </li>
                         ))}
@@ -1268,16 +1260,16 @@ export default function ProyectoHubPage() {
                 <div><dt className="text-xs text-text-muted inline">Garantía: </dt><dd className="inline text-text-heading">{proyecto.garantiaAnios} años</dd></div>
               )}
               {numDe(proyecto.costosOperativos) > 0 && (
-                <div><dt className="text-xs text-text-muted inline">Costos operativos: </dt><dd className="inline text-text-heading">{formatCOP(numDe(proyecto.costosOperativos))}</dd></div>
+                <div><dt className="text-xs text-text-muted inline">Costos operativos: </dt><dd className="inline text-text-heading">{formatCurrency(numDe(proyecto.costosOperativos))}</dd></div>
               )}
               {numDe(proyecto.imprevistosInstalacion) > 0 && (
-                <div><dt className="text-xs text-text-muted inline">Imprevistos: </dt><dd className="inline text-text-heading">{formatCOP(numDe(proyecto.imprevistosInstalacion))}</dd></div>
+                <div><dt className="text-xs text-text-muted inline">Imprevistos: </dt><dd className="inline text-text-heading">{formatCurrency(numDe(proyecto.imprevistosInstalacion))}</dd></div>
               )}
               {numDe(proyecto.descuentoComercial) > 0 && (
-                <div><dt className="text-xs text-text-muted inline">Descuento: </dt><dd className="inline text-text-heading">{formatCOP(numDe(proyecto.descuentoComercial))}</dd></div>
+                <div><dt className="text-xs text-text-muted inline">Descuento: </dt><dd className="inline text-text-heading">{formatCurrency(numDe(proyecto.descuentoComercial))}</dd></div>
               )}
               {numDe(proyecto.ajusteArbitrario) > 0 && (
-                <div><dt className="text-xs text-text-muted inline">Ajuste: </dt><dd className="inline text-text-heading">{formatCOP(numDe(proyecto.ajusteArbitrario))}</dd></div>
+                <div><dt className="text-xs text-text-muted inline">Ajuste: </dt><dd className="inline text-text-heading">{formatCurrency(numDe(proyecto.ajusteArbitrario))}</dd></div>
               )}
             </dl>
           </section>
@@ -1323,7 +1315,7 @@ export default function ProyectoHubPage() {
         {materialesTotal > 0 && (
           <footer className="mt-6 border-t-2 border-gold-500 pt-3 text-right">
             <span className="text-sm text-text-muted">Total materiales cotizados: </span>
-            <span className="text-base font-bold text-text-heading">{formatCOP(materialesTotal)}</span>
+            <span className="text-base font-bold text-text-heading">{formatCurrency(materialesTotal)}</span>
           </footer>
         )}
 

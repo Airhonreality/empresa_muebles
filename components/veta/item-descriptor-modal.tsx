@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { Modal } from '@/components/veta/modal'
 import { type ProductoCatalogo } from '@/lib/data'
+import { formatCurrency } from '@/lib/utils/format'
 
 interface ItemDescriptorModalProps {
   producto: ProductoCatalogo
@@ -13,15 +14,6 @@ function parseNum(s: string | null | undefined): number {
   if (!s) return 0
   const n = Number(s)
   return Number.isFinite(n) ? n : 0
-}
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 /**
@@ -67,13 +59,13 @@ export function ItemDescriptorModal({ producto, onClose }: ItemDescriptorModalPr
               <tr>
                 <td className="py-1 text-text-muted">Precio directo</td>
                 <td className="font-mono text-right">
-                  {producto.precioDirecto ? formatCOP(parseNum(producto.precioDirecto)) : '—'}
+                  {producto.precioDirecto ? formatCurrency(parseNum(producto.precioDirecto)) : '—'}
                 </td>
               </tr>
               <tr>
                 <td className="py-1 text-text-muted">Precio público</td>
                 <td className="font-mono text-right">
-                  {producto.precioPublico ? formatCOP(parseNum(producto.precioPublico)) : '—'}
+                  {producto.precioPublico ? formatCurrency(parseNum(producto.precioPublico)) : '—'}
                 </td>
               </tr>
               <tr>

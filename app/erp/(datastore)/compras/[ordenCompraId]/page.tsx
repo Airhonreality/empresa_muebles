@@ -9,15 +9,7 @@ import { Modal } from '@/components/veta/modal'
 import { useDataStore, type EstadoOrdenCompra, type ItemOrdenCompra, type ProductoCatalogo } from '@/lib/data'
 import { derivarListaCompraSugerida } from '@/lib/modules/f4/gates'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 function numDe(s: string | null | undefined): number {
   const n = Number(s)
@@ -243,12 +235,12 @@ export default function DetalleOrdenCompraPage() {
           )}
           <div>
             <p className="text-xs text-text-muted mb-1">Monto total</p>
-            <p className="font-mono font-medium text-text-heading">{formatCOP(numDe(orden.montoTotal))}</p>
+            <p className="font-mono font-medium text-text-heading">{formatCurrency(numDe(orden.montoTotal))}</p>
           </div>
           {orden.anticipoMonto && (
             <div>
               <p className="text-xs text-text-muted mb-1">Anticipo</p>
-              <p className="font-mono font-medium text-text-heading">{formatCOP(numDe(orden.anticipoMonto))}</p>
+              <p className="font-mono font-medium text-text-heading">{formatCurrency(numDe(orden.anticipoMonto))}</p>
             </div>
           )}
           {orden.fechaRecepcionEsperada && (

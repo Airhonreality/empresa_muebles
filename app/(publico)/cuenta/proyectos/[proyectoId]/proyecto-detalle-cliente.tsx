@@ -9,6 +9,7 @@ import type { ProyectoClienteDetalle } from '@/lib/data/actions/public'
 import type { PropuestaVersion } from '@/lib/data/contracts'
 import type { PropuestaPublicaData } from '@/lib/data/actions/public'
 import { PropuestaPublicaClient } from '@/app/(publico)/propuesta/[proyectoId]/PropuestaPublicaClient'
+import { formatCurrency } from '@/lib/utils/format'
 
 // F-07 Portal Cliente — Detalle de proyecto (ProyectoDetalleCliente).
 // Auditoría 2026-08-15 (A5): ya no consume useDataStore() — recibe los datos ya escopados a
@@ -57,15 +58,6 @@ const ESTADO_TONE: Record<EstadoProyecto, 'neutral' | 'info' | 'warning' | 'dang
   pre_produccion: 'info',
   produccion: 'warning',
   retoma: 'warning',
-}
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 function parseNum(s: string | null | undefined): number {
@@ -183,7 +175,7 @@ export function ProyectoDetalleCliente({ proyectoId, clienteId, data, versionesP
             </div>
             <div>
               <span className="text-text-muted">Valor total</span>
-              <p className="font-mono text-text-heading">{formatCOP(totalContrato)}</p>
+              <p className="font-mono text-text-heading">{formatCurrency(totalContrato)}</p>
             </div>
             <div>
               <span className="text-text-muted">Plazo</span>
@@ -226,9 +218,9 @@ export function ProyectoDetalleCliente({ proyectoId, clienteId, data, versionesP
                 <div key={o.id} className="flex justify-between text-sm border-b border-border-subtle/50 py-1.5 last:border-0">
                   <span className="text-text-heading">{o.descripcion}</span>
                   <div className="text-right">
-                    <span className="font-mono text-text-heading">{formatCOP(parseNum(o.montoTotal))}</span>
+                    <span className="font-mono text-text-heading">{formatCurrency(parseNum(o.montoTotal))}</span>
                     {saldo > 0 && (
-                      <span className="text-xs text-amber-600 ml-2">Saldo: {formatCOP(saldo)}</span>
+                      <span className="text-xs text-amber-600 ml-2">Saldo: {formatCurrency(saldo)}</span>
                     )}
                   </div>
                 </div>
@@ -237,11 +229,11 @@ export function ProyectoDetalleCliente({ proyectoId, clienteId, data, versionesP
           </div>
           <div className="mt-3 flex justify-between text-sm font-semibold border-t border-border-subtle pt-3">
             <span>Total pagado</span>
-            <span className="font-mono">{formatCOP(totalPagado)}</span>
+            <span className="font-mono">{formatCurrency(totalPagado)}</span>
           </div>
           <div className="flex justify-between text-sm font-semibold">
             <span>Saldo pendiente</span>
-            <span className="font-mono text-amber-600">{formatCOP(saldoPendiente)}</span>
+            <span className="font-mono text-amber-600">{formatCurrency(saldoPendiente)}</span>
           </div>
 
           {/* Historial de movimientos */}
@@ -252,7 +244,7 @@ export function ProyectoDetalleCliente({ proyectoId, clienteId, data, versionesP
                 {movimientos.filter((m) => m.tipo === 'credito').map((m) => (
                   <div key={m.id} className="flex justify-between text-xs text-text-muted">
                     <span>{formatDate(m.fecha)} — {m.descripcion}</span>
-                    <span className="font-mono">{formatCOP(parseNum(m.monto))}</span>
+                    <span className="font-mono">{formatCurrency(parseNum(m.monto))}</span>
                   </div>
                 ))}
               </div>

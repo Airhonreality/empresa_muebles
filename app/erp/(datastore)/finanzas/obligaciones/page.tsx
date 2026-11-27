@@ -9,15 +9,7 @@ import { CuentaFinancieraModal } from '@/components/veta/cuenta-financiera-modal
 import { MoneyInput, parseMoney } from '@/components/veta/money-input'
 import { Modal } from '@/components/veta/modal'
 import { useDataStore, type ObligacionPendiente, type OrigenObligacion, type EstadoObligacion, type CuentaFinanciera, type Proveedor, type Cliente, type Proyecto, type Persona } from '@/lib/data'
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -182,21 +174,21 @@ export default function ObligacionesPage() {
       header: 'Monto total',
       align: 'center',
       sortValue: (o) => numDe(o.montoTotal),
-      render: (o) => <span className="font-mono">{formatCOP(numDe(o.montoTotal))}</span>,
+      render: (o) => <span className="font-mono">{formatCurrency(numDe(o.montoTotal))}</span>,
     },
     {
       key: 'pagado',
       header: 'Pagado',
       align: 'center',
       sortValue: (o) => numDe(o.montoPagado),
-      render: (o) => <span className="font-mono">{formatCOP(numDe(o.montoPagado))}</span>,
+      render: (o) => <span className="font-mono">{formatCurrency(numDe(o.montoPagado))}</span>,
     },
     {
       key: 'saldo',
       header: 'Saldo',
       align: 'center',
       sortValue: (o) => saldoPendiente(o),
-      render: (o) => <span className="font-mono text-text-heading">{formatCOP(saldoPendiente(o))}</span>,
+      render: (o) => <span className="font-mono text-text-heading">{formatCurrency(saldoPendiente(o))}</span>,
     },
     {
       key: 'vencimiento',
@@ -323,7 +315,7 @@ export default function ObligacionesPage() {
             <div>
               <p className="font-medium text-text-heading">{obligacionAPagar.descripcion}</p>
               <p className="text-xs text-text-muted mt-1">
-                Origen: {ORIGEN_LABELS[obligacionAPagar.origen]} · Saldo pendiente: {formatCOP(saldoPendiente(obligacionAPagar))}
+                Origen: {ORIGEN_LABELS[obligacionAPagar.origen]} · Saldo pendiente: {formatCurrency(saldoPendiente(obligacionAPagar))}
               </p>
             </div>
             <MoneyInput
@@ -342,7 +334,7 @@ export default function ObligacionesPage() {
                 >
                   {cuentas.map((c: CuentaFinanciera) => (
                     <option key={c.id} value={c.id}>
-                      {c.nombre} — {formatCOP(numDe(c.saldoActual))}
+                      {c.nombre} — {formatCurrency(numDe(c.saldoActual))}
                     </option>
                   ))}
                 </select>

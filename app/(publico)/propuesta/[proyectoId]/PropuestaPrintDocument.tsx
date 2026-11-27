@@ -9,6 +9,7 @@ import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actio
 import { compararVariantes, type DiffEspacio, type ItemComparado } from '@/lib/propuesta/comparar-variantes'
 import type { ImagenPublica, TextoPublico } from '@/lib/imagen/publica'
 import { calcularTotalesCotizacion, repartirHitos } from '@/lib/dinero/calculo'
+import { formatCurrency } from '@/lib/utils/format'
 
 // Documento de impresión de la propuesta (rediseño 2026-10-14).
 //
@@ -25,15 +26,6 @@ import { calcularTotalesCotizacion, repartirHitos } from '@/lib/dinero/calculo'
 // marca, cascada vertical de datos, imágenes en grilla horizontal y saltos de
 // página explícitos. Al no usar breakpoints de viewport, PC y celular imprimen
 // exactamente lo mismo.
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 function parseNum(s: string | null | undefined): number {
   const n = Number(s)
@@ -178,8 +170,8 @@ function TablaItems({
         <td className="pp-qty">
           {formatQty(item.cantidad)} {unidadesItem(producto)}
         </td>
-        <td className="pp-amount">{formatCOP(parseNum(item.precioUnitario))}</td>
-        <td className="pp-amount">{total > 0 ? formatCOP(total) : '—'}</td>
+        <td className="pp-amount">{formatCurrency(parseNum(item.precioUnitario))}</td>
+        <td className="pp-amount">{total > 0 ? formatCurrency(total) : '—'}</td>
       </tr>
     )
   }
@@ -293,7 +285,7 @@ function TablaItemsComparados({ diff }: { diff: DiffEspacio }) {
               )}
             </td>
             <td className="pp-cmp-estado">{textoEstadoItem(f.estado, diff.a.nombreVariante, diff.b.nombreVariante)}</td>
-            <td className="pp-amount">{formatCOP(f.precioA || f.precioB)}</td>
+            <td className="pp-amount">{formatCurrency(f.precioA || f.precioB)}</td>
           </tr>
         ))}
       </tbody>
@@ -323,12 +315,12 @@ function BloquePar({ diff }: { diff: DiffEspacio }) {
       <div className="pp-cmp-inversion pp-avoid">
         <span className="pp-meta-k">Inversión del ambiente</span>
         <span className="pp-cmp-inversion-num">
-          {formatCOP(diff.a.total)} → {formatCOP(diff.b.total)}
+          {formatCurrency(diff.a.total)} → {formatCurrency(diff.b.total)}
           {diff.deltaTotal !== 0 && (
             <span className={diff.deltaTotal > 0 ? 'pp-cmp-up' : 'pp-cmp-down'}>
               {' '}
               ({deltaSigno}
-              {formatCOP(Math.abs(diff.deltaTotal))}
+              {formatCurrency(Math.abs(diff.deltaTotal))}
               {diff.deltaTotalPct !== null ? ` · ${diff.deltaTotalPct > 0 ? '+' : ''}${diff.deltaTotalPct}%` : ''})
             </span>
           )}
@@ -402,7 +394,7 @@ function BloquePar({ diff }: { diff: DiffEspacio }) {
                 <FilaTotal
                   key={f.clave}
                   etiqueta={`${f.etiqueta} (${f.a} → ${f.b} jornadas)`}
-                  valor={`${f.deltaCOP > 0 ? '+' : '−'}${formatCOP(Math.abs(f.deltaCOP))}`}
+                  valor={`${f.deltaCOP > 0 ? '+' : '−'}${formatCurrency(Math.abs(f.deltaCOP))}`}
                 />
               ))}
           </div>
@@ -451,7 +443,7 @@ function BloquePar({ diff }: { diff: DiffEspacio }) {
                       <span className="pp-item-nombre">{f.nombre}</span>
                     </td>
                     <td className="pp-cmp-estado">{textoEstadoItem(f.estado, nombreA, nombreB)}</td>
-                    <td className="pp-amount">{formatCOP(f.precioA || f.precioB)}</td>
+                    <td className="pp-amount">{formatCurrency(f.precioA || f.precioB)}</td>
                   </tr>
                 ),
               )}
@@ -520,7 +512,7 @@ function ComparacionEspacio({
           <div key={v.id} className={`pp-cmp-total ${v.activa ? 'pp-cmp-total-base' : ''}`}>
             <span className="pp-meta-k">{v.activa ? 'Del contrato' : 'Alternativa'}</span>
             <span className="pp-cmp-total-nombre">{v.nombreVariante || 'Versión'}</span>
-            <span className="pp-cmp-total-num">{formatCOP(totalAmbiente(v))}</span>
+            <span className="pp-cmp-total-num">{formatCurrency(totalAmbiente(v))}</span>
           </div>
         ))}
       </div>
@@ -706,7 +698,7 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
               {espSubtotal > 0 && (
                 <p className="pp-ambiente-inv">
                   <span className="pp-meta-k">Inversión del ambiente</span>
-                  <span className="pp-ambiente-inv-num">{formatCOP(espSubtotal)}</span>
+                  <span className="pp-ambiente-inv-num">{formatCurrency(espSubtotal)}</span>
                 </p>
               )}
             </header>
@@ -765,15 +757,15 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
                 <div className="pp-desglose">
                   <p className="pp-mini">Mano de obra</p>
                   {parseNum(esp.jornadasDesarrolloTecnico) * tarifas.tarifaDev > 0 && (
-                    <FilaTotal etiqueta="Desarrollo técnico" valor={formatCOP(parseNum(esp.jornadasDesarrolloTecnico) * tarifas.tarifaDev)} />
+                    <FilaTotal etiqueta="Desarrollo técnico" valor={formatCurrency(parseNum(esp.jornadasDesarrolloTecnico) * tarifas.tarifaDev)} />
                   )}
                   {parseNum(esp.jornadasEnsamblajeTaller) * tarifas.tarifaAssembly > 0 && (
-                    <FilaTotal etiqueta="Ensamblaje" valor={formatCOP(parseNum(esp.jornadasEnsamblajeTaller) * tarifas.tarifaAssembly)} />
+                    <FilaTotal etiqueta="Ensamblaje" valor={formatCurrency(parseNum(esp.jornadasEnsamblajeTaller) * tarifas.tarifaAssembly)} />
                   )}
                   {parseNum(esp.jornadasInstalacionObra) * tarifas.tarifaInstall > 0 && (
-                    <FilaTotal etiqueta="Instalación" valor={formatCOP(parseNum(esp.jornadasInstalacionObra) * tarifas.tarifaInstall)} />
+                    <FilaTotal etiqueta="Instalación" valor={formatCurrency(parseNum(esp.jornadasInstalacionObra) * tarifas.tarifaInstall)} />
                   )}
-                  <FilaTotal etiqueta="Subtotal mano de obra" valor={formatCOP(espMo)} fuerte />
+                  <FilaTotal etiqueta="Subtotal mano de obra" valor={formatCurrency(espMo)} fuerte />
                 </div>
               </div>
             )}
@@ -805,21 +797,21 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
       <section className="pp-resumen">
         <h2 className="pp-resumen-titulo">Inversión total</h2>
         <div className="pp-cascada">
-          <FilaTotal etiqueta="Materiales" valor={formatCOP(materialesTotal)} />
-          <FilaTotal etiqueta="Mano de obra" valor={formatCOP(moTotal)} />
-          {moDev > 0 && <FilaTotal etiqueta="· Desarrollo técnico" valor={formatCOP(moDev)} />}
-          {moEns > 0 && <FilaTotal etiqueta="· Ensamblaje" valor={formatCOP(moEns)} />}
-          {moInst > 0 && <FilaTotal etiqueta="· Instalación" valor={formatCOP(moInst)} />}
-          {costosOperativos > 0 && <FilaTotal etiqueta="Costos operativos" valor={formatCOP(costosOperativos)} />}
-          {imprevistos > 0 && <FilaTotal etiqueta="Imprevistos" valor={formatCOP(imprevistos)} />}
-          {descuento > 0 && <FilaTotal etiqueta="Descuento" valor={`−${formatCOP(descuento)}`} />}
-          {ajuste !== 0 && <FilaTotal etiqueta="Ajuste" valor={`${ajuste > 0 ? '+' : '−'}${formatCOP(Math.abs(ajuste))}`} />}
-          {iva > 0 && <FilaTotal etiqueta="Subtotal" valor={formatCOP(subtotal)} />}
-          {iva > 0 && <FilaTotal etiqueta={`IVA (${proyecto.porcentajeIva}%)`} valor={formatCOP(iva)} />}
+          <FilaTotal etiqueta="Materiales" valor={formatCurrency(materialesTotal)} />
+          <FilaTotal etiqueta="Mano de obra" valor={formatCurrency(moTotal)} />
+          {moDev > 0 && <FilaTotal etiqueta="· Desarrollo técnico" valor={formatCurrency(moDev)} />}
+          {moEns > 0 && <FilaTotal etiqueta="· Ensamblaje" valor={formatCurrency(moEns)} />}
+          {moInst > 0 && <FilaTotal etiqueta="· Instalación" valor={formatCurrency(moInst)} />}
+          {costosOperativos > 0 && <FilaTotal etiqueta="Costos operativos" valor={formatCurrency(costosOperativos)} />}
+          {imprevistos > 0 && <FilaTotal etiqueta="Imprevistos" valor={formatCurrency(imprevistos)} />}
+          {descuento > 0 && <FilaTotal etiqueta="Descuento" valor={`−${formatCurrency(descuento)}`} />}
+          {ajuste !== 0 && <FilaTotal etiqueta="Ajuste" valor={`${ajuste > 0 ? '+' : '−'}${formatCurrency(Math.abs(ajuste))}`} />}
+          {iva > 0 && <FilaTotal etiqueta="Subtotal" valor={formatCurrency(subtotal)} />}
+          {iva > 0 && <FilaTotal etiqueta={`IVA (${proyecto.porcentajeIva}%)`} valor={formatCurrency(iva)} />}
         </div>
         <div className="pp-grand pp-avoid">
           <span>Valor total</span>
-          <strong>{formatCOP(total)}</strong>
+          <strong>{formatCurrency(total)}</strong>
         </div>
 
         {contrato && hitosOrdenados.length > 0 && (
@@ -843,7 +835,7 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
                         {h.orden}. {h.razon}
                       </td>
                       <td className="pp-amount">{esPct ? `${h.montoOPorcentaje}%` : '—'}</td>
-                      <td className="pp-amount">{formatCOP(monto)}</td>
+                      <td className="pp-amount">{formatCurrency(monto)}</td>
                     </tr>
                   )
                 })}
@@ -881,14 +873,14 @@ export function PropuestaPrintDocument({ data }: { data: PropuestaPublicaData })
                     <span className="pp-item-nota">{f.grupo}</span>
                   </td>
                   <td>{f.espacio}</td>
-                  <td className="pp-amount">{formatCOP(f.valor)}</td>
+                  <td className="pp-amount">{formatCurrency(f.valor)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <div className="pp-grand pp-avoid">
             <span>Total otros presupuestos</span>
-            <strong>{formatCOP(totalReferenciales)}</strong>
+            <strong>{formatCurrency(totalReferenciales)}</strong>
           </div>
         </section>
       )}

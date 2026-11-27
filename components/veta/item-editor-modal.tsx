@@ -11,6 +11,7 @@ import { EntityFields } from '@/components/veta/entity-fields'
 import { useToast } from '@/components/veta/toast-provider'
 import { fichaTecnicaFormFields, type FichaTecnicaValues } from '@/lib/forms/ficha-tecnica-form-spec'
 import type { CampoPersonalizadoProducto, GrupoItem, ItemVariante, ProductoCatalogo } from '@/lib/data'
+import { formatCurrency } from '@/lib/utils/format'
 
 interface ItemEditorModalProps {
   item: ItemVariante
@@ -43,15 +44,6 @@ function parseNum(s: string | null | undefined): number {
   if (!s) return 0
   const n = Number(s)
   return Number.isFinite(n) ? n : 0
-}
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 /* Iconos SVG hardcodeados (patrón del proyecto: sin librería de iconos, inline y stroke=currentColor). */
@@ -364,7 +356,7 @@ export function ItemEditorModal({
               <div className="flex items-center justify-between rounded bg-bg-alt/50 p-2 border border-border-subtle">
                 <span className="text-xs text-text-muted">Total de esta línea:</span>
                 <span className="font-mono text-sm font-bold text-brand">
-                  {formatCOP(totalCalculado)}
+                  {formatCurrency(totalCalculado)}
                 </span>
               </div>
 
@@ -599,7 +591,7 @@ export function ItemEditorModal({
                     {productoSeleccionado.descripcion}
                   </p>
                   <p className="font-mono text-[11px] text-text-muted">
-                    SKU: {productoSeleccionado.sku} · Precio catálogo: {formatCOP(parseNum(productoSeleccionado.precioPublico))}
+                    SKU: {productoSeleccionado.sku} · Precio catálogo: {formatCurrency(parseNum(productoSeleccionado.precioPublico))}
                   </p>
                 </div>
                 {productoSeleccionado.imagenUrl && (
@@ -625,7 +617,7 @@ export function ItemEditorModal({
                     className="text-gold-500"
                   />
                   <span>
-                    Mantener precio cotizado actual (<strong>{formatCOP(parseNum(precioUnitario))}</strong>)
+                    Mantener precio cotizado actual (<strong>{formatCurrency(parseNum(precioUnitario))}</strong>)
                   </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -637,7 +629,7 @@ export function ItemEditorModal({
                     className="text-gold-500"
                   />
                   <span>
-                    Adoptar nuevo precio de catálogo (<strong>{formatCOP(parseNum(productoSeleccionado.precioPublico))}</strong>)
+                    Adoptar nuevo precio de catálogo (<strong>{formatCurrency(parseNum(productoSeleccionado.precioPublico))}</strong>)
                   </span>
                 </label>
               </div>

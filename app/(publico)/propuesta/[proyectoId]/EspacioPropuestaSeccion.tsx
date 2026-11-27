@@ -11,21 +11,13 @@ import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 import { compararVariantes } from '@/lib/propuesta/comparar-variantes'
 import { ComparadorVersiones } from './ComparadorVersiones'
+import { formatCurrency } from '@/lib/utils/format'
 
 // Sección de un ambiente dentro del scroll acumulativo de la propuesta pública
 // (rediseño 2026-10-29). Antes la pantalla mostraba un solo ambiente a la vez
 // (tabs); ahora el cliente baja por todos los ambientes en una sola página y
 // esta sección encapsula el estado local de cada uno: versión elegida, tabs de
 // imagen y comparador de versiones.
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 function formatQty(s: string | null | undefined): string {
   const n = Number(s)
@@ -95,7 +87,7 @@ function ItemCard({ item, producto, onDetalle }: ItemCardProps) {
         <p className="text-sm font-medium leading-5 text-text-heading">{nombre}</p>
         <p className="mt-0.5 text-xs text-text-muted">
           {formatQty(item.cantidad)} {unidad}
-          {precioUnitario > 0 ? <> · {formatCOP(precioUnitario)} c/u</> : null}
+          {precioUnitario > 0 ? <> · {formatCurrency(precioUnitario)} c/u</> : null}
         </p>
         {item.comentario && (
           <p className="mt-0.5 text-xs italic text-text-muted/80">{item.comentario}</p>
@@ -128,7 +120,7 @@ function ItemCard({ item, producto, onDetalle }: ItemCardProps) {
       {total > 0 && (
         <div className="shrink-0 self-center text-right">
           <span className="block text-[9px] uppercase tracking-[0.12em] text-text-muted">Total</span>
-          <strong className="font-display text-sm tabular-nums text-text-heading">{formatCOP(total)}</strong>
+          <strong className="font-display text-sm tabular-nums text-text-heading">{formatCurrency(total)}</strong>
         </div>
       )}
     </div>
@@ -184,24 +176,24 @@ function DetalleTecnico({
           {moDev > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-text-muted">· Desarrollo técnico</span>
-              <span className="font-mono">{formatCOP(moDev)}</span>
+              <span className="font-mono">{formatCurrency(moDev)}</span>
             </div>
           )}
           {moEns > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-text-muted">· Ensamblaje</span>
-              <span className="font-mono">{formatCOP(moEns)}</span>
+              <span className="font-mono">{formatCurrency(moEns)}</span>
             </div>
           )}
           {moInst > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-text-muted">· Instalación</span>
-              <span className="font-mono">{formatCOP(moInst)}</span>
+              <span className="font-mono">{formatCurrency(moInst)}</span>
             </div>
           )}
           <div className="mt-2 flex justify-between border-t border-border-subtle/50 pt-2 text-sm">
             <span className="font-medium text-text-muted">Subtotal MO</span>
-            <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
+            <span className="font-mono text-text-heading">{formatCurrency(moTotal)}</span>
           </div>
         </div>
       )}
@@ -382,7 +374,7 @@ export function EspacioPropuestaSeccion({
         {espSubtotal > 0 && (
           <p className="text-right">
             <span className="block text-[10px] uppercase tracking-[0.14em] text-text-muted">Inversión del ambiente</span>
-            <strong className="font-display block text-xl text-text-heading">{formatCOP(espSubtotal)}</strong>
+            <strong className="font-display block text-xl text-text-heading">{formatCurrency(espSubtotal)}</strong>
           </p>
         )}
       </div>
@@ -479,7 +471,7 @@ export function EspacioPropuestaSeccion({
                   }`}
                 >
                   {var_.nombreVariante}
-                  <span className={activa ? 'text-white/70' : 'text-text-muted'}>{formatCOP(totalAmbiente(var_))}</span>
+                  <span className={activa ? 'text-white/70' : 'text-text-muted'}>{formatCurrency(totalAmbiente(var_))}</span>
                   {var_.activa && (
                     <span
                       className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${

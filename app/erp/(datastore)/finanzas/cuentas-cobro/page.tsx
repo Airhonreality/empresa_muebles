@@ -10,15 +10,7 @@ import { Modal } from '@/components/veta/modal'
 import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
 import { useDataStore, type CuentaCobroProveedor, type EstadoCuentaCobro, type Proveedor, type OrdenCompra } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 function numDe(s: string | null | undefined): number {
   const n = Number(s)
@@ -169,7 +161,7 @@ export default function CuentasCobroPage() {
       header: 'Valor',
       align: 'center',
       sortValue: (c) => numDe(c.valor),
-      render: (c) => <span className="font-mono">{formatCOP(numDe(c.valor))}</span>,
+      render: (c) => <span className="font-mono">{formatCurrency(numDe(c.valor))}</span>,
     },
     {
       key: 'estado',
@@ -410,7 +402,7 @@ export default function CuentasCobroPage() {
                   <div>
                     <p className="font-medium text-text-heading">{oc.codigoOrden}</p>
                     <p className="text-xs text-text-muted">
-                      {formatCOP(numDe(oc.montoTotal))} · {formatDate(oc.createdAt)}
+                      {formatCurrency(numDe(oc.montoTotal))} · {formatDate(oc.createdAt)}
                     </p>
                   </div>
                   <Button
@@ -472,7 +464,7 @@ export default function CuentasCobroPage() {
         {cuentaAAnular && (
           <div className="space-y-3 text-sm">
             <p className="text-xs text-text-muted">
-              ¿Anular la cuenta de cobro &quot;{cuentaAAnular.concepto}&quot; por {formatCOP(numDe(cuentaAAnular.valor))}? Esta acción no se puede deshacer.
+              ¿Anular la cuenta de cobro &quot;{cuentaAAnular.concepto}&quot; por {formatCurrency(numDe(cuentaAAnular.valor))}? Esta acción no se puede deshacer.
             </p>
             <div className="flex gap-2 pt-2">
               <Button variant="destructive" size="md" onClick={handleAnular}>

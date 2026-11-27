@@ -53,6 +53,7 @@ import { BulkActionsBar } from '@/components/cotizador/BulkActionsBar'
 import { useItemSelection } from '@/lib/hooks/useItemSelection'
 import { useAutosave, combinarEstados } from '@/lib/hooks/autosave'
 import { AutosaveStatus } from '@/components/veta/autosave-status'
+import { formatCurrency } from '@/lib/utils/format'
 
 /* Wrapper local para el input de "Grupo referencial": vive dentro de un `.map()`, así que el hook
    no puede llamarse directamente en el callback del map (violaría Rules of Hooks) -- por eso se
@@ -70,15 +71,6 @@ function GrupoReferencialInput({ value, onChange }: { value: string; onChange: (
       aria-label="Grupo referencial"
     />
   )
-}
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 // Semántica decidida por el Supervisor (2026-08-09): tarifa horaria por rol
@@ -591,10 +583,10 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <span className="shrink-0 text-sm">
               <span className="text-text-muted">Total</span>{' '}
-              <span className="font-mono font-semibold text-brand">{formatCOP(total)}</span>
+              <span className="font-mono font-semibold text-brand">{formatCurrency(total)}</span>
             </span>
             <span className="hidden shrink-0 text-xs text-text-muted sm:inline">
-              Subtotal <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
+              Subtotal <span className="font-mono text-text-heading">{formatCurrency(subtotal)}</span>
             </span>
           </div>
           <div className="ml-auto flex flex-col sm:flex-row sm:items-center gap-1.5 w-full sm:w-auto">
@@ -624,25 +616,25 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
             <div className="mx-auto max-w-5xl space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-text-muted">Materiales</span>
-                <span className="font-mono text-text-heading">{formatCOP(materialesTotal)}</span>
+                <span className="font-mono text-text-heading">{formatCurrency(materialesTotal)}</span>
               </div>
               <div>
                 <div className="flex justify-between">
                   <span className="text-text-muted">Mano de Obra</span>
-                  <span className="font-mono text-text-heading">{formatCOP(moTotal)}</span>
+                  <span className="font-mono text-text-heading">{formatCurrency(moTotal)}</span>
                 </div>
                 <div className="pl-3 mt-1 space-y-0.5 text-xs text-text-muted">
                   <div className="flex justify-between">
                     <span>Desarrollo técnico</span>
-                    <span className="font-mono">{formatCOP(moDev)}</span>
+                    <span className="font-mono">{formatCurrency(moDev)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Ensamblaje taller</span>
-                    <span className="font-mono">{formatCOP(moEns)}</span>
+                    <span className="font-mono">{formatCurrency(moEns)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Instalación obra</span>
-                    <span className="font-mono">{formatCOP(moInst)}</span>
+                    <span className="font-mono">{formatCurrency(moInst)}</span>
                   </div>
                 </div>
               </div>
@@ -678,12 +670,12 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
               <hr className="border-border-subtle" />
               <div className="flex justify-between font-semibold">
                 <span className="text-text-heading">Subtotal</span>
-                <span className="font-mono text-text-heading">{formatCOP(subtotal)}</span>
+                <span className="font-mono text-text-heading">{formatCurrency(subtotal)}</span>
               </div>
               {iva > 0 && (
                 <div className="flex justify-between">
                   <span className="text-text-muted">IVA ({proyecto.porcentajeIva}%)</span>
-                  <span className="font-mono text-text-heading">{formatCOP(iva)}</span>
+                  <span className="font-mono text-text-heading">{formatCurrency(iva)}</span>
                 </div>
           )}
         </div>
@@ -902,7 +894,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
       {contrato && (
         <section className="mt-6 rounded-lg border border-border-subtle bg-bg-raised p-6">
           <h3 className="font-semibold text-text-heading">Contrato · {contrato.codigoContrato}</h3>
-          <p className="text-sm text-text-muted mt-1">Valor total: <span className="font-mono font-medium">{formatCOP(parseNum(contrato.valorTotal))}</span> · Estado: {contrato.estado}</p>
+          <p className="text-sm text-text-muted mt-1">Valor total: <span className="font-mono font-medium">{formatCurrency(parseNum(contrato.valorTotal))}</span> · Estado: {contrato.estado}</p>
 
           <div className="mt-3 flex items-center gap-2">
             <Button variant="primary" size="md" onClick={() => window.open(`/erp/cotizador/${proyecto.id}/contrato`, '_blank')}>
@@ -929,7 +921,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
                   <span className="ml-2 text-text-heading">{h.razon}</span>
                 </div>
                 <span className="font-mono text-text-heading">
-                  {h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCOP(parseNum(h.montoOPorcentaje))}
+                  {h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCurrency(parseNum(h.montoOPorcentaje))}
                 </span>
               </div>
             ))}
@@ -1039,7 +1031,7 @@ function CotizadorPageInner({ proyectoId }: { proyectoId: string }) {
           <>
             <span className="text-[10px] text-text-muted">Total acumulado del proyecto</span>
             <span className="font-mono font-semibold text-text-heading text-clamp-money">
-              {formatCOP(total)}
+              {formatCurrency(total)}
             </span>
           </>
         }
@@ -1140,9 +1132,9 @@ function VistaSoloLectura({
           }
         />
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-text-muted sm:grid-cols-4">
-          <span>Costos operativos: {formatCOP(costosOperativos)}</span>
-          <span>Imprevistos: {formatCOP(imprevistos)}</span>
-          <span className={descuento > 0 ? 'text-red-600' : ''}>Descuento: {formatCOP(descuento)}</span>
+          <span>Costos operativos: {formatCurrency(costosOperativos)}</span>
+          <span>Imprevistos: {formatCurrency(imprevistos)}</span>
+          <span className={descuento > 0 ? 'text-red-600' : ''}>Descuento: {formatCurrency(descuento)}</span>
           <span>IVA: {proyecto.aplicaIva ? `Sí (${proyecto.porcentajeIva}%)` : 'No'}</span>
           <span>Garantía: {proyecto.garantiaAnios} años</span>
         </div>
@@ -1164,7 +1156,7 @@ function VistaSoloLectura({
               {contractuales.map((item) => (
                 <div key={item.id} className="flex justify-between text-sm border-b border-border-subtle/50 py-1 last:border-0">
                   <span className="text-text-heading">{item.nombrePersonalizado ?? 'Ítem'} · {item.cantidad}</span>
-                  <span className="font-mono text-text-muted">{formatCOP(parseNum(item.precioUnitario))} → {formatCOP(parseNum(item.totalLinea))}</span>
+                  <span className="font-mono text-text-muted">{formatCurrency(parseNum(item.precioUnitario))} → {formatCurrency(parseNum(item.totalLinea))}</span>
                 </div>
               ))}
               {referenciales.length > 0 && (
@@ -1176,7 +1168,7 @@ function VistaSoloLectura({
                         <span className="w-1.5 h-1.5 rounded-full bg-gold-500" />
                         {item.nombrePersonalizado ?? 'Ítem'}
                       </span>
-                      <span className="font-mono">{formatCOP(parseNum(item.totalLinea))}</span>
+                      <span className="font-mono">{formatCurrency(parseNum(item.totalLinea))}</span>
                     </div>
                   ))}
                 </div>
@@ -1190,24 +1182,24 @@ function VistaSoloLectura({
       <section className="mb-6 rounded-lg border border-border-subtle bg-bg-raised p-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-3">Mano de Obra</h2>
         <div className="grid gap-2 text-sm sm:grid-cols-3">
-          <p>Desarrollo técnico — Tarifa: {formatCOP(tarifas.tarifaDev)}/jornada — {formatCOP(moDev)}</p>
-          <p>Ensamblaje taller — Tarifa: {formatCOP(tarifas.tarifaAssembly)}/jornada — {formatCOP(moEns)}</p>
-          <p>Instalación obra — Tarifa: {formatCOP(tarifas.tarifaInstall)}/jornada — {formatCOP(moInst)}</p>
+          <p>Desarrollo técnico — Tarifa: {formatCurrency(tarifas.tarifaDev)}/jornada — {formatCurrency(moDev)}</p>
+          <p>Ensamblaje taller — Tarifa: {formatCurrency(tarifas.tarifaAssembly)}/jornada — {formatCurrency(moEns)}</p>
+          <p>Instalación obra — Tarifa: {formatCurrency(tarifas.tarifaInstall)}/jornada — {formatCurrency(moInst)}</p>
         </div>
-        <p className="mt-2 text-sm font-semibold text-text-heading">Subtotal MO: {formatCOP(moTotal)}</p>
+        <p className="mt-2 text-sm font-semibold text-text-heading">Subtotal MO: {formatCurrency(moTotal)}</p>
       </section>
 
       {/* ResumenTotals */}
       <section className="mb-6 rounded-lg border border-border-subtle bg-bg-paper p-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-4">Resumen de Cotización</h2>
         <div className="space-y-1 text-sm">
-          <div className="flex justify-between"><span className="text-text-muted">Materiales</span><span className="font-mono">{formatCOP(materialesTotal)}</span></div>
-          <div className="flex justify-between"><span className="text-text-muted">Mano de Obra</span><span className="font-mono">{formatCOP(moTotal)}</span></div>
-          {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{formatCOP(ajuste)}</span></div>}
+          <div className="flex justify-between"><span className="text-text-muted">Materiales</span><span className="font-mono">{formatCurrency(materialesTotal)}</span></div>
+          <div className="flex justify-between"><span className="text-text-muted">Mano de Obra</span><span className="font-mono">{formatCurrency(moTotal)}</span></div>
+          {ajuste !== 0 && <div className="flex justify-between"><span className="text-text-muted">Ajuste</span><span className="font-mono">{formatCurrency(ajuste)}</span></div>}
           <hr className="border-border-subtle" />
-          <div className="flex justify-between font-semibold"><span>Subtotal</span><span className="font-mono">{formatCOP(subtotal)}</span></div>
-          {iva > 0 && <div className="flex justify-between"><span className="text-text-muted">IVA</span><span className="font-mono">{formatCOP(iva)}</span></div>}
-          <div className="flex justify-between text-lg font-semibold"><span>Total</span><span className="font-mono text-brand">{formatCOP(total)}</span></div>
+          <div className="flex justify-between font-semibold"><span>Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
+          {iva > 0 && <div className="flex justify-between"><span className="text-text-muted">IVA</span><span className="font-mono">{formatCurrency(iva)}</span></div>}
+          <div className="flex justify-between text-lg font-semibold"><span>Total</span><span className="font-mono text-brand">{formatCurrency(total)}</span></div>
         </div>
       </section>
 
@@ -1216,13 +1208,13 @@ function VistaSoloLectura({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted mb-3">Contrato</h2>
         {contrato ? (
           <>
-            <p className="text-sm text-text-heading">{contrato.codigoContrato} · {formatCOP(parseNum(contrato.valorTotal))} · {contrato.estado}</p>
+            <p className="text-sm text-text-heading">{contrato.codigoContrato} · {formatCurrency(parseNum(contrato.valorTotal))} · {contrato.estado}</p>
             {hitosList.length > 0 && (
               <div className="mt-3 space-y-1">
                 {hitosList.map((h) => (
                   <div key={h.id} className="flex justify-between text-sm border-b border-border-subtle/50 py-1 last:border-0">
                     <span>{h.orden}. {h.razon}</span>
-                    <span className="font-mono">{h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCOP(parseNum(h.montoOPorcentaje))}</span>
+                    <span className="font-mono">{h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCurrency(parseNum(h.montoOPorcentaje))}</span>
                   </div>
                 ))}
               </div>
@@ -1526,7 +1518,7 @@ function EspacioGroup({
             )}
           </div>
           <div className="flex items-center gap-3">
-            <span className="font-mono text-sm text-text-heading">{formatCOP(totalGrupo)}</span>
+            <span className="font-mono text-sm text-text-heading">{formatCurrency(totalGrupo)}</span>
             <span className={`text-sm transition-transform duration-fast ${expandido ? 'rotate-180' : ''}`}>&#9660;</span>
           </div>
         </div>
@@ -2360,7 +2352,7 @@ function VarianteContenido({
                   </div>
                   <div className="col-span-4 text-right">
                     <span className="font-mono text-sm font-semibold text-text-heading">
-                      {formatCOP(total)}
+                      {formatCurrency(total)}
                     </span>
                   </div>
                 </div>
@@ -2807,7 +2799,7 @@ function VarianteContenido({
                       </div>
                       <div className="col-span-4 text-right">
                         <span className="font-mono text-sm font-semibold text-text-heading">
-                          {formatCOP(total)}
+                          {formatCurrency(total)}
                         </span>
                       </div>
                     </div>
@@ -2882,7 +2874,7 @@ function VarianteContenido({
             })}
             <div className="flex justify-between text-sm font-semibold mt-2 border-t border-border-subtle pt-2">
               <span className="text-text-heading">Total Referencial</span>
-              <span className="font-mono text-gold-600">{formatCOP(totalReferencial)}</span>
+              <span className="font-mono text-gold-600">{formatCurrency(totalReferencial)}</span>
             </div>
             <p className="text-[11px] text-text-muted italic mt-1">No incluido en el contrato — inversión estimada informativa para el cliente.</p>
           </>
@@ -2894,15 +2886,15 @@ function VarianteContenido({
         <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Subtotal Espacio</p>
         <div className="flex justify-between text-sm">
           <span className="text-text-muted">Materiales</span>
-          <span className="font-mono text-text-heading">{formatCOP(subtotalItems)}</span>
+          <span className="font-mono text-text-heading">{formatCurrency(subtotalItems)}</span>
         </div>
         <div className="flex justify-between text-sm mt-1">
           <span className="text-text-muted">Mano de Obra</span>
-          <span className="font-mono text-text-heading">{formatCOP(moSubtotal)}</span>
+          <span className="font-mono text-text-heading">{formatCurrency(moSubtotal)}</span>
         </div>
         <div className="flex justify-between text-sm font-semibold mt-1 border-t border-border-subtle pt-2">
           <span className="text-text-heading">Total Espacio</span>
-          <span className="font-mono text-text-heading">{formatCOP(subtotalItems + moSubtotal)}</span>
+          <span className="font-mono text-text-heading">{formatCurrency(subtotalItems + moSubtotal)}</span>
         </div>
       </div>
 
@@ -2939,7 +2931,7 @@ function VarianteContenido({
         </div>
           <div className="mt-2 flex justify-between items-center border-t border-border-subtle pt-2">
             <span className="text-[11px] text-text-muted">Total MO (jornadas × tarifa):</span>
-            <span className="font-mono text-xs font-medium text-brand">{formatCOP(moSubtotal)}</span>
+            <span className="font-mono text-xs font-medium text-brand">{formatCurrency(moSubtotal)}</span>
           </div>
         </div>
 

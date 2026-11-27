@@ -11,17 +11,7 @@ import { Modal } from '@/components/veta/modal'
 import { useDataStore, type Herramienta, type EstadoOperativoHerramienta, type OrdenCompra } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import { parteEnteraDb } from '@/lib/utils/dinero'
-
-function formatCOP(amount: string | number): string {
-  const n = typeof amount === 'string' ? parseInt(parteEnteraDb(amount), 10) : amount
-  if (Number.isNaN(n)) return '—'
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 const ESTADO_LABELS: Record<EstadoOperativoHerramienta, string> = {
   operativa: 'Operativa',
@@ -290,7 +280,7 @@ export default function HerramientasPage() {
                     </span>
                     <span className="min-w-0 truncate font-medium text-text-heading">{h.nombre}</span>
                     <span><BadgeEstadoHerramienta estado={h.estadoOperativo} /></span>
-                    <span className="font-mono text-text-heading">{formatCOP(h.valor)}</span>
+                    <span className="font-mono text-text-heading">{formatCurrency(h.valor)}</span>
                     <span className="text-text-muted truncate">{proveedor?.nombre ?? '—'}</span>
                     <span className="flex items-center justify-end gap-1">
                       <AccionesHerramienta

@@ -1,6 +1,7 @@
 'use client'
 
 import { GalleryRail, type GalleryImage } from './gallery-rail'
+import { formatCurrency } from '@/lib/utils/format'
 
 export interface ProductoFichaData {
   descripcion: string
@@ -28,12 +29,6 @@ interface ProductoFichaProps {
   onZoom?: (imagenes: GalleryImage[], index: number) => void
   className?: string
 }
-
-const fmt = new Intl.NumberFormat('es-CO', {
-  style: 'currency',
-  currency: 'COP',
-  maximumFractionDigits: 0,
-})
 
 function aNumero(v: string | number | null | undefined): number {
   if (typeof v === 'number') return v
@@ -89,12 +84,12 @@ export function ProductoFicha({ data, onZoom, className }: ProductoFichaProps) {
         <div className="mt-1 flex flex-wrap items-end gap-x-4 gap-y-2">
           {tienePrecio && (
             <span className="font-display text-3xl text-[var(--color-border-brand)]">
-              {fmt.format(precioPublico as number)}
+              {formatCurrency(precioPublico as number)}
             </span>
           )}
           {Number.isFinite(precioDirecto) && precioDirecto > 0 && (
             <span className="pb-1 text-sm text-[var(--color-text-primary)] opacity-70">
-              Directo: {fmt.format(precioDirecto as number)}
+              Directo: {formatCurrency(precioDirecto as number)}
             </span>
           )}
         </div>

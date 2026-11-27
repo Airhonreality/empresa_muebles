@@ -4,15 +4,7 @@ import Image from 'next/image'
 import { ArrowRight, Check, Info, Plus } from 'lucide-react'
 import type { CatalogoAcabado } from '@/lib/data/contracts'
 import type { DiffEspacio, ItemComparado } from '@/lib/propuesta/comparar-variantes'
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 function formatQty(n: number): string {
   return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(n)
@@ -100,7 +92,7 @@ function FilaItem({ fila, nombreA, nombreB }: { fila: ItemComparado; nombreA: st
               )}
               {fila.precioA !== fila.precioB && (
                 <span>
-                  {formatCOP(fila.precioA)} <ArrowRight size={10} className="inline" /> {formatCOP(fila.precioB)}
+                  {formatCurrency(fila.precioA)} <ArrowRight size={10} className="inline" /> {formatCurrency(fila.precioB)}
                 </span>
               )}
             </p>
@@ -115,7 +107,7 @@ function FilaItem({ fila, nombreA, nombreB }: { fila: ItemComparado; nombreA: st
         </div>
       )}
       {fila.estado !== 'cambia' && fila.precioA + fila.precioB > 0 && (
-        <p className="mt-1 text-xs text-text-muted">{formatCOP(fila.precioA || fila.precioB)}</p>
+        <p className="mt-1 text-xs text-text-muted">{formatCurrency(fila.precioA || fila.precioB)}</p>
       )}
     </div>
   )
@@ -186,7 +178,7 @@ export function ComparadorVersiones({ diff, variantes, comparadaId, onCambiarCom
                     : 'border border-border-subtle bg-bg-raised text-text-heading hover:border-border-brand'
                 }`}
               >
-                {v.etiqueta} · {formatCOP(v.total)}
+                {v.etiqueta} · {formatCurrency(v.total)}
               </button>
             ))}
           </div>
@@ -197,13 +189,13 @@ export function ComparadorVersiones({ diff, variantes, comparadaId, onCambiarCom
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="text-xs font-medium uppercase tracking-wide text-text-muted">Inversión del ambiente</span>
           <span className="font-display text-lg text-text-heading">
-            {formatCOP(diff.a.total)} <ArrowRight size={14} className="inline text-gold-500" /> {formatCOP(diff.b.total)}
+            {formatCurrency(diff.a.total)} <ArrowRight size={14} className="inline text-gold-500" /> {formatCurrency(diff.b.total)}
           </span>
         </div>
         {diff.deltaTotal !== 0 && (
           <p className={`mt-1 text-right text-sm font-medium ${diff.deltaTotal > 0 ? 'text-gold-700' : 'text-warning-text'}`}>
             {diff.deltaTotal > 0 ? '+' : '−'}
-            {formatCOP(Math.abs(diff.deltaTotal))}
+            {formatCurrency(Math.abs(diff.deltaTotal))}
             {diff.deltaTotalPct !== null ? ` (${diff.deltaTotalPct > 0 ? '+' : ''}${diff.deltaTotalPct}%)` : ''}
           </p>
         )}
@@ -277,7 +269,7 @@ export function ComparadorVersiones({ diff, variantes, comparadaId, onCambiarCom
                       {formatQty(f.a)} <ArrowRight size={10} className="inline" /> {formatQty(f.b)} jornadas{' '}
                       <span className="text-gold-700">
                         ({f.deltaCOP > 0 ? '+' : '−'}
-                        {formatCOP(Math.abs(f.deltaCOP))})
+                        {formatCurrency(Math.abs(f.deltaCOP))})
                       </span>
                     </span>
                   </div>

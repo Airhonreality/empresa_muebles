@@ -13,15 +13,7 @@ import { useCatalogoCompat } from '@/lib/data/queries/catalogo-compat'
 import { crearPlantillaEspacioAction, eliminarPlantillaEspacioAction, listarPlantillasEspacioAction } from '@/lib/data/actions/core'
 import { PlantillaEditorModal } from '@/components/veta/PlantillaEditorModal'
 import { formatRelativeDate } from '@/lib/utils/format'
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 function parseNum(s: string | null | undefined): number {
   if (!s) return 0
@@ -212,7 +204,7 @@ function CatalogoPageContent() {
                     <p className="truncate text-[11px] font-medium text-text-heading" title={p.descripcion}>{p.descripcion}</p>
                     <p className="truncate font-mono text-[10px] text-text-muted">{p.sku}</p>
                     <p className="font-mono text-[11px] text-text-heading">
-                      {p.precioPublico ? formatCOP(parseNum(p.precioPublico)) : '—'}
+                      {p.precioPublico ? formatCurrency(parseNum(p.precioPublico)) : '—'}
                     </p>
                     {/* t-165: metadata "última actualización" visible en la tarjeta. */}
                     <p className="text-[9px] text-text-muted">act. {formatRelativeDate(p.updatedAt)}</p>

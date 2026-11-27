@@ -4,6 +4,7 @@ import type { MovimientoFinanciero, CuentaFinanciera } from '@/lib/data';
 import { Badge } from '@/components/veta/badge';
 import { Button } from '@/components/veta/button';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/utils/format'
 
 interface MovimientoLibroCardProps {
   mov: MovimientoFinanciero;
@@ -22,15 +23,6 @@ function formatDate(iso: string): string {
 function numDe(value: string | null | undefined): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
-}
-
-function formatCurrency(value: number, decimals: number): string {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
 }
 
 export function MovimientoLibroCard({
