@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { z } from 'zod'
 import type { SesionEmpleado } from '../auth/session'
-import { lecturasErpTemporales as crearHerramientas, type AccionesLectura } from './ops/erp'
+import { mundoFalso, registroFalso, type MundoFalso } from './prueba-registro'
 import { Procedencia, type DefinicionAsistente } from './herramientas'
 import { dominioOperaciones, ejecutarOperacion, MENSAJE_NO_DISPONIBLE, type DepsOperaciones } from './operaciones'
 import type { Propuesta, RepositorioPropuestas } from './propuestas'
@@ -14,20 +14,11 @@ function sesionCon(rol: SesionEmpleado['rol']): SesionEmpleado {
 }
 
 function accionesFalsas() {
-  const llamadas = { cotizadorLista: 0, finanzas: 0 }
-  const acciones: AccionesLectura = {
-    cotizadorLista: async () => {
-      llamadas.cotizadorLista++
-      return { proyectos: [], clientes: [] } as never
-    },
-    proyecto: async () => ({ proyecto: null, cliente: null, espacios: [] }) as never,
-    finanzas: async () => {
-      llamadas.finanzas++
-      return { cuentas: [] } as never
-    },
-  }
-  return { acciones, llamadas }
+  const mundo = mundoFalso()
+  return { acciones: mundo, llamadas: mundo.llamadas }
 }
+
+const crearHerramientas = (mundo: MundoFalso) => registroFalso(mundo)
 
 /** Operación de escritura de prueba: cuenta ejecuciones directas (no deben ocurrir). */
 function escrituraFalsa(ejecuciones: unknown[]): DefinicionAsistente {
@@ -93,7 +84,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     const comercial = await conPermisosRestringidos('comercial', ['cotizador:leer'], () => dominioOperaciones('finanzas', sesionCon('comercial'), reg))
     assert.deepEqual(comercial.operaciones, [])
     const admin = dominioOperaciones('finanzas', sesionCon('admin'), reg)
-    assert.deepEqual(admin.operaciones.map((o) => o.operacion), ['saldo_caja'])
+    assert.deepEqual(admin.operaciones.map((o) => o.operacion), ['cuentas'])
     assert.equal(typeof admin.operaciones[0].esquema, 'object')
   }],
   ['dominio inexistente responde lista vacía (igual que uno sin permiso)', async () => {
@@ -106,11 +97,11 @@ const casos: Array<[string, () => Promise<void>]> = [
     const { d } = deps(crearHerramientas(acciones))
     await conPermisosRestringidos('comercial', ['cotizador:leer'], () =>
       assert.rejects(
-        ejecutarOperacion({ dominio: 'finanzas', operacion: 'saldo_caja', argumentos: {} }, sesionCon('comercial'), d),
+        ejecutarOperacion({ dominio: 'finanzas', operacion: 'cuentas', argumentos: {} }, sesionCon('comercial'), d),
         (e: unknown) => e instanceof Error && e.message === MENSAJE_NO_DISPONIBLE,
       ),
     )
-    assert.equal(llamadas.finanzas, 0)
+    assert.equal(llamadas['finanzas.cuentas'] ?? 0, 0)
   }],
   ['operación inexistente y no permitida dan el mismo mensaje', async () => {
     const { acciones } = accionesFalsas()
@@ -124,17 +115,17 @@ const casos: Array<[string, () => Promise<void>]> = [
       }
     }
     await conPermisosRestringidos('comercial', ['cotizador:leer'], async () =>
-      assert.equal(await msg({ dominio: 'finanzas', operacion: 'saldo_caja' }), await msg({ dominio: 'x', operacion: 'y' })),
+      assert.equal(await msg({ dominio: 'finanzas', operacion: 'cuentas' }), await msg({ dominio: 'x', operacion: 'y' })),
     )
   }],
   ['argumentos inválidos no ejecutan la operación de lectura', async () => {
     const { acciones, llamadas } = accionesFalsas()
     const { d } = deps(crearHerramientas(acciones))
     await assert.rejects(
-      ejecutarOperacion({ dominio: 'cotizacion', operacion: 'buscar', argumentos: { texto: 'a' } }, sesionCon('admin'), d),
+      ejecutarOperacion({ dominio: 'cotizacion', operacion: 'buscar', argumentos: { texto: 'a', limite: 7 } }, sesionCon('admin'), d),
       /Entrada inválida/,
     )
-    assert.equal(llamadas.cotizadorLista, 0)
+    assert.equal(llamadas['cotizaciones.proyectos'] ?? 0, 0)
   }],
   ['envelope inválido (sin operación) se rechaza', async () => {
     const { acciones } = accionesFalsas()

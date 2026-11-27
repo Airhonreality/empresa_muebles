@@ -3,12 +3,18 @@
 // dominios. El chat interno y, más adelante, el servidor MCP consumen este mismo arreglo.
 import type { Documento } from './conocimiento'
 import type { DefinicionAsistente } from './herramientas'
-import { accionesErp, lecturasErpTemporales, type AccionesLectura } from './ops/erp'
 import { operacionAyuda } from './ops/ayuda'
+import { operacionesCatalogo, type PuertoCatalogo } from './ops/catalogo'
+import { operacionesClientes, type PuertoClientes } from './ops/clientes'
+import { operacionesCotizacion, type PuertoCotizaciones } from './ops/cotizacion'
+import { operacionesFinanzas, type PuertoFinanzas } from './ops/finanzas'
 import { operacionCotizacionCrearCompleta, type DepsCotizacion } from './operaciones/cotizacion-completa'
 
 export interface DepsRegistro {
-  acciones: AccionesLectura
+  clientes: PuertoClientes
+  catalogo: PuertoCatalogo
+  cotizaciones: PuertoCotizaciones
+  finanzas: PuertoFinanzas
   cotizacion: DepsCotizacion
   /** Base de conocimiento ya cargada y validada. */
   documentos: readonly Documento[]
@@ -18,10 +24,11 @@ export interface DepsRegistro {
 
 export function crearOperaciones(deps: DepsRegistro): DefinicionAsistente[] {
   return [
-    ...lecturasErpTemporales(deps.acciones),
+    ...operacionesClientes(deps.clientes),
+    ...operacionesCatalogo(deps.catalogo),
+    ...operacionesCotizacion(deps.cotizaciones),
+    ...operacionesFinanzas(deps.finanzas),
     operacionCotizacionCrearCompleta(deps.cotizacion),
     ...operacionAyuda(deps.documentos, deps.indice),
   ]
 }
-
-export { accionesErp }

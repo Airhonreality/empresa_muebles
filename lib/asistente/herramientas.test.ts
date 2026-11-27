@@ -1,155 +1,103 @@
+// Pruebas del núcleo del registro (herramientas.ts): permisos, canales, procedencia y truncado.
 import assert from 'node:assert/strict'
-import { NoAutorizadoError } from '../auth/errors'
-import { conPermisosRestringidos } from './prueba-permisos'
+import { z } from 'zod'
 import type { SesionEmpleado } from '../auth/session'
-import type { ProyectoSnapshot } from '../data/queries/proyecto-types'
+import { NoAutorizadoError } from '../auth/errors'
+import { ErrorProcedencia } from './errores'
 import {
-  MAX_CARACTERES_RESULTADO,
   catalogoDominios,
   ejecutarHerramienta,
   herramientasPermitidas,
+  MAX_CARACTERES_RESULTADO,
+  Procedencia,
+  tienePermiso,
   truncarResultado,
   type DefinicionAsistente,
 } from './herramientas'
-import { lecturasErpTemporales as crearHerramientas, type AccionesLectura } from './ops/erp'
+import { conPermisosRestringidos } from './prueba-permisos'
 
 function sesionCon(rol: SesionEmpleado['rol']): SesionEmpleado {
   return { usuarioId: 'u-1', personaId: null, nombre: 'Prueba', email: 'p@prueba.test', rol }
 }
 
-/** Registro de lectura de prueba (acciones falsas). */
-const REGISTRO_PRUEBA = () => crearHerramientas(accionesFalsas().acciones)
-
-const PROYECTO_ID = '11111111-1111-4111-8111-111111111111'
-
-/** Acciones falsas que cuentan llamadas. Ninguna toca base de datos. */
-function accionesFalsas(extra?: Partial<AccionesLectura>) {
-  const llamadas = { cotizadorLista: 0, proyecto: 0, finanzas: 0 }
-  const acciones: AccionesLectura = {
-    cotizadorLista: async () => {
-      llamadas.cotizadorLista++
-      return {
-        proyectos: [
-          { id: PROYECTO_ID, codigo: 'COT-2026-11-25-01', nombreProyecto: 'Cocina Juan', estado: 'borrador', tipoProyecto: 'personalizado', clienteId: 'c-1', createdAt: '2026-11-25' } as never,
-          { id: 'p-2', codigo: 'COT-2026-11-20-02', nombreProyecto: 'Closet Ana', estado: 'borrador', tipoProyecto: 'personalizado', clienteId: 'c-2', createdAt: '2026-11-20' } as never,
-        ],
-        clientes: [
-          { id: 'c-1', nombre: 'Juan Pérez' } as never,
-          { id: 'c-2', nombre: 'Ana López' } as never,
-        ],
-      }
-    },
-    proyecto: async () => {
-      llamadas.proyecto++
-      return { proyecto: null, cliente: null, espacios: [] } as unknown as ProyectoSnapshot
-    },
-    finanzas: async () => {
-      llamadas.finanzas++
-      return {
-        cuentas: [
-          { id: 'k1', nombre: 'Caja menor', tipo: 'caja', saldoInicial: '0', saldoActual: '150000.50', createdAt: '' },
-          { id: 'b1', nombre: 'Bancolombia', tipo: 'banco', saldoInicial: '0', saldoActual: '1000000', createdAt: '' },
-        ],
-      } as never
-    },
-    ...extra,
-  }
-  return { acciones, llamadas }
-}
-
-function buscar(nombre: string, acciones: AccionesLectura) {
-  const def = crearHerramientas(acciones).find((h) => h.nombre === nombre)
-  assert.ok(def, `falta la herramienta ${nombre}`)
-  return def
-}
+let llamadas = 0
+const lectura = (over: Partial<DefinicionAsistente> = {}): DefinicionAsistente => ({
+  nombre: 'finanzas.prueba',
+  dominio: 'finanzas',
+  operacion: 'prueba',
+  descripcion: 'prueba',
+  permiso: 'finanzas:leer',
+  canales: ['chat'],
+  esEscritura: false,
+  esquema: z.strictObject({ n: z.number().int().optional() }),
+  ejecutar: async () => {
+    llamadas++
+    return { ok: true }
+  },
+  ...over,
+} as DefinicionAsistente)
 
 const casos: Array<[string, () => Promise<void>]> = [
-  ['entrada inválida de cotizacion.buscar no llama a la acción', async () => {
-    const { acciones, llamadas } = accionesFalsas()
-    await assert.rejects(ejecutarHerramienta(buscar('cotizacion.buscar', acciones), { texto: 'a' }, sesionCon('admin')), /Entrada inválida/)
-    assert.equal(llamadas.cotizadorLista, 0)
+  ['truncarResultado deja el texto igual si cabe', async () => {
+    assert.equal(truncarResultado('corto'), 'corto')
   }],
-  ['proyectoId que no es uuid no llama a la acción', async () => {
-    const { acciones, llamadas } = accionesFalsas()
-    await assert.rejects(ejecutarHerramienta(buscar('proyecto.consultar', acciones), { proyectoId: 'no-uuid' }, sesionCon('admin')), /Entrada inválida/)
-    assert.equal(llamadas.proyecto, 0)
+  ['truncarResultado recorta al límite y avisa al modelo', async () => {
+    const largo = 'x'.repeat(MAX_CARACTERES_RESULTADO + 500)
+    const r = truncarResultado(largo)
+    assert.ok(r.length <= MAX_CARACTERES_RESULTADO)
+    assert.match(r, /RESULTADO TRUNCADO/)
   }],
-  ['entrada nula se rechaza (no se llama a la acción)', async () => {
-    const { acciones, llamadas } = accionesFalsas()
-    await assert.rejects(ejecutarHerramienta(buscar('cotizacion.buscar', acciones), null, sesionCon('admin')))
-    assert.equal(llamadas.cotizadorLista, 0)
+  ['ejecutarHerramienta trunca un resultado grande a MAX_CARACTERES_RESULTADO', async () => {
+    const def = lectura({ ejecutar: async () => ({ texto: 'y'.repeat(20000) }) })
+    const r = await ejecutarHerramienta(def, {}, sesionCon('admin'))
+    assert.ok(r.length <= MAX_CARACTERES_RESULTADO)
   }],
-  ['cotizacion.buscar devuelve solo las coincidencias por nombre de cliente', async () => {
-    const { acciones, llamadas } = accionesFalsas()
-    const texto = await ejecutarHerramienta(buscar('cotizacion.buscar', acciones), { texto: 'juan' }, sesionCon('comercial'))
-    assert.equal(llamadas.cotizadorLista, 1)
-    const datos = JSON.parse(texto)
-    assert.equal(datos.total, 1)
-    assert.equal(datos.resultados[0].codigo, 'COT-2026-11-25-01')
-    assert.equal(datos.resultados[0].cliente, 'Juan Pérez')
-  }],
-  ['finanzas.saldo_caja suma los saldos de las cuentas', async () => {
-    const { acciones } = accionesFalsas()
-    const datos = JSON.parse(await ejecutarHerramienta(buscar('finanzas.saldo_caja', acciones), {}, sesionCon('finanzas')))
-    assert.equal(datos.total, 1150000.5)
-    assert.equal(datos.cuentas.length, 2)
-  }],
-  ['usuario sin permiso no recibe finanzas.saldo_caja (comercial)', async () => {
-    const { acciones } = accionesFalsas()
-    const nombres = await conPermisosRestringidos('comercial', ['cotizador:leer', 'proyectos:leer'], () =>
-      herramientasPermitidas(sesionCon('comercial'), undefined, crearHerramientas(acciones)).map((h) => h.nombre),
+  ['permiso denegado: NoAutorizadoError y la acción no se llama', async () => {
+    llamadas = 0
+    await conPermisosRestringidos('comercial', ['clientes:leer'], () =>
+      assert.rejects(ejecutarHerramienta(lectura(), {}, sesionCon('comercial')), NoAutorizadoError),
     )
-    assert.ok(!nombres.includes('finanzas.saldo_caja'))
-    assert.ok(nombres.includes('cotizacion.buscar'))
+    assert.equal(llamadas, 0)
   }],
-  ['usuario sin permiso que llama directo recibe NoAutorizadoError sin tocar la acción', async () => {
-    const { acciones, llamadas } = accionesFalsas()
-    await conPermisosRestringidos('comercial', ['cotizador:leer'], () =>
-      assert.rejects(ejecutarHerramienta(buscar('finanzas.saldo_caja', acciones), {}, sesionCon('comercial')), NoAutorizadoError),
-    )
-    assert.equal(llamadas.finanzas, 0)
+  ['entrada inválida no llama a la acción', async () => {
+    llamadas = 0
+    await assert.rejects(ejecutarHerramienta(lectura(), { n: 'no-numero' }, sesionCon('admin')), /Entrada inválida/)
+    assert.equal(llamadas, 0)
   }],
-  ['herramienta de escritura no se ejecuta por ejecutarHerramienta', async () => {
-    const { acciones, llamadas } = accionesFalsas()
-    const escritura = { ...buscar('finanzas.saldo_caja', acciones), esEscritura: true } as DefinicionAsistente
-    await assert.rejects(ejecutarHerramienta(escritura, {}, sesionCon('admin')), /escritura/)
-    assert.equal(llamadas.finanzas, 0)
+  ['una operación de escritura no se ejecuta como lectura', async () => {
+    const escritura = { ...lectura(), esEscritura: true, preparar: async () => ({ resumen: '', datos: {} }), confirmar: async () => ({}) } as unknown as DefinicionAsistente
+    await assert.rejects(ejecutarHerramienta(escritura, {}, sesionCon('admin')), /solo se ejecuta con confirmación/)
   }],
-  ['la lista habilitada por configuración solo reduce', async () => {
-    const { acciones } = accionesFalsas()
-    const nombres = herramientasPermitidas(sesionCon('admin'), ['finanzas.saldo_caja', 'nombre_que_no_existe'], crearHerramientas(acciones)).map((h) => h.nombre)
-    assert.deepEqual(nombres, ['finanzas.saldo_caja'])
+  ['herramientasPermitidas: la configuración solo puede reducir la lista', async () => {
+    const reg = [lectura({ nombre: 'finanzas.a' }), lectura({ nombre: 'finanzas.b' })]
+    const nombres = herramientasPermitidas(sesionCon('admin'), ['finanzas.a', 'no.existe'], reg).map((h) => h.nombre)
+    assert.deepEqual(nombres, ['finanzas.a'])
+    assert.equal(herramientasPermitidas(sesionCon('admin'), undefined, reg).length, 2)
   }],
-  ['resultado grande se trunca a 8000 caracteres con aviso', async () => {
-    const enorme = 'x'.repeat(50000)
-    const { acciones } = accionesFalsas({ finanzas: async () => ({ cuentas: [{ id: 'k', nombre: enorme, tipo: 'caja', saldoInicial: '0', saldoActual: '0', createdAt: '' }] }) as never })
-    const texto = await ejecutarHerramienta(buscar('finanzas.saldo_caja', acciones), {}, sesionCon('finanzas'))
-    assert.ok(texto.length <= MAX_CARACTERES_RESULTADO)
-    assert.ok(texto.includes('RESULTADO TRUNCADO'))
+  ['las operaciones de canal MCP no se ofrecen en el chat', async () => {
+    const reg = [lectura({ nombre: 'finanzas.a' }), lectura({ nombre: 'finanzas.solo_mcp', canales: ['mcp'] })]
+    assert.deepEqual(herramientasPermitidas(sesionCon('admin'), undefined, reg).map((h) => h.nombre), ['finanzas.a'])
   }],
-  ['truncarResultado no toca textos cortos', async () => {
-    assert.equal(truncarResultado('hola'), 'hola')
+  ['una operación no disponible para el usuario no aparece (disponible = false)', async () => {
+    const reg = [lectura({ nombre: 'finanzas.a', disponible: () => false })]
+    assert.deepEqual(herramientasPermitidas(sesionCon('admin'), undefined, reg), [])
   }],
-  ['proyecto.consultar con proyecto inexistente responde encontrado false', async () => {
-    const { acciones } = accionesFalsas()
-    const datos = JSON.parse(await ejecutarHerramienta(buscar('proyecto.consultar', acciones), { proyectoId: PROYECTO_ID }, sesionCon('admin')))
-    assert.deepEqual(datos, { encontrado: false })
+  ['catalogoDominios: solo dominios con alguna operación permitida, sin nombres de operaciones', async () => {
+    const reg = [lectura({ nombre: 'finanzas.a', dominio: 'finanzas' }), lectura({ nombre: 'clientes.b', dominio: 'clientes', permiso: 'clientes:leer' })]
+    const dominios = await conPermisosRestringidos('comercial', ['clientes:leer'], () => catalogoDominios(sesionCon('comercial'), reg))
+    assert.deepEqual(dominios.map((d) => d.dominio), ['clientes'])
+    assert.ok(!JSON.stringify(catalogoDominios(sesionCon('admin'), reg)).includes('finanzas.a'))
   }],
-  ['catálogo de dominios: solo los que el rol puede leer, sin nombres de herramientas', async () => {
-    const admin = catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA()).map((d) => d.dominio)
-    assert.deepEqual(admin, ['cotizacion', 'finanzas', 'proyecto'])
-    const comercial = await conPermisosRestringidos('comercial', ['cotizador:leer', 'proyectos:leer'], () =>
-      catalogoDominios(sesionCon('comercial'), REGISTRO_PRUEBA()).map((d) => d.dominio),
-    )
-    assert.deepEqual(comercial, ['cotizacion', 'proyecto'])
-    const taller = await conPermisosRestringidos('taller', ['proyectos:leer'], () =>
-      catalogoDominios(sesionCon('taller'), REGISTRO_PRUEBA()).map((d) => d.dominio),
-    )
-    // cotizacion.buscar es de proyectos:leer (paso 2 de t-200): el taller la ve, no la de cobro.
-    assert.deepEqual(taller, ['cotizacion', 'proyecto'])
-    const descripcion = catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA())[0]
-    assert.ok(descripcion.nombre && descripcion.descripcion)
-    assert.ok(!JSON.stringify(catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA())).includes('_'))
+  ['tienePermiso sigue la matriz única', async () => {
+    assert.equal(tienePermiso(sesionCon('admin'), lectura()), true)
+    await conPermisosRestringidos('taller', [], () => assert.equal(tienePermiso(sesionCon('taller'), lectura()), false))
+  }],
+  ['Procedencia: un id no registrado se rechaza con ErrorProcedencia', async () => {
+    const p = new Procedencia()
+    assert.throws(() => p.exigir('cliente', 'c-1', 'cliente'), ErrorProcedencia)
+    p.registrar('cliente', ['c-1'])
+    assert.doesNotThrow(() => p.exigir('cliente', 'c-1', 'cliente'))
+    assert.equal(p.tiene('producto', 'c-1'), false, 'un id de cliente no vale como producto')
   }],
 ]
 
@@ -161,13 +109,10 @@ async function principal(): Promise<void> {
       console.log(`ok - ${nombre}`)
     } catch (err) {
       fallos++
-      console.error(`FALLA - ${nombre}\n${(err as Error).stack ?? err}`)
+      console.log(`FALLA - ${nombre}\n${(err as Error).message}`)
     }
   }
-  if (fallos > 0) {
-    console.error(`${fallos} caso(s) fallaron`)
-    process.exitCode = 1
-  }
+  if (fallos > 0) process.exit(1)
 }
 
 void principal()

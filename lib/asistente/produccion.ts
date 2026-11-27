@@ -4,7 +4,10 @@
 import { cifrar } from './cifrado'
 import { crearCatalogo, obtenerCatalogoOpenRouter, type CatalogoModelos, type ProveedorConCatalogo } from './catalogo-modelos'
 import { crearOperaciones } from './registro'
-import { accionesErp } from './ops/erp'
+import { clientesDb } from './operaciones/clientes-produccion'
+import { catalogoDb } from './operaciones/catalogo-produccion'
+import { cotizacionesDb } from './operaciones/cotizaciones-produccion'
+import { finanzasDb } from './operaciones/finanzas-produccion'
 import { lecturaCotizacionDb, transaccionCotizacionDb } from './operaciones/cotizacion-produccion'
 import { cargarDocumentos, type Documento } from './conocimiento'
 import { readFileSync } from 'node:fs'
@@ -49,7 +52,10 @@ function indiceProcedimientosTexto(): string {
 
 /** Registro real de operaciones. */
 export const REGISTRO_OPERACIONES = crearOperaciones({
-  acciones: accionesErp,
+  clientes: clientesDb,
+  catalogo: catalogoDb,
+  cotizaciones: cotizacionesDb,
+  finanzas: finanzasDb,
   cotizacion: { lectura: lecturaCotizacionDb, transaccion: transaccionCotizacionDb, ahora: () => new Date() },
   documentos: DOCUMENTOS,
   indice: indiceProcedimientosTexto(),

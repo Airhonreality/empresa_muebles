@@ -12,12 +12,10 @@ import {
   type DepsTurno,
   type LlamadaRegistro,
 } from './bucle'
-import { lecturasErpTemporales as crearHerramientas, type AccionesLectura } from './ops/erp'
+import { mundoFalso, registroFalso } from './prueba-registro'
 import { conPermisosRestringidos } from './prueba-permisos'
 
 const PASOS_MAXIMOS = 8
-import { operacionCotizacionCrearCompleta } from './operaciones/cotizacion-completa'
-import type { EjecutorTransaccion } from './operaciones/cotizacion-completa'
 
 const AHORA = new Date('2026-11-25T15:00:00.000Z')
 
@@ -30,18 +28,9 @@ const CONFIG: ConfiguracionTurno = {
   temperatura: 0.2,
   maxTokensRespuesta: 1024,
   pasosMaximos: PASOS_MAXIMOS,
-  herramientasHabilitadas: ['cotizacion.buscar', 'proyecto.consultar', 'finanzas.saldo_caja', 'cotizacion.crear_completa'],
+  herramientasHabilitadas: ['clientes.buscar', 'cotizacion.buscar', 'finanzas.cuentas', 'cotizacion.crear_completa'],
   topes: { usuarioDiaUsd: 5, globalDiaUsd: 50, alertaFraccion: 0.8 },
   precios: { entradaPorMillon: 1, salidaPorMillon: 2 },
-}
-
-const ACCIONES: AccionesLectura = {
-  cotizadorLista: async () => ({
-    proyectos: [{ id: 'p-1', codigo: 'COT-1', nombreProyecto: 'Cocina', estado: 'borrador', tipoProyecto: 'personalizado', clienteId: 'c-1', createdAt: '2026-11-25' } as never],
-    clientes: [{ id: 'c-1', nombre: 'Juan Pérez' } as never],
-  }),
-  proyecto: async () => ({ proyecto: null, cliente: null, espacios: [] }) as never,
-  finanzas: async () => ({ cuentas: [] }) as never,
 }
 
 const USO = { input: 10, output: 5 }
@@ -127,7 +116,7 @@ function entorno(opts: {
       if (!modelo) throw new Error(`sin modelo para ${id}`)
       return modelo
     },
-    herramientas: opts.herramientas ?? crearHerramientas(ACCIONES),
+    herramientas: opts.herramientas ?? registroFalso(),
     propuestas: propuestas,
     asegurarConversacion: async () => 'conv-test',
     ahora: () => AHORA,
@@ -168,12 +157,14 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['usuario sin permiso: la herramienta no aparece en tools del modelo', async () => {
     const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('ok')] })
     const { deps } = entorno({ modelos: { a: modelo } })
-    await ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'saldo', configuracion: CONFIG }, deps)
+    await conPermisosRestringidos('comercial', ['clientes:leer'], () =>
+      ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'saldo', configuracion: CONFIG }, deps),
+    )
     const nombres = (modelo.doGenerateCalls[0].tools ?? []).map((t) => t.name)
     assert.deepEqual(nombres.sort(), ['dominio_operaciones', 'ejecutar'])
     const sistema = JSON.stringify(modelo.doGenerateCalls[0].prompt.find((m) => m.role === 'system'))
-    assert.ok(!sistema.includes('saldo_caja'))
-    assert.ok(sistema.includes('cotizacion'))
+    assert.ok(!sistema.includes('- finanzas'))
+    assert.ok(sistema.includes('- clientes'))
   }],
   ['temperatura y tokens de respuesta del panel llegan al modelo; las reglas base siguen en el sistema', async () => {
     const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('ok')] })
@@ -248,16 +239,11 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['cotización por el asistente: queda como propuesta pendiente y ninguna escritura real', async () => {
     const CLIENTE = '22222222-2222-4222-8222-222222222222'
     const PRODUCTO = '33333333-3333-4333-8333-333333333333'
-    const escrituras: string[] = []
-    const transaccion: EjecutorTransaccion = async () => {
-      escrituras.push('transaccion')
-      throw new Error('no debe ejecutarse durante el turno')
-    }
-    const lectura = {
-      clienteNombre: async () => 'Juan Pérez',
-      productoCatalogo: async () => ({ precioPublico: '100000.00', anulado: false }),
-    }
-    const herramientas = [...crearHerramientas(ACCIONES), operacionCotizacionCrearCompleta({ lectura, transaccion, ahora: () => AHORA })]
+    const mundo = mundoFalso({
+      clientes: [{ id: CLIENTE, nombre: 'Juan Pérez', documento: null, telefono: null }],
+      productos: [{ id: PRODUCTO, descripcion: 'Gabinete', sku: 'G-1', categoria: null, precioPublico: '100000.00', unidad: 'ud' }],
+    })
+    const herramientas = registroFalso(mundo)
     const modelo = new MockLanguageModelV4({
       doGenerate: [
         respuestaHerramienta('ejecutar', {
@@ -274,7 +260,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     })
     const { deps, propuestas, llamadas } = entorno({ modelos: { a: modelo }, herramientas })
     const r = await ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'cotiza a Juan', configuracion: CONFIG }, deps)
-    assert.equal(escrituras.length, 0)
+    assert.equal(mundo.escrituras.length, 0)
     assert.ok(r.propuestas && r.propuestas.length === 1)
     const id = r.propuestas[0].id
     assert.equal(propuestas.filas.get(id)?.estado, 'pendiente')
