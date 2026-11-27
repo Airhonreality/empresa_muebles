@@ -9,6 +9,7 @@ import { ordinalesClausulas, type ClaveClausula } from '@/lib/data/contrato-clau
 import { lineaObjetoItem } from '@/lib/data/contrato-items'
 import type { EspacioVariante } from '@/lib/data/contracts'
 import { repartirHitos } from '@/lib/dinero/calculo'
+import { MESES_ES } from '@/lib/catalogos/meses'
 
 // Plantilla del contrato de fabricación e instalación (t-163, 2026-09-14).
 // Adaptada de la plantilla del sistema legacy (`legacy-agnostic-backup:
@@ -82,13 +83,11 @@ function parseNum(s: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0
 }
 
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-
 function fechaLarga(iso: string | null): { dia: string; mes: string; anio: string } | null {
   if (!iso) return null
   const [year, month, day] = iso.slice(0, 10).split('-')
   if (!year || !month || !day) return null
-  return { dia: day, mes: MESES[parseInt(month, 10) - 1] ?? month, anio: year }
+  return { dia: day, mes: MESES_ES[parseInt(month, 10) - 1] ?? month, anio: year }
 }
 
 /** 'AAAA-MM-DD' → '15 de octubre de 2026', para la fecha de entrega del contrato. */
@@ -681,7 +680,6 @@ function ContratoPrintInner({ proyectoId }: { proyectoId: string }) {
         <p>
           Las partes acuerdan que el presente contrato presta mérito ejecutivo de acuerdo con la legislación colombiana para la exigencia judicial del cumplimiento de todas las obligaciones de dar, hacer y pagar contenidas en él.
         </p>
-
 
         <div className="section-title">4. Medios de Pago Autorizados</div>
         <p>

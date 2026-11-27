@@ -10,8 +10,7 @@ import { useDataStore, type Portafolio } from '@/lib/data'
 import { TIPOS_ESPACIO, labelTipoEspacio, nombreBaseTituloTipoEspacio } from '@/lib/catalogos/tipos-espacio'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import { slugify } from '@/lib/utils/slug'
-
-const TIPOS_PROYECTO = ['Residencial', 'Comercial', 'Oficina', 'Hotel', 'Otro']
+import { TIPOS_PROYECTO } from '@/lib/catalogos/tipos-proyecto'
 
 // --- Helpers de nomenclatura (ley de nomenclatura pública High-Ticket):
 // título = `[Espacio] [Inicial]. — [Barrio]`. La inicial es la primera letra del apellido del

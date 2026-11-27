@@ -12,8 +12,7 @@ import { ImagePicker } from '@/components/veta/image-picker'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
 import { slugify } from '@/lib/utils/slug'
 import { TIPOS_ESPACIO, nombreBaseTituloTipoEspacio } from '@/lib/catalogos/tipos-espacio'
-
-const TIPOS_PROYECTO = ['Residencial', 'Comercial', 'Oficina', 'Hotel', 'Otro']
+import { TIPOS_PROYECTO } from '@/lib/catalogos/tipos-proyecto'
 
 function inicialClienteDeTitulo(titulo: string | null | undefined): string | null {
   if (!titulo) return null
