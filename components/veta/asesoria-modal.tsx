@@ -77,10 +77,11 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
 
   const executeRedirect = (url: string) => {
     setFormStatus('redirecting');
-    fireAdsConversion('general');
-
-    // Abordaje Axiomático: Navegación directa en la misma pestaña para evadir Popup Blockers y forzar Deep Linking en móviles
-    window.location.href = url;
+    // Navegar solo cuando Google confirme la conversión (o tras 1 s), para que el evento no se pierda en móvil
+    fireAdsConversion('general', () => {
+      // Abordaje Axiomático: Navegación directa en la misma pestaña para evadir Popup Blockers y forzar Deep Linking en móviles
+      window.location.href = url;
+    });
 
     // Limpieza resiliente
     setTimeout(() => {
