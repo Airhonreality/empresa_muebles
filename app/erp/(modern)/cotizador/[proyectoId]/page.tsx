@@ -14,6 +14,7 @@ import { calcularTotalesCotizacion } from '@/lib/dinero/calculo'
 import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
+import { SlotImagen } from '@/components/imagen/slot-imagen'
 import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { FilePicker } from '@/components/veta/file-picker'
 import { ItemMiniatura } from '@/components/veta/item-miniatura'
@@ -3512,11 +3513,11 @@ function FormDetallesEspacio({
           header de la tarjeta (mismo patrón de "dos UI para un solo dato" ya corregido en el
           flujo de referenciales). Queda un solo lugar para renombrar: el lápiz del header. */}
 
-      {/* Selector de imágenes — arriba, con miniaturas y controles de reordenamiento */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <ImagePicker label="Fotos del espacio" value={fotosEspacio} onChange={setFotosEspacio} uploadToR2 r2Prefix="cotizador/espacio" />
-        <ImagePicker label="Fotos de diseño" value={fotosDisenio} onChange={setFotosDisenio} uploadToR2 r2Prefix="cotizador/disenio" />
-        <ImagePicker label="Fotos de referencia" value={fotosReferencia} onChange={setFotosReferencia} uploadToR2 r2Prefix="cotizador/referencia" />
+      {/* Fotos del espacio por tipo (t-200): cada slot a ancho completo, con su colección y su panel */}
+      <div className="flex flex-col gap-4">
+        <SlotImagen slot={{ id: 'espacio:espacio', etiqueta: 'Fotos del espacio', multiple: true }} value={fotosEspacio} onChange={setFotosEspacio} r2Prefix="cotizador/espacio" />
+        <SlotImagen slot={{ id: 'espacio:disenio', etiqueta: 'Fotos de diseño', multiple: true }} value={fotosDisenio} onChange={setFotosDisenio} r2Prefix="cotizador/disenio" />
+        <SlotImagen slot={{ id: 'espacio:referencia', etiqueta: 'Fotos de referencia', multiple: true }} value={fotosReferencia} onChange={setFotosReferencia} r2Prefix="cotizador/referencia" />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
