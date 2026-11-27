@@ -8,6 +8,7 @@ import { ejecutarHerramienta, Procedencia, catalogoDominios, herramientasPermiti
 import { conPermisosRestringidos } from '../__pruebas__/prueba-permisos'
 import { mundoFalso, registroFalso, type MundoFalso } from '../__pruebas__/prueba-registro'
 import { ESTADOS_PROYECTO } from './cotizacion'
+import { ETIQUETA_SUBTOTAL_MATERIALES } from '../etiquetas'
 import { zodToJsonSchema } from '../esquema-json'
 
 const CLI_GARCIA = '11111111-1111-4111-8111-111111111111'
@@ -96,7 +97,7 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['cotizacion.buscar filtra por estado del enum y devuelve subtotal de materiales', async () => {
     const { datos } = await ejecutar(registroFalso(mundoBase()), 'cotizacion.buscar', { estado: 'cotizado' })
     assert.equal(datos.total, 1)
-    assert.equal(datos.resultados[0].subtotalMateriales, '500000')
+    assert.equal(datos.resultados[0][ETIQUETA_SUBTOTAL_MATERIALES], '500000')
     assert.match(datos.nota, /sin mano de obra/)
   }],
   ['cotizacion.buscar: estado fuera del enum real se rechaza', async () => {
@@ -114,7 +115,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     const { datos, procedencia } = await ejecutar(registroFalso(mundoBase()), 'cotizacion.consultar', { id: PROY_1 })
     assert.equal(datos.encontrado, true)
     assert.equal(datos.espacios[0].items[0].productoId, PROD_COCINA)
-    assert.equal(datos.subtotalMateriales, '500000')
+    assert.equal(datos[ETIQUETA_SUBTOTAL_MATERIALES], '500000')
     assert.ok(procedencia.tiene('producto', PROD_COCINA))
   }],
   ['cotizacion.consultar de un id inexistente responde encontrado false', async () => {

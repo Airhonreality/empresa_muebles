@@ -56,7 +56,8 @@ const casos: Array<[string, () => Promise<void>]> = [
     const datos = esquemaCotizacionCompleta.parse(entrada())
     const r = await op.preparar!(datos, sesion, { procedencia: TODO_BUSCADO() })
     assert.equal(m.escrituras.length, 0)
-    assert.match(r.resumen, /Total \$ 500\.000/)
+    assert.match(r.resumen, /Subtotal materiales \(sin mano de obra\) \$ 500\.000/)
+    assert.doesNotMatch(r.resumen, /\bTotal\b/)
     assert.match(r.resumen, /No incluye mano de obra/)
   }],
   ['caso feliz: proyecto, espacio con tipo, ítems a precio de catálogo, código del servidor', async () => {
@@ -135,7 +136,8 @@ const casos: Array<[string, () => Promise<void>]> = [
     await assert.rejects(op.confirmar(preparada.datos, sesion), (e: unknown) => {
       assert.ok(e instanceof ErrorRevalidacion)
       assert.match(e.message, /cambió de \$ 500\.000 a \$ 600\.000/)
-      assert.match(e.resumenNuevo, /Total \$ 600\.000/)
+      assert.match(e.resumenNuevo, /Subtotal materiales \(sin mano de obra\) \$ 600\.000/)
+      assert.doesNotMatch(e.resumenNuevo, /\bTotal\b/)
       return true
     })
     assert.equal(m.escrituras.length, 0)

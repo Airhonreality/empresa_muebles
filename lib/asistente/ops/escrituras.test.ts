@@ -200,7 +200,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     m.productos[0] = { ...m.productos[0], precioPublico: '300000.00' }
     await assert.rejects(confirmarPropuesta(id, sesion, deps), ErrorRevalidacion)
     assert.equal(filas.get(id)!.estado, 'pendiente')
-    assert.match(filas.get(id)!.resumen, /Total \$ 600\.000/)
+    assert.match(filas.get(id)!.resumen, /Subtotal materiales \(sin mano de obra\) \$ 600\.000/)
     assert.equal(m.escrituras.length, 0)
     // Segunda confirmación, ya con el resumen nuevo: escribe una sola vez.
     const ok = await confirmarPropuesta(id, sesion, deps)

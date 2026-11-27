@@ -17,6 +17,7 @@ import { generarCodigoCotizacion, prefijoCodigoFecha } from '../../data/codigos-
 import { TIPOS_ESPACIO } from '../../catalogos/tipos-espacio'
 import { codigoPg, ErrorRevalidacion } from '../errores'
 import type { DefinicionEscritura } from '../herramientas'
+import { ETIQUETA_SUBTOTAL_MATERIALES } from '../etiquetas'
 
 /** Mismo default que la columna proyectos.porcentaje_iva. */
 export const PORCENTAJE_IVA = 19
@@ -174,9 +175,8 @@ export async function planificarCotizacion(entrada: EntradaCotizacionCompleta, l
     `Espacios (${espacios.length}): ${espacios.map((e) => e.nombre).join(', ')}.`,
     `Ítems: ${numItems}.`,
     aplicaIva
-      ? `Subtotal ${formatoPesos(totales.subtotal)}, IVA ${PORCENTAJE_IVA}% ${formatoPesos(totales.iva)}.`
-      : `Subtotal ${formatoPesos(totales.subtotal)} (sin IVA).`,
-    `Total ${formatoPesos(totales.total)}.`,
+      ? `${ETIQUETA_SUBTOTAL_MATERIALES} ${formatoPesos(totales.subtotal)}, IVA ${PORCENTAJE_IVA}% ${formatoPesos(totales.iva)}, valor con IVA ${formatoPesos(totales.total)}.`
+      : `${ETIQUETA_SUBTOTAL_MATERIALES} ${formatoPesos(totales.subtotal)} (sin IVA).`,
     'No incluye mano de obra: el total final lo calcula el cotizador.',
   ]
 

@@ -7,6 +7,7 @@
 // calcula con los parámetros del panel de finanzas. Por eso no se devuelve un "total" de cotización.
 import { z } from 'zod'
 import type { DefinicionAsistente } from '../herramientas'
+import { ETIQUETA_SUBTOTAL_MATERIALES } from '../etiquetas'
 import { buscarEnLista } from './busqueda'
 import { esquemaLimite, limiteDe } from './limites'
 
@@ -60,7 +61,7 @@ export interface PuertoCotizaciones {
 }
 
 const NOTA_MATERIALES =
-  'Montos = subtotal de materiales (sin mano de obra, costos ni imprevistos). El total del cotizador puede ser mayor.'
+  `Montos = ${ETIQUETA_SUBTOTAL_MATERIALES}, sin costos ni imprevistos. El valor con mano de obra lo calcula el cotizador y puede ser mayor.`
 
 export function operacionesCotizacion(puerto: PuertoCotizaciones): DefinicionAsistente[] {
   const esquemaBuscar = z.strictObject({
@@ -75,7 +76,7 @@ export function operacionesCotizacion(puerto: PuertoCotizaciones): DefinicionAsi
       dominio: 'cotizacion',
       operacion: 'buscar',
       descripcion:
-        'Busca cotizaciones por código (COT-…), nombre del proyecto o cliente, y opcionalmente por estado. Devuelve id, código, cliente y subtotal de materiales.',
+        'Busca cotizaciones por código (COT-…), nombre del proyecto o cliente, y opcionalmente por estado. Devuelve id, código, cliente y Subtotal materiales (sin mano de obra).',
       permiso: 'cotizador:leer',
       canales: ['chat'],
       esEscritura: false,
@@ -101,7 +102,7 @@ export function operacionesCotizacion(puerto: PuertoCotizaciones): DefinicionAsi
             nombreProyecto: p.nombreProyecto,
             cliente: p.clienteNombre,
             estado: p.estado,
-            subtotalMateriales: String(materiales.get(p.id) ?? 0),
+            [ETIQUETA_SUBTOTAL_MATERIALES]: String(materiales.get(p.id) ?? 0),
           })),
         }
       },
@@ -111,7 +112,7 @@ export function operacionesCotizacion(puerto: PuertoCotizaciones): DefinicionAsi
       dominio: 'cotizacion',
       operacion: 'consultar',
       descripcion:
-        'Consulta una cotización por su id (obtenido con cotizacion.buscar): cliente, espacios activos con sus ítems (productoId de catálogo) y subtotal de materiales.',
+        'Consulta una cotización por su id (obtenido con cotizacion.buscar): cliente, espacios activos con sus ítems (productoId de catálogo) y Subtotal materiales (sin mano de obra).',
       permiso: 'cotizador:leer',
       canales: ['chat'],
       esEscritura: false,
@@ -141,7 +142,7 @@ export function operacionesCotizacion(puerto: PuertoCotizaciones): DefinicionAsi
             cliente: detalle.cliente,
           },
           espacios: detalle.espacios,
-          subtotalMateriales: String(subtotal),
+          [ETIQUETA_SUBTOTAL_MATERIALES]: String(subtotal),
         }
       },
     },
