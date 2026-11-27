@@ -220,3 +220,5 @@ Hecho hoy:
 - Reautorizar la cuenta de Google Ads para la Data Manager API y automatizar la subida (la API de carga anterior está restringida a usuarios existentes).
 
 **Restricción de tratamiento:** el mapeo de conversiones con los chats de WhatsApp se hace manualmente o con exportaciones que entrega el titular. No se automatiza la lectura de mensajes de terceros.
+
+**Ajuste 2026-11-27 (aprobado por Javier):** tope de CPA de $14.000 en la campaña de cocinas (maximizar conversiones con meta) y presupuesto diario de $5.500 (antes $11.300). Motivo: tras quitar el tope, el gasto llegó a ~2× el presupuesto diario, el costo por clic subió a ~$2.400 y hubo 1 conversión en 3 días. Pendiente: revisar medición de conversiones en móvil (13 clics, 0 conversiones en 25–27 nov). Evaluar a 7 días antes de nuevos cambios.
