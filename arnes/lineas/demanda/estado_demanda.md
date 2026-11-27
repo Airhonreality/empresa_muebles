@@ -226,3 +226,5 @@ Hecho hoy:
 **Ajuste 2026-11-27 (aprobado por Javier):** aumentos de puja por zona de Bogotá (+15% a +80%, 7 zonas) llevados a 0%. Se mantiene el −10% de la zona con mejor costo por conversión. Motivo: las zonas con aumento gastaron ~$53.000 con 2 conversiones; la zona con descuento tuvo 3 conversiones por $17.971.
 
 **Ajuste 2026-11-27 (aprobado por Javier):** la zona con −10% (estratos altos de Bogotá, mejor costo por conversión en 30 días, muestra pequeña) también llevada a 0%. Todas las zonas con ajuste quedan en 0%. Reevaluar a 14 días antes de considerar cualquier ajuste.
+
+**Ajuste 2026-11-27 (aprobado por Javier):** presupuesto diario de $5.500 a $7.500 para observar el efecto. Riesgo conocido: Google puede gastar hasta el doble en un día. Revisar gasto diario y costo por conversión a 7 días.
