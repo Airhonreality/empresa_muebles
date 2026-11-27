@@ -6,8 +6,8 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import type { SesionEmpleado } from '../auth/session'
-import { PERMISOS, PERMISOS_POR_ROL, type Permiso } from '../auth/permisos'
-import { truncarResultado } from './herramientas'
+import { PERMISOS, type Permiso } from '../auth/permisos'
+import { tienePermisoRol, truncarResultado } from './herramientas'
 
 /** Tamaño máximo de un procedimiento devuelto al modelo (plan t-199 §3.3). */
 export const MAX_CARACTERES_PROCEDIMIENTO = 12000
@@ -66,8 +66,7 @@ export function cargarDocumentos(raiz: string): Documento[] {
 
 /** Documentos que el rol de la sesión puede leer. */
 export function documentosPermitidos(docs: readonly Documento[], usuario: SesionEmpleado): Documento[] {
-  const permisos = PERMISOS_POR_ROL[usuario.rol] ?? []
-  return docs.filter((d) => permisos.includes(d.permiso))
+  return docs.filter((d) => tienePermisoRol(usuario.rol, d.permiso))
 }
 
 function diasDesde(fechaIso: string, ahora: Date): number {

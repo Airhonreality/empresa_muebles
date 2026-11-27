@@ -12,6 +12,8 @@
 //   empleado (confirmarPropuesta en propuestas.ts).
 import { z } from 'zod'
 import { PERMISOS_POR_ROL, type Permiso } from '../auth/permisos'
+import type { RolCanonico } from '../data/contracts'
+import { puedeUsarChat } from './matriz-chat'
 import { NoAutorizadoError } from '../auth/errors'
 import type { SesionEmpleado } from '../auth/session'
 import { ErrorProcedencia } from './errores'
@@ -110,9 +112,17 @@ export function esquemaDe(def: DefinicionAsistente, usuario: SesionEmpleado): z.
   return def.esquemaPara?.(usuario) ?? def.esquema
 }
 
-/** ¿Puede el rol de la sesión usar esta operación? Única comprobación de permiso del registro. */
+/**
+ * ¿Puede el rol usar un permiso desde el chat? Dos barreras: el permiso base (lib/auth/permisos.ts)
+ * y la matriz del chat (lib/asistente/matriz-chat.ts). Única comprobación de permiso del registro.
+ */
+export function tienePermisoRol(rol: RolCanonico, permiso: Permiso): boolean {
+  return (PERMISOS_POR_ROL[rol] ?? []).includes(permiso) && puedeUsarChat(rol, permiso)
+}
+
+/** ¿Puede el rol de la sesión usar esta operación? */
 export function tienePermiso(usuario: SesionEmpleado, def: DefinicionAsistente): boolean {
-  return (PERMISOS_POR_ROL[usuario.rol] ?? []).includes(def.permiso)
+  return tienePermisoRol(usuario.rol, def.permiso)
 }
 
 /** Descripción de cada dominio para el mapa que ve el modelo (nivel 0). */

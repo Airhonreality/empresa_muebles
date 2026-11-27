@@ -3,9 +3,8 @@
 // crea una propuesta pendiente con los datos que devolvió `preparar`. Solo la confirmación del mismo
 // usuario la ejecuta (`confirmar` revalida y escribe). Lógica pura: la persistencia entra por
 // RepositorioPropuestas (repositorio.ts es la implementación real).
-import { PERMISOS_POR_ROL } from '../auth/permisos'
 import type { SesionEmpleado } from '../auth/session'
-import type { DefinicionAsistente } from './herramientas'
+import { tienePermisoRol, type DefinicionAsistente } from './herramientas'
 import { ErrorRevalidacion } from './errores'
 
 export const HORAS_VENCIMIENTO = 48
@@ -118,7 +117,7 @@ export async function confirmarPropuesta(id: string, usuario: SesionEmpleado, de
   const def = deps.registro.find((h) => h.nombre === p.herramienta)
   if (!def) throw new ErrorPropuesta('NO_ENCONTRADA', `Operación desconocida: ${p.herramienta}`, 400)
   if (!def.esEscritura) throw new ErrorPropuesta('NO_ES_ESCRITURA', `"${def.nombre}" no es de escritura.`, 400)
-  if (!PERMISOS_POR_ROL[usuario.rol]?.includes(def.permiso)) {
+  if (!tienePermisoRol(usuario.rol, def.permiso)) {
     throw new ErrorPropuesta('SIN_PERMISO', `Sin permiso "${def.permiso}" para esta acción.`, 403)
   }
 

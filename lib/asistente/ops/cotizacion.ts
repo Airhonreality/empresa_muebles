@@ -76,7 +76,7 @@ export function operacionesCotizacion(puerto: PuertoCotizaciones): DefinicionAsi
       operacion: 'buscar',
       descripcion:
         'Busca cotizaciones por código (COT-…), nombre del proyecto o cliente, y opcionalmente por estado. Devuelve id, código, cliente y subtotal de materiales.',
-      permiso: 'proyectos:leer',
+      permiso: 'cotizador:leer',
       canales: ['chat'],
       esEscritura: false,
       esquema: esquemaBuscar,
@@ -112,7 +112,7 @@ export function operacionesCotizacion(puerto: PuertoCotizaciones): DefinicionAsi
       operacion: 'consultar',
       descripcion:
         'Consulta una cotización por su id (obtenido con cotizacion.buscar): cliente, espacios activos con sus ítems (productoId de catálogo) y subtotal de materiales.',
-      permiso: 'proyectos:leer',
+      permiso: 'cotizador:leer',
       canales: ['chat'],
       esEscritura: false,
       esquema: z.strictObject({ id: z.uuid('id debe ser un identificador válido') }),
