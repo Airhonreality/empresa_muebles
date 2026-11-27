@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { esquemaConfiguracion } from './configuracion-esquema'
 import { guardarConfiguracionHttp, leerConfiguracionHttp } from './ruta'
 import { ErrorCatalogoNoDisponible, type ModeloCatalogo } from './catalogo-modelos'
-import { crearHerramientas, type AccionesLectura } from './herramientas'
+import { lecturasErpTemporales as crearHerramientas, type AccionesLectura } from './ops/erp'
 import type { SesionEmpleado } from '../auth/session'
 
 const ADMIN: SesionEmpleado = { usuarioId: 'u-1', personaId: null, nombre: 'A', email: 'a@prueba.test', rol: 'admin' }

@@ -12,7 +12,7 @@ import {
   type DepsTurno,
   type LlamadaRegistro,
 } from './bucle'
-import { crearHerramientas, type AccionesLectura } from './herramientas'
+import { lecturasErpTemporales as crearHerramientas, type AccionesLectura } from './ops/erp'
 import { conPermisosRestringidos } from './prueba-permisos'
 
 const PASOS_MAXIMOS = 8
@@ -86,6 +86,8 @@ function propuestasMemoria(): RepositorioPropuestas & { filas: Map<string, Propu
       return id
     },
     obtener: async (id) => (filas.has(id) ? { ...filas.get(id)! } : null),
+    reabrir: async () => false,
+    listarDeUsuario: async () => [],
     cambiarEstado: async (id, desde, nuevo) => {
       const f = filas.get(id)
       if (!f || f.estado !== desde) return false

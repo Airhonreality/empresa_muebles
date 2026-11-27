@@ -6,12 +6,12 @@ import type { ProyectoSnapshot } from '../data/queries/proyecto-types'
 import {
   MAX_CARACTERES_RESULTADO,
   catalogoDominios,
-  crearHerramientas,
   ejecutarHerramienta,
   herramientasPermitidas,
   truncarResultado,
-  type AccionesLectura,
+  type DefinicionAsistente,
 } from './herramientas'
+import { lecturasErpTemporales as crearHerramientas, type AccionesLectura } from './ops/erp'
 
 function sesionCon(rol: SesionEmpleado['rol']): SesionEmpleado {
   return { usuarioId: 'u-1', personaId: null, nombre: 'Prueba', email: 'p@prueba.test', rol }
@@ -111,7 +111,7 @@ const casos: Array<[string, () => Promise<void>]> = [
   }],
   ['herramienta de escritura no se ejecuta por ejecutarHerramienta', async () => {
     const { acciones, llamadas } = accionesFalsas()
-    const escritura = { ...buscar('finanzas.saldo_caja', acciones), esEscritura: true }
+    const escritura = { ...buscar('finanzas.saldo_caja', acciones), esEscritura: true } as DefinicionAsistente
     await assert.rejects(ejecutarHerramienta(escritura, {}, sesionCon('admin')), /escritura/)
     assert.equal(llamadas.finanzas, 0)
   }],
@@ -145,7 +145,8 @@ const casos: Array<[string, () => Promise<void>]> = [
     const taller = await conPermisosRestringidos('taller', ['proyectos:leer'], () =>
       catalogoDominios(sesionCon('taller'), REGISTRO_PRUEBA()).map((d) => d.dominio),
     )
-    assert.deepEqual(taller, ['proyecto'])
+    // cotizacion.buscar es de proyectos:leer (paso 2 de t-200): el taller la ve, no la de cobro.
+    assert.deepEqual(taller, ['cotizacion', 'proyecto'])
     const descripcion = catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA())[0]
     assert.ok(descripcion.nombre && descripcion.descripcion)
     assert.ok(!JSON.stringify(catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA())).includes('_'))

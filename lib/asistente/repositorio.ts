@@ -154,6 +154,32 @@ const propuestas: RepositorioPropuestas = {
       .returning({ id: s.propuestasAsistente.id })
     return filas.length > 0
   },
+  async reabrir(id: string, datos: unknown, resumen: string): Promise<boolean> {
+    const filas = await db
+      .update(s.propuestasAsistente)
+      .set({ estado: 'pendiente', entrada: datos as object, resumen, resueltaEn: null })
+      .where(and(eq(s.propuestasAsistente.id, id), eq(s.propuestasAsistente.estado, 'ejecutada')))
+      .returning({ id: s.propuestasAsistente.id })
+    return filas.length > 0
+  },
+  async listarDeUsuario(usuarioId: string, estados: readonly EstadoPropuesta[], limite: number): Promise<Propuesta[]> {
+    const filas = await db
+      .select()
+      .from(s.propuestasAsistente)
+      .where(and(eq(s.propuestasAsistente.usuarioId, usuarioId), inArray(s.propuestasAsistente.estado, [...estados])))
+      .orderBy(desc(s.propuestasAsistente.creadaEn))
+      .limit(limite)
+    return filas.map((f) => ({
+      id: f.id,
+      conversacionId: f.conversacionId,
+      usuarioId: f.usuarioId,
+      herramienta: f.herramienta,
+      entrada: f.entrada,
+      resumen: f.resumen,
+      estado: f.estado as EstadoPropuesta,
+      venceEn: new Date(f.venceEn),
+    }))
+  },
 }
 
 /** Dependencias reales para confirmar/cancelar propuestas (bloque E las usa). */

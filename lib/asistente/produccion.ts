@@ -3,9 +3,11 @@
 // los manejadores de ruta.ts con Drizzle (repositorio.ts) y con el cifrado.
 import { cifrar } from './cifrado'
 import { crearCatalogo, obtenerCatalogoOpenRouter, type CatalogoModelos, type ProveedorConCatalogo } from './catalogo-modelos'
-import { accionesErp, crearOperaciones } from './herramientas'
+import { crearOperaciones } from './registro'
+import { accionesErp } from './ops/erp'
 import { lecturaCotizacionDb, transaccionCotizacionDb } from './operaciones/cotizacion-produccion'
 import { cargarDocumentos, type Documento } from './conocimiento'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   agregarClaveProveedor,
@@ -36,11 +38,21 @@ function documentosProduccion(): Documento[] {
 }
 const DOCUMENTOS = documentosProduccion()
 
-/** Registro real de operaciones (lectura + cotización completa). */
-export const REGISTRO_OPERACIONES = crearOperaciones(accionesErp, {
-  lectura: lecturaCotizacionDb,
-  transaccion: transaccionCotizacionDb,
-  ahora: () => new Date(),
+/** Texto del índice de procedimientos (fuente del enum de ayuda.procedimiento). Vacío si no se puede leer. */
+function indiceProcedimientosTexto(): string {
+  try {
+    return readFileSync(join(process.cwd(), 'conocimiento', 'asistente', 'INDICE.md'), 'utf8')
+  } catch {
+    return ''
+  }
+}
+
+/** Registro real de operaciones. */
+export const REGISTRO_OPERACIONES = crearOperaciones({
+  acciones: accionesErp,
+  cotizacion: { lectura: lecturaCotizacionDb, transaccion: transaccionCotizacionDb, ahora: () => new Date() },
+  documentos: DOCUMENTOS,
+  indice: indiceProcedimientosTexto(),
 })
 
 export const atender = (p: { usuario: SesionEmpleado; conversacionId?: string; mensaje: string }) =>

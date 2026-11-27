@@ -14,7 +14,7 @@ import type { SesionEmpleado } from '../../auth/session'
 import { aNumero, calcularTotalLinea, calcularTotalesCotizacion, type TotalesCotizacion } from '../../dinero/calculo'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../../data/codigos-cotizacion'
 import { clienteCrearSchema } from '../../validacion/cotizador'
-import { codigoPg } from '../errores'
+import { codigoPg, ErrorRevalidacion } from '../errores'
 import type { DefinicionAsistente } from '../herramientas'
 
 /** Mismo default que la columna proyectos.porcentaje_iva. */
@@ -132,7 +132,7 @@ export interface PlanCotizacion {
   resumen: string
 }
 
-function formatoPesos(n: number): string {
+export function formatoPesos(n: number): string {
   return `$ ${Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`
 }
 
@@ -285,11 +285,20 @@ export async function crearCotizacionCompleta(
   entrada: EntradaCotizacionCompleta,
   usuario: SesionEmpleado,
   deps: DepsCotizacion,
+  /** Total mostrado en el resumen. Si el recalculado no coincide, no se escribe nada (ErrorRevalidacion). */
+  totalEsperado?: number,
 ): Promise<ResultadoCotizacionCreada> {
   for (let intento = 1; ; intento++) {
     try {
       return await deps.transaccion(async (tx) => {
         const plan = await planificarCotizacion(entrada, usuario, tx)
+        if (totalEsperado !== undefined && plan.totales.total !== totalEsperado) {
+          throw new ErrorRevalidacion(
+            `El total de la cotización cambió de ${formatoPesos(totalEsperado)} a ${formatoPesos(plan.totales.total)}. Revisa la propuesta y vuelve a confirmar.`,
+            { entrada, totalEsperado: plan.totales.total },
+            plan.resumen,
+          )
+        }
         return persistirCotizacion(plan, tx, deps.ahora())
       })
     } catch (err) {
@@ -309,9 +318,16 @@ export function operacionCotizacionCrearCompleta(deps: DepsCotizacion): Definici
       'Crea una cotización completa: cliente (existente por id, o nuevo con nombre), proyecto, espacios y ítems. ' +
       'Requiere confirmación del empleado. No envíes totales: los calcula el sistema. Los precios de catálogo los pone el sistema.',
     permiso: 'cotizador:escribir',
+    canales: ['chat'],
     esEscritura: true,
     esquema: esquemaCotizacionCompleta,
-    resumir: async (entrada, usuario) => (await planificarCotizacion(entrada, usuario, deps.lectura)).resumen,
-    ejecutar: async (entrada, usuario) => crearCotizacionCompleta(entrada, usuario, deps),
+    preparar: async (entrada, usuario) => {
+      const plan = await planificarCotizacion(entrada, usuario, deps.lectura)
+      return { resumen: plan.resumen, datos: { entrada, totalEsperado: plan.totales.total } }
+    },
+    confirmar: async (datos, usuario) => {
+      const { entrada, totalEsperado } = datos as { entrada: unknown; totalEsperado: number }
+      return crearCotizacionCompleta(esquemaCotizacionCompleta.parse(entrada), usuario, deps, totalEsperado)
+    },
   }
 }

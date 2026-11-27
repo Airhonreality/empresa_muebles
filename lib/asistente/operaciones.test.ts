@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { z } from 'zod'
 import type { SesionEmpleado } from '../auth/session'
-import { crearHerramientas, type AccionesLectura, type DefinicionAsistente } from './herramientas'
+import { lecturasErpTemporales as crearHerramientas, type AccionesLectura } from './ops/erp'
+import { Procedencia, type DefinicionAsistente } from './herramientas'
 import { dominioOperaciones, ejecutarOperacion, MENSAJE_NO_DISPONIBLE, type DepsOperaciones } from './operaciones'
 import type { Propuesta, RepositorioPropuestas } from './propuestas'
 import { conPermisosRestringidos } from './prueba-permisos'
@@ -36,11 +37,12 @@ function escrituraFalsa(ejecuciones: unknown[]): DefinicionAsistente {
     operacion: 'crear_prueba',
     descripcion: 'crea algo (prueba)',
     permiso: 'cotizador:escribir',
+    canales: ['chat'],
     esEscritura: true,
     esquema: z.object({ nombre: z.string().min(1) }),
-    resumir: async (e) => `Crear ${e.nombre}`,
-    ejecutar: async (e) => {
-      ejecuciones.push(e)
+    preparar: async (e) => ({ resumen: `Crear ${e.nombre}`, datos: { entrada: e } }),
+    confirmar: async (datos) => {
+      ejecuciones.push(datos)
       return { ok: true }
     },
   }
@@ -57,6 +59,13 @@ function repoMemoria(): RepositorioPropuestas & { filas: Map<string, Propuesta> 
       return id
     },
     obtener: async (id) => (filas.has(id) ? { ...filas.get(id)! } : null),
+    reabrir: async (id, datos, resumen) => {
+      const f = filas.get(id)
+      if (!f || f.estado !== 'ejecutada') return false
+      Object.assign(f, { estado: 'pendiente', entrada: datos, resumen })
+      return true
+    },
+    listarDeUsuario: async () => [],
     cambiarEstado: async (id, desde, nuevo) => {
       const f = filas.get(id)
       if (!f || f.estado !== desde) return false
@@ -72,6 +81,7 @@ function deps(registro: DefinicionAsistente[]) {
     registro,
     propuestas: { repo, ahora: () => AHORA, registro },
     conversacionId: async () => 'conv-1',
+    procedencia: new Procedencia(),
   }
   return { d, repo }
 }

@@ -74,7 +74,7 @@ function turnoFalso(modelo: MockLanguageModelV4): DepsTurno {
     descifrar: () => 'clave-prueba',
     construirModelo: () => modelo,
     herramientas: [],
-    propuestas: { insertar: async () => 'p-x', obtener: async () => null, cambiarEstado: async () => false },
+    propuestas: { insertar: async () => 'p-x', obtener: async () => null, cambiarEstado: async () => false, reabrir: async () => false, listarDeUsuario: async () => [] },
     ahora: () => new Date('2026-11-25T15:00:00.000Z'),
     esperar: async () => {},
   }
@@ -140,8 +140,9 @@ const casos: Array<[string, () => Promise<void>]> = [
     const filas = new Map<string, { conversacionId: string }>()
     const escritura: DefinicionAsistente = {
       nombre: 'finanzas.registrar', dominio: 'finanzas', operacion: 'registrar', descripcion: 'registra (prueba)',
-      permiso: 'finanzas:escribir', esEscritura: true, esquema: z.object({ monto: z.number() }),
-      ejecutar: async () => { throw new Error('no debe ejecutarse') },
+      permiso: 'finanzas:escribir', canales: ['chat'], esEscritura: true, esquema: z.object({ monto: z.number() }),
+      preparar: async () => ({ resumen: 'registra (prueba)', datos: {} }),
+      confirmar: async () => { throw new Error('no debe ejecutarse') },
     }
     const base = turnoFalso(modelo)
     const turno: DepsTurno = {
@@ -151,6 +152,8 @@ const casos: Array<[string, () => Promise<void>]> = [
         insertar: async (p) => { filas.set('p-1', { conversacionId: p.conversacionId }); return 'p-1' },
         obtener: async () => null,
         cambiarEstado: async () => false,
+        reabrir: async () => false,
+        listarDeUsuario: async () => [],
       },
     }
     const r = await atenderMensaje({ usuario: { ...sesionDe('u-1'), rol: 'finanzas' }, mensaje: 'registra' }, { conversaciones: repo, cargarConfiguracion: async () => ({ ...CONFIG, herramientasHabilitadas: ['finanzas.registrar'] }), turno })

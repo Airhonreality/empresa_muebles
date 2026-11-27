@@ -1,226 +1,102 @@
 // lib/asistente/herramientas.ts
-// Registro de operaciones del asistente (t-198 pieza 3; capa de acciones: diseno_capa_acciones §2).
-// Cada operación pertenece a un dominio y se nombra "dominio.operacion". El modelo NO las ve
-// planas: ve el mapa de dominios y pide operaciones con dominio_operaciones / ejecutar (operaciones.ts).
-// Regla: ninguna operación toca Drizzle directamente. Las de lectura llaman a acciones de
-// lib/data/actions/ (lecturas), inyectadas en AccionesLectura para poder probarlas sin base.
-// Las de escritura (esEscritura: true) nunca se ejecutan desde el bucle: ejecutarOperacion crea una
-// propuesta y solo la confirmación del empleado llama a `ejecutar`.
+// Tipos y utilidades del registro de operaciones del asistente (t-200 paso 2).
+// El registro completo se arma en registro.ts. Cada operación pertenece a un dominio y se nombra
+// "dominio.operacion". El modelo NO ve operaciones planas: ve tres herramientas fijas (dominios,
+// operaciones, ejecutar; ver bucle.ts y operaciones.ts).
+//
+// Dos clases de operación:
+// - Lectura: `ejecutar(entrada, usuario, ctx)` devuelve datos. Las búsquedas registran en
+//   `ctx.procedencia` los ids que devuelven.
+// - Escritura: NUNCA se ejecuta desde el bucle. `preparar` valida, calcula y devuelve un resumen y los
+//   datos de la propuesta. `confirmar(datos)` revalida y escribe; solo lo llama la confirmación del
+//   empleado (confirmarPropuesta en propuestas.ts).
 import { z } from 'zod'
 import { PERMISOS_POR_ROL, type Permiso } from '../auth/permisos'
 import { NoAutorizadoError } from '../auth/errors'
 import type { SesionEmpleado } from '../auth/session'
-import type { Cliente, Proyecto } from '../data/contracts'
-import type { CotizadorListaSnapshot } from '../data/queries/cotizador-lista-types'
-import type { ProyectoSnapshot } from '../data/queries/proyecto-types'
-import type { FinanzasSnapshot } from '../data/queries/finanzas-types'
-import { aNumero } from '../dinero/calculo'
-import { operacionCotizacionCrearCompleta, type DepsCotizacion } from './operaciones/cotizacion-completa'
+import { ErrorProcedencia } from './errores'
 
 /** Tamaño máximo del resultado que se envía al modelo. Constante fija, no configurable. */
 export const MAX_CARACTERES_RESULTADO = 8000
 
-export interface DefinicionHerramienta<I> {
-  /** Nombre cualificado "dominio.operacion" (ej. cotizacion.buscar). Identificador único del registro. */
+/** Canal donde una operación está disponible. El chat interno nunca ve las de canal solo MCP. */
+export type Canal = 'chat' | 'mcp'
+
+/** Tipos de id que el modelo puede usar en una escritura. Cada uno debe venir de una búsqueda. */
+export type TipoId = 'cliente' | 'producto' | 'cotizacion' | 'cuenta'
+
+/**
+ * Ids que el modelo obtuvo de búsquedas EN ESTE TURNO. Una escritura que referencia un id fuera de
+ * este conjunto se rechaza. Alcance: el turno (no la conversación entera): el historial no guarda
+ * los resultados de herramientas, y no hay columna nueva donde guardarlos (ver informe t-200).
+ */
+export class Procedencia {
+  private readonly vistos = new Map<TipoId, Set<string>>()
+
+  registrar(tipo: TipoId, ids: readonly string[]): void {
+    let conjunto = this.vistos.get(tipo)
+    if (!conjunto) {
+      conjunto = new Set()
+      this.vistos.set(tipo, conjunto)
+    }
+    for (const id of ids) conjunto.add(id)
+  }
+
+  tiene(tipo: TipoId, id: string): boolean {
+    return this.vistos.get(tipo)?.has(id) ?? false
+  }
+
+  /** Lanza ErrorProcedencia si el id no se obtuvo de una búsqueda. `nombre` va al mensaje para el modelo. */
+  exigir(tipo: TipoId, id: string, nombre: string): void {
+    if (!this.tiene(tipo, id)) {
+      throw new ErrorProcedencia(`El ${nombre} con id ${id} no se obtuvo de una búsqueda en esta conversación. Búscalo primero.`)
+    }
+  }
+}
+
+/** Contexto de una llamada: solo lo que el servidor conoce (nunca lo que escribe el modelo como identidad). */
+export interface ContextoOperacion {
+  readonly procedencia: Procedencia
+}
+
+interface BaseDefinicion<S extends z.ZodType> {
+  /** Nombre cualificado "dominio.operacion" (ej. clientes.buscar). Identificador único del registro. */
   nombre: string
-  /** Dominio de negocio (cotizacion, proyecto, finanzas). */
   dominio: string
-  /** Operación dentro del dominio (ej. buscar). */
   operacion: string
+  /** Español, dirigida al modelo: qué hace, con qué datos y qué devuelve. */
   descripcion: string
   permiso: Permiso
-  esEscritura: boolean
-  esquema: z.ZodType<I>
-  /** Solo escrituras: resumen legible para la propuesta. Lo calcula el servidor, nunca el modelo. */
-  resumir?: (entrada: I, usuario: SesionEmpleado) => Promise<string>
-  ejecutar: (entrada: I, usuario: SesionEmpleado) => Promise<unknown>
+  canales: readonly Canal[]
+  /** Esquema Zod 4 de los argumentos. Se convierte a JSON Schema para el modelo. */
+  esquema: S
+  /**
+   * Esquema por usuario, si los valores permitidos dependen de la sesión (p. ej. documentos que
+   * puede leer). Así un valor que el usuario no puede usar ni aparece en el esquema que recibe el modelo.
+   */
+  esquemaPara?: (usuario: SesionEmpleado) => z.ZodType
+  /** Si devuelve false, la operación no aparece para ese usuario (ej. no tiene documentos visibles). */
+  disponible?: (usuario: SesionEmpleado) => boolean
 }
 
-/**
- * Acciones de lectura que usan las herramientas. En producción se cargan con import dinámico
- * (así los tests que usan acciones falsas no abren conexión ni leen la cookie).
- */
-export interface AccionesLectura {
-  cotizadorLista: () => Promise<CotizadorListaSnapshot>
-  proyecto: (proyectoId: string) => Promise<ProyectoSnapshot>
-  finanzas: () => Promise<FinanzasSnapshot>
+export interface DefinicionLectura<S extends z.ZodType = z.ZodType> extends BaseDefinicion<S> {
+  esEscritura: false
+  ejecutar: (entrada: z.infer<S>, usuario: SesionEmpleado, ctx: ContextoOperacion) => Promise<unknown>
 }
 
-export const accionesErp: AccionesLectura = {
-  cotizadorLista: async () =>
-    (await import('../data/actions/lecturas-cotizador-lista')).obtenerSnapshotCotizadorListaAction(),
-  proyecto: async (proyectoId) =>
-    (await import('../data/actions/lecturas-proyecto')).obtenerSnapshotProyectoAction(proyectoId),
-  finanzas: async () =>
-    (await import('../data/actions/lecturas-finanzas')).obtenerSnapshotFinanzasAction(),
+export interface DefinicionEscritura<S extends z.ZodType = z.ZodType> extends BaseDefinicion<S> {
+  esEscritura: true
+  /** Valida contra el servidor (existencia, procedencia, precios) y devuelve el resumen y los datos de la propuesta. */
+  preparar: (entrada: z.infer<S>, usuario: SesionEmpleado, ctx: ContextoOperacion) => Promise<{ resumen: string; datos: unknown }>
+  /** Revalida y escribe. Se llama solo desde la confirmación del empleado. Lanza ErrorRevalidacion si cambió algo. */
+  confirmar: (datos: unknown, usuario: SesionEmpleado) => Promise<unknown>
 }
 
-const LIMITE_RESULTADOS_LISTA = 20
-
-function nombreCliente(clientes: Cliente[], clienteId: string | null): string | null {
-  if (!clienteId) return null
-  return clientes.find((c) => c.id === clienteId)?.nombre ?? null
-}
-
-function resumenProyecto(p: Proyecto, clientes: Cliente[]) {
-  return {
-    id: p.id,
-    codigo: p.codigo,
-    nombreProyecto: p.nombreProyecto,
-    estado: p.estado,
-    tipoProyecto: p.tipoProyecto,
-    cliente: nombreCliente(clientes, p.clienteId),
-    creadoEn: p.createdAt,
-  }
-}
-
-// ── cotizacion_buscar ──────────────────────────────────────────────
-const esquemaCotizacionBuscar = z.object({
-  texto: z.string().trim().min(2, 'Escribe al menos 2 caracteres').max(120),
-})
-
-const cotizacionBuscar = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaCotizacionBuscar>> => ({
-  nombre: 'cotizacion.buscar',
-  dominio: 'cotizacion',
-  operacion: 'buscar',
-  descripcion:
-    'Busca cotizaciones por código (ej. COT-2026-11-25-01), nombre del proyecto o nombre del cliente. Devuelve hasta 20 coincidencias.',
-  permiso: 'cotizador:leer',
-  esEscritura: false,
-  esquema: esquemaCotizacionBuscar,
-  ejecutar: async ({ texto }) => {
-    const snapshot = await acciones.cotizadorLista()
-    const buscado = texto.toLocaleLowerCase('es')
-    const coincidencias = snapshot.proyectos.filter((p) => {
-      const cliente = nombreCliente(snapshot.clientes, p.clienteId) ?? ''
-      return (
-        p.codigo.toLocaleLowerCase('es').includes(buscado) ||
-        p.nombreProyecto.toLocaleLowerCase('es').includes(buscado) ||
-        cliente.toLocaleLowerCase('es').includes(buscado)
-      )
-    })
-    return {
-      total: coincidencias.length,
-      resultados: coincidencias
-        .slice(0, LIMITE_RESULTADOS_LISTA)
-        .map((p) => ({ ...resumenProyecto(p, snapshot.clientes), proyectoId: p.id })),
-    }
-  },
-})
-
-// ── proyecto_consultar ─────────────────────────────────────────────
-const esquemaProyectoConsultar = z.object({
-  proyectoId: z.string().uuid('proyectoId debe ser un identificador válido'),
-})
-
-const proyectoConsultar = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaProyectoConsultar>> => ({
-  nombre: 'proyecto.consultar',
-  dominio: 'proyecto',
-  operacion: 'consultar',
-  descripcion:
-    'Consulta un proyecto por su proyectoId (obtenido con cotizacion_buscar): estado, cliente, espacios y totales básicos.',
-  permiso: 'proyectos:leer',
-  esEscritura: false,
-  esquema: esquemaProyectoConsultar,
-  ejecutar: async ({ proyectoId }) => {
-    const snapshot = await acciones.proyecto(proyectoId)
-    if (!snapshot.proyecto) return { encontrado: false }
-    return {
-      encontrado: true,
-      proyecto: resumenProyecto(snapshot.proyecto, snapshot.cliente ? [snapshot.cliente] : []),
-      espacios: snapshot.espacios.map((e) => ({
-        nombre: e.nombreEspacio,
-        variante: e.nombreVariante,
-        tipo: e.tipoEspacio,
-      })),
-    }
-  },
-})
-
-// ── caja_saldo ─────────────────────────────────────────────────────
-const esquemaCajaSaldo = z.object({})
-
-const cajaSaldo = (acciones: AccionesLectura): DefinicionHerramienta<z.infer<typeof esquemaCajaSaldo>> => ({
-  nombre: 'finanzas.saldo_caja',
-  dominio: 'finanzas',
-  operacion: 'saldo_caja',
-  descripcion: 'Devuelve el saldo actual de cada cuenta financiera (caja, bancos) y el total.',
-  permiso: 'finanzas:leer',
-  esEscritura: false,
-  esquema: esquemaCajaSaldo,
-  ejecutar: async () => {
-    const snapshot = await acciones.finanzas()
-    const cuentas = snapshot.cuentas.map((c) => ({
-      nombre: c.nombre,
-      tipo: c.tipo,
-      saldoActual: c.saldoActual,
-    }))
-    // Dos decimales, sin redondear a pesos: un saldo de caja no puede perder centavos.
-    const total = Math.round(snapshot.cuentas.reduce((suma, c) => suma + aNumero(c.saldoActual), 0) * 100) / 100
-    return { cuentas, total }
-  },
-})
-
-/** Definición genérica del registro. La entrada concreta la valida el esquema de cada herramienta. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DefinicionAsistente = DefinicionHerramienta<any>
+export type DefinicionAsistente = DefinicionLectura<any> | DefinicionEscritura<any>
 
-/** Crea el registro con las acciones indicadas (los tests inyectan acciones falsas). */
-export function crearHerramientas(acciones: AccionesLectura): DefinicionAsistente[] {
-  return [cotizacionBuscar(acciones), proyectoConsultar(acciones), cajaSaldo(acciones)]
-}
-
-/** Descripción de cada dominio para el catálogo que ve el modelo (nivel 1: dominios, no acciones). */
-export const DESCRIPCION_DOMINIOS: Record<string, { nombre: string; descripcion: string }> = {
-  cotizacion: { nombre: 'Cotizaciones', descripcion: 'Buscar cotizaciones; crear una cotización completa (requiere confirmación del empleado).' },
-  proyecto: { nombre: 'Proyectos', descripcion: 'Consultar el detalle de un proyecto: estado, cliente y espacios.' },
-  finanzas: { nombre: 'Finanzas', descripcion: 'Saldos de cuentas de caja y bancos.' },
-}
-
-export interface DominioCatalogo {
-  dominio: string
-  nombre: string
-  descripcion: string
-}
-
-/**
- * Dominios donde la sesión tiene permiso para AL MENOS una operación registrada. Solo nombre y
- * descripción: nunca nombres de operaciones ni datos.
- */
-export function catalogoDominios(sesion: SesionEmpleado, registro: readonly DefinicionAsistente[]): DominioCatalogo[] {
-  const permisos = PERMISOS_POR_ROL[sesion.rol] ?? []
-  const dominios = new Set<string>()
-  for (const h of registro) {
-    if (permisos.includes(h.permiso)) dominios.add(h.dominio)
-  }
-  return [...dominios].sort().map((dominio) => ({
-    dominio,
-    nombre: DESCRIPCION_DOMINIOS[dominio]?.nombre ?? dominio,
-    descripcion: DESCRIPCION_DOMINIOS[dominio]?.descripcion ?? '',
-  }))
-}
-
-/** Registro completo: lectura + escritura. La escritura se conecta a la base en produccion.ts. */
-export function crearOperaciones(acciones: AccionesLectura, cotizacion: DepsCotizacion): DefinicionAsistente[] {
-  return [...crearHerramientas(acciones), operacionCotizacionCrearCompleta(cotizacion)]
-}
-
-/**
- * Operaciones que la sesión puede usar. Se filtra por permiso ANTES de enviar nada al modelo.
- * `habilitadas` (opcional, de la configuración, por nombre "dominio.operacion") solo puede REDUCIR la lista.
- */
-export function herramientasPermitidas(
-  sesion: SesionEmpleado,
-  habilitadas: readonly string[] | undefined,
-  registro: readonly DefinicionAsistente[],
-): DefinicionAsistente[] {
-  const permisos = PERMISOS_POR_ROL[sesion.rol] ?? []
-  return registro.filter(
-    (h) =>
-      permisos.includes(h.permiso) &&
-      (habilitadas === undefined || habilitadas.includes(h.nombre)),
-  )
-}
+/** Canal por defecto de las operaciones que el chat interno puede usar. */
+export const CANAL_CHAT: Canal = 'chat'
 
 /** Recorta el texto a MAX_CARACTERES_RESULTADO agregando un aviso visible para el modelo. */
 export function truncarResultado(texto: string, max: number = MAX_CARACTERES_RESULTADO): string {
@@ -229,31 +105,88 @@ export function truncarResultado(texto: string, max: number = MAX_CARACTERES_RES
   return texto.slice(0, max - aviso.length) + aviso
 }
 
+/** Esquema de argumentos que corresponde a este usuario (el general o el suyo). */
+export function esquemaDe(def: DefinicionAsistente, usuario: SesionEmpleado): z.ZodType {
+  return def.esquemaPara?.(usuario) ?? def.esquema
+}
+
+/** ¿Puede el rol de la sesión usar esta operación? Única comprobación de permiso del registro. */
+export function tienePermiso(usuario: SesionEmpleado, def: DefinicionAsistente): boolean {
+  return (PERMISOS_POR_ROL[usuario.rol] ?? []).includes(def.permiso)
+}
+
+/** Descripción de cada dominio para el mapa que ve el modelo (nivel 0). */
+export const DESCRIPCION_DOMINIOS: Record<string, { nombre: string; descripcion: string }> = {
+  clientes: { nombre: 'Clientes', descripcion: 'Buscar clientes; crear un cliente nuevo (requiere confirmación).' },
+  catalogo: { nombre: 'Catálogo', descripcion: 'Tipos de espacio y productos del catálogo con precio público.' },
+  cotizacion: { nombre: 'Cotizaciones', descripcion: 'Buscar y consultar cotizaciones; crear una cotización completa (requiere confirmación).' },
+  finanzas: { nombre: 'Finanzas', descripcion: 'Cuentas y saldos; registrar una entrada o salida de dinero (requiere confirmación).' },
+  ayuda: { nombre: 'Procedimientos', descripcion: 'Procedimientos de la empresa: cómo se hacen las cosas.' },
+  propuestas: { nombre: 'Propuestas', descripcion: 'Ver tus propuestas pendientes de confirmación.' },
+}
+
+export interface DominioCatalogo {
+  dominio: string
+  nombre: string
+  descripcion: string
+}
+
+/** Operaciones que la sesión puede usar en un canal: permiso, canal y disponibilidad. */
+export function operacionesDelCanal(
+  usuario: SesionEmpleado,
+  registro: readonly DefinicionAsistente[],
+  canal: Canal = CANAL_CHAT,
+): DefinicionAsistente[] {
+  return registro.filter((h) => tienePermiso(usuario, h) && h.canales.includes(canal) && (h.disponible?.(usuario) ?? true))
+}
+
+/**
+ * Dominios donde la sesión tiene AL MENOS una operación disponible en el chat. Solo nombre y
+ * descripción: nunca nombres de operaciones ni datos.
+ */
+export function catalogoDominios(sesion: SesionEmpleado, registro: readonly DefinicionAsistente[]): DominioCatalogo[] {
+  const dominios = new Set(operacionesDelCanal(sesion, registro).map((h) => h.dominio))
+  return [...dominios].sort().map((dominio) => ({
+    dominio,
+    nombre: DESCRIPCION_DOMINIOS[dominio]?.nombre ?? dominio,
+    descripcion: DESCRIPCION_DOMINIOS[dominio]?.descripcion ?? '',
+  }))
+}
+
+/**
+ * Operaciones que la sesión puede usar en el chat. `habilitadas` (configuración, por nombre
+ * "dominio.operacion") solo puede REDUCIR la lista.
+ */
+export function herramientasPermitidas(
+  sesion: SesionEmpleado,
+  habilitadas: readonly string[] | undefined,
+  registro: readonly DefinicionAsistente[],
+): DefinicionAsistente[] {
+  return operacionesDelCanal(sesion, registro).filter((h) => habilitadas === undefined || habilitadas.includes(h.nombre))
+}
+
 /**
  * Ejecuta una operación de LECTURA con la entrada cruda del modelo:
  *  1. Verifica el permiso de la sesión (NoAutorizadoError si no lo tiene).
  *  2. Valida la entrada con Zod. Si no cumple, lanza error SIN llamar a la acción.
  *  3. Ejecuta y devuelve el resultado serializado y truncado.
- * Las de escritura NO pasan por aquí: ejecutarOperacion crea propuestas para ellas.
  */
 export async function ejecutarHerramienta(
   def: DefinicionAsistente,
   entradaCruda: unknown,
   usuario: SesionEmpleado,
+  ctx: ContextoOperacion = { procedencia: new Procedencia() },
 ): Promise<string> {
   if (def.esEscritura) {
     throw new Error(`La operación "${def.nombre}" es de escritura: solo se ejecuta con confirmación del empleado.`)
   }
-  const permisos = PERMISOS_POR_ROL[usuario.rol] ?? []
-  if (!permisos.includes(def.permiso)) {
+  if (!tienePermiso(usuario, def)) {
     throw new NoAutorizadoError(def.permiso)
   }
-  const validada = def.esquema.safeParse(entradaCruda)
+  const validada = esquemaDe(def, usuario).safeParse(entradaCruda)
   if (!validada.success) {
-    throw new Error(
-      `Entrada inválida para "${def.nombre}": ${validada.error.issues.map((i) => i.message).join('; ')}`,
-    )
+    throw new Error(`Entrada inválida para "${def.nombre}": ${validada.error.issues.map((i) => i.message).join('; ')}`)
   }
-  const resultado = await def.ejecutar(validada.data, usuario)
+  const resultado = await def.ejecutar(validada.data, usuario, ctx)
   return truncarResultado(JSON.stringify(resultado ?? null))
 }

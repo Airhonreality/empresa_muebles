@@ -4,7 +4,7 @@
 // todo lo externo entra por `deps` (la implementación real está en repositorio.ts).
 import { generateText, stepCountIs, tool, type LanguageModel, type ModelMessage, type ToolSet } from 'ai'
 import type { SesionEmpleado } from '../auth/session'
-import { herramientasPermitidas, truncarResultado, catalogoDominios, type DefinicionAsistente, type DominioCatalogo } from './herramientas'
+import { herramientasPermitidas, truncarResultado, catalogoDominios, Procedencia, type DefinicionAsistente, type DominioCatalogo } from './herramientas'
 import { ejecutarConRotacion, type RepositorioClaves } from './claves'
 import type { ProveedorAsistente } from './modelo'
 import {
@@ -213,6 +213,7 @@ export async function ejecutarTurno(
       if (!deps.asegurarConversacion) throw new Error('Este turno no tiene conversación donde guardar una propuesta.')
       return deps.asegurarConversacion()
     },
+    procedencia: new Procedencia(),
   }
 
   // Sin operaciones habilitadas, el modelo no recibe las herramientas de dominios ni de ejecución.

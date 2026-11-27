@@ -8,8 +8,13 @@
 import { z } from 'zod'
 import { zodToJsonSchema } from './esquema-json'
 import type { SesionEmpleado } from '../auth/session'
-import { PERMISOS_POR_ROL } from '../auth/permisos'
-import { ejecutarHerramienta, type DefinicionAsistente } from './herramientas'
+import {
+  esquemaDe,
+  ejecutarHerramienta,
+  operacionesDelCanal,
+  Procedencia,
+  type DefinicionAsistente,
+} from './herramientas'
 import { crearPropuesta, type DepsPropuestas } from './propuestas'
 
 export const MENSAJE_NO_DISPONIBLE = 'Esa operación no está disponible para tu rol.'
@@ -32,24 +37,19 @@ export interface OperacionDescrita {
   esquema: Record<string, unknown>
 }
 
-function permitidasDe(usuario: SesionEmpleado, registro: readonly DefinicionAsistente[]): DefinicionAsistente[] {
-  const permisos = PERMISOS_POR_ROL[usuario.rol] ?? []
-  return registro.filter((h) => permisos.includes(h.permiso))
-}
-
 /** Nivel 1. Un dominio sin operaciones permitidas responde igual que uno inexistente (no revela nada). */
 export function dominioOperaciones(
   dominio: string,
   usuario: SesionEmpleado,
   registro: readonly DefinicionAsistente[],
 ): { dominio: string; operaciones: OperacionDescrita[] } {
-  const operaciones = permitidasDe(usuario, registro)
+  const operaciones = operacionesDelCanal(usuario, registro)
     .filter((h) => h.dominio === dominio)
     .map((h) => ({
       operacion: h.operacion,
       descripcion: h.descripcion,
       esEscritura: h.esEscritura,
-      esquema: zodToJsonSchema(h.esquema),
+      esquema: zodToJsonSchema(esquemaDe(h, usuario)),
     }))
   return { dominio, operaciones }
 }
@@ -59,6 +59,8 @@ export interface DepsOperaciones {
   propuestas: DepsPropuestas
   /** Conversación donde se guarda la propuesta. Se llama solo al crear una propuesta. */
   conversacionId: () => Promise<string>
+  /** Ids obtenidos de búsquedas en este turno (ver Procedencia). */
+  procedencia: Procedencia
 }
 
 export interface PropuestaCreada {
@@ -91,21 +93,23 @@ export async function ejecutarOperacion(
   const { dominio, operacion } = entrada.data
   const nombre = `${dominio}.${operacion}`
   // Inexistente y no permitida dan el mismo mensaje.
-  const def = permitidasDe(usuario, deps.registro).find((h) => h.nombre === nombre)
+  const def = operacionesDelCanal(usuario, deps.registro).find((h) => h.nombre === nombre)
   if (!def) throw new Error(MENSAJE_NO_DISPONIBLE)
+  const ctx = { procedencia: deps.procedencia }
 
   if (!def.esEscritura) {
-    return { texto: await ejecutarHerramienta(def, entrada.data.argumentos ?? {}, usuario) }
+    return { texto: await ejecutarHerramienta(def, entrada.data.argumentos ?? {}, usuario, ctx) }
   }
 
-  const validada = def.esquema.safeParse(entrada.data.argumentos ?? {})
+  // Escritura: valida, consulta el servidor y prepara. Nunca escribe.
+  const validada = esquemaDe(def, usuario).safeParse(entrada.data.argumentos ?? {})
   if (!validada.success) {
     throw new Error(`Argumentos inválidos para ${nombre}: ${validada.error.issues.map((i) => i.message).join('; ')}`)
   }
-  const resumen = def.resumir ? await def.resumir(validada.data, usuario) : `Operación ${nombre}`
+  const { resumen, datos } = await def.preparar(validada.data, usuario, ctx)
   const conversacionId = await deps.conversacionId()
   const { id, venceEn } = await crearPropuesta(
-    { usuario, conversacionId, herramienta: def.nombre, entradaCruda: validada.data, resumen },
+    { usuario, conversacionId, herramienta: def.nombre, datos, resumen },
     deps.propuestas,
   )
   return {

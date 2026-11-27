@@ -1,3 +1,4 @@
+import { Procedencia } from '../herramientas'
 import assert from 'node:assert/strict'
 import type { SesionEmpleado } from '../../auth/session'
 import { calcularTotalesCotizacion } from '../../dinero/calculo'
@@ -222,12 +223,14 @@ const casos: Array<[string, () => Promise<void>]> = [
       insertar: async (p) => { const id = `p-${++n}`; propuestas.set(id, { ...p, id, estado: 'pendiente' }); return id },
       obtener: async (id) => (propuestas.has(id) ? { ...propuestas.get(id)! } : null),
       cambiarEstado: async (id, desde, nuevo) => { const f = propuestas.get(id); if (!f || f.estado !== desde) return false; f.estado = nuevo; return true },
+      reabrir: async () => false,
+      listarDeUsuario: async () => [],
     }
     const dp: DepsPropuestas = { repo, ahora: () => AHORA, registro: reg }
     const r = await ejecutarOperacion(
       { dominio: 'cotizacion', operacion: 'crear_completa', argumentos: entradaBase() },
       sesionCon('admin'),
-      { registro: reg, propuestas: dp, conversacionId: async () => 'conv-1' },
+      { registro: reg, propuestas: dp, conversacionId: async () => 'conv-1', procedencia: new Procedencia() },
     )
     assert.ok(r.propuesta)
     assert.match(r.propuesta.resumen, /Juan Pérez/)

@@ -31,6 +31,13 @@ function repoMemoria() {
       return id
     },
     obtener: async (id) => (filas.has(id) ? { ...filas.get(id)! } : null),
+    reabrir: async (id, datos, resumen) => {
+      const f = filas.get(id)
+      if (!f || f.estado !== 'ejecutada') return false
+      Object.assign(f, { estado: 'pendiente', entrada: datos, resumen })
+      return true
+    },
+    listarDeUsuario: async () => [],
     cambiarEstado: async (id, desde, nuevo) => {
       const f = filas.get(id)
       if (!f || f.estado !== desde) return false
@@ -50,9 +57,11 @@ function escrituraFalsa(opciones: { falla?: boolean } = {}) {
     operacion: 'movimiento_registrar',
     descripcion: 'registra un movimiento (prueba)',
     permiso: 'finanzas:escribir',
+    canales: ['chat'],
     esEscritura: true,
     esquema: z.object({ monto: z.number().positive() }),
-    ejecutar: async (entrada) => {
+    preparar: async (entrada) => ({ resumen: 'x', datos: entrada }),
+    confirmar: async (entrada) => {
       ejecuciones.push(entrada)
       if (opciones.falla) throw new Error('fallo simulado')
       return { creado: true }
@@ -69,26 +78,24 @@ function entorno(ahora: { valor: Date } = { valor: AHORA }, def = escrituraFalsa
 
 async function creaPendiente(deps: DepsPropuestas, usuario: SesionEmpleado) {
   const { id } = await crearPropuesta(
-    { usuario, conversacionId: 'conv-1', herramienta: 'finanzas.movimiento_registrar', entradaCruda: { monto: 500000 }, resumen: 'Ingreso $ 500.000' },
+    { usuario, conversacionId: 'conv-1', herramienta: 'finanzas.movimiento_registrar', datos: { monto: 500000 }, resumen: 'Ingreso $ 500.000' },
     deps,
   )
   return id
 }
 
 const casos: Array<[string, () => Promise<void>]> = [
-  ['crear propuesta valida la entrada antes de guardarla', async () => {
+  ['crear propuesta guarda exactamente los datos que devolvió preparar (la validación es de preparar)', async () => {
     const { deps, filas } = entorno()
-    await assert.rejects(
-      crearPropuesta({ usuario: sesion('u1'), conversacionId: 'c', herramienta: 'finanzas.movimiento_registrar', entradaCruda: { monto: -1 }, resumen: 'x' }, deps),
-      (e: unknown) => e instanceof ErrorPropuesta && e.codigo === 'ENTRADA_INVALIDA',
-    )
-    assert.equal(filas.size, 0)
+    const { id } = await crearPropuesta({ usuario: sesion('u1'), conversacionId: 'c', herramienta: 'finanzas.movimiento_registrar', datos: { monto: 7 }, resumen: 'x' }, deps)
+    assert.deepEqual(filas.get(id)!.entrada, { monto: 7 })
+    assert.equal(filas.get(id)!.estado, 'pendiente')
   }],
   ['crear propuesta rechaza herramientas que no son de escritura', async () => {
     const { deps } = entorno()
-    const lectura = { ...deps.registro[0], nombre: 'lectura', esEscritura: false }
+    const lectura = { ...deps.registro[0], nombre: 'lectura', esEscritura: false } as DefinicionAsistente
     await assert.rejects(
-      crearPropuesta({ usuario: sesion('u1'), conversacionId: 'c', herramienta: 'lectura', entradaCruda: {}, resumen: 'x' },
+      crearPropuesta({ usuario: sesion('u1'), conversacionId: 'c', herramienta: 'lectura', datos: {}, resumen: 'x' },
         { ...deps, registro: [lectura] }),
       (e: unknown) => e instanceof ErrorPropuesta && e.codigo === 'NO_ES_ESCRITURA',
     )
