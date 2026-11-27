@@ -228,3 +228,23 @@ Hecho hoy:
 **Ajuste 2026-11-27 (aprobado por Javier):** la zona con −10% (estratos altos de Bogotá, mejor costo por conversión en 30 días, muestra pequeña) también llevada a 0%. Todas las zonas con ajuste quedan en 0%. Reevaluar a 14 días antes de considerar cualquier ajuste.
 
 **Ajuste 2026-11-27 (aprobado por Javier):** presupuesto diario de $5.500 a $7.500 para observar el efecto. Riesgo conocido: Google puede gastar hasta el doble en un día. Revisar gasto diario y costo por conversión a 7 días.
+
+### Bitácora 25–27 nov 2026 (resumen de la sesión)
+
+**Cambios en Google Ads (campaña `Hermanos_garcia_busqueda_noviembre_2023`):**
+- 25-nov: 14 negativas amplias (mesón, marcas, DIY) y 5 de carpintero; 95 ubicaciones negativas (zonas fuera de Bogotá y sabana sur; Chía, Cota y Cajicá NO excluidas); declaración de publicidad política UE; tCPA de $14.117 quitado (aplicado por Google el 19-nov); aplicación automática de recomendaciones desactivada en la interfaz; IA Max desactivado.
+- 25-nov: acción de conversión offline "Lead alto valor (offline, puntaje 0-10)" creada (sin datos aún).
+- 27-nov: tope de CPA a $14.000; presupuesto diario $11.300 → $5.500 → $7.500 (aprobado); aumentos de puja por zona (+15% a +80%) llevados a 0%; zona de estratos altos (−10%) llevada a 0%.
+
+**Cambios en la página de cocinas y el sitio (código, `dev`):** H1 y subtítulo con la búsqueda principal; mesón sin remisiones a otros proveedores; dirección y cobertura visibles; testimonios publicados; CTA "Agenda tu asesoría sin costo" y barra móvil; caché de 1 hora; foto optimizada a WebP; Clarity en carga diferida. Corrección del WhatsApp del modal (canal general; Jair solo en pisos).
+
+**Conversiones:** el cambio de navegación ahora espera confirmación de gtag (tope 1 s) para no perder el evento en móvil.
+
+**Diagnóstico:** agosto convirtió 12,8% por clic; desde el 22-ago baja a 5-8%. Coincide con la pausa del grupo de amoblamiento (21-ago), que aportó 8 de 15 conversiones de agosto, y con el cambio a V3 (28-29-ago). Sin separar ambos efectos. Costo por conversión a 30 días: ~$19.800. Móvil: 115 clics, 7 conversiones (46% de probabilidad de 0 en 13 clics: normal). Tracking: 9 acciones primarias habilitadas, la campaña las optimiza todas.
+
+**Pendientes:**
+1. Subir `carga_conversiones_alto_valor.csv` en Google Ads antes del 7-dic-2026 (Iván 10, Santiago 5, Martha 2).
+2. Revisar a 7 días (≈4-dic): gasto diario, costo por conversión y conversiones de móvil con el cambio de navegación.
+3. Decidir si se restringen las acciones primarias a una sola (objetivo de la campaña, en la interfaz).
+4. Mapeo manual de los 27 leads con clic de Google a su proyecto, y escala de puntaje (aprobada).
+5. Seguimiento automático el 9-dic-2026 (timer de systemd, script en `scripts/analisis_ads/`).
