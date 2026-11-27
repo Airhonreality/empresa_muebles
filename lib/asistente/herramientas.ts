@@ -154,8 +154,12 @@ export function operacionesDelCanal(
  * Dominios donde la sesión tiene AL MENOS una operación disponible en el chat. Solo nombre y
  * descripción: nunca nombres de operaciones ni datos.
  */
-export function catalogoDominios(sesion: SesionEmpleado, registro: readonly DefinicionAsistente[]): DominioCatalogo[] {
-  const dominios = new Set(operacionesDelCanal(sesion, registro).map((h) => h.dominio))
+export function catalogoDominios(
+  sesion: SesionEmpleado,
+  registro: readonly DefinicionAsistente[],
+  canal: Canal = CANAL_CHAT,
+): DominioCatalogo[] {
+  const dominios = new Set(operacionesDelCanal(sesion, registro, canal).map((h) => h.dominio))
   return [...dominios].sort().map((dominio) => ({
     dominio,
     nombre: DESCRIPCION_DOMINIOS[dominio]?.nombre ?? dominio,

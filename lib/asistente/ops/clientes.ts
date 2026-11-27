@@ -64,7 +64,7 @@ export function operacionesClientes(puerto: PuertoClientes): DefinicionAsistente
       descripcion:
         'Busca clientes por nombre o documento. Devuelve id y etiqueta. Usa el id en cotizacion.crear_completa; no lo inventes.',
       permiso: 'clientes:leer',
-      canales: ['chat'],
+      canales: ['chat', 'mcp'],
       esEscritura: false,
       esquema: esquemaBuscar,
       ejecutar: async ({ texto, limite }, _usuario, ctx) => {
@@ -90,7 +90,7 @@ export function operacionesClientes(puerto: PuertoClientes): DefinicionAsistente
         'Crea un cliente nuevo (nombre y, si hay, documento, teléfono, correo y domicilio). Requiere confirmación. ' +
         'Antes de crear, busca con clientes.buscar: si el cliente ya existe, úsalo.',
       permiso: 'clientes:escribir',
-      canales: ['chat'],
+      canales: ['chat', 'mcp'],
       esEscritura: true,
       esquema: esquemaClienteCrear,
       preparar: async (entrada, _usuario, ctx) => {

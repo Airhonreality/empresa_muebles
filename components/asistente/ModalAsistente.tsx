@@ -6,8 +6,9 @@ import { Button, buttonClassName } from '@/components/veta/button';
 import { MarkdownContent } from '@/components/veta/markdown-content';
 import { llamarAsistente } from './api';
 import { PanelConfiguracion } from './PanelConfiguracion';
+import { AccesoMcp } from './AccesoMcp';
 
-type Pestana = 'chat' | 'historial' | 'configuracion';
+type Pestana = 'chat' | 'historial' | 'acceso-mcp' | 'configuracion';
 interface Mensaje { rol: 'usuario' | 'asistente' | 'herramienta'; contenido: string }
 interface Propuesta { id: string; herramienta: string; resumen: string; venceEn: string }
 interface Resumen { id: string; titulo: string; actualizadaEn: string }
@@ -110,6 +111,7 @@ export function ModalAsistente({ open, onClose, puedeConfigurar }: { open: boole
         <nav className="flex flex-wrap gap-2" aria-label="Secciones del asistente">
           <Button variant={pestana === 'chat' ? 'primary' : 'outline'} size="md" onClick={() => setPestana('chat')}>Chat</Button>
           <Button variant={pestana === 'historial' ? 'primary' : 'outline'} size="md" onClick={() => setPestana('historial')}>Historial</Button>
+          <Button variant={pestana === 'acceso-mcp' ? 'primary' : 'outline'} size="md" onClick={() => setPestana('acceso-mcp')}>Acceso MCP</Button>
           {puedeConfigurar && (
             <Button variant={pestana === 'configuracion' ? 'primary' : 'outline'} size="md" onClick={() => setPestana('configuracion')}>Configuración</Button>
           )}
@@ -189,6 +191,7 @@ export function ModalAsistente({ open, onClose, puedeConfigurar }: { open: boole
           </div>
         )}
 
+        {pestana === 'acceso-mcp' && <AccesoMcp />}
         {pestana === 'configuracion' && puedeConfigurar && <PanelConfiguracion />}
       </div>
     </Modal>

@@ -38,7 +38,7 @@ export function operacionAyuda(documentos: readonly Documento[], indice: string)
       descripcion:
         'Lee un procedimiento de la empresa (cómo se hace algo) completo. El tema es la ruta del índice de procedimientos del prompt.',
       permiso: 'erp:acceso',
-      canales: ['chat'],
+      canales: ['chat', 'mcp'],
       esEscritura: false,
       esquema: esquemaDeTemas(temas),
       esquemaPara,

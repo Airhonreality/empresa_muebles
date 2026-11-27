@@ -211,9 +211,9 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.equal(otra.sinCambios, true)
     assert.equal(m.escrituras.filter((e) => e.tabla === 'proyectos').length, 1)
   }],
-  ['todas las escrituras están solo en el canal chat (MCP llega en el paso 8)', async () => {
+  ['todas las escrituras están en el canal chat y en MCP (paso 8): solo proponen', async () => {
     const reg = registroFalso(mundo())
-    for (const h of reg.filter((x) => x.esEscritura)) assert.deepEqual([...h.canales], ['chat'])
+    for (const h of reg.filter((x) => x.esEscritura)) assert.deepEqual([...h.canales], ['chat', 'mcp'])
   }],
   ['el registro tiene exactamente las escrituras previstas', async () => {
     const reg = registroFalso(mundo())

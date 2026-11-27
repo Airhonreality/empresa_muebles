@@ -280,7 +280,7 @@ export function operacionCotizacionCrearCompleta(deps: DepsCotizacion): Definici
       'Crea una cotización para un cliente existente (clienteId de clientes.buscar) con espacios e ítems de catálogo (productoId de catalogo.productos_buscar). ' +
       'Requiere confirmación del empleado. No envíes precios ni totales: los pone el sistema.',
     permiso: 'cotizador:escribir',
-    canales: ['chat'],
+    canales: ['chat', 'mcp'],
     esEscritura: true,
     esquema: esquemaCotizacionCompleta,
     preparar: async (entrada, _usuario, ctx) => {

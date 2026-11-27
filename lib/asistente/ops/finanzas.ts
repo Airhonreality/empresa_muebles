@@ -77,7 +77,7 @@ export function operacionesFinanzas(puerto: PuertoFinanzas): DefinicionAsistente
       operacion: 'cuentas',
       descripcion: 'Lista las cuentas financieras (caja, banco, etc.) con su id, nombre, tipo y saldo actual. Usa el id como cuentaId.',
       permiso: 'finanzas:leer',
-      canales: ['chat'],
+      canales: ['chat', 'mcp'],
       esEscritura: false,
       esquema: z.strictObject({}),
       ejecutar: async (_entrada, _usuario, ctx) => {
@@ -97,7 +97,7 @@ export function operacionesFinanzas(puerto: PuertoFinanzas): DefinicionAsistente
         'Registra una entrada o salida de dinero en una cuenta (cuentaId de finanzas.cuentas). Monto en pesos enteros como texto. ' +
         'Requiere confirmación del empleado.',
       permiso: 'finanzas:escribir',
-      canales: ['chat'],
+      canales: ['chat', 'mcp'],
       esEscritura: true,
       esquema: esquemaMovimiento,
       preparar: async (entrada, _usuario, ctx) => {

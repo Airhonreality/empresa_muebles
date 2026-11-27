@@ -9,10 +9,12 @@ import { z } from 'zod'
 import { zodToJsonSchema } from './esquema-json'
 import type { SesionEmpleado } from '../auth/session'
 import {
+  CANAL_CHAT,
   esquemaDe,
   ejecutarHerramienta,
   operacionesDelCanal,
   Procedencia,
+  type Canal,
   type DefinicionAsistente,
 } from './herramientas'
 import { crearPropuesta, type DepsPropuestas } from './propuestas'
@@ -42,8 +44,9 @@ export function dominioOperaciones(
   dominio: string,
   usuario: SesionEmpleado,
   registro: readonly DefinicionAsistente[],
+  canal: Canal = CANAL_CHAT,
 ): { dominio: string; operaciones: OperacionDescrita[] } {
-  const operaciones = operacionesDelCanal(usuario, registro)
+  const operaciones = operacionesDelCanal(usuario, registro, canal)
     .filter((h) => h.dominio === dominio)
     .map((h) => ({
       operacion: h.operacion,
@@ -61,6 +64,8 @@ export interface DepsOperaciones {
   conversacionId: () => Promise<string>
   /** Ids obtenidos de búsquedas en este turno (ver Procedencia). */
   procedencia: Procedencia
+  /** Canal desde el que se llama: el chat interno (por defecto) o el servidor MCP. */
+  canal?: Canal
 }
 
 export interface PropuestaCreada {
@@ -93,7 +98,7 @@ export async function ejecutarOperacion(
   const { dominio, operacion } = entrada.data
   const nombre = `${dominio}.${operacion}`
   // Inexistente y no permitida dan el mismo mensaje.
-  const def = operacionesDelCanal(usuario, deps.registro).find((h) => h.nombre === nombre)
+  const def = operacionesDelCanal(usuario, deps.registro, deps.canal ?? CANAL_CHAT).find((h) => h.nombre === nombre)
   if (!def) throw new Error(MENSAJE_NO_DISPONIBLE)
   const ctx = { procedencia: deps.procedencia }
 

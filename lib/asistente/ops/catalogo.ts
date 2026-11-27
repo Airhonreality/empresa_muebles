@@ -31,7 +31,7 @@ export function operacionesCatalogo(puerto: PuertoCatalogo): DefinicionAsistente
       operacion: 'espacios',
       descripcion: 'Lista los tipos de espacio válidos (valor y nombre). Usa el valor en tipoEspacio al crear una cotización.',
       permiso: 'catalogo:leer',
-      canales: ['chat'],
+      canales: ['chat', 'mcp'],
       esEscritura: false,
       esquema: z.strictObject({}),
       ejecutar: async () => ({
@@ -45,7 +45,7 @@ export function operacionesCatalogo(puerto: PuertoCatalogo): DefinicionAsistente
       descripcion:
         'Busca productos del catálogo por nombre, referencia o categoría. Devuelve id, nombre, categoría, precio público y unidad. Usa el id como productoId; el precio lo pone el sistema.',
       permiso: 'catalogo:leer',
-      canales: ['chat'],
+      canales: ['chat', 'mcp'],
       esEscritura: false,
       esquema: z.strictObject({
         texto: z.string().trim().min(1, 'Escribe el nombre del producto').max(80),
