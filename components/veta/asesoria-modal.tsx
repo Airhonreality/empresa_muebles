@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { submitLeadAction } from '@/app/actions/lead-actions';
-import { fireAdsConversion } from '@/lib/analytics/ads-conversion';
 import { leerAtribucion } from '@/lib/hooks/useGclidCapture';
 import { construirUserDataGtag } from '@/lib/leads/enhanced-conversions';
 import { construirMensajeWhatsApp, construirUrlWhatsApp } from '@/lib/leads/ref';
@@ -22,12 +21,25 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
   const [ubicacion, setUbicacion] = useState('Bogotá D.C.');
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'redirecting'>('idle');
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'confirmado'>('idle');
+  const [whatsappUrl, setWhatsappUrl] = useState('');
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Asegurar que solo usamos Portal en el cliente
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Cancelar la redirección automática si el modal se cierra o el componente se desmonta
+  useEffect(() => {
+    if (!isOpen && redirectTimer.current) {
+      clearTimeout(redirectTimer.current);
+      redirectTimer.current = null;
+    }
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, [isOpen]);
 
   // 1. Efecto: Tecla Escape, Bloqueo de Scroll y Limpieza
   useEffect(() => {
@@ -75,20 +87,16 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
   // Canal general (cocinas, closets, etc.). El número de Jair Daza (pisos) vive solo en AsesoriaModalPisos.
   const WHATSAPP_NUMBER = obtenerCanal('general').whatsapp;
 
-  const executeRedirect = (url: string) => {
-    setFormStatus('redirecting');
-    // Navegar solo cuando Google confirme la conversión (o tras 1 s), para que el evento no se pierda en móvil
-    fireAdsConversion('general', () => {
-      // Abordaje Axiomático: Navegación directa en la misma pestaña para evadir Popup Blockers y forzar Deep Linking en móviles
+  // El lead ya está guardado y la conversión ya se disparó: mostramos confirmación y el usuario
+  // decide cuándo abrir WhatsApp. Si no lo pulsa, se abre solo a los 3 s como respaldo.
+  // La navegación ya no depende de que el evento de conversión termine de enviarse.
+  const mostrarConfirmacion = (url: string) => {
+    setWhatsappUrl(url);
+    setFormStatus('confirmado');
+    if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    redirectTimer.current = setTimeout(() => {
       window.location.href = url;
-    });
-
-    // Limpieza resiliente
-    setTimeout(() => {
-      if (formStatus !== 'idle') {
-        onClose();
-      }
-    }, 800);
+    }, 3000);
   };
 
   /**
@@ -98,9 +106,11 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
   const dispararConversion = async ({
     nombre,
     telefono,
+    transactionId,
   }: {
     nombre?: string
     telefono: string
+    transactionId: string
   }) => {
     const gtagFn = typeof window !== 'undefined'
       ? (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
@@ -113,11 +123,11 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
         gtagFn('set', 'user_data', userData);
       }
       const sendTo = process.env.NEXT_PUBLIC_GTAG_SEND_TO || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
-      gtagFn('event', 'conversion', { send_to: sendTo });
+      gtagFn('event', 'conversion', { send_to: sendTo, transaction_id: transactionId });
     } catch {
       // Si el navegador no soporta Web Crypto, la conversión igual se dispara sin user_data.
       const sendTo = process.env.NEXT_PUBLIC_GTAG_SEND_TO || 'AW-10970379192/55ciCNWI4ZQZELjniu8o';
-      gtagFn('event', 'conversion', { send_to: sendTo });
+      gtagFn('event', 'conversion', { send_to: sendTo, transaction_id: transactionId });
     }
   };
 
@@ -175,13 +185,13 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
 
       const result = await Promise.race([fetchPromise, timeoutPromise]);
 
-      await dispararConversion({ nombre, telefono: telefono.trim() });
-      executeRedirect(result.whatsappUrl || urlLocal);
+      await dispararConversion({ nombre, telefono: telefono.trim(), transactionId: leadId });
+      mostrarConfirmacion(result.whatsappUrl || urlLocal);
     } catch (error) {
       console.error('Fallback activado: Error al procesar lead', error);
       // Degradación elegante: mismo mensaje (nombre + ref), aunque la fila no se haya guardado.
-      await dispararConversion({ nombre, telefono: telefono.trim() });
-      executeRedirect(urlLocal);
+      await dispararConversion({ nombre, telefono: telefono.trim(), transactionId: leadId });
+      mostrarConfirmacion(urlLocal);
     }
   };
 
@@ -291,8 +301,20 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
               <p className="text-red-700 font-medium text-sm">Lo sentimos, por ahora solo prestamos servicio de diseño e instalación en Bogotá y la Sabana.</p>
             </div>
           ) : (
+            formStatus === 'confirmado' ? (
+              <div className="text-center space-y-4" role="status" aria-live="polite">
+                <p className="text-text-heading font-medium">¡Listo! Ya recibimos tus datos.</p>
+                <a
+                  href={whatsappUrl}
+                  className="block w-full py-3.5 uppercase tracking-[0.15em] text-sm font-semibold rounded-sm bg-charcoal-950 text-gold-500 hover:text-gold-400 hover:bg-charcoal-900 shadow-md"
+                >
+                  Abrir WhatsApp
+                </a>
+                <p className="text-xs text-text-muted font-light">Te llevaremos a WhatsApp en unos segundos.</p>
+              </div>
+            ) : (
             <>
-              <button 
+              <button
                 onClick={handleWhatsApp}
                 disabled={!isPhoneValid || formStatus !== 'idle'}
                 className={`w-full py-3.5 uppercase tracking-[0.15em] text-sm font-semibold rounded-sm transition-all duration-300 flex items-center justify-center gap-2 ${
@@ -308,14 +330,13 @@ export function AsesoriaModal({ isOpen, onClose, precio3dFormatted }: AsesoriaMo
                     <div className="w-3.5 h-3.5 border-2 border-gold-500/30 border-t-gold-500 rounded-full animate-spin" />
                     Conectando...
                   </>
-                ) : formStatus === 'redirecting' ? (
-                  'Abriendo WhatsApp...'
                 ) : (
                   'Ir a WhatsApp'
                 )}
               </button>
               <p className="text-center text-xs text-text-muted mt-4 font-light">Un diseñador te atenderá directamente para coordinar los detalles.</p>
             </>
+            )
           )}
         </div>
       </div>
