@@ -36,6 +36,10 @@ export const metadata: Metadata = {
   title: "Veta Dorada — Carpintería arquitectónica en Bogotá",
   description:
     "Estudio de carpintería arquitectónica en Bogotá. Diseñamos, fabricamos e instalamos cocinas, closets, centros de entretenimiento y espacios integrales en madera a la medida. Tres generaciones de oficio.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export function viewport() {
