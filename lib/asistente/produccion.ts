@@ -60,20 +60,22 @@ const depsPropuestas = depsPropuestasProduccion(REGISTRO_OPERACIONES)
 export const resolverPropuesta = (accion: 'confirmar' | 'cancelar', id: string, usuario: SesionEmpleado) =>
   accion === 'confirmar' ? confirmarPropuesta(id, usuario, depsPropuestas) : cancelarPropuesta(id, usuario, depsPropuestas)
 
+/** Un catálogo en caché por proveedor (1 hora). Anthropic y Google no tienen listado: ver catalogo-modelos.ts. */
+const CATALOGOS: Record<ProveedorConCatalogo, CatalogoModelos> = {
+  openrouter: crearCatalogo({ obtener: obtenerCatalogoOpenRouter, ahora: () => new Date() }),
+}
+
 export const depsConfiguracion: DepsConfiguracion = {
   leer: () => leerConfiguracionAdmin(),
   guardar: (clave, valor, usuarioId) => guardarValorConfiguracion(clave, valor, usuarioId),
+  modelos: (proveedor) => CATALOGOS[proveedor].listar(),
+  registro: REGISTRO_OPERACIONES,
 }
 
 export const depsClaves: DepsClaves = {
   cifrar,
   agregar: (p) => agregarClaveProveedor(p),
   eliminar: (id) => eliminarClaveProveedor(id),
-}
-
-/** Un catálogo en caché por proveedor (1 hora). Anthropic y Google no tienen listado: ver catalogo-modelos.ts. */
-const CATALOGOS: Record<ProveedorConCatalogo, CatalogoModelos> = {
-  openrouter: crearCatalogo({ obtener: obtenerCatalogoOpenRouter, ahora: () => new Date() }),
 }
 
 export const depsCatalogo: DepsCatalogoHttp = {

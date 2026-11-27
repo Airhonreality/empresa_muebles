@@ -11,7 +11,8 @@ import { codigoPg } from './errores'
 import { ErrorConversacionNoEncontrada, type ResultadoAtencion } from './servicio'
 import { ErrorPropuesta, type ResultadoConfirmacion } from './propuestas'
 import type { ProveedorAsistente } from './modelo'
-import { ErrorCatalogoNoDisponible, PROVEEDORES_CON_CATALOGO, type CatalogoModelos, type ProveedorConCatalogo } from './catalogo-modelos'
+import { ErrorCatalogoNoDisponible, PROVEEDORES_CON_CATALOGO, type CatalogoModelos, type ModeloCatalogo, type ProveedorConCatalogo } from './catalogo-modelos'
+import { herramientasPermitidas, type DefinicionAsistente } from './herramientas'
 import { esquemaConfiguracion, type ConfiguracionAsistenteCuerpo } from './configuracion-esquema'
 
 export interface Respuesta {
@@ -147,13 +148,32 @@ export type ClaveConfiguracion =
 export interface DepsConfiguracion {
   leer: () => Promise<unknown>
   guardar: (clave: ClaveConfiguracion, valor: unknown, usuarioId: string) => Promise<void>
+  /** Modelos vigentes del proveedor (S2). Lanza ErrorCatalogoNoDisponible si no se pueden consultar. */
+  modelos: (proveedor: ProveedorConCatalogo) => Promise<ModeloCatalogo[]>
+  /** Registro completo de operaciones (S4). Se filtra por permiso de la sesión antes de usarlo. */
+  registro: readonly DefinicionAsistente[]
+}
+
+/** Operaciones que la sesión puede habilitar en la configuración (nombre, dominio, descripción). */
+function herramientasHabilitables(sesion: SesionEmpleado, registro: readonly DefinicionAsistente[]) {
+  return herramientasPermitidas(sesion, undefined, registro).map((h) => ({
+    nombre: h.nombre,
+    dominio: h.dominio,
+    operacion: h.operacion,
+    descripcion: h.descripcion,
+    esEscritura: h.esEscritura,
+  }))
 }
 
 export async function leerConfiguracionHttp(sesion: SesionEmpleado | null, deps: DepsConfiguracion): Promise<Respuesta> {
   if (!sesion) return { status: 401, body: { error: MENSAJE_SIN_SESION } }
   if (!esAdmin(sesion)) return { status: 403, body: { error: MENSAJE_SOLO_ADMIN } }
   try {
-    return { status: 200, body: { configuracion: await deps.leer() } as Record<string, unknown> }
+    const base = (await deps.leer()) as Record<string, unknown>
+    return {
+      status: 200,
+      body: { configuracion: { ...base, herramientasDisponibles: herramientasHabilitables(sesion, deps.registro) } },
+    }
   } catch (err) {
     return respuestaDeError(err)
   }
@@ -180,8 +200,29 @@ export async function guardarConfiguracionHttp(
   if (!esAdmin(sesion)) return { status: 403, body: { error: MENSAJE_SOLO_ADMIN } }
   const validada = esquemaConfiguracion.safeParse(cuerpo)
   if (!validada.success) return { status: 400, body: { error: validada.error.issues[0]?.message ?? 'Cuerpo inválido' } }
+  const v = validada.data
   try {
-    for (const [clave, valor] of valoresAGuardar(validada.data)) {
+    // S2: el modelo debe existir en el catálogo vigente del proveedor. Sus precios salen de ahí, no del formulario.
+    let modelos: ModeloCatalogo[]
+    try {
+      modelos = await deps.modelos(v.proveedor)
+    } catch (err) {
+      if (err instanceof ErrorCatalogoNoDisponible) {
+        return { status: 503, body: { error: 'No se pudo verificar el modelo: el catálogo del proveedor no responde. Intenta de nuevo.' } }
+      }
+      throw err
+    }
+    const modelo = modelos.find((m) => m.id === v.modelo)
+    if (!modelo) return { status: 400, body: { error: 'Modelo no disponible para este proveedor' } }
+
+    // S4: cada herramienta debe existir en el registro y estar permitida para quien configura.
+    const permitidas = new Set(herramientasHabilitables(sesion, deps.registro).map((h) => h.nombre))
+    const noValida = v.herramientasHabilitadas.find((id) => !permitidas.has(id))
+    if (noValida !== undefined) return { status: 400, body: { error: `Herramienta no disponible: ${noValida}` } }
+
+    const valores = valoresAGuardar(v)
+    valores.push(['precios', { entradaPorMillon: modelo.precioPor1MEntradaUsd, salidaPorMillon: modelo.precioPor1MSalidaUsd }])
+    for (const [clave, valor] of valores) {
       await deps.guardar(clave, valor, sesion.usuarioId)
     }
     return { status: 200, body: { ok: true } }

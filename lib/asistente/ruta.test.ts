@@ -113,17 +113,22 @@ const casos: Array<[string, () => Promise<void>]> = [
   }],
   ['configuración: no admin -> 403 y no lee ni guarda', async () => {
     let tocado = false
-    const deps = { leer: async () => { tocado = true; return {} }, guardar: async () => { tocado = true } }
+    const deps = { leer: async () => { tocado = true; return {} }, guardar: async () => { tocado = true }, modelos: async () => { tocado = true; return [] }, registro: [] }
     assert.equal((await leerConfiguracionHttp(COMERCIAL, deps)).status, 403)
     assert.equal((await guardarConfiguracionHttp(COMERCIAL, { topes: { usuarioDiaUsd: 1, globalDiaUsd: 2, alertaFraccion: 0.8 } }, deps)).status, 403)
     assert.equal(tocado, false)
   }],
   ['configuración: admin guarda una configuración completa válida', async () => {
     const guardados: string[] = []
-    const deps = { leer: async () => ({}), guardar: async (clave: string) => { guardados.push(clave) } }
+    const deps = {
+      leer: async () => ({}),
+      guardar: async (clave: string) => { guardados.push(clave) },
+      modelos: async () => [{ id: 'modelo/prueba', nombre: 'P', gratis: true, precioPor1MEntradaUsd: 0, precioPor1MSalidaUsd: 0, contexto: 1 }],
+      registro: [],
+    }
     const r = await guardarConfiguracionHttp(ADMIN, CONFIG_VALIDA, deps)
     assert.equal(r.status, 200)
-    assert.deepEqual(guardados, ['modelo', 'temperatura', 'maxTokensRespuesta', 'pasosMaximos', 'topes', 'herramientasHabilitadas'])
+    assert.deepEqual(guardados, ['modelo', 'temperatura', 'maxTokensRespuesta', 'pasosMaximos', 'topes', 'herramientasHabilitadas', 'precios'])
   }],
   ['clave: no admin -> 403', async () => {
     const r = await agregarClaveHttp(COMERCIAL, { proveedor: 'openrouter', etiqueta: 'x', clave: SECRETO }, DEPS_CLAVES)
@@ -142,7 +147,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.equal((await agregarClaveHttp(ADMIN, { proveedor: 'openrouter', etiqueta: 'x', clave: 'corta' }, DEPS_CLAVES)).status, 400)
   }],
   ['lectura de configuración de admin pasa el resultado sin claves en claro', async () => {
-    const r = await leerConfiguracionHttp(ADMIN, { leer: async () => ({ claves: [{ ultimos4: '1234' }] }), guardar: async () => {} })
+    const r = await leerConfiguracionHttp(ADMIN, { leer: async () => ({ claves: [{ ultimos4: '1234' }] }), guardar: async () => {}, modelos: async () => [], registro: [] })
     assert.equal(r.status, 200)
     assert.ok(!JSON.stringify(r.body).includes(SECRETO))
   }],
