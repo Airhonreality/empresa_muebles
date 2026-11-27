@@ -7,7 +7,7 @@ import type { SlotImagen } from '../tipos'
 const CAMPOS_ESPACIO = {
   descripcion: {
     tipo: 'texto',
-    etiqueta: 'Descripción para la propuesta',
+    etiqueta: 'Descripción',
     multilinea: true,
     maxLength: 600,
     publica: true,

@@ -71,7 +71,7 @@ test.describe('SlotImagen (diseño nuevo)', () => {
 
     await page.getByLabel('Texto alternativo').fill('Frente de cocina')
     await page.getByLabel('Pie de foto').fill('Vista general')
-    await page.getByLabel('Descripción para la propuesta').fill('Roble natural con tirador de acero')
+    await page.getByLabel('Descripción').fill('Roble natural con tirador de acero')
 
     const valor = page.getByTestId('valor')
     await expect(valor).toContainText('"alt":"Frente de cocina"')

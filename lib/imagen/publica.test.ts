@@ -21,7 +21,7 @@ assert.deepEqual(pub[0], {
   url: 'https://r2/1.webp',
   alt: 'Frente de cocina',
   pie: 'Vista general',
-  textos: [{ etiqueta: 'Descripción para la propuesta', valor: 'Roble natural, tirador en acero' }],
+  textos: [{ etiqueta: 'Descripción', valor: 'Roble natural, tirador en acero' }],
 })
 assert.deepEqual(pub[1], { url: 'https://r2/2.webp', alt: '', textos: [] })
 
