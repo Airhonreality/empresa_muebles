@@ -189,7 +189,7 @@ export function AppShell({ children, precio3dFormatted }: { children: React.Reac
                 href="/espacios/cocinas-integrales-bogota"
                 className="text-xs text-text-muted hover:text-text-heading hover:translate-x-0.5 transition-all duration-fast font-light"
               >
-                Cocinas Integrales
+                Cocinas integrales a medida
               </Link>
             </nav>
           </div>

@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Oculta la cabecera X-Powered-By: Next.js (higiene de seguridad; checklist SEO de servidor, Seobility 2026-11-27).
+  poweredByHeader: false,
   // Server Actions (uploadFileToR2 en lib/r2/upload.ts recibe el File crudo del navegador antes
   // de optimizarlo con sharp) topaban con el límite por defecto de 1MB de Next -- cualquier foto
   // real de celular/cámara lo supera y Next rechaza la petición antes de correr la acción, dejando
