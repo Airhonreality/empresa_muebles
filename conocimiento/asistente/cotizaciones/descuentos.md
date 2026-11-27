@@ -20,7 +20,7 @@ permiso: cotizador:escribir
 
 ## Límite
 
-- Un descuento no puede ser mayor que el total de materiales de la cotización. El asistente lo rechaza.
+- Un descuento no puede ser mayor que el total de materiales de la cotización. En esta versión el asistente no aplica descuentos; se hace en el cotizador.
 
 ## Cómo se calcula
 
