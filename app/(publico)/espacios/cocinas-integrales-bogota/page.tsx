@@ -8,7 +8,7 @@ import { obtenerGaleriaEspacioAction, listarTestimoniosPublicadosAction } from '
 const TIPO_ESPACIO_CODIGO = 'cocina';
 
 const DESCRIPCION_SEO =
-  'Cocinas integrales a medida en Bogotá, fabricadas directamente por nosotros. Madecor RH, herrajes europeos y acabados personalizados. Pide tu asesoría sin costo.';
+  'Cocinas integrales a medida en Bogotá, fabricadas directamente por nosotros. Melamina RH de 18 mm, herrajes europeos y acabados personalizados. Pide tu asesoría sin costo.';
 
 // Caché de una hora: la página no es de sesión, y así no consulta la base en cada visita.
 export const revalidate = 3600;
@@ -17,11 +17,18 @@ const CONFIG: EspacioLandingConfig = {
   slug: 'cocinas-integrales-bogota',
   nombreCategoria: 'Cocinas Integrales',
   h1: 'Cocinas integrales en Bogotá: diseño a medida',
-  subtitulo: 'Cocinas integrales en Bogotá, diseñadas y fabricadas por nosotros: interiores en Madecor RH, herrajes europeos y acabados a tu medida.',
+  subtitulo: 'Cocinas integrales en Bogotá, diseñadas y fabricadas por nosotros: estructura en melamina RH de 18 mm, herrajes europeos y acabados a tu medida.',
   parrafoDescriptor:
     'Fabricantes directos en Bogotá. Sin intermediarios: diseñamos, fabricamos e instalamos tu cocina integral.',
   imageKey: 'espaciosCocinas',
-  ctaTexto: 'Agenda tu asesoría sin costo',
+  ctaTexto: 'Agenda una visita sin costo',
+  visita: {
+    titulo: 'Agenda una visita sin costo',
+    cuerpo:
+      'Un diseñador visita tu espacio en Bogotá, toma las medidas contigo y conversa sobre materiales y acabados. Con eso armamos una cotización preliminar, sin compromiso. Si ya tienes las medidas, puedes enviarlas desde el formulario, pero no es necesario.',
+    ctaPrincipal: 'Agendar visita sin costo',
+    mostrarGuiaMedidas: true,
+  },
   direccion: 'Cra. 72a #71A 57, Bogotá',
   cobertura: 'Bogotá, Chía, Cota y Cajicá',
   ocultarPrecio3d: true,
@@ -30,7 +37,7 @@ const CONFIG: EspacioLandingConfig = {
     {
       titulo: 'Fachadas y Estructura',
       cuerpo:
-        'Usamos exclusivamente aglomerado Madecor RH (Resistente a la humedad) para los interiores, garantizando que tu cocina no se sople. Para las fachadas puedes elegir entre melaminas texturizadas de alta gama o acabados en Poliuretano para un brillo inmaculado.',
+        'Toda la estructura y las fachadas estándar se fabrican en melamina RH diferencial de 18 mm, resistente a la humedad. Para un acabado premium puedes elegir fachadas en altobrillo o mate, y superficies de acrílico EGR o Glask.',
       imageSrc: '/images/home/fachadas.jpg',
     },
     {
@@ -49,11 +56,11 @@ const CONFIG: EspacioLandingConfig = {
   faqs: [
     {
       pregunta: '¿Cuánto cuesta una cocina integral a la medida en Bogotá?',
-      respuesta: 'El precio depende del tamaño, los materiales y los acabados. Una cocina en Madecor RH (estructuras resistentes a la humedad) con acabados estándar parte de un presupuesto base, mientras que fachadas en poliuretano o mesones en piedra sinterizada ajustan el valor hacia arriba. Lo mejor es agendar una visita técnica para obtener un presupuesto exacto línea por línea sin sorpresas.'
+      respuesta: 'El precio depende del tamaño, los materiales y los acabados. Una cocina en melamina RH de 18 mm con acabados estándar parte de un presupuesto base, mientras que fachadas premium (altobrillo, mate, acrílico EGR o Glask) o mesones en piedra sinterizada ajustan el valor hacia arriba. Lo mejor es agendar una visita técnica para obtener un presupuesto exacto línea por línea sin sorpresas.'
     },
     {
       pregunta: '¿Qué materiales usan para las cocinas integrales?',
-      respuesta: 'Usamos interiores exclusivamente en Madecor RH (Resistente a la humedad) para garantizar la durabilidad a largo plazo. Para las fachadas, ofrecemos desde melaminas texturizadas hasta pintura en poliuretano o chapillas de madera maciza. Los mesones los trabajamos en Granito natural, Quarztone, o Piedra Sinterizada según la resistencia requerida.'
+      respuesta: 'Toda la estructura, incluidas las fachadas estándar, se fabrica en melamina RH diferencial de 18 mm, resistente a la humedad. Como variaciones premium ofrecemos fachadas en altobrillo y mate, y superficies de acrílico EGR o Glask. Los mesones los trabajamos en granito natural, Quarztone o piedra sinterizada según la resistencia requerida.'
     },
     {
       pregunta: '¿Hacen solo el mesón?',
@@ -101,7 +108,7 @@ const JSON_LD_COCINAS = {
       provider: { '@id': `${SITE_URL}/#negocio` },
       areaServed: { '@type': 'City', name: 'Bogotá' },
       description:
-        'Diseño, fabricación e instalación de cocinas integrales a medida en Bogotá, con interiores en Madecor RH y herrajes europeos.',
+        'Diseño, fabricación e instalación de cocinas integrales a medida en Bogotá, con estructura en melamina RH de 18 mm y herrajes europeos.',
       url: `${SITE_URL}/espacios/cocinas-integrales-bogota`,
     },
     {

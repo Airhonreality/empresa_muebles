@@ -75,7 +75,29 @@ export interface EspacioLandingConfig {
   ocultarPrecio3d?: boolean;
   /** Barra fija de contacto en móvil. */
   barraMovil?: boolean;
+  /**
+   * Sección después del hero. Por defecto invita a enviar medidas (texto histórico de las landings).
+   * Las landings que priorizan la visita gratuita sobreescriben el texto; las medidas quedan opcionales.
+   */
+  visita?: VisitaSeccionConfig;
 }
+
+export interface VisitaSeccionConfig {
+  titulo: string;
+  cuerpo: string;
+  /** Texto del botón que abre el formulario de asesoría. */
+  ctaPrincipal: string;
+  /** Muestra el enlace a la guía para tomar medidas. */
+  mostrarGuiaMedidas?: boolean;
+}
+
+const VISITA_POR_DEFECTO: VisitaSeccionConfig = {
+  titulo: '¿Ya tienes medidas?',
+  cuerpo:
+    'Recibe una cotización sin costo enviando las dimensiones de tu espacio. Saltamos directo a los números.',
+  ctaPrincipal: 'Enviar medidas',
+  mostrarGuiaMedidas: true,
+};
 
 const CTA_CLASS =
   'inline-flex items-center justify-center rounded-sm bg-gold-600 px-6 py-3 text-sm font-bold text-white transition-colors duration-300 hover:bg-gold-700';
@@ -90,6 +112,7 @@ export interface FotoGaleriaEspacio {
 
 export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { config: EspacioLandingConfig; galeria?: FotoGaleriaEspacio[]; tipoEspacio?: string }) {
   const { slug, nombreCategoria, h1, subtitulo, parrafoDescriptor, imageKey } = config;
+  const visita: VisitaSeccionConfig = config.visita ?? VISITA_POR_DEFECTO;
   const heroImageFallback = HOME_IMAGES_SEO[imageKey];
   const heroImages = await obtenerHeroCarouselImagesAction(tipoEspacio || slug);
   const atributosTecnicos = await obtenerAtributosTecnicosAction(tipoEspacio || slug);
@@ -179,15 +202,17 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
       {/* 1.5. CTA Temprano (¿Ya tienes medidas?) */}
       <section className="bg-bg-paper py-16 border-b border-border-subtle">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="font-display text-2xl md:text-3xl font-semibold text-text-heading mb-4">¿Ya tienes medidas?</h2>
+          <h2 className="font-display text-2xl md:text-3xl font-semibold text-text-heading mb-4">{visita.titulo}</h2>
           <p className="text-text-primary mb-8 font-light max-w-2xl mx-auto">
-            Recibe una cotización sin costo enviando las dimensiones de tu espacio. Saltamos directo a los números.
+            {visita.cuerpo}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <AsesoriaBoton className={CTA_CLASS}>Enviar medidas</AsesoriaBoton>
-            <Link href="/blog/como-medir-tu-espacio" className="text-sm text-gold-600 hover:text-gold-700 underline underline-offset-4 font-medium transition-colors">
-              ¿No sabes cómo? Aprende a tomar tus medidas aquí
-            </Link>
+            <AsesoriaBoton className={CTA_CLASS}>{visita.ctaPrincipal}</AsesoriaBoton>
+            {visita.mostrarGuiaMedidas && (
+              <Link href="/blog/como-medir-tu-espacio" className="text-sm text-gold-600 hover:text-gold-700 underline underline-offset-4 font-medium transition-colors">
+                ¿No sabes cómo? Aprende a tomar tus medidas aquí
+              </Link>
+            )}
           </div>
         </div>
       </section>
