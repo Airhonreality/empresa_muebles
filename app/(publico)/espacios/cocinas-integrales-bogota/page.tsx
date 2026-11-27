@@ -2,9 +2,13 @@ import type { Metadata } from 'next';
 import { EspacioLanding, type EspacioLandingConfig } from '@/components/veta/espacio-landing';
 import { SITE_URL } from '@/lib/seo/jsonld';
 import { socialMeta } from '@/lib/seo/social';
+import { obtenerCanal } from '@/lib/contacto';
 import { obtenerGaleriaEspacioAction, listarTestimoniosPublicadosAction } from '@/lib/data/actions/public';
 
 const TIPO_ESPACIO_CODIGO = 'cocina';
+
+const DESCRIPCION_SEO =
+  'Cocinas integrales a medida en Bogotá, fabricadas directamente por nosotros. Madecor RH, herrajes europeos y acabados personalizados. Pide tu asesoría sin costo.';
 
 // Caché de una hora: la página no es de sesión, y así no consulta la base en cada visita.
 export const revalidate = 3600;
@@ -12,8 +16,8 @@ export const revalidate = 3600;
 const CONFIG: EspacioLandingConfig = {
   slug: 'cocinas-integrales-bogota',
   nombreCategoria: 'Cocinas Integrales',
-  h1: 'Cocinas integrales a medida en Bogotá',
-  subtitulo: 'Diseño y fabricación directa: interiores en Madecor RH, herrajes europeos y acabados a tu medida.',
+  h1: 'Cocinas integrales en Bogotá: diseño a medida',
+  subtitulo: 'Cocinas integrales en Bogotá, diseñadas y fabricadas por nosotros: interiores en Madecor RH, herrajes europeos y acabados a tu medida.',
   parrafoDescriptor:
     'Fabricantes directos en Bogotá. Sin intermediarios: diseñamos, fabricamos e instalamos tu cocina integral.',
   imageKey: 'espaciosCocinas',
@@ -60,15 +64,63 @@ const CONFIG: EspacioLandingConfig = {
 
 export const metadata: Metadata = {
   title: 'Cocinas Integrales en Bogotá | Diseño a Medida',
-  description:
-    'Cocinas integrales a medida en Bogotá. Nuestros clientes estrenan cocina y tranquilidad. Materiales de primera, Madecor RH y acabados personalizados.',
+  description: DESCRIPCION_SEO,
   alternates: { canonical: `${SITE_URL}/espacios/${CONFIG.slug}` },
+  icons: { apple: '/apple-touch-icon.png' },
   ...socialMeta({
     title: 'Cocinas Integrales en Bogotá | Diseño a Medida',
-    description:
-      'Cocinas integrales a medida en Bogotá. Nuestros clientes estrenan cocina y tranquilidad. Materiales de primera, Madecor RH y acabados personalizados.',
+    description: DESCRIPCION_SEO,
     path: `/espacios/${CONFIG.slug}`,
   }),
+};
+
+const canal = obtenerCanal('general');
+
+const JSON_LD_COCINAS = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'LocalBusiness',
+      '@id': `${SITE_URL}/#negocio`,
+      name: 'Veta Dorada',
+      url: SITE_URL,
+      telephone: canal.telefono,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: 'Cra 72a #71a-57',
+        addressLocality: 'Bogotá',
+        addressRegion: 'Bogotá',
+        addressCountry: 'CO',
+      },
+      areaServed: { '@type': 'City', name: 'Bogotá' },
+      description: DESCRIPCION_SEO,
+    },
+    {
+      '@type': 'Service',
+      serviceType: 'Cocinas integrales a medida',
+      provider: { '@id': `${SITE_URL}/#negocio` },
+      areaServed: { '@type': 'City', name: 'Bogotá' },
+      description:
+        'Diseño, fabricación e instalación de cocinas integrales a medida en Bogotá, con interiores en Madecor RH y herrajes europeos.',
+      url: `${SITE_URL}/espacios/cocinas-integrales-bogota`,
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Espacios', item: `${SITE_URL}/espacios` },
+        { '@type': 'ListItem', position: 3, name: 'Cocinas Integrales', item: `${SITE_URL}/espacios/cocinas-integrales-bogota` },
+      ],
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: (CONFIG.faqs ?? []).map((f) => ({
+        '@type': 'Question',
+        name: f.pregunta,
+        acceptedAnswer: { '@type': 'Answer', text: f.respuesta },
+      })),
+    },
+  ],
 };
 
 export default async function CocinasIntegralesPage() {
@@ -88,10 +140,16 @@ export default async function CocinasIntegralesPage() {
   }));
 
   return (
-    <EspacioLanding
-      config={{ ...CONFIG, testimonios }}
-      galeria={galeria}
-      tipoEspacio={TIPO_ESPACIO_CODIGO}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD_COCINAS) }}
+      />
+      <EspacioLanding
+        config={{ ...CONFIG, testimonios }}
+        galeria={galeria}
+        tipoEspacio={TIPO_ESPACIO_CODIGO}
+      />
+    </>
   );
 }
