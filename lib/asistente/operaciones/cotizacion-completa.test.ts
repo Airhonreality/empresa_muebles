@@ -5,7 +5,7 @@ import type { SesionEmpleado } from '../../auth/session'
 import { calcularTotalesCotizacion } from '../../dinero/calculo'
 import { ErrorProcedencia, ErrorRevalidacion } from '../errores'
 import { Procedencia } from '../herramientas'
-import { cotizacionFalsa, mundoFalso, type MundoFalso } from '../prueba-registro'
+import { cotizacionFalsa, mundoFalso, type MundoFalso } from '../__pruebas__/prueba-registro'
 import {
   crearCotizacionCompleta,
   ErrorCotizacion,

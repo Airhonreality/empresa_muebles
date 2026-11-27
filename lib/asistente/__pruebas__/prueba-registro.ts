@@ -2,14 +2,14 @@
 // SOLO PRUEBAS. Mundo en memoria con los mismos puertos que usan las operaciones en producción
 // (clientes, catálogo, cotizaciones, finanzas y transacción de cotización). Las escrituras quedan en
 // `mundo.escrituras`; una transacción que falla las revierte (como Postgres).
-import type { FilaCliente, DatosClienteNuevo, PuertoClientes } from './ops/clientes'
-import type { FilaProducto, PuertoCatalogo } from './ops/catalogo'
-import type { DetalleProyecto, FilaProyectoBusqueda, PuertoCotizaciones } from './ops/cotizacion'
-import type { FilaCuenta, PuertoFinanzas } from './ops/finanzas'
-import type { DefinicionAsistente } from './herramientas'
-import type { DepsCotizacion, EjecutorTransaccion, EscrituraCotizacion, LecturaCotizacion } from './operaciones/cotizacion-completa'
-import { crearOperaciones, type DepsRegistro } from './registro'
-import type { EstadoPropuesta, Propuesta, RepositorioPropuestas } from './propuestas'
+import type { FilaCliente, DatosClienteNuevo, PuertoClientes } from '../ops/clientes'
+import type { FilaProducto, PuertoCatalogo } from '../ops/catalogo'
+import type { DetalleProyecto, FilaProyectoBusqueda, PuertoCotizaciones } from '../ops/cotizacion'
+import type { FilaCuenta, PuertoFinanzas } from '../ops/finanzas'
+import type { DefinicionAsistente } from '../herramientas'
+import type { DepsCotizacion, EjecutorTransaccion, EscrituraCotizacion, LecturaCotizacion } from '../operaciones/cotizacion-completa'
+import { crearOperaciones, type DepsRegistro } from '../registro'
+import type { EstadoPropuesta, Propuesta, RepositorioPropuestas } from '../propuestas'
 
 export interface MundoFalso {
   clientes: FilaCliente[]

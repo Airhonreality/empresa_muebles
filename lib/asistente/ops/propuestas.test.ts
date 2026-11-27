@@ -5,7 +5,7 @@ import type { SesionEmpleado } from '../../auth/session'
 import { ejecutarOperacion, MENSAJE_NO_DISPONIBLE, type DepsOperaciones } from '../operaciones'
 import { ejecutarHerramienta, operacionesDelCanal, Procedencia, type DefinicionAsistente, type DefinicionLectura } from '../herramientas'
 import { crearPropuesta } from '../propuestas'
-import { depsRegistroFalsos, mundoFalso, repoPropuestasFalso, type MundoFalso } from '../prueba-registro'
+import { depsRegistroFalsos, mundoFalso, repoPropuestasFalso, type MundoFalso } from '../__pruebas__/prueba-registro'
 import { crearOperaciones } from '../registro'
 import type { RepositorioPropuestas } from '../propuestas'
 

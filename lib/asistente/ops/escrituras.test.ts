@@ -6,7 +6,7 @@ import { ErrorDuplicado, ErrorProcedencia, ErrorRevalidacion } from '../errores'
 import { ejecutarOperacion, type DepsOperaciones } from '../operaciones'
 import { Procedencia, type DefinicionAsistente } from '../herramientas'
 import { confirmarPropuesta, type EstadoPropuesta, type Propuesta, type RepositorioPropuestas } from '../propuestas'
-import { mundoFalso, registroFalso, type MundoFalso } from '../prueba-registro'
+import { mundoFalso, registroFalso, type MundoFalso } from '../__pruebas__/prueba-registro'
 import { topeMovimientoPesos, TOPE_MOVIMIENTO_POR_DEFECTO, VARIABLE_TOPE_MOVIMIENTO } from './finanzas'
 
 /** Entorno de prueba: solo la variable del tope. */

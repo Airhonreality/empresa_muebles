@@ -14,7 +14,7 @@ import {
   truncarResultado,
   type DefinicionAsistente,
 } from './herramientas'
-import { conPermisosRestringidos } from './prueba-permisos'
+import { conPermisosRestringidos } from './__pruebas__/prueba-permisos'
 
 function sesionCon(rol: SesionEmpleado['rol']): SesionEmpleado {
   return { usuarioId: 'u-1', personaId: null, nombre: 'Prueba', email: 'p@prueba.test', rol }

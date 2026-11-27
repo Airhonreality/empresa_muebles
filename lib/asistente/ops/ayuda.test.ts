@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import type { SesionEmpleado } from '../../auth/session'
 import { cargarDocumentos } from '../conocimiento'
 import { ejecutarHerramienta, Procedencia, type DefinicionAsistente } from '../herramientas'
-import { conPermisosRestringidos } from '../prueba-permisos'
+import { conPermisosRestringidos } from '../__pruebas__/prueba-permisos'
 import { operacionAyuda, rutasDeIndice, temasDeIndice } from './ayuda'
 import { zodToJsonSchema } from '../esquema-json'
 

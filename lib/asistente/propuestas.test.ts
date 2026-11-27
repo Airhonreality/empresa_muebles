@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { z } from 'zod'
 import type { SesionEmpleado } from '../auth/session'
 import type { DefinicionAsistente } from './herramientas'
-import { conPermisosRestringidos } from './prueba-permisos'
+import { conPermisosRestringidos } from './__pruebas__/prueba-permisos'
 import {
   ErrorPropuesta,
   cancelarPropuesta,

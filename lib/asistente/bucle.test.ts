@@ -12,9 +12,9 @@ import {
   type DepsTurno,
   type LlamadaRegistro,
 } from './bucle'
-import { mundoFalso, registroFalso } from './prueba-registro'
+import { mundoFalso, registroFalso } from './__pruebas__/prueba-registro'
 const CLIENTE_REAL = '22222222-2222-4222-8222-222222222222'
-import { conPermisosRestringidos } from './prueba-permisos'
+import { conPermisosRestringidos } from './__pruebas__/prueba-permisos'
 
 const PASOS_MAXIMOS = 8
 

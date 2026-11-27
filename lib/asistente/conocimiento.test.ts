@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import type { SesionEmpleado } from '../auth/session'
-import { conPermisosRestringidos } from './prueba-permisos'
+import { conPermisosRestringidos } from './__pruebas__/prueba-permisos'
 import {
   cargarDocumentos,
   consultarProcedimiento,

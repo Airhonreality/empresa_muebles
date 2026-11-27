@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { z } from 'zod'
 import type { SesionEmpleado } from '../auth/session'
-import { mundoFalso, registroFalso, type MundoFalso } from './prueba-registro'
+import { mundoFalso, registroFalso, type MundoFalso } from './__pruebas__/prueba-registro'
 import { Procedencia, type DefinicionAsistente } from './herramientas'
 import { dominioOperaciones, ejecutarOperacion, MENSAJE_NO_DISPONIBLE, type DepsOperaciones } from './operaciones'
 import type { Propuesta, RepositorioPropuestas } from './propuestas'
-import { conPermisosRestringidos } from './prueba-permisos'
+import { conPermisosRestringidos } from './__pruebas__/prueba-permisos'
 
 const AHORA = new Date('2026-11-25T15:00:00.000Z')
 
