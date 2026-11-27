@@ -7,8 +7,9 @@ import * as s from '@/lib/db/schema'
 import type {
   ItemOrdenCompra, RecepcionMaterial, EstadoRecepcionMaterial, Herramienta, EstadoOperativoHerramienta, OrdenCompra,
 } from '../contracts'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function crearItemOrdenCompraAction(data: { ordenCompraId: string; productoCatalogoId?: string | null; especificacion?: string | null; cantidadEsperada: number }): Promise<ItemOrdenCompra | null> {
+export const crearItemOrdenCompraAction = protegerAccion({ permiso: "compras:escribir" }, async function crearItemOrdenCompraAction(data: { ordenCompraId: string; productoCatalogoId?: string | null; especificacion?: string | null; cantidadEsperada: number }): Promise<ItemOrdenCompra | null> {
   const tieneProducto = !!data.productoCatalogoId
   const tieneEspecificacion = !!data.especificacion && data.especificacion.trim().length > 0
   if (tieneProducto === tieneEspecificacion) return null
@@ -17,24 +18,24 @@ export async function crearItemOrdenCompraAction(data: { ordenCompraId: string; 
     especificacion: data.especificacion ?? null, cantidadEsperada: data.cantidadEsperada,
   }).returning()
   return nuevo as unknown as ItemOrdenCompra
-}
+});
 
-export async function crearItemsOrdenCompraDesdeSugeridosAction(ordenCompraId: string, sugeridos: { productoCatalogoId: string; cantidad: number }[]): Promise<ItemOrdenCompra[]> {
+export const crearItemsOrdenCompraDesdeSugeridosAction = protegerAccion({ permiso: "compras:escribir" }, async function crearItemsOrdenCompraDesdeSugeridosAction(ordenCompraId: string, sugeridos: { productoCatalogoId: string; cantidad: number }[]): Promise<ItemOrdenCompra[]> {
   if (sugeridos.length === 0) return []
   const nuevos = await db.insert(s.itemsOrdenCompra).values(sugeridos.map(sg => ({
     ordenCompraId, productoCatalogoId: sg.productoCatalogoId, cantidadEsperada: sg.cantidad,
   }))).returning()
   return nuevos as unknown as ItemOrdenCompra[]
-}
+});
 
-export async function crearRecepcionMaterialAction(data: { ordenCompraId: string; proyectoId?: string | null }): Promise<RecepcionMaterial> {
+export const crearRecepcionMaterialAction = protegerAccion({ permiso: "compras:escribir" }, async function crearRecepcionMaterialAction(data: { ordenCompraId: string; proyectoId?: string | null }): Promise<RecepcionMaterial> {
   const [nuevo] = await db.insert(s.recepcionesMaterial).values({
     ordenCompraId: data.ordenCompraId, proyectoId: data.proyectoId ?? null,
   }).returning()
   return nuevo as unknown as RecepcionMaterial
-}
+});
 
-export async function actualizarChecksRecepcionAction(id: string, data: { checkPedidoBien: boolean; checkDespachoBien: boolean; checkMaterial: boolean; descripcionDefecto?: string | null }): Promise<RecepcionMaterial | null> {
+export const actualizarChecksRecepcionAction = protegerAccion({ permiso: "compras:escribir" }, async function actualizarChecksRecepcionAction(id: string, data: { checkPedidoBien: boolean; checkDespachoBien: boolean; checkMaterial: boolean; descripcionDefecto?: string | null }): Promise<RecepcionMaterial | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.recepcionesMaterial).where(eq(s.recepcionesMaterial.id, id))
     if (!actual) return null
@@ -55,22 +56,22 @@ export async function actualizarChecksRecepcionAction(id: string, data: { checkP
     }
     return actualizado as unknown as RecepcionMaterial
   })
-}
+});
 
-export async function crearHerramientaAction(data: { nombre: string; valor: string; fotoUrl?: string | null; proveedorId?: string | null }): Promise<Herramienta> {
+export const crearHerramientaAction = protegerAccion({ permiso: "taller:escribir" }, async function crearHerramientaAction(data: { nombre: string; valor: string; fotoUrl?: string | null; proveedorId?: string | null }): Promise<Herramienta> {
   const [nuevo] = await db.insert(s.herramientas).values({
     nombre: data.nombre, estadoOperativo: 'operativa', valor: data.valor,
     fotoUrl: data.fotoUrl ?? null, proveedorId: data.proveedorId ?? null,
   }).returning()
   return nuevo as unknown as Herramienta
-}
+});
 
-export async function actualizarEstadoHerramientaAction(id: string, estado: EstadoOperativoHerramienta): Promise<Herramienta | null> {
+export const actualizarEstadoHerramientaAction = protegerAccion({ permiso: "taller:escribir" }, async function actualizarEstadoHerramientaAction(id: string, estado: EstadoOperativoHerramienta): Promise<Herramienta | null> {
   const [actualizado] = await db.update(s.herramientas).set({ estadoOperativo: estado }).where(eq(s.herramientas.id, id)).returning()
   return (actualizado as unknown as Herramienta) ?? null
-}
+});
 
-export async function reponerHerramientaAction(id: string): Promise<{ herramienta: Herramienta; ordenCompra: OrdenCompra } | null> {
+export const reponerHerramientaAction = protegerAccion({ permiso: "taller:escribir" }, async function reponerHerramientaAction(id: string): Promise<{ herramienta: Herramienta; ordenCompra: OrdenCompra } | null> {
   return db.transaction(async (tx) => {
     const [herramienta] = await tx.select().from(s.herramientas).where(eq(s.herramientas.id, id))
     if (!herramienta) return null
@@ -94,4 +95,4 @@ export async function reponerHerramientaAction(id: string): Promise<{ herramient
 
     return { herramienta: herramientaActualizada as unknown as Herramienta, ordenCompra: nuevaOC as unknown as OrdenCompra }
   })
-}
+});

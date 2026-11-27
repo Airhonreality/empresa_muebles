@@ -10,6 +10,7 @@ import type {
   OrdenTrabajo, TipoOrdenTrabajo, PedidoWeb, CitacionCalidad, Reproceso, OrigenReproceso,
   Instalacion, ActaEntrega, CasoGarantia, CitaGarantia, EstadoProyecto,
 } from '../contracts'
+import { protegerAccion } from '@/lib/auth/accion'
 
 async function setProyectoEstado(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], id: string, estado: EstadoProyecto): Promise<void> {
   const [actual] = await tx.select().from(s.proyectos).where(eq(s.proyectos.id, id))
@@ -20,27 +21,27 @@ async function setProyectoEstado(tx: Parameters<Parameters<typeof db.transaction
   })
 }
 
-export async function crearOrdenTrabajoAction(data: { proyectoId: string; tipo: TipoOrdenTrabajo; pedidoWebId?: string | null }): Promise<OrdenTrabajo> {
+export const crearOrdenTrabajoAction = protegerAccion({ permiso: "taller:escribir" }, async function crearOrdenTrabajoAction(data: { proyectoId: string; tipo: TipoOrdenTrabajo; pedidoWebId?: string | null }): Promise<OrdenTrabajo> {
   const [nuevo] = await db.insert(s.ordenesTrabajo).values({
     proyectoId: data.proyectoId, pedidoWebId: data.pedidoWebId ?? null, tipo: data.tipo, estado: 'abierta',
     codigoOrden: `OT-${Date.now()}`,
   }).returning()
   return nuevo as unknown as OrdenTrabajo
-}
+});
 
-export async function crearPedidoWebAction(data: { clienteId: string; totalPedido: string }): Promise<PedidoWeb> {
+export const crearPedidoWebAction = protegerAccion({ permiso: "comercial:escribir" }, async function crearPedidoWebAction(data: { clienteId: string; totalPedido: string }): Promise<PedidoWeb> {
   const [nuevo] = await db.insert(s.pedidosWeb).values({
     clienteId: data.clienteId, proyectoId: null, estado: 'nuevo', totalPedido: data.totalPedido,
   }).returning()
   return nuevo as unknown as PedidoWeb
-}
+});
 
-export async function actualizarEstadoPedidoWebAction(id: string, estado: string): Promise<PedidoWeb | null> {
+export const actualizarEstadoPedidoWebAction = protegerAccion({ permiso: "comercial:escribir" }, async function actualizarEstadoPedidoWebAction(id: string, estado: string): Promise<PedidoWeb | null> {
   const [actualizado] = await db.update(s.pedidosWeb).set({ estado }).where(eq(s.pedidosWeb.id, id)).returning()
   return (actualizado as unknown as PedidoWeb) ?? null
-}
+});
 
-export async function engancharPedidoWebAction(id: string, proyectoId: string): Promise<PedidoWeb | null> {
+export const engancharPedidoWebAction = protegerAccion({ permiso: "comercial:escribir" }, async function engancharPedidoWebAction(id: string, proyectoId: string): Promise<PedidoWeb | null> {
   if (!proyectoId) return null
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.pedidosWeb).where(eq(s.pedidosWeb.id, id))
@@ -52,32 +53,32 @@ export async function engancharPedidoWebAction(id: string, proyectoId: string): 
     })
     return actualizado as unknown as PedidoWeb
   })
-}
+});
 
-export async function crearCitacionCalidadAction(data: { proyectoId: string; modulosIds: string[]; fecha: string }): Promise<CitacionCalidad> {
+export const crearCitacionCalidadAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearCitacionCalidadAction(data: { proyectoId: string; modulosIds: string[]; fecha: string }): Promise<CitacionCalidad> {
   const [nuevo] = await db.insert(s.citacionesCalidad).values({
     proyectoId: data.proyectoId, modulosIds: data.modulosIds, estado: 'citada', fecha: data.fecha,
   }).returning()
   return nuevo as unknown as CitacionCalidad
-}
+});
 
-export async function crearReprocesoAction(data: { proyectoId: string; origen: OrigenReproceso; moduloId?: string | null; culpable?: string | null; granularidad?: 'modulo' | 'componente' | null; descripcion?: string | null }): Promise<Reproceso> {
+export const crearReprocesoAction = protegerAccion({ permiso: "produccion:escribir" }, async function crearReprocesoAction(data: { proyectoId: string; origen: OrigenReproceso; moduloId?: string | null; culpable?: string | null; granularidad?: 'modulo' | 'componente' | null; descripcion?: string | null }): Promise<Reproceso> {
   const [nuevo] = await db.insert(s.reprocesos).values({
     proyectoId: data.proyectoId, origen: data.origen, moduloId: data.moduloId ?? null, culpable: data.culpable ?? null,
     granularidad: data.granularidad ?? null, descripcion: data.descripcion ?? null, estado: 'abierto',
   }).returning()
   return nuevo as unknown as Reproceso
-}
+});
 
-export async function programarInstalacionAction(data: { proyectoId: string; rangoFechaInicio: string; rangoFechaFin: string }): Promise<Instalacion | null> {
+export const programarInstalacionAction = protegerAccion({ permiso: "produccion:escribir" }, async function programarInstalacionAction(data: { proyectoId: string; rangoFechaInicio: string; rangoFechaFin: string }): Promise<Instalacion | null> {
   if (!rangoInstalacionValido(data.rangoFechaInicio, data.rangoFechaFin)) return null
   const [nuevo] = await db.insert(s.instalaciones).values({
     proyectoId: data.proyectoId, rangoFechaInicio: data.rangoFechaInicio, rangoFechaFin: data.rangoFechaFin, estado: 'programada',
   }).returning()
   return nuevo as unknown as Instalacion
-}
+});
 
-export async function iniciarInstalacionAction(id: string): Promise<Instalacion | null> {
+export const iniciarInstalacionAction = protegerAccion({ permiso: "produccion:escribir" }, async function iniciarInstalacionAction(id: string): Promise<Instalacion | null> {
   return db.transaction(async (tx) => {
     const [inst] = await tx.select().from(s.instalaciones).where(eq(s.instalaciones.id, id))
     if (!inst) return null
@@ -96,9 +97,9 @@ export async function iniciarInstalacionAction(id: string): Promise<Instalacion 
     await setProyectoEstado(tx, inst.proyectoId, 'en_instalacion')
     return actualizado as unknown as Instalacion
   })
-}
+});
 
-export async function marcarInstaladaAction(id: string): Promise<Instalacion | null> {
+export const marcarInstaladaAction = protegerAccion({ permiso: "produccion:escribir" }, async function marcarInstaladaAction(id: string): Promise<Instalacion | null> {
   return db.transaction(async (tx) => {
     const [inst] = await tx.select().from(s.instalaciones).where(eq(s.instalaciones.id, id))
     if (!inst) return null
@@ -106,9 +107,9 @@ export async function marcarInstaladaAction(id: string): Promise<Instalacion | n
     await setProyectoEstado(tx, inst.proyectoId, 'instalado')
     return actualizado as unknown as Instalacion
   })
-}
+});
 
-export async function marcarFallidaInstalacionAction(id: string, motivo: string): Promise<Instalacion | null> {
+export const marcarFallidaInstalacionAction = protegerAccion({ permiso: "produccion:escribir" }, async function marcarFallidaInstalacionAction(id: string, motivo: string): Promise<Instalacion | null> {
   return db.transaction(async (tx) => {
     const [inst] = await tx.select().from(s.instalaciones).where(eq(s.instalaciones.id, id))
     if (!inst) return null
@@ -116,9 +117,9 @@ export async function marcarFallidaInstalacionAction(id: string, motivo: string)
     await tx.insert(s.reprocesos).values({ proyectoId: inst.proyectoId, origen: 'instalacion', descripcion: motivo, estado: 'abierto' })
     return actualizado as unknown as Instalacion
   })
-}
+});
 
-export async function generarActaEntregaAction(proyectoId: string, data?: { holguraOperativaDias?: number; fotos?: string[]; observaciones?: string | null }): Promise<ActaEntrega | null> {
+export const generarActaEntregaAction = protegerAccion({ permiso: "produccion:escribir" }, async function generarActaEntregaAction(proyectoId: string, data?: { holguraOperativaDias?: number; fotos?: string[]; observaciones?: string | null }): Promise<ActaEntrega | null> {
   return db.transaction(async (tx) => {
     const [instalada] = await tx.select().from(s.instalaciones).where(and(eq(s.instalaciones.proyectoId, proyectoId), eq(s.instalaciones.estado, 'instalada')))
     if (!instalada) return null
@@ -128,16 +129,16 @@ export async function generarActaEntregaAction(proyectoId: string, data?: { holg
     }).returning()
     return nuevo as unknown as ActaEntrega
   })
-}
+});
 
-export async function enviarActaEntregaAction(id: string): Promise<ActaEntrega | null> {
+export const enviarActaEntregaAction = protegerAccion({ permiso: "produccion:escribir" }, async function enviarActaEntregaAction(id: string): Promise<ActaEntrega | null> {
   const [actual] = await db.select().from(s.actasEntrega).where(eq(s.actasEntrega.id, id))
   if (!actual || !actual.pdfUrl) return null
   const [actualizado] = await db.update(s.actasEntrega).set({ estado: 'enviada', updatedAt: new Date().toISOString() }).where(eq(s.actasEntrega.id, id)).returning()
   return actualizado as unknown as ActaEntrega
-}
+});
 
-export async function firmarActaEntregaAction(id: string): Promise<ActaEntrega | null> {
+export const firmarActaEntregaAction = protegerAccion({ permiso: "produccion:escribir" }, async function firmarActaEntregaAction(id: string): Promise<ActaEntrega | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.actasEntrega).where(eq(s.actasEntrega.id, id))
     if (!actual) return null
@@ -145,9 +146,9 @@ export async function firmarActaEntregaAction(id: string): Promise<ActaEntrega |
     await setProyectoEstado(tx, actual.proyectoId, 'entregado')
     return actualizado as unknown as ActaEntrega
   })
-}
+});
 
-export async function reportarCasoGarantiaAction(data: { proyectoId: string; moduloId?: string | null; clienteId?: string | null; descripcion: string; fotos?: string[] }): Promise<CasoGarantia | null> {
+export const reportarCasoGarantiaAction = protegerAccion({ permiso: "garantia:escribir" }, async function reportarCasoGarantiaAction(data: { proyectoId: string; moduloId?: string | null; clienteId?: string | null; descripcion: string; fotos?: string[] }): Promise<CasoGarantia | null> {
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.select().from(s.proyectos).where(eq(s.proyectos.id, data.proyectoId))
     if (!proyecto || proyecto.estado !== 'entregado') return null
@@ -166,15 +167,15 @@ export async function reportarCasoGarantiaAction(data: { proyectoId: string; mod
     }).returning()
     return nuevo as unknown as CasoGarantia
   })
-}
+});
 
-export async function diagnosticarCasoGarantiaAction(id: string, diagnostico: string): Promise<CasoGarantia | null> {
+export const diagnosticarCasoGarantiaAction = protegerAccion({ permiso: "garantia:escribir" }, async function diagnosticarCasoGarantiaAction(id: string, diagnostico: string): Promise<CasoGarantia | null> {
   if (diagnostico.trim().length === 0) return null
   const [actualizado] = await db.update(s.casosGarantia).set({ diagnostico, estado: 'diagnosticado', updatedAt: new Date().toISOString() }).where(eq(s.casosGarantia.id, id)).returning()
   return (actualizado as unknown as CasoGarantia) ?? null
-}
+});
 
-export async function crearOrdenReparacionAction(id: string): Promise<CasoGarantia | null> {
+export const crearOrdenReparacionAction = protegerAccion({ permiso: "garantia:escribir" }, async function crearOrdenReparacionAction(id: string): Promise<CasoGarantia | null> {
   return db.transaction(async (tx) => {
     const [caso] = await tx.select().from(s.casosGarantia).where(eq(s.casosGarantia.id, id))
     if (!caso) return null
@@ -182,9 +183,9 @@ export async function crearOrdenReparacionAction(id: string): Promise<CasoGarant
     const [actualizado] = await tx.update(s.casosGarantia).set({ estado: 'en_reparacion', updatedAt: new Date().toISOString() }).where(eq(s.casosGarantia.id, id)).returning()
     return actualizado as unknown as CasoGarantia
   })
-}
+});
 
-export async function dispararReprocesoGarantiaAction(id: string): Promise<CasoGarantia | null> {
+export const dispararReprocesoGarantiaAction = protegerAccion({ permiso: "garantia:escribir" }, async function dispararReprocesoGarantiaAction(id: string): Promise<CasoGarantia | null> {
   return db.transaction(async (tx) => {
     const [caso] = await tx.select().from(s.casosGarantia).where(eq(s.casosGarantia.id, id))
     if (!caso || !caso.dentroGarantiaContractual) return null
@@ -195,20 +196,20 @@ export async function dispararReprocesoGarantiaAction(id: string): Promise<CasoG
     const [actualizado] = await tx.update(s.casosGarantia).set({ estado: 'en_reparacion', updatedAt: new Date().toISOString() }).where(eq(s.casosGarantia.id, id)).returning()
     return actualizado as unknown as CasoGarantia
   })
-}
+});
 
-export async function resolverCasoGarantiaAction(id: string, solucionAplicada: string): Promise<CasoGarantia | null> {
+export const resolverCasoGarantiaAction = protegerAccion({ permiso: "garantia:escribir" }, async function resolverCasoGarantiaAction(id: string, solucionAplicada: string): Promise<CasoGarantia | null> {
   if (solucionAplicada.trim().length === 0) return null
   const [actualizado] = await db.update(s.casosGarantia).set({ solucionAplicada, estado: 'resuelto', updatedAt: new Date().toISOString() }).where(eq(s.casosGarantia.id, id)).returning()
   return (actualizado as unknown as CasoGarantia) ?? null
-}
+});
 
-export async function cerrarCasoGarantiaAction(id: string): Promise<CasoGarantia | null> {
+export const cerrarCasoGarantiaAction = protegerAccion({ permiso: "garantia:escribir" }, async function cerrarCasoGarantiaAction(id: string): Promise<CasoGarantia | null> {
   const [actualizado] = await db.update(s.casosGarantia).set({ estado: 'cerrado', updatedAt: new Date().toISOString() }).where(eq(s.casosGarantia.id, id)).returning()
   return (actualizado as unknown as CasoGarantia) ?? null
-}
+});
 
-export async function agendarCitaGarantiaAction(data: { casoId: string; proyectoId: string; fecha: string }): Promise<CitaGarantia> {
+export const agendarCitaGarantiaAction = protegerAccion({ permiso: "garantia:escribir" }, async function agendarCitaGarantiaAction(data: { casoId: string; proyectoId: string; fecha: string }): Promise<CitaGarantia> {
   const [nuevo] = await db.insert(s.citasGarantia).values(data).returning()
   return nuevo as unknown as CitaGarantia
-}
+});

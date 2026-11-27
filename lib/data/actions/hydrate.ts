@@ -18,8 +18,9 @@ import {
   type SnapshotTablesResponse,
 } from '../snapshot-tables'
 import { requireSesionEmpleado } from '@/lib/auth/session'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function fetchVersionTokenAction(): Promise<string> {
+export const fetchVersionTokenAction = protegerAccion({ permiso: "erp:acceso" }, async function fetchVersionTokenAction(): Promise<string> {
   // Query barata: MAX(updated_at) de proyectos (toca casi todo flujo de negocio) +
   // COUNT(*) de un puñado de tablas de alto volumen de escritura, sumados en una
   // sola fila. No es un hash exhaustivo de las 55 tablas (eso volvería el poll tan
@@ -39,7 +40,7 @@ export async function fetchVersionTokenAction(): Promise<string> {
   `)
   const row = rows[0] as { max_updated: string; total: string } | undefined
   return `${row?.max_updated ?? '0'}:${row?.total ?? '0'}`
-}
+});
 
 const CARGADORES: Record<SnapshotTable, () => Promise<unknown[]>> = {
   proyectos: async () => db.select().from(s.proyectos),
@@ -121,10 +122,7 @@ const CARGADORES: Record<SnapshotTable, () => Promise<unknown[]>> = {
   plantillas_espacio: async () => db.select().from(s.plantillasEspacio),
 }
 
-export async function fetchSnapshotTablesAction(tablas: string[]): Promise<SnapshotTablesResponse> {
-  const sesion = await requireSesionEmpleado()
-  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
-
+export const fetchSnapshotTablesAction = protegerAccion({ permiso: "erp:acceso" }, async function fetchSnapshotTablesAction(tablas: string[]): Promise<SnapshotTablesResponse> {
   const unicas = [...new Set(tablas)]
   const version = await fetchVersionTokenAction()
   const resultados = await Promise.all(
@@ -151,9 +149,9 @@ export async function fetchSnapshotTablesAction(tablas: string[]): Promise<Snaps
   )
 
   return { version, tablas: resultados }
-}
+});
 
-export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
+export const fetchSnapshotAction = protegerAccion({ permiso: "erp:acceso" }, async function fetchSnapshotAction(): Promise<StoreSnapshot> {
   const version = await fetchVersionTokenAction()
   const [
     proyectos, clientes, espacios, items, artefactos, catalogo, parametros, contratosRows, hitos,
@@ -319,4 +317,4 @@ export async function fetchSnapshotAction(): Promise<StoreSnapshot> {
     espacioVarianteAcabados: espacioVarianteAcabados as StoreSnapshot['espacioVarianteAcabados'],
     plantillas: plantillas as StoreSnapshot['plantillas'],
   }
-}
+});

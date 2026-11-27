@@ -88,7 +88,7 @@ export default function CronogramaPage() {
 
   // --- P-09 Additional State (FIX 1: Decisión manual) ---
   const [mostrarFormDecisionManual, setMostrarFormDecisionManual] = useState(false)
-  const [decisionManualForm, setDecisionManualForm] = useState({ decision: '', autorizadoPor: '' })
+  const [decisionManualForm, setDecisionManualForm] = useState({ decision: '' })
 
   // --- P-10 Additional State (FIX 2: Escalar con escaladoA) ---
   const [novedadEnEscalacion, setNovedadEnEscalacion] = useState<string | null>(null)
@@ -377,27 +377,17 @@ export default function CronogramaPage() {
                             className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
                           />
                         </label>
-                        <label className="flex flex-col gap-1">
-                          <span className="text-xs text-text-muted">Autorizado por*</span>
-                          <input
-                            type="text"
-                            value={decisionManualForm.autorizadoPor}
-                            onChange={(e) => setDecisionManualForm(prev => ({ ...prev, autorizadoPor: e.target.value }))}
-                            placeholder="Ej. Javier García (Gerente)"
-                            className="rounded border border-border-subtle bg-bg-raised px-2 py-1 text-xs text-text-heading focus:border-gold-400 focus:outline-none"
-                          />
-                        </label>
+                        <p className="text-xs text-text-muted">Quedará registrada a tu nombre (sesión actual).</p>
                         <div className="flex gap-2 pt-1">
                           <button
                             type="button"
                             onClick={async () => {
-                              if (decisionManualForm.decision.trim() && decisionManualForm.autorizadoPor.trim()) {
+                              if (decisionManualForm.decision.trim()) {
                                 await store.desfases.decisionManual(ultimoDesfaseAplicado.id, {
                                   decisionManual: decisionManualForm.decision,
-                                  autorizadoPor: decisionManualForm.autorizadoPor,
                                 })
                                 setMostrarFormDecisionManual(false)
-                                setDecisionManualForm({ decision: '', autorizadoPor: '' })
+                                setDecisionManualForm({ decision: '' })
                               }
                             }}
                             className="rounded bg-gold-500 px-3 py-1 text-xs font-medium text-white hover:bg-gold-600 transition-colors"
@@ -408,7 +398,7 @@ export default function CronogramaPage() {
                             type="button"
                             onClick={() => {
                               setMostrarFormDecisionManual(false)
-                              setDecisionManualForm({ decision: '', autorizadoPor: '' })
+                              setDecisionManualForm({ decision: '' })
                             }}
                             className="rounded border border-border-subtle px-3 py-1 text-xs text-text-muted hover:bg-bg-alt transition-colors"
                           >

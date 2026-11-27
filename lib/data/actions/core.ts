@@ -13,6 +13,7 @@ function fotosAGuardar(imagenes: unknown, fotosLegacy: unknown) {
   const origen = imagenes !== undefined ? imagenes : fotosLegacy
   return sanitizarGuardadas(origen, (u) => sanitizarUrlsFotos([u])?.[0] ?? null)
 }
+import { exigirVerificadorValido } from '@/lib/auth/verificadores'
 import { num, sanitizarCamposPersonalizados } from './mappers'
 import { registrarConversionOfflineDeContrato } from '../conversion-offline'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
@@ -34,8 +35,9 @@ import type {
 // VarianteNoEliminableError vive en errors.ts (no en 'use server':
 // Next.js prohíbe exportar clases desde archivos 'use server').
 import { VarianteNoEliminableError } from '../errors'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function actualizarEstadoProyectoAction(id: string, estado: string): Promise<Proyecto | null> {
+export const actualizarEstadoProyectoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarEstadoProyectoAction(id: string, estado: string): Promise<Proyecto | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.proyectos).where(eq(s.proyectos.id, id))
     if (!actual) return null
@@ -56,9 +58,9 @@ export async function actualizarEstadoProyectoAction(id: string, estado: string)
     })
     return actualizado as unknown as Proyecto
   })
-}
+});
 
-export async function eliminarProyectoAction(id: string): Promise<boolean> {
+export const eliminarProyectoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function eliminarProyectoAction(id: string): Promise<boolean> {
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.select().from(s.proyectos).where(eq(s.proyectos.id, id))
     if (!proyecto) return false
@@ -156,9 +158,9 @@ export async function eliminarProyectoAction(id: string): Promise<boolean> {
     await tx.delete(s.proyectos).where(eq(s.proyectos.id, id))
     return true
   })
-}
+});
 
-export async function actualizarParametrosFinancierosAction(
+export const actualizarParametrosFinancierosAction = protegerAccion({ permiso: "finanzas:escribir" }, async function actualizarParametrosFinancierosAction(
   id: string,
   partial: Partial<Pick<Proyecto, 'aplicaIva' | 'porcentajeIva' | 'garantiaAnios' | 'costosOperativos' | 'imprevistosInstalacion' | 'descuentoComercial' | 'ajusteArbitrario'>>
 ): Promise<Proyecto | null> {
@@ -204,22 +206,24 @@ export async function actualizarParametrosFinancierosAction(
     }
     return (actualizado as unknown as Proyecto) ?? null
   })
-}
+});
 
 /** Campos monetarios de proyecto que se auditan al cambiar (t-195). */
 const CAMPOS_MONTO_PROYECTO = ['costosOperativos', 'imprevistosInstalacion', 'descuentoComercial', 'ajusteArbitrario'] as const
 
-export async function actualizarVerificadorAction(id: string, verificadorId: string): Promise<Proyecto | null> {
+export const actualizarVerificadorAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarVerificadorAction(id: string, verificadorId: string): Promise<Proyecto | null> {
+  // El verificador debe ser un empleado activo con rol de verificador (D3/I-035). Si no, lanza.
+  await exigirVerificadorValido(verificadorId)
   const [actualizado] = await db.update(s.proyectos)
     .set({ verificadorId, comercialVendedorId: verificadorId, updatedAt: new Date().toISOString() })
     .where(eq(s.proyectos.id, id)).returning()
   return (actualizado as unknown as Proyecto) ?? null
-}
+});
 
 // t-143: edición flexible de datos maestros de la cotización. Actualiza solo los
 // campos pasados (partial) y toca updatedAt. Los campos con orden de negocio
 // (estado vía kanban, IVA/garantía vía actualizarParametrosFinancieros) quedan fuera.
-export async function actualizarProyectoAction(
+export const actualizarProyectoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarProyectoAction(
   id: string,
   partial: Partial<Pick<Proyecto, 'nombreProyecto' | 'clienteId' | 'tipoProyecto' | 'direccionObra' | 'descripcionSemantica' | 'diasEntregaEstimados'>>
 ): Promise<Proyecto | null> {
@@ -227,9 +231,9 @@ export async function actualizarProyectoAction(
     .set({ ...partial, tipoProyecto: partial.tipoProyecto as 'personalizado' | 'producto_fijo' | undefined, updatedAt: new Date().toISOString() })
     .where(eq(s.proyectos.id, id)).returning()
   return (actualizado as unknown as Proyecto) ?? null
-}
+});
 
-export async function crearProyectoAction(data: Partial<Proyecto> & { nombreProyecto: string }): Promise<Proyecto> {
+export const crearProyectoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function crearProyectoAction(data: Partial<Proyecto> & { nombreProyecto: string }): Promise<Proyecto> {
   // id opcional generado en el cliente (crypto.randomUUID()) para creación optimista (piloto
   // 2026-08-20, plan "optimistic create"): si no viene, Postgres sigue usando defaultRandom()
   // igual que antes. onConflictDoNothing hace que un reintento con el mismo id (retry de red,
@@ -280,7 +284,7 @@ export async function crearProyectoAction(data: Partial<Proyecto> & { nombreProy
     }
   }
   throw new Error('crearProyectoAction: no se pudo asignar un codigo único tras 5 intentos')
-}
+});
 
 /** t-150: cuenta las cotizaciones de HOY (prefijo `COT-AAAA-MM-DD`) y devuelve la siguiente secuencia. */
 async function siguienteCodigoCotizacion(): Promise<string> {
@@ -290,12 +294,12 @@ async function siguienteCodigoCotizacion(): Promise<string> {
   return generarCodigoCotizacion(hoy, rows.length + 1)
 }
 
-export async function historialEstadoAction(proyectoId: string): Promise<ProyectosEstadosHistorial[]> {
+export const historialEstadoAction = protegerAccion({ permiso: "proyectos:leer" }, async function historialEstadoAction(proyectoId: string): Promise<ProyectosEstadosHistorial[]> {
   const rows = await db.select().from(s.proyectosEstadosHistorial).where(eq(s.proyectosEstadosHistorial.proyectoId, proyectoId))
   return rows as unknown as ProyectosEstadosHistorial[]
-}
+});
 
-export async function crearClienteAction(data: Partial<Cliente> & { nombre: string }): Promise<Cliente> {
+export const crearClienteAction = protegerAccion({ permiso: "clientes:escribir" }, async function crearClienteAction(data: Partial<Cliente> & { nombre: string }): Promise<Cliente> {
   const validado = validarEntrada(clienteCrearSchema, data)
   const [nuevo] = await db.insert(s.clientes).values({
     nombre: validado.nombre,
@@ -305,11 +309,11 @@ export async function crearClienteAction(data: Partial<Cliente> & { nombre: stri
     domicilio: validado.domicilio ?? null,
   }).returning()
   return nuevo as unknown as Cliente
-}
+});
 
 // t-143: edición de datos maestros del cliente. Actualiza solo los campos pasados
 // (partial); no se puede cambiar el id.
-export async function actualizarClienteAction(
+export const actualizarClienteAction = protegerAccion({ permiso: "clientes:escribir" }, async function actualizarClienteAction(
   id: string,
   partial: Partial<Omit<Cliente, 'id'>>
 ): Promise<Cliente | null> {
@@ -318,9 +322,9 @@ export async function actualizarClienteAction(
     .set({ ...validado, updatedAt: new Date().toISOString() })
     .where(eq(s.clientes.id, id)).returning()
   return (actualizado as unknown as Cliente) ?? null
-}
+});
 
-export async function crearEspacioAction(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante> {
+export const crearEspacioAction = protegerAccion({ permiso: "proyectos:escribir" }, async function crearEspacioAction(data: Partial<EspacioVariante> & { proyectoId: string; nombreEspacio: string }): Promise<EspacioVariante> {
   const validado = validarEntrada(espacioCrearSchema, data)
   return db.transaction(async (tx) => {
     let orden = validado.orden
@@ -351,18 +355,18 @@ export async function crearEspacioAction(data: Partial<EspacioVariante> & { proy
     if (existente) return existente as unknown as EspacioVariante
     throw new Error('crearEspacioAction: conflicto de id sin fila existente')
   })
-}
+});
 
-export async function actualizarJornadasAction(
+export const actualizarJornadasAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarJornadasAction(
   id: string,
   jornadas: { jornadasDesarrolloTecnico: string; jornadasEnsamblajeTaller: string; jornadasInstalacionObra: string }
 ): Promise<EspacioVariante | null> {
   const validado = validarEntrada(jornadasSchema, jornadas)
   const [actualizado] = await db.update(s.espacioVariantes).set(validado).where(eq(s.espacioVariantes.id, id)).returning()
   return (actualizado as unknown as EspacioVariante) ?? null
-}
+});
 
-export async function actualizarEspacioAction(
+export const actualizarEspacioAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarEspacioAction(
   id: string,
   partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia' | 'imagenesEspacio' | 'imagenesDisenio' | 'imagenesReferencia'>>
 ): Promise<EspacioVariante | null> {
@@ -434,9 +438,9 @@ export async function actualizarEspacioAction(
         : {}),
     };
   });
-}
+});
 
-export async function duplicarEspacioAction(id: string, opciones: { vacio: boolean; nuevoNombreEspacio?: string }): Promise<EspacioVariante | null> {
+export const duplicarEspacioAction = protegerAccion({ permiso: "proyectos:escribir" }, async function duplicarEspacioAction(id: string, opciones: { vacio: boolean; nuevoNombreEspacio?: string }): Promise<EspacioVariante | null> {
   return db.transaction(async (tx) => {
     const [origen] = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, id))
     if (!origen) return null
@@ -500,9 +504,9 @@ export async function duplicarEspacioAction(id: string, opciones: { vacio: boole
 
     return nuevo as unknown as EspacioVariante
   })
-}
+});
 
-export async function marcarActivaEspacioAction(id: string): Promise<EspacioVariante | null> {
+export const marcarActivaEspacioAction = protegerAccion({ permiso: "proyectos:escribir" }, async function marcarActivaEspacioAction(id: string): Promise<EspacioVariante | null> {
   return db.transaction(async (tx) => {
     const [objetivo] = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, id))
     if (!objetivo) return null
@@ -519,9 +523,9 @@ export async function marcarActivaEspacioAction(id: string): Promise<EspacioVari
     const [actualizado] = await tx.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, id))
     return (actualizado as unknown as EspacioVariante) ?? null
   })
-}
+});
 
-export async function crearItemAction(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante> {
+export const crearItemAction = protegerAccion({ permiso: "proyectos:escribir" }, async function crearItemAction(data: Partial<ItemVariante> & { varianteId: string; catalogoId: string | null; cantidad: string }): Promise<ItemVariante> {
   const validado = validarEntrada(itemCrearSchema, data)
   const precioUnitario = validado.precioUnitario ?? '0'
   // DEC-1 (2026-09-05, plan_cotizador_tanstack_query.md): id opcional cliente-generado
@@ -563,9 +567,9 @@ export async function crearItemAction(data: Partial<ItemVariante> & { varianteId
     throw new Error('crearItemAction: conflicto de id sin fila existente')
   }
   return nuevo as unknown as ItemVariante
-}
+});
 
-export async function actualizarItemAction(
+export const actualizarItemAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarItemAction(
   id: string,
   partial: Partial<Pick<ItemVariante, 'catalogoId' | 'cantidad' | 'precioUnitario' | 'nombrePersonalizado' | 'anulado' | 'esReferencial' | 'fuenteReferencial' | 'grupoReferencial' | 'comentario' | 'grupoItemId' | 'fotoUrl' | 'marca' | 'referencia' | 'color' | 'dimensiones' | 'acabado' | 'espesor' | 'camposPersonalizados' | 'jornadasDesarrolloTecnico' | 'jornadasEnsamblajeTaller' | 'jornadasInstalacionObra'>>
 ): Promise<ItemVariante | null> {
@@ -586,9 +590,9 @@ export async function actualizarItemAction(
     }).where(eq(s.itemsVariante.id, id)).returning()
     return actualizado as unknown as ItemVariante
   })
-}
+});
 
-export async function eliminarItemAction(id: string): Promise<boolean> {
+export const eliminarItemAction = protegerAccion({ permiso: "proyectos:escribir" }, async function eliminarItemAction(id: string): Promise<boolean> {
   return db.transaction(async (tx) => {
     const [item] = await tx.select().from(s.itemsVariante).where(eq(s.itemsVariante.id, id))
     if (!item) return false
@@ -634,13 +638,13 @@ export async function eliminarItemAction(id: string): Promise<boolean> {
       .returning({ id: s.itemsVariante.id })
     return Boolean(eliminado)
   })
-}
+});
 
 // --- Grupos de ítems de cotización (t-157, 2026-09-10) — árbol Espacio → Grupo → Subgrupo →
 // Ítems. Tabla NUEVA y SEPARADA de `modulos` (producción) — ver comentario de GrupoItem en
 // contracts.ts y de gruposItem en lib/db/schema.ts.
 
-export async function crearGrupoItemAction(espacioVarianteId: string, nombre: string, padreId: string | null = null): Promise<GrupoItem> {
+export const crearGrupoItemAction = protegerAccion({ permiso: "proyectos:escribir" }, async function crearGrupoItemAction(espacioVarianteId: string, nombre: string, padreId: string | null = null): Promise<GrupoItem> {
   return db.transaction(async (tx) => {
     const hermanos = await tx.select().from(s.gruposItem).where(
       padreId
@@ -655,9 +659,9 @@ export async function crearGrupoItemAction(espacioVarianteId: string, nombre: st
     }).returning()
     return nuevo as unknown as GrupoItem
   })
-}
+});
 
-export async function actualizarGrupoItemAction(
+export const actualizarGrupoItemAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarGrupoItemAction(
   id: string,
   cambios: Partial<Pick<GrupoItem, 'nombre' | 'padreId' | 'orden' | 'jornadasDesarrolloTecnico' | 'jornadasEnsamblajeTaller' | 'jornadasInstalacionObra' | 'estado'>>
 ): Promise<GrupoItem | null> {
@@ -668,7 +672,7 @@ export async function actualizarGrupoItemAction(
     }).where(eq(s.gruposItem.id, id)).returning()
     return (actualizado as unknown as GrupoItem) ?? null
   })
-}
+});
 
 /**
  * Decisión de diseño (t-157): bloquea con `false` si el grupo tiene subgrupos hijos (evita
@@ -676,7 +680,7 @@ export async function actualizarGrupoItemAction(
  * directamente, los reasigna a "sin grupo" (`grupoItemId = null`) antes de borrar — la
  * agrupación es opcional, así que perder el grupo nunca debe perder el ítem.
  */
-export async function eliminarGrupoItemAction(id: string): Promise<boolean> {
+export const eliminarGrupoItemAction = protegerAccion({ permiso: "proyectos:escribir" }, async function eliminarGrupoItemAction(id: string): Promise<boolean> {
   return db.transaction(async (tx) => {
     const [grupo] = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.id, id))
     if (!grupo) return false
@@ -698,12 +702,12 @@ export async function eliminarGrupoItemAction(id: string): Promise<boolean> {
     const [eliminado] = await tx.delete(s.gruposItem).where(eq(s.gruposItem.id, id)).returning({ id: s.gruposItem.id })
     return Boolean(eliminado)
   })
-}
+});
 
 /** 2026-10-29: Convertir grupo a producto compuesto de catálogo.
  * Crea un ProductoCatalogo con el grupo como "producto compuesto" que referencia sus ítems.
  * Marca el grupo como "permanente" y vincula `productoCatalogoId`. */
-export async function convertirGrupoAProductoAction(
+export const convertirGrupoAProductoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function convertirGrupoAProductoAction(
   grupoId: string,
   datosProducto: {
     nombreProducto: string
@@ -743,14 +747,14 @@ export async function convertirGrupoAProductoAction(
 
     return producto as unknown as ProductoCatalogo
   })
-}
+});
 
 /**
  * Duplicar un grupo completo (copia nombre, jornadas, contenedor descriptivo e items).
  * El grupo se inserta con orden = max(orden) + 1 y siempre en estado 'temporal'.
  * Los items copiados reciben nuevos ids automáticos.
  */
-export async function duplicarGrupoAction(grupoId: string): Promise<GrupoItem | null> {
+export const duplicarGrupoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function duplicarGrupoAction(grupoId: string): Promise<GrupoItem | null> {
   return db.transaction(async (tx) => {
     const [grupoOrigen] = await tx.select().from(s.gruposItem).where(eq(s.gruposItem.id, grupoId))
     if (!grupoOrigen) return null
@@ -805,7 +809,7 @@ export async function duplicarGrupoAction(grupoId: string): Promise<GrupoItem | 
 
     return grupoNuevo as unknown as GrupoItem
   })
-}
+});
 
 // --- Acabados asociados a un espacio de cotización (t-172, 2026-09-30) ---
 // Puente INSTANCIA con texto libre de destino ("fachadas módulo X", "mesón de isla"),
@@ -817,7 +821,7 @@ export async function duplicarGrupoAction(grupoId: string): Promise<GrupoItem | 
  * asociación anterior del espacio y se reinserta la nueva con `orden` reasignado — quitar un
  * acabado del medio no deja huecos en la numeración.
  */
-export async function reemplazarAcabadosEspacioAction(
+export const reemplazarAcabadosEspacioAction = protegerAccion({ permiso: "proyectos:escribir" }, async function reemplazarAcabadosEspacioAction(
   espacioVarianteId: string,
   items: { acabadoId: string; descripcionUso: string }[],
 ): Promise<EspacioVarianteAcabado[]> {
@@ -834,7 +838,7 @@ export async function reemplazarAcabadosEspacioAction(
     ).returning()
     return filas as unknown as EspacioVarianteAcabado[]
   })
-}
+});
 
 
 /**
@@ -850,7 +854,7 @@ export async function reemplazarAcabadosEspacioAction(
  *     `items_variante` de esa variante, y por último `espacio_variantes`.
  * @returns true si la fila de `espacio_variantes` existía y fue eliminada.
  */
-export async function eliminarEspacioAction(id: string): Promise<boolean> {
+export const eliminarEspacioAction = protegerAccion({ permiso: "proyectos:escribir" }, async function eliminarEspacioAction(id: string): Promise<boolean> {
   return db.transaction(async (tx) => {
     const items = await tx.select({ id: s.itemsVariante.id }).from(s.itemsVariante).where(eq(s.itemsVariante.varianteId, id))
 
@@ -903,9 +907,9 @@ export async function eliminarEspacioAction(id: string): Promise<boolean> {
     const [eliminado] = await tx.delete(s.espacioVariantes).where(eq(s.espacioVariantes.id, id)).returning({ id: s.espacioVariantes.id })
     return Boolean(eliminado)
   })
-}
+});
 
-export async function crearArtefactoAction(data: Partial<EspacioArtefacto> & { espacioVarianteId: string; categoria: EspacioArtefacto['categoria'] }): Promise<EspacioArtefacto> {
+export const crearArtefactoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function crearArtefactoAction(data: Partial<EspacioArtefacto> & { espacioVarianteId: string; categoria: EspacioArtefacto['categoria'] }): Promise<EspacioArtefacto> {
   // DEC-8 (plan_cotizador_tanstack_query.md): mismo contrato idempotente que crearItemAction/
   // crearEspacioAction — id opcional cliente-generado + onConflictDoNothing ante reintentos.
   const [nuevo] = await db.insert(s.espaciosArtefactos).values({
@@ -930,9 +934,9 @@ export async function crearArtefactoAction(data: Partial<EspacioArtefacto> & { e
     throw new Error('crearArtefactoAction: conflicto de id sin fila existente')
   }
   return nuevo as unknown as EspacioArtefacto
-}
+});
 
-export async function actualizarArtefactoAction(
+export const actualizarArtefactoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarArtefactoAction(
   id: string,
   partial: Partial<Pick<EspacioArtefacto, 'dimensionesMm' | 'tipoSpecifique' | 'ubicacion' | 'descripcion' | 'fotoUrls' | 'archivosUrls'>>
 ): Promise<EspacioArtefacto | null> {
@@ -941,9 +945,9 @@ export async function actualizarArtefactoAction(
   if (sanitizado.archivosUrls !== undefined) sanitizado.archivosUrls = sanitizarUrlsFotos(sanitizado.archivosUrls, { permitirExternas: false }) ?? []
   const [actualizado] = await db.update(s.espaciosArtefactos).set({ ...sanitizado, updatedAt: new Date().toISOString() }).where(eq(s.espaciosArtefactos.id, id)).returning()
   return (actualizado as unknown as EspacioArtefacto) ?? null
-}
+});
 
-export async function crearProductoCatalogoAction(data: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>> & { descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null> {
+export const crearProductoCatalogoAction = protegerAccion({ permiso: "catalogo:escribir" }, async function crearProductoCatalogoAction(data: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>> & { descripcion: string; unidadMedida: string }): Promise<ProductoCatalogo | null> {
   return db.transaction(async (tx) => {
     // t-165: SKU autogenerado server-side (abreviatura descripción + YYMMDD + sufijo ante
     // colisión) contra los skus ya existentes — nunca lo manda el cliente.
@@ -973,9 +977,9 @@ export async function crearProductoCatalogoAction(data: Partial<Omit<ProductoCat
     }).returning()
     return nuevo as unknown as ProductoCatalogo
   })
-}
+});
 
-export async function actualizarProductoCatalogoAction(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>>): Promise<ProductoCatalogo | null> {
+export const actualizarProductoCatalogoAction = protegerAccion({ permiso: "catalogo:escribir" }, async function actualizarProductoCatalogoAction(id: string, partial: Partial<Omit<ProductoCatalogo, 'id' | 'sku' | 'createdAt'>>): Promise<ProductoCatalogo | null> {
   return db.transaction(async (tx) => {
     const [actual] = await tx.select().from(s.productosCatalogo).where(eq(s.productosCatalogo.id, id))
     if (!actual) return null
@@ -1009,14 +1013,14 @@ export async function actualizarProductoCatalogoAction(id: string, partial: Part
     const [row] = await tx.update(s.productosCatalogo).set(setData).where(eq(s.productosCatalogo.id, id)).returning()
     return row as unknown as ProductoCatalogo
   })
-}
+});
 
-export async function eliminarProductoCatalogoAction(id: string): Promise<boolean> {
+export const eliminarProductoCatalogoAction = protegerAccion({ permiso: "catalogo:escribir" }, async function eliminarProductoCatalogoAction(id: string): Promise<boolean> {
   const [actualizado] = await db.update(s.productosCatalogo).set({ anulado: true, updatedAt: new Date().toISOString() }).where(eq(s.productosCatalogo.id, id)).returning()
   return Boolean(actualizado)
-}
+});
 
-export async function actualizarParametroAction(clave: string, datos: Partial<Parametro>): Promise<void> {
+export const actualizarParametroAction = protegerAccion({ permiso: "sistema:escribir" }, async function actualizarParametroAction(clave: string, datos: Partial<Parametro>): Promise<void> {
   const [actual] = await db.select().from(s.parametros).where(eq(s.parametros.clave, clave))
   if (actual) {
     await db.update(s.parametros).set({ ...datos, updatedAt: new Date().toISOString() }).where(eq(s.parametros.clave, clave))
@@ -1027,7 +1031,7 @@ export async function actualizarParametroAction(clave: string, datos: Partial<Pa
       unidad: datos.unidad ?? null, descripcion: datos.descripcion ?? `Parámetro ${clave} (generado automáticamente)`,
     })
   }
-}
+});
 
 /** Columnas del contrato que se escriben en alta y en edición. `proyectoId` y
  *  `codigoContrato` quedan AFUERA a propósito: son inmutables una vez creado el contrato
@@ -1094,7 +1098,7 @@ function filasHitos(contratoId: string, hitos: HitoPagoInput[]) {
   }))
 }
 
-export async function crearContratoAction(data: import('@/lib/data/contracts').DatosContratoNuevo): Promise<Contrato> {
+export const crearContratoAction = protegerAccion({ permiso: "contratos:escribir" }, async function crearContratoAction(data: import('@/lib/data/contracts').DatosContratoNuevo): Promise<Contrato> {
   const nuevo = await db.transaction(async (tx) => {
     const [creado] = await tx
       .insert(s.contratos)
@@ -1109,7 +1113,7 @@ export async function crearContratoAction(data: import('@/lib/data/contracts').D
 
   await registrarConversionOfflineDeContrato(nuevo)
   return nuevo
-}
+});
 
 /**
  * t-166: edita un contrato ya existente — el mecanismo que hacía falta para poder corregir
@@ -1121,7 +1125,7 @@ export async function crearContratoAction(data: import('@/lib/data/contracts').D
  * con el encabezado actualizado, el contrato impreso ya no cuadraría con los hitos.
  * Devuelve `null` si el id no existe.
  */
-export async function actualizarContratoAction(
+export const actualizarContratoAction = protegerAccion({ permiso: "contratos:escribir" }, async function actualizarContratoAction(
   id: string,
   data: import('@/lib/data/contracts').DatosContratoEdicion,
 ): Promise<Contrato | null> {
@@ -1147,14 +1151,14 @@ export async function actualizarContratoAction(
   // t-188: la cola es idempotente, así que re-editar el contrato no duplica el evento.
   if (actualizado) await registrarConversionOfflineDeContrato(actualizado)
   return actualizado
-}
+});
 
 // ── F-08-ext · Modo Presentación Comercial — Server Action (ZN-004) ──────
 /**
  * Crea una nota de reunión vinculada a un proyecto.
  * Append-only: las notas no se editan ni se eliminan (audit trail comercial).
  */
-export async function crearNotaReunionAction(data: {
+export const crearNotaReunionAction = protegerAccion({ permiso: "proyectos:escribir" }, async function crearNotaReunionAction(data: {
   proyectoId: string
   espacioVarianteId?: string | null
   categoria: import('@/lib/data/contracts').CategoriaNotaReunion
@@ -1172,7 +1176,7 @@ export async function crearNotaReunionAction(data: {
     })
     .returning()
   return nota as unknown as import('@/lib/data/contracts').NotaReunion
-}
+});
 
 // ── Fase 3.2 (2026-10-29) · Contenedores descriptivos con fotos ────────────
 /**
@@ -1181,7 +1185,7 @@ export async function crearNotaReunionAction(data: {
  */
 /** Lee el contenedor descriptivo de un grupo (descripción + fotos). Devuelve null si el
  *  grupo todavía no tiene contenedor — el editor de descripción lo trata como texto vacío. */
-export async function obtenerContenedorDescriptivoGrupoAction(
+export const obtenerContenedorDescriptivoGrupoAction = protegerAccion({ permiso: "proyectos:leer" }, async function obtenerContenedorDescriptivoGrupoAction(
   grupoItemId: string
 ): Promise<ContenedorDescriptivo | null> {
   const [contenedor] = await db
@@ -1190,9 +1194,9 @@ export async function obtenerContenedorDescriptivoGrupoAction(
     .where(eq(s.contenedoresDescriptivos.grupoItemId, grupoItemId))
     .limit(1)
   return (contenedor as unknown as ContenedorDescriptivo) ?? null
-}
+});
 
-export async function actualizarContenedorDescriptivoGrupoAction(
+export const actualizarContenedorDescriptivoGrupoAction = protegerAccion({ permiso: "proyectos:escribir" }, async function actualizarContenedorDescriptivoGrupoAction(
   grupoItemId: string,
   cambios: Partial<Pick<import('@/lib/data/contracts').ContenedorDescriptivo, 'descripcion' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
 ): Promise<import('@/lib/data/contracts').ContenedorDescriptivo | null> {
@@ -1240,14 +1244,14 @@ export async function actualizarContenedorDescriptivoGrupoAction(
 
     return actualizado as unknown as import('@/lib/data/contracts').ContenedorDescriptivo
   })
-}
+});
 
 // ════════════════════════════════════════════════════════════════════════════════
 // Solución 1 — Patrón Prototipo: Server Actions de Plantillas de Espacio
 // ════════════════════════════════════════════════════════════════════════════════
 
 /** CRUD de plantillas de espacio (clase/blueprint del catálogo). */
-export async function crearPlantillaEspacioAction(data: Partial<PlantillaEspacio> & { nombre: string }): Promise<PlantillaEspacio> {
+export const crearPlantillaEspacioAction = protegerAccion({ permiso: "catalogo:escribir" }, async function crearPlantillaEspacioAction(data: Partial<PlantillaEspacio> & { nombre: string }): Promise<PlantillaEspacio> {
   const validado = validarEntrada(plantillaCrearSchema, data)
   const [nuevo] = await db.insert(s.plantillasEspacio).values({
     id: validado.id,
@@ -1262,28 +1266,28 @@ export async function crearPlantillaEspacioAction(data: Partial<PlantillaEspacio
     jornadasInstalacionObra: validado.jornadasInstalacionObra ?? '0',
   }).returning()
   return nuevo as unknown as PlantillaEspacio
-}
+});
 
-export async function actualizarPlantillaEspacioAction(id: string, patch: Partial<PlantillaEspacio>): Promise<PlantillaEspacio | null> {
+export const actualizarPlantillaEspacioAction = protegerAccion({ permiso: "catalogo:escribir" }, async function actualizarPlantillaEspacioAction(id: string, patch: Partial<PlantillaEspacio>): Promise<PlantillaEspacio | null> {
   const validado = validarEntrada(plantillaActualizarSchema, patch)
   const [actualizado] = await db.update(s.plantillasEspacio)
     .set({ ...validado, updatedAt: new Date().toISOString() })
     .where(eq(s.plantillasEspacio.id, id))
     .returning()
   return (actualizado as unknown as PlantillaEspacio) ?? null
-}
+});
 
-export async function eliminarPlantillaEspacioAction(id: string): Promise<boolean> {
+export const eliminarPlantillaEspacioAction = protegerAccion({ permiso: "catalogo:escribir" }, async function eliminarPlantillaEspacioAction(id: string): Promise<boolean> {
   const eliminados = await db.delete(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, id)).returning({ id: s.plantillasEspacio.id })
   return eliminados.length > 0
-}
+});
 
-export async function listarPlantillasEspacioAction(): Promise<PlantillaEspacio[]> {
+export const listarPlantillasEspacioAction = protegerAccion({ permiso: "catalogo:leer" }, async function listarPlantillasEspacioAction(): Promise<PlantillaEspacio[]> {
   const rows = await db.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.activa, true))
   return rows as unknown as PlantillaEspacio[]
-}
+});
 
-export async function obtenerPlantillaEspacioAction(id: string): Promise<PlantillaEspacioHidratado | null> {
+export const obtenerPlantillaEspacioAction = protegerAccion({ permiso: "catalogo:leer" }, async function obtenerPlantillaEspacioAction(id: string): Promise<PlantillaEspacioHidratado | null> {
   const [plantilla] = await db.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, id))
   if (!plantilla) return null
   const grupos = await db.select().from(s.plantillaGrupos).where(eq(s.plantillaGrupos.plantillaEspacioId, id))
@@ -1309,9 +1313,9 @@ export async function obtenerPlantillaEspacioAction(id: string): Promise<Plantil
     ...plantilla,
     grupos: raices as unknown as PlantillaGrupo[],
   } as unknown as PlantillaEspacioHidratado
-}
+});
 
-export async function crearPlantillaGrupoAction(plantillaEspacioId: string, nombre: string, padreId: string | null = null): Promise<PlantillaGrupo> {
+export const crearPlantillaGrupoAction = protegerAccion({ permiso: "catalogo:escribir" }, async function crearPlantillaGrupoAction(plantillaEspacioId: string, nombre: string, padreId: string | null = null): Promise<PlantillaGrupo> {
   return db.transaction(async (tx) => {
     const hermanos = await tx.select().from(s.plantillaGrupos).where(
       padreId
@@ -1326,9 +1330,9 @@ export async function crearPlantillaGrupoAction(plantillaEspacioId: string, nomb
     }).returning()
     return nuevo as unknown as PlantillaGrupo
   })
-}
+});
 
-export async function crearPlantillaItemAction(
+export const crearPlantillaItemAction = protegerAccion({ permiso: "catalogo:escribir" }, async function crearPlantillaItemAction(
   plantillaEspacioId: string,
   plantillaGrupoId: string | null,
   data: { nombrePersonalizado: string; cantidad?: string; precioUnitario?: string; esReferencial?: boolean; fuenteReferencial?: 'electrodomestico' | 'obra_civil' | 'servicio_tercero' | 'otro' | null; grupoReferencial?: string | null; orden?: number }
@@ -1359,9 +1363,9 @@ export async function crearPlantillaItemAction(
     }).returning()
     return nuevo as unknown as PlantillaItem
   })
-}
+});
 
-export async function materializarPlantillaAction(plantillaEspacioId: string, proyectoId: string): Promise<string> {
+export const materializarPlantillaAction = protegerAccion({ permiso: "cotizador:escribir" }, async function materializarPlantillaAction(plantillaEspacioId: string, proyectoId: string): Promise<string> {
   return db.transaction(async (tx) => {
     const [plantilla] = await tx.select().from(s.plantillasEspacio).where(eq(s.plantillasEspacio.id, plantillaEspacioId))
     if (!plantilla) throw new Error(`Plantilla no encontrada: ${plantillaEspacioId}`)
@@ -1444,9 +1448,9 @@ export async function materializarPlantillaAction(plantillaEspacioId: string, pr
 
     return espacioId
   })
-}
+});
 
-export async function guardarEspacioComoPlantillaAction(espacioId: string, nombre: string): Promise<PlantillaEspacio> {
+export const guardarEspacioComoPlantillaAction = protegerAccion({ permiso: "catalogo:escribir" }, async function guardarEspacioComoPlantillaAction(espacioId: string, nombre: string): Promise<PlantillaEspacio> {
   const [origen] = await db.select().from(s.espacioVariantes).where(eq(s.espacioVariantes.id, espacioId))
   if (!origen) throw new Error(`Espacio no encontrado: ${espacioId}`)
 
@@ -1505,9 +1509,9 @@ export async function guardarEspacioComoPlantillaAction(espacioId: string, nombr
 
     return plantilla as unknown as PlantillaEspacio
   })
-}
+});
 
-export async function eliminarPlantillaGrupoAction(id: string): Promise<boolean> {
+export const eliminarPlantillaGrupoAction = protegerAccion({ permiso: "catalogo:escribir" }, async function eliminarPlantillaGrupoAction(id: string): Promise<boolean> {
   return db.transaction(async (tx) => {
     const [grupo] = await tx.select().from(s.plantillaGrupos).where(eq(s.plantillaGrupos.id, id))
     if (!grupo) return false
@@ -1520,11 +1524,11 @@ export async function eliminarPlantillaGrupoAction(id: string): Promise<boolean>
     const [eliminado] = await tx.delete(s.plantillaGrupos).where(eq(s.plantillaGrupos.id, id)).returning({ id: s.plantillaGrupos.id })
     return Boolean(eliminado)
   })
-}
+});
 
-export async function resetearContenidoPlantillaAction(plantillaEspacioId: string): Promise<void> {
+export const resetearContenidoPlantillaAction = protegerAccion({ permiso: "catalogo:escribir" }, async function resetearContenidoPlantillaAction(plantillaEspacioId: string): Promise<void> {
   await db.transaction(async (tx) => {
     await tx.delete(s.plantillaItems).where(eq(s.plantillaItems.plantillaEspacioId, plantillaEspacioId))
     await tx.delete(s.plantillaGrupos).where(eq(s.plantillaGrupos.plantillaEspacioId, plantillaEspacioId))
   })
-}
+});

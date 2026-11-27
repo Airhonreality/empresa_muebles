@@ -7,13 +7,14 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import type { CatalogoEspacioArquitectonico } from '../contracts'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function listarCatalogoEspaciosAction(): Promise<CatalogoEspacioArquitectonico[]> {
+export const listarCatalogoEspaciosAction = protegerAccion({ permiso: "marketing:leer" }, async function listarCatalogoEspaciosAction(): Promise<CatalogoEspacioArquitectonico[]> {
   const rows = await db.select().from(s.catalogoEspaciosArquitectonicos)
   return rows as unknown as CatalogoEspacioArquitectonico[]
-}
+});
 
-export async function crearCatalogoEspacioAction(data: Partial<CatalogoEspacioArquitectonico> & { codigo: string; nombre: string }): Promise<CatalogoEspacioArquitectonico> {
+export const crearCatalogoEspacioAction = protegerAccion({ permiso: "marketing:escribir" }, async function crearCatalogoEspacioAction(data: Partial<CatalogoEspacioArquitectonico> & { codigo: string; nombre: string }): Promise<CatalogoEspacioArquitectonico> {
   const [nuevo] = await db.insert(s.catalogoEspaciosArquitectonicos).values({
     codigo: data.codigo,
     nombre: data.nombre,
@@ -25,17 +26,17 @@ export async function crearCatalogoEspacioAction(data: Partial<CatalogoEspacioAr
     modulosTipicosJson: data.modulosTipicosJson ?? null,
   }).returning()
   return nuevo as unknown as CatalogoEspacioArquitectonico
-}
+});
 
-export async function actualizarCatalogoEspacioAction(
+export const actualizarCatalogoEspacioAction = protegerAccion({ permiso: "marketing:escribir" }, async function actualizarCatalogoEspacioAction(
   id: string,
   partial: Partial<Pick<CatalogoEspacioArquitectonico, 'codigo' | 'nombre' | 'descripcion' | 'unidadBase' | 'rangoMinimo' | 'rangoMaximo' | 'ejemploTamanio' | 'modulosTipicosJson'>>
 ): Promise<CatalogoEspacioArquitectonico | null> {
   const [actualizado] = await db.update(s.catalogoEspaciosArquitectonicos).set(partial).where(eq(s.catalogoEspaciosArquitectonicos.id, id)).returning()
   return (actualizado as unknown as CatalogoEspacioArquitectonico) ?? null
-}
+});
 
-export async function eliminarCatalogoEspacioAction(id: string): Promise<boolean> {
+export const eliminarCatalogoEspacioAction = protegerAccion({ permiso: "marketing:escribir" }, async function eliminarCatalogoEspacioAction(id: string): Promise<boolean> {
   const eliminados = await db.delete(s.catalogoEspaciosArquitectonicos).where(eq(s.catalogoEspaciosArquitectonicos.id, id)).returning({ id: s.catalogoEspaciosArquitectonicos.id })
   return eliminados.length > 0
-}
+});

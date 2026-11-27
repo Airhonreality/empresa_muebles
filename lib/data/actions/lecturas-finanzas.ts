@@ -2,13 +2,10 @@
 
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
-import { requireSesionEmpleado } from '@/lib/auth/session'
 import type { FinanzasSnapshot } from '../queries/finanzas-types'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function obtenerSnapshotFinanzasAction(): Promise<FinanzasSnapshot> {
-  const sesion = await requireSesionEmpleado()
-  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
-
+export const obtenerSnapshotFinanzasAction = protegerAccion({ permiso: "finanzas:leer" }, async function obtenerSnapshotFinanzasAction(): Promise<FinanzasSnapshot> {
   const [
     cuentas,
     movimientos,
@@ -43,4 +40,4 @@ export async function obtenerSnapshotFinanzasAction(): Promise<FinanzasSnapshot>
     proyectos,
     registrosGate: registrosGate as unknown as FinanzasSnapshot['registrosGate'],
   }
-}
+});

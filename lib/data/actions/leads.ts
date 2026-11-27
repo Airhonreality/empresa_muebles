@@ -12,10 +12,10 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
-import { requireSesionEmpleado } from '@/lib/auth/session'
 import { validarEntrada } from '@/lib/validacion/validar'
 import type { Cliente, Lead } from '../contracts'
 import { registrarConversionOfflineDeContrato } from '../conversion-offline'
+import { protegerAccion } from '@/lib/auth/accion'
 
 const asociarSchema = z.object({
   leadId: z.uuid(),
@@ -27,14 +27,11 @@ const convertirSchema = z.object({
   leadId: z.uuid(),
 })
 
-export async function asociarLeadAClienteAction(input: {
+export const asociarLeadAClienteAction = protegerAccion({ permiso: "comercial:escribir" }, async function asociarLeadAClienteAction(input: {
   leadId: string
   clienteId: string
   proyectoId?: string | null
 }): Promise<Lead | null> {
-  const sesion = await requireSesionEmpleado()
-  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
-
   const { leadId, clienteId, proyectoId } = validarEntrada(asociarSchema, input)
 
   const [cliente] = await db
@@ -103,16 +100,13 @@ export async function asociarLeadAClienteAction(input: {
   }
 
   return (actualizado as unknown as Lead) ?? null
-}
+});
 
 /**
  * Crea el cliente a partir de los datos del lead y los deja asociados en la misma transacción.
  * Si el lead ya tenía cliente, devuelve el existente sin duplicarlo.
  */
-export async function convertirLeadEnClienteAction(input: { leadId: string }): Promise<Cliente | null> {
-  const sesion = await requireSesionEmpleado()
-  if (!sesion) throw new Error('No autorizado: se requiere sesión de empleado')
-
+export const convertirLeadEnClienteAction = protegerAccion({ permiso: "comercial:escribir" }, async function convertirLeadEnClienteAction(input: { leadId: string }): Promise<Cliente | null> {
   const { leadId } = validarEntrada(convertirSchema, input)
 
   return db.transaction(async (tx) => {
@@ -148,4 +142,4 @@ export async function convertirLeadEnClienteAction(input: { leadId: string }): P
 
     return cliente as unknown as Cliente
   })
-}
+});

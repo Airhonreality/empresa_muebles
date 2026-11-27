@@ -11,7 +11,8 @@ export default async function GarantiaPage() {
   const clienteId = await requireSesionCliente()
   if (!clienteId) redirect('/cuenta/login')
 
-  const data = await obtenerGarantiasClienteAction(clienteId)
+  // El clienteId lo toma la acción de la sesión de cliente (regla { cliente: true }); no se pasa.
+  const data = await obtenerGarantiasClienteAction()
 
   return <GarantiaHistorialClienteConReportar clienteId={clienteId} data={data} />
 }

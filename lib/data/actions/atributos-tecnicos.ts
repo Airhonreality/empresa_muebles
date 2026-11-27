@@ -7,8 +7,9 @@ import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual } from '@/lib/r2/sanitize'
 import type { AtributoTecnico } from '../contracts'
+import { protegerAccion } from '@/lib/auth/accion'
 
-export async function crearAtributoTecnicoAction(data: { tipoEspacio: string; titulo: string; cuerpo: string; badge?: string | null; imagenUrl?: string | null }): Promise<AtributoTecnico> {
+export const crearAtributoTecnicoAction = protegerAccion({ permiso: "marketing:escribir" }, async function crearAtributoTecnicoAction(data: { tipoEspacio: string; titulo: string; cuerpo: string; badge?: string | null; imagenUrl?: string | null }): Promise<AtributoTecnico> {
   const [{ value }] = await db.select({ value: count() }).from(s.atributosTecnicos)
   const [nuevo] = await db.insert(s.atributosTecnicos).values({
     tipoEspacio: data.tipoEspacio,
@@ -20,9 +21,9 @@ export async function crearAtributoTecnicoAction(data: { tipoEspacio: string; ti
     orden: value,
   }).returning()
   return nuevo as unknown as AtributoTecnico
-}
+});
 
-export async function actualizarAtributoTecnicoAction(
+export const actualizarAtributoTecnicoAction = protegerAccion({ permiso: "marketing:escribir" }, async function actualizarAtributoTecnicoAction(
   id: string,
   partial: Partial<Pick<AtributoTecnico, 'tipoEspacio' | 'titulo' | 'cuerpo' | 'badge' | 'imagenUrl' | 'visible' | 'orden'>>
 ): Promise<AtributoTecnico | null> {
@@ -30,9 +31,9 @@ export async function actualizarAtributoTecnicoAction(
   if (partial.imagenUrl !== undefined) sanitized.imagenUrl = sanitizarUrlIndividual(partial.imagenUrl);
   const [actualizado] = await db.update(s.atributosTecnicos).set(sanitized).where(eq(s.atributosTecnicos.id, id)).returning()
   return (actualizado as unknown as AtributoTecnico) ?? null
-}
+});
 
-export async function eliminarAtributoTecnicoAction(id: string): Promise<boolean> {
+export const eliminarAtributoTecnicoAction = protegerAccion({ permiso: "marketing:escribir" }, async function eliminarAtributoTecnicoAction(id: string): Promise<boolean> {
   const eliminados = await db.delete(s.atributosTecnicos).where(eq(s.atributosTecnicos.id, id)).returning({ id: s.atributosTecnicos.id })
   return eliminados.length > 0
-}
+});
