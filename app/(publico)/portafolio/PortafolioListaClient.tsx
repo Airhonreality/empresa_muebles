@@ -1,5 +1,6 @@
 'use client';
 
+import { urlsDe } from '@/lib/imagen/persistencia';
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -44,7 +45,7 @@ export function PortafolioListaClient({ proyectos }: { proyectos: Portafolio[] }
   }, []);
 
   const activeProyecto = proyectos.find((p) => p.id === hoveredProyectoId) || proyectos[0];
-  const activeImage = activeProyecto?.imagenPortafolioUrl || activeProyecto?.galeriaPortafolioUrl?.[0] || '';
+  const activeImage = activeProyecto?.imagenPortafolioUrl || urlsDe(activeProyecto?.galeriaPortafolioUrl)[0] || '';
 
   if (proyectos.length === 0) {
     return (
@@ -168,7 +169,7 @@ export function PortafolioListaClient({ proyectos }: { proyectos: Portafolio[] }
         </div>
 
         {proyectos.map((proyecto, index) => {
-          const mainImg = proyecto.imagenPortafolioUrl || proyecto.galeriaPortafolioUrl?.[0];
+          const mainImg = proyecto.imagenPortafolioUrl || urlsDe(proyecto.galeriaPortafolioUrl)[0];
           return (
             <Link
               key={proyecto.id}

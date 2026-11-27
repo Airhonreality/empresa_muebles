@@ -1,5 +1,6 @@
 'use client';
 
+import { urlsDe } from '@/lib/imagen/persistencia';
 import { useState, useEffect, useCallback } from 'react';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton'
 import Image from 'next/image';
@@ -98,7 +99,7 @@ export function PortafolioDetalleClient({ proyecto }: { proyecto: Portafolio }) 
   // Deduplicación estricta de URLs
   const urlsUnicas = Array.from(new Set([
     proyecto.imagenPortafolioUrl,
-    ...(proyecto.galeriaPortafolioUrl || [])
+    ...urlsDe(proyecto.galeriaPortafolioUrl)
   ].filter(Boolean) as string[]));
 
   const imagenes = urlsUnicas.length > 0

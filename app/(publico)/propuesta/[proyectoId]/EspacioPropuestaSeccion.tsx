@@ -1,5 +1,6 @@
 'use client'
 
+import { urlsDe } from '@/lib/imagen/persistencia';
 import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Expand } from 'lucide-react'
@@ -61,7 +62,7 @@ function ItemCard({ item, producto, onDetalle }: ItemCardProps) {
   const precioUnitario = parseNum(item.precioUnitario)
   const total = parseNum(item.totalLinea)
   const fotoItem = item.fotoUrl ?? null
-  const galeria = [fotoItem, producto?.imagenUrl, ...(producto?.galeriaImagenesUrl ?? [])].filter(Boolean) as string[]
+  const galeria = [fotoItem, producto?.imagenUrl, ...urlsDe(producto?.galeriaImagenesUrl)].filter(Boolean) as string[]
   const imagen = galeria[0] ?? null
 
   return (

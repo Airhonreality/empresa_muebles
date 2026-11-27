@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { urlsDe } from '@/lib/imagen/persistencia';
 import { LinkButton } from '@/components/veta/button';
 import { obtenerPortafolioPorSlugAction } from '@/lib/data/actions/portafolio';
 import { SITE_URL } from '@/lib/seo/jsonld';
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   }
 
   const descripcion = proyecto.descripcionComercial || `Proyecto de carpintería arquitectónica: ${proyecto.titulo}`;
-  const imagen = proyecto.imagenPortafolioUrl || proyecto.galeriaPortafolioUrl[0];
+  const imagen = proyecto.imagenPortafolioUrl || urlsDe(proyecto.galeriaPortafolioUrl)[0];
 
   return {
     title: `${proyecto.titulo} — Portafolio Veta Dorada`,
@@ -63,7 +64,7 @@ export default async function PortafolioDetallePage({ params }: RouteParams) {
   // JSON-LD CreativeWork + ImageObject + BreadcrumbList (plan_seo_2026.md §2, auditoría SEO
   // 2026-08-19 checklist #7). Sin precios (precio_referencial no se publica), sin dirección
   // exacta — barrio sí (es contenido público del portafolio, I-049).
-  const imagenes = [proyecto.imagenPortafolioUrl, ...proyecto.galeriaPortafolioUrl].filter(Boolean) as string[];
+  const imagenes = [proyecto.imagenPortafolioUrl, ...urlsDe(proyecto.galeriaPortafolioUrl)].filter(Boolean) as string[];
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
