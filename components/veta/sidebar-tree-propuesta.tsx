@@ -1,5 +1,7 @@
 'use client'
 
+import { formatCurrency } from '@/lib/utils/format'
+
 /* Sidebar interactivo de la propuesta pública (rediseño 2026-10-29).
    Reemplaza el frame estático de "Inversión total" por un árbol navegable:
    Espacio → Grupo/Subgrupo → Versiones, con el valor de cada nodo. El nodo
@@ -7,15 +9,6 @@
    fila lleva a su sección. Abajo, separadas del árbol, van las filas extra de
    costos (operativos, financieros, impuestos) y el total: la factura en su
    estado más puro. Es el mismo componente para escritorio y móvil. */
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 export interface NodoGrupoPropuesta {
   id: string
@@ -87,32 +80,32 @@ export function ResumenCostosPropuesta({ costos }: { costos: CostosPropuesta }) 
     <section className="rounded-lg border border-border-subtle bg-bg-raised p-4 shadow-sm">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-muted">Inversión total</h2>
       <div className="space-y-1.5 text-sm">
-        <FilaCosto etiqueta="Materiales" valor={formatCOP(costos.materialesTotal)} />
-        <FilaCosto etiqueta="Mano de obra" valor={formatCOP(costos.moTotal)} />
-        {costos.moDev > 0 && <FilaCosto etiqueta="· Desarrollo técnico" valor={formatCOP(costos.moDev)} clase="pl-4 text-xs" />}
-        {costos.moEns > 0 && <FilaCosto etiqueta="· Ensamblaje" valor={formatCOP(costos.moEns)} clase="pl-4 text-xs" />}
-        {costos.moInst > 0 && <FilaCosto etiqueta="· Instalación" valor={formatCOP(costos.moInst)} clase="pl-4 text-xs" />}
-        {costos.costosOperativos > 0 && <FilaCosto etiqueta="Costos operativos" valor={formatCOP(costos.costosOperativos)} />}
-        {costos.imprevistos > 0 && <FilaCosto etiqueta="Imprevistos" valor={formatCOP(costos.imprevistos)} />}
+        <FilaCosto etiqueta="Materiales" valor={formatCurrency(costos.materialesTotal)} />
+        <FilaCosto etiqueta="Mano de obra" valor={formatCurrency(costos.moTotal)} />
+        {costos.moDev > 0 && <FilaCosto etiqueta="· Desarrollo técnico" valor={formatCurrency(costos.moDev)} clase="pl-4 text-xs" />}
+        {costos.moEns > 0 && <FilaCosto etiqueta="· Ensamblaje" valor={formatCurrency(costos.moEns)} clase="pl-4 text-xs" />}
+        {costos.moInst > 0 && <FilaCosto etiqueta="· Instalación" valor={formatCurrency(costos.moInst)} clase="pl-4 text-xs" />}
+        {costos.costosOperativos > 0 && <FilaCosto etiqueta="Costos operativos" valor={formatCurrency(costos.costosOperativos)} />}
+        {costos.imprevistos > 0 && <FilaCosto etiqueta="Imprevistos" valor={formatCurrency(costos.imprevistos)} />}
         {costos.descuento > 0 && (
           <div className="flex justify-between gap-3">
             <span className="text-text-muted">Descuento</span>
-            <span className="font-mono tabular-nums text-red-600">−{formatCOP(costos.descuento)}</span>
+            <span className="font-mono tabular-nums text-red-600">−{formatCurrency(costos.descuento)}</span>
           </div>
         )}
         {costos.ajuste !== 0 && (
           <FilaCosto
             etiqueta="Ajuste"
-            valor={`${costos.ajuste > 0 ? '+' : '−'}${formatCOP(Math.abs(costos.ajuste))}`}
+            valor={`${costos.ajuste > 0 ? '+' : '−'}${formatCurrency(Math.abs(costos.ajuste))}`}
           />
         )}
         {costos.iva > 0 && <hr className="my-2 border-border-subtle" />}
-        {costos.iva > 0 && <FilaCosto etiqueta="Subtotal" valor={formatCOP(costos.subtotal)} />}
-        {costos.iva > 0 && <FilaCosto etiqueta={`IVA (${costos.porcentajeIva}%)`} valor={formatCOP(costos.iva)} />}
+        {costos.iva > 0 && <FilaCosto etiqueta="Subtotal" valor={formatCurrency(costos.subtotal)} />}
+        {costos.iva > 0 && <FilaCosto etiqueta={`IVA (${costos.porcentajeIva}%)`} valor={formatCurrency(costos.iva)} />}
         <hr className="my-2 border-border-subtle" />
         <div className="border-l-2 border-gold-400 pl-3">
           <span className="block text-xs font-medium text-text-muted">Inversión total</span>
-          <span className="font-display text-2xl text-text-heading">{formatCOP(costos.total)}</span>
+          <span className="font-display text-2xl text-text-heading">{formatCurrency(costos.total)}</span>
         </div>
       </div>
     </section>
@@ -143,7 +136,7 @@ export function SidebarTreePropuesta({
           }`}
         >
           <span className="min-w-0 flex-1 truncate">{grupo.nombre}</span>
-          <span className="shrink-0 font-mono tabular-nums">{formatCOP(grupo.total)}</span>
+          <span className="shrink-0 font-mono tabular-nums">{formatCurrency(grupo.total)}</span>
         </button>
         {grupo.hijos.map((hijo) => renderGrupo(hijo, nivel + 1))}
       </div>
@@ -180,7 +173,7 @@ export function SidebarTreePropuesta({
                       </span>
                       {nodo.nombre}
                     </span>
-                    <span className="shrink-0 font-mono text-xs tabular-nums">{formatCOP(nodo.total)}</span>
+                    <span className="shrink-0 font-mono text-xs tabular-nums">{formatCurrency(nodo.total)}</span>
                   </button>
 
                   {nodo.grupos.map((grupo) => renderGrupo(grupo, 1))}
@@ -205,7 +198,7 @@ export function SidebarTreePropuesta({
                               </span>
                             )}
                           </span>
-                          <span className="shrink-0 font-mono tabular-nums">{formatCOP(variante.total)}</span>
+                          <span className="shrink-0 font-mono tabular-nums">{formatCurrency(variante.total)}</span>
                         </button>
                       ))}
                     </div>

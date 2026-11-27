@@ -6,6 +6,7 @@ import { CotizadorCompatProvider, useCotizadorCompat } from '@/lib/data/queries/
 import { Button } from '@/components/veta/button'
 import { numeroALetrasPesos } from '@/lib/utils/numero-a-letras'
 import { repartirHitos } from '@/lib/dinero/calculo'
+import { MESES_ES } from '@/lib/catalogos/meses'
 
 // Cuenta de cobro estándar Colombia (t-163 / t-178), mismo pipeline que el contrato:
 // página imprimible + window.print(), NO PDF binario. Se eliminó el generador
@@ -36,16 +37,11 @@ function fmtCOP(v: number): string {
   )
 }
 
-const MESES = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
-]
-
 /** 'AAAA-MM-DD' → '15 de octubre de 2026' (o la fecha de hoy si no llega). */
 function fechaTexto(iso: string | null | undefined): string {
   const base = iso && /^\d{4}-\d{2}-\d{2}/.test(iso) ? iso.slice(0, 10) : new Date().toISOString().slice(0, 10)
   const [year, month, day] = base.split('-')
-  const mes = MESES[parseInt(month, 10) - 1] ?? month
+  const mes = MESES_ES[parseInt(month, 10) - 1] ?? month
   return `${parseInt(day, 10)} de ${mes} de ${year}`
 }
 

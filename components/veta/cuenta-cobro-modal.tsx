@@ -8,20 +8,12 @@ import { type HitoPago } from '@/lib/data/contracts'
 import { type Cliente } from '@/lib/data/contracts'
 import { type Proyecto } from '@/lib/data/contracts'
 import { useToast } from '@/components/veta/toast-provider'
+import { formatCurrency } from '@/lib/utils/format'
 
 function parseNum(s: string | null | undefined): number {
   if (!s) return 0
   const n = Number(s)
   return Number.isFinite(n) ? n : 0
-}
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 interface CuentaCobroModalProps {
@@ -82,7 +74,7 @@ export function CuentaCobroModal({
     const monto =
       h.tipo === 'percentage'
         ? `${h.montoOPorcentaje}% del total`
-        : formatCOP(parseNum(h.montoOPorcentaje))
+        : formatCurrency(parseNum(h.montoOPorcentaje))
     return `${h.orden}. ${h.razon} — ${monto}`
   })
 
@@ -157,10 +149,10 @@ export function CuentaCobroModal({
               <strong>Valor:</strong>{' '}
               {hitoSeleccionado.tipo === 'percentage'
                 ? `${hitoSeleccionado.montoOPorcentaje}% del contrato`
-                : formatCOP(parseNum(hitoSeleccionado.montoOPorcentaje))}
+                : formatCurrency(parseNum(hitoSeleccionado.montoOPorcentaje))}
             </p>
             <p className="text-sm text-text-muted">
-              <strong>Valor total contrato:</strong> {formatCOP(parseNum(contrato.valorTotal))}
+              <strong>Valor total contrato:</strong> {formatCurrency(parseNum(contrato.valorTotal))}
             </p>
           </div>
         )}

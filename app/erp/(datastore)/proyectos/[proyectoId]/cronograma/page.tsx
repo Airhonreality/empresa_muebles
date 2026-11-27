@@ -6,6 +6,7 @@ import { Badge } from '@/components/veta/badge'
 import { Button } from '@/components/veta/button'
 import { useDataStore, type CronogramaEtapa, type CausaDesfase, type EstadoNovedadCritica, type DesenlaceCheck } from '@/lib/data'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
+import { ETAPAS_CRONOGRAMA_CONTRACTUAL } from '@/lib/catalogos/etapas-cronograma'
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -245,7 +246,7 @@ export default function CronogramaPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {['aprobacion', 'compras', 'ensamblaje', 'instalacion'].map(etapaKey => {
+                      {ETAPAS_CRONOGRAMA_CONTRACTUAL.map(etapaKey => {
                         const pair = etapasMap.get(etapaKey)
                         const contractual = pair?.contractual
                         const interna = pair?.interna

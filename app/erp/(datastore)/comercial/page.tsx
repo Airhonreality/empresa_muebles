@@ -6,61 +6,10 @@ import { Button } from '@/components/veta/button'
 import { Busqueda } from '@/components/veta/busqueda'
 import { useDataStore, type Proyecto, type Cliente, type TransicionesProyecto } from '@/lib/data'
 import { useSmartSearch } from '@/lib/hooks/useSmartSearch'
-
-// Macro-fases del proyecto
-type MacroFase = 'pre_venta' | 'cotizacion' | 'produccion' | 'instalacion' | 'post_venta';
+import { esTransicionValidaMacroFase } from '@/lib/data/transiciones-proyecto'
 
 // Estados del proyecto
 type EstadoProyecto = 'activa' | 'enviada' | 'negociacion' | 'en_contrato' | 'retoma' | 'pre_produccion' | 'produccion' | 'entregado' | 'perdida' | 'cancelada';
-
-// Macro-fase a la que pertenece cada estado
-const MACRO_FASE_POR_ESTADO: Record<EstadoProyecto, MacroFase> = {
-  activa: 'pre_venta',
-  enviada: 'cotizacion',
-  negociacion: 'cotizacion',
-  en_contrato: 'cotizacion',
-  retoma: 'cotizacion',
-  pre_produccion: 'produccion',
-  produccion: 'produccion',
-  entregado: 'instalacion',
-  perdida: 'post_venta',
-  cancelada: 'post_venta',
-};
-
-// Acciones permitidas por estado (solo transiciones válidas dentro de su macro-fase o a macro-fases adyacentes).
-// Bidireccional (2026-08-19): cada columna permite avanzar Y retroceder un paso dentro del corredor
-// canónico — enviada→activa, en_contrato→negociacion, produccion→pre_produccion, entregado→produccion.
-const ACCIONES_POR_ESTADO: Record<EstadoProyecto, { transiciones: string[]; puedeRetoma: boolean }> = {
-  activa: { transiciones: ['enviada', 'perdida', 'cancelada'], puedeRetoma: false },
-  enviada: { transiciones: ['activa', 'negociacion', 'en_contrato', 'perdida', 'cancelada'], puedeRetoma: false },
-  negociacion: { transiciones: ['en_contrato', 'enviada', 'perdida', 'cancelada'], puedeRetoma: false },
-  en_contrato: { transiciones: ['pre_produccion', 'retoma', 'negociacion', 'perdida', 'cancelada'], puedeRetoma: true },
-  retoma: { transiciones: ['en_contrato', 'pre_produccion', 'perdida', 'cancelada'], puedeRetoma: false },
-  pre_produccion: { transiciones: ['produccion', 'retoma', 'cancelada'], puedeRetoma: true },
-  produccion: { transiciones: ['entregado', 'retoma', 'pre_produccion', 'cancelada'], puedeRetoma: true },
-  entregado: { transiciones: ['produccion', 'perdida', 'cancelada'], puedeRetoma: false },
-  perdida: { transiciones: [], puedeRetoma: false },
-  cancelada: { transiciones: [], puedeRetoma: false },
-};
-
-// Orden de macro-fases para validar adyacencia
-const ORDEN_MACRO_FASES: MacroFase[] = ['pre_venta', 'cotizacion', 'produccion', 'instalacion', 'post_venta'];
-
-// Verifica si dos macro-fases son adyacentes (diferencia de 1 en el orden)
-const sonMacrosAdyacentes = (a: MacroFase, b: MacroFase): boolean => {
-  const idxA = ORDEN_MACRO_FASES.indexOf(a)
-  const idxB = ORDEN_MACRO_FASES.indexOf(b)
-  if (idxA === -1 || idxB === -1) return false
-  return Math.abs(idxA - idxB) <= 1
-}
-
-// Valida si una transición es válida según macro-fases
-const esTransicionValidaMacroFase = (estadoActual: EstadoProyecto, estadoDestino: string): boolean => {
-  const macroActual = MACRO_FASE_POR_ESTADO[estadoActual]
-  const macroDestino = MACRO_FASE_POR_ESTADO[estadoDestino as EstadoProyecto]
-  if (!macroActual || !macroDestino) return false
-  return macroActual === macroDestino || sonMacrosAdyacentes(macroActual, macroDestino)
-}
 
 type ColumnKey = { key: string; keys?: undefined; label: string; color: 'stone' | 'sky' | 'emerald' | 'amber' | 'red' | 'gray'; editable: boolean }
 type ColumnKeys = { key?: undefined; keys: string[]; label: string; color: 'stone' | 'sky' | 'emerald' | 'amber' | 'red' | 'gray'; editable: boolean }
@@ -160,13 +109,9 @@ function ProjectCard({
   const router = useRouter()
   const [menuAbierto, setMenuAbierto] = useState(false)
 
-  // Obtener acciones permitidas para este estado
   const estadoActual = proyecto.estado as EstadoProyecto;
-  const acciones = ACCIONES_POR_ESTADO[estadoActual] ?? { transiciones: [], puedeRetoma: false };
-
-  // Filtrar transiciones permitidas (intersección entre transiciones del store y ACCIONES_POR_ESTADO + validación macro-fase)
+  // Destinos permitidos: solo los que define el parámetro transiciones_proyecto, filtrados por macro-fase
   const estadosPosibles = (transiciones[estadoActual] ?? []).filter(destino =>
-    (acciones.transiciones.includes(destino) || (destino === 'retoma' && acciones.puedeRetoma)) &&
     esTransicionValidaMacroFase(estadoActual, destino)
   );
 

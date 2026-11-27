@@ -6,6 +6,7 @@ import { LinkButton, buttonClassName } from '@/components/veta/button'
 import { LogoutButton } from '@/components/veta/logout-button'
 import type { EstadoProyecto } from '@/lib/data'
 import type { ProyectosClienteData } from '@/lib/data/actions/public'
+import { formatCurrency } from '@/lib/utils/format'
 
 // F-07 Portal Cliente — Lista de proyectos del cliente autenticado.
 // Auditoría 2026-08-15 (A5): ya no consume useDataStore() — recibe los datos ya escopados a
@@ -54,15 +55,6 @@ const ESTADO_TONE: Record<EstadoProyecto, 'neutral' | 'info' | 'warning' | 'dang
   pre_produccion: 'info',
   produccion: 'warning',
   retoma: 'warning',
-}
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 function parseNum(s: string | null | undefined): number {
@@ -138,11 +130,11 @@ export function MisProyectosLista({ data }: MisProyectosListaProps) {
                     <span>Contrato: {contrato.codigoContrato}</span>
                   )}
                   {totalContrato > 0 && (
-                    <span className="font-mono">{formatCOP(totalContrato)}</span>
+                    <span className="font-mono">{formatCurrency(totalContrato)}</span>
                   )}
                   {obligaciones.length > 0 && (
                     <span>
-                      Pagado: {formatCOP(totalPagado)} / {formatCOP(totalContrato)}
+                      Pagado: {formatCurrency(totalPagado)} / {formatCurrency(totalContrato)}
                     </span>
                   )}
                 </div>

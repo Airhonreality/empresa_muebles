@@ -13,15 +13,7 @@ import { ProveedorFormModal } from '@/components/veta/proveedor-form-modal'
 import { useDataStore, type EstadoOrdenCompra, type MecanicaPagoOC, type OrdenCompra, type Proyecto, type Proveedor } from '@/lib/data'
 import { puedeCrearOrdenCompra } from '@/lib/modules/f4/gates'
 import { usePendingGuard } from '@/lib/hooks/usePendingGuard'
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 function numDe(s: string | null | undefined): number {
   const n = Number(s)
@@ -218,7 +210,7 @@ export default function ComprasPage() {
       header: 'Monto',
       align: 'center',
       sortValue: (o) => numDe(o.montoTotal),
-      render: (o) => <span className="font-mono">{formatCOP(numDe(o.montoTotal))}</span>,
+      render: (o) => <span className="font-mono">{formatCurrency(numDe(o.montoTotal))}</span>,
     },
     {
       key: 'mecanica',
@@ -560,7 +552,7 @@ export default function ComprasPage() {
           <div className="space-y-3 text-sm">
             <p className="text-xs text-text-muted">
               ¿Cancelar la orden de compra &quot;{ordenACancelar.codigoOrden}&quot; por{' '}
-              {formatCOP(numDe(ordenACancelar.montoTotal))}? Esta acción no se puede deshacer.
+              {formatCurrency(numDe(ordenACancelar.montoTotal))}? Esta acción no se puede deshacer.
             </p>
             <div className="flex gap-2 pt-2">
               <Button variant="destructive" size="md" onClick={handleCancelar}>

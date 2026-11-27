@@ -52,3 +52,39 @@ export function destinosProyectoValidos(estadoActual: string, valorParametro: un
   if (propios !== undefined) return propios
   return TRANSICIONES_PROYECTO_DEFAULT[estadoActual] ?? []
 }
+
+// Macro-fase de cada estado del proyecto. Regla de la UI de comercial: un proyecto solo puede
+// pasar a un destino de su misma macro-fase o de una macro-fase adyacente (ver abajo).
+export type MacroFase = 'pre_venta' | 'cotizacion' | 'produccion' | 'instalacion' | 'post_venta'
+
+export const MACRO_FASE_POR_ESTADO: Record<string, MacroFase> = {
+  activa: 'pre_venta',
+  enviada: 'cotizacion',
+  negociacion: 'cotizacion',
+  en_contrato: 'cotizacion',
+  retoma: 'cotizacion',
+  pre_produccion: 'produccion',
+  produccion: 'produccion',
+  entregado: 'instalacion',
+  perdida: 'post_venta',
+  cancelada: 'post_venta',
+}
+
+// Orden de macro-fases para validar adyacencia
+export const ORDEN_MACRO_FASES: MacroFase[] = ['pre_venta', 'cotizacion', 'produccion', 'instalacion', 'post_venta']
+
+// Verifica si dos macro-fases son adyacentes (diferencia de 1 en el orden)
+export function sonMacrosAdyacentes(a: MacroFase, b: MacroFase): boolean {
+  const idxA = ORDEN_MACRO_FASES.indexOf(a)
+  const idxB = ORDEN_MACRO_FASES.indexOf(b)
+  if (idxA === -1 || idxB === -1) return false
+  return Math.abs(idxA - idxB) <= 1
+}
+
+// Valida si una transición es válida según macro-fases
+export function esTransicionValidaMacroFase(estadoActual: string, estadoDestino: string): boolean {
+  const macroActual = MACRO_FASE_POR_ESTADO[estadoActual]
+  const macroDestino = MACRO_FASE_POR_ESTADO[estadoDestino]
+  if (!macroActual || !macroDestino) return false
+  return macroActual === macroDestino || sonMacrosAdyacentes(macroActual, macroDestino)
+}

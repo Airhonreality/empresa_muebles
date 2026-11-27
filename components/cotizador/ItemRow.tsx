@@ -8,15 +8,7 @@ import { MoneyInput } from '@/components/veta/money-input'
 import { Button } from '@/components/veta/button'
 import { Edit, Trash2, MoreVertical } from 'lucide-react'
 import { useIsMobile } from '@/lib/hooks/useMediaQuery'
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency } from '@/lib/utils/format'
 
 function parseNum(s: string | null | undefined): number {
   if (!s) return 0
@@ -73,7 +65,7 @@ export function ItemRow({
           </div>
         </div>
         <div className="flex items-end gap-2 text-right sm:ml-auto">
-          <span className="font-mono font-semibold text-sm sm:text-base">{formatCOP(total)}</span>
+          <span className="font-mono font-semibold text-sm sm:text-base">{formatCurrency(total)}</span>
         </div>
       </div>
 

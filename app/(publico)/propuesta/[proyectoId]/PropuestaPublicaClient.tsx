@@ -17,6 +17,7 @@ import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actio
 import { PropuestaPrintDocument } from './PropuestaPrintDocument'
 import { EspacioPropuestaSeccion } from './EspacioPropuestaSeccion'
 import { calcularTotalesCotizacion } from '@/lib/dinero/calculo'
+import { formatCurrency } from '@/lib/utils/format'
 
 // F-08 Propuesta pública (disenio_F08_propuesta_publica.md). Ruta simplificada
 // a /propuesta/[proyectoId] en vez de /propuesta/{slug}.
@@ -30,15 +31,6 @@ import { calcularTotalesCotizacion } from '@/lib/dinero/calculo'
 // entran a ningún total oficial: viven en el anexo "Cuadro de otros presupuestos".
 //
 // R1: snapshot de solo lectura, sin mutaciones. R5: sin botones de pago.
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 function parseNum(s: string | null | undefined): number {
   const n = Number(s)
@@ -389,7 +381,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                 <div className="inline-flex items-center gap-1.5 text-sm text-text-muted">
                   <Wallet size={16} strokeWidth={1.75} className="shrink-0 text-gold-400" />
                   <span className="block text-[10px] uppercase tracking-[0.14em] text-text-muted">Inversión total</span>
-                  <strong className="text-sm text-text-heading">{formatCOP(total)}</strong>
+                  <strong className="text-sm text-text-heading">{formatCurrency(total)}</strong>
                 </div>
               )}
             </div>
@@ -478,7 +470,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                     <div key={h.id} className="flex justify-between border-b border-border-subtle/50 py-1.5 text-sm last:border-0">
                       <span>{h.orden}. {h.razon}</span>
                       <span className="font-mono">
-                        {h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCOP(parseNum(h.montoOPorcentaje))}
+                        {h.tipo === 'percentage' ? `${h.montoOPorcentaje}%` : formatCurrency(parseNum(h.montoOPorcentaje))}
                       </span>
                     </div>
                   ))}
@@ -528,7 +520,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
                           {f.nombre}
                           <span className="ml-2 text-xs text-text-muted">· {f.espacio}</span>
                         </span>
-                        <span className="shrink-0 font-mono tabular-nums">{formatCOP(f.valor)}</span>
+                        <span className="shrink-0 font-mono tabular-nums">{formatCurrency(f.valor)}</span>
                       </div>
                     ))}
                   </div>
@@ -536,7 +528,7 @@ export function PropuestaPublicaClient({ data, banner }: { data: PropuestaPublic
               </div>
               <div className="mt-4 flex items-baseline justify-between border-t border-border-subtle pt-3">
                 <span className="text-sm font-medium text-text-heading">Total otros presupuestos</span>
-                <span className="font-display text-lg text-text-heading">{formatCOP(anexo.total)}</span>
+                <span className="font-display text-lg text-text-heading">{formatCurrency(anexo.total)}</span>
               </div>
             </div>
           </section>
