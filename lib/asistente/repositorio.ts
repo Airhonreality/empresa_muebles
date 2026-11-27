@@ -11,6 +11,7 @@ import type { ClaveRegistro, EventoRotacion, RepositorioClaves } from './claves'
 import { modeloPorDefecto, obtenerModelo, type ProveedorAsistente } from './modelo'
 import { ErrorConfiguracionIncompleta, type ConfiguracionTurno, type DepsTurno, type LlamadaRegistro, type Mensaje, type RepositorioUso } from './bucle'
 import type { DepsPropuestas, EstadoPropuesta, Propuesta, RepositorioPropuestas } from './propuestas'
+import { ENTRADA_PROCEDENCIA, type FilaProcedencia, type RepositorioProcedencia } from './procedencia'
 import { tituloDe, type RepositorioConversaciones, type ResumenConversacion } from './servicio'
 
 const claves: RepositorioClaves = {
@@ -182,6 +183,31 @@ export const propuestas: RepositorioPropuestas = {
   },
 }
 
+/** Procedencia persistente de búsquedas: filas en llamadas_herramienta_asistente (ver procedencia.ts). */
+export const procedenciaPersistente: RepositorioProcedencia = {
+  async registrar(usuarioId: string, filas: readonly FilaProcedencia[], creadaEn: Date): Promise<void> {
+    if (filas.length === 0) return
+    await db.insert(s.llamadasHerramientaAsistente).values(
+      filas.map((f) => ({
+        usuarioId,
+        tipo: 'herramienta' as const,
+        herramienta: f.herramienta,
+        entradaResumen: ENTRADA_PROCEDENCIA,
+        resultadoResumen: f.id,
+        creadaEn: creadaEn.toISOString(),
+      })),
+    )
+  },
+  async vigentes(usuarioId: string, desde: Date): Promise<FilaProcedencia[]> {
+    const t = s.llamadasHerramientaAsistente
+    const filas = await db
+      .select({ herramienta: t.herramienta, id: t.resultadoResumen })
+      .from(t)
+      .where(and(eq(t.usuarioId, usuarioId), eq(t.entradaResumen, ENTRADA_PROCEDENCIA), gte(t.creadaEn, desde.toISOString())))
+    return filas.flatMap((f) => (f.herramienta && f.id ? [{ herramienta: f.herramienta, id: f.id }] : []))
+  },
+}
+
 /** Dependencias reales para confirmar/cancelar propuestas (bloque E las usa). */
 export function depsPropuestasProduccion(registro: DepsPropuestas['registro']): DepsPropuestas {
   return { repo: propuestas, ahora: () => new Date(), registro }
@@ -197,6 +223,7 @@ export function depsProduccion(registro: DepsTurno['herramientas'], documentos: 
     herramientas: registro,
     propuestas,
     documentos,
+    procedenciaPersistente,
     ahora: () => new Date(),
     esperar: (ms) => new Promise((resolver) => setTimeout(resolver, ms)),
   }
@@ -223,11 +250,15 @@ export const conversaciones: RepositorioConversaciones = {
       .reverse()
       .map((f) => ({ rol: f.rol as Mensaje['rol'], contenido: String(f.contenido) }))
   },
-  async crear(usuarioId: string): Promise<string> {
+  async crear(usuarioId: string, titulo?: string): Promise<string> {
     const [fila] = await db
       .insert(s.conversacionesAsistente)
       .values({ usuarioId })
       .returning({ id: s.conversacionesAsistente.id })
+    // Sin columna de título: el título es el primer mensaje del usuario (ver listar).
+    if (titulo) {
+      await db.insert(s.mensajesAsistente).values({ conversacionId: fila.id, rol: 'usuario', contenido: titulo })
+    }
     return fila.id
   },
   async guardarMensajes(conversacionId: string, mensajes: Mensaje[]): Promise<void> {

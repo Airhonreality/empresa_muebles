@@ -6,9 +6,10 @@ import type { DefinicionAsistente } from '../asistente/herramientas'
 import { operacionesPropuestas } from '../asistente/ops/propuestas'
 import type { FilaTokenMcp, RepositorioTokensMcp } from './tokens'
 import { crearTokenMcp, generarToken, revocarTokenMcp } from './tokens'
-import { manejarMcp, type DepsMcp } from './servidor'
+import { manejarMcp, tituloSolicitudMcp, type DepsMcp } from './servidor'
 import { acotarElementos, MAX_LLAMADAS_POR_PETICION } from './limites'
 import type { Propuesta, RepositorioPropuestas, EstadoPropuesta } from '../asistente/propuestas'
+import type { FilaProcedencia, RepositorioProcedencia } from '../asistente/procedencia'
 
 const AHORA = new Date('2026-11-27T10:00:00.000Z')
 const COMERCIAL = '11111111-1111-4111-8111-111111111111'
@@ -61,6 +62,16 @@ function entorno() {
     listarDeUsuario: async (u, estados) => [...filasProp.values()].filter((p) => p.usuarioId === u && estados.includes(p.estado)),
   }
 
+  const procedencia: Array<FilaProcedencia & { usuarioId: string; creadaEn: Date }> = []
+  const procedenciaPersistente: RepositorioProcedencia = {
+    registrar: async (usuarioId, filas, creadaEn) => {
+      for (const f of filas) procedencia.push({ ...f, usuarioId, creadaEn })
+    },
+    vigentes: async (usuarioId, desde) =>
+      procedencia.filter((f) => f.usuarioId === usuarioId && f.creadaEn >= desde).map(({ herramienta, id }) => ({ herramienta, id })),
+  }
+  const titulos: string[] = []
+
   const contadores = { lecturas: 0, confirmaciones: 0 }
   const escrituras: unknown[] = []
   const lectura: DefinicionAsistente = {
@@ -107,10 +118,14 @@ function entorno() {
     },
     registro,
     propuestas,
-    crearConversacion: async () => 'conv-prueba',
+    procedenciaPersistente,
+    crearConversacion: async (_usuarioId, titulo) => {
+      titulos.push(titulo)
+      return 'conv-prueba'
+    },
     ahora: () => AHORA,
   }
-  return { deps, contadores, escrituras, filasProp }
+  return { deps, contadores, escrituras, filasProp, titulos }
 }
 
 function peticion(token: string | null, cuerpo: unknown): Request {
@@ -241,6 +256,18 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.equal(contadores.lecturas, MAX_LLAMADAS_POR_PETICION)
     assert.equal(respuestas[MAX_LLAMADAS_POR_PETICION].result.isError, true)
     assert.match(respuestas[MAX_LLAMADAS_POR_PETICION].result.content[0].text, /Límite de 8/)
+  }],
+  ['conversación MCP: título fijo "Solicitud MCP — <fecha de Bogotá>" al crear la propuesta', async () => {
+    assert.equal(tituloSolicitudMcp(new Date('2026-11-27T10:00:00.000Z')), 'Solicitud MCP — 2026-11-27')
+    // 03:00 UTC del 28 es 22:00 del 27 en Bogotá: la fecha es la local.
+    assert.equal(tituloSolicitudMcp(new Date('2026-11-28T03:00:00.000Z')), 'Solicitud MCP — 2026-11-27')
+    const { deps, titulos } = entorno()
+    // Como en el caso de la escritura sin confirmación: un rol con finanzas:escribir crea la propuesta.
+    const conFinanzas = { ...deps, tokens: { ...deps.tokens, cargarUsuario: async (id: string) => sesionDe(id, 'finanzas') } }
+    const { token } = await crearTokenMcp(COMERCIAL, 'Finanzas', conFinanzas.tokens)
+    const r = await llamar(token, 'ejecutar', { dominio: 'finanzas', operacion: 'movimiento_registrar', argumentos: { monto: 5 } }, conFinanzas)
+    assert.equal(r.cuerpo.result?.isError, false, textoDe(r))
+    assert.deepEqual(titulos, ['Solicitud MCP — 2026-11-27'])
   }],
   ['acotarElementos: recorta listas a 20 y deja texto no JSON', async () => {
     const grande = JSON.stringify({ resultados: Array.from({ length: 35 }, (_, i) => ({ i })) })

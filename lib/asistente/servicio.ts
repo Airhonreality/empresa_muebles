@@ -22,7 +22,8 @@ export interface ResumenConversacion {
 export interface RepositorioConversaciones {
   /** Últimos mensajes (orden cronológico). null si la conversación no existe o no es del usuario. */
   historial(id: string, usuarioId: string, limite?: number): Promise<Mensaje[] | null>
-  crear(usuarioId: string): Promise<string>
+  /** Crea una conversación. Con `titulo`, la primera fila del historial es ese título (ver repositorio.ts). */
+  crear(usuarioId: string, titulo?: string): Promise<string>
   guardarMensajes(conversacionId: string, mensajes: Mensaje[]): Promise<void>
   listar(usuarioId: string): Promise<ResumenConversacion[]>
 }

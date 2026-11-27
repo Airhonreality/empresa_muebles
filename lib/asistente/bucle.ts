@@ -18,6 +18,7 @@ import {
 } from './operaciones'
 import { z } from 'zod'
 import type { RepositorioPropuestas } from './propuestas'
+import type { RepositorioProcedencia } from './procedencia'
 import { indiceProcedimientos, type Documento } from './conocimiento'
 
 /** Caracteres máximos de resúmenes guardados en el registro de llamadas. */
@@ -90,6 +91,8 @@ export interface DepsTurno {
   herramientas: readonly DefinicionAsistente[]
   /** Almacén de propuestas de escritura. */
   propuestas: RepositorioPropuestas
+  /** Procedencia persistente de búsquedas (ver procedencia.ts). Opcional: sin ella, solo vale el turno. */
+  procedenciaPersistente?: RepositorioProcedencia
   /** Devuelve (creando si hace falta) la conversación del turno. Solo se llama al crear una propuesta. */
   asegurarConversacion?: () => Promise<string>
   /** Base de conocimiento ya cargada y validada (ver conocimiento.ts). Vacía por defecto. */
@@ -210,6 +213,7 @@ export async function ejecutarTurno(
       return deps.asegurarConversacion()
     },
     procedencia: new Procedencia(),
+    procedenciaPersistente: deps.procedenciaPersistente ? { repo: deps.procedenciaPersistente, ahora: deps.ahora } : undefined,
   }
 
   // El modelo ve SOLO tres herramientas fijas (plan t-200 §6): dominios, operaciones y ejecutar.

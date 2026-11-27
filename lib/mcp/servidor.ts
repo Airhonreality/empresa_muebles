@@ -20,6 +20,7 @@ import { ErrorProcedencia, ErrorRevalidacion } from '../asistente/errores'
 import { catalogoDominios, Procedencia, type DefinicionAsistente } from '../asistente/herramientas'
 import { dominioOperaciones, ejecutarOperacion } from '../asistente/operaciones'
 import { ErrorPropuesta, type DepsPropuestas, type RepositorioPropuestas } from '../asistente/propuestas'
+import type { RepositorioProcedencia } from '../asistente/procedencia'
 import { verificarTokenMcp, type DepsVerificacionMcp } from './tokens'
 import { acotarElementos, MAX_CARACTERES_RESULTADO, MAX_LLAMADAS_POR_PETICION } from './limites'
 
@@ -29,9 +30,17 @@ export interface DepsMcp {
   /** Registro completo de operaciones del asistente (lib/asistente/registro.ts). */
   registro: readonly DefinicionAsistente[]
   propuestas: RepositorioPropuestas
+  /** Procedencia persistente: un id buscado en otra petición del mismo usuario sirve para escribir (60 min). */
+  procedenciaPersistente: RepositorioProcedencia
   /** Crea una conversación para guardar las propuestas de una petición MCP. */
-  crearConversacion: (usuarioId: string) => Promise<string>
+  crearConversacion: (usuarioId: string, titulo: string) => Promise<string>
   ahora: () => Date
+}
+
+/** Título fijo de las conversaciones creadas por MCP: "Solicitud MCP — AAAA-MM-DD" (fecha de Bogotá). */
+export function tituloSolicitudMcp(ahora: Date): string {
+  const fecha = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(ahora)
+  return `Solicitud MCP — ${fecha}`
 }
 
 /** Mensajes de validación que lanzan las operaciones del registro. Cualquier otro error se oculta. */
@@ -114,6 +123,7 @@ export async function ejecutarHerramientaMcp(
         propuestas: depsPropuestas,
         conversacionId: alcance.conversacionId,
         procedencia: alcance.procedencia,
+        procedenciaPersistente: { repo: deps.procedenciaPersistente, ahora: deps.ahora },
         canal: 'mcp',
       })
       return { texto: acotarElementos(r.texto).slice(0, MAX_CARACTERES_RESULTADO), esError: false }
@@ -161,7 +171,7 @@ export async function manejarMcp(request: Request, deps: DepsMcp): Promise<Respo
   const procedencia = new Procedencia()
   let conversacion: Promise<string> | null = null
   const conversacionId = () => {
-    conversacion ??= deps.crearConversacion(sesion.usuarioId)
+    conversacion ??= deps.crearConversacion(sesion.usuarioId, tituloSolicitudMcp(deps.ahora()))
     return conversacion
   }
   let llamadas = 0

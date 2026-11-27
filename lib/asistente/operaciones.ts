@@ -18,6 +18,7 @@ import {
   type DefinicionAsistente,
 } from './herramientas'
 import { crearPropuesta, type DepsPropuestas } from './propuestas'
+import { filasDeDescubrimiento, VENTANA_PROCEDENCIA_MS, type RepositorioProcedencia } from './procedencia'
 
 export const MENSAJE_NO_DISPONIBLE = 'Esa operación no está disponible para tu rol.'
 
@@ -66,6 +67,11 @@ export interface DepsOperaciones {
   procedencia: Procedencia
   /** Canal desde el que se llama: el chat interno (por defecto) o el servidor MCP. */
   canal?: Canal
+  /**
+   * Procedencia persistente (procedencia.ts): permite usar en una escritura un id buscado en otra
+   * petición del mismo usuario (ventana de 60 min). Sin ella, solo vale la procedencia del turno.
+   */
+  procedenciaPersistente?: { repo: RepositorioProcedencia; ahora: () => Date }
 }
 
 export interface PropuestaCreada {
@@ -101,26 +107,46 @@ export async function ejecutarOperacion(
   const def = operacionesDelCanal(usuario, deps.registro, deps.canal ?? CANAL_CHAT).find((h) => h.nombre === nombre)
   if (!def) throw new Error(MENSAJE_NO_DISPONIBLE)
   const ctx = { procedencia: deps.procedencia }
+  // Lo que quedó de una llamada anterior no es de esta: se descarta antes de empezar.
+  deps.procedencia.drenar()
 
-  if (!def.esEscritura) {
-    return { texto: await ejecutarHerramienta(def, entrada.data.argumentos ?? {}, usuario, ctx) }
-  }
+  try {
+    if (!def.esEscritura) {
+      return { texto: await ejecutarHerramienta(def, entrada.data.argumentos ?? {}, usuario, ctx) }
+    }
 
-  // Escritura: valida, consulta el servidor y prepara. Nunca escribe.
-  const validada = esquemaDe(def, usuario).safeParse(entrada.data.argumentos ?? {})
-  if (!validada.success) {
-    throw new Error(`Argumentos inválidos para ${nombre}: ${validada.error.issues.map((i) => i.message).join('; ')}`)
+    // Escritura: valida, consulta el servidor y prepara. Nunca escribe.
+    const validada = esquemaDe(def, usuario).safeParse(entrada.data.argumentos ?? {})
+    if (!validada.success) {
+      throw new Error(`Argumentos inválidos para ${nombre}: ${validada.error.issues.map((i) => i.message).join('; ')}`)
+    }
+    if (deps.procedenciaPersistente) {
+      const { repo, ahora } = deps.procedenciaPersistente
+      const desde = new Date(ahora().getTime() - VENTANA_PROCEDENCIA_MS)
+      deps.procedencia.cargarPersistidas(await repo.vigentes(usuario.usuarioId, desde))
+    }
+    const { resumen, datos } = await def.preparar(validada.data, usuario, ctx)
+    const conversacionId = await deps.conversacionId()
+    const { id, venceEn } = await crearPropuesta(
+      { usuario, conversacionId, herramienta: def.nombre, datos, resumen },
+      deps.propuestas,
+    )
+    return {
+      texto:
+        `Propuesta creada, pendiente de confirmación del empleado. id ${id}. Resumen: ${resumen}. ` +
+        'La operación AÚN NO está realizada: no la des por hecha; pide al empleado que la revise y confirme en el chat.',
+      propuesta: { id, herramienta: def.nombre, resumen, venceEn: venceEn.toISOString() },
+    }
+  } finally {
+    // Lectura o escritura: los ids descubiertos (también al fallar, p. ej. cliente duplicado) se guardan.
+    await guardarDescubiertos(deps, usuario.usuarioId, nombre)
   }
-  const { resumen, datos } = await def.preparar(validada.data, usuario, ctx)
-  const conversacionId = await deps.conversacionId()
-  const { id, venceEn } = await crearPropuesta(
-    { usuario, conversacionId, herramienta: def.nombre, datos, resumen },
-    deps.propuestas,
-  )
-  return {
-    texto:
-      `Propuesta creada, pendiente de confirmación del empleado. id ${id}. Resumen: ${resumen}. ` +
-      'La operación AÚN NO está realizada: no la des por hecha; pide al empleado que la revise y confirme en el chat.',
-    propuesta: { id, herramienta: def.nombre, resumen, venceEn: venceEn.toISOString() },
-  }
+}
+
+/** Guarda como procedencia persistente los ids que la operación descubrió. Sin resultados, no escribe. */
+async function guardarDescubiertos(deps: DepsOperaciones, usuarioId: string, herramienta: string): Promise<void> {
+  const descubiertos = deps.procedencia.drenar()
+  if (!deps.procedenciaPersistente || descubiertos.length === 0) return
+  const { repo, ahora } = deps.procedenciaPersistente
+  await repo.registrar(usuarioId, filasDeDescubrimiento(herramienta, descubiertos), ahora())
 }

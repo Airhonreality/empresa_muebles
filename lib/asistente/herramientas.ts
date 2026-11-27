@@ -17,6 +17,7 @@ import { puedeUsarChat } from './matriz-chat'
 import { NoAutorizadoError } from '../auth/errors'
 import type { SesionEmpleado } from '../auth/session'
 import { ErrorProcedencia } from './errores'
+import { tiposDeFila } from './procedencia'
 
 /** Tamaño máximo del resultado que se envía al modelo. Constante fija, no configurable. */
 export const MAX_CARACTERES_RESULTADO = 8000
@@ -34,6 +35,10 @@ export type TipoId = 'cliente' | 'producto' | 'cotizacion' | 'cuenta'
  */
 export class Procedencia {
   private readonly vistos = new Map<TipoId, Set<string>>()
+  /** Ids de procedencia persistente del usuario (cargados antes de una escritura; ver operaciones.ts). */
+  private readonly persistidos = new Map<TipoId, Set<string>>()
+  /** Ids registrados desde el último drenar(): son los que hay que guardar de forma persistente. */
+  private descubiertos: Array<{ tipo: TipoId; id: string }> = []
 
   registrar(tipo: TipoId, ids: readonly string[]): void {
     let conjunto = this.vistos.get(tipo)
@@ -41,11 +46,35 @@ export class Procedencia {
       conjunto = new Set()
       this.vistos.set(tipo, conjunto)
     }
-    for (const id of ids) conjunto.add(id)
+    for (const id of ids) {
+      conjunto.add(id)
+      this.descubiertos.push({ tipo, id })
+    }
+  }
+
+  /** Devuelve y vacía los ids descubiertos desde la última vez. */
+  drenar(): Array<{ tipo: TipoId; id: string }> {
+    const lista = this.descubiertos
+    this.descubiertos = []
+    return lista
+  }
+
+  /** Carga filas persistidas del usuario. Cada fila habilita solo los tipos de su operación. */
+  cargarPersistidas(filas: readonly { herramienta: string; id: string }[]): void {
+    for (const f of filas) {
+      for (const tipo of tiposDeFila(f.herramienta)) {
+        let conjunto = this.persistidos.get(tipo)
+        if (!conjunto) {
+          conjunto = new Set()
+          this.persistidos.set(tipo, conjunto)
+        }
+        conjunto.add(f.id)
+      }
+    }
   }
 
   tiene(tipo: TipoId, id: string): boolean {
-    return this.vistos.get(tipo)?.has(id) ?? false
+    return (this.vistos.get(tipo)?.has(id) ?? false) || (this.persistidos.get(tipo)?.has(id) ?? false)
   }
 
   /** Lanza ErrorProcedencia si el id no se obtuvo de una búsqueda. `nombre` va al mensaje para el modelo. */
