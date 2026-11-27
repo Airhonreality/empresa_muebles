@@ -224,3 +224,5 @@ Hecho hoy:
 **Ajuste 2026-11-27 (aprobado por Javier):** tope de CPA de $14.000 en la campaña de cocinas (maximizar conversiones con meta) y presupuesto diario de $5.500 (antes $11.300). Motivo: tras quitar el tope, el gasto llegó a ~2× el presupuesto diario, el costo por clic subió a ~$2.400 y hubo 1 conversión en 3 días. Pendiente: revisar medición de conversiones en móvil (13 clics, 0 conversiones en 25–27 nov). Evaluar a 7 días antes de nuevos cambios.
 
 **Ajuste 2026-11-27 (aprobado por Javier):** aumentos de puja por zona de Bogotá (+15% a +80%, 7 zonas) llevados a 0%. Se mantiene el −10% de la zona con mejor costo por conversión. Motivo: las zonas con aumento gastaron ~$53.000 con 2 conversiones; la zona con descuento tuvo 3 conversiones por $17.971.
+
+**Ajuste 2026-11-27 (aprobado por Javier):** la zona con −10% (estratos altos de Bogotá, mejor costo por conversión en 30 días, muestra pequeña) también llevada a 0%. Todas las zonas con ajuste quedan en 0%. Reevaluar a 14 días antes de considerar cualquier ajuste.
