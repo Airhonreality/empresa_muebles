@@ -32,8 +32,8 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['el enum de temas sale del índice y solo incluye documentos cargables', async () => {
     const temas = temasDeIndice(INDICE, DOCS)
     assert.deepEqual(temas.sort(), DOCS.map((d) => d.ruta).sort().filter((r) => rutasDeIndice(INDICE).includes(r)))
-    // HUECO CONOCIDO (ver conocimiento.test.ts): descuentos.md no carga con la matriz única.
-    assert.ok(!temas.includes('cotizaciones/descuentos.md'))
+    // descuentos.md carga: su permiso (cotizador:escribir) existe en la matriz del chat.
+    assert.ok(temas.includes('cotizaciones/descuentos.md'))
   }],
   ['tema fuera del enum se rechaza sin ejecutar el procedimiento', async () => {
     await assert.rejects(

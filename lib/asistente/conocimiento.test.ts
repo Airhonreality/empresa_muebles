@@ -79,11 +79,19 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.ok(rutasReales.length >= 2)
     const indice = readFileSync(join(RAIZ_REAL, 'INDICE.md'), 'utf8')
     const enlaces = [...indice.matchAll(/\]\(([^)]+\.md)\)/g)].map((m) => m[1]).sort()
-    // HUECO CONOCIDO (t-200 paso 1): descuentos.md declara el permiso "cotizador:descuento", que ya no
-    // existe en la matriz única (lib/auth/permisos.ts). Ese documento no carga hasta que el Supervisor
-    // defina el permiso o cambie el encabezado. La prueba fija el hueco para que no pase en silencio.
-    assert.deepEqual(enlaces.filter((r) => !rutasReales.includes(r)), ['cotizaciones/descuentos.md'])
+    // Todos los enlaces del índice apuntan a un documento que carga (descuentos.md usa cotizador:escribir).
+    assert.deepEqual(enlaces.filter((r) => !rutasReales.includes(r)), [])
     assert.deepEqual(enlaces.filter((r) => rutasReales.includes(r)), rutasReales)
+  }],
+  ['descuentos.md carga para quien tiene cotizador:escribir y dice que aplicar descuentos requiere admin', async () => {
+    const docs = cargarDocumentos(RAIZ_REAL)
+    const descuentos = docs.find((d) => d.ruta === 'cotizaciones/descuentos.md')
+    assert.ok(descuentos, 'descuentos.md debe cargar')
+    assert.equal(descuentos.permiso, 'cotizador:escribir')
+    assert.ok(documentosPermitidos(docs, sesionCon('comercial')).some((d) => d.ruta === 'cotizaciones/descuentos.md'))
+    assert.ok(documentosPermitidos(docs, sesionCon('admin')).some((d) => d.ruta === 'cotizaciones/descuentos.md'))
+    assert.ok(!documentosPermitidos(docs, sesionCon('taller')).some((d) => d.ruta === 'cotizaciones/descuentos.md'))
+    assert.match(descuentos.cuerpo, /rol admin/)
   }],
   ['ningún documento de conocimiento contiene patrones de claves de API', async () => {
     // Patrones de claves de proveedor, partidos a propósito para que este archivo no los contenga.
