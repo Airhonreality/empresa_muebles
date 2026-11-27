@@ -2118,3 +2118,15 @@ export const adjuntosAsistente = pgTable("adjuntos_asistente", {
   tamanoBytes: integer("tamano_bytes").notNull(),
   creadoEn: timestamp("creado_en", { mode: 'string' }).defaultNow().notNull(),
 })
+
+// ─── Servidor MCP (t-200, plan §6.2): tokens personales por usuario ───
+// Solo se guarda el hash SHA-256 del token; el token en claro se muestra una sola vez.
+export const tokensMcp = pgTable("tokens_mcp", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  usuarioId: uuid("usuario_id").notNull().references(() => usuarios.id),
+  etiqueta: text().notNull(),
+  hash: text().notNull().unique(),
+  creadoEn: timestamp("creado_en", { mode: 'string' }).defaultNow().notNull(),
+  ultimoUsoEn: timestamp("ultimo_uso_en", { mode: 'string' }),
+  revocadoEn: timestamp("revocado_en", { mode: 'string' }),
+})
