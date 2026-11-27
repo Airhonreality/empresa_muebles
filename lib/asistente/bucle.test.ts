@@ -13,6 +13,7 @@ import {
   type LlamadaRegistro,
 } from './bucle'
 import { mundoFalso, registroFalso } from './prueba-registro'
+const CLIENTE_REAL = '22222222-2222-4222-8222-222222222222'
 import { conPermisosRestringidos } from './prueba-permisos'
 
 const PASOS_MAXIMOS = 8
@@ -161,7 +162,7 @@ const casos: Array<[string, () => Promise<void>]> = [
       ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'saldo', configuracion: CONFIG }, deps),
     )
     const nombres = (modelo.doGenerateCalls[0].tools ?? []).map((t) => t.name)
-    assert.deepEqual(nombres.sort(), ['dominio_operaciones', 'ejecutar'])
+    assert.deepEqual(nombres.sort(), ['dominios', 'ejecutar', 'operaciones'])
     const sistema = JSON.stringify(modelo.doGenerateCalls[0].prompt.find((m) => m.role === 'system'))
     assert.ok(!sistema.includes('- finanzas'))
     assert.ok(sistema.includes('- clientes'))
@@ -275,7 +276,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.ok(llamadas.some((l) => l.herramienta === 'cotizacion.crear_completa'))
     assert.ok(llamadas.some((l) => l.herramienta === 'clientes.buscar'))
   }],
-  ['procedimientos: el índice va al prompt y procedimiento_consultar solo si hay docs permitidos', async () => {
+  ['procedimientos: el índice va al prompt; el modelo sigue viendo solo tres herramientas', async () => {
     const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('ok'), respuestaTexto('ok')] })
     const { deps } = entorno({ modelos: { a: modelo } })
     deps.documentos = [
@@ -288,13 +289,47 @@ const casos: Array<[string, () => Promise<void>]> = [
     const sistema = JSON.stringify(modelo.doGenerateCalls[0].prompt.find((m) => m.role === 'system'))
     assert.ok(sistema.includes('cotizaciones/iva.md: IVA en una cotización'))
     assert.ok(!sistema.includes('cierre.md'))
-    const nombres = (modelo.doGenerateCalls[0].tools ?? []).map((t) => t.name)
-    assert.ok(nombres.includes('procedimiento_consultar'))
+    const nombres = (modelo.doGenerateCalls[0].tools ?? []).map((t) => t.name).sort()
+    assert.deepEqual(nombres, ['dominios', 'ejecutar', 'operaciones'])
     await conPermisosRestringidos('taller', ['proyectos:leer'], () =>
       ejecutarTurno({ usuario: sesionCon('taller'), historial: [], mensaje: 'iva', configuracion: CONFIG }, deps),
     )
-    const nombresTaller = (modelo.doGenerateCalls[1].tools ?? []).map((t) => t.name)
-    assert.ok(!nombresTaller.includes('procedimiento_consultar'))
+    const sistemaTaller = JSON.stringify(modelo.doGenerateCalls[1].prompt.find((m) => m.role === 'system'))
+    assert.ok(!sistemaTaller.includes('iva.md'))
+  }],
+  ['el prompt incluye la regla de no inventar ids y el mapa de dominios', async () => {
+    const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('ok')] })
+    const { deps } = entorno({ modelos: { a: modelo } })
+    await ejecutarTurno({ usuario: sesionCon('admin'), historial: [], mensaje: 'x', configuracion: CONFIG }, deps)
+    const sistema = JSON.stringify(modelo.doGenerateCalls[0].prompt.find((m) => m.role === 'system'))
+    assert.ok(sistema.includes('No inventes identificadores. Busca primero'))
+    assert.ok(sistema.includes('- clientes (Clientes)'))
+  }],
+  ['el modelo que escribe un id no buscado recibe rechazo y no se escribe nada', async () => {
+    const CLIENTE_INVENTADO = '99999999-9999-4999-8999-999999999999'
+    const PRODUCTO_INVENTADO = '88888888-8888-4888-8888-888888888888'
+    const mundo = mundoFalso({ clientes: [{ id: CLIENTE_REAL, nombre: 'Juan Pérez', documento: null, telefono: null }] })
+    const modelo = new MockLanguageModelV4({
+      doGenerate: [
+        respuestaHerramienta('ejecutar', {
+          dominio: 'cotizacion',
+          operacion: 'crear_completa',
+          argumentos: {
+            clienteId: CLIENTE_INVENTADO,
+            nombreProyecto: 'Cocina',
+            espacios: [{ tipoEspacio: 'cocina', nombre: 'Cocina', items: [{ productoId: PRODUCTO_INVENTADO, cantidad: '1' }] }],
+          },
+        }),
+        respuestaTexto('No encontré ese cliente; ¿quieres que lo busque por nombre?'),
+      ],
+    })
+    const { deps, propuestas } = entorno({ modelos: { a: modelo }, herramientas: registroFalso(mundo) })
+    const r = await ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'cotiza', configuracion: CONFIG }, deps)
+    const resultado = JSON.stringify(modelo.doGenerateCalls[1].prompt)
+    assert.ok(resultado.includes('no se obtuvo de una búsqueda'), 'el modelo debe recibir el rechazo')
+    assert.equal(r.propuestas, undefined, 'no hay propuesta')
+    assert.equal(propuestas.filas.size, 0)
+    assert.equal(mundo.escrituras.length, 0)
   }],
 ]
 

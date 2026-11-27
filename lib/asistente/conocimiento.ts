@@ -5,17 +5,12 @@
 // devuelve, aunque lo pida por nombre.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
-import { z } from 'zod'
 import type { SesionEmpleado } from '../auth/session'
 import { PERMISOS, PERMISOS_POR_ROL, type Permiso } from '../auth/permisos'
 import { truncarResultado } from './herramientas'
 
 /** Tamaño máximo de un procedimiento devuelto al modelo (plan t-199 §3.3). */
 export const MAX_CARACTERES_PROCEDIMIENTO = 12000
-/** Entrada de la herramienta procedimiento_consultar. */
-export const esquemaProcedimientoConsultar = z.object({
-  tema: z.string().trim().min(2, 'Escribe al menos 2 caracteres').max(120),
-})
 /** A partir de estos días sin revisión, el índice marca el documento como "por revisar". */
 export const DIAS_PARA_REVISAR = 180
 
