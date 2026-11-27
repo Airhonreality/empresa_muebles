@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 import { obtenerPrecioAsesoria3dAction } from '@/lib/data/actions/public';
+import { formatearPrecioAsesoria3d } from '@/lib/utils/format'
 
 export const metadata: Metadata = {
   title: 'Conócenos — Veta Dorada, carpintería arquitectónica en Bogotá',
@@ -9,12 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ConocenosPage() {
-  const precio3d = (await obtenerPrecioAsesoria3dAction()) || 130000;
-  const formattedPrice = new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-  }).format(precio3d || 130000);
+  const formattedPrice = formatearPrecioAsesoria3d(await obtenerPrecioAsesoria3dAction());
 
   return (
     <>
