@@ -4,15 +4,15 @@
 // clave del proveedor, que vive en otra ruta. Campo desconocido -> error (.strict()).
 // Las reglas de seguridad del prompt NO son configurables: no existe ningún campo para ellas.
 import { z } from 'zod'
-
-export const PROVEEDORES_CONFIGURABLES = ['openrouter'] as const
-
-export const TEMPERATURAS = [0, 0.2, 0.5, 0.7, 1] as const
-export const MAX_TOKENS_RESPUESTA = [512, 1024, 2048, 4096] as const
-export const PASOS_MAXIMOS_OPCIONES = [4, 8, 12] as const
-export const TOPE_DIARIO_USUARIO_USD = [1, 5, 10, 25, 50] as const
-export const TOPE_DIARIO_GLOBAL_USD = [10, 50, 100, 250, 500] as const
-export const ALERTA_FRACCION = [0.5, 0.8, 0.9] as const
+import {
+  ALERTA_FRACCION,
+  MAX_TOKENS_RESPUESTA,
+  PASOS_MAXIMOS_OPCIONES,
+  PROVEEDORES_CONFIGURABLES,
+  TEMPERATURAS,
+  TOPE_DIARIO_GLOBAL_USD,
+  TOPE_DIARIO_USUARIO_USD,
+} from './opciones-configuracion'
 
 const MENSAJE_OPCION = 'Valor no permitido'
 

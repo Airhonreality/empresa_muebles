@@ -16,7 +16,7 @@ import { ErrorConversacionNoEncontrada, type ResultadoAtencion } from './servici
 const ADMIN: SesionEmpleado = { usuarioId: 'u-1', personaId: null, nombre: 'A', email: 'a@prueba.test', rol: 'admin' }
 const COMERCIAL: SesionEmpleado = { ...ADMIN, usuarioId: 'u-2', rol: 'comercial' }
 const UUID = '11111111-1111-4111-8111-111111111111'
-const SECRETO = 'valor-secreto-de-prueba-9876'
+const SECRETO = 'valor-secreto-de-prueba-9876-largo'
 const CONFIG_VALIDA = {
   proveedor: 'openrouter',
   modelo: 'modelo/prueba',
@@ -142,9 +142,10 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.ok(!texto.includes('cifrado('))
     assert.match(texto, /"ultimos4":"1234"/)
   }],
-  ['clave: sin etiqueta o demasiado corta -> 400', async () => {
-    assert.equal((await agregarClaveHttp(ADMIN, { proveedor: 'openrouter', etiqueta: '', clave: SECRETO }, DEPS_CLAVES)).status, 400)
-    assert.equal((await agregarClaveHttp(ADMIN, { proveedor: 'openrouter', etiqueta: 'x', clave: 'corta' }, DEPS_CLAVES)).status, 400)
+  ['clave: sin etiqueta es válida; clave de menos de 20 caracteres o etiqueta de más de 40 -> 400', async () => {
+    assert.equal((await agregarClaveHttp(ADMIN, { proveedor: 'openrouter', clave: SECRETO }, DEPS_CLAVES)).status, 201)
+    assert.equal((await agregarClaveHttp(ADMIN, { proveedor: 'openrouter', etiqueta: 'x', clave: 'corta-de-19-chars-x' }, DEPS_CLAVES)).status, 400)
+    assert.equal((await agregarClaveHttp(ADMIN, { proveedor: 'openrouter', etiqueta: 'e'.repeat(41), clave: SECRETO }, DEPS_CLAVES)).status, 400)
   }],
   ['lectura de configuración de admin pasa el resultado sin claves en claro', async () => {
     const r = await leerConfiguracionHttp(ADMIN, { leer: async () => ({ claves: [{ ultimos4: '1234' }] }), guardar: async () => {}, modelos: async () => [], registro: [] })

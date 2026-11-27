@@ -2,82 +2,83 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/veta/button';
-import { InputField } from '@/components/veta/input-field';
+import { ClavesProveedor, type ClaveVista } from './ClavesProveedor';
 import { llamarAsistente } from './api';
+import { ParametrosModelo, type HerramientaHabilitable } from './ParametrosModelo';
+import { SelectorModelo } from './SelectorModelo';
+import {
+  aCuerpo,
+  erroresFormulario,
+  FORMULARIO_VACIO,
+  type FormularioConfiguracion,
+  type ModeloLista,
+} from './configuracion-formulario';
 
-type Proveedor = 'openrouter' | 'anthropic' | 'google';
-interface ClaveVista { id: string; proveedor: Proveedor; etiqueta: string; ultimos4: string; estado: string; orden: number }
-interface Config {
-  modelo: { proveedor: Proveedor; modelo: string } | null;
+/** Forma de GET /api/asistente/configuracion (solo lo que el panel usa). */
+interface ConfiguracionVista {
+  modelo: { proveedor: string; modelo: string } | null;
+  temperatura: number | null;
+  maxTokensRespuesta: number | null;
+  pasosMaximos: number | null;
+  herramientasHabilitadas: string[];
   topes: { usuarioDiaUsd: number; globalDiaUsd: number; alertaFraccion: number } | null;
-  precios: { entradaPorMillon: number; salidaPorMillon: number } | null;
   claves: ClaveVista[];
+  herramientasDisponibles: HerramientaHabilitable[];
 }
-
-const PROVEEDORES: Proveedor[] = ['openrouter', 'anthropic', 'google'];
 
 /** Solo se monta para admin. Las claves nunca vuelven: solo se ven los últimos 4 caracteres. */
 export function PanelConfiguracion() {
-  const [config, setConfig] = useState<Config | null>(null);
+  const [claves, setClaves] = useState<ClaveVista[]>([]);
+  const [herramientas, setHerramientas] = useState<HerramientaHabilitable[]>([]);
+  const [sinTopes, setSinTopes] = useState(false);
+  const [formulario, setFormulario] = useState<FormularioConfiguracion>(FORMULARIO_VACIO);
+  const [modelos, setModelos] = useState<ModeloLista[] | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [nuevaClave, setNuevaClave] = useState({ proveedor: 'openrouter' as Proveedor, etiqueta: '', clave: '' });
-  const [modelo, setModelo] = useState({ proveedor: 'openrouter' as Proveedor, modelo: '' });
-  const [topes, setTopes] = useState({ usuarioDiaUsd: '', globalDiaUsd: '', alertaFraccion: '0.8' });
-  const [precios, setPrecios] = useState({ entradaPorMillon: '', salidaPorMillon: '' });
+  const [guardando, setGuardando] = useState(false);
 
   async function cargar() {
-    const r = await llamarAsistente<{ configuracion: Config }>('/api/asistente/configuracion');
+    const r = await llamarAsistente<{ configuracion: ConfiguracionVista }>('/api/asistente/configuracion');
     if (!r.ok) {
       setError(r.data.error ?? 'No se pudo cargar la configuración.');
       return;
     }
     const c = r.data.configuracion;
-    setConfig(c);
-    if (c.modelo) setModelo({ proveedor: c.modelo.proveedor, modelo: c.modelo.modelo });
-    if (c.topes) setTopes({ usuarioDiaUsd: String(c.topes.usuarioDiaUsd), globalDiaUsd: String(c.topes.globalDiaUsd), alertaFraccion: String(c.topes.alertaFraccion) });
-    if (c.precios) setPrecios({ entradaPorMillon: String(c.precios.entradaPorMillon), salidaPorMillon: String(c.precios.salidaPorMillon) });
+    setClaves(c.claves);
+    setHerramientas(c.herramientasDisponibles);
+    setSinTopes(c.topes === null);
+    setFormulario({
+      proveedor: c.modelo?.proveedor ?? 'openrouter',
+      modelo: c.modelo?.modelo ?? '',
+      temperatura: c.temperatura === null ? '' : String(c.temperatura),
+      maxTokensRespuesta: c.maxTokensRespuesta === null ? '' : String(c.maxTokensRespuesta),
+      pasosMaximos: c.pasosMaximos === null ? '' : String(c.pasosMaximos),
+      topeDiarioUsuarioUsd: c.topes ? String(c.topes.usuarioDiaUsd) : '',
+      topeDiarioGlobalUsd: c.topes ? String(c.topes.globalDiaUsd) : '',
+      alertaFraccion: c.topes ? String(c.topes.alertaFraccion) : '',
+      herramientasHabilitadas: c.herramientasHabilitadas,
+    });
   }
 
   useEffect(() => {
     void cargar();
   }, []);
 
-  async function agregarClave() {
-    setError(null);
+  function cambiar(cambios: Partial<FormularioConfiguracion>) {
+    setFormulario((previo) => ({ ...previo, ...cambios }));
     setAviso(null);
-    const r = await llamarAsistente<{ clave: ClaveVista }>('/api/asistente/claves', { method: 'POST', body: JSON.stringify(nuevaClave) });
-    if (!r.ok) {
-      setError(r.data.error ?? 'No se pudo guardar la clave.');
-      return;
-    }
-    setNuevaClave({ proveedor: nuevaClave.proveedor, etiqueta: '', clave: '' });
-    setAviso('Clave guardada. Solo se muestran los últimos 4 caracteres.');
-    await cargar();
+    setError(null);
   }
 
-  async function eliminarClave(id: string) {
-    setError(null);
-    const r = await llamarAsistente<{ ok: boolean }>(`/api/asistente/claves?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-    if (!r.ok) {
-      setError(r.data.error ?? 'No se pudo eliminar la clave.');
-      return;
-    }
-    await cargar();
-  }
-
-  async function guardarParametros() {
+  async function guardar() {
     setError(null);
     setAviso(null);
-    const cuerpo: Record<string, unknown> = {};
-    if (modelo.modelo.trim()) cuerpo.modelo = { proveedor: modelo.proveedor, modelo: modelo.modelo.trim() };
-    if (topes.usuarioDiaUsd !== '' && topes.globalDiaUsd !== '') {
-      cuerpo.topes = { usuarioDiaUsd: Number(topes.usuarioDiaUsd), globalDiaUsd: Number(topes.globalDiaUsd), alertaFraccion: Number(topes.alertaFraccion) };
-    }
-    if (precios.entradaPorMillon !== '' && precios.salidaPorMillon !== '') {
-      cuerpo.precios = { entradaPorMillon: Number(precios.entradaPorMillon), salidaPorMillon: Number(precios.salidaPorMillon) };
-    }
-    const r = await llamarAsistente<{ ok: boolean }>('/api/asistente/configuracion', { method: 'PUT', body: JSON.stringify(cuerpo) });
+    setGuardando(true);
+    const r = await llamarAsistente<{ ok: boolean }>('/api/asistente/configuracion', {
+      method: 'PUT',
+      body: JSON.stringify(aCuerpo(formulario)),
+    });
+    setGuardando(false);
     if (!r.ok) {
       setError(r.data.error ?? 'No se pudo guardar la configuración.');
       return;
@@ -86,10 +87,11 @@ export function PanelConfiguracion() {
     await cargar();
   }
 
-  const sinTopes = config !== null && config.topes === null;
+  const errores = erroresFormulario(formulario, modelos);
+  const puedeGuardar = errores.length === 0 && !guardando;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       {sinTopes && (
         <p role="status" className="rounded-sm border border-border-subtle px-3 py-2 text-sm text-text-primary">
           Configura los topes de gasto antes de usar el chat. Sin topes, el asistente no llama al modelo.
@@ -98,56 +100,26 @@ export function PanelConfiguracion() {
       {aviso && <p role="status" className="text-sm text-text-primary">{aviso}</p>}
       {error && <p role="alert" className="text-sm text-error-stroke">{error}</p>}
 
-      <section className="flex flex-col gap-3" aria-labelledby="claves-titulo">
-        <h3 id="claves-titulo" className="font-semibold text-text-heading">Claves de proveedor</h3>
-        <ul className="flex flex-col gap-2">
-          {config?.claves.length === 0 && <li className="text-sm text-text-muted">No hay claves configuradas.</li>}
-          {config?.claves.map((c) => (
-            <li key={c.id} className="flex flex-wrap items-center gap-3 rounded-sm border border-border-subtle p-3 text-sm">
-              <span className="font-medium">{c.etiqueta}</span>
-              <span className="text-text-muted">{c.proveedor}</span>
-              <span className="text-text-muted">••••{c.ultimos4}</span>
-              <span className="text-text-muted">{c.estado}</span>
-              <Button variant="destructive" size="md" className="ml-auto" onClick={() => void eliminarClave(c.id)}>Eliminar</Button>
-            </li>
-          ))}
-        </ul>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="flex flex-col gap-2 text-sm text-text-muted">
-            Proveedor
-            <select
-              value={nuevaClave.proveedor}
-              onChange={(e) => setNuevaClave({ ...nuevaClave, proveedor: e.target.value as Proveedor })}
-              className="min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-text-primary"
-            >
-              {PROVEEDORES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </label>
-          <InputField label="Etiqueta" value={nuevaClave.etiqueta} onChange={(e) => setNuevaClave({ ...nuevaClave, etiqueta: e.target.value })} />
-          <InputField label="Clave (no se volverá a mostrar)" type="password" autoComplete="off" value={nuevaClave.clave} onChange={(e) => setNuevaClave({ ...nuevaClave, clave: e.target.value })} />
-        </div>
-        <Button size="md" className="self-start" onClick={() => void agregarClave()} disabled={!nuevaClave.etiqueta || nuevaClave.clave.length < 10}>
-          Agregar clave
-        </Button>
-      </section>
+      <ClavesProveedor claves={claves} onCambio={cargar} />
 
-      <section className="flex flex-col gap-3" aria-labelledby="modelo-titulo">
-        <h3 id="modelo-titulo" className="font-semibold text-text-heading">Modelo y topes de gasto (USD)</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm text-text-muted">
-            Proveedor del modelo
-            <select value={modelo.proveedor} onChange={(e) => setModelo({ ...modelo, proveedor: e.target.value as Proveedor })} className="min-h-[44px] rounded-sm border border-border-subtle bg-bg-paper px-3 text-text-primary">
-              {PROVEEDORES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </label>
-          <InputField label="Identificador del modelo" value={modelo.modelo} onChange={(e) => setModelo({ ...modelo, modelo: e.target.value })} />
-          <InputField label="Tope diario por usuario" type="number" min="0" step="0.01" value={topes.usuarioDiaUsd} onChange={(e) => setTopes({ ...topes, usuarioDiaUsd: e.target.value })} />
-          <InputField label="Tope diario global" type="number" min="0" step="0.01" value={topes.globalDiaUsd} onChange={(e) => setTopes({ ...topes, globalDiaUsd: e.target.value })} />
-          <InputField label="Alerta (fracción: 0.8 = 80%)" type="number" min="0" max="1" step="0.05" value={topes.alertaFraccion} onChange={(e) => setTopes({ ...topes, alertaFraccion: e.target.value })} />
-          <InputField label="Precio entrada por millón de tokens" type="number" min="0" step="0.0001" value={precios.entradaPorMillon} onChange={(e) => setPrecios({ ...precios, entradaPorMillon: e.target.value })} />
-          <InputField label="Precio salida por millón de tokens" type="number" min="0" step="0.0001" value={precios.salidaPorMillon} onChange={(e) => setPrecios({ ...precios, salidaPorMillon: e.target.value })} />
-        </div>
-        <Button size="md" className="self-start" onClick={() => void guardarParametros()}>Guardar configuración</Button>
+      <section className="flex flex-col gap-6" aria-labelledby="modelo-titulo">
+        <h3 id="modelo-titulo" className="font-semibold text-text-heading">Modelo y parámetros</h3>
+        <SelectorModelo formulario={formulario} modelos={modelos} onCambio={cambiar} onModelos={setModelos} />
+        <ParametrosModelo formulario={formulario} herramientas={herramientas} onCambio={cambiar} />
+
+        {errores.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium text-text-heading">Antes de guardar:</p>
+            <ul className="list-disc pl-5 text-sm text-text-muted">
+              {errores.map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <Button size="md" className="self-start" onClick={() => void guardar()} disabled={!puedeGuardar}>
+          {guardando ? 'Guardando…' : 'Guardar configuración'}
+        </Button>
       </section>
     </div>
   );

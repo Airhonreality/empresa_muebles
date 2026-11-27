@@ -14,6 +14,7 @@ import type { ProveedorAsistente } from './modelo'
 import { ErrorCatalogoNoDisponible, PROVEEDORES_CON_CATALOGO, type CatalogoModelos, type ModeloCatalogo, type ProveedorConCatalogo } from './catalogo-modelos'
 import { herramientasPermitidas, type DefinicionAsistente } from './herramientas'
 import { esquemaConfiguracion, type ConfiguracionAsistenteCuerpo } from './configuracion-esquema'
+import { CLAVE_MIN_CARACTERES, ETIQUETA_MAX_CARACTERES } from './opciones-configuracion'
 
 export interface Respuesta {
   status: number
@@ -243,8 +244,8 @@ export interface DepsClaves {
 
 const esquemaClaveNueva = z.object({
   proveedor: z.enum(PROVEEDORES),
-  etiqueta: z.string().trim().min(1, 'Pon una etiqueta').max(60),
-  clave: z.string().trim().min(10, 'La clave parece demasiado corta').max(400),
+  etiqueta: z.string().trim().max(ETIQUETA_MAX_CARACTERES, `La etiqueta no puede superar ${ETIQUETA_MAX_CARACTERES} caracteres`).default(''),
+  clave: z.string().trim().min(CLAVE_MIN_CARACTERES, `La clave debe tener al menos ${CLAVE_MIN_CARACTERES} caracteres`).max(400),
 })
 
 /** Agrega una clave. La respuesta solo trae los últimos 4 caracteres; la clave nunca vuelve. */
