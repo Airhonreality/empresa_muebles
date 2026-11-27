@@ -28,7 +28,7 @@ const CONFIG: ConfiguracionTurno = {
   temperatura: 0.2,
   maxTokensRespuesta: 1024,
   pasosMaximos: PASOS_MAXIMOS,
-  herramientasHabilitadas: ['clientes.buscar', 'cotizacion.buscar', 'finanzas.cuentas', 'cotizacion.crear_completa'],
+  herramientasHabilitadas: ['clientes.buscar', 'catalogo.productos_buscar', 'cotizacion.buscar', 'finanzas.cuentas', 'cotizacion.crear_completa'],
   topes: { usuarioDiaUsd: 5, globalDiaUsd: 50, alertaFraccion: 0.8 },
   precios: { entradaPorMillon: 1, salidaPorMillon: 2 },
 }
@@ -246,15 +246,17 @@ const casos: Array<[string, () => Promise<void>]> = [
     const herramientas = registroFalso(mundo)
     const modelo = new MockLanguageModelV4({
       doGenerate: [
+        respuestaHerramienta('ejecutar', { dominio: 'clientes', operacion: 'buscar', argumentos: { texto: 'Juan' } }, 'call-b'),
+        respuestaHerramienta('ejecutar', { dominio: 'catalogo', operacion: 'productos_buscar', argumentos: { texto: 'gabinete' } }, 'call-c'),
         respuestaHerramienta('ejecutar', {
           dominio: 'cotizacion',
           operacion: 'crear_completa',
           argumentos: {
-            cliente: { id: CLIENTE },
+            clienteId: CLIENTE,
             nombreProyecto: 'Cocina',
-            espacios: [{ nombre: 'Cocina', items: [{ catalogoId: PRODUCTO, cantidad: '2' }] }],
+            espacios: [{ tipoEspacio: 'cocina', nombre: 'Cocina', items: [{ productoId: PRODUCTO, cantidad: '2' }] }],
           },
-        }),
+        }, 'call-d'),
         respuestaTexto('Preparé la cotización; revísala y confírmala.'),
       ],
     })
@@ -268,9 +270,10 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.equal(propuestas.filas.get(id)?.conversacionId, 'conv-test')
     assert.match(r.propuestas[0].resumen, /Juan Pérez/)
     // El modelo recibe el texto de propuesta pendiente, no un éxito.
-    const resultadoDelModelo = JSON.stringify(modelo.doGenerateCalls[1].prompt)
+    const resultadoDelModelo = JSON.stringify(modelo.doGenerateCalls[3].prompt)
     assert.ok(resultadoDelModelo.includes('pendiente de confirmación'))
     assert.ok(llamadas.some((l) => l.herramienta === 'cotizacion.crear_completa'))
+    assert.ok(llamadas.some((l) => l.herramienta === 'clientes.buscar'))
   }],
   ['procedimientos: el índice va al prompt y procedimiento_consultar solo si hay docs permitidos', async () => {
     const modelo = new MockLanguageModelV4({ doGenerate: [respuestaTexto('ok'), respuestaTexto('ok')] })

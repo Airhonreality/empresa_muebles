@@ -1,21 +1,22 @@
 // lib/asistente/operaciones/cotizacion-completa.ts
-// Operación cotizacion.crear_completa (T2). Crea cliente (opcional), proyecto, espacios e ítems en
-// UNA transacción. Este módulo es puro: toda lectura y escritura entra por puertos
-// (LecturaCotizacion / EscrituraCotizacion). La implementación Drizzle está en cotizacion-produccion.ts.
+// Operación cotizacion.crear_completa (t-200 paso 4). Crea proyecto, espacios e ítems en UNA transacción.
+// Este módulo es puro: toda lectura y escritura entra por puertos (LecturaCotizacion / EscrituraCotizacion).
+// La implementación Drizzle está en cotizacion-produccion.ts.
 //
 // Reglas que impone el SERVIDOR, no el modelo:
+// - Cliente: existente, con id obtenido de clientes.buscar en el turno. No hay cliente nuevo aquí (S-6).
+// - Productos: id obtenido de catalogo.productos_buscar en el turno. El precio sale del catálogo al
+//   confirmar; cualquier precio que envíe el modelo se descarta (el esquema no lo conoce).
 // - Código COT-AAAA-MM-DD-NN generado aquí (cuenta las del día dentro de la transacción).
-// - Precio de ítems de catálogo = precioPublico de la base (lo que usa el cotizador). Lo que envíe el modelo se ignora.
-// - Ítem sin catálogo: exige cotizador:precio_libre y precio explícito.
-// - descuentoComercial: exige cotizador:descuento (la presencia del campo basta para pedirlo).
-// - Totales: calcularTotalesCotizacion (cálculo único). Mano de obra, costos e imprevistos = 0 (ver informe).
+// - Totales: calcularTotalesCotizacion. Mano de obra, costos e imprevistos = 0 (ver nota en el informe de t-200).
+// - Revalidación: si el total recalculado al confirmar no coincide con el del resumen, no se escribe y se
+//   lanza ErrorRevalidacion con el total nuevo.
 import { z } from 'zod'
-import type { SesionEmpleado } from '../../auth/session'
-import { aNumero, calcularTotalLinea, calcularTotalesCotizacion, type TotalesCotizacion } from '../../dinero/calculo'
+import { calcularTotalLinea, calcularTotalesCotizacion, type TotalesCotizacion } from '../../dinero/calculo'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../../data/codigos-cotizacion'
-import { clienteCrearSchema } from '../../validacion/cotizador'
+import { TIPOS_ESPACIO } from '../../catalogos/tipos-espacio'
 import { codigoPg, ErrorRevalidacion } from '../errores'
-import type { DefinicionAsistente } from '../herramientas'
+import type { DefinicionEscritura } from '../herramientas'
 
 /** Mismo default que la columna proyectos.porcentaje_iva. */
 export const PORCENTAJE_IVA = 19
@@ -31,41 +32,36 @@ export class ErrorCotizacion extends Error {
 
 // ── Entrada ────────────────────────────────────────────────────────
 
-const montoPesos = z.string().regex(/^\d{1,12}(\.0{1,2})?$/, 'debe ser un monto en pesos enteros (sin decimales)')
+/** Cantidad positiva con hasta 2 decimales, como texto (lo que guarda la base). */
 const cantidad = z
   .string()
   .regex(/^\d{1,6}(\.\d{1,2})?$/, 'cantidad inválida (número con hasta 2 decimales)')
   .refine((v) => Number(v) > 0, 'la cantidad debe ser mayor que cero')
 
-const esquemaItem = z
-  .object({
-    catalogoId: z.uuid().nullable(),
-    nombrePersonalizado: z.string().trim().min(1).max(200).optional(),
-    cantidad,
-    precioUnitario: montoPesos.optional(),
-  })
-  .refine((i) => i.catalogoId !== null || (i.nombrePersonalizado ?? '').length > 0, {
-    message: 'un ítem sin catálogo necesita nombrePersonalizado',
-  })
-
-const esquemaEspacio = z.object({
-  nombre: z.string().trim().min(1, 'el nombre del espacio no puede estar vacío').max(120),
-  items: z.array(esquemaItem).min(1, 'cada espacio necesita al menos un ítem'),
+const esquemaItem = z.object({
+  productoId: z.uuid('productoId debe ser un identificador válido'),
+  cantidad,
 })
 
-const clienteNuevo = clienteCrearSchema.omit({ id: true })
+const esquemaEspacio = z.object({
+  tipoEspacio: z.enum(TIPOS_ESPACIO.map((t) => t.codigo) as [string, ...string[]], { error: 'tipoEspacio no es un tipo de espacio válido' }),
+  nombre: z.string().trim().min(1, 'el nombre del espacio no puede estar vacío').max(80),
+  items: z.array(esquemaItem).min(1, 'cada espacio necesita al menos un ítem').max(60),
+})
 
+/**
+ * Entrada del modelo. z.object sin `strict`: un campo de precio que envíe el modelo se DESCARTA
+ * (no llega a la base). No hay descuento ni precio libre.
+ */
 export const esquemaCotizacionCompleta = z.object({
-  cliente: z.union([z.object({ id: z.uuid() }), clienteNuevo]),
-  nombreProyecto: z.string().trim().min(1, 'el nombre del proyecto no puede estar vacío').max(200),
+  clienteId: z.uuid('clienteId debe ser un identificador válido'),
+  nombreProyecto: z.string().trim().min(1, 'el nombre del proyecto no puede estar vacío').max(120),
   direccionObra: z.string().trim().min(1).max(300).optional(),
-  espacios: z.array(esquemaEspacio).min(1, 'la cotización necesita al menos un espacio'),
-  descuentoComercial: montoPesos.optional(),
+  espacios: z.array(esquemaEspacio).min(1, 'la cotización necesita al menos un espacio').max(20),
   aplicaIva: z.boolean().optional(),
 })
 
 export type EntradaCotizacionCompleta = z.infer<typeof esquemaCotizacionCompleta>
-export type ClienteNuevo = z.infer<typeof clienteNuevo>
 
 // ── Puertos ────────────────────────────────────────────────────────
 
@@ -89,13 +85,13 @@ export interface FilaProyecto {
 export interface FilaEspacio {
   proyectoId: string
   nombreEspacio: string
+  tipoEspacio: string
   orden: number
 }
 
 export interface FilaItem {
   varianteId: string
-  catalogoId: string | null
-  nombrePersonalizado: string | null
+  catalogoId: string
   cantidad: string
   precioUnitario: string
   totalLinea: string
@@ -105,7 +101,6 @@ export interface FilaItem {
 export interface EscrituraCotizacion extends LecturaCotizacion {
   /** Cotizaciones cuyo código empieza por el prefijo (para la secuencia del día). */
   cotizacionesDelDia(prefijo: string): Promise<number>
-  clienteCrear(datos: ClienteNuevo): Promise<string>
   proyectoInsertar(fila: FilaProyecto): Promise<string>
   espacioInsertar(fila: FilaEspacio): Promise<string>
   itemInsertar(fila: FilaItem): Promise<string>
@@ -117,17 +112,16 @@ export type EjecutorTransaccion = <T>(fn: (tx: EscrituraCotizacion) => Promise<T
 // ── Plan (lectura + cálculo, sin escrituras) ───────────────────────
 
 export interface ItemPlan {
-  catalogoId: string | null
-  nombrePersonalizado: string | null
+  catalogoId: string
   cantidad: string
   precioUnitario: string
   totalLinea: number
 }
 
 export interface PlanCotizacion {
-  cliente: { tipo: 'existente'; id: string; nombre: string } | { tipo: 'nuevo'; datos: ClienteNuevo }
+  cliente: { id: string; nombre: string }
   proyecto: Omit<FilaProyecto, 'codigo' | 'clienteId'>
-  espacios: Array<{ nombre: string; items: ItemPlan[] }>
+  espacios: Array<{ tipoEspacio: string; nombre: string; items: ItemPlan[] }>
   totales: TotalesCotizacion
   resumen: string
 }
@@ -137,92 +131,61 @@ export function formatoPesos(n: number): string {
 }
 
 /**
- * Valida permisos, resuelve precios y calcula totales. Solo LEE (usa `lectura`).
- * Se usa dos veces: al preparar la propuesta (resumen) y, dentro de la transacción, al confirmar
- * (precios vigentes en ese momento).
+ * Valida el cliente y los productos, resuelve precios y calcula totales. Solo LEE (usa `lectura`).
+ * Se usa al preparar (resumen) y, dentro de la transacción, al confirmar (precios vigentes).
  */
-export async function planificarCotizacion(
-  entrada: EntradaCotizacionCompleta,
-  usuario: SesionEmpleado,
-  lectura: LecturaCotizacion,
-): Promise<PlanCotizacion> {
-  // El descuento comercial no tiene permiso en la matriz única (lib/auth/permisos.ts): se rechaza
-  // explícitamente hasta que el Supervisor lo defina. El paso 4 de t-200 retira este campo.
-  if (entrada.descuentoComercial !== undefined) {
-    throw new ErrorCotizacion('El descuento comercial no está disponible en el asistente.')
-  }
-
-  let cliente: PlanCotizacion['cliente']
-  if ('id' in entrada.cliente) {
-    const nombre = await lectura.clienteNombre(entrada.cliente.id)
-    if (nombre === null) throw new ErrorCotizacion('El cliente indicado no existe.')
-    cliente = { tipo: 'existente', id: entrada.cliente.id, nombre }
-  } else {
-    cliente = { tipo: 'nuevo', datos: entrada.cliente }
-  }
+export async function planificarCotizacion(entrada: EntradaCotizacionCompleta, lectura: LecturaCotizacion): Promise<PlanCotizacion> {
+  const nombreCliente = await lectura.clienteNombre(entrada.clienteId)
+  if (nombreCliente === null) throw new ErrorCotizacion('El cliente indicado no existe.')
+  const cliente = { id: entrada.clienteId, nombre: nombreCliente }
 
   let materiales = 0
   const espacios: PlanCotizacion['espacios'] = []
   for (const esp of entrada.espacios) {
     const items: ItemPlan[] = []
     for (const it of esp.items) {
-      let precioUnitario: string
-      if (it.catalogoId !== null) {
-        // El precio enviado por el modelo se IGNORA: manda el del catálogo.
-        const producto = await lectura.productoCatalogo(it.catalogoId)
-        if (!producto || producto.anulado) throw new ErrorCotizacion(`Producto de catálogo no disponible: ${it.catalogoId}`)
-        if (producto.precioPublico === null) throw new ErrorCotizacion(`El producto ${it.catalogoId} no tiene precio público.`)
-        precioUnitario = producto.precioPublico
-      } else {
-        // Precio libre: sin permiso en la matriz única. Se rechaza (el paso 4 de t-200 lo retira).
-        throw new ErrorCotizacion(`El ítem "${it.nombrePersonalizado}" no tiene producto de catálogo; el precio libre no está disponible.`)
-      }
+      // El precio manda el catálogo. No hay otra fuente de precio en este módulo.
+      const producto = await lectura.productoCatalogo(it.productoId)
+      if (!producto || producto.anulado) throw new ErrorCotizacion(`Producto de catálogo no disponible: ${it.productoId}`)
+      if (producto.precioPublico === null) throw new ErrorCotizacion(`El producto ${it.productoId} no tiene precio público.`)
+      const precioUnitario = producto.precioPublico
       const totalLinea = calcularTotalLinea(it.cantidad, precioUnitario)
       materiales += totalLinea
-      items.push({
-        catalogoId: it.catalogoId,
-        nombrePersonalizado: it.nombrePersonalizado ?? null,
-        cantidad: it.cantidad,
-        precioUnitario,
-        totalLinea,
-      })
+      items.push({ catalogoId: it.productoId, cantidad: it.cantidad, precioUnitario, totalLinea })
     }
-    espacios.push({ nombre: esp.nombre, items })
+    espacios.push({ tipoEspacio: esp.tipoEspacio, nombre: esp.nombre, items })
   }
 
-  const descuento = entrada.descuentoComercial !== undefined ? aNumero(entrada.descuentoComercial) : 0
   const aplicaIva = entrada.aplicaIva === true
   const totales = calcularTotalesCotizacion({
     materiales,
     manoObra: 0,
     costosOperativos: 0,
     imprevistos: 0,
-    descuento,
+    descuento: 0,
     ajuste: 0,
     aplicaIva,
     porcentajeIva: PORCENTAJE_IVA,
   })
-  if (totales.subtotal < 0) throw new ErrorCotizacion('El descuento supera el total de materiales de la cotización.')
 
-  const etiquetaCliente = cliente.tipo === 'existente' ? cliente.nombre : `${cliente.datos.nombre} (cliente nuevo)`
   const numItems = espacios.reduce((n, e) => n + e.items.length, 0)
   const partes = [
-    `Cotización "${entrada.nombreProyecto}" para ${etiquetaCliente}.`,
+    `Cotización "${entrada.nombreProyecto}" para ${cliente.nombre}.`,
     `Espacios (${espacios.length}): ${espacios.map((e) => e.nombre).join(', ')}.`,
     `Ítems: ${numItems}.`,
     aplicaIva
       ? `Subtotal ${formatoPesos(totales.subtotal)}, IVA ${PORCENTAJE_IVA}% ${formatoPesos(totales.iva)}.`
       : `Subtotal ${formatoPesos(totales.subtotal)} (sin IVA).`,
-    descuento > 0 ? `Descuento comercial ${formatoPesos(descuento)}.` : '',
     `Total ${formatoPesos(totales.total)}.`,
-  ].filter((p) => p !== '')
+    'No incluye mano de obra: el total final lo calcula el cotizador.',
+  ]
 
   return {
     cliente,
     proyecto: {
       nombreProyecto: entrada.nombreProyecto,
       direccionObra: entrada.direccionObra ?? null,
-      descuentoComercial: String(descuento),
+      descuentoComercial: '0',
       aplicaIva,
       porcentajeIva: String(PORCENTAJE_IVA),
     },
@@ -245,21 +208,19 @@ export interface ResultadoCotizacionCreada {
 
 /** Escribe un plan ya calculado. Debe llamarse con el `tx` de la misma transacción. */
 export async function persistirCotizacion(plan: PlanCotizacion, tx: EscrituraCotizacion, ahora: Date): Promise<ResultadoCotizacionCreada> {
-  const clienteId = plan.cliente.tipo === 'nuevo' ? await tx.clienteCrear(plan.cliente.datos) : plan.cliente.id
   const existentes = await tx.cotizacionesDelDia(prefijoCodigoFecha(ahora))
   const codigo = generarCodigoCotizacion(ahora, existentes + 1)
-  const proyectoId = await tx.proyectoInsertar({ codigo, clienteId, ...plan.proyecto })
+  const proyectoId = await tx.proyectoInsertar({ codigo, clienteId: plan.cliente.id, ...plan.proyecto })
 
   const espacioIds: string[] = []
   let totalItems = 0
   for (const [orden, esp] of plan.espacios.entries()) {
-    const espacioId = await tx.espacioInsertar({ proyectoId, nombreEspacio: esp.nombre, orden })
+    const espacioId = await tx.espacioInsertar({ proyectoId, nombreEspacio: esp.nombre, tipoEspacio: esp.tipoEspacio, orden })
     espacioIds.push(espacioId)
     for (const it of esp.items) {
       await tx.itemInsertar({
         varianteId: espacioId,
         catalogoId: it.catalogoId,
-        nombrePersonalizado: it.nombrePersonalizado,
         cantidad: it.cantidad,
         precioUnitario: it.precioUnitario,
         totalLinea: String(it.totalLinea),
@@ -267,7 +228,7 @@ export async function persistirCotizacion(plan: PlanCotizacion, tx: EscrituraCot
       totalItems++
     }
   }
-  return { proyectoId, codigo, clienteId, espacioIds, totalItems, totales: plan.totales }
+  return { proyectoId, codigo, clienteId: plan.cliente.id, espacioIds, totalItems, totales: plan.totales }
 }
 
 export interface DepsCotizacion {
@@ -278,20 +239,18 @@ export interface DepsCotizacion {
 
 /**
  * Crea la cotización completa en UNA transacción. Si algo lanza, la transacción revierte todo.
- * Solo reintenta toda la transacción ante un código repetido (23505): dentro de una transacción de
- * Postgres un error deja la transacción abortada, así que no se puede reintentar el INSERT suelto.
+ * Si `totalEsperado` no coincide con el recalculado, lanza ErrorRevalidacion ANTES de escribir.
+ * Reintenta toda la transacción solo ante un código repetido (23505).
  */
 export async function crearCotizacionCompleta(
   entrada: EntradaCotizacionCompleta,
-  usuario: SesionEmpleado,
   deps: DepsCotizacion,
-  /** Total mostrado en el resumen. Si el recalculado no coincide, no se escribe nada (ErrorRevalidacion). */
   totalEsperado?: number,
 ): Promise<ResultadoCotizacionCreada> {
   for (let intento = 1; ; intento++) {
     try {
       return await deps.transaccion(async (tx) => {
-        const plan = await planificarCotizacion(entrada, usuario, tx)
+        const plan = await planificarCotizacion(entrada, tx)
         if (totalEsperado !== undefined && plan.totales.total !== totalEsperado) {
           throw new ErrorRevalidacion(
             `El total de la cotización cambió de ${formatoPesos(totalEsperado)} a ${formatoPesos(plan.totales.total)}. Revisa la propuesta y vuelve a confirmar.`,
@@ -308,26 +267,33 @@ export async function crearCotizacionCompleta(
   }
 }
 
-/** Definición de la operación para el registro. Escritura: el bucle solo crea propuestas con ella. */
-export function operacionCotizacionCrearCompleta(deps: DepsCotizacion): DefinicionAsistente {
+/**
+ * Definición de la operación para el registro. Escritura en dos fases: preparar valida y calcula
+ * (resumen); confirmar revalida y escribe.
+ */
+export function operacionCotizacionCrearCompleta(deps: DepsCotizacion): DefinicionEscritura<typeof esquemaCotizacionCompleta> {
   return {
     nombre: 'cotizacion.crear_completa',
     dominio: 'cotizacion',
     operacion: 'crear_completa',
     descripcion:
-      'Crea una cotización completa: cliente (existente por id, o nuevo con nombre), proyecto, espacios y ítems. ' +
-      'Requiere confirmación del empleado. No envíes totales: los calcula el sistema. Los precios de catálogo los pone el sistema.',
+      'Crea una cotización para un cliente existente (clienteId de clientes.buscar) con espacios e ítems de catálogo (productoId de catalogo.productos_buscar). ' +
+      'Requiere confirmación del empleado. No envíes precios ni totales: los pone el sistema.',
     permiso: 'cotizador:escribir',
     canales: ['chat'],
     esEscritura: true,
     esquema: esquemaCotizacionCompleta,
-    preparar: async (entrada, usuario) => {
-      const plan = await planificarCotizacion(entrada, usuario, deps.lectura)
+    preparar: async (entrada, _usuario, ctx) => {
+      ctx.procedencia.exigir('cliente', entrada.clienteId, 'cliente')
+      for (const esp of entrada.espacios) {
+        for (const it of esp.items) ctx.procedencia.exigir('producto', it.productoId, 'producto')
+      }
+      const plan = await planificarCotizacion(entrada, deps.lectura)
       return { resumen: plan.resumen, datos: { entrada, totalEsperado: plan.totales.total } }
     },
-    confirmar: async (datos, usuario) => {
+    confirmar: async (datos) => {
       const { entrada, totalEsperado } = datos as { entrada: unknown; totalEsperado: number }
-      return crearCotizacionCompleta(esquemaCotizacionCompleta.parse(entrada), usuario, deps, totalEsperado)
+      return crearCotizacionCompleta(esquemaCotizacionCompleta.parse(entrada), deps, totalEsperado)
     },
   }
 }

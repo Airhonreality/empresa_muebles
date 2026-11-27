@@ -26,19 +26,6 @@ function adaptador(q: Consulta): EscrituraCotizacion {
       const filas = await q.select({ codigo: s.proyectos.codigo }).from(s.proyectos).where(like(s.proyectos.codigo, `${prefijo}%`))
       return filas.length
     },
-    async clienteCrear(datos) {
-      const [f] = await q
-        .insert(s.clientes)
-        .values({
-          nombre: datos.nombre,
-          documento: datos.documento ?? null,
-          telefono: datos.telefono ?? null,
-          email: datos.email ?? null,
-          domicilio: datos.domicilio ?? null,
-        })
-        .returning({ id: s.clientes.id })
-      return f.id
-    },
     async proyectoInsertar(fila) {
       // Mismos defaults que crearProyectoAction (core.ts): activa, personalizado, montos en 0.
       const [f] = await q
@@ -67,6 +54,7 @@ function adaptador(q: Consulta): EscrituraCotizacion {
           proyectoId: fila.proyectoId,
           nombreEspacio: fila.nombreEspacio,
           nombreVariante: 'Inicial',
+          tipoEspacio: fila.tipoEspacio,
           activa: true,
           visibleEnPropuestaPublica: true,
           orden: fila.orden,
@@ -80,7 +68,6 @@ function adaptador(q: Consulta): EscrituraCotizacion {
         .values({
           varianteId: fila.varianteId,
           catalogoId: fila.catalogoId,
-          nombrePersonalizado: fila.nombrePersonalizado,
           cantidad: fila.cantidad,
           precioUnitario: fila.precioUnitario,
           totalLinea: fila.totalLinea,

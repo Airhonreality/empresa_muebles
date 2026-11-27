@@ -84,7 +84,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     const comercial = await conPermisosRestringidos('comercial', ['cotizador:leer'], () => dominioOperaciones('finanzas', sesionCon('comercial'), reg))
     assert.deepEqual(comercial.operaciones, [])
     const admin = dominioOperaciones('finanzas', sesionCon('admin'), reg)
-    assert.deepEqual(admin.operaciones.map((o) => o.operacion), ['cuentas'])
+    assert.deepEqual(admin.operaciones.map((o) => o.operacion), ['cuentas', 'movimiento_registrar'])
     assert.equal(typeof admin.operaciones[0].esquema, 'object')
   }],
   ['dominio inexistente responde lista vacía (igual que uno sin permiso)', async () => {

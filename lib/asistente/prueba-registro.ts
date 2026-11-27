@@ -21,6 +21,8 @@ export interface MundoFalso {
   escrituras: Array<{ tabla: string; fila: unknown }>
   /** Cuántas veces se llamó cada puerto de lectura. */
   llamadas: Record<string, number>
+  /** Si se indica N, la inserción número N de ítem de cotización lanza (para probar atomicidad). */
+  fallaEnItem?: number
 }
 
 export function mundoFalso(parcial: Partial<MundoFalso> = {}): MundoFalso {
@@ -98,11 +100,22 @@ function finanzasFalsas(mundo: MundoFalso): PuertoFinanzas {
       contar(mundo, 'finanzas.cuentaPorId')
       return mundo.cuentas.find((c) => c.id === id) ?? null
     },
+    async registrarMovimiento(datos) {
+      contar(mundo, 'finanzas.registrarMovimiento')
+      const id = `mov-${mundo.escrituras.length + 1}`
+      const cuenta = mundo.cuentas.find((c) => c.id === datos.cuentaId)
+      if (cuenta) {
+        const delta = Number(datos.monto) * (datos.tipo === 'entrada' ? 1 : -1)
+        cuenta.saldoActual = String(Number(cuenta.saldoActual) + delta)
+      }
+      mundo.escrituras.push({ tabla: 'movimientos', fila: { id, ...datos } })
+      return id
+    },
   }
 }
 
 /** Dependencias de cotización sobre el mundo: lectura directa y transacción con rollback. */
-function cotizacionFalsa(mundo: MundoFalso): DepsCotizacion {
+export function cotizacionFalsa(mundo: MundoFalso): DepsCotizacion {
   const lectura: LecturaCotizacion = {
     async clienteNombre(id) {
       return mundo.clientes.find((c) => c.id === id)?.nombre ?? null
@@ -113,13 +126,11 @@ function cotizacionFalsa(mundo: MundoFalso): DepsCotizacion {
     },
   }
   let n = 0
+  let itemsIntentados = 0
   const tx = (escritas: MundoFalso['escrituras']): EscrituraCotizacion => ({
     ...lectura,
     async cotizacionesDelDia() {
       return 0
-    },
-    async clienteCrear() {
-      throw new Error('no usado por el paso 3/4')
     },
     async proyectoInsertar(fila) {
       const id = `proy-${++n}`
@@ -133,6 +144,8 @@ function cotizacionFalsa(mundo: MundoFalso): DepsCotizacion {
     },
     async itemInsertar(fila) {
       const id = `item-${++n}`
+      itemsIntentados += 1
+      if (mundo.fallaEnItem === itemsIntentados) throw new Error('fallo simulado en el ítem')
       escritas.push({ tabla: 'items', fila: { id, ...fila } })
       return id
     },
