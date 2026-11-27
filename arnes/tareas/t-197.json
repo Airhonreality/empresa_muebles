@@ -1,0 +1,50 @@
+{
+  "id": "t-197",
+  "titulo": "Revisión del Supervisor de las correcciones de seguridad (rama fix/guard-acciones-protegidas) antes de mergear a dev",
+  "intencion_negocio": "Cerrar el hueco de autenticación y autorización en las Server Actions del ERP. Como dev es producción (AGENTS.md), el merge es un despliegue real: debe revisarse antes.",
+  "zona": "datos",
+  "tipo": "seguridad",
+  "riesgo": "alto",
+  "estado": "pendiente",
+  "bloquea": "merge de fix/guard-acciones-protegidas a dev",
+  "rama": "fix/guard-acciones-protegidas",
+  "clon": "/home/airhon/Proyectos/empresa_muebles_seguridad_acciones",
+  "commits": [
+    "0f5a649 fix(seguridad): protocolo único protegerAccion en todas las Server Actions",
+    "5c85ade fix(seguridad): invitaciones de empleado solo para administradores",
+    "adb2e84 fix(seguridad): portal de clientes toma el cliente desde la sesión",
+    "6dcc8c2 fix(seguridad): vista previa de propuesta solo para empleados",
+    "50a6aa5 fix(seguridad): parámetros financieros restringidos a finanzas y admin",
+    "b0fc49a fix(seguridad): contenido público solo muestra lo publicado",
+    "81bee9c fix(seguridad): autoría de decisiones tomada de la sesión",
+    "d18623e fix(seguridad): marcar lead-actions como público con motivo"
+  ],
+  "decisiones_a_revisar": [
+    "T6: decisiones_cronograma.autorizado_por toma sesion.personaId (FK a personas). Una cuenta sin persona asociada no puede registrar decisiones. Confirmar política.",
+    "T6: verificadores = comerciales activos con persona, según referencia en arnes/nucleo/logica_de_negocio.md (D3/I-035). Confirmar.",
+    "T2: el portal de cliente ya no puede reportar garantías (reportarCasoGarantiaAction exige garantia:escribir de empleado) y sigue recibiendo clienteId del llamador. Decisión de diseño pendiente.",
+    "T3: la vista previa de propuesta se movió a /erp/vista-previa-propuesta/[proyectoId]. Verificar que nada externo enlace a la ruta anterior.",
+    "T1/T4: matriz de roles en lib/auth/permisos.ts inferida por el agente; el Supervisor debe confirmar quién puede qué."
+  ],
+  "pendientes_fuera_de_alcance": [
+    "Archivos 'use server' no revisados: app/actions/pdf/cotizacion.ts, app/(publico)/cuenta/login/actions.ts, lib/r2/upload.ts, acciones de logout en lib/auth/actions.ts.",
+    "Formulario de contacto (lead-actions) sin límite de tasa ni anti-spam.",
+    "Identidades mixtas en el schema: publicadaPorId (propuestas_versiones) guarda usuarios.id sin FK; cambiadoPor y autorizadoPor apuntan a personas.id con FK. Unificar criterio de auditoría."
+  ],
+  "criterios_aceptacion": [
+    "Supervisor revisa el diff de cada commit y registra veredicto por decisión",
+    "Prueba en navegador con un empleado real y un cliente real, en un entorno que no sea producción",
+    "Decisión explícita sobre el portal de garantías",
+    "tsc 0; cobertura-acciones.test.ts en verde; next build compila (ya verificado por el agente, repetir antes del merge)"
+  ],
+  "verificacion_mecanica_previa": [
+    "npx tsc --noEmit: exit 0 (verificado por el orquestador en el clon)",
+    "Tests de lib/auth y lib/data pasan salvo mock-store.test.ts y coverage.test.ts, que ya fallaban antes de estos cambios",
+    "No se probó contra base real, producción, login con cookies ni navegador"
+  ],
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "nota": "Mergear a dev = desplegar a producción. Requiere aprobación explícita del Supervisor."
+  }
+}

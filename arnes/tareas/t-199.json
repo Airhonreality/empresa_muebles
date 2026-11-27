@@ -1,0 +1,12 @@
+{
+  "id": "t-199",
+  "titulo": "Capa de inteligencia del asistente: acciones compuestas atómicas y base de conocimiento",
+  "estado": "borrador",
+  "plan_ref": "arnes/planes/plan_t-199_inteligencia_asistente.md",
+  "depende_de": ["t-198"],
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "nota": "Aprobar I-1 a I-4 del plan. El refactor de acciones existentes requiere revisión porque toca el cotizador en producción."
+  }
+}

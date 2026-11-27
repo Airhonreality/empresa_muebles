@@ -1,0 +1,12 @@
+{
+  "id": "t-198",
+  "titulo": "Asistente de chat en el ERP (bucle con herramientas sobre acciones protegidas)",
+  "estado": "borrador",
+  "plan_ref": "arnes/planes/plan_t-198_asistente_erp.md",
+  "depende_de": ["t-197"],
+  "checkpoint": {
+    "requerido": true,
+    "veredicto_humano": "pendiente",
+    "nota": "Aprobar decisiones D1-D6 del plan y el cambio de schema (bloque A) antes de escribir código."
+  }
+}
