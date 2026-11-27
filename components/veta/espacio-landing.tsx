@@ -7,7 +7,6 @@ import { HeroCarousel } from '@/components/veta/hero-carousel';
 import { GaleriaEspacioScroll } from '@/components/veta/galeria-espacio-client';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 import { ValidacionTecnicaSlider } from '@/components/veta/validacion-tecnica-slider';
-import { formatearPrecioAsesoria3d } from '@/lib/utils/format';
 
 // t-188: los CTA de WhatsApp ya no navegan directo a wa.me — abren AsesoriaBoton/AsesoriaModal
 // para que el clic quede como lead con teléfono, gclid y referencia.
@@ -117,7 +116,11 @@ export async function EspacioLanding({ config, galeria = [], tipoEspacio }: { co
   const heroImageFallback = HOME_IMAGES_SEO[imageKey];
   const heroImages = await obtenerHeroCarouselImagesAction(tipoEspacio || slug);
   const atributosTecnicos = await obtenerAtributosTecnicosAction(tipoEspacio || slug);
-  const formattedPrice = formatearPrecioAsesoria3d(await obtenerPrecioAsesoria3dAction());
+  const precio3d = (await obtenerPrecioAsesoria3dAction()) || 130000;
+  
+  const formattedPrice = precio3d !== null 
+    ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(precio3d || 130000)
+    : 'tarifa vigente';
 
   const jsonLd = {
     '@context': 'https://schema.org',

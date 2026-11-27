@@ -9,7 +9,6 @@ import {
   obtenerPrecioAsesoria3dAction
 } from '@/lib/data/actions/public';
 import { getHomeJsonLd, SITE_URL } from '@/lib/seo/jsonld';
-import { formatearPrecioAsesoria3d } from '@/lib/utils/format';
 import { HeroCarousel } from '@/components/veta/hero-carousel';
 import { AsesoriaBoton } from '@/components/veta/asesoria-boton';
 import { socialMeta } from '@/lib/seo/social';
@@ -130,7 +129,9 @@ export default async function Home() {
     obtenerPrecioAsesoria3dAction()
   ]);
   
-  const formattedPrice = formatearPrecioAsesoria3d(precio3d);
+  const formattedPrice = precio3d !== null 
+    ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(precio3d || 130000)
+    : 'tarifa vigente';
   // Testimonios reales curados (I-050, I-019 — reseñas de Google Business Profile) ya no se
   // hardcodean (D-01-9 T-03): vienen de store.testimonios.publicados() por Server Action escopada.
   // El seed de datos vive en lib/data/fixtures.ts TESTIMONIOS + DB (testimonios.nombre_autor).

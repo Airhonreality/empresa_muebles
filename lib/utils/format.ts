@@ -68,21 +68,3 @@ export function formatRelativeDate(date: Date | string | null | undefined): stri
     day: 'numeric',
   }).format(d);
 }
-
-/** Texto que muestran las pantallas públicas cuando el parámetro `precio_asesoria_3d` no existe o no es numérico. */
-export const PRECIO_ASESORIA_3D_SIN_DATO = 'tarifa vigente'
-
-/**
- * Formatea el precio de asesoría 3D leído del parámetro `precio_asesoria_3d`.
- * `null` (parámetro ausente o inválido) NO se reemplaza por un precio inventado: devuelve
- * `PRECIO_ASESORIA_3D_SIN_DATO`.
- */
-export function formatearPrecioAsesoria3d(valor: number | null | undefined): string {
-  if (valor === null || valor === undefined || Number.isNaN(valor)) return PRECIO_ASESORIA_3D_SIN_DATO
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(valor)
-}
