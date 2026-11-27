@@ -2,7 +2,7 @@
 // Propuestas de escritura con confirmación (plan §2 pieza 5). Una herramienta de escritura NUNCA
 // se ejecuta desde el bucle: crea una propuesta pendiente; solo el mismo usuario que la pidió,
 // en confirmación explícita, la ejecuta. Lógica pura: la persistencia entra por RepositorioPropuestas.
-import { PERMISOS_POR_ROL } from './permisos'
+import { PERMISOS_POR_ROL } from '../auth/permisos'
 import type { SesionEmpleado } from '../auth/session'
 import type { DefinicionAsistente } from './herramientas'
 

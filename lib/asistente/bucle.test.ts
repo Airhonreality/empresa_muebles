@@ -13,6 +13,7 @@ import {
   type LlamadaRegistro,
 } from './bucle'
 import { crearHerramientas, type AccionesLectura } from './herramientas'
+import { conPermisosRestringidos } from './prueba-permisos'
 
 const PASOS_MAXIMOS = 8
 import { operacionCotizacionCrearCompleta } from './operaciones/cotizacion-completa'
@@ -288,15 +289,19 @@ const casos: Array<[string, () => Promise<void>]> = [
     const { deps } = entorno({ modelos: { a: modelo } })
     deps.documentos = [
       { ruta: 'cotizaciones/iva.md', titulo: 'IVA en una cotización', dueno: 'area-cotizaciones', revisado: '2026-11-26', permiso: 'cotizador:leer', cuerpo: 'El IVA es 19.' },
-      { ruta: 'cotizaciones/descuentos.md', titulo: 'Descuentos', dueno: 'area-cotizaciones', revisado: '2026-11-26', permiso: 'cotizador:descuento', cuerpo: 'secreto' },
+      { ruta: 'finanzas/cierre.md', titulo: 'Cierre', dueno: 'area-finanzas', revisado: '2026-11-26', permiso: 'finanzas:escribir', cuerpo: 'secreto' },
     ]
-    await ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'iva', configuracion: CONFIG }, deps)
+    await conPermisosRestringidos('comercial', ['cotizador:leer', 'proyectos:leer'], () =>
+      ejecutarTurno({ usuario: sesionCon('comercial'), historial: [], mensaje: 'iva', configuracion: CONFIG }, deps),
+    )
     const sistema = JSON.stringify(modelo.doGenerateCalls[0].prompt.find((m) => m.role === 'system'))
     assert.ok(sistema.includes('cotizaciones/iva.md: IVA en una cotización'))
-    assert.ok(!sistema.includes('descuentos.md'))
+    assert.ok(!sistema.includes('cierre.md'))
     const nombres = (modelo.doGenerateCalls[0].tools ?? []).map((t) => t.name)
     assert.ok(nombres.includes('procedimiento_consultar'))
-    await ejecutarTurno({ usuario: sesionCon('taller'), historial: [], mensaje: 'iva', configuracion: CONFIG }, deps)
+    await conPermisosRestringidos('taller', ['proyectos:leer'], () =>
+      ejecutarTurno({ usuario: sesionCon('taller'), historial: [], mensaje: 'iva', configuracion: CONFIG }, deps),
+    )
     const nombresTaller = (modelo.doGenerateCalls[1].tools ?? []).map((t) => t.name)
     assert.ok(!nombresTaller.includes('procedimiento_consultar'))
   }],

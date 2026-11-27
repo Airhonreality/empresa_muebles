@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import type { SesionEmpleado } from '../../auth/session'
-import { NoAutorizadoError } from '../permisos'
 import { calcularTotalesCotizacion } from '../../dinero/calculo'
 import { confirmarPropuesta, type DepsPropuestas, type Propuesta, type RepositorioPropuestas } from '../propuestas'
 import { ejecutarOperacion } from '../operaciones'
@@ -150,22 +149,15 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.equal(m.items.length, 2)
     assert.equal(r.totalItems, 2)
   }],
-  ['usuario sin cotizador:descuento con descuentoComercial -> rechazo, sin escritura', async () => {
+  ['descuentoComercial -> rechazo explícito (sin permiso en la matriz única), sin escritura', async () => {
     const m = mundoInicial()
     const { deps, intentos } = depsDe(m)
     await assert.rejects(
       crearCotizacionCompleta(entradaBase({ descuentoComercial: '50000' }), sesionCon('comercial'), deps),
-      (e: unknown) => e instanceof NoAutorizadoError && /cotizador:descuento/.test((e as Error).message),
+      ErrorCotizacion,
     )
     assert.equal(m.proyectos.length, 0)
     assert.equal(intentos.n, 1)
-  }],
-  ['descuento con permiso se aplica al proyecto y al total', async () => {
-    const m = mundoInicial()
-    const { deps } = depsDe(m)
-    const r = await crearCotizacionCompleta(entradaBase({ descuentoComercial: '50000' }), sesionCon('admin'), deps)
-    assert.equal(r.totales.subtotal, 500000 + 100000 - 50000)
-    assert.equal(m.proyectos.length, 1)
   }],
   ['precio enviado por el modelo distinto del catálogo -> se usa el del catálogo', async () => {
     const m = mundoInicial()
@@ -177,23 +169,14 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.equal(m.items[0].precioUnitario, '250000.00')
     assert.equal(m.items[0].totalLinea, '500000')
   }],
-  ['ítem sin catálogo sin cotizador:precio_libre -> rechazo, sin escritura', async () => {
+  ['ítem sin catálogo -> rechazo (precio libre no disponible), sin escritura', async () => {
     const m = mundoInicial()
     const { deps } = depsDe(m)
     const entrada = entradaBase({
       espacios: [{ nombre: 'Baño', items: [{ catalogoId: null, nombrePersonalizado: 'Repisa', cantidad: '1', precioUnitario: '80000' }] }],
     })
-    await assert.rejects(crearCotizacionCompleta(entrada, sesionCon('comercial'), deps), NoAutorizadoError)
+    await assert.rejects(crearCotizacionCompleta(entrada, sesionCon('comercial'), deps), ErrorCotizacion)
     assert.equal(m.items.length, 0)
-  }],
-  ['ítem sin catálogo con cotizador:precio_libre usa el precio de la entrada', async () => {
-    const m = mundoInicial()
-    const { deps } = depsDe(m)
-    const entrada = entradaBase({
-      espacios: [{ nombre: 'Baño', items: [{ catalogoId: null, nombrePersonalizado: 'Repisa', cantidad: '1', precioUnitario: '80000' }] }],
-    })
-    await crearCotizacionCompleta(entrada, sesionCon('admin'), deps)
-    assert.equal(m.items[0].totalLinea, '80000')
   }],
   ['producto de catálogo inexistente o anulado -> error, sin escritura', async () => {
     const m = mundoInicial()
@@ -214,21 +197,12 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['los totales coinciden con calcularTotalesCotizacion sobre los mismos datos', async () => {
     const m = mundoInicial()
     const { deps } = depsDe(m)
-    const r = await crearCotizacionCompleta(entradaBase({ aplicaIva: true, descuentoComercial: '20000' }), sesionCon('admin'), deps)
+    const r = await crearCotizacionCompleta(entradaBase({ aplicaIva: true }), sesionCon('admin'), deps)
     const esperado = calcularTotalesCotizacion({
       materiales: 500000 + 100000, manoObra: 0, costosOperativos: 0, imprevistos: 0,
-      descuento: 20000, ajuste: 0, aplicaIva: true, porcentajeIva: 19,
+      descuento: 0, ajuste: 0, aplicaIva: true, porcentajeIva: 19,
     })
     assert.deepEqual(r.totales, esperado)
-  }],
-  ['descuento mayor que los materiales -> rechazo, sin escritura', async () => {
-    const m = mundoInicial()
-    const { deps } = depsDe(m)
-    await assert.rejects(
-      crearCotizacionCompleta(entradaBase({ descuentoComercial: '999999999' }), sesionCon('admin'), deps),
-      /supera el total de materiales/,
-    )
-    assert.equal(m.proyectos.length, 0)
   }],
   ['código repetido (23505) reintenta la transacción completa con otro código', async () => {
     const m = mundoInicial()

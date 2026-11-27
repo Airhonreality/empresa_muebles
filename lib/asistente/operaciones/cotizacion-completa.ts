@@ -11,7 +11,6 @@
 // - Totales: calcularTotalesCotizacion (cálculo único). Mano de obra, costos e imprevistos = 0 (ver informe).
 import { z } from 'zod'
 import type { SesionEmpleado } from '../../auth/session'
-import { NoAutorizadoError, PERMISOS_POR_ROL, type Permiso } from '../permisos'
 import { aNumero, calcularTotalLinea, calcularTotalesCotizacion, type TotalesCotizacion } from '../../dinero/calculo'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../../data/codigos-cotizacion'
 import { clienteCrearSchema } from '../../validacion/cotizador'
@@ -147,11 +146,10 @@ export async function planificarCotizacion(
   usuario: SesionEmpleado,
   lectura: LecturaCotizacion,
 ): Promise<PlanCotizacion> {
-  const permisos: readonly Permiso[] = PERMISOS_POR_ROL[usuario.rol] ?? []
-  const tiene = (p: Permiso) => permisos.includes(p)
-
-  if (entrada.descuentoComercial !== undefined && !tiene('cotizador:descuento')) {
-    throw new NoAutorizadoError('cotizador:descuento')
+  // El descuento comercial no tiene permiso en la matriz única (lib/auth/permisos.ts): se rechaza
+  // explícitamente hasta que el Supervisor lo defina. El paso 4 de t-200 retira este campo.
+  if (entrada.descuentoComercial !== undefined) {
+    throw new ErrorCotizacion('El descuento comercial no está disponible en el asistente.')
   }
 
   let cliente: PlanCotizacion['cliente']
@@ -176,11 +174,8 @@ export async function planificarCotizacion(
         if (producto.precioPublico === null) throw new ErrorCotizacion(`El producto ${it.catalogoId} no tiene precio público.`)
         precioUnitario = producto.precioPublico
       } else {
-        if (!tiene('cotizador:precio_libre')) throw new NoAutorizadoError('cotizador:precio_libre')
-        if (it.precioUnitario === undefined) {
-          throw new ErrorCotizacion(`El ítem "${it.nombrePersonalizado}" necesita precio unitario.`)
-        }
-        precioUnitario = it.precioUnitario
+        // Precio libre: sin permiso en la matriz única. Se rechaza (el paso 4 de t-200 lo retira).
+        throw new ErrorCotizacion(`El ítem "${it.nombrePersonalizado}" no tiene producto de catálogo; el precio libre no está disponible.`)
       }
       const totalLinea = calcularTotalLinea(it.cantidad, precioUnitario)
       materiales += totalLinea

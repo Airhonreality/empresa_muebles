@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { z } from 'zod'
 import type { SesionEmpleado } from '../auth/session'
 import type { DefinicionAsistente } from './herramientas'
+import { conPermisosRestringidos } from './prueba-permisos'
 import {
   ErrorPropuesta,
   cancelarPropuesta,
@@ -156,7 +157,9 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['confirmar sin permiso de la herramienta no la marca como ejecutada', async () => {
     const { deps, filas, ejecuciones } = entorno()
     const id = await creaPendiente(deps, sesion('u1', 'finanzas'))
-    await assert.rejects(confirmarPropuesta(id, sesion('u1', 'comercial'), deps), (e: unknown) => e instanceof ErrorPropuesta && e.codigo === 'SIN_PERMISO')
+    await conPermisosRestringidos('comercial', ['cotizador:leer'], () =>
+      assert.rejects(confirmarPropuesta(id, sesion('u1', 'comercial'), deps), (e: unknown) => e instanceof ErrorPropuesta && e.codigo === 'SIN_PERMISO'),
+    )
     assert.equal(filas.get(id)!.estado, 'pendiente')
     assert.equal(ejecuciones.length, 0)
   }],

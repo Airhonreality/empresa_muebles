@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import type { SesionEmpleado } from '../auth/session'
+import { conPermisosRestringidos } from './prueba-permisos'
 import {
   cargarDocumentos,
   consultarProcedimiento,
@@ -46,12 +47,14 @@ const casos: Array<[string, () => Promise<void>]> = [
     assert.ok(!indice.includes('sin_encabezado') && !indice.includes('Malo') && !indice.includes('Fecha'))
   }],
   ['usuario sin permiso no recibe el documento ni en el índice ni por nombre', async () => {
-    const docs = [docMemoria({ ruta: 'cotizaciones/descuentos.md', titulo: 'Descuentos', permiso: 'cotizador:descuento' })]
-    assert.equal(indiceProcedimientos(docs, sesionCon('comercial'), AHORA), '')
-    assert.match(consultarProcedimiento('descuentos', sesionCon('comercial'), docs), /No hay un procedimiento/)
-    assert.equal(documentosPermitidos(docs, sesionCon('comercial')).length, 0)
+    const docs = [docMemoria({ ruta: 'finanzas/cierre.md', titulo: 'Cierre', permiso: 'finanzas:escribir' })]
+    await conPermisosRestringidos('comercial', ['cotizador:leer'], () => {
+      assert.equal(indiceProcedimientos(docs, sesionCon('comercial'), AHORA), '')
+      assert.match(consultarProcedimiento('cierre', sesionCon('comercial'), docs), /No hay un procedimiento/)
+      assert.equal(documentosPermitidos(docs, sesionCon('comercial')).length, 0)
+    })
     assert.equal(documentosPermitidos(docs, sesionCon('admin')).length, 1)
-    assert.match(indiceProcedimientos(docs, sesionCon('admin'), AHORA), /cotizaciones\/descuentos\.md: Descuentos/)
+    assert.match(indiceProcedimientos(docs, sesionCon('admin'), AHORA), /finanzas\/cierre\.md: Cierre/)
   }],
   ['consultar por ruta o por título devuelve el documento completo', async () => {
     const docs = [docMemoria({ ruta: 'cotizaciones/iva.md', titulo: 'IVA en una cotización', cuerpo: 'El IVA es 19.' })]
@@ -73,10 +76,14 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['los documentos reales son válidos y el INDICE.md lista exactamente esos archivos', async () => {
     const docs = cargarDocumentos(RAIZ_REAL)
     const rutasReales = docs.map((d) => d.ruta).sort()
-    assert.ok(rutasReales.length >= 3)
+    assert.ok(rutasReales.length >= 2)
     const indice = readFileSync(join(RAIZ_REAL, 'INDICE.md'), 'utf8')
     const enlaces = [...indice.matchAll(/\]\(([^)]+\.md)\)/g)].map((m) => m[1]).sort()
-    assert.deepEqual(enlaces, rutasReales)
+    // HUECO CONOCIDO (t-200 paso 1): descuentos.md declara el permiso "cotizador:descuento", que ya no
+    // existe en la matriz única (lib/auth/permisos.ts). Ese documento no carga hasta que el Supervisor
+    // defina el permiso o cambie el encabezado. La prueba fija el hueco para que no pase en silencio.
+    assert.deepEqual(enlaces.filter((r) => !rutasReales.includes(r)), ['cotizaciones/descuentos.md'])
+    assert.deepEqual(enlaces.filter((r) => rutasReales.includes(r)), rutasReales)
   }],
   ['ningún documento de conocimiento contiene patrones de claves de API', async () => {
     // Patrones de claves de proveedor, partidos a propósito para que este archivo no los contenga.

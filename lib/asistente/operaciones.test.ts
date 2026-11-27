@@ -4,6 +4,7 @@ import type { SesionEmpleado } from '../auth/session'
 import { crearHerramientas, type AccionesLectura, type DefinicionAsistente } from './herramientas'
 import { dominioOperaciones, ejecutarOperacion, MENSAJE_NO_DISPONIBLE, type DepsOperaciones } from './operaciones'
 import type { Propuesta, RepositorioPropuestas } from './propuestas'
+import { conPermisosRestringidos } from './prueba-permisos'
 
 const AHORA = new Date('2026-11-25T15:00:00.000Z')
 
@@ -79,7 +80,7 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['dominio_operaciones no lista operaciones que el permiso no cubre', async () => {
     const { acciones } = accionesFalsas()
     const reg = crearHerramientas(acciones)
-    const comercial = dominioOperaciones('finanzas', sesionCon('comercial'), reg)
+    const comercial = await conPermisosRestringidos('comercial', ['cotizador:leer'], () => dominioOperaciones('finanzas', sesionCon('comercial'), reg))
     assert.deepEqual(comercial.operaciones, [])
     const admin = dominioOperaciones('finanzas', sesionCon('admin'), reg)
     assert.deepEqual(admin.operaciones.map((o) => o.operacion), ['saldo_caja'])
@@ -93,9 +94,11 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['operación no permitida se rechaza aunque se pida por nombre, sin tocar la acción', async () => {
     const { acciones, llamadas } = accionesFalsas()
     const { d } = deps(crearHerramientas(acciones))
-    await assert.rejects(
-      ejecutarOperacion({ dominio: 'finanzas', operacion: 'saldo_caja', argumentos: {} }, sesionCon('comercial'), d),
-      (e: unknown) => e instanceof Error && e.message === MENSAJE_NO_DISPONIBLE,
+    await conPermisosRestringidos('comercial', ['cotizador:leer'], () =>
+      assert.rejects(
+        ejecutarOperacion({ dominio: 'finanzas', operacion: 'saldo_caja', argumentos: {} }, sesionCon('comercial'), d),
+        (e: unknown) => e instanceof Error && e.message === MENSAJE_NO_DISPONIBLE,
+      ),
     )
     assert.equal(llamadas.finanzas, 0)
   }],
@@ -110,7 +113,9 @@ const casos: Array<[string, () => Promise<void>]> = [
         return (e as Error).message
       }
     }
-    assert.equal(await msg({ dominio: 'finanzas', operacion: 'saldo_caja' }), await msg({ dominio: 'x', operacion: 'y' }))
+    await conPermisosRestringidos('comercial', ['cotizador:leer'], async () =>
+      assert.equal(await msg({ dominio: 'finanzas', operacion: 'saldo_caja' }), await msg({ dominio: 'x', operacion: 'y' })),
+    )
   }],
   ['argumentos inválidos no ejecutan la operación de lectura', async () => {
     const { acciones, llamadas } = accionesFalsas()
@@ -150,9 +155,11 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['escritura sin permiso de escritura se rechaza sin propuesta', async () => {
     const ejecuciones: unknown[] = []
     const { d, repo } = deps([escrituraFalsa(ejecuciones)])
-    await assert.rejects(
-      ejecutarOperacion({ dominio: 'cotizacion', operacion: 'crear_prueba', argumentos: { nombre: 'x' } }, sesionCon('taller'), d),
-      (e: unknown) => e instanceof Error && e.message === MENSAJE_NO_DISPONIBLE,
+    await conPermisosRestringidos('taller', ['proyectos:leer'], () =>
+      assert.rejects(
+        ejecutarOperacion({ dominio: 'cotizacion', operacion: 'crear_prueba', argumentos: { nombre: 'x' } }, sesionCon('taller'), d),
+        (e: unknown) => e instanceof Error && e.message === MENSAJE_NO_DISPONIBLE,
+      ),
     )
     assert.equal(repo.filas.size, 0)
   }],

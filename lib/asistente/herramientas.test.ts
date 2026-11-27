@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { NoAutorizadoError } from './permisos'
+import { NoAutorizadoError } from '../auth/errors'
+import { conPermisosRestringidos } from './prueba-permisos'
 import type { SesionEmpleado } from '../auth/session'
 import type { ProyectoSnapshot } from '../data/queries/proyecto-types'
 import {
@@ -95,15 +96,16 @@ const casos: Array<[string, () => Promise<void>]> = [
   }],
   ['usuario sin permiso no recibe finanzas.saldo_caja (comercial)', async () => {
     const { acciones } = accionesFalsas()
-    const nombres = herramientasPermitidas(sesionCon('comercial'), undefined, crearHerramientas(acciones)).map((h) => h.nombre)
+    const nombres = await conPermisosRestringidos('comercial', ['cotizador:leer', 'proyectos:leer'], () =>
+      herramientasPermitidas(sesionCon('comercial'), undefined, crearHerramientas(acciones)).map((h) => h.nombre),
+    )
     assert.ok(!nombres.includes('finanzas.saldo_caja'))
     assert.ok(nombres.includes('cotizacion.buscar'))
   }],
   ['usuario sin permiso que llama directo recibe NoAutorizadoError sin tocar la acción', async () => {
     const { acciones, llamadas } = accionesFalsas()
-    await assert.rejects(
-      ejecutarHerramienta(buscar('finanzas.saldo_caja', acciones), {}, sesionCon('comercial')),
-      NoAutorizadoError,
+    await conPermisosRestringidos('comercial', ['cotizador:leer'], () =>
+      assert.rejects(ejecutarHerramienta(buscar('finanzas.saldo_caja', acciones), {}, sesionCon('comercial')), NoAutorizadoError),
     )
     assert.equal(llamadas.finanzas, 0)
   }],
@@ -136,9 +138,13 @@ const casos: Array<[string, () => Promise<void>]> = [
   ['catálogo de dominios: solo los que el rol puede leer, sin nombres de herramientas', async () => {
     const admin = catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA()).map((d) => d.dominio)
     assert.deepEqual(admin, ['cotizacion', 'finanzas', 'proyecto'])
-    const comercial = catalogoDominios(sesionCon('comercial'), REGISTRO_PRUEBA()).map((d) => d.dominio)
+    const comercial = await conPermisosRestringidos('comercial', ['cotizador:leer', 'proyectos:leer'], () =>
+      catalogoDominios(sesionCon('comercial'), REGISTRO_PRUEBA()).map((d) => d.dominio),
+    )
     assert.deepEqual(comercial, ['cotizacion', 'proyecto'])
-    const taller = catalogoDominios(sesionCon('taller'), REGISTRO_PRUEBA()).map((d) => d.dominio)
+    const taller = await conPermisosRestringidos('taller', ['proyectos:leer'], () =>
+      catalogoDominios(sesionCon('taller'), REGISTRO_PRUEBA()).map((d) => d.dominio),
+    )
     assert.deepEqual(taller, ['proyecto'])
     const descripcion = catalogoDominios(sesionCon('admin'), REGISTRO_PRUEBA())[0]
     assert.ok(descripcion.nombre && descripcion.descripcion)

@@ -7,8 +7,8 @@
 // Las de escritura (esEscritura: true) nunca se ejecutan desde el bucle: ejecutarOperacion crea una
 // propuesta y solo la confirmación del empleado llama a `ejecutar`.
 import { z } from 'zod'
-import { PERMISOS_POR_ROL, type Permiso } from './permisos'
-import { NoAutorizadoError } from './permisos'
+import { PERMISOS_POR_ROL, type Permiso } from '../auth/permisos'
+import { NoAutorizadoError } from '../auth/errors'
 import type { SesionEmpleado } from '../auth/session'
 import type { Cliente, Proyecto } from '../data/contracts'
 import type { CotizadorListaSnapshot } from '../data/queries/cotizador-lista-types'

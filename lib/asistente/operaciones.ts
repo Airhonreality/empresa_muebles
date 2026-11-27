@@ -8,7 +8,7 @@
 import { z } from 'zod'
 import { zodToJsonSchema } from './esquema-json'
 import type { SesionEmpleado } from '../auth/session'
-import { PERMISOS_POR_ROL } from './permisos'
+import { PERMISOS_POR_ROL } from '../auth/permisos'
 import { ejecutarHerramienta, type DefinicionAsistente } from './herramientas'
 import { crearPropuesta, type DepsPropuestas } from './propuestas'
 
