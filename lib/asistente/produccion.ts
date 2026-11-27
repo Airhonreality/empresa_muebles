@@ -2,6 +2,7 @@
 // Cableado real del asistente para las rutas de app/api/asistente/**. Es el único punto que une
 // los manejadores de ruta.ts con Drizzle (repositorio.ts) y con el cifrado.
 import { cifrar } from './cifrado'
+import { crearCatalogo, obtenerCatalogoOpenRouter, type CatalogoModelos, type ProveedorConCatalogo } from './catalogo-modelos'
 import { accionesErp, crearOperaciones } from './herramientas'
 import { lecturaCotizacionDb, transaccionCotizacionDb } from './operaciones/cotizacion-produccion'
 import { cargarDocumentos, type Documento } from './conocimiento'
@@ -20,7 +21,7 @@ import {
 import { cancelarPropuesta, confirmarPropuesta } from './propuestas'
 import { atenderMensaje } from './servicio'
 import type { SesionEmpleado } from '../auth/session'
-import type { DepsClaves, DepsConfiguracion } from './ruta'
+import type { DepsCatalogoHttp, DepsClaves, DepsConfiguracion } from './ruta'
 
 const TAMANO_DETALLE = 200
 
@@ -68,4 +69,13 @@ export const depsClaves: DepsClaves = {
   cifrar,
   agregar: (p) => agregarClaveProveedor(p),
   eliminar: (id) => eliminarClaveProveedor(id),
+}
+
+/** Un catálogo en caché por proveedor (1 hora). Anthropic y Google no tienen listado: ver catalogo-modelos.ts. */
+const CATALOGOS: Record<ProveedorConCatalogo, CatalogoModelos> = {
+  openrouter: crearCatalogo({ obtener: obtenerCatalogoOpenRouter, ahora: () => new Date() }),
+}
+
+export const depsCatalogo: DepsCatalogoHttp = {
+  catalogo: (proveedor) => CATALOGOS[proveedor],
 }

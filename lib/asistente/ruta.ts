@@ -11,6 +11,7 @@ import { codigoPg } from './errores'
 import { ErrorConversacionNoEncontrada, type ResultadoAtencion } from './servicio'
 import { ErrorPropuesta, type ResultadoConfirmacion } from './propuestas'
 import type { ProveedorAsistente } from './modelo'
+import { ErrorCatalogoNoDisponible, PROVEEDORES_CON_CATALOGO, type CatalogoModelos, type ProveedorConCatalogo } from './catalogo-modelos'
 
 export interface Respuesta {
   status: number
@@ -225,6 +226,37 @@ export async function eliminarClaveHttp(sesion: SesionEmpleado | null, id: strin
     const ok = await deps.eliminar(id)
     return ok ? { status: 200, body: { ok: true } } : { status: 404, body: { error: 'Clave no encontrada' } }
   } catch (err) {
+    return respuestaDeError(err)
+  }
+}
+
+// ── Catálogo de modelos por proveedor (solo admin) ──────────────────
+
+export interface DepsCatalogoHttp {
+  /** Catálogo del proveedor (solo los que tienen listado; ver PROVEEDORES_CON_CATALOGO). */
+  catalogo: (proveedor: ProveedorConCatalogo) => CatalogoModelos
+}
+
+/** Lista de modelos con herramientas. Si el proveedor no responde, 503 con el último resultado conocido. */
+export async function catalogoModelosHttp(
+  sesion: SesionEmpleado | null,
+  proveedor: string,
+  deps: DepsCatalogoHttp,
+): Promise<Respuesta> {
+  if (!sesion) return { status: 401, body: { error: MENSAJE_SIN_SESION } }
+  if (!esAdmin(sesion)) return { status: 403, body: { error: MENSAJE_SOLO_ADMIN } }
+  const validado = z.enum(PROVEEDORES_CON_CATALOGO).safeParse(proveedor)
+  if (!validado.success) return { status: 400, body: { error: 'Proveedor sin catálogo de modelos' } }
+  const catalogo = deps.catalogo(validado.data)
+  try {
+    return { status: 200, body: { proveedor: validado.data, modelos: await catalogo.listar() } }
+  } catch (err) {
+    if (err instanceof ErrorCatalogoNoDisponible) {
+      return {
+        status: 503,
+        body: { error: err.message, modelos: catalogo.ultimoConocido() ?? [] },
+      }
+    }
     return respuestaDeError(err)
   }
 }
