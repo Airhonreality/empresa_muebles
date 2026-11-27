@@ -8,6 +8,7 @@ import { clientesDb } from './operaciones/clientes-produccion'
 import { catalogoDb } from './operaciones/catalogo-produccion'
 import { cotizacionesDb } from './operaciones/cotizaciones-produccion'
 import { finanzasDb } from './operaciones/finanzas-produccion'
+import { propuestas as repoPropuestas } from './repositorio'
 import { lecturaCotizacionDb, transaccionCotizacionDb } from './operaciones/cotizacion-produccion'
 import { cargarDocumentos, type Documento } from './conocimiento'
 import { readFileSync } from 'node:fs'
@@ -59,6 +60,8 @@ export const REGISTRO_OPERACIONES = crearOperaciones({
   cotizacion: { lectura: lecturaCotizacionDb, transaccion: transaccionCotizacionDb, ahora: () => new Date() },
   documentos: DOCUMENTOS,
   indice: indiceProcedimientosTexto(),
+  propuestas: repoPropuestas,
+  ahora: () => new Date(),
 })
 
 export const atender = (p: { usuario: SesionEmpleado; conversacionId?: string; mensaje: string }) =>

@@ -9,6 +9,7 @@ import type { FilaCuenta, PuertoFinanzas } from './ops/finanzas'
 import type { DefinicionAsistente } from './herramientas'
 import type { DepsCotizacion, EjecutorTransaccion, EscrituraCotizacion, LecturaCotizacion } from './operaciones/cotizacion-completa'
 import { crearOperaciones, type DepsRegistro } from './registro'
+import type { EstadoPropuesta, Propuesta, RepositorioPropuestas } from './propuestas'
 
 export interface MundoFalso {
   clientes: FilaCliente[]
@@ -165,9 +166,44 @@ export function cotizacionFalsa(mundo: MundoFalso): DepsCotizacion {
   return { lectura, transaccion, ahora: () => new Date('2026-11-27T15:00:00.000Z') }
 }
 
+/** Repositorio de propuestas en memoria (mismas reglas de estado condicionado que producción). */
+export function repoPropuestasFalso(): RepositorioPropuestas & { filas: Map<string, Propuesta> } {
+  const filas = new Map<string, Propuesta>()
+  let n = 0
+  return {
+    filas,
+    async insertar(p) {
+      const id = `prop-${++n}`
+      filas.set(id, { ...p, id, estado: 'pendiente' })
+      return id
+    },
+    async obtener(id) {
+      const f = filas.get(id)
+      return f ? { ...f } : null
+    },
+    async cambiarEstado(id, desde: EstadoPropuesta, nuevo: EstadoPropuesta) {
+      const f = filas.get(id)
+      if (!f || f.estado !== desde) return false
+      f.estado = nuevo
+      return true
+    },
+    async reabrir(id, datos, resumen) {
+      const f = filas.get(id)
+      if (!f || f.estado !== 'ejecutada') return false
+      Object.assign(f, { estado: 'pendiente', entrada: datos, resumen })
+      return true
+    },
+    async listarDeUsuario(usuarioId, estados) {
+      return [...filas.values()].filter((f) => f.usuarioId === usuarioId && estados.includes(f.estado))
+    },
+  }
+}
+
 /** Dependencias del registro sobre un mundo en memoria (sin base de datos). */
 export function depsRegistroFalsos(mundo: MundoFalso = mundoFalso(), documentos: DepsRegistro['documentos'] = [], indice = ''): DepsRegistro {
   return {
+    propuestas: repoPropuestasFalso(),
+    ahora: () => new Date('2026-11-27T15:00:00.000Z'),
     clientes: clientesFalsos(mundo),
     catalogo: catalogoFalso(mundo),
     cotizaciones: cotizacionesFalsas(mundo),

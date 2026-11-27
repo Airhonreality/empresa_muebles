@@ -144,7 +144,7 @@ const casos: Array<[string, () => Promise<void>]> = [
     const r = await leerConfiguracionHttp(ADMIN, { leer: async () => ({ modelo: null }), guardar: async () => {}, modelos: async () => [], registro: REGISTRO })
     assert.equal(r.status, 200)
     const disponibles = (r.body.configuracion as { herramientasDisponibles: Array<{ nombre: string; dominio: string }> }).herramientasDisponibles
-    assert.deepEqual(disponibles.map((h) => h.nombre).sort(), REGISTRO.map((h) => h.nombre).sort())
+    assert.deepEqual(disponibles.map((h) => h.nombre).sort(), REGISTRO.filter((h) => h.canales.includes('chat')).map((h) => h.nombre).sort())
     assert.ok(disponibles.every((h) => typeof h.dominio === 'string' && h.dominio.length > 0))
   }],
 ]

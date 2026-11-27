@@ -116,7 +116,7 @@ export async function cargarConfiguracion(): Promise<ConfiguracionTurno> {
   }
 }
 
-const propuestas: RepositorioPropuestas = {
+export const propuestas: RepositorioPropuestas = {
   async insertar(p): Promise<string> {
     const [fila] = await db
       .insert(s.propuestasAsistente)

@@ -9,6 +9,8 @@ import { operacionesClientes, type PuertoClientes } from './ops/clientes'
 import { operacionesCotizacion, type PuertoCotizaciones } from './ops/cotizacion'
 import { operacionesFinanzas, type PuertoFinanzas } from './ops/finanzas'
 import { operacionCotizacionCrearCompleta, type DepsCotizacion } from './operaciones/cotizacion-completa'
+import { operacionesPropuestas } from './ops/propuestas'
+import type { RepositorioPropuestas } from './propuestas'
 
 export interface DepsRegistro {
   clientes: PuertoClientes
@@ -20,15 +22,21 @@ export interface DepsRegistro {
   documentos: readonly Documento[]
   /** Texto de conocimiento/asistente/INDICE.md (fuente del enum de procedimientos). */
   indice: string
+  /** Almacén de propuestas (las operaciones propuestas.* lo usan). */
+  propuestas: RepositorioPropuestas
+  ahora: () => Date
 }
 
 export function crearOperaciones(deps: DepsRegistro): DefinicionAsistente[] {
-  return [
+  // propuestas.confirmar necesita el registro completo: se lee con una función, al ejecutar.
+  const registro: DefinicionAsistente[] = [
     ...operacionesClientes(deps.clientes),
     ...operacionesCatalogo(deps.catalogo),
     ...operacionesCotizacion(deps.cotizaciones),
     ...operacionesFinanzas(deps.finanzas),
     operacionCotizacionCrearCompleta(deps.cotizacion),
     ...operacionAyuda(deps.documentos, deps.indice),
+    ...operacionesPropuestas({ repo: deps.propuestas, ahora: deps.ahora, registro: () => registro }),
   ]
+  return registro
 }
