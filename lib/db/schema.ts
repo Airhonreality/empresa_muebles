@@ -1,3 +1,4 @@
+import type { FotoRaw } from "@/lib/imagen/tipos";
 import { pgTable, uuid, text, integer, timestamp, foreignKey, unique, numeric, boolean, jsonb, pgEnum, check } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
@@ -527,9 +528,9 @@ export const contenedoresDescriptivos = pgTable("contenedores_descriptivos", {
 	espacioVarianteId: uuid("espacio_variante_id"),
 	grupoItemId: uuid("grupo_item_id"),
 	descripcion: text(),
-	fotosEspacio: jsonb().$type<string[]>().default([]).notNull(),
-	fotosDisenio: jsonb().$type<string[]>().default([]).notNull(),
-	fotosReferencia: jsonb().$type<string[]>().default([]).notNull(),
+	fotosEspacio: jsonb().$type<FotoRaw[]>().default([]).notNull(),
+	fotosDisenio: jsonb().$type<FotoRaw[]>().default([]).notNull(),
+	fotosReferencia: jsonb().$type<FotoRaw[]>().default([]).notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => {

@@ -3,6 +3,7 @@
 import type { GrupoItemCalculado } from '@/lib/data/contracts'
 import { convertirGrupoAProductoAction } from '@/lib/data/actions/core'
 import { useState } from 'react'
+import { urlsDe } from '@/lib/imagen/persistencia'
 
 interface Props {
   grupo: GrupoItemCalculado | null
@@ -29,10 +30,10 @@ export function ConvertirGrupoAProductoModal({ grupo, abierto, onClose, onSucces
       await convertirGrupoAProductoAction(grupo.id, {
         nombreProducto: nombre,
         descripcion: grupo.contenedor?.descripcion ?? undefined,
-        imagenUrl: grupo.contenedor?.fotosDisenio?.[0] ?? undefined,
+        imagenUrl: urlsDe(grupo.contenedor?.fotosDisenio)[0] ?? undefined,
         galeriaImagenesUrl: [
-          ...(grupo.contenedor?.fotosDisenio ?? []),
-          ...(grupo.contenedor?.fotosReferencia ?? []),
+          ...urlsDe(grupo.contenedor?.fotosDisenio),
+          ...urlsDe(grupo.contenedor?.fotosReferencia),
         ],
         precioPublico: grupo.precioPublicoGrupo,
         categoria: categoria || undefined,

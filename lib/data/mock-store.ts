@@ -471,7 +471,7 @@ export function createMockStore(): DataStore {
         notify()
         return espacios[idx]
       },
-      async actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>): Promise<EspacioVariante | null> {
+      async actualizar(id: string, partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia' | 'imagenesEspacio' | 'imagenesDisenio' | 'imagenesReferencia'>>): Promise<EspacioVariante | null> {
         const idx = espacios.findIndex(e => e.id === id)
         if (idx === -1) return null
         espacios[idx] = { ...espacios[idx], ...partial }

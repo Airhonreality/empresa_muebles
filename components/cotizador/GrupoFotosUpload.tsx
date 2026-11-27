@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { actualizarContenedorDescriptivoGrupoAction } from '@/lib/data/actions/core'
 import type { ContenedorDescriptivo } from '@/lib/data'
+import { leerImagenes, urlsDe } from '@/lib/imagen/persistencia'
 
 export interface GrupoFotosUploadProps {
   grupoId: string
@@ -19,8 +20,12 @@ export function GrupoFotosUpload({ grupoId, contenedor, onUpdate }: GrupoFotosUp
   const handleGuardarFotos = async (tipo: 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia', urls: string[]) => {
     setGuardando(true)
     try {
+      // El picker solo maneja URLs: se reinyectan los objetos previos (alt, pie, valores)
+      // de las fotos que siguen en la lista, para no perder esos datos al reordenar o agregar.
+      const previas = leerImagenes(contenedor?.[tipo])
+      const enviar = urls.map((u) => previas.find((p) => p.url === u) ?? u)
       const actualizado = await actualizarContenedorDescriptivoGrupoAction(grupoId, {
-        [tipo]: urls,
+        [tipo]: enviar,
       })
       if (actualizado) {
         onUpdate(actualizado)
@@ -32,9 +37,9 @@ export function GrupoFotosUpload({ grupoId, contenedor, onUpdate }: GrupoFotosUp
     }
   }
 
-  const fotosEspacio = contenedor?.fotosEspacio ?? []
-  const fotosDisenio = contenedor?.fotosDisenio ?? []
-  const fotosReferencia = contenedor?.fotosReferencia ?? []
+  const fotosEspacio = urlsDe(contenedor?.fotosEspacio)
+  const fotosDisenio = urlsDe(contenedor?.fotosDisenio)
+  const fotosReferencia = urlsDe(contenedor?.fotosReferencia)
 
   const totalFotos = fotosEspacio.length + fotosDisenio.length + fotosReferencia.length
 

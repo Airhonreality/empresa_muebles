@@ -1,3 +1,6 @@
+import type { FotoRaw, ImagenGuardada } from '@/lib/imagen/tipos'
+import type { ImagenPublica } from '@/lib/imagen/publica'
+import { urlsDe } from '@/lib/imagen/persistencia'
 // Tipos de datos que las pantallas consumen.
 // Derivados del REGISTRO_DE_ENTIDADES.md — una copia plana, sin dependencia de Drizzle.
 // Las pantallas NUNCA importan lib/db/ directamente; siempre pasan por este contrato.
@@ -122,9 +125,16 @@ export interface EspacioVariante {
   jornadasInstalacionObra: string
   // Campos descriptivos (2026-10-29): movidos a ContenedorDescriptivo, cargados opcionalmente
   descripcion?: string | null
+  /** Solo URLs (proyección para pantallas y presentación). */
   fotosEspacio?: string[]
   fotosDisenio?: string[]
   fotosReferencia?: string[]
+  /** Forma completa con alt, pie y valores (t-200). Fuente de verdad al editar. */
+  imagenesEspacio?: ImagenGuardada[]
+  imagenesDisenio?: ImagenGuardada[]
+  imagenesReferencia?: ImagenGuardada[]
+  /** Solo lo público (t-200): alt, pie y textos de campos `publica: true`. Lo único que sale a la propuesta. */
+  imagenesPublicas?: { espacio: ImagenPublica[]; disenio: ImagenPublica[]; referencia: ImagenPublica[] }
 }
 
 /** NUEVA (2026-10-29): Schema descriptivo compartido — espacios y grupos usan la misma tabla para
@@ -134,9 +144,10 @@ export interface ContenedorDescriptivo {
   espacioVarianteId: string | null
   grupoItemId: string | null
   descripcion: string | null
-  fotosEspacio: string[]
-  fotosDisenio: string[]
-  fotosReferencia: string[]
+  /** Columnas jsonb: forma vieja (URLs) o nueva (objetos). Leer con leerImagenes/urlsDe. */
+  fotosEspacio: FotoRaw[]
+  fotosDisenio: FotoRaw[]
+  fotosReferencia: FotoRaw[]
   createdAt: string
   updatedAt: string
 }
@@ -150,13 +161,13 @@ export interface EspacioVarianteHidratado extends EspacioVariante {
 
 /** Acceso de conveniencia: si contenedor existe, sus fotos; si no, arrays vacíos. */
 export function obtenerFotosEspacio(e: EspacioVarianteHidratado): string[] {
-  return e.contenedor?.fotosEspacio ?? []
+  return urlsDe(e.contenedor?.fotosEspacio)
 }
 export function obtenerFotosDisenio(e: EspacioVarianteHidratado): string[] {
-  return e.contenedor?.fotosDisenio ?? []
+  return urlsDe(e.contenedor?.fotosDisenio)
 }
 export function obtenerFotosReferencia(e: EspacioVarianteHidratado): string[] {
-  return e.contenedor?.fotosReferencia ?? []
+  return urlsDe(e.contenedor?.fotosReferencia)
 }
 export function obtenerDescripcion(e: EspacioVarianteHidratado): string | null {
   return e.contenedor?.descripcion ?? null

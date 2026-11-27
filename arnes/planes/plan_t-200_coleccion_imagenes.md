@@ -345,3 +345,32 @@ Hay un panel por slot. Se muestra al lado de la grilla en escritorio y debajo en
 - Cola de subida en segundo plano: plan de la conversación del 2026-11-26 (decisiones D4). Se integra en la capa 1 como adaptador de almacenamiento.
 - Saneamiento de URLs (`arnes/lineas/ola7/tecnico/diagnostico_plan_imagenes_r2.md`, citado en `arnes/estado.md`): la capa 0 aplica la misma regla de whitelist a `url`.
 - Pantalla de renders (`/erp/portafolio/renders`): candidata a usar `version="v2"` con metadatos de tipo de render en P4.
+
+---
+
+## 12. Estado de ejecución (2026-11-27)
+
+| Fase | Estado | Evidencia |
+|---|---|---|
+| **P0** Línea base visual | **Hecha** con Playwright Component Testing (sin sesión ni base de datos). Picker antiguo: 12 pares de controles solapados a 360 px. Módulo nuevo: 0 en 360, 768 y 1280 px. | `arnes/planes/evidencia_t-200/RESULTADOS.md` |
+| **P1** Núcleo puro `lib/imagen/` | **Hecha.** Tipos, operaciones, forma persistida, proyección pública. Tests: `operaciones.test.ts` (10), `persistencia.test.ts` (6), `publica.test.ts`. | `npx tsx <archivo>.test.ts` |
+| **P2** Cargador y adaptador | **Hecha** la capa 1 (`cargador.tsx`) y el adaptador de R2 (`adaptador-r2.ts`). La fachada `ImagePicker` con `version="v2"` **no** se hizo: el cotizador usa `SlotImagen` directo. | — |
+| **P3** Colección y panel | **Hecha** para el cotizador: colección por slot y panel contextual con edición de alt, pie y campos. | Pruebas de componentes |
+| **P4** Slots, alt/pie, metadatos persistidos y propuesta pública | **Hecha.** Contrato de slots en `lib/imagen/slots/cotizador.ts`. Forma persistida `{url, alt?, pie?, valores?}` en la misma columna jsonb, sin migración. Lector de compatibilidad para la forma vieja. Proyección pública filtrada en el servidor por `publica: true`. Galería y documento de impresión muestran pie y descripción. | Build verde, tsc sin errores, tests de persistencia y de proyección |
+| **P5** Migrar las demás pantallas y retirar `ImagePicker` y `hideGrid` | **No hecha.** Quedan ~14 archivos con `ImagePicker`. Mezclan columnas de lista y de URL única (producto, acabado), y varias alimentan páginas públicas (portafolio, renders). Requiere contrato de slots y checkpoint por pantalla. | — |
+
+### Desviaciones respecto al plan original
+
+1. **La normalización de imágenes vive en la capa 1**, no en la capa 0. Usa canvas, así que necesita el DOM. Queda en `components/imagen/normalizar-navegador.ts`, copia del original.
+2. **La forma persistida es aditiva.** Las columnas siguen llamándose `fotosEspacio`, etc. Las pantallas y la presentación siguen leyendo URLs (`fotosEspacio: string[]`). Los datos con objetos viven en los campos `imagenesEspacio`, etc. Esto evita tocar ~25 archivos que solo necesitan URLs y no requiere migración de base de datos. El tipo de la columna en `schema.ts` cambió solo a nivel TypeScript (`$type<FotoRaw[]>`).
+3. **El contexto declara los campos y el módulo solo renderiza.** Cada campo tiene `publica: boolean`. Un campo sin esa bandera es interno por defecto.
+4. **Lo público se filtra en el servidor.** `publicarEspacio` en `lib/data/actions/public.ts` retira las imágenes completas del snapshot y deja solo `imagenesPublicas`. Las versiones guardadas pasan por el mismo filtro al construirse.
+5. **Editor de grupos conserva el alt y el pie.** `GrupoFotosUpload` reinyecta los objetos previos de las URLs que siguen en la lista, para no perder datos al guardar desde el picker antiguo.
+
+### Pendiente y riesgos conocidos
+
+- **P5 completo** (ver tabla). Recomiendo hacerlo pantalla por pantalla, con checkpoint, empezando por las que no alimentan páginas públicas.
+- **La pantalla real del cotizador no se ha probado visualmente.** Necesita sesión y base de datos. El modo mock todavía no cubre las lecturas del cotizador.
+- **Falla preexistente:** `lib/data/mock-store.test.ts` (f3-portafolio) ya fallaba antes de este trabajo, según `arnes/estado.md`.
+- **Falla no relacionada en el árbol:** `lib/data/queries/coverage.test.ts` falla porque hay acciones de plantillas sin registrar en el manifiesto. Vienen de trabajo que no es de t-200.
+- **Checkpoint de datos:** el cambio de forma en el jsonb (P4) ya estaba aprobado con D2, pero lo que se publica en la propuesta pública necesita revisión visual del Supervisor antes del despliegue.

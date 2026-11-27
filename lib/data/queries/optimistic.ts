@@ -188,7 +188,7 @@ export function agregarEspacio(snapshot: CotizadorSnapshot, input: InputEspacioO
 export function actualizarEspacio(
   snapshot: CotizadorSnapshot,
   espacioId: string,
-  patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>,
+  patch: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia' | 'imagenesEspacio' | 'imagenesDisenio' | 'imagenesReferencia'>>,
 ): CotizadorSnapshot {
   if (!snapshot.espacios.some((e) => e.id === espacioId)) return snapshot
   return {

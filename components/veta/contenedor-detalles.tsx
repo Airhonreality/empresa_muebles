@@ -3,6 +3,7 @@
 import { MarkdownContent } from '@/components/veta/markdown-content'
 import { PhotoGrid } from '@/components/veta/photo-grid'
 import type { ContenedorDescriptivo } from '@/lib/data'
+import { leerImagenes } from '@/lib/imagen/persistencia'
 
 interface ContenedorDetallesProps {
   contenedor: ContenedorDescriptivo | null
@@ -45,7 +46,7 @@ export function ContenedorDetalles({ contenedor, titulo = 'Detalles' }: Contened
           <div>
             <h4 className="text-[10px] font-semibold text-text-muted mb-1">Fotos del espacio</h4>
             <PhotoGrid
-              fotos={contenedor.fotosEspacio.map((url) => ({ url, alt: 'Foto del espacio' }))}
+              fotos={leerImagenes(contenedor.fotosEspacio).map((img) => ({ url: img.url, alt: img.alt ?? 'Foto del espacio' }))}
             />
           </div>
         )}
@@ -53,7 +54,7 @@ export function ContenedorDetalles({ contenedor, titulo = 'Detalles' }: Contened
           <div>
             <h4 className="text-[10px] font-semibold text-text-muted mb-1">Fotos de diseño</h4>
             <PhotoGrid
-              fotos={contenedor.fotosDisenio.map((url) => ({ url, alt: 'Foto de diseño' }))}
+              fotos={leerImagenes(contenedor.fotosDisenio).map((img) => ({ url: img.url, alt: img.alt ?? 'Foto de diseño' }))}
             />
           </div>
         )}
@@ -61,7 +62,7 @@ export function ContenedorDetalles({ contenedor, titulo = 'Detalles' }: Contened
           <div>
             <h4 className="text-[10px] font-semibold text-text-muted mb-1">Fotos de referencia</h4>
             <PhotoGrid
-              fotos={contenedor.fotosReferencia.map((url) => ({ url, alt: 'Foto de referencia' }))}
+              fotos={leerImagenes(contenedor.fotosReferencia).map((img) => ({ url: img.url, alt: img.alt ?? 'Foto de referencia' }))}
             />
           </div>
         )}

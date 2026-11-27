@@ -15,6 +15,9 @@ import { NumberInput } from '@/components/veta/number-input'
 import { SmartSearch } from '@/components/veta/smart-search'
 import { ImagePicker } from '@/components/veta/image-picker'
 import { SlotImagen } from '@/components/imagen/slot-imagen'
+import { SLOT_ESPACIO_FOTOS, SLOT_ESPACIO_DISENIO, SLOT_ESPACIO_REFERENCIA } from '@/lib/imagen/slots/cotizador'
+import { leerImagenes } from '@/lib/imagen/persistencia'
+import type { ImagenGuardada } from '@/lib/imagen/tipos'
 import { GalleryOverlay } from '@/components/veta/gallery-lightbox'
 import { FilePicker } from '@/components/veta/file-picker'
 import { ItemMiniatura } from '@/components/veta/item-miniatura'
@@ -3465,15 +3468,17 @@ function FormDetallesEspacio({
       })
       .filter((x): x is AcabadoSeleccionado => x !== null)
   })
-  const [fotosEspacio, setFotosEspacio] = useState<string[]>(espacio.fotosEspacio ?? [])
-  const [fotosDisenio, setFotosDisenio] = useState<string[]>(espacio.fotosDisenio ?? [])
-  const [fotosReferencia, setFotosReferencia] = useState<string[]>(espacio.fotosReferencia ?? [])
+  // Forma completa (alt, pie, descripción). La proyección trae `imagenes*` desde la columna jsonb;
+  // si no existe, cae a la lista vieja de URLs.
+  const [fotosEspacio, setFotosEspacio] = useState<ImagenGuardada[]>(() => leerImagenes(espacio.imagenesEspacio ?? espacio.fotosEspacio))
+  const [fotosDisenio, setFotosDisenio] = useState<ImagenGuardada[]>(() => leerImagenes(espacio.imagenesDisenio ?? espacio.fotosDisenio))
+  const [fotosReferencia, setFotosReferencia] = useState<ImagenGuardada[]>(() => leerImagenes(espacio.imagenesReferencia ?? espacio.fotosReferencia))
 
   // 2026-10-29: autoguardado por sección. Cada grupo de campos es un patch coalescido
   // (debounce 700 ms + una sola escritura en vuelo) y las mutaciones van serializadas por
   // scope de TanStack, así el servidor termina con lo último que vio el usuario.
   const detalles = useMemo(
-    () => ({ descripcion: descripcion.trim() || null, fotosEspacio, fotosDisenio, fotosReferencia }),
+    () => ({ descripcion: descripcion.trim() || null, imagenesEspacio: fotosEspacio, imagenesDisenio: fotosDisenio, imagenesReferencia: fotosReferencia }),
     [descripcion, fotosEspacio, fotosDisenio, fotosReferencia],
   )
   const autosaveDetalles = useAutosave({
@@ -3515,9 +3520,9 @@ function FormDetallesEspacio({
 
       {/* Fotos del espacio por tipo (t-200): cada slot a ancho completo, con su colección y su panel */}
       <div className="flex flex-col gap-4">
-        <SlotImagen slot={{ id: 'espacio:espacio', etiqueta: 'Fotos del espacio', multiple: true }} value={fotosEspacio} onChange={setFotosEspacio} r2Prefix="cotizador/espacio" />
-        <SlotImagen slot={{ id: 'espacio:disenio', etiqueta: 'Fotos de diseño', multiple: true }} value={fotosDisenio} onChange={setFotosDisenio} r2Prefix="cotizador/disenio" />
-        <SlotImagen slot={{ id: 'espacio:referencia', etiqueta: 'Fotos de referencia', multiple: true }} value={fotosReferencia} onChange={setFotosReferencia} r2Prefix="cotizador/referencia" />
+        <SlotImagen slot={SLOT_ESPACIO_FOTOS} value={fotosEspacio} onChange={setFotosEspacio} r2Prefix="cotizador/espacio" />
+        <SlotImagen slot={SLOT_ESPACIO_DISENIO} value={fotosDisenio} onChange={setFotosDisenio} r2Prefix="cotizador/disenio" />
+        <SlotImagen slot={SLOT_ESPACIO_REFERENCIA} value={fotosReferencia} onChange={setFotosReferencia} r2Prefix="cotizador/referencia" />
       </div>
 
       <div className="grid grid-cols-2 gap-2">

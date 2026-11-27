@@ -1,12 +1,12 @@
 {
   "id": "t-200",
   "titulo": "Desacoplar cargador de imágenes de la colección: capas (núcleo puro, cargador, colección, panel contextual) con diseño axiomático",
-  "estado": "aprobado",
+  "estado": "en_ejecucion",
   "plan_ref": "arnes/planes/plan_t-200_coleccion_imagenes.md",
   "depende_de": [],
   "checkpoint": {
     "requerido": true,
     "veredicto_humano": "aprobado",
-    "nota": "Aprobado 2026-11-27 con ajuste D3: los campos por imagen los declara el contexto como slots; alt y pie son atributos base por defecto. P4 cambia la forma de datos en jsonb y requiere checkpoint propio antes de escribir. Ejecutar P0 (reproducción del solapamiento con capturas) antes de cualquier código."
+    "nota": "Aprobado 2026-11-27 con ajuste D3. Ejecutado P0-P4 (ver plan sección 12). Pendiente: P5 (migrar ~14 pantallas restantes y retirar ImagePicker/hideGrid, con checkpoint por pantalla), y revisión visual del Supervisor de la propuesta pública (cambio en el sitio público)."
   }
 }

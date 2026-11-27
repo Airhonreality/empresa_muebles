@@ -90,6 +90,16 @@ export type ItemActualizarInput = z.infer<typeof itemActualizarSchema>
 
 // --- Espacios / jornadas ---
 
+/** Forma persistida de una foto del espacio (t-200): URL + alt/pie/valores opcionales. */
+const imagenGuardadaSchema = z.object({
+  url: z.string(),
+  alt: z.string().max(200).optional(),
+  pie: z.string().max(160).optional(),
+  valores: z.record(z.string(), z.union([z.string(), z.boolean()])).optional(),
+})
+/** Acepta la forma vieja (URL) y la nueva (objeto) mientras conviven en la base. */
+const fotoEntradaSchema = z.union([z.string(), imagenGuardadaSchema])
+
 export const espacioCrearSchema = z.object({
   id: idNoVacio.optional(),
   proyectoId: idNoVacio,
@@ -103,9 +113,12 @@ export const espacioCrearSchema = z.object({
   jornadasDesarrolloTecnico: numeroDecimalTexto.optional(),
   jornadasEnsamblajeTaller: numeroDecimalTexto.optional(),
   jornadasInstalacionObra: numeroDecimalTexto.optional(),
-  fotosEspacio: z.array(z.string()).optional(),
-  fotosDisenio: z.array(z.string()).optional(),
-  fotosReferencia: z.array(z.string()).optional(),
+  fotosEspacio: z.array(fotoEntradaSchema).optional(),
+  fotosDisenio: z.array(fotoEntradaSchema).optional(),
+  fotosReferencia: z.array(fotoEntradaSchema).optional(),
+  imagenesEspacio: z.array(imagenGuardadaSchema).optional(),
+  imagenesDisenio: z.array(imagenGuardadaSchema).optional(),
+  imagenesReferencia: z.array(imagenGuardadaSchema).optional(),
 })
 export type EspacioCrearInput = z.infer<typeof espacioCrearSchema>
 
@@ -116,9 +129,12 @@ export const espacioActualizarSchema = z.object({
   descripcion: textoOpcional,
   activa: z.boolean().optional(),
   visibleEnPropuestaPublica: z.boolean().optional(),
-  fotosEspacio: z.array(z.string()).optional(),
-  fotosDisenio: z.array(z.string()).optional(),
-  fotosReferencia: z.array(z.string()).optional(),
+  fotosEspacio: z.array(fotoEntradaSchema).optional(),
+  fotosDisenio: z.array(fotoEntradaSchema).optional(),
+  fotosReferencia: z.array(fotoEntradaSchema).optional(),
+  imagenesEspacio: z.array(imagenGuardadaSchema).optional(),
+  imagenesDisenio: z.array(imagenGuardadaSchema).optional(),
+  imagenesReferencia: z.array(imagenGuardadaSchema).optional(),
 })
 export type EspacioActualizarInput = z.infer<typeof espacioActualizarSchema>
 

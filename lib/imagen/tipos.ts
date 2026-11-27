@@ -1,11 +1,18 @@
 // Capa 0 del módulo de imágenes (t-200). SIN React, SIN DOM, SIN almacenamiento.
 // Contrato: plan arnes/planes/plan_t-200_coleccion_imagenes.md
 
+/** Campos comunes a todo tipo de campo declarado por el contexto. */
+interface CampoBase {
+  etiqueta: string
+  /** true = el valor puede mostrarse al cliente en la propuesta pública. Por defecto false. */
+  publica?: boolean
+}
+
 /** Tipo de campo que el contexto puede declarar para cada imagen de un slot. */
 export type TipoCampo =
-  | { tipo: 'texto'; etiqueta: string; maxLength?: number; multilinea?: boolean }
-  | { tipo: 'seleccion'; etiqueta: string; opciones: readonly string[] }
-  | { tipo: 'booleano'; etiqueta: string }
+  | (CampoBase & { tipo: 'texto'; maxLength?: number; multilinea?: boolean })
+  | (CampoBase & { tipo: 'seleccion'; opciones: readonly string[] })
+  | (CampoBase & { tipo: 'booleano' })
 
 /** Campos propios de un tipo de imagen. Los declara el contexto. */
 export type CamposSlot = Record<string, TipoCampo>
@@ -35,7 +42,7 @@ export type ValoresCampos<C extends CamposSlot> = {
   [K in keyof C]?: C[K] extends { tipo: 'booleano' } ? boolean : string
 }
 
-/** Una imagen dentro de un slot. */
+/** Una imagen dentro de un slot, en memoria. */
 export interface ImagenItem<C extends CamposSlot = CamposSlot> {
   /** Identificador local para React y selección. No se persiste. */
   clienteId: string
@@ -44,3 +51,14 @@ export interface ImagenItem<C extends CamposSlot = CamposSlot> {
   base: Partial<AtributosBase>
   valores: ValoresCampos<C>
 }
+
+/** Forma persistida de una imagen (jsonb). Solo se guardan los atributos con valor. */
+export interface ImagenGuardada {
+  url: string
+  alt?: string
+  pie?: string
+  valores?: Record<string, string | boolean>
+}
+
+/** Entrada cruda de la columna jsonb: forma vieja (string) o nueva (objeto). */
+export type FotoRaw = string | ImagenGuardada

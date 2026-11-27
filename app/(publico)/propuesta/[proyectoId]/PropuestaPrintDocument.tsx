@@ -7,6 +7,7 @@ import { textoPlazoSemanas } from '@/lib/data/contrato-fechas'
 import { MarkdownContent } from '@/components/veta/markdown-content'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
 import { compararVariantes, type DiffEspacio, type ItemComparado } from '@/lib/propuesta/comparar-variantes'
+import type { ImagenPublica, TextoPublico } from '@/lib/imagen/publica'
 import { calcularTotalesCotizacion, repartirHitos } from '@/lib/dinero/calculo'
 
 // Documento de impresión de la propuesta (rediseño 2026-10-14).
@@ -66,24 +67,24 @@ function specsItem(item: ItemVariante): Array<[string, string]> {
   ].filter((p): p is [string, string] => p !== null)
 }
 
-type GrupoFotos = { etiqueta: string; fotos: string[] }
+type GrupoFotos = { etiqueta: string; fotos: ImagenPublica[] }
 
+/** t-200: usa `imagenesPublicas` (pie y textos públicos); snapshots viejos caen a URLs. */
 function gruposDeFotos(v: EspacioVariante): GrupoFotos[] {
-  return (
-    [
-      { etiqueta: 'Espacio actual', fotos: v.fotosEspacio },
-      { etiqueta: 'Diseño', fotos: v.fotosDisenio },
-      { etiqueta: 'Referencia', fotos: v.fotosReferencia },
-    ] as const
-  )
-    .map((g) => ({ ...g, fotos: (g.fotos ?? []).filter(Boolean) as string[] }))
-    .filter((g) => g.fotos.length > 0)
+  const pub = v.imagenesPublicas
+  const desdeUrls = (urls: string[] | undefined): ImagenPublica[] =>
+    (urls ?? []).filter(Boolean).map((url) => ({ url, alt: '', textos: [] }))
+  return [
+    { etiqueta: 'Espacio actual', fotos: pub?.espacio ?? desdeUrls(v.fotosEspacio) },
+    { etiqueta: 'Diseño', fotos: pub?.disenio ?? desdeUrls(v.fotosDisenio) },
+    { etiqueta: 'Referencia', fotos: pub?.referencia ?? desdeUrls(v.fotosReferencia) },
+  ].filter((g) => g.fotos.length > 0)
 }
 
 /** Imagen de la propuesta para impresión. Detecta la orientación real de la
  *  foto para decidir si ocupa el ancho completo (cuadrada/horizontal) o se
  *  empareja de dos en dos (vertical), sin recortar ni dejar cajas vacías. */
-function ImgPrint({ url, alt }: { url: string; alt: string }): ReactElement {
+function ImgPrint({ url, alt, pie, textos = [] }: { url: string; alt: string; pie?: string; textos?: TextoPublico[] }): ReactElement {
   const [orient, setOrient] = useState<'h' | 'v'>('h')
   const span = orient === 'h' ? 'span 2' : 'span 1'
   const ratio = orient === 'h' ? '3 / 2' : '2 / 3'
@@ -103,6 +104,17 @@ function ImgPrint({ url, alt }: { url: string; alt: string }): ReactElement {
           }}
         />
       </div>
+      {(pie || textos.length > 0) && (
+        <figcaption style={{ fontSize: '9pt', lineHeight: 1.35, marginTop: '4pt' }}>
+          {pie && <strong style={{ display: 'block' }}>{pie}</strong>}
+          {textos.map((t) => (
+            <span key={t.etiqueta} style={{ display: 'block', whiteSpace: 'pre-line' }}>
+              <strong>{t.etiqueta}: </strong>
+              {t.valor}
+            </span>
+          ))}
+        </figcaption>
+      )}
     </figure>
   )
 }
@@ -116,8 +128,14 @@ function BloqueFotos({ v }: { v: EspacioVariante }): ReactElement | null {
         <div key={g.etiqueta} className="pp-fotobloque">
           <p className="pp-mini pp-avoid">{g.etiqueta}</p>
           <div className="pp-imgs">
-            {g.fotos.map((url, i) => (
-              <ImgPrint key={`${url}-${i}`} url={url} alt={`${v.nombreEspacio} — ${g.etiqueta} ${i + 1}`} />
+            {g.fotos.map((f, i) => (
+              <ImgPrint
+                key={`${f.url}-${i}`}
+                url={f.url}
+                alt={f.alt || `${v.nombreEspacio} — ${g.etiqueta} ${i + 1}`}
+                pie={f.pie}
+                textos={f.textos}
+              />
             ))}
           </div>
         </div>

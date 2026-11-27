@@ -6,6 +6,13 @@ import { eq, and, inArray, or, like, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
 import { sanitizarUrlIndividual, sanitizarUrlsFotos } from '@/lib/r2/sanitize'
+import { leerImagenes, sanitizarGuardadas, urlsDe } from '@/lib/imagen/persistencia'
+
+/** Forma a guardar en la columna jsonb: prefiere `imagenes` (forma nueva) y cae a la lista vieja. */
+function fotosAGuardar(imagenes: unknown, fotosLegacy: unknown) {
+  const origen = imagenes !== undefined ? imagenes : fotosLegacy
+  return sanitizarGuardadas(origen, (u) => sanitizarUrlsFotos([u])?.[0] ?? null)
+}
 import { num, sanitizarCamposPersonalizados } from './mappers'
 import { registrarConversionOfflineDeContrato } from '../conversion-offline'
 import { generarCodigoCotizacion, prefijoCodigoFecha } from '../codigos-cotizacion'
@@ -357,13 +364,13 @@ export async function actualizarJornadasAction(
 
 export async function actualizarEspacioAction(
   id: string,
-  partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>>
+  partial: Partial<Pick<EspacioVariante, 'nombreEspacio' | 'nombreVariante' | 'tipoEspacio' | 'descripcion' | 'activa' | 'visibleEnPropuestaPublica' | 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia' | 'imagenesEspacio' | 'imagenesDisenio' | 'imagenesReferencia'>>
 ): Promise<EspacioVariante | null> {
   return db.transaction(async (tx) => {
     const sanitized = { ...validarEntrada(espacioActualizarSchema, partial) };
 
     // Separar campos de metadata de campos descriptivos
-    const { descripcion, fotosEspacio, fotosDisenio, fotosReferencia, ...metadataFields } = sanitized;
+    const { descripcion, fotosEspacio, fotosDisenio, fotosReferencia, imagenesEspacio, imagenesDisenio, imagenesReferencia, ...metadataFields } = sanitized;
 
     // 2026-10-29 (bug real "Guardar detalles no guarda nada"): "Detalles del espacio"
     // manda SOLO campos descriptivos, así que `metadataFields` viene vacío y Drizzle lanza
@@ -383,12 +390,13 @@ export async function actualizarEspacioAction(
 
     // Actualizar/crear contenedor descriptivo
     let contenedor: typeof s.contenedoresDescriptivos.$inferSelect | null = null;
-    if (descripcion !== undefined || fotosEspacio !== undefined || fotosDisenio !== undefined || fotosReferencia !== undefined) {
+    const hayFotos = [fotosEspacio, imagenesEspacio, fotosDisenio, imagenesDisenio, fotosReferencia, imagenesReferencia].some((v) => v !== undefined);
+    if (descripcion !== undefined || hayFotos) {
       const patch: Partial<typeof s.contenedoresDescriptivos.$inferInsert> = { updatedAt: new Date().toISOString() };
       if (descripcion !== undefined) patch.descripcion = descripcion;
-      if (fotosEspacio !== undefined) patch.fotosEspacio = sanitizarUrlsFotos(fotosEspacio) ?? [];
-      if (fotosDisenio !== undefined) patch.fotosDisenio = sanitizarUrlsFotos(fotosDisenio) ?? [];
-      if (fotosReferencia !== undefined) patch.fotosReferencia = sanitizarUrlsFotos(fotosReferencia) ?? [];
+      if (fotosEspacio !== undefined || imagenesEspacio !== undefined) patch.fotosEspacio = fotosAGuardar(imagenesEspacio, fotosEspacio);
+      if (fotosDisenio !== undefined || imagenesDisenio !== undefined) patch.fotosDisenio = fotosAGuardar(imagenesDisenio, fotosDisenio);
+      if (fotosReferencia !== undefined || imagenesReferencia !== undefined) patch.fotosReferencia = fotosAGuardar(imagenesReferencia, fotosReferencia);
 
       const [existente] = await tx.select().from(s.contenedoresDescriptivos).where(eq(s.contenedoresDescriptivos.espacioVarianteId, id));
 
@@ -400,9 +408,9 @@ export async function actualizarEspacioAction(
           espacioVarianteId: id,
           grupoItemId: null,
           descripcion: descripcion ?? null,
-          fotosEspacio: sanitizarUrlsFotos(fotosEspacio) ?? [],
-          fotosDisenio: sanitizarUrlsFotos(fotosDisenio) ?? [],
-          fotosReferencia: sanitizarUrlsFotos(fotosReferencia) ?? [],
+          fotosEspacio: fotosAGuardar(imagenesEspacio, fotosEspacio),
+          fotosDisenio: fotosAGuardar(imagenesDisenio, fotosDisenio),
+          fotosReferencia: fotosAGuardar(imagenesReferencia, fotosReferencia),
         }).returning();
         contenedor = insertado ?? null;
       }
@@ -416,9 +424,12 @@ export async function actualizarEspacioAction(
       ...(contenedor
         ? {
             descripcion: contenedor.descripcion,
-            fotosEspacio: contenedor.fotosEspacio,
-            fotosDisenio: contenedor.fotosDisenio,
-            fotosReferencia: contenedor.fotosReferencia,
+            fotosEspacio: urlsDe(contenedor.fotosEspacio),
+            fotosDisenio: urlsDe(contenedor.fotosDisenio),
+            fotosReferencia: urlsDe(contenedor.fotosReferencia),
+            imagenesEspacio: leerImagenes(contenedor.fotosEspacio),
+            imagenesDisenio: leerImagenes(contenedor.fotosDisenio),
+            imagenesReferencia: leerImagenes(contenedor.fotosReferencia),
           }
         : {}),
     };
@@ -1189,9 +1200,9 @@ export async function actualizarContenedorDescriptivoGrupoAction(
     // Sanitizar URLs de fotos
     const sanitized = {
       descripcion: cambios.descripcion,
-      fotosEspacio: cambios.fotosEspacio ? (sanitizarUrlsFotos(cambios.fotosEspacio) ?? []) : undefined,
-      fotosDisenio: cambios.fotosDisenio ? (sanitizarUrlsFotos(cambios.fotosDisenio) ?? []) : undefined,
-      fotosReferencia: cambios.fotosReferencia ? (sanitizarUrlsFotos(cambios.fotosReferencia) ?? []) : undefined,
+      fotosEspacio: cambios.fotosEspacio ? fotosAGuardar(undefined, cambios.fotosEspacio) : undefined,
+      fotosDisenio: cambios.fotosDisenio ? fotosAGuardar(undefined, cambios.fotosDisenio) : undefined,
+      fotosReferencia: cambios.fotosReferencia ? fotosAGuardar(undefined, cambios.fotosReferencia) : undefined,
     }
 
     // Buscar contenedor existente

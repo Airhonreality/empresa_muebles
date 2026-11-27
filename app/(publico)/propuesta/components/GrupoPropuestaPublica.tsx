@@ -1,5 +1,6 @@
 'use client'
 
+import { urlsDe } from '@/lib/imagen/persistencia'
 import type { GrupoItemCalculado, GrupoItemHidratado } from '@/lib/data/contracts'
 import { calcularGrupoConSubgrupos, type ParametrosManoObra } from '@/lib/data/queries/grupo-calculado'
 import { useState } from 'react'
@@ -14,7 +15,7 @@ export function GrupoPropuestaPublica({ grupo, parametros }: Props) {
   const [expandido, setExpandido] = useState(false)
 
   // Tomar primera foto de diseño si existe
-  const fotoPrincipal = grupo.contenedor?.fotosDisenio?.[0]
+  const fotoPrincipal = urlsDe(grupo.contenedor?.fotosDisenio)[0]
 
   return (
     <div className="border rounded-lg overflow-hidden">

@@ -24,6 +24,8 @@ export interface PanelProps {
   onMoverDespues: () => void
   onQuitar: () => void
   onQuitarTodas: () => void
+  /** Editor de la imagen seleccionada (alt, pie y campos del slot). */
+  edicion?: ReactNode
 }
 
 const botonBase =
@@ -41,6 +43,7 @@ export function Panel({
   onMoverDespues,
   onQuitar,
   onQuitarTodas,
+  edicion,
 }: PanelProps) {
   return (
     <aside
@@ -75,6 +78,7 @@ export function Panel({
               Después →
             </button>
           </div>
+          {edicion && <div className="border-t border-border-subtle pt-3">{edicion}</div>}
         </Seccion>
       ) : (
         <Seccion titulo="Ninguna foto seleccionada">

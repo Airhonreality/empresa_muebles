@@ -6,6 +6,9 @@
 // filtraba client-side sobre datos de TODOS los clientes/proyectos, ya presentes en el HTML/RSC
 // payload. Acá cada función trae por SQL solo lo que la página necesita. Mismo patrón dual
 // DATA_IMPL ya establecido en lib/data/actions/portafolio.ts.
+import { publicarImagenes, type ImagenPublica } from '@/lib/imagen/publica'
+import { SLOTS_ESPACIO } from '@/lib/imagen/slots/cotizador'
+import type { ImagenGuardada } from '@/lib/imagen/tipos'
 import { eq, and, or, inArray, desc, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import * as s from '@/lib/db/schema'
@@ -441,10 +444,7 @@ async function construirSnapshotPropuestaPublica(proyectoId: string): Promise<Pr
 
     const items = itemsResult
     const hitos = hitosResult
-    const espacios = aplicarContenedoresAEspacios(espaciosResult, contenedoresResult).map((e) => ({
-      ...e,
-      descripcion: normalizarDescripcion(e.descripcion),
-    })) as unknown as EspacioVariante[]
+    const espacios = aplicarContenedoresAEspacios(espaciosResult, contenedoresResult).map(publicarEspacio) as unknown as EspacioVariante[]
 
     // Descripción de grupos: comparten contenedores_descriptivos con los espacios, indexados
     // por grupoItemId. Sin esto, un grupo con descripción salía sin texto en la propuesta.
@@ -866,4 +866,21 @@ export async function obtenerHeroCarouselImagesAction(categoriaEspacio?: string)
   }
 
   return fotos;
+}
+
+/**
+ * Proyección pública de un espacio (t-200). Retira las imágenes completas (que pueden traer
+ * valores internos) y entrega solo `imagenesPublicas`, filtradas por la bandera `publica` del slot.
+ */
+function publicarEspacio<T extends { descripcion?: string | null; imagenesEspacio?: ImagenGuardada[]; imagenesDisenio?: ImagenGuardada[]; imagenesReferencia?: ImagenGuardada[] }>(e: T) {
+  const { imagenesEspacio, imagenesDisenio, imagenesReferencia, ...resto } = e
+  return {
+    ...resto,
+    descripcion: normalizarDescripcion(e.descripcion),
+    imagenesPublicas: {
+      espacio: publicarImagenes(imagenesEspacio ?? [], SLOTS_ESPACIO.espacio.campos),
+      disenio: publicarImagenes(imagenesDisenio ?? [], SLOTS_ESPACIO.disenio.campos),
+      referencia: publicarImagenes(imagenesReferencia ?? [], SLOTS_ESPACIO.referencia.campos),
+    } as { espacio: ImagenPublica[]; disenio: ImagenPublica[]; referencia: ImagenPublica[] },
+  }
 }

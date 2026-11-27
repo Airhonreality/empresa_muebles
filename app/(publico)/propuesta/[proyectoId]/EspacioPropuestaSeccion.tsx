@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Expand } from 'lucide-react'
 import { GaleriaPropuesta, type GaleriaPropuestaFoto } from '@/components/veta/galeria-propuesta'
+import type { ImagenPublica } from '@/lib/imagen/publica'
 import { MarkdownContent } from '@/components/veta/markdown-content'
 import type { EspacioVariante, GrupoItem, ItemVariante } from '@/lib/data'
 import type { CatalogoItemPublico, PropuestaPublicaData } from '@/lib/data/actions/public'
@@ -35,8 +36,17 @@ function parseNum(s: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0
 }
 
-function toGaleria(fotos: string[], alt: string): GaleriaPropuestaFoto[] {
-  return fotos.filter(Boolean).map((url, i) => ({ url, alt: `${alt} ${i + 1}` }))
+function urlsComoPublicas(urls: string[] | undefined): ImagenPublica[] {
+  return (urls ?? []).filter(Boolean).map((url) => ({ url, alt: '', textos: [] }))
+}
+
+function toGaleria(fotos: ImagenPublica[], nombreEspacio: string): GaleriaPropuestaFoto[] {
+  return fotos.filter((f) => f.url).map((f, i) => ({
+    url: f.url,
+    alt: f.alt || `${nombreEspacio} ${i + 1}`,
+    pie: f.pie,
+    textos: f.textos,
+  }))
 }
 
 interface ItemCardProps {
@@ -338,11 +348,13 @@ export function EspacioPropuestaSeccion({
     })
   }, [varianteContractual, varianteComparada, items, gruposTodos, acabados, catalogoPorId, tarifas])
 
+  // t-200: `imagenesPublicas` trae alt, pie y textos públicos. Snapshots anteriores solo traen
+  // URLs: se convierten a la misma forma para no tener dos caminos de render.
   const tiposImagen = (
     [
-      { key: 'espacio', etiqueta: 'Espacio actual', fotos: varianteActual.fotosEspacio ?? [] },
-      { key: 'disenio', etiqueta: 'Diseño', fotos: varianteActual.fotosDisenio ?? [] },
-      { key: 'referencia', etiqueta: 'Referencia', fotos: varianteActual.fotosReferencia ?? [] },
+      { key: 'espacio', etiqueta: 'Espacio actual', fotos: varianteActual.imagenesPublicas?.espacio ?? urlsComoPublicas(varianteActual.fotosEspacio) },
+      { key: 'disenio', etiqueta: 'Diseño', fotos: varianteActual.imagenesPublicas?.disenio ?? urlsComoPublicas(varianteActual.fotosDisenio) },
+      { key: 'referencia', etiqueta: 'Referencia', fotos: varianteActual.imagenesPublicas?.referencia ?? urlsComoPublicas(varianteActual.fotosReferencia) },
     ] as const
   )
     .map((t) => ({ ...t, fotos: toGaleria(t.fotos, varianteActual.nombreEspacio) }))

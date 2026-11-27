@@ -7,12 +7,17 @@
 // Estos dos helpers son la única traducción entre el modelo nuevo y ese modelo de lectura,
 // para no repetir el merge en cada consumidor.
 import type { ContenedorDescriptivo } from './contracts'
+import type { ImagenGuardada } from '@/lib/imagen/tipos'
+import { leerImagenes, urlsDe } from '@/lib/imagen/persistencia'
 
 export interface CamposDescriptivos {
   descripcion?: string | null
   fotosEspacio?: string[]
   fotosDisenio?: string[]
   fotosReferencia?: string[]
+  imagenesEspacio?: ImagenGuardada[]
+  imagenesDisenio?: ImagenGuardada[]
+  imagenesReferencia?: ImagenGuardada[]
 }
 
 /** Normaliza saltos de línea para lectura en documentos al cliente.
@@ -63,11 +68,21 @@ export function aplicarContenedoresAEspacios<T extends { id: string }>(
     return {
       ...espacio,
       descripcion: contenedor.descripcion,
-      fotosEspacio: contenedor.fotosEspacio,
-      fotosDisenio: contenedor.fotosDisenio,
-      fotosReferencia: contenedor.fotosReferencia,
+      ...proyectarFotos(contenedor),
     }
   })
+}
+
+/** Deriva URLs (para pantallas que solo muestran imagen) y forma completa desde la columna jsonb. */
+export function proyectarFotos(contenedor: Pick<ContenedorDescriptivo, 'fotosEspacio' | 'fotosDisenio' | 'fotosReferencia'>): CamposDescriptivos {
+  return {
+    fotosEspacio: urlsDe(contenedor.fotosEspacio),
+    fotosDisenio: urlsDe(contenedor.fotosDisenio),
+    fotosReferencia: urlsDe(contenedor.fotosReferencia),
+    imagenesEspacio: leerImagenes(contenedor.fotosEspacio),
+    imagenesDisenio: leerImagenes(contenedor.fotosDisenio),
+    imagenesReferencia: leerImagenes(contenedor.fotosReferencia),
+  }
 }
 
 /** Conserva los campos descriptivos ya proyectados cuando llega una lista "seca" de
@@ -88,6 +103,9 @@ export function conservarCamposDescriptivos<T extends { id: string }>(
       fotosEspacio: previa.fotosEspacio,
       fotosDisenio: previa.fotosDisenio,
       fotosReferencia: previa.fotosReferencia,
+      imagenesEspacio: previa.imagenesEspacio,
+      imagenesDisenio: previa.imagenesDisenio,
+      imagenesReferencia: previa.imagenesReferencia,
     }
   })
 }
